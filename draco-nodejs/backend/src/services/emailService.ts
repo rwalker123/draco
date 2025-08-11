@@ -8,9 +8,11 @@ import {
   ResolvedRecipient,
   EmailSettings,
   EmailRecipientSelection,
+  EmailAttachment,
 } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
+import { EmailAttachmentService } from './emailAttachmentService.js';
 import prisma from '../lib/prisma.js';
 
 // Email queue management interfaces
@@ -25,6 +27,7 @@ interface EmailQueueJob {
   retryCount: number;
   scheduledAt: Date;
   createdAt: Date;
+  attachments?: EmailAttachment[];
 }
 
 interface QueueMetrics {
@@ -59,10 +62,12 @@ export class EmailService {
   private jobQueue: Map<string, EmailQueueJob> = new Map();
   private processingQueue: Set<string> = new Set();
   private queueProcessor: NodeJS.Timeout | null = null;
+  private scheduledEmailProcessor: NodeJS.Timeout | null = null;
   private rateLimitWindow: { startTime: Date; count: number } = {
     startTime: new Date(),
     count: 0,
   };
+  private attachmentService: EmailAttachmentService;
 
   // Provider-specific queue configuration
   private readonly PROVIDER_CONFIGS = {
@@ -90,9 +95,13 @@ export class EmailService {
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
     // Legacy constructor for backward compatibility
     this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
+    this.attachmentService = new EmailAttachmentService();
 
     // Start queue processor
     this.startQueueProcessor();
+
+    // Start scheduled email processor
+    this.startScheduledEmailProcessor();
 
     // Initialize provider type detection
     this.initializeProvider();
@@ -256,8 +265,17 @@ export class EmailService {
         },
       });
 
+      // Load attachments for the email
+      const attachments = await this.attachmentService.getAttachmentsForSending(emailId.toString());
+
       // Queue email batches for processing
-      await this.queueEmailBatches(emailId, recipients, email.subject, email.body_html);
+      await this.queueEmailBatches(
+        emailId,
+        recipients,
+        email.subject,
+        email.body_html,
+        attachments,
+      );
 
       console.log(
         `Queued ${recipients.length} recipients in ${Math.ceil(recipients.length / this.BATCH_SIZE)} batches for email ${emailId}`,
@@ -285,6 +303,7 @@ export class EmailService {
     recipients: ResolvedRecipient[],
     subject: string,
     bodyHtml: string,
+    attachments?: EmailAttachment[],
   ): Promise<void> {
     const settings = EmailConfigFactory.getEmailSettings();
     const now = new Date();
@@ -305,6 +324,7 @@ export class EmailService {
         retryCount: 0,
         scheduledAt: now,
         createdAt: now,
+        attachments,
       };
 
       this.jobQueue.set(job.id, job);
@@ -339,6 +359,145 @@ export class EmailService {
       clearInterval(this.queueProcessor);
       this.queueProcessor = null;
       console.log('Email queue processor stopped');
+    }
+  }
+
+  /**
+   * Start the scheduled email processor
+   */
+  private startScheduledEmailProcessor(): void {
+    if (this.scheduledEmailProcessor) {
+      clearInterval(this.scheduledEmailProcessor);
+    }
+
+    // Check for scheduled emails every minute
+    this.scheduledEmailProcessor = setInterval(async () => {
+      try {
+        await this.processScheduledEmails();
+      } catch (error) {
+        console.error('Scheduled email processor error:', error);
+      }
+    }, 60000); // Check every minute
+
+    console.log('Scheduled email processor started');
+  }
+
+  /**
+   * Stop the scheduled email processor
+   */
+  public stopScheduledEmailProcessor(): void {
+    if (this.scheduledEmailProcessor) {
+      clearInterval(this.scheduledEmailProcessor);
+      this.scheduledEmailProcessor = null;
+      console.log('Scheduled email processor stopped');
+    }
+  }
+
+  /**
+   * Stop all processors
+   */
+  public stopAllProcessors(): void {
+    this.stopQueueProcessor();
+    this.stopScheduledEmailProcessor();
+  }
+
+  /**
+   * Process scheduled emails that are ready to send
+   */
+  private async processScheduledEmails(): Promise<void> {
+    try {
+      const now = new Date();
+
+      // Find emails scheduled for sending that haven't been sent yet
+      const scheduledEmails = await prisma.emails.findMany({
+        where: {
+          status: 'scheduled',
+          scheduled_send_at: {
+            lte: now,
+          },
+        },
+        orderBy: {
+          scheduled_send_at: 'asc',
+        },
+      });
+
+      if (scheduledEmails.length === 0) {
+        return; // No emails to process
+      }
+
+      console.log(`📅 Processing ${scheduledEmails.length} scheduled emails`);
+
+      for (const email of scheduledEmails) {
+        try {
+          // Update status to 'sending' to prevent duplicate processing
+          await prisma.emails.update({
+            where: { id: email.id },
+            data: { status: 'sending' },
+          });
+
+          // Note: EmailComposeRequest reconstruction could be implemented here if needed
+          // for more complex recipient selection reconstruction
+
+          // Check if recipients already exist (email was previously composed)
+          const existingRecipients = await prisma.email_recipients.findMany({
+            where: { email_id: email.id },
+          });
+
+          if (existingRecipients.length > 0) {
+            // Recipients already exist, process the email directly
+            console.log(
+              `📧 Processing scheduled email ${email.id} with existing ${existingRecipients.length} recipients`,
+            );
+
+            // Load attachments for the email
+            const attachments = await this.attachmentService.getAttachmentsForSending(
+              email.id.toString(),
+            );
+
+            // Queue email batches for processing using existing recipients
+            const resolvedRecipients = existingRecipients.map((recipient) => ({
+              contactId: recipient.contact_id,
+              emailAddress: recipient.email_address,
+              contactName: recipient.contact_name || 'Unknown',
+              recipientType: recipient.recipient_type || 'individual',
+            }));
+
+            await this.queueEmailBatches(
+              email.id,
+              resolvedRecipients,
+              email.subject,
+              email.body_html,
+              attachments,
+            );
+          } else {
+            // No existing recipients - this shouldn't happen in normal flow,
+            // but handle gracefully by marking as failed
+            console.warn(`⚠️ Scheduled email ${email.id} has no recipients - marking as failed`);
+            await prisma.emails.update({
+              where: { id: email.id },
+              data: {
+                status: 'failed',
+                sent_at: now,
+              },
+            });
+          }
+
+          console.log(`✅ Scheduled email ${email.id} queued for processing`);
+        } catch (error) {
+          console.error(`❌ Error processing scheduled email ${email.id}:`, error);
+
+          // Mark email as failed
+          await prisma.emails.update({
+            where: { id: email.id },
+            data: {
+              status: 'failed',
+              sent_at: now,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error in processScheduledEmails:', error);
     }
   }
 
@@ -466,6 +625,7 @@ export class EmailService {
           from: job.settings.fromEmail,
           fromName: job.settings.fromName,
           replyTo: job.settings.replyTo,
+          attachments: job.attachments,
         };
 
         const result = await provider.sendEmail(emailOptions);

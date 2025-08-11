@@ -174,6 +174,75 @@ export class LocalStorageService extends BaseStorageService {
       this.handleStorageError(error, 'delete contact photo from local storage');
     }
   }
+
+  async saveAttachment(
+    accountId: string,
+    emailId: string,
+    filename: string,
+    buffer: Buffer,
+  ): Promise<string> {
+    try {
+      const attachmentDir = path.join(this.uploadsDir, accountId, 'email-attachments', emailId);
+      if (!fs.existsSync(attachmentDir)) {
+        fs.mkdirSync(attachmentDir, { recursive: true });
+      }
+
+      const storagePath = this.getAttachmentKey(accountId, emailId, filename);
+      const filePath = path.join(this.uploadsDir, storagePath);
+      fs.writeFileSync(filePath, buffer);
+      console.log(`Email attachment saved to local storage: ${filePath}`);
+      return storagePath;
+    } catch (error) {
+      this.handleStorageError(error, 'save email attachment to local storage');
+    }
+  }
+
+  async getAttachment(
+    accountId: string,
+    emailId: string,
+    filename: string,
+  ): Promise<Buffer | null> {
+    try {
+      const storagePath = this.getAttachmentKey(accountId, emailId, filename);
+      const filePath = path.join(this.uploadsDir, storagePath);
+
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      return fs.readFileSync(filePath);
+    } catch (error) {
+      console.error('Error reading email attachment from local storage:', error);
+      return null;
+    }
+  }
+
+  async deleteAttachment(accountId: string, emailId: string, filename: string): Promise<void> {
+    try {
+      const storagePath = this.getAttachmentKey(accountId, emailId, filename);
+      const filePath = path.join(this.uploadsDir, storagePath);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Email attachment deleted from local storage: ${filePath}`);
+      }
+    } catch (error) {
+      this.handleStorageError(error, 'delete email attachment from local storage');
+    }
+  }
+
+  async deleteAllAttachments(accountId: string, emailId: string): Promise<void> {
+    try {
+      const attachmentDir = path.join(this.uploadsDir, accountId, 'email-attachments', emailId);
+
+      if (fs.existsSync(attachmentDir)) {
+        fs.rmSync(attachmentDir, { recursive: true, force: true });
+        console.log(`All email attachments deleted from local storage for email ${emailId}`);
+      }
+    } catch (error) {
+      this.handleStorageError(error, 'delete all email attachments from local storage');
+    }
+  }
 }
 
 export class S3StorageService extends BaseStorageService {
@@ -495,6 +564,134 @@ export class S3StorageService extends BaseStorageService {
 
   private getContactPhotoS3Key(accountId: string, contactId: string): string {
     return this.getContactPhotoKey(accountId, contactId);
+  }
+
+  async saveAttachment(
+    accountId: string,
+    emailId: string,
+    filename: string,
+    buffer: Buffer,
+  ): Promise<string> {
+    try {
+      const key = this.getAttachmentKey(accountId, emailId, filename);
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: buffer,
+        CacheControl: 'private, max-age=3600',
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Email attachment saved to S3: ${key}`);
+      return key;
+    } catch (error: unknown) {
+      console.error('Error saving email attachment to S3:', error);
+
+      const awsError = error as AWSError;
+      if (awsError.name === 'NoSuchBucket') {
+        throw new Error(
+          `S3 bucket '${this.bucketName}' does not exist. Please ensure the bucket is created or check your S3 configuration.`,
+        );
+      } else if (awsError.name === 'AccessDenied') {
+        throw new Error('Access denied to S3. Please check your AWS credentials and permissions.');
+      } else {
+        throw new Error(
+          `Failed to save email attachment to S3: ${awsError.message || 'Unknown error'}`,
+        );
+      }
+    }
+  }
+
+  async getAttachment(
+    accountId: string,
+    emailId: string,
+    filename: string,
+  ): Promise<Buffer | null> {
+    try {
+      const key = this.getAttachmentKey(accountId, emailId, filename);
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+      const response = await this.s3Client.send(command);
+      if (!response.Body) {
+        return null;
+      }
+      const chunks: Buffer[] = [];
+      const stream = response.Body as NodeJS.ReadableStream;
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        (('name' in error && (error as { name: string }).name === 'NoSuchKey') ||
+          ('$metadata' in error &&
+            (error as { $metadata: { httpStatusCode?: number } }).$metadata?.httpStatusCode ===
+              404))
+      ) {
+        return null;
+      }
+      console.error('Error getting email attachment from S3:', error);
+      throw new Error('Failed to get email attachment from S3');
+    }
+  }
+
+  async deleteAttachment(accountId: string, emailId: string, filename: string): Promise<void> {
+    try {
+      const key = this.getAttachmentKey(accountId, emailId, filename);
+
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Email attachment deleted from S3: ${key}`);
+    } catch (error) {
+      console.error('Error deleting email attachment from S3:', error);
+      throw new Error('Failed to delete email attachment from S3');
+    }
+  }
+
+  async deleteAllAttachments(accountId: string, emailId: string): Promise<void> {
+    try {
+      const prefix = `${accountId}/email-attachments/${emailId}/`;
+
+      // List all objects with the prefix
+      const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
+      const listCommand = new ListObjectsV2Command({
+        Bucket: this.bucketName,
+        Prefix: prefix,
+      });
+
+      const listResponse = await this.s3Client.send(listCommand);
+
+      if (!listResponse.Contents || listResponse.Contents.length === 0) {
+        console.log(`No attachments found for email ${emailId}`);
+        return;
+      }
+
+      // Delete all objects
+      const deletePromises = listResponse.Contents.map(async (object) => {
+        if (object.Key) {
+          const deleteCommand = new DeleteObjectCommand({
+            Bucket: this.bucketName,
+            Key: object.Key,
+          });
+          await this.s3Client.send(deleteCommand);
+        }
+      });
+
+      await Promise.all(deletePromises);
+      console.log(`All email attachments deleted from S3 for email ${emailId}`);
+    } catch (error) {
+      console.error('Error deleting all email attachments from S3:', error);
+      throw new Error('Failed to delete all email attachments from S3');
+    }
   }
 }
 

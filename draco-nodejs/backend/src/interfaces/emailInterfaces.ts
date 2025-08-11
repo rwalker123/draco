@@ -35,6 +35,32 @@ export interface EmailAttachment {
   contentType?: string;
 }
 
+// Email attachment upload result
+export interface AttachmentUploadResult {
+  id: string;
+  filename: string;
+  originalName: string;
+  fileSize: number;
+  mimeType: string;
+  storagePath: string;
+}
+
+// Email attachment details
+export interface AttachmentDetails {
+  id: string;
+  filename: string;
+  originalName: string;
+  fileSize: number;
+  mimeType: string | null;
+  uploadedAt: Date;
+}
+
+// Email attachment with buffer
+export interface AttachmentWithBuffer {
+  attachment: AttachmentDetails;
+  buffer: Buffer;
+}
+
 // Template processing interface
 export interface IEmailTemplateEngine {
   processTemplate(template: string, variables: Record<string, unknown>): string;
@@ -236,4 +262,49 @@ export interface EmailQueryFilter {
 export interface EtherealTestAccount {
   user: string;
   pass: string;
+}
+
+// SendGrid webhook event interfaces
+export interface SendGridWebhookEvent {
+  email: string;
+  timestamp: number;
+  event:
+    | 'delivered'
+    | 'bounce'
+    | 'dropped'
+    | 'open'
+    | 'click'
+    | 'processed'
+    | 'deferred'
+    | 'spam_report'
+    | 'unsubscribe'
+    | 'group_unsubscribe'
+    | 'group_resubscribe';
+  sg_event_id: string;
+  sg_message_id: string;
+  'smtp-id'?: string;
+  reason?: string;
+  status?: string;
+  response?: string;
+  url?: string;
+  useragent?: string;
+  ip?: string;
+  category?: string[];
+  unique_args?: Record<string, string>;
+  marketing_campaign_id?: string;
+  marketing_campaign_name?: string;
+}
+
+export interface WebhookProcessingResult {
+  processed: number;
+  errors: string[];
+}
+
+export interface RecipientUpdateData {
+  status: string;
+  delivered_at?: Date;
+  opened_at?: Date;
+  clicked_at?: Date;
+  bounce_reason?: string;
+  error_message?: string;
 }

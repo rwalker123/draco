@@ -6,7 +6,9 @@ export interface SelfRegisterInput {
   firstName: string;
   middleName?: string;
   lastName: string;
-  email?: string;
+  validationType?: 'streetAddress' | 'dateOfBirth';
+  streetAddress?: string;
+  dateOfBirth?: string;
 }
 
 export interface CombinedNewUserPayload {
@@ -16,6 +18,9 @@ export interface CombinedNewUserPayload {
   firstName: string;
   middleName?: string;
   lastName: string;
+  validationType?: 'streetAddress' | 'dateOfBirth';
+  streetAddress?: string;
+  dateOfBirth?: string;
 }
 
 export interface CombinedExistingUserPayload {
@@ -25,6 +30,9 @@ export interface CombinedExistingUserPayload {
   firstName: string;
   middleName?: string;
   lastName?: string;
+  validationType?: 'streetAddress' | 'dateOfBirth';
+  streetAddress?: string;
+  dateOfBirth?: string;
 }
 
 export type CombinedRegistrationPayload = CombinedNewUserPayload | CombinedExistingUserPayload;
@@ -41,7 +49,9 @@ export const AccountRegistrationService = {
     } catch (err: unknown) {
       if (
         axios.isAxiosError(err) &&
-        (err.response?.status === 404 || err.response?.status === 401 || err.response?.status === 403)
+        (err.response?.status === 404 ||
+          err.response?.status === 401 ||
+          err.response?.status === 403)
       ) {
         return null;
       }
@@ -56,7 +66,9 @@ export const AccountRegistrationService = {
         firstName: input.firstName,
         middleName: input.middleName,
         lastName: input.lastName,
-        email: input.email,
+        validationType: input.validationType,
+        streetAddress: input.streetAddress,
+        dateOfBirth: input.dateOfBirth,
       },
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -79,5 +91,3 @@ export const AccountRegistrationService = {
     };
   },
 };
-
-
