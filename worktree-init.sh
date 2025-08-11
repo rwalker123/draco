@@ -10,7 +10,6 @@
 set -e  # Exit on any error
 
 # Parse command line arguments
-COPY_NODE_MODULES=true
 for arg in "$@"; do
     case $arg in
         --help|-h)
@@ -103,7 +102,6 @@ if [ -f "$MAIN_REPO_PATH/.claude/settings.local.json" ]; then
 else
     print_warning "Claude settings file not found in main repo"
 fi
-
 # Step 3: Install/update dependencies
 print_status "Installing dependencies..."
 

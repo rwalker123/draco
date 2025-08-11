@@ -31,8 +31,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
-import JoinAccountDialog from './account/JoinAccountDialog';
-import CombinedRegistrationDialog from './account/CombinedRegistrationDialog';
+import RegistrationDialog from './account/RegistrationDialog';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -54,8 +53,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [accountType, setAccountType] = React.useState<string | null>(null);
   const [currentAccount, setCurrentAccount] = React.useState<Record<string, unknown> | null>(null);
-  const [joinOpen, setJoinOpen] = React.useState(false);
-  const [registerOpen, setRegisterOpen] = React.useState(false);
+  const [registrationOpen, setRegistrationOpen] = React.useState(false);
 
   // Check if user has admin role
   const isAdmin =
@@ -221,7 +219,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   </Typography>
                 )}
                 {accountId && isMember === false && (
-                  <Button color="inherit" onClick={() => setJoinOpen(true)} sx={{ mr: 1 }}>
+                  <Button color="inherit" onClick={() => setRegistrationOpen(true)} sx={{ mr: 1 }}>
                     Register
                   </Button>
                 )}
@@ -235,7 +233,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   Sign In
                 </Button>
                 {accountId ? (
-                  <Button color="inherit" onClick={() => setRegisterOpen(true)}>
+                  <Button color="inherit" onClick={() => setRegistrationOpen(true)}>
                     Register
                   </Button>
                 ) : (
@@ -385,12 +383,9 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
       {/* Dialogs */}
       {accountId && (
-        <JoinAccountDialog open={joinOpen} onClose={() => setJoinOpen(false)} accountId={accountId} />
-      )}
-      {accountId && (
-        <CombinedRegistrationDialog
-          open={registerOpen}
-          onClose={() => setRegisterOpen(false)}
+        <RegistrationDialog
+          open={registrationOpen}
+          onClose={() => setRegistrationOpen(false)}
           accountId={accountId}
         />
       )}

@@ -11,6 +11,15 @@ export interface StorageService {
   saveContactPhoto(accountId: string, contactId: string, buffer: Buffer): Promise<void>;
   getContactPhoto(accountId: string, contactId: string): Promise<Buffer | null>;
   deleteContactPhoto(accountId: string, contactId: string): Promise<void>;
+  saveAttachment(
+    accountId: string,
+    emailId: string,
+    filename: string,
+    buffer: Buffer,
+  ): Promise<string>;
+  getAttachment(accountId: string, emailId: string, filename: string): Promise<Buffer | null>;
+  deleteAttachment(accountId: string, emailId: string, filename: string): Promise<void>;
+  deleteAllAttachments(accountId: string, emailId: string): Promise<void>;
 }
 
 export abstract class BaseStorageService implements StorageService {
@@ -41,6 +50,10 @@ export abstract class BaseStorageService implements StorageService {
     return `${accountId}/contact-photos/${contactId}-photo.png`;
   }
 
+  protected getAttachmentKey(accountId: string, emailId: string, filename: string): string {
+    return `${accountId}/email-attachments/${emailId}/${filename}`;
+  }
+
   protected handleStorageError(error: unknown, operation: string): never {
     console.error(`Error during ${operation}:`, error);
 
@@ -60,4 +73,17 @@ export abstract class BaseStorageService implements StorageService {
   abstract saveContactPhoto(accountId: string, contactId: string, buffer: Buffer): Promise<void>;
   abstract getContactPhoto(accountId: string, contactId: string): Promise<Buffer | null>;
   abstract deleteContactPhoto(accountId: string, contactId: string): Promise<void>;
+  abstract saveAttachment(
+    accountId: string,
+    emailId: string,
+    filename: string,
+    buffer: Buffer,
+  ): Promise<string>;
+  abstract getAttachment(
+    accountId: string,
+    emailId: string,
+    filename: string,
+  ): Promise<Buffer | null>;
+  abstract deleteAttachment(accountId: string, emailId: string, filename: string): Promise<void>;
+  abstract deleteAllAttachments(accountId: string, emailId: string): Promise<void>;
 }

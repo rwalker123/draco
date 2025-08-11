@@ -28,6 +28,7 @@ import standingsRouter from './routes/standings.js';
 import monitoringRouter from './routes/monitoring.js';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
 import emailsRouter from './routes/emails.js';
+import webhookRouter from './routes/webhookRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -113,6 +114,7 @@ app.use(
 );
 app.use('/api/accounts/:accountId/seasons/:seasonId/standings', standingsRouter);
 app.use('/api', emailsRouter);
+app.use('/api/webhooks', webhookRouter);
 app.use('/api/accounts', accountsRouter);
 
 // Global error handler
