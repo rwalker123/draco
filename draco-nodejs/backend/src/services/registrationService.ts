@@ -213,7 +213,29 @@ export class RegistrationService {
       });
 
       if (existing) {
-        // User is already registered with this account, return success with existing contact
+        // User is already registered with this account
+        // If validation info was provided, check if they're trying to register as a different contact
+        if (validationType && (firstName || lastName)) {
+          const existingFirstName = (existing.firstname || '').toLowerCase().trim();
+          const existingLastName = (existing.lastname || '').toLowerCase().trim();
+          const providedFirstName = (firstName || '').toLowerCase().trim();
+          const providedLastName = (lastName || '').toLowerCase().trim();
+
+          // Check if the provided names match the existing contact
+          const namesMatch =
+            existingFirstName === providedFirstName && existingLastName === providedLastName;
+
+          if (!namesMatch) {
+            // User is trying to register as a different contact
+            return {
+              success: false,
+              statusCode: 409,
+              message: `You are already registered as ${existing.firstname} ${existing.lastname}. You cannot register as a different contact in this account.`,
+            };
+          }
+        }
+
+        // Names match or no validation info provided - return success with existing contact
         return {
           success: true,
           payload: {
