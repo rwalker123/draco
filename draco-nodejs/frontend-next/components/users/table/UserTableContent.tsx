@@ -14,6 +14,7 @@ interface UserTableContentProps {
   onEditContact: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto: (contactId: string) => Promise<void>;
+  onRevokeRegistration?: (contactId: string) => void;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
@@ -31,6 +32,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
   onEditContact,
   onDeleteContact,
   onDeleteContactPhoto,
+  onRevokeRegistration,
   getRoleDisplayName,
   searchTerm,
   hasFilters = false,
@@ -91,6 +93,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
               onEditContact={onEditContact}
               onDeleteContact={onDeleteContact}
               onDeleteContactPhoto={onDeleteContactPhoto}
+              onRevokeRegistration={onRevokeRegistration}
               getRoleDisplayName={getRoleDisplayName}
             />
           ))}

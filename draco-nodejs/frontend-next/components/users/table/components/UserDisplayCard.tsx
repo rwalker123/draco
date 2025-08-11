@@ -35,6 +35,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   onEditContact,
   onDeleteContact,
   onDeleteContactPhoto,
+  onRevokeRegistration,
   canManageUsers,
   getRoleDisplayName: _getRoleDisplayName,
   showActions = true,
@@ -325,7 +326,10 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
               <RegistrationStatusChip
                 userId={user.userId}
+                contactId={user.id}
                 size={cardSize === 'compact' ? 'small' : 'medium'}
+                canManage={canManageUsers}
+                onRevoke={onRevokeRegistration}
               />
             </Box>
             {user.email && (

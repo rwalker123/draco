@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import { Table, TableContainer, TableBody, Box, CircularProgress, Typography } from '@mui/material';
+import UserCard from '../../../users/UserCard';
 import {
   ViewMode,
   EnhancedUser,
@@ -40,6 +41,7 @@ interface UserTableContentProps {
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
+  onRevokeRegistration?: (contactId: string) => void;
   onAssignRole?: (user: User) => Promise<void>;
   onRemoveRole?: (user: User, role: UserRole) => void;
   // Permissions
@@ -72,6 +74,7 @@ const UserTableContent: React.FC<UserTableContentProps> = memo(
     onEditContact,
     onDeleteContact,
     onDeleteContactPhoto,
+    onRevokeRegistration,
     onAssignRole,
     onRemoveRole,
     canManageUsers = false,
@@ -112,6 +115,7 @@ const UserTableContent: React.FC<UserTableContentProps> = memo(
               onEditContact={onEditContact}
               onDeleteContact={onDeleteContact}
               onDeleteContactPhoto={onDeleteContactPhoto}
+              onRevokeRegistration={onRevokeRegistration}
               onAssignRole={onAssignRole || (async () => {})}
               onRemoveRole={onRemoveRole || (() => {})}
               canManageUsers={canManageUsers}
@@ -132,12 +136,22 @@ const UserTableContent: React.FC<UserTableContentProps> = memo(
               <Table>
                 <TableBody>
                   {users.map((user) => (
-                    <tr key={user.id}>
-                      <td>{user.firstName}</td>
-                      <td>{user.lastName}</td>
-                      <td>{user.email}</td>
-                      {/* Add more table cells as needed */}
-                    </tr>
+                    <UserCard
+                      key={user.id}
+                      user={user}
+                      canManageUsers={canManageUsers}
+                      onAssignRole={onAssignRole || (async () => {})}
+                      onRemoveRole={onRemoveRole || (() => {})}
+                      onEditContact={onEditContact}
+                      onDeleteContact={onDeleteContact}
+                      onDeleteContactPhoto={onDeleteContactPhoto}
+                      getRoleDisplayName={
+                        getRoleDisplayName ||
+                        ((role) =>
+                          typeof role === 'string' ? role : role.roleName || `Role ${role.roleId}`)
+                      }
+                      onRevokeRegistration={onRevokeRegistration}
+                    />
                   ))}
                 </TableBody>
               </Table>

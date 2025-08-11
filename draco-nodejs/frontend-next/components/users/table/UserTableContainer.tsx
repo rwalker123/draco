@@ -328,6 +328,10 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           onEditContact={onEditContact}
           onDeleteContact={onDeleteContact}
           onDeleteContactPhoto={onDeleteContactPhoto}
+          onRevokeRegistration={
+            (_restProps as { onRevokeRegistration?: (contactId: string) => void })
+              .onRevokeRegistration
+          }
           getRoleDisplayName={getRoleDisplayName}
           searchTerm={searchTerm}
           hasFilters={false}

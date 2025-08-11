@@ -155,6 +155,7 @@ export interface UserCardProps {
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
+  onRevokeRegistration?: (contactId: string) => void;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
@@ -324,6 +325,7 @@ export interface UseUserManagementReturn {
   openDeleteContactDialog: (contact: Contact) => void;
   closeDeleteContactDialog: () => void;
   handleDeleteContact: (contactId: string, force: boolean) => Promise<void>;
+  handleRevokeRegistration: (contactId: string) => Promise<void> | void;
   setAssignRoleDialogOpen: (open: boolean) => void;
   setRemoveRoleDialogOpen: (open: boolean) => void;
   setEditContactDialogOpen: (open: boolean) => void;
