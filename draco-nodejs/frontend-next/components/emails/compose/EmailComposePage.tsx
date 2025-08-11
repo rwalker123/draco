@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
-  Grid,
   Stack,
   Typography,
   Alert,
@@ -19,6 +18,7 @@ import {
   DialogActions,
   Button,
 } from '@mui/material';
+// Using Box/Stack layout only; avoid Grid2 to match project conventions
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
@@ -36,7 +36,12 @@ import { RecipientSelector } from '../recipients/RecipientSelector';
 import { AttachmentUploader } from '../attachments/AttachmentUploader';
 import RichTextEditor from '../../email/RichTextEditor';
 
-import { RecipientContact, TeamGroup, RoleGroup, RecipientSelectionState } from '../../../types/emails/recipients';
+import {
+  RecipientContact,
+  TeamGroup,
+  RoleGroup,
+  RecipientSelectionState,
+} from '../../../types/emails/recipients';
 import { EmailAttachment } from '../../../types/emails/attachments';
 import { EmailComposeRequest } from '../../../types/emails/email';
 
@@ -53,9 +58,11 @@ interface EmailComposePageProps {
 /**
  * Internal compose page component (wrapped with providers)
  */
-const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialData' | 'onSendComplete'> & {
-  onSendComplete?: (emailId: string) => void;
-}> = ({
+const EmailComposePageInternal: React.FC<
+  Omit<EmailComposePageProps, 'initialData' | 'onSendComplete'> & {
+    onSendComplete?: (emailId: string) => void;
+  }
+> = ({
   accountId,
   contacts,
   teamGroups = [],
@@ -65,9 +72,9 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const { state, actions } = useEmailCompose();
-  
+
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
@@ -79,7 +86,7 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
 
   // Handle sidebar toggle
   const handleSidebarToggle = useCallback(() => {
-    setSidebarOpen(prev => !prev);
+    setSidebarOpen((prev) => !prev);
   }, []);
 
   // Handle schedule dialog
@@ -111,22 +118,27 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
   }, []);
 
   // Handle content change
-  const handleContentChange = useCallback((content: string) => {
-    actions.setContent(content);
-  }, [actions]);
+  const handleContentChange = useCallback(
+    (content: string) => {
+      actions.setContent(content);
+    },
+    [actions],
+  );
 
   // Handle attachments change
-  const handleAttachmentsChange = useCallback((newAttachments: EmailAttachment[]) => {
-    actions.clearAttachments();
-    actions.addAttachments(newAttachments);
-  }, [actions]);
+  const handleAttachmentsChange = useCallback(
+    (newAttachments: EmailAttachment[]) => {
+      actions.clearAttachments();
+      actions.addAttachments(newAttachments);
+    },
+    [actions],
+  );
 
   // Handle recipient selection change
   const handleRecipientSelectionChange = useCallback((_recipientState: RecipientSelectionState) => {
     // Update the compose state with recipient information
     // This would be integrated with the RecipientSelectionProvider
   }, []);
-
 
   // Close notification
   const handleNotificationClose = useCallback(() => {
@@ -163,7 +175,7 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
     if (!isMobile) return;
 
     let lastScrollY = window.scrollY;
-    
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       setActionsCollapsed(currentScrollY > lastScrollY && currentScrollY > 100);
@@ -176,37 +188,48 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
 
   // Render preview content
   const renderPreviewContent = () => {
-    const processedSubject = state.selectedTemplate && state.templateVariables ? 
-      // Process template variables in subject
-      state.subject : state.subject;
-      
-    const processedContent = state.selectedTemplate && state.templateVariables ?
-      // Process template variables in content  
-      state.content : state.content;
+    const processedSubject =
+      state.selectedTemplate && state.templateVariables
+        ? // Process template variables in subject
+          state.subject
+        : state.subject;
+
+    const processedContent =
+      state.selectedTemplate && state.templateVariables
+        ? // Process template variables in content
+          state.content
+        : state.content;
 
     return (
       <Stack spacing={2}>
         <Box>
-          <Typography variant="subtitle2" color="text.secondary">Subject:</Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            Subject:
+          </Typography>
           <Typography variant="body1" fontWeight="medium">
             {processedSubject || '(No subject)'}
           </Typography>
         </Box>
-        
+
         <Box>
-          <Typography variant="subtitle2" color="text.secondary">Recipients:</Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            Recipients:
+          </Typography>
           <Typography variant="body2">
-            {state.recipientState?.totalRecipients || 0} recipient{state.recipientState?.totalRecipients !== 1 ? 's' : ''}
+            {state.recipientState?.totalRecipients || 0} recipient
+            {state.recipientState?.totalRecipients !== 1 ? 's' : ''}
           </Typography>
         </Box>
-        
+
         <Box>
-          <Typography variant="subtitle2" color="text.secondary">Content:</Typography>
-          <Box 
-            sx={{ 
-              border: 1, 
-              borderColor: 'divider', 
-              borderRadius: 1, 
+          <Typography variant="subtitle2" color="text.secondary">
+            Content:
+          </Typography>
+          <Box
+            sx={{
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
               p: 2,
               maxHeight: 300,
               overflow: 'auto',
@@ -214,12 +237,14 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
             dangerouslySetInnerHTML={{ __html: processedContent || '<p><em>No content</em></p>' }}
           />
         </Box>
-        
+
         {state.attachments.length > 0 && (
           <Box>
-            <Typography variant="subtitle2" color="text.secondary">Attachments:</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Attachments:
+            </Typography>
             <Stack spacing={0.5}>
-              {state.attachments.map(att => (
+              {state.attachments.map((att) => (
                 <Typography key={att.id} variant="body2">
                   📎 {att.name} ({(att.size / 1024 / 1024).toFixed(2)} MB)
                 </Typography>
@@ -235,15 +260,21 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Main Content Area */}
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        <Grid container sx={{ height: '100%' }}>
+        <Box
+          sx={{
+            height: '100%',
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: !isMobile && sidebarOpen ? '2fr 1fr' : '1fr',
+              lg: !isMobile && sidebarOpen ? '3fr 1fr' : '1fr',
+            },
+          }}
+        >
           {/* Main Compose Area */}
-          <Grid 
-            item 
-            xs={12} 
-            md={sidebarOpen ? 8 : 12} 
-            lg={sidebarOpen ? 9 : 12}
-            sx={{ 
-              height: '100%', 
+          <Box
+            sx={{
+              height: '100%',
               overflow: 'auto',
               display: 'flex',
               flexDirection: 'column',
@@ -293,11 +324,11 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
                 />
               </Stack>
             </Box>
-          </Grid>
+          </Box>
 
           {/* Sidebar */}
           {!isMobile && sidebarOpen && (
-            <Grid item md={4} lg={3} sx={{ height: '100%', borderLeft: 1, borderColor: 'divider' }}>
+            <Box sx={{ height: '100%', borderLeft: 1, borderColor: 'divider' }}>
               <Box sx={{ height: '100%', overflow: 'auto', p: 2 }}>
                 <ComposeSidebar
                   accountId={accountId}
@@ -306,16 +337,16 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
                   showAttachmentSummary={true}
                 />
               </Box>
-            </Grid>
+            </Box>
           )}
-        </Grid>
+        </Box>
       </Box>
 
       {/* Actions Bar */}
-      <Box 
-        sx={{ 
-          borderTop: 1, 
-          borderColor: 'divider', 
+      <Box
+        sx={{
+          borderTop: 1,
+          borderColor: 'divider',
           p: 2,
           backgroundColor: 'background.paper',
           transform: isMobile && actionsCollapsed ? 'translateY(100%)' : 'translateY(0)',
@@ -339,7 +370,12 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
           PaperProps={{ sx: { width: '90%', maxWidth: 400 } }}
         >
           <Box sx={{ p: 2 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 2 }}
+            >
               <Typography variant="h6">Email Options</Typography>
               <IconButton onClick={handleSidebarToggle}>
                 <CloseIcon />
@@ -360,20 +396,12 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
       {isMobile && (
         <Box sx={{ position: 'fixed', bottom: 80, right: 16, zIndex: 1000 }}>
           <Stack spacing={1}>
-            <Fab
-              size="small"
-              color="primary"
-              onClick={handleSidebarToggle}
-            >
+            <Fab size="small" color="primary" onClick={handleSidebarToggle}>
               <MenuIcon />
             </Fab>
-            
+
             {actionsCollapsed && (
-              <Fab
-                size="small"
-                color="secondary"
-                onClick={() => setActionsCollapsed(false)}
-              >
+              <Fab size="small" color="secondary" onClick={() => setActionsCollapsed(false)}>
                 <ExpandIcon />
               </Fab>
             )}
@@ -396,12 +424,16 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
             <Typography variant="h6">Email Preview</Typography>
           </Stack>
         </DialogTitle>
-        <DialogContent>
-          {renderPreviewContent()}
-        </DialogContent>
+        <DialogContent>{renderPreviewContent()}</DialogContent>
         <DialogActions>
           <Button onClick={handlePreviewClose}>Close</Button>
-          <Button variant="contained" onClick={() => { handlePreviewClose(); actions.sendEmail(); }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              handlePreviewClose();
+              actions.sendEmail();
+            }}
+          >
             Send Email
           </Button>
         </DialogActions>
@@ -414,11 +446,7 @@ const EmailComposePageInternal: React.FC<Omit<EmailComposePageProps, 'initialDat
         onClose={handleNotificationClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Alert 
-          onClose={handleNotificationClose} 
-          severity={notification?.severity}
-          variant="filled"
-        >
+        <Alert onClose={handleNotificationClose} severity={notification?.severity} variant="filled">
           {notification?.message}
         </Alert>
       </Snackbar>
@@ -439,11 +467,14 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   onCancel: _onCancel,
 }) => {
   // Provider callback handlers for notifications
-  const handleProviderSendComplete = useCallback((emailId: string) => {
-    if (onSendComplete) {
-      onSendComplete(emailId);
-    }
-  }, [onSendComplete]);
+  const handleProviderSendComplete = useCallback(
+    (emailId: string) => {
+      if (onSendComplete) {
+        onSendComplete(emailId);
+      }
+    },
+    [onSendComplete],
+  );
 
   const handleProviderDraftSaved = useCallback((_draftId: string) => {
     // Draft saved - could add notification here if needed
@@ -466,7 +497,7 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
         teamGroups={teamGroups}
         roleGroups={roleGroups}
         onSendComplete={onSendComplete}
-        onCancel={onCancel}
+        onCancel={_onCancel}
       />
     </EmailComposeProvider>
   );

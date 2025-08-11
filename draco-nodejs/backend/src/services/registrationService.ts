@@ -192,52 +192,51 @@ export class RegistrationService {
       return { success: false, statusCode: 400, message: 'Missing required fields' };
     }
 
-    // Validate contact information FIRST (before login)
-    if (validationType) {
-      const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
-        firstName,
-        middleName,
-        lastName: lastName || '', // lastName can be optional for existing user
-        validationType,
-        streetAddress,
-        dateOfBirth,
-      });
+    // Step 1: Login user FIRST via AuthService
+    const loginResult = await this.authService.login({ username: usernameOrEmail, password });
 
-      if (!validationResult.success) {
-        return {
-          success: false,
-          statusCode: validationResult.statusCode || 400,
-          message: validationResult.error || 'Contact validation failed',
-        };
-      }
+    if (!loginResult.success || !loginResult.token || !loginResult.user) {
+      return {
+        success: false,
+        statusCode: 401,
+        message: loginResult.message || 'Invalid credentials',
+      };
     }
 
-    return await prisma.$transaction(async (tx) => {
-      // Step 1: Login user via AuthService
-      const loginResult = await this.authService.login({ username: usernameOrEmail, password });
-      if (!loginResult.success || !loginResult.token || !loginResult.user) {
-        return {
-          success: false,
-          statusCode: 401,
-          message: loginResult.message || 'Invalid credentials',
-        } as ServiceResult<never>;
-      }
+    // Extract user and token (TypeScript now knows they exist)
+    const { user: authenticatedUser, token } = loginResult;
 
-      // Step 2: Guard - ensure not already registered in this account
+    return await prisma.$transaction(async (tx) => {
+      // Step 2: Check if user is already registered in this account
       const existing = await tx.contacts.findFirst({
-        where: { userid: loginResult.user.id, creatoraccountid: accountId },
+        where: { userid: authenticatedUser.id, creatoraccountid: accountId },
       });
+
       if (existing) {
+        // User is already registered with this account, return success with existing contact
         return {
-          success: false,
-          statusCode: 409,
-          message: 'Already registered',
-        } as ServiceResult<never>;
+          success: true,
+          payload: {
+            token,
+            user: authenticatedUser,
+            contact: {
+              id: existing.id.toString(),
+              firstname: existing.firstname,
+              lastname: existing.lastname,
+              middlename: existing.middlename,
+              email: existing.email || undefined,
+            },
+          },
+        } as ServiceResult<{
+          token: string;
+          user: { id: string; username: string; email: string };
+          contact: unknown;
+        }>;
       }
 
       let linkedContact;
       if (validationType) {
-        // Step 3: Find and validate contact again within transaction
+        // Step 3: Find contact matching validation info (with skipUserIdCheck=true)
         const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
           firstName,
           middleName,
@@ -245,6 +244,7 @@ export class RegistrationService {
           validationType,
           streetAddress,
           dateOfBirth,
+          skipUserIdCheck: true, // Allow finding contacts regardless of userid status
         });
 
         if (!validationResult.success) {
@@ -257,21 +257,34 @@ export class RegistrationService {
 
         const contact = validationResult.contact!;
 
-        // Step 4: Link existing contact to logged-in user
-        linkedContact = await tx.contacts.update({
-          where: { id: contact.id },
-          data: { userid: loginResult.user.id },
-        });
+        // Step 4: Check userid status and handle appropriately
+        if (contact.userid === null) {
+          // Contact is unlinked, link it to the authenticated user
+          linkedContact = await tx.contacts.update({
+            where: { id: contact.id },
+            data: { userid: authenticatedUser.id },
+          });
+        } else if (contact.userid === authenticatedUser.id) {
+          // Contact is already linked to this user (shouldn't happen due to step 2, but handle gracefully)
+          linkedContact = contact;
+        } else {
+          // Contact is linked to a different user
+          return {
+            success: false,
+            statusCode: 409,
+            message: 'This contact is already registered to another user.',
+          } as ServiceResult<never>;
+        }
       } else {
         // Legacy: Create new contact (for backward compatibility when no validation type provided)
         linkedContact = await tx.contacts.create({
           data: {
-            userid: loginResult.user.id,
+            userid: authenticatedUser.id,
             creatoraccountid: accountId,
             firstname: firstName,
             lastname: lastName || '',
             middlename: middleName || '',
-            email: loginResult.user.email || null,
+            email: authenticatedUser.email || null,
             dateofbirth: new Date('1900-01-01'),
           },
         });
@@ -280,8 +293,8 @@ export class RegistrationService {
       return {
         success: true,
         payload: {
-          token: loginResult.token,
-          user: loginResult.user,
+          token,
+          user: authenticatedUser,
           contact: {
             id: linkedContact.id.toString(),
             firstname: linkedContact.firstname,

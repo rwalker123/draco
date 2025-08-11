@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import axios from 'axios';
 import {
   Dialog,
   DialogTitle,
@@ -129,9 +130,14 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
         }
         handleClose();
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Registration error:', err);
-      setError('Registration failed. Please check your information and try again.');
+      // Extract specific error message from backend if available
+      const errorMessage =
+        axios.isAxiosError(err) && err.response?.data?.message
+          ? err.response.data.message
+          : 'Registration failed. Please check your information and try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

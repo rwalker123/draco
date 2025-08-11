@@ -11,6 +11,7 @@ import {
   AccordionDetails,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
@@ -24,7 +25,7 @@ import {
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  Template as TemplateIcon,
+  Description as TemplateIcon,
   People as PeopleIcon,
   Attachment as AttachmentIcon,
   Preview as PreviewIcon,
@@ -57,20 +58,13 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
 }) => {
   const { state, actions } = useEmailCompose();
   const { token } = useAuth();
-  
+
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(
-    new Set(['templates', 'recipients'])
+    new Set(['templates', 'recipients']),
   );
-
-  // Load templates
-  useEffect(() => {
-    if (showTemplates && token) {
-      loadTemplates();
-    }
-  }, [showTemplates, token, loadTemplates]);
 
   const loadTemplates = useCallback(async () => {
     if (!token) return;
@@ -78,10 +72,10 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
     try {
       setLoadingTemplates(true);
       setTemplatesError(null);
-      
+
       const emailService = createEmailService(token);
       const templateList = await emailService.listTemplates(accountId);
-      setTemplates(templateList.filter(t => t.isActive));
+      setTemplates(templateList.filter((t) => t.isActive));
     } catch (error) {
       console.error('Failed to load templates:', error);
       setTemplatesError('Failed to load templates');
@@ -90,10 +84,17 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
     }
   }, [token, accountId]);
 
+  // Load templates
+  useEffect(() => {
+    if (showTemplates && token) {
+      loadTemplates();
+    }
+  }, [showTemplates, token, loadTemplates]);
+
   // Handle accordion expansion
   const handleAccordionChange = useCallback(
     (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-      setExpandedAccordions(prev => {
+      setExpandedAccordions((prev) => {
         const newSet = new Set(prev);
         if (isExpanded) {
           newSet.add(panel);
@@ -103,25 +104,32 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
         return newSet;
       });
     },
-    []
+    [],
   );
 
   // Handle template selection
-  const handleTemplateSelect = useCallback((template: EmailTemplate) => {
-    actions.selectTemplate(template);
-  }, [actions]);
+  const handleTemplateSelect = useCallback(
+    (template: EmailTemplate) => {
+      actions.selectTemplate(template);
+    },
+    [actions],
+  );
 
   // Handle template variable update
-  const handleTemplateVariableChange = useCallback((key: string, value: string) => {
-    actions.updateTemplateVariable(key, value);
-  }, [actions]);
+  const handleTemplateVariableChange = useCallback(
+    (key: string, value: string) => {
+      actions.updateTemplateVariable(key, value);
+    },
+    [actions],
+  );
 
   // Get template variables
-  const templateVariables = state.selectedTemplate ? 
-    extractTemplateVariables(
-      (state.selectedTemplate.subjectTemplate || '') + 
-      (state.selectedTemplate.bodyTemplate || '')
-    ) : [];
+  const templateVariables = state.selectedTemplate
+    ? extractTemplateVariables(
+        (state.selectedTemplate.subjectTemplate || '') +
+          (state.selectedTemplate.bodyTemplate || ''),
+      )
+    : [];
 
   // Get recipient summary
   const recipientSummary = {
@@ -135,7 +143,7 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
   // Get attachment summary
   const attachmentSummary = {
     totalAttachments: state.attachments.length,
-    uploadedCount: state.attachments.filter(a => a.status === 'uploaded').length,
+    uploadedCount: state.attachments.filter((a) => a.status === 'uploaded').length,
     totalSize: state.attachments.reduce((sum, att) => sum + att.size, 0),
   };
 
@@ -154,7 +162,7 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
         {/* Templates Section */}
         {showTemplates && (
           <Paper variant="outlined">
-            <Accordion 
+            <Accordion
               expanded={expandedAccordions.has('templates')}
               onChange={handleAccordionChange('templates')}
             >
@@ -164,9 +172,7 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                   <Typography variant="subtitle1" fontWeight="medium">
                     Email Templates
                   </Typography>
-                  {state.selectedTemplate && (
-                    <Chip label="Active" size="small" color="secondary" />
-                  )}
+                  {state.selectedTemplate && <Chip label="Active" size="small" color="secondary" />}
                 </Stack>
               </AccordionSummary>
               <AccordionDetails>
@@ -180,11 +186,14 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
 
                   {/* Template Error */}
                   {templatesError && (
-                    <Alert severity="error" action={
-                      <Button size="small" onClick={loadTemplates}>
-                        Retry
-                      </Button>
-                    }>
+                    <Alert
+                      severity="error"
+                      action={
+                        <Button size="small" onClick={loadTemplates}>
+                          Retry
+                        </Button>
+                      }
+                    >
                       {templatesError}
                     </Alert>
                   )}
@@ -217,7 +226,7 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                         Template Variables
                       </Typography>
                       <Stack spacing={1}>
-                        {templateVariables.map(variable => (
+                        {templateVariables.map((variable) => (
                           <TextField
                             key={variable}
                             label={variable}
@@ -243,10 +252,9 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                         </Typography>
                       ) : (
                         <List dense>
-                          {templates.map(template => (
-                            <ListItem
+                          {templates.map((template) => (
+                            <ListItemButton
                               key={template.id}
-                              button
                               onClick={() => handleTemplateSelect(template)}
                               selected={state.selectedTemplate?.id === template.id}
                             >
@@ -265,7 +273,7 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                                   </IconButton>
                                 </Tooltip>
                               </ListItemSecondaryAction>
-                            </ListItem>
+                            </ListItemButton>
                           ))}
                         </List>
                       )}
@@ -290,9 +298,9 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                   <Typography variant="subtitle1" fontWeight="medium">
                     Recipients
                   </Typography>
-                  <Chip 
-                    label={recipientSummary.totalRecipients} 
-                    size="small" 
+                  <Chip
+                    label={recipientSummary.totalRecipients}
+                    size="small"
                     color={recipientSummary.totalRecipients === 0 ? 'error' : 'primary'}
                   />
                 </Stack>
@@ -315,27 +323,30 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                           variant="outlined"
                         />
                       )}
-                      
+
                       {recipientSummary.individualContacts > 0 && (
                         <Typography variant="body2">
-                          {recipientSummary.individualContacts} individual contact{recipientSummary.individualContacts !== 1 ? 's' : ''}
+                          {recipientSummary.individualContacts} individual contact
+                          {recipientSummary.individualContacts !== 1 ? 's' : ''}
                         </Typography>
                       )}
-                      
+
                       {recipientSummary.teamGroups > 0 && (
                         <Typography variant="body2">
-                          {recipientSummary.teamGroups} team group{recipientSummary.teamGroups !== 1 ? 's' : ''}
+                          {recipientSummary.teamGroups} team group
+                          {recipientSummary.teamGroups !== 1 ? 's' : ''}
                         </Typography>
                       )}
-                      
+
                       {recipientSummary.roleGroups > 0 && (
                         <Typography variant="body2">
-                          {recipientSummary.roleGroups} role group{recipientSummary.roleGroups !== 1 ? 's' : ''}
+                          {recipientSummary.roleGroups} role group
+                          {recipientSummary.roleGroups !== 1 ? 's' : ''}
                         </Typography>
                       )}
 
                       <Divider />
-                      
+
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Typography variant="caption" color="text.secondary">
                           Total Recipients:
@@ -365,17 +376,13 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                   <Typography variant="subtitle1" fontWeight="medium">
                     Attachments
                   </Typography>
-                  <Chip 
-                    label={attachmentSummary.totalAttachments} 
-                    size="small" 
-                    color="primary"
-                  />
+                  <Chip label={attachmentSummary.totalAttachments} size="small" color="primary" />
                 </Stack>
               </AccordionSummary>
               <AccordionDetails>
                 <Stack spacing={1}>
                   <List dense>
-                    {state.attachments.map(attachment => (
+                    {state.attachments.map((attachment) => (
                       <ListItem key={attachment.id}>
                         <ListItemText
                           primary={attachment.name}
@@ -391,8 +398,8 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                         />
                         <ListItemSecondaryAction>
                           <Tooltip title="Remove attachment">
-                            <IconButton 
-                              edge="end" 
+                            <IconButton
+                              edge="end"
                               size="small"
                               onClick={() => actions.removeAttachment(attachment.id)}
                             >
@@ -403,9 +410,9 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                       </ListItem>
                     ))}
                   </List>
-                  
+
                   <Divider />
-                  
+
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="caption" color="text.secondary">
                       Total Size:
@@ -414,11 +421,16 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
                       {formatFileSize(attachmentSummary.totalSize)}
                     </Typography>
                   </Box>
-                  
+
                   {attachmentSummary.uploadedCount < attachmentSummary.totalAttachments && (
                     <Alert severity="warning" sx={{ mt: 1 }}>
                       <Typography variant="caption">
-                        {attachmentSummary.totalAttachments - attachmentSummary.uploadedCount} attachment{attachmentSummary.totalAttachments - attachmentSummary.uploadedCount !== 1 ? 's' : ''} still uploading
+                        {attachmentSummary.totalAttachments - attachmentSummary.uploadedCount}{' '}
+                        attachment
+                        {attachmentSummary.totalAttachments - attachmentSummary.uploadedCount !== 1
+                          ? 's'
+                          : ''}{' '}
+                        still uploading
                       </Typography>
                     </Alert>
                   )}
