@@ -1,0 +1,292 @@
+'use client';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Alert,
+  Tabs,
+  Tab,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormControl,
+  FormLabel,
+  Box,
+} from '@mui/material';
+import {
+  AccountRegistrationService,
+  CombinedRegistrationPayload,
+  SelfRegisterInput,
+} from '../../services/accountRegistrationService';
+import { useAuth } from '../../context/AuthContext';
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  accountId: string;
+}
+
+type ValidationType = 'streetAddress' | 'dateOfBirth';
+
+/**
+ * Unified registration dialog that handles all registration scenarios:
+ * - Authenticated users: Link-by-name with validation
+ * - Unauthenticated users: Combined registration (new user or existing user) with validation
+ */
+const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
+  const { user, token, fetchUser } = useAuth();
+
+  // Form state
+  const [mode, setMode] = useState<'newUser' | 'existingUser'>('newUser');
+  const [email, setEmail] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [validationType, setValidationType] = useState<ValidationType>('streetAddress');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setEmail('');
+    setUsernameOrEmail('');
+    setPassword('');
+    setFirstName('');
+    setMiddleName('');
+    setLastName('');
+    setStreetAddress('');
+    setDateOfBirth('');
+    setError(null);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (user && token) {
+        // Authenticated user: Use self-registration (link-by-name with validation)
+        const input: SelfRegisterInput = {
+          firstName,
+          middleName: middleName || undefined,
+          lastName,
+          validationType,
+          streetAddress: validationType === 'streetAddress' ? streetAddress : undefined,
+          dateOfBirth: validationType === 'dateOfBirth' ? dateOfBirth : undefined,
+        };
+
+        await AccountRegistrationService.selfRegister(accountId, input, token);
+        await fetchUser();
+        handleClose();
+      } else {
+        // Unauthenticated user: Use combined registration
+        const payload: CombinedRegistrationPayload =
+          mode === 'newUser'
+            ? {
+                mode,
+                email,
+                password,
+                firstName,
+                middleName: middleName || undefined,
+                lastName,
+                validationType,
+                streetAddress: validationType === 'streetAddress' ? streetAddress : undefined,
+                dateOfBirth: validationType === 'dateOfBirth' ? dateOfBirth : undefined,
+              }
+            : {
+                mode,
+                usernameOrEmail,
+                password,
+                firstName,
+                middleName: middleName || undefined,
+                lastName: lastName || undefined,
+                validationType,
+                streetAddress: validationType === 'streetAddress' ? streetAddress : undefined,
+                dateOfBirth: validationType === 'dateOfBirth' ? dateOfBirth : undefined,
+              };
+
+        const { token: newToken } = await AccountRegistrationService.combinedRegister(
+          accountId,
+          payload,
+        );
+        if (newToken) {
+          localStorage.setItem('jwtToken', newToken);
+          await fetchUser();
+        }
+        handleClose();
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('Registration failed. Please check your information and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <DialogTitle>{user ? 'Join Organization' : 'Register to this organization'}</DialogTitle>
+
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Show tabs only for unauthenticated users */}
+        {!user && (
+          <Tabs value={mode} onChange={(_, v) => setMode(v)} sx={{ mb: 2 }}>
+            <Tab value="newUser" label="Create login + register" />
+            <Tab value="existingUser" label="I'm already a user" />
+          </Tabs>
+        )}
+
+        {/* Login credentials section (only for unauthenticated users) */}
+        {!user && (
+          <>
+            {mode === 'newUser' ? (
+              <>
+                <TextField
+                  fullWidth
+                  margin="dense"
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  margin="dense"
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </>
+            ) : (
+              <>
+                <TextField
+                  fullWidth
+                  margin="dense"
+                  label="Username or Email"
+                  value={usernameOrEmail}
+                  onChange={(e) => setUsernameOrEmail(e.target.value)}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  margin="dense"
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </>
+            )}
+          </>
+        )}
+
+        {/* Name fields (for all users) */}
+        <TextField
+          fullWidth
+          margin="dense"
+          label="First name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          required
+        />
+        <TextField
+          fullWidth
+          margin="dense"
+          label="Middle name (optional)"
+          value={middleName}
+          onChange={(e) => setMiddleName(e.target.value)}
+        />
+        <TextField
+          fullWidth
+          margin="dense"
+          label="Last name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          required={!user || mode === 'newUser'}
+        />
+
+        {/* Validation section */}
+        <Box sx={{ mt: 3, mb: 2 }}>
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Additional Verification Required</FormLabel>
+            <RadioGroup
+              row
+              value={validationType}
+              onChange={(e) => setValidationType(e.target.value as ValidationType)}
+            >
+              <FormControlLabel
+                value="streetAddress"
+                control={<Radio />}
+                label="Verify with Street Address"
+              />
+              <FormControlLabel
+                value="dateOfBirth"
+                control={<Radio />}
+                label="Verify with Date of Birth"
+              />
+            </RadioGroup>
+          </FormControl>
+        </Box>
+
+        {validationType === 'streetAddress' ? (
+          <TextField
+            fullWidth
+            margin="dense"
+            label="Street Address"
+            value={streetAddress}
+            onChange={(e) => setStreetAddress(e.target.value)}
+            required
+            helperText="Enter your street address as it appears in our records"
+          />
+        ) : (
+          <TextField
+            fullWidth
+            margin="dense"
+            label="Date of Birth"
+            type="date"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            required
+            InputLabelProps={{ shrink: true }}
+            helperText="Enter your date of birth as it appears in our records"
+          />
+        )}
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={handleClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+          {loading ? 'Submitting...' : 'Continue'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default RegistrationDialog;
