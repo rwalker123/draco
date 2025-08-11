@@ -75,6 +75,11 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
       // Filter props
       onlyWithRoles={onlyWithRoles}
       onOnlyWithRolesChange={onOnlyWithRolesChange}
+      // Registration management
+      onRevokeRegistration={
+        (originalProps as unknown as { onRevokeRegistration?: (id: string) => void })
+          .onRevokeRegistration
+      }
       // Title props for enhanced container
       title={hasModernFeatures ? 'User Management' : undefined}
       showTitle={hasModernFeatures}

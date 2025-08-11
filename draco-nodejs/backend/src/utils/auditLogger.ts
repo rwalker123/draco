@@ -4,7 +4,8 @@ type RegistrationEvent =
   | 'registration_newUser'
   | 'registration_existingUser'
   | 'registration_selfRegister'
-  | 'registration_linkByName';
+  | 'registration_linkByName'
+  | 'registration_revoke';
 
 type RegistrationStatus =
   | 'attempt'
@@ -58,5 +59,3 @@ export function logRegistrationEvent(
   // Intentionally avoid logging sensitive fields
   console.log(JSON.stringify(payload));
 }
-
-

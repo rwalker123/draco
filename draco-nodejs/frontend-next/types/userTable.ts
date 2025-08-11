@@ -225,6 +225,7 @@ export interface UserDisplayCardProps {
   onEditContact?: (contact: import('./users').Contact) => void;
   onDeleteContact?: (contact: import('./users').Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
+  onRevokeRegistration?: (contactId: string) => void;
   canManageUsers: boolean;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -364,6 +365,9 @@ export interface UserTableContainerProps extends ModernUserTableProps {
 
   // Contact photo management
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
+
+  // Registration management
+  onRevokeRegistration?: (contactId: string) => void;
 }
 
 // Backward compatibility props mapping
@@ -396,4 +400,7 @@ export interface UserTableEnhancedProps extends UserTableProps {
 
   // Contact photo management
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
+
+  // Registration management
+  onRevokeRegistration?: (contactId: string) => void;
 }

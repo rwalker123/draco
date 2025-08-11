@@ -188,12 +188,10 @@ router.post(
         accountId,
         timingMs: Date.now() - start,
       });
-      res
-        .status(404)
-        .json({
-          success: false,
-          message: 'Multiple matching contacts found. Please contact admin.',
-        });
+      res.status(404).json({
+        success: false,
+        message: 'Multiple matching contacts found. Please contact admin.',
+      });
       return;
     }
 
@@ -341,6 +339,73 @@ router.post(
           middlename: created.middlename,
           email: created.email || undefined,
           dateofbirth: DateUtils.formatDateOfBirthForResponse(created.dateofbirth),
+        },
+      },
+    });
+  }),
+);
+
+/**
+ * DELETE /api/accounts/:accountId/contacts/:contactId/registration
+ * Unlink a contact from a user (clear userid) within an account
+ */
+router.delete(
+  '/:accountId/contacts/:contactId/registration',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, contactId } = extractContactParams(req.params);
+
+    const existingContact = await prisma.contacts.findFirst({
+      where: {
+        id: contactId,
+        creatoraccountid: accountId,
+      },
+      select: {
+        id: true,
+        userid: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+      },
+    });
+
+    if (!existingContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    if (existingContact.userid === null) {
+      res.status(409).json({ success: false, message: 'Contact is not registered' });
+      return;
+    }
+
+    const updated = await prisma.contacts.update({
+      where: { id: existingContact.id },
+      data: { userid: null },
+      select: {
+        id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        userid: true,
+      },
+    });
+
+    logRegistrationEvent(req, 'registration_revoke', 'success', {
+      accountId,
+      userId: req.user!.id,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        contact: {
+          id: updated.id.toString(),
+          firstname: updated.firstname,
+          lastname: updated.lastname,
+          email: updated.email || undefined,
+          userid: updated.userid,
         },
       },
     });

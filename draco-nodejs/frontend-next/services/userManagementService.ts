@@ -708,6 +708,24 @@ export class UserManagementService {
 
     return data.data;
   }
+
+  /**
+   * Revoke registration (unlink userId from contact)
+   */
+  async revokeRegistration(accountId: string, contactId: string): Promise<void> {
+    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}/registration`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to revoke registration (${response.status})`);
+    }
+  }
 }
 
 /**

@@ -21,6 +21,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
   // Confirmation dialog state for photo deletion
   const [photoDeleteConfirmOpen, setPhotoDeleteConfirmOpen] = useState(false);
   const [contactToDeletePhoto, setContactToDeletePhoto] = useState<string | null>(null);
+  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
+  const [contactToRevoke, setContactToRevoke] = useState<string | null>(null);
 
   // Use custom hook for all state and logic
   const {
@@ -85,6 +87,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     closeCreateContactDialog,
     handleCreateContact,
     handleDeleteContactPhoto,
+    handleRevokeRegistration,
     openDeleteContactDialog,
     closeDeleteContactDialog,
     handleDeleteContact,
@@ -116,10 +119,30 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     }
   }, [contactToDeletePhoto, handleDeleteContactPhoto]);
 
+  const handleRevokeWithConfirm = useCallback(async (contactId: string) => {
+    setContactToRevoke(contactId);
+    setRevokeConfirmOpen(true);
+  }, []);
+
+  const confirmRevoke = useCallback(async () => {
+    if (contactToRevoke) {
+      await handleRevokeRegistration(contactToRevoke);
+      setRevokeConfirmOpen(false);
+      setContactToRevoke(null);
+    }
+  }, [contactToRevoke, handleRevokeRegistration]);
+
+  const cancelRevoke = useCallback(() => {
+    setRevokeConfirmOpen(false);
+    setContactToRevoke(null);
+  }, []);
+
   const cancelDeletePhoto = useCallback(() => {
     setPhotoDeleteConfirmOpen(false);
     setContactToDeletePhoto(null);
   }, []);
+
+  // No global event bridge; using explicit prop wiring instead
 
   return (
     <main className="min-h-screen bg-background">
@@ -177,6 +200,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         isShowingSearchResults={isShowingSearchResults}
         searchLoading={searchLoading}
         onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
+        onRevokeRegistration={handleRevokeWithConfirm}
         // Filter props
         onlyWithRoles={onlyWithRoles}
         onOnlyWithRolesChange={handleFilterToggle}
@@ -250,6 +274,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         title="Delete Photo"
         message="Are you sure you want to delete this photo? This action cannot be undone."
         confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonColor="error"
+      />
+
+      {/* Revoke registration confirmation dialog */}
+      <ConfirmationDialog
+        open={revokeConfirmOpen}
+        onClose={cancelRevoke}
+        onConfirm={confirmRevoke}
+        title="Remove Registration"
+        message="Are you sure you want to remove registration for this user? They will no longer be linked to a login."
+        confirmText="Remove"
         cancelText="Cancel"
         confirmButtonColor="error"
       />
