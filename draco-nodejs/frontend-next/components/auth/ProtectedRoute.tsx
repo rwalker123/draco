@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, Suspense, useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { extractAccountIdFromPath } from '../../utils/authHelpers';
 import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
@@ -50,7 +51,10 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
 
     // Check if user is authenticated
     if (!user || !token) {
-      router.replace(`/login?next=${encodeURIComponent(routeData.fullPath)}`);
+      const accountId = extractAccountIdFromPath(pathname || '');
+      const params = new URLSearchParams({ next: routeData.fullPath });
+      if (accountId) params.set('accountId', accountId);
+      router.replace(`/login?${params.toString()}`);
       return;
     }
 

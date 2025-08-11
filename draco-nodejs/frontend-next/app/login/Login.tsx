@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   TextField,
@@ -13,20 +13,74 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRole } from '../../context/RoleContext';
 import AccountPageHeader from '../../components/AccountPageHeader';
+import {
+  hasRouteAccess,
+  getFallbackRoute,
+  logSecurityEvent,
+  extractAccountIdFromPath,
+} from '../../utils/authHelpers';
 
 const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [needsRedirect, setNeedsRedirect] = useState(false);
   const router = useRouter();
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, user } = useAuth();
+  const { userRoles, loading: roleLoading } = useRole();
+
+  const validateAndRedirect = useCallback(() => {
+    if (!user || roleLoading || !userRoles) return;
+
+    let redirectPath = '/accounts'; // Default fallback
+
+    if (next) {
+      // Check if user has access to the requested route
+      const roles = [
+        ...userRoles.globalRoles,
+        ...userRoles.contactRoles.map((role) => role.roleName || role.roleData),
+      ];
+      const hasAccess = hasRouteAccess(next, roles);
+
+      if (hasAccess) {
+        // User has permission, redirect to requested page
+        redirectPath = next;
+      } else {
+        // User lacks permission, log security event and use fallback
+        logSecurityEvent({
+          type: 'unauthorized_access',
+          route: next,
+          userId: user.id,
+          requiredRole: 'unknown',
+        });
+
+        // Extract accountId from the next parameter or use component prop as fallback
+        const nextAccountId = extractAccountIdFromPath(next) || accountId;
+        redirectPath = getFallbackRoute(!!nextAccountId, nextAccountId);
+      }
+    } else {
+      // No specific route requested, use component accountId prop fallback
+      redirectPath = getFallbackRoute(!!accountId, accountId);
+    }
+
+    router.replace(redirectPath);
+  }, [user, roleLoading, userRoles, next, accountId, router]);
 
   const handleLogin = async () => {
     const success = await login(email, password);
     if (success) {
-      router.replace(next || '/accounts');
+      setNeedsRedirect(true);
     }
   };
+
+  // Handle redirect after successful login when contexts are loaded
+  useEffect(() => {
+    if (needsRedirect && user && !roleLoading && userRoles) {
+      validateAndRedirect();
+      setNeedsRedirect(false);
+    }
+  }, [needsRedirect, user, roleLoading, userRoles, validateAndRedirect]);
 
   return (
     <main className="min-h-screen bg-background">

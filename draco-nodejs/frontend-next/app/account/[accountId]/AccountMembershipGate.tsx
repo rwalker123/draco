@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { isPublicRoute } from '../../../config/routePermissions';
 import { useAuth } from '../../../context/AuthContext';
+import axios from 'axios';
 import {
   AccountRegistrationService,
   SelfRegisterInput,
@@ -68,8 +69,13 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
       try {
         await AccountRegistrationService.selfRegister(accountId, input, token);
         setIsMember(true);
-      } catch {
-        setError('Registration failed');
+      } catch (err: unknown) {
+        // Extract specific error message from backend if available
+        const errorMessage =
+          axios.isAxiosError(err) && err.response?.data?.message
+            ? err.response.data.message
+            : 'Registration failed';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -92,8 +98,13 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
           await fetchUser();
         }
         setIsMember(true);
-      } catch {
-        setError('Registration failed');
+      } catch (err: unknown) {
+        // Extract specific error message from backend if available
+        const errorMessage =
+          axios.isAxiosError(err) && err.response?.data?.message
+            ? err.response.data.message
+            : 'Registration failed';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

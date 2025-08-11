@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -21,7 +21,7 @@ import {
   Send as SendIcon,
   Save as SaveIcon,
   Schedule as ScheduleIcon,
-  Draft as DraftIcon,
+  Edit as DraftIcon,
   MoreVert as MoreVertIcon,
   Preview as PreviewIcon,
   Delete as DeleteIcon,
@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 
 import { useEmailCompose } from './EmailComposeProvider';
+import { validateComposeData } from '../../../types/emails/compose';
 
 interface ComposeActionsProps {
   onScheduleClick?: () => void;
@@ -91,7 +92,9 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
 
   // Handle reset/clear
   const handleReset = useCallback(() => {
-    if (window.confirm('Are you sure you want to clear all content? This action cannot be undone.')) {
+    if (
+      window.confirm('Are you sure you want to clear all content? This action cannot be undone.')
+    ) {
       actions.reset();
     }
     setMoreMenuAnchor(null);
@@ -114,8 +117,8 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
     setSendMenuAnchor(null);
   }, []);
 
-  // Determine if send is disabled
-  const validation = actions.validateCompose();
+  // Determine if send is disabled (pure validation to avoid dispatch in render)
+  const validation = useMemo(() => validateComposeData(state, state.config), [state]);
   const canSend = validation.isValid && !state.isSending && !state.isLoading;
   const canSave = !state.isSending && !state.isLoading;
 
@@ -127,12 +130,12 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
       {/* Send Progress */}
       {state.isSending && (
         <Box sx={{ mb: 2 }}>
-          <LinearProgress 
+          <LinearProgress
             variant={state.sendProgress !== undefined ? 'determinate' : 'indeterminate'}
             value={state.sendProgress}
           />
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-            {state.sendProgress !== undefined 
+            {state.sendProgress !== undefined
               ? `Sending... ${Math.round(state.sendProgress)}%`
               : 'Preparing to send...'}
           </Typography>
@@ -140,9 +143,9 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
       )}
 
       {/* Main Actions */}
-      <Stack 
-        direction={compact ? 'column' : 'row'} 
-        spacing={2} 
+      <Stack
+        direction={compact ? 'column' : 'row'}
+        spacing={2}
         alignItems={compact ? 'stretch' : 'center'}
         justifyContent="space-between"
       >
@@ -206,14 +209,9 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
                 variant="outlined"
               />
             )}
-            
+
             {state.hasUnsavedChanges && (
-              <Chip
-                label="Unsaved"
-                size="small"
-                color="warning"
-                variant="outlined"
-              />
+              <Chip label="Unsaved" size="small" color="warning" variant="outlined" />
             )}
           </Stack>
 
@@ -230,12 +228,9 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
                   Preview
                 </Button>
               )}
-              
+
               <Tooltip title="More actions">
-                <IconButton
-                  onClick={handleMoreMenuOpen}
-                  size="small"
-                >
+                <IconButton onClick={handleMoreMenuOpen} size="small">
                   <MoreVertIcon />
                 </IconButton>
               </Tooltip>
@@ -245,12 +240,13 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
       </Stack>
 
       {/* Send Options Menu */}
-      <Menu
-        anchorEl={sendMenuAnchor}
-        open={Boolean(sendMenuAnchor)}
-        onClose={handleSendMenuClose}
-      >
-        <MenuItem onClick={() => { handleSend(); handleSendMenuClose(); }}>
+      <Menu anchorEl={sendMenuAnchor} open={Boolean(sendMenuAnchor)} onClose={handleSendMenuClose}>
+        <MenuItem
+          onClick={() => {
+            handleSend();
+            handleSendMenuClose();
+          }}
+        >
           <ListItemIcon>
             <SendIcon fontSize="small" />
           </ListItemIcon>
@@ -261,8 +257,13 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
             </Typography>
           </ListItemText>
         </MenuItem>
-        
-        <MenuItem onClick={() => { handleSchedule(); handleSendMenuClose(); }}>
+
+        <MenuItem
+          onClick={() => {
+            handleSchedule();
+            handleSendMenuClose();
+          }}
+        >
           <ListItemIcon>
             <ScheduleIcon fontSize="small" />
           </ListItemIcon>
@@ -276,29 +277,35 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
       </Menu>
 
       {/* More Actions Menu */}
-      <Menu
-        anchorEl={moreMenuAnchor}
-        open={Boolean(moreMenuAnchor)}
-        onClose={handleMoreMenuClose}
-      >
+      <Menu anchorEl={moreMenuAnchor} open={Boolean(moreMenuAnchor)} onClose={handleMoreMenuClose}>
         {compact && (
-          <MenuItem onClick={() => { handlePreview(); handleMoreMenuClose(); }}>
+          <MenuItem
+            onClick={() => {
+              handlePreview();
+              handleMoreMenuClose();
+            }}
+          >
             <ListItemIcon>
               <PreviewIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Preview Email</ListItemText>
           </MenuItem>
         )}
-        
+
         {compact && <Divider />}
-        
-        <MenuItem onClick={() => { handleReset(); handleMoreMenuClose(); }}>
+
+        <MenuItem
+          onClick={() => {
+            handleReset();
+            handleMoreMenuClose();
+          }}
+        >
           <ListItemIcon>
             <RefreshIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Clear All</ListItemText>
         </MenuItem>
-        
+
         {state.isDraft && (
           <MenuItem onClick={handleDeleteDraft}>
             <ListItemIcon>
@@ -313,7 +320,8 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
       {!validation.isValid && validation.errors.length > 0 && (
         <Box sx={{ mt: 1 }}>
           <Typography variant="caption" color="error">
-            Please fix {validation.errors.length} error{validation.errors.length !== 1 ? 's' : ''} before sending
+            Please fix {validation.errors.length} error{validation.errors.length !== 1 ? 's' : ''}{' '}
+            before sending
           </Typography>
         </Box>
       )}

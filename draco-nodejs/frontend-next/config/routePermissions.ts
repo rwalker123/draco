@@ -36,6 +36,24 @@ export const routePermissions: Record<string, RoutePermission> = {
     checkAccountBoundary: true,
   },
 
+  // Communications routes - require AccountAdmin for most; templates allow ContactAdmin as well
+  '/account/[accountId]/communications': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+  '/account/[accountId]/communications/compose': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+  '/account/[accountId]/communications/history': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+  '/account/[accountId]/communications/templates': {
+    roles: ['ContactAdmin', 'AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+
   // Public routes - no authentication required
   '/': {
     public: true,
