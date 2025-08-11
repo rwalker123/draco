@@ -15,7 +15,7 @@ import {
 import {
   Person as PersonIcon,
   Schedule as ScheduleIcon,
-  Template as TemplateIcon,
+  Description as TemplateIcon,
   Clear as ClearIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
@@ -49,7 +49,7 @@ export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
     (event: React.ChangeEvent<HTMLInputElement>) => {
       actions.setSubject(event.target.value);
     },
-    [actions]
+    [actions],
   );
 
   // Clear template
@@ -63,13 +63,13 @@ export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
   }, [actions]);
 
   // Get validation errors for header fields
-  const subjectError = state.errors.find(e => e.field === 'subject');
-  const recipientError = state.errors.find(e => e.field === 'recipients');
+  const subjectError = state.errors.find((e) => e.field === 'subject');
+  const recipientError = state.errors.find((e) => e.field === 'recipients');
 
   // Format sender display
-  const senderDisplay = user ? 
-    `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username :
-    'Unknown Sender';
+  const senderDisplay = user
+    ? `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username
+    : 'Unknown Sender';
 
   // Format account display
   const accountDisplay = currentAccount?.name || 'Unknown Account';
@@ -113,11 +113,7 @@ export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
         {showRecipientCount && (
           <Box>
             <Stack direction="row" spacing={1} alignItems="center">
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
-                fontWeight="medium"
-              >
+              <Typography variant="body2" color="text.secondary" fontWeight="medium">
                 To:
               </Typography>
               <Chip
@@ -151,7 +147,7 @@ export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
               sx: {
                 fontSize: compact ? '0.875rem' : '1rem',
                 fontWeight: state.subject ? 500 : 'normal',
-              }
+              },
             }}
           />
         </Box>
@@ -203,7 +199,7 @@ export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
           <Alert severity="error" sx={{ mt: 1 }}>
             <Stack spacing={0.5}>
               {state.errors
-                .filter(error => ['subject', 'recipients', 'general'].includes(error.field))
+                .filter((error) => ['subject', 'recipients', 'general'].includes(error.field))
                 .map((error, index) => (
                   <Typography key={index} variant="body2">
                     {error.message}
@@ -217,7 +213,8 @@ export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
         {state.isDraft && state.lastSaved && (
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Draft saved {new Intl.DateTimeFormat('en-US', {
+              Draft saved{' '}
+              {new Intl.DateTimeFormat('en-US', {
                 dateStyle: 'short',
                 timeStyle: 'short',
               }).format(state.lastSaved)}

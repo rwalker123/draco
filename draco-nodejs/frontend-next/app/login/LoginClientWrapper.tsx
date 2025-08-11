@@ -6,8 +6,11 @@ import Login from './Login';
 
 export default function LoginClientWrapper() {
   const searchParams = useSearchParams();
-  const accountId = searchParams.get('accountId') || undefined;
+  const accountIdParam = searchParams.get('accountId') || undefined;
   const next = searchParams.get('next') || undefined;
+  const accountId =
+    accountIdParam ||
+    (next ? (next.match(/\/account\/([^/]+)/)?.[1] as string | undefined) : undefined);
   const { setCurrentAccount } = useAccount();
 
   // Set the account in context when accountId is present in query string

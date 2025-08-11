@@ -4,31 +4,25 @@ import { useState, useEffect, useCallback } from 'react';
 import { Box, Button, CircularProgress, Alert, Typography } from '@mui/material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
 
-import { EmailComposePage } from '../../../../components/emails/compose';
-import { useAuth } from '../../../../context/AuthContext';
-import { RecipientContact, TeamGroup, RoleGroup } from '../../../../types/emails/recipients';
-import { EmailComposeRequest } from '../../../../types/emails/email';
+import { EmailComposePage } from '../../../../../components/emails/compose';
+import { useAuth } from '../../../../../context/AuthContext';
+import { RecipientContact, TeamGroup, RoleGroup } from '../../../../../types/emails/recipients';
+import { EmailComposeRequest } from '../../../../../types/emails/email';
 
 export default function ComposePage() {
   const { accountId } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token } = useAuth();
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<RecipientContact[]>([]);
   const [teamGroups, setTeamGroups] = useState<TeamGroup[]>([]);
   const [roleGroups, setRoleGroups] = useState<RoleGroup[]>([]);
   const [initialData, setInitialData] = useState<Partial<EmailComposeRequest> | undefined>();
-
-  // Load data on mount
-  useEffect(() => {
-    if (token && accountId) {
-      loadComposeData();
-    }
-  }, [token, accountId, loadComposeData]);
 
   const loadComposeData = useCallback(async () => {
     if (!token || !accountId) return;
@@ -39,7 +33,7 @@ export default function ComposePage() {
 
       // For now, we'll use mock data. In a real implementation, you would:
       // 1. Load contacts from the contacts API
-      // 2. Load team groups from the teams API  
+      // 2. Load team groups from the teams API
       // 3. Load role groups from the roles API
       // 4. Handle any initial data from URL params (reply, forward, template, etc.)
 
@@ -53,7 +47,7 @@ export default function ComposePage() {
           phone: '555-0123',
           displayName: 'John Doe',
           hasValidEmail: true,
-          roles: [{ roleId: '1', roleName: 'Manager' }],
+          roles: [{ id: '1', roleId: '1', roleName: 'Manager', roleData: 'manager' }],
         },
         {
           id: '2',
@@ -63,7 +57,7 @@ export default function ComposePage() {
           phone: '555-0124',
           displayName: 'Jane Smith',
           hasValidEmail: true,
-          roles: [{ roleId: '2', roleName: 'Player' }],
+          roles: [{ id: '2', roleId: '2', roleName: 'Player', roleData: 'player' }],
         },
         // Add more mock contacts as needed
       ];
@@ -73,7 +67,7 @@ export default function ComposePage() {
         {
           id: 'team-1',
           name: 'Baseball Team A',
-          description: 'Main baseball team',
+          type: 'all' as const,
           contactIds: ['1', '2'],
           estimatedCount: 2,
         },
@@ -88,7 +82,7 @@ export default function ComposePage() {
           estimatedCount: 1,
         },
         {
-          roleId: 'role-2', 
+          roleId: 'role-2',
           roleName: 'Players',
           contactIds: ['2'],
           estimatedCount: 1,
@@ -113,7 +107,6 @@ export default function ComposePage() {
       setTeamGroups(mockTeamGroups);
       setRoleGroups(mockRoleGroups);
       setInitialData(composeInitialData);
-
     } catch (err) {
       console.error('Failed to load compose data:', err);
       setError('Failed to load email composition data. Please try again.');
@@ -122,16 +115,26 @@ export default function ComposePage() {
     }
   }, [token, accountId, searchParams]);
 
+  // Load data on mount
+  useEffect(() => {
+    if (token && accountId) {
+      loadComposeData();
+    }
+  }, [token, accountId, loadComposeData]);
+
   // Handle back navigation
   const handleBack = useCallback(() => {
     router.push(`/account/${accountId}/communications`);
   }, [router, accountId]);
 
   // Handle send completion
-  const handleSendComplete = useCallback((emailId: string) => {
-    // Navigate back to communications page or show success message
-    router.push(`/account/${accountId}/communications?sent=${emailId}`);
-  }, [router, accountId]);
+  const handleSendComplete = useCallback(
+    (emailId: string) => {
+      // Navigate back to communications page or show success message
+      router.push(`/account/${accountId}/communications?sent=${emailId}`);
+    },
+    [router, accountId],
+  );
 
   // Handle cancel
   const handleCancel = useCallback(() => {
@@ -141,72 +144,75 @@ export default function ComposePage() {
   // Show loading state
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh',
-        gap: 2 
-      }}>
-        <CircularProgress size={48} />
-        <Typography variant="body1" color="text.secondary">
-          Loading email composer...
-        </Typography>
-      </Box>
+      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+            gap: 2,
+          }}
+        >
+          <CircularProgress size={48} />
+          <Typography variant="body1" color="text.secondary">
+            Loading email composer...
+          </Typography>
+        </Box>
+      </ProtectedRoute>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
-          Back to Communications
-        </Button>
-        
-        <Alert 
-          severity="error" 
-          action={
-            <Button size="small" onClick={loadComposeData}>
-              Retry
-            </Button>
-          }
-        >
-          <Typography variant="h6">Failed to Load</Typography>
-          {error}
-        </Alert>
-      </Box>
+      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+        <Box sx={{ p: 3 }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
+            Back to Communications
+          </Button>
+
+          <Alert
+            severity="error"
+            action={
+              <Button size="small" onClick={loadComposeData}>
+                Retry
+              </Button>
+            }
+          >
+            <Typography variant="h6">Failed to Load</Typography>
+            {error}
+          </Alert>
+        </Box>
+      </ProtectedRoute>
     );
   }
 
   // Render the complete email compose interface
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Navigation Header */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Button 
-          startIcon={<ArrowBackIcon />} 
-          onClick={handleBack}
-          size="small"
-          color="inherit"
-        >
-          Back to Communications
-        </Button>
-      </Box>
+    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Navigation Header */}
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={handleBack} size="small" color="inherit">
+            Back to Communications
+          </Button>
+        </Box>
 
-      {/* Main Compose Interface */}
-      <Box sx={{ flex: 1 }}>
-        <EmailComposePage
-          accountId={accountId as string}
-          initialData={initialData}
-          contacts={contacts}
-          teamGroups={teamGroups}
-          roleGroups={roleGroups}
-          onSendComplete={handleSendComplete}
-          onCancel={handleCancel}
-        />
+        {/* Main Compose Interface */}
+        <Box sx={{ flex: 1 }}>
+          <EmailComposePage
+            accountId={accountId as string}
+            initialData={initialData}
+            contacts={contacts}
+            teamGroups={teamGroups}
+            roleGroups={roleGroups}
+            onSendComplete={handleSendComplete}
+            onCancel={handleCancel}
+          />
+        </Box>
       </Box>
-    </Box>
+    </ProtectedRoute>
   );
 }
