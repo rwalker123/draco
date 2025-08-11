@@ -2,6 +2,7 @@
  * Contact validation utilities for registration processes
  */
 import prisma from '../lib/prisma.js';
+import { DateUtils } from './dateUtils.js';
 
 export type ValidationType = 'streetAddress' | 'dateOfBirth';
 
@@ -12,6 +13,7 @@ export interface ContactValidationInput {
   validationType: ValidationType;
   streetAddress?: string;
   dateOfBirth?: string; // ISO date string
+  skipUserIdCheck?: boolean; // Optional: skip the userid null check for existing user flow
 }
 
 export interface ContactValidationResult {
@@ -41,7 +43,15 @@ export class ContactValidationService {
     accountId: bigint,
     input: ContactValidationInput,
   ): Promise<ContactValidationResult> {
-    const { firstName, middleName, lastName, validationType, streetAddress, dateOfBirth } = input;
+    const {
+      firstName,
+      middleName,
+      lastName,
+      validationType,
+      streetAddress,
+      dateOfBirth,
+      skipUserIdCheck,
+    } = input;
 
     // Validate required fields
     if (!firstName || !lastName) {
@@ -74,7 +84,7 @@ export class ContactValidationService {
     // Build base query for name matching
     const whereClause: {
       creatoraccountid: bigint;
-      userid: null;
+      userid?: null | undefined;
       firstname: { equals: string; mode: 'insensitive' };
       lastname: { equals: string; mode: 'insensitive' };
       middlename?: { equals: string; mode: 'insensitive' };
@@ -82,10 +92,14 @@ export class ContactValidationService {
       dateofbirth?: Date;
     } = {
       creatoraccountid: accountId,
-      userid: null, // Must not be already linked
       firstname: { equals: firstName.trim(), mode: 'insensitive' },
       lastname: { equals: lastName.trim(), mode: 'insensitive' },
     };
+
+    // Only add userid constraint if not skipping it
+    if (!skipUserIdCheck) {
+      whereClause.userid = null; // Must not be already linked
+    }
 
     // Add middle name if provided
     if (middleName && middleName.trim().length > 0) {
@@ -100,14 +114,9 @@ export class ContactValidationService {
       };
     } else if (validationType === 'dateOfBirth') {
       try {
-        const parsedDate = new Date(dateOfBirth!);
-        if (isNaN(parsedDate.getTime())) {
-          return {
-            success: false,
-            error: 'Invalid date of birth format',
-            statusCode: 400,
-          };
-        }
+        // Use the same DateUtils logic that was used when originally storing the contact
+        // This ensures we create the exact same Date object for database matching
+        const parsedDate = DateUtils.parseDateOfBirthForDatabase(dateOfBirth);
         whereClause.dateofbirth = parsedDate;
       } catch (error) {
         return {
@@ -142,8 +151,9 @@ export class ContactValidationService {
 
       const contact = candidates[0];
 
-      // Double-check that contact is not already linked
-      if (contact.userid) {
+      // Only check if contact is already linked when not skipping the check
+      // When skipUserIdCheck is true, we return the contact regardless of userid status
+      if (!skipUserIdCheck && contact.userid) {
         return {
           success: false,
           error: 'This contact is already registered to another user.',

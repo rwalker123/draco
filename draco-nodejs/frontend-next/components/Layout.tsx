@@ -27,7 +27,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useAccount } from '../context/AccountContext';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
@@ -39,7 +39,7 @@ interface LayoutProps {
 }
 
 const getAccountIdFromPath = (pathname: string): string | null => {
-  const match = pathname.match(/\/account\/(\d+)/);
+  const match = pathname.match(/\/account\/([^/]+)/);
   return match ? match[1] : null;
 };
 
@@ -49,6 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const { currentAccount: contextAccount } = useAccount();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const logout = useLogout();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [accountType, setAccountType] = React.useState<string | null>(null);
@@ -80,8 +81,10 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     </Box>
   );
 
-  // Extract accountId from prop, context, or URL (in that order of preference)
-  const accountId = propAccountId ?? contextAccount?.id ?? getAccountIdFromPath(pathname);
+  // Extract accountId from prop, context, URL path, or query string (in that order of preference)
+  const accountIdFromQuery = searchParams.get('accountId');
+  const accountId =
+    propAccountId ?? contextAccount?.id ?? getAccountIdFromPath(pathname) ?? accountIdFromQuery;
   const { isMember } = useAccountMembership(accountId);
 
   // Fetch account type and current account info

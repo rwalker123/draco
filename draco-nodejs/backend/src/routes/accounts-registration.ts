@@ -136,6 +136,7 @@ router.post(
       streetAddress,
       dateOfBirth,
     } = req.body;
+
     const result = await registrationService.loginAndCreateContactExistingUser({
       usernameOrEmail,
       password,
@@ -147,6 +148,7 @@ router.post(
       streetAddress,
       dateOfBirth,
     });
+
     if (!result.success) {
       logRegistrationEvent(req, 'registration_existingUser', 'auth_error', {
         accountId,

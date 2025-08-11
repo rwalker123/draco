@@ -1,15 +1,15 @@
 'use client';
 
-import React, { 
-  createContext, 
-  useContext, 
-  useReducer, 
-  useCallback, 
-  useEffect, 
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useEffect,
   useRef,
-  useMemo 
+  useMemo,
 } from 'react';
-import { 
+import {
   EmailComposeState,
   EmailComposeActions,
   EmailComposeContextValue,
@@ -19,7 +19,7 @@ import {
   ComposeValidationResult,
   DEFAULT_COMPOSE_CONFIG,
   validateComposeData,
-  processTemplate
+  processTemplate,
 } from '../../../types/emails/compose';
 import { EmailTemplate, EmailComposeRequest } from '../../../types/emails/email';
 import { EmailAttachment } from '../../../types/emails/attachments';
@@ -53,7 +53,7 @@ type ComposeAction =
 // Initial state
 const createInitialState = (
   config: EmailComposeConfig,
-  initialData?: Partial<EmailComposeRequest>
+  initialData?: Partial<EmailComposeRequest>,
 ): EmailComposeState => ({
   subject: initialData?.subject || '',
   content: initialData?.body || '',
@@ -138,7 +138,7 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
     case 'REMOVE_ATTACHMENT':
       return {
         ...state,
-        attachments: state.attachments.filter(att => att.id !== action.payload),
+        attachments: state.attachments.filter((att) => att.id !== action.payload),
         hasUnsavedChanges: true,
       };
 
@@ -205,7 +205,7 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
     case 'ADD_ERROR':
       return {
         ...state,
-        errors: [...state.errors.filter(e => e.field !== action.payload.field), action.payload],
+        errors: [...state.errors.filter((e) => e.field !== action.payload.field), action.payload],
       };
 
     case 'CLEAR_ERRORS':
@@ -253,11 +253,11 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   const { token } = useAuth();
   const config = useMemo(() => ({ ...DEFAULT_COMPOSE_CONFIG, ...userConfig }), [userConfig]);
   const [state, dispatch] = useReducer(composeReducer, createInitialState(config, initialData));
-  
+
   // Refs for intervals and service
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const emailServiceRef = useRef(token ? createEmailService(token) : null);
-  
+
   // Update email service when token changes
   useEffect(() => {
     if (token) {
@@ -265,24 +265,101 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     }
   }, [token]);
 
+  const saveDraft = useCallback(async (): Promise<boolean> => {
+    if (!emailServiceRef.current || !token) return false;
+
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+
+      // Create draft request (will be used for API call when draft saving is implemented)
+      const draftRequest: EmailComposeRequest = {
+        recipients: {
+          contactIds: state.recipientState?.selectedContactIds
+            ? Array.from(state.recipientState.selectedContactIds)
+            : [],
+          groups: {
+            allContacts: state.recipientState?.allContacts,
+            teamPlayers: state.recipientState?.selectedTeamGroups.map((g) => g.id),
+            roles: state.recipientState?.selectedRoleGroups.map((r) => r.roleId),
+          },
+        },
+        subject: state.selectedTemplate
+          ? processTemplate(state.subject, state.templateVariables)
+          : state.subject,
+        body: state.selectedTemplate
+          ? processTemplate(state.content, state.templateVariables)
+          : state.content,
+        templateId: state.selectedTemplate?.id,
+        attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
+        scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
+      };
+
+      // TODO: Implement draft saving in EmailService
+      // const draftId = await emailServiceRef.current.saveDraft(accountId, draftRequest);
+      const draftId = `draft_${Date.now()}`; // Temporary mock
+
+      // Use draftRequest when API is implemented
+      console.log('Draft request prepared:', draftRequest);
+
+      dispatch({
+        type: 'SET_DRAFT_DATA',
+        payload: {
+          isDraft: true,
+          draftId,
+          lastSaved: new Date(),
+        },
+      });
+
+      if (onDraftSaved) {
+        onDraftSaved(draftId);
+      }
+
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save draft';
+      dispatch({
+        type: 'ADD_ERROR',
+        payload: {
+          field: 'general',
+          message: errorMessage,
+          severity: 'error',
+        },
+      });
+
+      if (onError) {
+        onError(error instanceof Error ? error : new Error(errorMessage));
+      }
+
+      return false;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [state, token, onDraftSaved, onError]);
+
   // Auto-save drafts
   useEffect(() => {
     if (config.autoSaveDrafts && state.hasUnsavedChanges && !state.isSending) {
       if (autoSaveIntervalRef.current) {
         clearTimeout(autoSaveIntervalRef.current);
       }
-      
+
       autoSaveIntervalRef.current = setTimeout(() => {
         saveDraft();
       }, config.autoSaveInterval);
     }
-    
+
     return () => {
       if (autoSaveIntervalRef.current) {
         clearTimeout(autoSaveIntervalRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.isSending, config.autoSaveDrafts, config.autoSaveInterval, saveDraft]);
+  }, [
+    state.hasUnsavedChanges,
+    state.isSending,
+    config.autoSaveDrafts,
+    config.autoSaveInterval,
+    saveDraft,
+  ]);
 
   // Actions
   const setSubject = useCallback((subject: string) => {
@@ -325,114 +402,49 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     dispatch({ type: 'CLEAR_SCHEDULE' });
   }, []);
 
-  const saveDraft = useCallback(async (): Promise<boolean> => {
-    if (!emailServiceRef.current || !token) return false;
+  const loadDraft = useCallback(
+    async (draftId: string): Promise<boolean> => {
+      if (!emailServiceRef.current || !token) return false;
 
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        dispatch({ type: 'SET_LOADING', payload: true });
 
-      // Create draft request (will be used for API call when draft saving is implemented)
-      const draftRequest: EmailComposeRequest = {
-        recipients: {
-          contactIds: state.recipientState?.selectedContactIds ? 
-            Array.from(state.recipientState.selectedContactIds) : [],
-          groups: {
-            allContacts: state.recipientState?.allContacts,
-            teamPlayers: state.recipientState?.selectedTeamGroups.map(g => g.id),
-            roles: state.recipientState?.selectedRoleGroups.map(r => r.roleId),
-          }
-        },
-        subject: state.selectedTemplate ? 
-          processTemplate(state.subject, state.templateVariables) : state.subject,
-        body: state.selectedTemplate ? 
-          processTemplate(state.content, state.templateVariables) : state.content,
-        templateId: state.selectedTemplate?.id,
-        attachments: state.attachments.filter(a => a.status === 'uploaded').map(a => a.url!),
-        scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
-      };
+        // TODO: Implement draft loading in EmailService
+        // const draft = await emailServiceRef.current.loadDraft(accountId, draftId);
 
-      // TODO: Implement draft saving in EmailService
-      // const draftId = await emailServiceRef.current.saveDraft(accountId, draftRequest);
-      const draftId = `draft_${Date.now()}`; // Temporary mock
-      
-      // Use draftRequest when API is implemented
-      console.log('Draft request prepared:', draftRequest);
+        // For now, just mark as draft loaded
+        dispatch({
+          type: 'SET_DRAFT_DATA',
+          payload: {
+            isDraft: true,
+            draftId,
+            lastSaved: new Date(),
+          },
+        });
 
-      dispatch({ 
-        type: 'SET_DRAFT_DATA', 
-        payload: { 
-          isDraft: true, 
-          draftId, 
-          lastSaved: new Date() 
-        } 
-      });
+        return true;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load draft';
+        dispatch({
+          type: 'ADD_ERROR',
+          payload: {
+            field: 'general',
+            message: errorMessage,
+            severity: 'error',
+          },
+        });
 
-      if (onDraftSaved) {
-        onDraftSaved(draftId);
+        if (onError) {
+          onError(error instanceof Error ? error : new Error(errorMessage));
+        }
+
+        return false;
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
       }
-
-      return true;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save draft';
-      dispatch({ 
-        type: 'ADD_ERROR', 
-        payload: { 
-          field: 'general', 
-          message: errorMessage, 
-          severity: 'error' 
-        } 
-      });
-      
-      if (onError) {
-        onError(error instanceof Error ? error : new Error(errorMessage));
-      }
-      
-      return false;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [state, token, onDraftSaved, onError]);
-
-  const loadDraft = useCallback(async (draftId: string): Promise<boolean> => {
-    if (!emailServiceRef.current || !token) return false;
-
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      
-      // TODO: Implement draft loading in EmailService
-      // const draft = await emailServiceRef.current.loadDraft(accountId, draftId);
-      
-      // For now, just mark as draft loaded
-      dispatch({ 
-        type: 'SET_DRAFT_DATA', 
-        payload: { 
-          isDraft: true, 
-          draftId, 
-          lastSaved: new Date() 
-        } 
-      });
-      
-      return true;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load draft';
-      dispatch({ 
-        type: 'ADD_ERROR', 
-        payload: { 
-          field: 'general', 
-          message: errorMessage, 
-          severity: 'error' 
-        } 
-      });
-      
-      if (onError) {
-        onError(error instanceof Error ? error : new Error(errorMessage));
-      }
-      
-      return false;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [token, onError]);
+    },
+    [token, onError],
+  );
 
   const clearDraft = useCallback(() => {
     dispatch({ type: 'CLEAR_DRAFT' });
@@ -460,29 +472,32 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       // Prepare email request
       const emailRequest: EmailComposeRequest = {
         recipients: {
-          contactIds: state.recipientState?.selectedContactIds ? 
-            Array.from(state.recipientState.selectedContactIds) : [],
+          contactIds: state.recipientState?.selectedContactIds
+            ? Array.from(state.recipientState.selectedContactIds)
+            : [],
           groups: {
             allContacts: state.recipientState?.allContacts,
-            teamPlayers: state.recipientState?.selectedTeamGroups.map(g => g.id),
-            roles: state.recipientState?.selectedRoleGroups.map(r => r.roleId),
-          }
+            teamPlayers: state.recipientState?.selectedTeamGroups.map((g) => g.id),
+            roles: state.recipientState?.selectedRoleGroups.map((r) => r.roleId),
+          },
         },
-        subject: state.selectedTemplate ? 
-          processTemplate(state.subject, state.templateVariables) : state.subject,
-        body: state.selectedTemplate ? 
-          processTemplate(state.content, state.templateVariables) : state.content,
+        subject: state.selectedTemplate
+          ? processTemplate(state.subject, state.templateVariables)
+          : state.subject,
+        body: state.selectedTemplate
+          ? processTemplate(state.content, state.templateVariables)
+          : state.content,
         templateId: state.selectedTemplate?.id,
-        attachments: state.attachments.filter(a => a.status === 'uploaded').map(a => a.url!),
+        attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
         scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
       };
 
       // Send email
       dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 50 } });
       const emailId = await emailServiceRef.current.composeEmail(accountId, emailRequest);
-      
+
       dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 100 } });
-      
+
       // Clear draft if it exists
       if (state.isDraft) {
         clearDraft();
@@ -498,19 +513,19 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to send email';
-      dispatch({ 
-        type: 'ADD_ERROR', 
-        payload: { 
-          field: 'general', 
-          message: errorMessage, 
-          severity: 'error' 
-        } 
+      dispatch({
+        type: 'ADD_ERROR',
+        payload: {
+          field: 'general',
+          message: errorMessage,
+          severity: 'error',
+        },
       });
-      
+
       if (onError) {
         onError(error instanceof Error ? error : new Error(errorMessage));
       }
-      
+
       return false;
     } finally {
       dispatch({ type: 'SET_SENDING', payload: { isSending: false, progress: undefined } });
@@ -558,9 +573,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   };
 
   return (
-    <EmailComposeContext.Provider value={contextValue}>
-      {children}
-    </EmailComposeContext.Provider>
+    <EmailComposeContext.Provider value={contextValue}>{children}</EmailComposeContext.Provider>
   );
 };
 
