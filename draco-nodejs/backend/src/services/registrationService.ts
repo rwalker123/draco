@@ -76,6 +76,7 @@ export class RegistrationService {
         validationType,
         streetAddress,
         dateOfBirth,
+        skipUserIdCheck: true, // Allow finding contacts regardless of userid status
       });
 
       if (!validationResult.success) {
@@ -83,6 +84,15 @@ export class RegistrationService {
           success: false,
           statusCode: validationResult.statusCode || 400,
           message: validationResult.error || 'Contact validation failed',
+        };
+      }
+
+      // If contact was found, check if it's already linked to another user
+      if (validationResult.contact && validationResult.contact.userid) {
+        return {
+          success: false,
+          statusCode: 409,
+          message: 'This contact is already registered to another user.',
         };
       }
     }
@@ -98,6 +108,7 @@ export class RegistrationService {
           validationType,
           streetAddress,
           dateOfBirth,
+          skipUserIdCheck: true, // Allow finding contacts regardless of userid status
         });
 
         if (!validationResult.success) {
@@ -107,17 +118,30 @@ export class RegistrationService {
             message: validationResult.error || 'Contact validation failed',
           } as ServiceResult<never>;
         }
+
+        // If contact was found, check if it's already linked to another user
+        if (validationResult.contact && validationResult.contact.userid) {
+          return {
+            success: false,
+            statusCode: 409,
+            message: 'This contact is already registered to another user.',
+          } as ServiceResult<never>;
+        }
+
         contact = validationResult.contact!;
       }
 
-      // Step 2: Register user via AuthService
-      const registerResult = await this.authService.register({
-        username: email,
-        email,
-        password,
-        firstName,
-        lastName,
-      });
+      // Step 2: Register user via AuthService (WITHIN TRANSACTION)
+      const registerResult = await this.authService.register(
+        {
+          username: email,
+          email,
+          password,
+          firstName,
+          lastName,
+        },
+        tx,
+      );
       if (!registerResult.success || !registerResult.token || !registerResult.user) {
         return {
           success: false,

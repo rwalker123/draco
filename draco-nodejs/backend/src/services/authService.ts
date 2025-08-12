@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma.js';
+import type { Prisma } from '@prisma/client';
 
 export interface LoginCredentials {
   username: string;
@@ -128,12 +129,15 @@ export class AuthService {
   /**
    * Register a new user
    */
-  async register(data: RegisterData): Promise<AuthResponse> {
+  async register(data: RegisterData, tx?: Prisma.TransactionClient): Promise<AuthResponse> {
     try {
       const { username, email, password } = data;
 
+      // Use transaction client if provided, otherwise use regular prisma
+      const dbClient = tx || prisma;
+
       // Check if username already exists
-      const existingUser = await prisma.aspnetusers.findUnique({
+      const existingUser = await dbClient.aspnetusers.findUnique({
         where: { username },
       });
 
@@ -146,7 +150,7 @@ export class AuthService {
 
       // Check if email already exists
       if (email) {
-        const existingEmail = await prisma.aspnetusers.findFirst({
+        const existingEmail = await dbClient.aspnetusers.findFirst({
           where: { email },
         });
 
@@ -165,7 +169,7 @@ export class AuthService {
       const userId = this.generateUserId();
 
       // Create user
-      const newUser = await prisma.aspnetusers.create({
+      const newUser = await dbClient.aspnetusers.create({
         data: {
           id: userId,
           username,

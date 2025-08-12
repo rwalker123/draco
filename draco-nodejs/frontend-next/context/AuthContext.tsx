@@ -17,7 +17,8 @@ interface AuthContextType {
   error: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: (refreshPage?: boolean) => void;
-  fetchUser: () => Promise<void>;
+  fetchUser: (overrideToken?: string) => Promise<void>;
+  setAuthToken: (newToken: string) => void;
   clearAllContexts: () => void;
 }
 
@@ -91,6 +92,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('jwtToken');
   };
 
+  const setAuthToken = (newToken: string) => {
+    setToken(newToken);
+    localStorage.setItem('jwtToken', newToken);
+  };
+
   const fetchUser = async (overrideToken?: string): Promise<void> => {
     const authToken = overrideToken || token;
     if (!authToken) {
@@ -128,7 +134,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, error, login, logout, fetchUser, clearAllContexts }}
+      value={{
+        user,
+        token,
+        loading,
+        error,
+        login,
+        logout,
+        fetchUser,
+        setAuthToken,
+        clearAllContexts,
+      }}
     >
       {children}
     </AuthContext.Provider>
