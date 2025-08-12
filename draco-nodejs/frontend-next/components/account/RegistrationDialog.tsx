@@ -39,7 +39,7 @@ type ValidationType = 'streetAddress' | 'dateOfBirth';
  * - Unauthenticated users: Combined registration (new user or existing user) with validation
  */
 const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
-  const { user, token, fetchUser } = useAuth();
+  const { user, token, fetchUser, setAuthToken } = useAuth();
 
   // Form state
   const [mode, setMode] = useState<'newUser' | 'existingUser'>('newUser');
@@ -125,8 +125,8 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
           payload,
         );
         if (newToken) {
-          localStorage.setItem('jwtToken', newToken);
-          await fetchUser();
+          setAuthToken(newToken);
+          await fetchUser(newToken);
         }
         handleClose();
       }

@@ -62,12 +62,29 @@ export const formatDateOfBirth = (dateString: string | null): string => {
   if (!dateString) return '';
 
   try {
+    // If we get a date-only string (YYYY-MM-DD), avoid timezone conversion
+    const dateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+    if (dateOnlyMatch) {
+      const [year, month, day] = dateString.split('-').map((p) => parseInt(p, 10));
+      // Format using Intl without constructing a Date in local TZ
+      // Construct a UTC date to avoid off-by-one and format in UTC
+      const utcDate = new Date(Date.UTC(year, month - 1, day));
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }).format(utcDate);
+    }
+
+    // Legacy ISO timestamps (with time/Z): format in UTC to avoid shifting the day
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    });
+      timeZone: 'UTC',
+    }).format(date);
   } catch {
     return dateString;
   }

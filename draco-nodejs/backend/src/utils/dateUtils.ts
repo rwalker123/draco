@@ -18,9 +18,16 @@ export class DateUtils {
   static formatDateOfBirthForResponse(date: Date | null | undefined): string | null {
     if (!date) return null;
 
-    const isoString = date.toISOString();
-    // Check if date is the sentinel value (starts with 1900-01-01)
-    return isoString.startsWith('1900-01-01') ? null : isoString;
+    // Return null for sentinel value
+    if (DateUtils.isSentinelDate(date)) {
+      return null;
+    }
+
+    // Return date-only (YYYY-MM-DD) to avoid timezone shifts in clients
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   /**
