@@ -27,14 +27,16 @@ import {
   SELECTION_CHANGE_COMMAND,
   EditorState,
   LexicalEditor,
+  $getRoot,
+  $insertNodes,
+  UNDO_COMMAND,
+  REDO_COMMAND,
 } from 'lexical';
-import { INSERT_UNORDERED_LIST_COMMAND, INSERT_ORDERED_LIST_COMMAND } from '@lexical/list';
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
-import { $getRoot, $insertNodes } from 'lexical';
-import { UNDO_COMMAND, REDO_COMMAND } from 'lexical';
-import { HeadingNode } from '@lexical/rich-text';
-import { ListNode, ListItemNode } from '@lexical/list';
+import { HeadingNode, $createHeadingNode } from '@lexical/rich-text';
+import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
+import { $setBlocksType } from '@lexical/selection';
 
 interface RichTextEditorProps {
   value?: string;
@@ -51,6 +53,7 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   const [isBold, setIsBold] = React.useState(false);
   const [isItalic, setIsItalic] = React.useState(false);
   const [isUnderline, setIsUnderline] = React.useState(false);
+  const [headingLevel, setHeadingLevel] = React.useState<string>('');
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -58,6 +61,19 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
+
+      // Check for heading level
+      const anchorNode = selection.anchor.getNode();
+      const element =
+        anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow();
+
+      if (element.getType() === 'heading') {
+        // Cast to HeadingNode type - HeadingNode has getTag method
+        const headingNode = element as unknown as { getTag(): string };
+        setHeadingLevel(headingNode.getTag());
+      } else {
+        setHeadingLevel('');
+      }
     }
   }, []);
 
@@ -92,13 +108,23 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 
   const insertBulletList = () => {
     if (!disabled) {
-      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $insertList('bullet');
+        }
+      });
     }
   };
 
   const insertNumberedList = () => {
     if (!disabled) {
-      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $insertList('number');
+        }
+      });
     }
   };
 
@@ -127,6 +153,17 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   const redo = () => {
     if (!disabled) {
       editor.dispatchCommand(REDO_COMMAND, undefined);
+    }
+  };
+
+  const formatHeading = (headingTag: 'h1' | 'h2' | 'h3') => {
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createHeadingNode(headingTag));
+        }
+      });
     }
   };
 
@@ -187,6 +224,47 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
 
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
+      <IconButton
+        size="small"
+        onClick={() => formatHeading('h1')}
+        disabled={disabled}
+        color={headingLevel === 'h1' ? 'primary' : 'default'}
+        title="Heading 1"
+        sx={{ minWidth: 32 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
+          H1
+        </Typography>
+      </IconButton>
+
+      <IconButton
+        size="small"
+        onClick={() => formatHeading('h2')}
+        disabled={disabled}
+        color={headingLevel === 'h2' ? 'primary' : 'default'}
+        title="Heading 2"
+        sx={{ minWidth: 32 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
+          H2
+        </Typography>
+      </IconButton>
+
+      <IconButton
+        size="small"
+        onClick={() => formatHeading('h3')}
+        disabled={disabled}
+        color={headingLevel === 'h3' ? 'primary' : 'default'}
+        title="Heading 3"
+        sx={{ minWidth: 32 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
+          H3
+        </Typography>
+      </IconButton>
+
+      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
       <IconButton size="small" onClick={insertLink} disabled={disabled} title="Insert Link">
         <LinkIcon />
       </IconButton>
@@ -226,13 +304,22 @@ function InitialContentPlugin({ initialHtml }: { initialHtml?: string }) {
 
 const theme = {
   text: {
-    bold: 'font-weight: bold;',
-    italic: 'font-style: italic;',
-    underline: 'text-decoration: underline;',
+    bold: 'editor-text-bold',
+    italic: 'editor-text-italic',
+    underline: 'editor-text-underline',
   },
   list: {
-    ul: 'list-style-type: disc; margin: 0; padding-left: 20px;',
-    ol: 'list-style-type: decimal; margin: 0; padding-left: 20px;',
+    ul: 'editor-list-ul',
+    ol: 'editor-list-ol',
+    listitem: 'editor-list-item',
+  },
+  heading: {
+    h1: 'editor-heading-h1',
+    h2: 'editor-heading-h2',
+    h3: 'editor-heading-h3',
+    h4: 'editor-heading-h4',
+    h5: 'editor-heading-h5',
+    h6: 'editor-heading-h6',
   },
 };
 
@@ -281,7 +368,39 @@ export default function RichTextEditor({
       <LexicalComposer initialConfig={editorConfig}>
         <ToolbarPlugin disabled={disabled} />
 
-        <Box sx={{ position: 'relative' }}>
+        <Box
+          sx={{
+            position: 'relative',
+            '& .editor-text-bold': { fontWeight: 'bold' },
+            '& .editor-text-italic': { fontStyle: 'italic' },
+            '& .editor-text-underline': { textDecoration: 'underline' },
+            '& .editor-list-ul': { listStyleType: 'disc', margin: 0, paddingLeft: '20px' },
+            '& .editor-list-ol': { listStyleType: 'decimal', margin: 0, paddingLeft: '20px' },
+            '& .editor-list-item': { margin: '4px 0' },
+            '& .editor-heading-h1': { fontSize: '2em', fontWeight: 'bold', margin: '16px 0 8px 0' },
+            '& .editor-heading-h2': {
+              fontSize: '1.5em',
+              fontWeight: 'bold',
+              margin: '14px 0 6px 0',
+            },
+            '& .editor-heading-h3': {
+              fontSize: '1.2em',
+              fontWeight: 'bold',
+              margin: '12px 0 4px 0',
+            },
+            '& .editor-heading-h4': {
+              fontSize: '1.1em',
+              fontWeight: 'bold',
+              margin: '10px 0 4px 0',
+            },
+            '& .editor-heading-h5': { fontSize: '1em', fontWeight: 'bold', margin: '8px 0 4px 0' },
+            '& .editor-heading-h6': {
+              fontSize: '0.9em',
+              fontWeight: 'bold',
+              margin: '8px 0 4px 0',
+            },
+          }}
+        >
           <RichTextPlugin
             contentEditable={
               <ContentEditable
