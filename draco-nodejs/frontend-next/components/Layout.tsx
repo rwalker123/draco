@@ -227,7 +227,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   </Button>
                 )}
                 <Button color="inherit" onClick={handleLogout}>
-                  Logout
+                  Sign Out
                 </Button>
               </>
             ) : (
