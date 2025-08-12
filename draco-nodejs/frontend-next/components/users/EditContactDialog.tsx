@@ -32,6 +32,28 @@ import {
 import ContactPhotoUpload from '../ContactPhotoUpload';
 import { validateContactPhotoFile } from '../../config/contacts';
 
+function parseDateOnlyToLocalDate(dateOnly: string | null | undefined): Date | null {
+  if (!dateOnly) return null;
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateOnly);
+  if (isDateOnly) {
+    const [y, m, d] = dateOnly.split('-').map((p) => parseInt(p, 10));
+    if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
+      return new Date(y, m - 1, d);
+    }
+    return null;
+  }
+  const parsed = new Date(dateOnly);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatLocalDateToDateOnlyString(date: Date | null): string | null {
+  if (!date) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 interface EditContactDialogProps {
   open: boolean;
   contact: Contact | null;
@@ -204,7 +226,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
     };
 
   const handleDateChange = (date: Date | null) => {
-    const dateString = date ? date.toISOString().split('T')[0] : null;
+    const dateString = formatLocalDateToDateOnlyString(date);
     setFormData((prev) => ({ ...prev, dateofbirth: dateString }));
 
     // Clear field error when user selects date
@@ -448,7 +470,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
                 />
                 <DatePicker
                   label="Date of Birth"
-                  value={formData.dateofbirth ? new Date(formData.dateofbirth) : null}
+                  value={parseDateOnlyToLocalDate(formData.dateofbirth)}
                   onChange={handleDateChange}
                   disabled={loading}
                   slotProps={{
