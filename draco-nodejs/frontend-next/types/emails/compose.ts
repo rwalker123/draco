@@ -2,19 +2,9 @@
  * Email composition type definitions
  */
 
-import type { 
-  RecipientSelectionState,
-  RecipientContact,
-  TeamGroup,
-  RoleGroup 
-} from './recipients';
-import type { 
-  EmailAttachment 
-} from './attachments';
-import type { 
-  EmailTemplate,
-  EmailComposeRequest 
-} from './email';
+import type { RecipientSelectionState } from './recipients';
+import type { EmailAttachment } from './attachments';
+import type { EmailTemplate, EmailComposeRequest } from './email';
 
 /**
  * Email compose state - central state for entire composition
@@ -24,33 +14,33 @@ export interface EmailComposeState {
   subject: string;
   content: string;
   isContentHtml: boolean;
-  
+
   // Recipients (managed by RecipientSelectionProvider)
   recipientState?: RecipientSelectionState;
-  
+
   // Attachments
   attachments: EmailAttachment[];
-  
+
   // Template
   selectedTemplate?: EmailTemplate;
   templateVariables: Record<string, string>;
-  
+
   // Scheduling
   isScheduled: boolean;
   scheduledDate?: Date;
-  
+
   // Draft management
   isDraft: boolean;
   draftId?: string;
   lastSaved?: Date;
   hasUnsavedChanges: boolean;
-  
+
   // UI state
   isLoading: boolean;
   isSending: boolean;
   sendProgress?: number;
   errors: ComposeValidationError[];
-  
+
   // Configuration
   config: EmailComposeConfig;
 }
@@ -62,30 +52,34 @@ export interface EmailComposeActions {
   // Content actions
   setSubject: (subject: string) => void;
   setContent: (content: string) => void;
-  
+
   // Template actions
   selectTemplate: (template: EmailTemplate | undefined) => void;
   updateTemplateVariable: (key: string, value: string) => void;
   clearTemplate: () => void;
-  
+
   // Attachment actions
   addAttachments: (attachments: EmailAttachment[]) => void;
+  updateAttachments: (attachments: EmailAttachment[]) => void;
   removeAttachment: (attachmentId: string) => void;
   clearAttachments: () => void;
-  
+
   // Scheduling actions
   setScheduled: (scheduled: boolean, date?: Date) => void;
   clearSchedule: () => void;
-  
+
   // Draft actions
   saveDraft: () => Promise<boolean>;
   loadDraft: (draftId: string) => Promise<boolean>;
   clearDraft: () => void;
-  
+
   // Send actions
   validateCompose: () => ComposeValidationResult;
   sendEmail: () => Promise<boolean>;
-  
+
+  // Recipient actions
+  updateRecipientState: (state: RecipientSelectionState) => void;
+
   // Utility actions
   reset: () => void;
   setError: (error: ComposeValidationError) => void;
@@ -99,21 +93,21 @@ export interface EmailComposeConfig {
   // Draft settings
   autoSaveDrafts: boolean;
   autoSaveInterval: number; // milliseconds
-  
+
   // Validation settings
   requireSubject: boolean;
   requireRecipients: boolean;
   requireContent: boolean;
-  
+
   // UI settings
   showTemplates: boolean;
   showScheduling: boolean;
   showAttachments: boolean;
-  
+
   // Feature flags
   enableKeyboardShortcuts: boolean;
   enableRealTimeValidation: boolean;
-  
+
   // Limits
   maxAttachments: number;
   maxAttachmentSize: number;
@@ -167,20 +161,20 @@ export interface TemplateVariableContext {
     fullName?: string;
     email?: string;
   };
-  
+
   // Account variables
   account?: {
     name?: string;
     type?: string;
   };
-  
+
   // Date variables
   date?: {
     today?: string;
     currentYear?: string;
     currentMonth?: string;
   };
-  
+
   // Custom variables (user-defined)
   custom?: Record<string, string>;
 }
@@ -255,31 +249,28 @@ export function extractTemplateVariables(template: string): string[] {
   const variableRegex = /\{\{([^}]+)\}\}/g;
   const variables: string[] = [];
   let match;
-  
+
   while ((match = variableRegex.exec(template)) !== null) {
     const variable = match[1].trim();
     if (!variables.includes(variable)) {
       variables.push(variable);
     }
   }
-  
+
   return variables;
 }
 
 /**
  * Process template with variables
  */
-export function processTemplate(
-  template: string,
-  variables: Record<string, string>
-): string {
+export function processTemplate(template: string, variables: Record<string, string>): string {
   let processed = template;
-  
+
   Object.entries(variables).forEach(([key, value]) => {
     const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
     processed = processed.replace(regex, value || '');
   });
-  
+
   return processed;
 }
 
@@ -288,99 +279,100 @@ export function processTemplate(
  */
 export function validateComposeData(
   state: EmailComposeState,
-  config: EmailComposeConfig
+  config: EmailComposeConfig,
 ): ComposeValidationResult {
   const errors: ComposeValidationError[] = [];
   const warnings: ComposeValidationError[] = [];
-  
+
   // Subject validation
   if (config.requireSubject && !state.subject.trim()) {
     errors.push({
       field: 'subject',
       message: 'Subject is required',
-      severity: 'error'
+      severity: 'error',
     });
   }
-  
+
   // Content validation
   if (config.requireContent && !state.content.trim()) {
     errors.push({
       field: 'content',
       message: 'Email content is required',
-      severity: 'error'
+      severity: 'error',
     });
   }
-  
+
   // Recipients validation
-  if (config.requireRecipients && (!state.recipientState || state.recipientState.totalRecipients === 0)) {
+  if (
+    config.requireRecipients &&
+    (!state.recipientState || state.recipientState.totalRecipients === 0)
+  ) {
     errors.push({
       field: 'recipients',
       message: 'At least one recipient is required',
-      severity: 'error'
+      severity: 'error',
     });
   }
-  
+
   // Recipient limit validation
   if (state.recipientState && state.recipientState.totalRecipients > config.maxRecipients) {
     errors.push({
       field: 'recipients',
       message: `Too many recipients. Maximum ${config.maxRecipients} allowed.`,
-      severity: 'error'
+      severity: 'error',
     });
   }
-  
+
   // Attachment validation
   if (state.attachments.length > config.maxAttachments) {
     errors.push({
       field: 'attachments',
       message: `Too many attachments. Maximum ${config.maxAttachments} allowed.`,
-      severity: 'error'
+      severity: 'error',
     });
   }
-  
+
   // Attachment size validation
   const totalSize = state.attachments.reduce((sum, att) => sum + att.size, 0);
   if (totalSize > config.maxAttachmentSize * config.maxAttachments) {
     errors.push({
       field: 'attachments',
       message: 'Total attachment size exceeds limit',
-      severity: 'error'
+      severity: 'error',
     });
   }
-  
+
   // Schedule validation
   if (state.isScheduled && state.scheduledDate) {
     if (state.scheduledDate <= new Date()) {
       errors.push({
         field: 'schedule',
         message: 'Scheduled date must be in the future',
-        severity: 'error'
+        severity: 'error',
       });
     }
   }
-  
+
   // Template validation
   if (state.selectedTemplate) {
     const requiredVars = extractTemplateVariables(
-      state.selectedTemplate.subjectTemplate + state.selectedTemplate.bodyTemplate
+      state.selectedTemplate.subjectTemplate + state.selectedTemplate.bodyTemplate,
     );
-    
-    const missingVars = requiredVars.filter(
-      variable => !state.templateVariables[variable]
-    );
-    
+
+    const missingVars = requiredVars.filter((variable) => !state.templateVariables[variable]);
+
     if (missingVars.length > 0) {
       warnings.push({
         field: 'template',
         message: `Missing template variables: ${missingVars.join(', ')}`,
-        severity: 'warning'
+        severity: 'warning',
       });
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
