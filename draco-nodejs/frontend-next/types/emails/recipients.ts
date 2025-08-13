@@ -15,16 +15,18 @@ export interface RecipientContact extends Contact {
 export interface TeamGroup {
   id: string;
   name: string;
-  type: 'managers' | 'players' | 'all';
-  contactIds: string[];
-  estimatedCount: number;
+  type: 'managers' | 'players' | 'all' | 'sports';
+  description?: string;
+  members: RecipientContact[];
 }
 
 export interface RoleGroup {
+  id: string;
+  name: string;
+  roleType: string;
   roleId: string;
-  roleName: string;
-  contactIds: string[];
-  estimatedCount: number;
+  permissions: string[];
+  members: RecipientContact[];
 }
 
 // Recipient selection state

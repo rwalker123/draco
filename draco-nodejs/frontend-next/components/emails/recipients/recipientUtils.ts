@@ -56,20 +56,18 @@ export function getEffectiveRecipients(
 
     // Add contacts from team groups
     state.selectedTeamGroups.forEach((team) => {
-      team.contactIds.forEach((id) => {
-        const contact = allContacts.find((c) => c.id === id);
-        if (contact && contact.hasValidEmail) {
-          recipientIds.add(id);
+      team.members.forEach((member) => {
+        if (member.email && member.email.trim()) {
+          recipientIds.add(member.id);
         }
       });
     });
 
     // Add contacts from role groups
     state.selectedRoleGroups.forEach((role) => {
-      role.contactIds.forEach((id) => {
-        const contact = allContacts.find((c) => c.id === id);
-        if (contact && contact.hasValidEmail) {
-          recipientIds.add(id);
+      role.members.forEach((member) => {
+        if (member.email && member.email.trim()) {
+          recipientIds.add(member.id);
         }
       });
     });
@@ -262,8 +260,8 @@ export function createTeamGroup(
     id: `${teamId}-${type}`,
     name: `${teamName} ${type === 'all' ? 'All' : type === 'managers' ? 'Managers' : 'Players'}`,
     type,
-    contactIds: teamContacts.map((c) => c.id),
-    estimatedCount: teamContacts.filter((c) => c.hasValidEmail).length,
+    members: teamContacts,
+    description: `${type === 'all' ? 'All team members' : type === 'managers' ? 'Team managers' : 'Team players'}`,
   };
 }
 
@@ -280,9 +278,11 @@ export function createRoleGroup(
   );
 
   return {
+    id: roleId, // Use roleId as the id
     roleId,
-    roleName,
-    contactIds: roleContacts.map((c) => c.id),
-    estimatedCount: roleContacts.filter((c) => c.hasValidEmail).length,
+    name: roleName,
+    roleType: 'contact', // Default role type
+    members: roleContacts,
+    permissions: ['view'], // Default permissions
   };
 }

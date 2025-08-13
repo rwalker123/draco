@@ -35,6 +35,7 @@ type ComposeAction =
   | { type: 'UPDATE_TEMPLATE_VARIABLE'; payload: { key: string; value: string } }
   | { type: 'CLEAR_TEMPLATE' }
   | { type: 'ADD_ATTACHMENTS'; payload: EmailAttachment[] }
+  | { type: 'UPDATE_ATTACHMENTS'; payload: EmailAttachment[] }
   | { type: 'REMOVE_ATTACHMENT'; payload: string }
   | { type: 'CLEAR_ATTACHMENTS' }
   | { type: 'SET_SCHEDULED'; payload: { scheduled: boolean; date?: Date } }
@@ -132,6 +133,13 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
       return {
         ...state,
         attachments: [...state.attachments, ...action.payload],
+        hasUnsavedChanges: true,
+      };
+
+    case 'UPDATE_ATTACHMENTS':
+      return {
+        ...state,
+        attachments: action.payload,
         hasUnsavedChanges: true,
       };
 
@@ -386,6 +394,10 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     dispatch({ type: 'ADD_ATTACHMENTS', payload: attachments });
   }, []);
 
+  const updateAttachments = useCallback((attachments: EmailAttachment[]) => {
+    dispatch({ type: 'UPDATE_ATTACHMENTS', payload: attachments });
+  }, []);
+
   const removeAttachment = useCallback((attachmentId: string) => {
     dispatch({ type: 'REMOVE_ATTACHMENT', payload: attachmentId });
   }, []);
@@ -544,6 +556,10 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     dispatch({ type: 'CLEAR_ERRORS' });
   }, []);
 
+  const updateRecipientState = useCallback((recipientState: RecipientSelectionState) => {
+    dispatch({ type: 'UPDATE_RECIPIENT_STATE', payload: recipientState });
+  }, []);
+
   // Create actions object
   const actions: EmailComposeActions = {
     setSubject,
@@ -552,6 +568,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     updateTemplateVariable,
     clearTemplate,
     addAttachments,
+    updateAttachments,
     removeAttachment,
     clearAttachments,
     setScheduled,
@@ -564,6 +581,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     reset,
     setError,
     clearErrors,
+    updateRecipientState,
   };
 
   // Context value

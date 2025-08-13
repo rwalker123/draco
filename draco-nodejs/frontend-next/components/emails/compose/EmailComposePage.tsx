@@ -28,12 +28,16 @@ import {
 
 import { EmailComposeProvider, useEmailCompose } from './EmailComposeProvider';
 import { RecipientSelectionProvider } from '../recipients/RecipientSelectionProvider';
+import { useNotifications } from '../../../hooks/useNotifications';
+import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { ComposeHeader } from './ComposeHeader';
 import { ComposeActions } from './ComposeActions';
 import { ComposeSidebar } from './ComposeSidebar';
 import { ScheduleDialog } from './ScheduleDialog';
 import { RecipientSelector } from '../recipients/RecipientSelector';
+import AdvancedRecipientDialog from '../recipients/AdvancedRecipientDialog';
 import { AttachmentUploader } from '../attachments/AttachmentUploader';
+import { FileUploadComponent } from '../attachments/FileUploadComponent';
 import RichTextEditor from '../../email/RichTextEditor';
 
 import {
@@ -78,11 +82,12 @@ const EmailComposePageInternal: React.FC<
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [advancedRecipientDialogOpen, setAdvancedRecipientDialogOpen] = useState(false);
+  const [useEnhancedUpload, setUseEnhancedUpload] = useState(true);
   const [actionsCollapsed, setActionsCollapsed] = useState(false);
-  const [notification, setNotification] = useState<{
-    message: string;
-    severity: 'success' | 'error' | 'info' | 'warning';
-  } | null>(null);
+
+  // Use centralized notification management
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   // Handle sidebar toggle
   const handleSidebarToggle = useCallback(() => {
@@ -98,15 +103,18 @@ const EmailComposePageInternal: React.FC<
     setScheduleDialogOpen(false);
   }, []);
 
-  const handleScheduleComplete = useCallback((date: Date) => {
-    setNotification({
-      message: `Email scheduled for ${new Intl.DateTimeFormat('en-US', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-      }).format(date)}`,
-      severity: 'success',
-    });
-  }, []);
+  const handleScheduleComplete = useCallback(
+    (date: Date) => {
+      showNotification(
+        `Email scheduled for ${new Intl.DateTimeFormat('en-US', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        }).format(date)}`,
+        'success',
+      );
+    },
+    [showNotification],
+  );
 
   // Handle preview
   const handlePreviewOpen = useCallback(() => {
@@ -116,6 +124,26 @@ const EmailComposePageInternal: React.FC<
   const handlePreviewClose = useCallback(() => {
     setPreviewDialogOpen(false);
   }, []);
+
+  // Handle advanced recipient dialog
+  const handleAdvancedRecipientOpen = useCallback(() => {
+    setAdvancedRecipientDialogOpen(true);
+  }, []);
+
+  const handleAdvancedRecipientClose = useCallback(() => {
+    setAdvancedRecipientDialogOpen(false);
+    // Show notification that recipients were updated
+    showNotification('Recipients updated successfully', 'success');
+  }, [showNotification]);
+
+  // Toggle enhanced upload mode (for testing/fallback)
+  const toggleUploadMode = useCallback(() => {
+    setUseEnhancedUpload((prev) => {
+      const newMode = !prev;
+      showNotification(`Switched to ${newMode ? 'enhanced' : 'basic'} upload mode`, 'info');
+      return newMode;
+    });
+  }, [showNotification]);
 
   // Handle content change
   const handleContentChange = useCallback(
@@ -135,15 +163,19 @@ const EmailComposePageInternal: React.FC<
   );
 
   // Handle recipient selection change
-  const handleRecipientSelectionChange = useCallback((_recipientState: RecipientSelectionState) => {
-    // Update the compose state with recipient information
-    // This would be integrated with the RecipientSelectionProvider
-  }, []);
+  const handleRecipientSelectionChange = useCallback(
+    (recipientState: RecipientSelectionState) => {
+      // Update the compose state with recipient information
+      actions.updateRecipientState(recipientState);
+      showNotification(`${recipientState.totalRecipients} recipients selected`, 'info');
+    },
+    [actions, showNotification],
+  );
 
   // Close notification
   const handleNotificationClose = useCallback(() => {
-    setNotification(null);
-  }, []);
+    hideNotification();
+  }, [hideNotification]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -290,18 +322,39 @@ const EmailComposePageInternal: React.FC<
                   compact={isMobile}
                 />
 
-                {/* Recipient Selection */}
+                {/* Enhanced Recipient Selection */}
                 <RecipientSelectionProvider
                   contacts={contacts}
                   teamGroups={teamGroups}
                   roleGroups={roleGroups}
                   onSelectionChange={handleRecipientSelectionChange}
                 >
-                  <RecipientSelector
-                    showSelectedList={!isMobile}
-                    compactView={isMobile}
-                    showValidation={true}
-                  />
+                  {/* Advanced Recipient Selection Button */}
+                  <Box sx={{ mb: 2 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleAdvancedRecipientOpen}
+                      sx={{ mb: 1 }}
+                      fullWidth={isMobile}
+                    >
+                      Advanced Recipient Selection
+                    </Button>
+
+                    {/* Recipient Summary Display */}
+                    <Typography variant="body2" color="text.secondary">
+                      {state.recipientState?.totalRecipients || 0} recipient
+                      {state.recipientState?.totalRecipients !== 1 ? 's' : ''} selected
+                    </Typography>
+                  </Box>
+
+                  {/* Fallback to basic selector if needed */}
+                  {!isMobile && (
+                    <RecipientSelector
+                      showSelectedList={true}
+                      compactView={false}
+                      showValidation={true}
+                    />
+                  )}
                 </RecipientSelectionProvider>
 
                 {/* Content Editor */}
@@ -315,13 +368,64 @@ const EmailComposePageInternal: React.FC<
                   />
                 </Box>
 
-                {/* Attachments */}
-                <AttachmentUploader
-                  attachments={state.attachments}
-                  onAttachmentsChange={handleAttachmentsChange}
-                  disabled={state.isSending}
-                  compact={isMobile}
-                />
+                {/* Enhanced File Upload */}
+                <Box>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 1 }}
+                  >
+                    <Typography variant="h6">File Attachments</Typography>
+                    {!isMobile && (
+                      <Button
+                        size="small"
+                        onClick={toggleUploadMode}
+                        variant="text"
+                        sx={{ fontSize: '0.75rem' }}
+                      >
+                        {useEnhancedUpload ? 'Use Basic' : 'Use Enhanced'}
+                      </Button>
+                    )}
+                  </Stack>
+
+                  {useEnhancedUpload ? (
+                    <ErrorBoundary
+                      fallback={
+                        <AttachmentUploader
+                          attachments={state.attachments}
+                          onAttachmentsChange={handleAttachmentsChange}
+                          disabled={state.isSending}
+                          compact={isMobile}
+                        />
+                      }
+                      onError={(error) => {
+                        console.error('FileUploadComponent error:', error);
+                        showNotification(
+                          'File upload component failed, using basic uploader',
+                          'warning',
+                        );
+                      }}
+                    >
+                      <FileUploadComponent
+                        accountId={accountId}
+                        onAttachmentsChange={handleAttachmentsChange}
+                        showQuota={true}
+                        showProgress={true}
+                        showPreview={true}
+                        compact={isMobile}
+                        disabled={state.isSending}
+                      />
+                    </ErrorBoundary>
+                  ) : (
+                    <AttachmentUploader
+                      attachments={state.attachments}
+                      onAttachmentsChange={handleAttachmentsChange}
+                      disabled={state.isSending}
+                      compact={isMobile}
+                    />
+                  )}
+                </Box>
               </Stack>
             </Box>
           </Box>
@@ -415,6 +519,25 @@ const EmailComposePageInternal: React.FC<
         onClose={handleScheduleClose}
         onSchedule={handleScheduleComplete}
       />
+
+      {/* Advanced Recipient Dialog */}
+      <ErrorBoundary
+        onError={(error) => {
+          console.error('AdvancedRecipientDialog error:', error);
+          showNotification('Advanced recipient dialog failed to load', 'error');
+          setAdvancedRecipientDialogOpen(false);
+        }}
+      >
+        <AdvancedRecipientDialog
+          open={advancedRecipientDialogOpen}
+          onClose={handleAdvancedRecipientClose}
+          _accountId={accountId}
+          contacts={contacts}
+          teamGroups={teamGroups}
+          roleGroups={roleGroups}
+          maxRecipients={500}
+        />
+      </ErrorBoundary>
 
       {/* Preview Dialog */}
       <Dialog open={previewDialogOpen} onClose={handlePreviewClose} maxWidth="md" fullWidth>
