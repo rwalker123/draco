@@ -172,7 +172,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                     <ListItem key={team.id} divider>
                       <ListItemText
                         primary={team.name}
-                        secondary={`${team.estimatedCount} recipients`}
+                        secondary={`${team.members.length} recipients`}
                       />
                       <ListItemSecondaryAction>
                         <Stack direction="row" spacing={1} alignItems="center">
@@ -225,8 +225,8 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                   return (
                     <ListItem key={role.roleId} divider>
                       <ListItemText
-                        primary={role.roleName}
-                        secondary={`${role.estimatedCount} recipients`}
+                        primary={role.name}
+                        secondary={`${role.members.length} recipients`}
                       />
                       <ListItemSecondaryAction>
                         <Stack direction="row" spacing={1} alignItems="center">
@@ -303,7 +303,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                   <Chip
                     key={team.id}
                     icon={<SportsIcon />}
-                    label={`${team.name} (${team.estimatedCount})`}
+                    label={`${team.name} (${team.members.length})`}
                     color="primary"
                     variant="outlined"
                     onDelete={() => actions.deselectTeamGroup(team.id)}
@@ -314,7 +314,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                   <Chip
                     key={role.roleId}
                     icon={<SecurityIcon />}
-                    label={`${role.roleName} (${role.estimatedCount})`}
+                    label={`${role.name} (${role.members.length})`}
                     color="primary"
                     variant="outlined"
                     onDelete={() => actions.deselectRoleGroup(role.roleId)}

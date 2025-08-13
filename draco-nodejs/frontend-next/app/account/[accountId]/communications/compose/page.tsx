@@ -68,24 +68,28 @@ export default function ComposePage() {
           id: 'team-1',
           name: 'Baseball Team A',
           type: 'all' as const,
-          contactIds: ['1', '2'],
-          estimatedCount: 2,
+          description: 'Full team roster',
+          members: mockContacts.slice(0, 2),
         },
       ];
 
       // Mock role groups
       const mockRoleGroups: RoleGroup[] = [
         {
+          id: 'role-1',
+          name: 'Managers',
           roleId: 'role-1',
-          roleName: 'Managers',
-          contactIds: ['1'],
-          estimatedCount: 1,
+          roleType: 'CONTACT_ADMIN',
+          permissions: ['VIEW', 'EDIT'],
+          members: [mockContacts[0]],
         },
         {
+          id: 'role-2',
+          name: 'Players',
           roleId: 'role-2',
-          roleName: 'Players',
-          contactIds: ['2'],
-          estimatedCount: 1,
+          roleType: 'CONTACT',
+          permissions: ['VIEW'],
+          members: [mockContacts[1]],
         },
       ];
 
