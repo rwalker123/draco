@@ -203,12 +203,12 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
 
       // Check if contact is in selected team groups
       for (const team of selectedTeamGroups) {
-        if (team.contactIds.includes(contactId)) return true;
+        if (team.members.some((member) => member.id === contactId)) return true;
       }
 
       // Check if contact is in selected role groups
       for (const role of selectedRoleGroups) {
-        if (role.contactIds.includes(contactId)) return true;
+        if (role.members.some((member) => member.id === contactId)) return true;
       }
 
       return false;

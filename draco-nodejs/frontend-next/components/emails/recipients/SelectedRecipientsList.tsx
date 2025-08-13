@@ -194,7 +194,7 @@ export const SelectedRecipientsList: React.FC<SelectedRecipientsListProps> = ({
               <Chip
                 key={team.id}
                 icon={<SportsIcon />}
-                label={`${team.name} (${team.estimatedCount})`}
+                label={`${team.name} (${team.members.length})`}
                 variant="outlined"
                 color="primary"
                 onDelete={() => actions.deselectTeamGroup(team.id)}
@@ -218,7 +218,7 @@ export const SelectedRecipientsList: React.FC<SelectedRecipientsListProps> = ({
               <Chip
                 key={role.roleId}
                 icon={<SecurityIcon />}
-                label={`${role.roleName} (${role.estimatedCount})`}
+                label={`${role.name} (${role.members.length})`}
                 variant="outlined"
                 color="primary"
                 onDelete={() => actions.deselectRoleGroup(role.roleId)}
