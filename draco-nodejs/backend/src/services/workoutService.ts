@@ -95,15 +95,8 @@ export class WorkoutService {
       include: FIELD_INCLUDE,
     });
     if (!row) return null;
-    return {
-      id: row.id.toString(),
-      accountId: row.accountid.toString(),
-      workoutDesc: row.workoutdesc,
-      workoutDate: row.workoutdate.toISOString(),
-      fieldId: row.fieldid ? row.fieldid.toString() : null,
-      field: mapWorkoutField(row.availablefields),
-      comments: row.comments,
-    };
+
+    return this.mapPrismaWorkoutToWorkout(row);
   }
 
   async createWorkout(accountId: bigint, dto: WorkoutCreateDTO): Promise<Workout> {
@@ -115,15 +108,10 @@ export class WorkoutService {
         fieldid: dto.fieldId ? BigInt(dto.fieldId) : null,
         comments: dto.comments ?? '',
       },
+      include: FIELD_INCLUDE,
     });
-    return {
-      id: created.id.toString(),
-      accountId: created.accountid.toString(),
-      workoutDesc: created.workoutdesc,
-      workoutDate: created.workoutdate.toISOString(),
-      fieldId: created.fieldid ? created.fieldid.toString() : null,
-      comments: created.comments,
-    };
+
+    return this.mapPrismaWorkoutToWorkout(created);
   }
 
   async updateWorkout(
@@ -139,15 +127,10 @@ export class WorkoutService {
         ...(dto.fieldId !== undefined && { fieldid: dto.fieldId ? BigInt(dto.fieldId) : null }),
         ...(dto.comments !== undefined && { comments: dto.comments ?? '' }),
       },
+      include: FIELD_INCLUDE,
     });
-    return {
-      id: updated.id.toString(),
-      accountId: updated.accountid.toString(),
-      workoutDesc: updated.workoutdesc,
-      workoutDate: updated.workoutdate.toISOString(),
-      fieldId: updated.fieldid ? updated.fieldid.toString() : null,
-      comments: updated.comments,
-    };
+
+    return this.mapPrismaWorkoutToWorkout(updated);
   }
 
   async deleteWorkout(accountId: bigint, workoutId: bigint): Promise<void> {
@@ -349,6 +332,22 @@ export class WorkoutService {
       isManager: prismaRegistration.ismanager,
       whereHeard: prismaRegistration.whereheard,
       dateRegistered: prismaRegistration.dateregistered.toISOString(),
+    };
+  }
+
+  private mapPrismaWorkoutToWorkout(
+    prismaWorkout: Prisma.workoutannouncementGetPayload<{
+      include: typeof FIELD_INCLUDE;
+    }>,
+  ): Workout {
+    return {
+      id: prismaWorkout.id.toString(),
+      accountId: prismaWorkout.accountid.toString(),
+      workoutDesc: prismaWorkout.workoutdesc,
+      workoutDate: prismaWorkout.workoutdate.toISOString(),
+      fieldId: prismaWorkout.fieldid ? prismaWorkout.fieldid.toString() : null,
+      field: mapWorkoutField(prismaWorkout.availablefields),
+      comments: prismaWorkout.comments,
     };
   }
 }
