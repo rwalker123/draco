@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -10,9 +10,6 @@ import {
   CircularProgress,
   Container,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
 } from '@mui/material';
 import {
   CalendarMonth,
@@ -25,10 +22,6 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import BaseballAccountHome from '../BaseballAccountHome';
-import { listWorkouts } from '../../../../services/workoutService';
-import { WorkoutSummary } from '../../../../types/workouts';
-import { WorkoutCard } from '../../../../components/workouts/WorkoutCard';
-import { WorkoutRegistrationForm } from '../../../../components/workouts/WorkoutRegistrationForm';
 
 interface Account {
   id: string;
@@ -52,11 +45,8 @@ interface Season {
 const AccountHome: React.FC = () => {
   const [account, setAccount] = useState<Account | null>(null);
   const [seasons, setSeasons] = useState<Season[]>([]);
-  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [registrationDialogOpen, setRegistrationDialogOpen] = useState(false);
-  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutSummary | null>(null);
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -97,24 +87,6 @@ const AccountHome: React.FC = () => {
     fetchAccountData();
   }, [accountId]);
 
-  const fetchUpcomingWorkouts = useCallback(async () => {
-    try {
-      const allWorkouts = await listWorkouts(accountId as string, false);
-      // Filter for upcoming workouts on the frontend
-      const upcoming = allWorkouts
-        .filter((workout) => new Date(workout.workoutDate) > new Date())
-        .sort((a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime())
-        .slice(0, 3); // Limit to 3 upcoming workouts
-      setWorkouts(upcoming);
-    } catch (error) {
-      console.error('Failed to fetch upcoming workouts:', error);
-    }
-  }, [accountId]);
-
-  useEffect(() => {
-    fetchUpcomingWorkouts();
-  }, [fetchUpcomingWorkouts]);
-
   const handleViewSeasons = () => {
     if (user) {
       router.push(`/account/${accountId}/seasons`);
@@ -137,15 +109,6 @@ const AccountHome: React.FC = () => {
     } else {
       router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`);
     }
-  };
-
-  const handleWorkoutRegister = (workout: WorkoutSummary) => {
-    setSelectedWorkout(workout);
-    setRegistrationDialogOpen(true);
-  };
-
-  const handleViewAllWorkouts = () => {
-    router.push(`/account/${accountId}/workouts`);
   };
 
   // Helper to get current path safely
@@ -234,39 +197,6 @@ const AccountHome: React.FC = () => {
           </Button>
         )}
       </Box>
-
-      {/* Upcoming Workouts Section */}
-      {workouts.length > 0 && (
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
-          >
-            <Typography variant="h5" gutterBottom>
-              Upcoming Workouts
-            </Typography>
-            <Button variant="outlined" onClick={handleViewAllWorkouts}>
-              View All
-            </Button>
-          </Box>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-              gap: 3,
-            }}
-          >
-            {workouts.map((workout) => (
-              <Box key={workout.id}>
-                <WorkoutCard
-                  workout={workout}
-                  onRegister={() => handleWorkoutRegister(workout)}
-                  showRegisterButton={true}
-                />
-              </Box>
-            ))}
-          </Box>
-        </Paper>
-      )}
 
       {/* Current Season Info */}
       {currentSeason && (
@@ -380,41 +310,6 @@ const AccountHome: React.FC = () => {
             ))}
           </Box>
         </Paper>
-      )}
-
-      {/* Registration Dialog */}
-      {selectedWorkout && (
-        <Dialog
-          open={registrationDialogOpen}
-          onClose={() => {
-            setRegistrationDialogOpen(false);
-            setSelectedWorkout(null);
-          }}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>{selectedWorkout.workoutDesc}</DialogTitle>
-          <DialogContent>
-            <WorkoutRegistrationForm
-              workoutId={selectedWorkout.id}
-              accountId={accountId as string}
-              onSubmit={async (_data) => {
-                try {
-                  // This will be implemented when we add the createRegistration service call
-                  console.log('Registration data:', _data);
-                  setRegistrationDialogOpen(false);
-                  setSelectedWorkout(null);
-                } catch (error) {
-                  console.error('Failed to register:', error);
-                }
-              }}
-              onCancel={() => {
-                setRegistrationDialogOpen(false);
-                setSelectedWorkout(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
       )}
     </main>
   );
