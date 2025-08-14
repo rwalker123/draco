@@ -9,6 +9,7 @@ import contactMediaRouter from './contact-media.js';
 import accountsResourcesRouter from './accounts-resources.js';
 import accountsSettingsRouter from './accounts-settings.js';
 import accountsAssetsRouter from './accounts-assets.js';
+import accountsWorkoutsRouter from './accounts-workouts.js';
 
 const router = Router({ mergeParams: true });
 
@@ -33,5 +34,8 @@ router.use('/', accountsSettingsRouter);
 
 // Assets endpoints (logo management)
 router.use('/', accountsAssetsRouter);
+
+// Workouts endpoints
+router.use('/', accountsWorkoutsRouter);
 
 export default router;

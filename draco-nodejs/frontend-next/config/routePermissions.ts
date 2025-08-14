@@ -54,6 +54,24 @@ export const routePermissions: Record<string, RoutePermission> = {
     checkAccountBoundary: true,
   },
 
+  // Workouts management - AccountAdmin only
+  '/account/[accountId]/workouts': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+  '/account/[accountId]/workouts/new': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+  '/account/[accountId]/workouts/[workoutId]/edit': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+  '/account/[accountId]/workouts/sources': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
+
   // Public routes - no authentication required
   '/': {
     public: true,
@@ -71,6 +89,9 @@ export const routePermissions: Record<string, RoutePermission> = {
     public: true,
   },
   '/account/[accountId]/home': {
+    public: true,
+  },
+  '/account/[accountId]/workouts/[workoutId]': {
     public: true,
   },
   '/account/[accountId]/schedule': {
