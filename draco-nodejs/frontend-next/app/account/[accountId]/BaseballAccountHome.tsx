@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -26,6 +26,9 @@ import MyTeams, { UserTeam } from '../../../components/MyTeams';
 import AccountPageHeader from '../../../components/AccountPageHeader';
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
+import { listWorkouts } from '../../../services/workoutService';
+import { WorkoutSummary } from '../../../types/workouts';
+import { WorkoutDisplay } from '../../../components/workouts/WorkoutDisplay';
 
 interface Account {
   id: string;
@@ -51,6 +54,7 @@ const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<Account | null>(null);
   const [currentSeason, setCurrentSeason] = useState<Season | null>(null);
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
@@ -128,9 +132,34 @@ const BaseballAccountHome: React.FC = () => {
     fetchUserTeams();
   }, [accountIdStr, user, token]);
 
+  // Fetch upcoming workouts
+  const fetchUpcomingWorkouts = useCallback(async () => {
+    if (!accountIdStr) return;
+
+    try {
+      const allWorkouts = await listWorkouts(accountIdStr, false);
+      // Filter for upcoming workouts on the frontend
+      const upcoming = allWorkouts
+        .filter((workout) => new Date(workout.workoutDate) > new Date())
+        .sort((a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime())
+        .slice(0, 3); // Limit to 3 upcoming workouts
+      setWorkouts(upcoming);
+    } catch (error) {
+      console.error('Failed to fetch upcoming workouts:', error);
+    }
+  }, [accountIdStr]);
+
+  useEffect(() => {
+    fetchUpcomingWorkouts();
+  }, [fetchUpcomingWorkouts]);
+
   const handleViewTeam = (teamSeasonId: string) => {
     if (!currentSeason) return;
     router.push(`/account/${accountIdStr}/seasons/${currentSeason.id}/teams/${teamSeasonId}`);
+  };
+
+  const handleViewAllWorkouts = () => {
+    router.push(`/account/${accountIdStr}/workouts`);
   };
 
   if (loading) {
@@ -252,6 +281,45 @@ const BaseballAccountHome: React.FC = () => {
 
       {/* Main Content - Single Column Layout */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {/* Upcoming Workouts Section */}
+        {workouts.length > 0 && (
+          <Paper sx={{ p: 3, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            >
+              <Typography
+                variant="h5"
+                gutterBottom
+                sx={{ fontWeight: 'bold', color: 'primary.main' }}
+              >
+                Upcoming Workouts
+              </Typography>
+              <Button variant="outlined" onClick={handleViewAllWorkouts}>
+                View All
+              </Button>
+            </Box>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+                gap: 3,
+              }}
+            >
+              {workouts.map((workout) => (
+                <Box key={workout.id}>
+                  <WorkoutDisplay
+                    accountId={accountIdStr!}
+                    workoutId={workout.id}
+                    token={token || undefined}
+                    showRegistrationButton={true}
+                    compact={true}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+        )}
+
         {/* Scoreboard Layout Toggle */}
         {hasAnyGames && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
