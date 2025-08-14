@@ -10,6 +10,7 @@ import {
   ListWorkoutsFilter,
   Paginated,
   WorkoutSources,
+  WorkoutField,
 } from '../interfaces/workoutInterfaces.js';
 import { createStorageService } from './storageService.js';
 import { mapWorkoutField, FIELD_INCLUDE, WORKOUT_CONSTANTS } from '../utils/workoutMappers.js';
@@ -72,7 +73,7 @@ export class WorkoutService {
         workoutDesc: string;
         workoutDate: string;
         fieldId: string | null;
-        field: { id: string; name: string; address: string } | null;
+        field: WorkoutField | null;
         registrationCount?: number;
       } = {
         id: r.id.toString(),
