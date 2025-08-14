@@ -79,6 +79,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'team.manage',
       'player.manage',
       'photo.manage',
+      'workout.manage',
     ],
     context: 'account',
   },

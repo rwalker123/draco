@@ -51,3 +51,22 @@ export class InternalServerError extends AppError {
     super(message, 500, false);
   }
 }
+
+// Workout-specific error classes
+export class WorkoutNotFoundError extends NotFoundError {
+  constructor(workoutId: string) {
+    super(`Workout with ID ${workoutId} not found`);
+  }
+}
+
+export class WorkoutRegistrationNotFoundError extends NotFoundError {
+  constructor(registrationId: string) {
+    super(`Workout registration with ID ${registrationId} not found`);
+  }
+}
+
+export class WorkoutUnauthorizedError extends AuthorizationError {
+  constructor(message = 'Unauthorized workout access') {
+    super(message);
+  }
+}

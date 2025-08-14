@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Box, Paper, Toolbar, IconButton, Divider, Typography } from '@mui/material';
 import {
   FormatBold,
@@ -25,7 +25,6 @@ import {
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
-  EditorState,
   LexicalEditor,
   $getRoot,
   $insertNodes,
@@ -334,115 +333,160 @@ const editorConfig = {
   },
 };
 
-export default function RichTextEditor({
-  value,
-  onChange,
-  placeholder = 'Write your email...',
-  disabled = false,
-  error = false,
-  minHeight = 200,
-}: RichTextEditorProps) {
-  const handleChange = useCallback(
-    (editorState: EditorState, editor: LexicalEditor) => {
-      if (onChange && !disabled) {
-        editorState.read(() => {
-          const htmlString = $generateHtmlFromNodes(editor);
-          onChange(htmlString);
+const RichTextEditor = React.forwardRef<{ getCurrentContent: () => string }, RichTextEditorProps>(
+  (
+    {
+      value,
+      onChange: _onChange,
+      placeholder = 'Write your email...',
+      disabled = false,
+      error = false,
+      minHeight = 200,
+    },
+    ref,
+  ) => {
+    // Ref to access the editor instance
+    const editorRef = useRef<LexicalEditor | null>(null);
+
+    // Function to get current content (called only when needed)
+    const getCurrentContent = useCallback(() => {
+      if (editorRef.current) {
+        return editorRef.current.getEditorState().read(() => {
+          return $generateHtmlFromNodes(editorRef.current!);
         });
       }
-    },
-    [onChange, disabled],
-  );
+      return '';
+    }, []);
 
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        borderColor: error ? 'error.main' : 'divider',
-        borderWidth: error ? 2 : 1,
-        borderRadius: 1,
-        overflow: 'hidden',
-        opacity: disabled ? 0.6 : 1,
-      }}
-    >
-      <LexicalComposer initialConfig={editorConfig}>
-        <ToolbarPlugin disabled={disabled} />
+    // Expose getCurrentContent method to parent via ref
+    React.useImperativeHandle(
+      ref,
+      () => ({
+        getCurrentContent,
+      }),
+      [getCurrentContent],
+    );
 
-        <Box
-          sx={{
-            position: 'relative',
-            '& .editor-text-bold': { fontWeight: 'bold' },
-            '& .editor-text-italic': { fontStyle: 'italic' },
-            '& .editor-text-underline': { textDecoration: 'underline' },
-            '& .editor-list-ul': { listStyleType: 'disc', margin: 0, paddingLeft: '20px' },
-            '& .editor-list-ol': { listStyleType: 'decimal', margin: 0, paddingLeft: '20px' },
-            '& .editor-list-item': { margin: '4px 0' },
-            '& .editor-heading-h1': { fontSize: '2em', fontWeight: 'bold', margin: '16px 0 8px 0' },
-            '& .editor-heading-h2': {
-              fontSize: '1.5em',
-              fontWeight: 'bold',
-              margin: '14px 0 6px 0',
-            },
-            '& .editor-heading-h3': {
-              fontSize: '1.2em',
-              fontWeight: 'bold',
-              margin: '12px 0 4px 0',
-            },
-            '& .editor-heading-h4': {
-              fontSize: '1.1em',
-              fontWeight: 'bold',
-              margin: '10px 0 4px 0',
-            },
-            '& .editor-heading-h5': { fontSize: '1em', fontWeight: 'bold', margin: '8px 0 4px 0' },
-            '& .editor-heading-h6': {
-              fontSize: '0.9em',
-              fontWeight: 'bold',
-              margin: '8px 0 4px 0',
+    // Remove the onChange handler entirely - no more cursor jumping!
+    // onChange will only be called when parent explicitly requests content
+    // Parent can access getCurrentContent via a ref if needed
+
+    // Store editor reference when it's created
+    const onEditorCreated = useCallback((editor: LexicalEditor) => {
+      editorRef.current = editor;
+    }, []);
+
+    return (
+      <Paper
+        variant="outlined"
+        sx={{
+          borderColor: error ? 'error.main' : 'divider',
+          borderWidth: error ? 2 : 1,
+          borderRadius: 1,
+          overflow: 'hidden',
+          opacity: disabled ? 0.6 : 1,
+        }}
+      >
+        <LexicalComposer
+          initialConfig={{
+            ...editorConfig,
+            onError: (error: Error) => {
+              console.error('Lexical error:', error);
             },
           }}
         >
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable
-                style={{
-                  minHeight: `${minHeight}px`,
-                  padding: '16px',
-                  outline: 'none',
-                  resize: 'none',
-                  fontSize: '14px',
-                  lineHeight: '1.5',
-                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                }}
-                readOnly={disabled}
-              />
-            }
-            placeholder={
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 16,
-                  left: 16,
-                  color: 'text.secondary',
-                  fontSize: '14px',
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  {placeholder}
-                </Typography>
-              </Box>
-            }
-            ErrorBoundary={({ children }: { children: React.ReactNode }) => <div>{children}</div>}
-          />
+          <ToolbarPlugin disabled={disabled} />
 
-          <OnChangePlugin onChange={handleChange} />
-          <HistoryPlugin />
-          <ListPlugin />
-          <LinkPlugin />
-          <InitialContentPlugin initialHtml={value} />
-        </Box>
-      </LexicalComposer>
-    </Paper>
-  );
-}
+          <Box
+            sx={{
+              position: 'relative',
+              '& .editor-text-bold': { fontWeight: 'bold' },
+              '& .editor-text-italic': { fontStyle: 'italic' },
+              '& .editor-text-underline': { textDecoration: 'underline' },
+              '& .editor-list-ul': { listStyleType: 'disc', margin: 0, paddingLeft: '20px' },
+              '& .editor-list-ol': { listStyleType: 'decimal', margin: 0, paddingLeft: '20px' },
+              '& .editor-list-item': { margin: '4px 0' },
+              '& .editor-heading-h1': {
+                fontSize: '2em',
+                fontWeight: 'bold',
+                margin: '16px 0 8px 0',
+              },
+              '& .editor-heading-h2': {
+                fontSize: '1.5em',
+                fontWeight: 'bold',
+                margin: '14px 0 6px 0',
+              },
+              '& .editor-heading-h3': {
+                fontSize: '1.2em',
+                fontWeight: 'bold',
+                margin: '12px 0 4px 0',
+              },
+              '& .editor-heading-h4': {
+                fontSize: '1.1em',
+                fontWeight: 'bold',
+                margin: '10px 0 4px 0',
+              },
+              '& .editor-heading-h5': {
+                fontSize: '1em',
+                fontWeight: 'bold',
+                margin: '8px 0 4px 0',
+              },
+              '& .editor-heading-h6': {
+                fontSize: '0.9em',
+                fontWeight: 'bold',
+                margin: '8px 0 4px 0',
+              },
+            }}
+          >
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable
+                  style={{
+                    minHeight: `${minHeight}px`,
+                    padding: '16px',
+                    outline: 'none',
+                    resize: 'none',
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                  }}
+                  readOnly={disabled}
+                />
+              }
+              placeholder={
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    color: 'text.secondary',
+                    fontSize: '14px',
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {placeholder}
+                  </Typography>
+                </Box>
+              }
+              ErrorBoundary={({ children }: { children: React.ReactNode }) => <div>{children}</div>}
+            />
+
+            {/* Store editor reference when created */}
+            <OnChangePlugin onChange={(editorState, editor) => onEditorCreated(editor)} />
+            <HistoryPlugin />
+            <ListPlugin />
+            <LinkPlugin />
+            <InitialContentPlugin initialHtml={value} />
+          </Box>
+        </LexicalComposer>
+      </Paper>
+    );
+  },
+);
+
+// Add display name for React DevTools
+RichTextEditor.displayName = 'RichTextEditor';
+
+export default RichTextEditor;

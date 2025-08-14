@@ -23,6 +23,7 @@ import {
   Key as KeyIcon,
   Person as PersonIcon,
   Email as EmailIcon,
+  FitnessCenter as FitnessCenterIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -371,6 +372,27 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <EmailIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Communications</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {/* Workout Management - AccountAdmin Role and above */}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/workouts`)}
+                key="workout-management"
+              >
+                <ListItemIcon>
+                  <FitnessCenterIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Workout Management</ListItemText>
               </MenuItem>
             );
           }
