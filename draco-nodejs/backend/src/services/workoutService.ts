@@ -10,7 +10,9 @@ import {
   ListWorkoutsFilter,
   Paginated,
   WorkoutSources,
-  WorkoutField,
+  PrismaWorkoutWithField,
+  PrismaWorkoutWithCount,
+  PrismaWorkoutRegistration,
 } from '../interfaces/workoutInterfaces.js';
 import { createStorageService } from './storageService.js';
 import { mapWorkoutField, FIELD_INCLUDE, WORKOUT_CONSTANTS } from '../utils/workoutMappers.js';
@@ -67,15 +69,8 @@ export class WorkoutService {
     });
 
     // Map the results with registration counts if included
-    const workoutsWithCounts = rows.map((r) => {
-      const workout: {
-        id: string;
-        workoutDesc: string;
-        workoutDate: string;
-        fieldId: string | null;
-        field: WorkoutField | null;
-        registrationCount?: number;
-      } = {
+    const workoutsWithCounts = rows.map((r: PrismaWorkoutWithField | PrismaWorkoutWithCount) => {
+      const workout: WorkoutSummary = {
         id: r.id.toString(),
         workoutDesc: r.workoutdesc,
         workoutDate: r.workoutdate.toISOString(),
@@ -84,9 +79,8 @@ export class WorkoutService {
       };
 
       if (includeRegistrationCounts && '_count' in r) {
-        workout.registrationCount = (
-          r as { _count: { workoutregistration: number } }
-        )._count.workoutregistration;
+        const workoutWithCount = r as PrismaWorkoutWithCount;
+        workout.registrationCount = workoutWithCount._count.workoutregistration;
       }
 
       return workout;
@@ -186,22 +180,25 @@ export class WorkoutService {
       orderBy: { id: 'desc' },
       take: limit,
     });
+
     return {
-      items: rows.map((r) => ({
-        id: r.id.toString(),
-        workoutId: r.workoutid.toString(),
-        name: r.name,
-        email: r.email,
-        age: r.age,
-        phone1: r.phone1 ?? '',
-        phone2: r.phone2 ?? '',
-        phone3: r.phone3 ?? '',
-        phone4: r.phone4 ?? '',
-        positions: r.positions,
-        isManager: r.ismanager,
-        whereHeard: r.whereheard,
-        dateRegistered: r.dateregistered.toISOString(),
-      })),
+      items: rows.map(
+        (r: PrismaWorkoutRegistration): WorkoutRegistration => ({
+          id: r.id.toString(),
+          workoutId: r.workoutid.toString(),
+          name: r.name,
+          email: r.email,
+          age: r.age,
+          phone1: r.phone1 ?? '',
+          phone2: r.phone2 ?? '',
+          phone3: r.phone3 ?? '',
+          phone4: r.phone4 ?? '',
+          positions: r.positions,
+          isManager: r.ismanager,
+          whereHeard: r.whereheard,
+          dateRegistered: r.dateregistered.toISOString(),
+        }),
+      ),
     };
   }
 
@@ -226,21 +223,8 @@ export class WorkoutService {
         whereheard: dto.whereHeard,
       },
     });
-    return {
-      id: created.id.toString(),
-      workoutId: created.workoutid.toString(),
-      name: created.name,
-      email: created.email,
-      age: created.age,
-      phone1: created.phone1 ?? '',
-      phone2: created.phone2 ?? '',
-      phone3: created.phone3 ?? '',
-      phone4: created.phone4 ?? '',
-      positions: created.positions,
-      isManager: created.ismanager,
-      whereHeard: created.whereheard,
-      dateRegistered: created.dateregistered.toISOString(),
-    };
+
+    return this.mapPrismaRegistrationToWorkoutRegistration(created);
   }
 
   async updateRegistration(
@@ -276,21 +260,8 @@ export class WorkoutService {
         whereheard: dto.whereHeard,
       },
     });
-    return {
-      id: updated.id.toString(),
-      workoutId: updated.workoutid.toString(),
-      name: updated.name,
-      email: updated.email,
-      age: updated.age,
-      phone1: updated.phone1 ?? '',
-      phone2: updated.phone2 ?? '',
-      phone3: updated.phone3 ?? '',
-      phone4: updated.phone4 ?? '',
-      positions: updated.positions,
-      isManager: updated.ismanager,
-      whereHeard: updated.whereheard,
-      dateRegistered: updated.dateregistered.toISOString(),
-    };
+
+    return this.mapPrismaRegistrationToWorkoutRegistration(updated);
   }
 
   async deleteRegistration(
@@ -359,5 +330,25 @@ export class WorkoutService {
       await this.putSources(accountId, current);
     }
     return current;
+  }
+
+  private mapPrismaRegistrationToWorkoutRegistration(
+    prismaRegistration: PrismaWorkoutRegistration,
+  ): WorkoutRegistration {
+    return {
+      id: prismaRegistration.id.toString(),
+      workoutId: prismaRegistration.workoutid.toString(),
+      name: prismaRegistration.name,
+      email: prismaRegistration.email,
+      age: prismaRegistration.age,
+      phone1: prismaRegistration.phone1 ?? '',
+      phone2: prismaRegistration.phone2 ?? '',
+      phone3: prismaRegistration.phone3 ?? '',
+      phone4: prismaRegistration.phone4 ?? '',
+      positions: prismaRegistration.positions,
+      isManager: prismaRegistration.ismanager,
+      whereHeard: prismaRegistration.whereheard,
+      dateRegistered: prismaRegistration.dateregistered.toISOString(),
+    };
   }
 }

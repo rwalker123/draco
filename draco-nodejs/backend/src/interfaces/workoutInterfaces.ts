@@ -25,7 +25,7 @@ export interface WorkoutUpdateDTO {
   workoutDesc?: string;
   workoutDate?: string; // ISO
   fieldId?: string | null;
-  comments?: string | null;
+  comments?: string;
 }
 
 export interface WorkoutSummary {
@@ -70,4 +70,39 @@ export interface ListWorkoutsFilter {
 export interface Paginated<T> {
   items: T[];
   nextCursor?: string;
+}
+
+// Prisma result types for better type safety
+export interface PrismaWorkoutWithField {
+  id: bigint;
+  workoutdesc: string;
+  workoutdate: Date;
+  fieldid: bigint | null;
+  availablefields: {
+    id: bigint;
+    name: string;
+    address: string;
+  } | null;
+}
+
+export interface PrismaWorkoutWithCount extends PrismaWorkoutWithField {
+  _count: {
+    workoutregistration: number;
+  };
+}
+
+export interface PrismaWorkoutRegistration {
+  id: bigint;
+  workoutid: bigint;
+  name: string;
+  email: string;
+  age: number;
+  phone1: string | null;
+  phone2: string | null;
+  phone3: string | null;
+  phone4: string | null;
+  positions: string;
+  ismanager: boolean;
+  whereheard: string;
+  dateregistered: Date;
 }
