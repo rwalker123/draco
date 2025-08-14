@@ -28,7 +28,7 @@ import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
 import { listWorkouts } from '../../../services/workoutService';
 import { WorkoutSummary } from '../../../types/workouts';
-import { WorkoutCard } from '../../../components/workouts/WorkoutCard';
+import { WorkoutDisplay } from '../../../components/workouts/WorkoutDisplay';
 
 interface Account {
   id: string;
@@ -307,13 +307,12 @@ const BaseballAccountHome: React.FC = () => {
             >
               {workouts.map((workout) => (
                 <Box key={workout.id}>
-                  <WorkoutCard
-                    workout={workout}
-                    onRegister={() => {
-                      // Navigate to workout details page for registration
-                      router.push(`/account/${accountIdStr}/workouts/${workout.id}`);
-                    }}
-                    showRegisterButton={true}
+                  <WorkoutDisplay
+                    accountId={accountIdStr!}
+                    workoutId={workout.id}
+                    token={token || undefined}
+                    showRegistrationButton={true}
+                    compact={true}
                   />
                 </Box>
               ))}
