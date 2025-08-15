@@ -41,7 +41,7 @@ const getDatabaseConfig = (): DatabaseConfig => {
     slowQueryThreshold: parseInt(
       process.env.SLOW_QUERY_THRESHOLD_MS || (isProduction ? '500' : '1000'),
     ),
-    enableQueryLogging: process.env.ENABLE_QUERY_LOGGING === 'true' || isDevelopment,
+    enableQueryLogging: process.env.ENABLE_QUERY_LOGGING === 'true',
     logLevel: isDevelopment
       ? (['query', 'error', 'warn', 'info'] as Prisma.LogLevel[])
       : (['error', 'warn'] as Prisma.LogLevel[]),
