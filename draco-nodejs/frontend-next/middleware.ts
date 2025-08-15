@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // Handle compression headers for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Clone the request headers and add Accept-Encoding
+    const requestHeaders = new Headers(request.headers);
+
+    // Add compression headers if not already present
+    if (!requestHeaders.get('Accept-Encoding')) {
+      requestHeaders.set('Accept-Encoding', 'gzip, deflate, br');
+    }
+
+    // Return the request with modified headers
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
   // Only run domain-based routing on root
   const { pathname } = request.nextUrl;
   if (pathname !== '/' && pathname !== '') {
@@ -43,5 +61,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/', // Only run on the root path
+    '/api/:path*', // Also apply to API routes for compression headers
   ],
 };

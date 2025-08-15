@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import prisma from './lib/prisma.js';
 import { Container } from './container/index.js';
@@ -43,6 +44,31 @@ app.locals.container = container;
 
 // Security middleware
 app.use(helmet());
+
+// Compression middleware
+app.use(
+  compression({
+    level: 6, // Compression level (0-9)
+    threshold: 1024, // Minimum size to compress (1KB)
+    filter: (req, res) => {
+      // Skip compression for binary files
+      const contentType = req.headers['content-type'];
+      if (
+        contentType &&
+        (contentType.includes('image/') ||
+          contentType.includes('video/') ||
+          contentType.includes('audio/') ||
+          contentType.includes('application/zip') ||
+          contentType.includes('application/gzip'))
+      ) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+    windowBits: 16, // Window size for gzip
+    memLevel: 8, // Memory usage level
+  }),
+);
 
 // CORS configuration
 app.use(

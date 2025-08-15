@@ -85,7 +85,7 @@ export function EmailButton({
     </Tooltip>
   ) : (
     <Tooltip title={`Email ${contact.firstname} ${contact.lastname}`} placement="top">
-      {buttonContent}
+      <span>{buttonContent}</span>
     </Tooltip>
   );
 
