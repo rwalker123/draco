@@ -45,6 +45,10 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+print_header() {
+    echo -e "${CYAN}$1${NC}"
+}
+
 # Get the main repository path
 MAIN_REPO_PATH="/Users/raywalker/source/Draco"
 CURRENT_DIR="$(pwd)"
@@ -64,14 +68,121 @@ if [ ! -d "$MAIN_REPO_PATH" ]; then
     exit 1
 fi
 
-# Step 1: Copy .env files
-print_status "Copying environment files..."
+# Step 1: Port Management and Environment Setup
+print_status "Setting up port management and environment files..."
+
+# Check if jq is available for JSON processing
+if ! command -v jq &> /dev/null; then
+    print_error "jq is required for port management. Please install jq to continue."
+    print_error "Install with: brew install jq (macOS) or apt-get install jq (Ubuntu)"
+    exit 1
+fi
+
+# Initialize port registry if it doesn't exist
+REGISTRY_PATH="$MAIN_REPO_PATH/draco-nodejs/.worktree-ports.json"
+if [ ! -f "$REGISTRY_PATH" ]; then
+    print_status "Creating initial port registry..."
+    cat > "$REGISTRY_PATH" << EOF
+{
+  "lastUpdated": "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)",
+  "registryVersion": "1.0",
+  "worktrees": {},
+  "portRanges": {
+    "backend": {"min": 3001, "max": 3099},
+    "frontend": {"min": 4001, "max": 4099}
+  }
+}
+EOF
+    print_success "Port registry created"
+fi
+
+# Calculate worktree hash for deterministic port assignment
+WORKTREE_HASH=0
+for ((i=0; i<${#CURRENT_DIR}; i++)); do
+    CHAR_CODE=$(printf '%d' "'${CURRENT_DIR:$i:1}")
+    WORKTREE_HASH=$(( (WORKTREE_HASH * 31 + CHAR_CODE) & 0xffffffff ))
+done
+WORKTREE_HASH=$((WORKTREE_HASH & 0x7fffffff)) # Ensure positive
+
+# Calculate target ports
+BACKEND_TARGET_PORT=$((3001 + (WORKTREE_HASH % 99)))
+FRONTEND_TARGET_PORT=$((4001 + (WORKTREE_HASH % 99)))
+
+print_status "Calculated target ports: Backend $BACKEND_TARGET_PORT, Frontend $FRONTEND_TARGET_PORT"
+
+# Function to check if port is available
+check_port_available() {
+    local port="$1"
+    ! netstat -an | grep LISTEN | grep ":$port " > /dev/null 2>&1
+}
+
+# Find available ports
+BACKEND_PORT=$BACKEND_TARGET_PORT
+FRONTEND_PORT=$FRONTEND_TARGET_PORT
+
+# Check if target ports are available, otherwise find next available
+if ! check_port_available "$BACKEND_PORT"; then
+    print_warning "Backend port $BACKEND_PORT is busy, finding next available..."
+    for ((p=3001; p<=3099; p++)); do
+        if check_port_available "$p"; then
+            BACKEND_PORT=$p
+            break
+        fi
+    done
+fi
+
+if ! check_port_available "$FRONTEND_PORT"; then
+    print_warning "Frontend port $FRONTEND_PORT is busy, finding next available..."
+    for ((p=4001; p<=4099; p++)); do
+        if check_port_available "$p"; then
+            FRONTEND_PORT=$p
+            break
+        fi
+    done
+fi
+
+print_success "Assigned ports: Backend $BACKEND_PORT, Frontend $FRONTEND_PORT"
+
+# Extract worktree name
+WORKTREE_NAME=$(basename "$CURRENT_DIR")
+
+# Update port registry
+print_status "Updating port registry..."
+TEMP_REGISTRY=$(mktemp)
+jq --arg path "$CURRENT_DIR" \
+   --arg name "$WORKTREE_NAME" \
+   --argjson backendPort "$BACKEND_PORT" \
+   --argjson frontendPort "$FRONTEND_PORT" \
+   --arg now "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+   '.worktrees[$path] = {
+     "worktreePath": $path,
+     "worktreeName": $name,
+     "backendPort": $backendPort,
+     "frontendPort": $frontendPort,
+     "lastActive": $now,
+     "status": "active",
+     "envFiles": {
+       "backend": ($path + "/draco-nodejs/backend/.env"),
+       "frontend": ($path + "/draco-nodejs/frontend-next/.env.local")
+     }
+   } | .lastUpdated = $now' "$REGISTRY_PATH" > "$TEMP_REGISTRY"
+mv "$TEMP_REGISTRY" "$REGISTRY_PATH"
+print_success "Port registry updated"
+
+# Copy and modify .env files with new ports
+print_status "Setting up environment files with assigned ports..."
 
 # Backend .env file
 if [ -f "$MAIN_REPO_PATH/draco-nodejs/backend/.env" ]; then
     mkdir -p "draco-nodejs/backend"
     cp "$MAIN_REPO_PATH/draco-nodejs/backend/.env" "draco-nodejs/backend/.env"
-    print_success "Copied backend .env file"
+    
+    # Update PORT and FRONTEND_URL in backend .env
+    sed -i.bak "s/^PORT=.*/PORT=$BACKEND_PORT/" "draco-nodejs/backend/.env"
+    sed -i.bak "s|^FRONTEND_URL=.*|FRONTEND_URL=https://localhost:$FRONTEND_PORT|" "draco-nodejs/backend/.env"
+    rm -f "draco-nodejs/backend/.env.bak"
+    
+    print_success "Backend .env configured with port $BACKEND_PORT"
 else
     print_warning "Backend .env file not found in main repo"
 fi
@@ -80,7 +191,12 @@ fi
 if [ -f "$MAIN_REPO_PATH/draco-nodejs/frontend-next/.env.local" ]; then
     mkdir -p "draco-nodejs/frontend-next"
     cp "$MAIN_REPO_PATH/draco-nodejs/frontend-next/.env.local" "draco-nodejs/frontend-next/.env.local"
-    print_success "Copied frontend .env.local file"
+    
+    # Update NEXT_PUBLIC_API_URL in frontend .env.local
+    sed -i.bak "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://localhost:$BACKEND_PORT|" "draco-nodejs/frontend-next/.env.local"
+    rm -f "draco-nodejs/frontend-next/.env.local.bak"
+    
+    print_success "Frontend .env.local configured with backend port $BACKEND_PORT"
 else
     print_warning "Frontend .env.local file not found in main repo"
 fi
@@ -153,7 +269,18 @@ npx prisma generate
 cd "$CURRENT_DIR"
 print_success "Prisma client generated"
 
-# Step 5: Verify setup
+# Step 5: Clean up port registry
+print_status "Cleaning up port registry..."
+if [ -f "$MAIN_REPO_PATH/worktree-cleanup.sh" ]; then
+    cd "$MAIN_REPO_PATH"
+    ./worktree-cleanup.sh > /dev/null 2>&1 || true
+    cd "$CURRENT_DIR"
+    print_success "Port registry cleanup completed"
+else
+    print_warning "Cleanup script not found, skipping registry cleanup"
+fi
+
+# Step 6: Verify setup
 print_status "Verifying setup..."
 
 # Check if build works
@@ -164,12 +291,29 @@ else
     print_warning "Build test failed - you may need to check configuration"
 fi
 
+# Step 7: Display port assignment summary
+echo ""
+print_header "🚀 Worktree Port Assignment Summary"
+echo ""
+echo "  📍 Worktree: $WORKTREE_NAME"
+echo "  🖥️  Backend Port: $BACKEND_PORT (https://localhost:$BACKEND_PORT)"
+echo "  🌐 Frontend Port: $FRONTEND_PORT (https://localhost:$FRONTEND_PORT)"
+echo "  🔗 API URL: https://localhost:$BACKEND_PORT"
+echo "  🌍 Frontend URL: https://localhost:$FRONTEND_PORT"
+echo ""
+echo "  📁 Backend .env: draco-nodejs/backend/.env"
+echo "  📁 Frontend .env.local: draco-nodejs/frontend-next/.env.local"
+echo ""
+
 # Summary
 echo ""
 print_success "Worktree initialization complete!"
 echo ""
 print_status "Summary of actions:"
-echo "  ✓ Copied environment files from main repo"
+echo "  ✓ Port management configured"
+echo "  ✓ Environment files updated with assigned ports"
+echo "  ✓ Port registry updated"
+echo "  ✓ Port registry cleanup completed"
 echo "  ✓ Copied SSL certificates from main repo"
 echo "  ✓ Copied Claude settings from main repo"
 echo "  ✓ Installed all dependencies"
@@ -178,6 +322,8 @@ echo "  ✓ Verified build setup"
 echo ""
 print_status "Your worktree is ready for development!"
 print_status "You can now run: npm run dev"
+echo ""
+print_status "💡 Tip: Use './worktree-status.sh' to view all worktree port assignments"
 echo ""
 
 # Optional: Show git worktree info

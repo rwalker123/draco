@@ -5,8 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next dev",
+    "dev:port": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next dev & sleep 3 && open https://localhost:${NEXT_PUBLIC_API_URL_PORT:-4001}",
     "build": "next build",
     "start": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next start",
+    "start:port": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next start & sleep 3 && open https://localhost:${NEXT_PUBLIC_API_URL_PORT:-4001}",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
