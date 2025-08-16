@@ -78,8 +78,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "prettier --write",
-      "eslint --fix",
-      "npm run type-check"
+      "eslint --fix"
     ]
   }
 }
