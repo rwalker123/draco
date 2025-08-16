@@ -235,7 +235,7 @@ export class AuthService {
           email: user.email || '',
         },
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         message: 'Invalid token',
@@ -355,7 +355,7 @@ export class AuthService {
   private async verifyPassword(password: string, hash: string): Promise<boolean> {
     try {
       return await bcrypt.compare(password, hash);
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

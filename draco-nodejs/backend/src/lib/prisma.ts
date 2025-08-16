@@ -4,7 +4,6 @@ import { performanceMonitor } from '../utils/performanceMonitor.js';
 
 // Declare global variable for PrismaClient instance
 declare global {
-  // eslint-disable-next-line no-var
   var __prisma: PrismaClient | undefined;
 }
 
