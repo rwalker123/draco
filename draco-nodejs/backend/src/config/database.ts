@@ -28,6 +28,7 @@ export interface ConnectionPoolMetrics {
 const getDatabaseConfig = (): DatabaseConfig => {
   const isProduction = process.env.NODE_ENV === 'production';
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const enableQueryLogging = process.env.ENABLE_QUERY_LOGGING === 'true';
 
   // Calculate optimal connection limit based on CPU cores
   const defaultConnectionLimit = Math.max(
@@ -35,16 +36,23 @@ const getDatabaseConfig = (): DatabaseConfig => {
     5,
   );
 
+  // Configure log levels based on environment and query logging preference
+  const logLevel: Prisma.LogLevel[] = isDevelopment
+    ? enableQueryLogging
+      ? ['query', 'error', 'warn', 'info']
+      : ['error', 'warn', 'info']
+    : enableQueryLogging
+      ? ['query', 'error', 'warn']
+      : ['error', 'warn'];
+
   return {
     connectionLimit: defaultConnectionLimit,
     poolTimeout: parseInt(process.env.POOL_TIMEOUT_SECONDS || '20'),
     slowQueryThreshold: parseInt(
       process.env.SLOW_QUERY_THRESHOLD_MS || (isProduction ? '500' : '1000'),
     ),
-    enableQueryLogging: process.env.ENABLE_QUERY_LOGGING === 'true',
-    logLevel: isDevelopment
-      ? (['query', 'error', 'warn', 'info'] as Prisma.LogLevel[])
-      : (['error', 'warn'] as Prisma.LogLevel[]),
+    enableQueryLogging,
+    logLevel,
   };
 };
 
