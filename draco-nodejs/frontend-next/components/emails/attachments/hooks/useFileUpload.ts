@@ -31,11 +31,11 @@ export interface UseFileUploadReturn {
 }
 
 // Helper function to validate files
-const validateFiles = (
+const validateFiles = async (
   files: File[],
   existingAttachments: EmailAttachment[],
   config: AttachmentConfig,
-): { isValid: boolean; errors: string[] } => {
+): Promise<{ isValid: boolean; errors: string[] }> => {
   const errors: string[] = [];
 
   // Check file count
@@ -67,7 +67,7 @@ const validateFiles = (
   });
 
   // Add security validation
-  const { securityRisks } = validateFilesSecure(files, config.allowedTypes || []);
+  const { securityRisks } = await validateFilesSecure(files, config.allowedTypes || []);
 
   return {
     isValid: errors.length === 0 && securityRisks.length === 0,
@@ -222,7 +222,7 @@ export function useFileUpload({
       setErrors([]);
 
       // Validate files
-      const validation = validateFiles(files, attachments, config);
+      const validation = await validateFiles(files, attachments, config);
       if (!validation.isValid) {
         setErrors(validation.errors);
         return;

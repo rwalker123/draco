@@ -57,7 +57,7 @@ export function getEffectiveRecipients(
     // Add contacts from team groups
     state.selectedTeamGroups.forEach((team) => {
       team.members.forEach((member) => {
-        if (member.email && member.email.trim()) {
+        if (hasValidEmail(member)) {
           recipientIds.add(member.id);
         }
       });
@@ -66,7 +66,7 @@ export function getEffectiveRecipients(
     // Add contacts from role groups
     state.selectedRoleGroups.forEach((role) => {
       role.members.forEach((member) => {
-        if (member.email && member.email.trim()) {
+        if (hasValidEmail(member)) {
           recipientIds.add(member.id);
         }
       });

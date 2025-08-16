@@ -46,7 +46,6 @@ export function EmailButton({
       window.location.href = mailtoUrl;
     } else {
       // TODO: Open advanced email composer
-      console.log('Advanced email mode not yet implemented');
     }
 
     setDialogOpen(false);

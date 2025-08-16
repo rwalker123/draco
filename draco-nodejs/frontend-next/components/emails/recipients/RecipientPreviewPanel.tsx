@@ -34,6 +34,7 @@ import {
 import { ExtendedRecipientSelectionState } from './hooks/useRecipientSelection';
 import { RecipientContact, TeamGroup, RoleGroup } from '../../../types/emails/recipients';
 import { sanitizeDisplayText } from '../../../utils/emailValidation';
+import { hasValidEmail } from '../common/mailtoUtils';
 
 export interface RecipientPreviewPanelProps {
   selectionState: ExtendedRecipientSelectionState;
@@ -81,12 +82,12 @@ const RecipientPreviewPanel: React.FC<RecipientPreviewPanelProps> = ({
   };
 
   // Get effective recipients that will actually receive emails
-  const effectiveRecipientsWithEmail = selectionState.effectiveRecipients.filter(
-    (recipient) => recipient.email && recipient.email.trim(),
+  const effectiveRecipientsWithEmail = selectionState.effectiveRecipients.filter((recipient) =>
+    hasValidEmail(recipient),
   );
 
   const recipientsWithoutEmail = selectionState.effectiveRecipients.filter(
-    (recipient) => !recipient.email || !recipient.email.trim(),
+    (recipient) => !hasValidEmail(recipient),
   );
 
   return (

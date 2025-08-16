@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
   Stack,
@@ -10,8 +10,6 @@ import {
   Button,
   Typography,
   Checkbox,
-  FormControlLabel,
-  Switch,
   Divider,
   List,
   ListItem,
@@ -21,6 +19,9 @@ import {
   ListItemSecondaryAction,
   Avatar,
   Chip,
+  CircularProgress,
+  Alert,
+  AlertTitle,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -33,9 +34,12 @@ import {
 
 import { useContactVirtualization } from './hooks/useContactVirtualization';
 import { RecipientContact } from '../../../types/emails/recipients';
+import { StreamPaginationControl } from '../../pagination';
+
+import { hasValidEmail } from '../common/mailtoUtils';
+import { ErrorBoundary } from '../../common/ErrorBoundary';
 
 export interface ContactSelectionPanelProps {
-  contacts: RecipientContact[];
   selectedContactIds: Set<string>;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -50,14 +54,27 @@ export interface ContactSelectionPanelProps {
   allContactsSelected?: boolean;
   onAllContactsToggle?: (enabled: boolean) => void;
   compact?: boolean;
+  // Pagination props
+  currentPage?: number;
+  hasNext?: boolean;
+  hasPrev?: boolean;
+  loading?: boolean;
+  onNextPage?: () => void;
+  onPrevPage?: () => void;
+  onRowsPerPageChange?: (rowsPerPage: number) => void;
+  rowsPerPage?: number;
+  error?: string | null;
+  // Optional contacts override (when not using provider)
+  contacts?: RecipientContact[];
+  // Search results message to display above pagination
+  searchResultsMessage?: React.ReactNode;
 }
 
 /**
  * ContactSelectionPanel - Individual contact selection interface
- * Provides search, filtering, and virtualized contact list
+ * Provides search, filtering, virtualized contact list, and pagination
  */
 const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
-  contacts,
   selectedContactIds,
   searchQuery,
   onSearchChange,
@@ -66,26 +83,68 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
   onClearAll,
   searchStats,
   allContactsSelected = false,
-  onAllContactsToggle,
+  onAllContactsToggle: _onAllContactsToggle,
   compact = false,
+  currentPage = 1,
+  hasNext = false,
+  hasPrev = false,
+  loading = false,
+  onNextPage,
+  onPrevPage,
+  onRowsPerPageChange,
+  rowsPerPage = 25,
+  error = null,
+  contacts: propContacts,
+  searchResultsMessage,
 }) => {
   // const theme = useTheme(); // Available for future styling needs
-  const [showEmailOnly, setShowEmailOnly] = useState(false);
 
-  // Filter contacts based on email availability
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Use contacts from props if provided, otherwise empty array (provider-independent)
+  const contactsToUse = useMemo(() => propContacts || [], [propContacts]);
+  const [previousContactCount, setPreviousContactCount] = useState(contactsToUse?.length || 0);
+
+  // Auto-scroll to show new contacts when they're loaded
+  useEffect(() => {
+    const currentContactCount = contactsToUse?.length || 0;
+    if (currentContactCount > previousContactCount && listContainerRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (listContainerRef.current) {
+          const container = listContainerRef.current;
+          const itemHeight = compact ? 56 : 72;
+          const newItemsStart = previousContactCount * itemHeight;
+
+          // Scroll to show the first new contact
+          container.scrollTo({
+            top: newItemsStart - 50, // 50px offset to show a bit of context
+            behavior: 'smooth',
+          });
+        }
+      }, 100);
+    }
+    setPreviousContactCount(currentContactCount);
+  }, [contactsToUse?.length, previousContactCount, compact]);
+
+  // Display contacts without filtering
   const displayContacts = useMemo(() => {
-    if (!showEmailOnly) return contacts;
-    return contacts.filter((contact) => contact.email && contact.email.trim());
-  }, [contacts, showEmailOnly]);
+    const contacts = contactsToUse || [];
 
-  // Virtualization for large contact lists
+    // Force List re-render by creating new array reference with timestamp
+    const resultArray = [...contacts];
+    return resultArray;
+  }, [contactsToUse]);
+
+  // Disable virtualization completely to prevent pagination conflicts
   const { virtualizedItems, containerProps, scrollProps, isVirtualized } = useContactVirtualization(
     displayContacts,
     {
-      enabled: displayContacts.length > 50,
+      enabled: false, // DISABLED: Virtualization conflicts with pagination
       config: {
         itemHeight: compact ? 56 : 72,
-        containerHeight: compact ? 300 : 400,
+        containerHeight: compact ? 600 : 800, // Larger height for more contacts
+        threshold: 999, // Effectively disabled
       },
     },
   );
@@ -125,11 +184,11 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
   // Render contact item
   const renderContactItem = (contact: RecipientContact, index: number) => {
     const isSelected = isContactSelected(contact.id);
-    const hasEmail = contact.email && contact.email.trim();
+    const hasEmail = hasValidEmail(contact);
 
     return (
       <ListItem
-        key={contact.id}
+        key={`${contact.id}-page-${currentPage}`}
         disablePadding
         sx={{
           position: isVirtualized ? 'absolute' : 'relative',
@@ -223,7 +282,7 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Search and Controls */}
       <Box sx={{ p: 2, flexShrink: 0 }}>
         <Stack spacing={2}>
@@ -251,34 +310,8 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
           />
 
           {/* Controls */}
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack direction="row" alignItems="center" spacing={2}>
-              {/* Select All Contacts toggle */}
-              {onAllContactsToggle && (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={allContactsSelected}
-                      onChange={(e) => onAllContactsToggle(e.target.checked)}
-                      size="small"
-                    />
-                  }
-                  label={<Typography variant="caption">All Contacts</Typography>}
-                />
-              )}
-
-              {/* Email filter */}
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={showEmailOnly}
-                    onChange={(e) => setShowEmailOnly(e.target.checked)}
-                    size="small"
-                  />
-                }
-                label={<Typography variant="caption">Email Only</Typography>}
-              />
-            </Stack>
+          <Stack direction="row" alignItems="center" justifyContent="flex-end">
+            <Stack direction="row" alignItems="center" spacing={2}></Stack>
 
             {/* Action buttons */}
             <Stack direction="row" spacing={1}>
@@ -301,11 +334,7 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
           {searchStats && (
             <>
               <Divider />
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="caption" color="text.secondary">
-                  {searchStats.filtered} of {searchStats.total} contacts
-                  {searchQuery && ` matching "${searchQuery}"`}
-                </Typography>
+              <Stack direction="row" justifyContent="center" alignItems="center">
                 <Typography variant="caption" color="primary">
                   {searchStats.selected} selected
                 </Typography>
@@ -317,29 +346,106 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
 
       <Divider />
 
-      {/* Contact List */}
-      <Box sx={{ flex: 1, overflow: 'hidden' }}>
+      {/* Contact List - Will shrink to accommodate fixed search message and pagination */}
+      <Box ref={listContainerRef} sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
         {displayContacts.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <PersonIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
             <Typography variant="body2" color="text.secondary">
-              {searchQuery
-                ? 'No contacts match your search'
-                : showEmailOnly
-                  ? 'No contacts with email addresses'
-                  : 'No contacts available'}
+              {searchQuery ? 'No contacts match your search' : 'No contacts available'}
             </Typography>
           </Box>
         ) : (
-          <Box {...containerProps} {...scrollProps}>
-            <List dense={compact}>
-              {isVirtualized
-                ? virtualizedItems.map((item, index) => renderContactItem(item.contact, index))
-                : displayContacts.map((contact, index) => renderContactItem(contact, index))}
-            </List>
-          </Box>
+          <ErrorBoundary
+            componentName="ContactList"
+            fallback={
+              <Alert severity="error" sx={{ m: 2 }}>
+                <AlertTitle>Contact List Unavailable</AlertTitle>
+                The contact list encountered an error. Please try refreshing the page.
+                <Button
+                  size="small"
+                  sx={{ mt: 1 }}
+                  onClick={() => window.location.reload()}
+                  variant="outlined"
+                >
+                  Refresh Page
+                </Button>
+              </Alert>
+            }
+            onError={(error) => {
+              console.error('ContactList error:', error);
+            }}
+          >
+            <Box {...containerProps} {...scrollProps}>
+              <List
+                dense={compact}
+                key={`contact-list-page-${currentPage}-${displayContacts.length}-${displayContacts[0]?.id || 'empty'}`}
+              >
+                {isVirtualized
+                  ? virtualizedItems.map((item, index) => renderContactItem(item.contact, index))
+                  : displayContacts.map((contact, index) => renderContactItem(contact, index))}
+              </List>
+
+              {/* Loading Indicator - Inside scrollable area */}
+              {loading && !hasNext && (
+                <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+                  <CircularProgress size={24} />
+                </Box>
+              )}
+
+              {/* Error State - Inside scrollable area */}
+              {error && (
+                <Box sx={{ p: 2 }}>
+                  <Alert severity="error">{error}</Alert>
+                </Box>
+              )}
+            </Box>
+          </ErrorBoundary>
         )}
       </Box>
+
+      {/* Search Results Message - Above pagination to prevent overflow */}
+      {searchResultsMessage && (
+        <Box
+          sx={{
+            borderTop: 1,
+            borderColor: 'divider',
+            p: 2,
+            backgroundColor: 'action.hover',
+            flexShrink: 0,
+          }}
+        >
+          {searchResultsMessage}
+        </Box>
+      )}
+
+      {/* Pagination Controls - Show if there's pagination available or if we have contacts */}
+      {(hasNext || hasPrev) && displayContacts.length > 0 && (
+        <Box
+          sx={{
+            borderTop: 1,
+            borderColor: 'divider',
+            backgroundColor: 'background.paper',
+            flexShrink: 0,
+          }}
+        >
+          <StreamPaginationControl
+            page={currentPage}
+            rowsPerPage={rowsPerPage}
+            hasNext={hasNext}
+            hasPrev={hasPrev}
+            onNextPage={onNextPage || (() => {})}
+            onPrevPage={onPrevPage || (() => {})}
+            onRowsPerPageChange={onRowsPerPageChange || (() => {})}
+            currentItems={displayContacts.length}
+            itemLabel="contacts"
+            loading={loading}
+            variant="compact"
+            showPageSize={false}
+            showJumpControls={false}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

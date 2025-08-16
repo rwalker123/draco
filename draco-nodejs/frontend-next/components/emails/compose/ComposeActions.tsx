@@ -43,7 +43,7 @@ interface ComposeActionsProps {
 /**
  * ComposeActions - Send, save, schedule, and other action buttons
  */
-export const ComposeActions: React.FC<ComposeActionsProps> = ({
+const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   onScheduleClick,
   onPreviewClick,
   onDeleteDraft,
@@ -328,3 +328,6 @@ export const ComposeActions: React.FC<ComposeActionsProps> = ({
     </Box>
   );
 };
+
+export const ComposeActions = React.memo(ComposeActionsComponent);
+ComposeActions.displayName = 'ComposeActions';
