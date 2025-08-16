@@ -24,7 +24,7 @@ class MockFile {
   }
 
   slice(_start: number, _end: number): { arrayBuffer: () => Promise<ArrayBuffer> } {
-    // Mock different file signatures based on type
+    // Mock different file signatures based on type (4100 bytes for file-type library)
     const signatures: { [key: string]: number[] } = {
       'image/jpeg': [0xff, 0xd8, 0xff, 0xe0],
       'image/png': [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
@@ -36,11 +36,12 @@ class MockFile {
 
     const signature = signatures[this.type] || [0x00, 0x00, 0x00, 0x00];
 
-    // Create array buffer with appropriate signature
-    const buffer = new ArrayBuffer(16);
+    // Create array buffer with appropriate signature (4100 bytes for file-type library)
+    const bufferSize = Math.max(_end - _start, 4100);
+    const buffer = new ArrayBuffer(bufferSize);
     const view = new Uint8Array(buffer);
     signature.forEach((byte, index) => {
-      if (index < 16) view[index] = byte;
+      if (index < bufferSize) view[index] = byte;
     });
 
     return {
@@ -54,10 +55,20 @@ class MockMaliciousFile extends MockFile {
   slice(_start: number, _end: number): { arrayBuffer: () => Promise<ArrayBuffer> } {
     const maliciousContent = '<script>alert("xss")</script>';
     const encoder = new TextEncoder();
-    const buffer = encoder.encode(maliciousContent).buffer;
+    const maliciousBuffer = encoder.encode(maliciousContent);
+
+    // Create 4100-byte buffer for file-type library with malicious content at start
+    const bufferSize = Math.max(_end - _start, 4100);
+    const buffer = new ArrayBuffer(bufferSize);
+    const view = new Uint8Array(buffer);
+
+    // Copy malicious content to beginning of buffer
+    maliciousBuffer.forEach((byte, index) => {
+      if (index < bufferSize) view[index] = byte;
+    });
 
     return {
-      arrayBuffer: () => Promise.resolve(buffer.slice(0, 16)),
+      arrayBuffer: () => Promise.resolve(buffer),
     };
   }
 }
@@ -68,16 +79,19 @@ describe('File Security Tests', () => {
       expect(validateFilePath('../../../etc/passwd')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
 
       expect(validateFilePath('..\\..\\..\\windows\\system32\\config\\sam')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
 
       expect(validateFilePath('test/../config.txt')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
     });
 
@@ -85,11 +99,13 @@ describe('File Security Tests', () => {
       expect(validateFilePath('%2e%2e%2fconfig.txt')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
 
       expect(validateFilePath('%2e%2e%5cconfig.txt')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
     });
 
@@ -97,6 +113,7 @@ describe('File Security Tests', () => {
       expect(validateFilePath('%252e%252e%252fconfig.txt')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
     });
 
@@ -104,16 +121,19 @@ describe('File Security Tests', () => {
       expect(validateFilePath('/etc/passwd')).toEqual({
         isValid: false,
         error: 'Absolute paths are not allowed',
+        securityRisk: true,
       });
 
       expect(validateFilePath('C:\\Windows\\System32\\config\\sam')).toEqual({
         isValid: false,
         error: 'Absolute paths are not allowed',
+        securityRisk: true,
       });
 
       expect(validateFilePath('D:\\sensitive\\data.txt')).toEqual({
         isValid: false,
         error: 'Absolute paths are not allowed',
+        securityRisk: true,
       });
     });
 
@@ -121,11 +141,13 @@ describe('File Security Tests', () => {
       expect(validateFilePath('file\0.txt')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
 
       expect(validateFilePath('file\x01.txt')).toEqual({
         isValid: false,
         error: 'Filename contains illegal path traversal sequences',
+        securityRisk: true,
       });
     });
 
@@ -136,11 +158,13 @@ describe('File Security Tests', () => {
         expect(validateFilePath(`${name}.txt`)).toEqual({
           isValid: false,
           error: 'Filename uses reserved system name',
+          securityRisk: true,
         });
 
         expect(validateFilePath(`${name.toLowerCase()}.txt`)).toEqual({
           isValid: false,
           error: 'Filename uses reserved system name',
+          securityRisk: true,
         });
       });
     });
@@ -207,14 +231,14 @@ describe('File Security Tests', () => {
 
     test('should reject files with invalid signatures', async () => {
       const fakeJpeg = new MockFile('fake.jpg', 'image/jpeg', 1024);
-      // Override slice to return wrong signature
+      // Override slice to return wrong signature (4100 bytes for file-type library)
       fakeJpeg.slice = () => ({
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(16)),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(4100)),
       });
 
       const result = await validateFileContent(fakeJpeg as File);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain('File content does not match expected format');
+      expect(result.error).toBe('Unable to determine actual file type from content');
     });
 
     test('should detect embedded scripts in images', async () => {
@@ -241,8 +265,19 @@ describe('File Security Tests', () => {
         maliciousFile.slice = () => ({
           arrayBuffer: () => {
             const encoder = new TextEncoder();
-            const buffer = encoder.encode(pattern).buffer;
-            return Promise.resolve(buffer.slice(0, 16));
+            const maliciousBuffer = encoder.encode(pattern);
+
+            // Create 4100-byte buffer with malicious content at start
+            const bufferSize = 4100;
+            const buffer = new ArrayBuffer(bufferSize);
+            const view = new Uint8Array(buffer);
+
+            // Copy malicious content to beginning of buffer
+            maliciousBuffer.forEach((byte, index) => {
+              if (index < bufferSize) view[index] = byte;
+            });
+
+            return Promise.resolve(buffer);
           },
         });
 
