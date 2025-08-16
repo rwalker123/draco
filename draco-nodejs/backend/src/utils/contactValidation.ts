@@ -118,7 +118,7 @@ export class ContactValidationService {
         // This ensures we create the exact same Date object for database matching
         const parsedDate = DateUtils.parseDateOfBirthForDatabase(dateOfBirth);
         whereClause.dateofbirth = parsedDate;
-      } catch (error) {
+      } catch (_error) {
         return {
           success: false,
           error: 'Invalid date of birth format',

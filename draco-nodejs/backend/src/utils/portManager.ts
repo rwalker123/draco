@@ -72,7 +72,7 @@ export class PortManager {
       // Use netstat to check if port is in use
       const { stdout } = await execAsync(`netstat -an | grep LISTEN | grep ":${port} "`);
       return stdout.trim() === '';
-    } catch (error) {
+    } catch (_error) {
       // If netstat fails or port is not in use, consider it available
       return true;
     }

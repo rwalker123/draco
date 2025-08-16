@@ -30,7 +30,7 @@ export const extractBigIntParams = <T extends string>(
 
     try {
       result[key] = BigInt(value);
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Invalid parameter ${key}: must be a valid number`);
     }
   }

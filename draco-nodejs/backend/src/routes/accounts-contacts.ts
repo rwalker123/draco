@@ -154,12 +154,10 @@ router.post(
 
     // Validate required validation type and corresponding field
     if (validationType && validationType !== 'streetAddress' && validationType !== 'dateOfBirth') {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: 'Invalid validation type. Must be "streetAddress" or "dateOfBirth"',
-        });
+      res.status(400).json({
+        success: false,
+        message: 'Invalid validation type. Must be "streetAddress" or "dateOfBirth"',
+      });
       return;
     }
 
@@ -611,7 +609,7 @@ router.post(
     let roleDataBigInt: bigint;
     try {
       roleDataBigInt = BigInt(roleData);
-    } catch (error) {
+    } catch (_error) {
       throw new ValidationError('Role data must be a valid numeric ID');
     }
 
@@ -620,7 +618,7 @@ router.post(
     if (seasonId !== undefined && seasonId !== null) {
       try {
         seasonIdBigInt = BigInt(seasonId);
-      } catch (error) {
+      } catch (_error) {
         throw new ValidationError('Season ID must be a valid numeric ID');
       }
     }

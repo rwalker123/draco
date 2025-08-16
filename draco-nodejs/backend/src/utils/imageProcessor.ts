@@ -91,7 +91,7 @@ export class ImageProcessor {
   static async getImageMetadata(buffer: Buffer): Promise<sharp.Metadata> {
     try {
       return await sharp(buffer).metadata();
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Failed to read image metadata: Invalid image format');
     }
   }
