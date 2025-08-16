@@ -238,9 +238,9 @@ export class EmailRecipientService {
       if (!responseObj.success) {
         throw createEmailRecipientError(
           EmailRecipientErrorCode.API_UNAVAILABLE,
-          responseObj.message || responseObj.error?.message || 'API request failed',
+          responseObj.message || 'API request failed',
           {
-            details: responseObj.error || responseObj,
+            details: responseObj.data || responseObj,
             context: {
               operation: 'api_response_validation',
               additionalData: { endpoint: response.url },

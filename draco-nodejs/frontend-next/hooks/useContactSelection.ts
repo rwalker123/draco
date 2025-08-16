@@ -303,6 +303,14 @@ export const useContactSelection = ({
     [isShowingSearchResults, loadContacts],
   );
 
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm('');
+    setIsShowingSearchResults(false);
+    setSearchLoading(false);
+    // Reload regular paginated data
+    loadContacts(1, undefined, false);
+  }, [loadContacts]);
+
   // Search handlers
   const handleSearch = useCallback(
     async (term: string) => {
@@ -314,14 +322,6 @@ export const useContactSelection = ({
     },
     [searchContacts, handleClearSearch],
   );
-
-  const handleClearSearch = useCallback(() => {
-    setSearchTerm('');
-    setIsShowingSearchResults(false);
-    setSearchLoading(false);
-    // Reload regular paginated data
-    loadContacts(1, undefined, false);
-  }, [loadContacts]);
 
   // Selection handlers
   const handleContactToggle = useCallback(

@@ -155,14 +155,23 @@ const GroupSelectionPanel: React.FC<GroupSelectionPanelProps> = ({
               }
               secondary={
                 !compact && (
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mt: 0.5,
+                      flexWrap: 'wrap',
+                    }}
+                  >
                     <Chip label={group.type} size="small" variant="outlined" color="primary" />
                     {group.description && (
                       <Typography variant="caption" color="text.secondary" noWrap>
                         {group.description}
                       </Typography>
                     )}
-                  </Stack>
+                  </Box>
                 )
               }
             />
@@ -242,7 +251,16 @@ const GroupSelectionPanel: React.FC<GroupSelectionPanelProps> = ({
               }
               secondary={
                 !compact && (
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mt: 0.5,
+                      flexWrap: 'wrap',
+                    }}
+                  >
                     <Chip
                       label={group.roleType.replace('_', ' ')}
                       size="small"
@@ -257,7 +275,7 @@ const GroupSelectionPanel: React.FC<GroupSelectionPanelProps> = ({
                         {group.permissions.length !== 1 ? 's' : ''}
                       </Typography>
                     )}
-                  </Stack>
+                  </Box>
                 )
               }
             />

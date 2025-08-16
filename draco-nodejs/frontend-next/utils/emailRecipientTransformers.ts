@@ -32,7 +32,7 @@ function memoize<T extends unknown[], R>(
     const key = keyGenerator(...args);
 
     if (transformationCache.has(key)) {
-      return transformationCache.get(key);
+      return transformationCache.get(key) as R;
     }
 
     const result = fn(...args);

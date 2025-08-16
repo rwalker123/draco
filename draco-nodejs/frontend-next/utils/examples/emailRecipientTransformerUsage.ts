@@ -5,7 +5,11 @@
  * backend API responses into frontend component types for the AdvancedRecipientDialog.
  */
 
-import { createEmailRecipientService } from '../../services/emailRecipientService';
+import {
+  createEmailRecipientService,
+  BackendContact,
+  BackendTeam,
+} from '../../services/emailRecipientService';
 import {
   transformBackendContact,
   transformContactsToRoleGroups,
@@ -68,7 +72,12 @@ export async function loadRecipientData(accountId: string, token: string) {
  */
 export function transformRawContactData(backendContacts: unknown[]) {
   // 1. Transform backend contacts to frontend format
-  const transformedContacts = backendContacts.map(transformBackendContact);
+  const transformedContacts = backendContacts
+    .filter(
+      (contact): contact is BackendContact =>
+        typeof contact === 'object' && contact !== null && 'id' in contact,
+    )
+    .map(transformBackendContact);
 
   // 2. Remove duplicates
   const uniqueContacts = deduplicateContacts(transformedContacts);
@@ -94,8 +103,34 @@ export function buildTeamGroupsManually(
   rostersMap: Map<string, unknown[]>,
   managersMap: Map<string, unknown[]>,
 ) {
+  // Type guard and filter for teams
+  const validTeams = teams.filter(
+    (team): team is BackendTeam =>
+      typeof team === 'object' && team !== null && 'id' in team && 'name' in team,
+  );
+
+  // Type guard and convert roster maps
+  const validRostersMap = new Map<string, BackendContact[]>();
+  rostersMap.forEach((contacts, teamId) => {
+    const validContacts = contacts.filter(
+      (contact): contact is BackendContact =>
+        typeof contact === 'object' && contact !== null && 'id' in contact,
+    );
+    validRostersMap.set(teamId, validContacts);
+  });
+
+  // Type guard and convert manager maps
+  const validManagersMap = new Map<string, BackendContact[]>();
+  managersMap.forEach((contacts, teamId) => {
+    const validContacts = contacts.filter(
+      (contact): contact is BackendContact =>
+        typeof contact === 'object' && contact !== null && 'id' in contact,
+    );
+    validManagersMap.set(teamId, validContacts);
+  });
+
   // Transform team data with rosters and managers
-  const teamGroups = transformTeamsToGroups(teams, rostersMap, managersMap);
+  const teamGroups = transformTeamsToGroups(validTeams, validRostersMap, validManagersMap);
 
   // Group by team type for UI organization
   const groupedByType = {
@@ -120,7 +155,15 @@ export function searchAndFilterContacts(
     maxResults?: number;
   } = {},
 ) {
-  let results = contacts;
+  // First convert unknown[] to RecipientContact[]
+  const recipientContacts = contacts
+    .filter(
+      (contact): contact is BackendContact =>
+        typeof contact === 'object' && contact !== null && 'id' in contact,
+    )
+    .map(transformBackendContact);
+
+  let results = recipientContacts;
 
   // Apply search filter
   if (searchQuery.trim()) {
@@ -149,7 +192,15 @@ export function searchAndFilterContacts(
  * Example: Data quality reporting
  */
 export function generateDataQualityReport(contacts: unknown[]) {
-  const validation = validateContactCollection(contacts);
+  // Convert unknown[] to RecipientContact[]
+  const recipientContacts = contacts
+    .filter(
+      (contact): contact is BackendContact =>
+        typeof contact === 'object' && contact !== null && 'id' in contact,
+    )
+    .map(transformBackendContact);
+
+  const validation = validateContactCollection(recipientContacts);
 
   const report = {
     summary: {

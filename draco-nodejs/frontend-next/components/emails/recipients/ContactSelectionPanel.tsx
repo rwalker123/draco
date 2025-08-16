@@ -251,7 +251,16 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
             }
             secondary={
               !compact && (
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mt: 0.5,
+                    flexWrap: 'wrap',
+                  }}
+                >
                   {hasEmail && (
                     <>
                       <EmailIcon fontSize="small" color="action" />
@@ -268,7 +277,7 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
                       </Typography>
                     </>
                   )}
-                </Stack>
+                </Box>
               )
             }
           />
