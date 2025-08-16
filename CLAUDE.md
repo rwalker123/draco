@@ -138,6 +138,34 @@ Key patterns:
    - Maintain backward compatibility by adding new fields rather than changing existing ones
    - If changes are absolutely necessary, update ALL consumers in the same commit
 
+## Git Hooks and CI/CD Workflow
+
+### Git Commit Hooks
+Git commit hooks provide **fast developer feedback** with the following checks:
+- **Secrets scan**: Prevents committing sensitive data
+- **Prettier formatting**: Auto-formats code on commit
+- **ESLint**: Fixes linting issues automatically
+- **Backend typecheck**: Runs TypeScript validation for backend changes only
+
+**Note**: Frontend typecheck is **intentionally excluded** from git hooks due to Next.js context requirements. This ensures fast commits while maintaining code quality.
+
+### Pull Request Validation
+**Comprehensive validation** runs on all PRs via GitHub Actions (`.github/workflows/pr-validation.yml`):
+- ✅ **Type Check**: `npm run type-check:all` (full project context)
+- ✅ **Build**: `npm run build` (includes Next.js typecheck)
+- ✅ **Lint**: `npm run lint:all` (all projects)
+- ✅ **Tests**: `npm run test:all` (backend + frontend)
+- ✅ **Security**: detect-secrets scan + npm audit
+- ✅ **Dependencies**: Vulnerability check
+
+### Development Workflow
+1. **Local development**: Use `npm run build`, `npm run type-check:all`, `npm run test:all` for comprehensive validation
+2. **Git commits**: Fast feedback with formatting, linting, and backend typecheck
+3. **Pull requests**: Full validation ensures production-ready code
+4. **Merge protection**: All CI checks must pass before merge
+
+This two-tier approach provides fast developer feedback while ensuring comprehensive validation before code reaches production.
+
 ## Common Tasks
 
 ### Adding a New API Endpoint

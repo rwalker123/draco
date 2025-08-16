@@ -1,153 +1,152 @@
 /**
  * Enhanced file validation utilities for secure file uploads
  * Provides comprehensive validation including file type, size, and security checks
+ * Uses established libraries like file-type for better security and maintainability
  */
 
-export interface FileValidationResult {
+import { fileTypeFromBuffer } from 'file-type';
+import path from 'path';
+
+/**
+ * Enhanced validation result types with better type safety
+ */
+export interface FileValidationResult<T = void> {
   isValid: boolean;
   error?: string;
   securityRisk?: boolean;
+  metadata?: T;
+}
+
+export interface ValidationMetadata {
+  detectedMimeType?: string;
+  fileSize: number;
+  extension: string;
+  category: string;
 }
 
 /**
- * List of dangerous file extensions that should never be allowed
+ * Type for file extensions
  */
-const DANGEROUS_EXTENSIONS = [
-  'exe',
-  'bat',
-  'cmd',
-  'com',
-  'pif',
-  'scr',
-  'vbs',
-  'js',
-  'jar',
-  'app',
-  'dmg',
-  'deb',
-  'rpm',
-  'msi',
-  'pkg',
-  'sh',
-  'ps1',
-  'php',
-  'asp',
-  'aspx',
-  'jsp',
-  'action',
-  'do',
-];
+export type FileExtension = (typeof VALIDATION_CONFIG.DANGEROUS_EXTENSIONS)[number] | string;
 
 /**
- * Maximum file size limits by category (in bytes)
+ * Type for MIME categories
  */
-const SIZE_LIMITS = {
-  image: 10 * 1024 * 1024, // 10MB
-  document: 25 * 1024 * 1024, // 25MB
-  default: 50 * 1024 * 1024, // 50MB
-};
+export type MimeCategory = keyof typeof VALIDATION_CONFIG.SIZE_LIMITS;
 
 /**
- * MIME type to category mapping
+ * Centralized validation configuration
  */
-const MIME_CATEGORIES = {
-  'image/': 'image',
-  'application/pdf': 'document',
-  'application/msword': 'document',
-  'application/vnd.openxmlformats-officedocument': 'document',
-  'text/': 'document',
-};
-/**
- * Allowed MIME types for security validation
- */
-const ALLOWED_MIME_TYPES = {
-  // Images
-  'image/jpeg': ['.jpg', '.jpeg'],
-  'image/png': ['.png'],
-  'image/gif': ['.gif'],
-  'image/webp': ['.webp'],
-  'image/svg+xml': ['.svg'],
-  'image/bmp': ['.bmp'],
-  'image/tiff': ['.tiff', '.tif'],
+export const VALIDATION_CONFIG = {
+  /**
+   * List of dangerous file extensions that should never be allowed
+   */
+  DANGEROUS_EXTENSIONS: [
+    'exe',
+    'bat',
+    'cmd',
+    'com',
+    'pif',
+    'scr',
+    'vbs',
+    'js',
+    'jar',
+    'app',
+    'dmg',
+    'deb',
+    'rpm',
+    'msi',
+    'pkg',
+    'sh',
+    'ps1',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'action',
+    'do',
+  ] as const,
 
-  // Documents
-  'application/pdf': ['.pdf'],
-  'application/msword': ['.doc'],
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-  'application/vnd.ms-excel': ['.xls'],
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-  'application/vnd.ms-powerpoint': ['.ppt'],
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-  'text/plain': ['.txt'],
-  'text/csv': ['.csv'],
-  'application/rtf': ['.rtf'],
+  /**
+   * Maximum file size limits by category (in bytes)
+   */
+  SIZE_LIMITS: {
+    image: 10 * 1024 * 1024, // 10MB
+    document: 25 * 1024 * 1024, // 25MB
+    default: 50 * 1024 * 1024, // 50MB
+  } as const,
 
-  // Archives (with caution)
-  'application/zip': ['.zip'],
-  'application/x-rar-compressed': ['.rar'],
-  'application/x-7z-compressed': ['.7z'],
+  /**
+   * MIME type to category mapping
+   */
+  MIME_CATEGORIES: {
+    'image/': 'image',
+    'application/pdf': 'document',
+    'application/msword': 'document',
+    'application/vnd.openxmlformats-officedocument': 'document',
+    'text/': 'document',
+  } as const,
+  /**
+   * Allowed MIME types for security validation
+   */
+  ALLOWED_MIME_TYPES: {
+    // Images
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/gif': ['.gif'],
+    'image/webp': ['.webp'],
+    'image/svg+xml': ['.svg'],
+    'image/bmp': ['.bmp'],
+    'image/tiff': ['.tiff', '.tif'],
 
-  // Audio/Video
-  'audio/mpeg': ['.mp3'],
-  'audio/wav': ['.wav'],
-  'video/mp4': ['.mp4'],
-  'video/mpeg': ['.mpeg', '.mpg'],
-  'video/quicktime': ['.mov'],
-};
+    // Documents
+    'application/pdf': ['.pdf'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'application/vnd.ms-excel': ['.xls'],
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+    'application/vnd.ms-powerpoint': ['.ppt'],
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+    'text/plain': ['.txt'],
+    'text/csv': ['.csv'],
+    'application/rtf': ['.rtf'],
 
-/**
- * Path traversal patterns to detect and block
- */
-const PATH_TRAVERSAL_PATTERNS = [
-  /\.\.\//g, // ../
-  /\.\.\\/g, // ..\
-  /\.\./g, // ..
-  /%2e%2e%2f/gi, // URL encoded ../
-  /%2e%2e%5c/gi, // URL encoded ..\
-  /%252e%252e%252f/gi, // Double URL encoded ../
-  /\.%2f/gi, // .%2f (./.)
-  /\.%5c/gi, // .%5c (..\)
-  /\/\.\.\//g, // /../
-  /\\\.\.\\/g, // \..\
-  /\0/g, // Null bytes
-  /[\x00-\x1f\x7f-\x9f]/g, // Control characters
-];
+    // Archives (with caution)
+    'application/zip': ['.zip'],
+    'application/x-rar-compressed': ['.rar'],
+    'application/x-7z-compressed': ['.7z'],
 
-/**
- * Validates file path for path traversal attacks
- */
-export const validateFilePath = (filename: string): { isValid: boolean; error?: string } => {
-  if (!filename || typeof filename !== 'string') {
-    return { isValid: false, error: 'Invalid filename' };
-  }
+    // Audio/Video
+    'audio/mpeg': ['.mp3'],
+    'audio/wav': ['.wav'],
+    'video/mp4': ['.mp4'],
+    'video/mpeg': ['.mpeg', '.mpg'],
+    'video/quicktime': ['.mov'],
+  } as const,
 
-  // Check for path traversal patterns
-  const hasPathTraversal = PATH_TRAVERSAL_PATTERNS.some((pattern) => pattern.test(filename));
-  if (hasPathTraversal) {
-    return {
-      isValid: false,
-      error: 'Filename contains illegal path traversal sequences',
-    };
-  }
+  /**
+   * Path traversal patterns to detect and block
+   * Using Node.js path module is more secure than regex patterns
+   */
+  PATH_TRAVERSAL_PATTERNS: [
+    /\.\.\//g, // ../
+    /\.\.\\/g, // ..\
+    /\.\./g, // ..
+    /%2e%2e%2f/gi, // URL encoded ../
+    /%2e%2e%5c/gi, // URL encoded ..\
+    /%252e%252e%252f/gi, // Double URL encoded ../
+    /\.%2f/gi, // .%2f (./.)
+    /\.%5c/gi, // .%5c (..\)
+    /\/\.\.\//g, // /../
+    /\\\.\.\\/g, // \..\
+    /\0/g, // Null bytes
+    /[\x00-\x1f\x7f-\x9f]/g, // Control characters
+  ] as const,
 
-  // Check for absolute paths
-  if (filename.startsWith('/') || filename.match(/^[a-zA-Z]:/)) {
-    return {
-      isValid: false,
-      error: 'Absolute paths are not allowed',
-    };
-  }
-
-  // Check filename length
-  if (filename.length > 255) {
-    return {
-      isValid: false,
-      error: 'Filename too long (max 255 characters)',
-    };
-  }
-
-  // Check for reserved names (Windows)
-  const reservedNames = [
+  /**
+   * Reserved Windows filenames
+   */
+  RESERVED_NAMES: [
     'CON',
     'PRN',
     'AUX',
@@ -170,13 +169,105 @@ export const validateFilePath = (filename: string): { isValid: boolean; error?: 
     'LPT7',
     'LPT8',
     'LPT9',
-  ];
+  ] as const,
+} as const;
 
+/**
+ * Enhanced path validation result type
+ */
+export interface PathValidationResult {
+  isValid: boolean;
+  error?: string;
+  securityRisk?: boolean;
+}
+
+/**
+ * Validates file path for path traversal attacks using Node.js path module
+ * More secure than regex patterns as it leverages Node.js built-in path handling
+ */
+export const validateFilePath = (filename: string): PathValidationResult => {
+  if (!filename || typeof filename !== 'string') {
+    return { isValid: false, error: 'Invalid filename', securityRisk: true };
+  }
+
+  // Check for path traversal patterns using regex (fallback for encoded sequences)
+  const hasPathTraversal = VALIDATION_CONFIG.PATH_TRAVERSAL_PATTERNS.some((pattern) =>
+    pattern.test(filename),
+  );
+  if (hasPathTraversal) {
+    return {
+      isValid: false,
+      error: 'Filename contains illegal path traversal sequences',
+      securityRisk: true,
+    };
+  }
+
+  // Use Node.js path module for better security validation (frontend-safe)
+  try {
+    // Check for absolute paths in input first (cross-platform)
+    const isWindowsAbsolute = /^[a-zA-Z]:/;
+    const isUnixAbsolute = filename.startsWith('/');
+
+    if (path.isAbsolute(filename) || isWindowsAbsolute.test(filename) || isUnixAbsolute) {
+      return {
+        isValid: false,
+        error: 'Absolute paths are not allowed',
+        securityRisk: true,
+      };
+    }
+
+    // Normalize the path and check for directory traversal
+    const normalizedInput = path.normalize(filename);
+
+    // After normalization, the path should not start with .. or contain ../ sequences
+    if (
+      normalizedInput.startsWith('..') ||
+      normalizedInput.includes('../') ||
+      normalizedInput.includes('..\\')
+    ) {
+      return {
+        isValid: false,
+        error: 'Path attempts to escape current directory',
+        securityRisk: true,
+      };
+    }
+
+    // Additional check: resolved path should be a simple filename (no directory components)
+    const resolvedPath = path.resolve('.', filename);
+    const basePath = path.resolve('.');
+    if (
+      !resolvedPath.startsWith(basePath + path.sep) &&
+      resolvedPath !== path.join(basePath, filename)
+    ) {
+      return {
+        isValid: false,
+        error: 'Invalid file path structure',
+        securityRisk: true,
+      };
+    }
+  } catch {
+    return {
+      isValid: false,
+      error: 'Invalid path format',
+      securityRisk: true,
+    };
+  }
+
+  // Check filename length
+  if (filename.length > 255) {
+    return {
+      isValid: false,
+      error: 'Filename too long (max 255 characters)',
+    };
+  }
+
+  // Check for reserved names (Windows)
   const baseName = filename.split('.')[0].toUpperCase();
-  if (reservedNames.includes(baseName)) {
+  if ((VALIDATION_CONFIG.RESERVED_NAMES as readonly string[]).includes(baseName)) {
     return {
       isValid: false,
       error: 'Filename uses reserved system name',
+      securityRisk: true,
     };
   }
 
@@ -184,23 +275,30 @@ export const validateFilePath = (filename: string): { isValid: boolean; error?: 
 };
 
 /**
- * Validates MIME type against file extension
+ * Validates MIME type against file extension using centralized configuration
  */
 export const validateMimeType = (file: File): { isValid: boolean; error?: string } => {
-  const extension = file.name.split('.').pop()?.toLowerCase();
+  const parts = file.name.split('.');
+  if (parts.length < 2 || parts[parts.length - 1] === '') {
+    return { isValid: false, error: 'File extension required' };
+  }
+
+  const extension = parts.pop()?.toLowerCase();
   if (!extension) {
     return { isValid: false, error: 'File extension required' };
   }
 
   // Find matching MIME type entry
-  const mimeEntry = Object.entries(ALLOWED_MIME_TYPES).find(([mimeType, extensions]) => {
-    return mimeType === file.type && extensions.includes(`.${extension}`);
-  });
+  const mimeEntry = Object.entries(VALIDATION_CONFIG.ALLOWED_MIME_TYPES).find(
+    ([mimeType, extensions]) => {
+      return mimeType === file.type && (extensions as readonly string[]).includes(`.${extension}`);
+    },
+  );
 
   if (!mimeEntry) {
     // Check if extension is allowed but MIME type doesn't match
-    const extensionFound = Object.values(ALLOWED_MIME_TYPES).some((extensions) =>
-      extensions.includes(`.${extension}`),
+    const extensionFound = Object.values(VALIDATION_CONFIG.ALLOWED_MIME_TYPES).some((extensions) =>
+      (extensions as readonly string[]).includes(`.${extension}`),
     );
 
     if (extensionFound) {
@@ -220,49 +318,22 @@ export const validateMimeType = (file: File): { isValid: boolean; error?: string
 };
 
 /**
- * Performs basic file content validation
+ * Performs enhanced file content validation using file-type library
+ * More reliable than custom signature detection
  */
 export const validateFileContent = async (
   file: File,
 ): Promise<{ isValid: boolean; error?: string }> => {
   try {
-    // Read first few bytes to check file signatures
-    const buffer = await file.slice(0, 16).arrayBuffer();
-    const bytes = new Uint8Array(buffer);
+    // Read sufficient bytes for file-type library (recommended 4100 bytes)
+    const buffer = await file.slice(0, 4100).arrayBuffer();
+    const uint8Array = new Uint8Array(buffer);
 
-    // Common file signature validation
-    const signatures: { [key: string]: number[][] } = {
-      'image/jpeg': [[0xff, 0xd8, 0xff]],
-      'image/png': [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
-      'image/gif': [
-        [0x47, 0x49, 0x46, 0x38, 0x37, 0x61],
-        [0x47, 0x49, 0x46, 0x38, 0x39, 0x61],
-      ],
-      'application/pdf': [[0x25, 0x50, 0x44, 0x46]],
-      'application/zip': [
-        [0x50, 0x4b, 0x03, 0x04],
-        [0x50, 0x4b, 0x05, 0x06],
-        [0x50, 0x4b, 0x07, 0x08],
-      ],
-    };
-
-    const expectedSignatures = signatures[file.type];
-    if (expectedSignatures) {
-      const hasValidSignature = expectedSignatures.some((signature) => {
-        return signature.every((byte, index) => bytes[index] === byte);
-      });
-
-      if (!hasValidSignature) {
-        return {
-          isValid: false,
-          error: `File content does not match expected format for ${file.type}`,
-        };
-      }
-    }
-
-    // Check for embedded scripts in various file types
+    // Check for embedded scripts FIRST (priority for security)
     if (file.type.startsWith('image/') || file.type === 'application/pdf') {
-      const textContent = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+      const textContent = new TextDecoder('utf-8', { fatal: false }).decode(
+        uint8Array.slice(0, 512), // Check first 512 bytes for scripts
+      );
       const scriptPatterns = [
         /<script/i,
         /javascript:/i,
@@ -270,6 +341,8 @@ export const validateFileContent = async (
         /onload=/i,
         /onerror=/i,
         /%3cscript/i,
+        /data:text\/html/i,
+        /data:application\/javascript/i,
       ];
 
       if (scriptPatterns.some((pattern) => pattern.test(textContent))) {
@@ -278,6 +351,28 @@ export const validateFileContent = async (
           error: 'File contains potentially malicious content',
         };
       }
+    }
+
+    // Use file-type library for accurate file signature detection
+    const detectedType = await fileTypeFromBuffer(uint8Array);
+
+    if (!detectedType) {
+      // If file-type can't detect the type, check if it's a plain text file
+      if (file.type.startsWith('text/')) {
+        return { isValid: true }; // Allow text files that file-type can't detect
+      }
+      return {
+        isValid: false,
+        error: 'Unable to determine actual file type from content',
+      };
+    }
+
+    // Compare detected MIME type with declared type
+    if (detectedType.mime !== file.type) {
+      return {
+        isValid: false,
+        error: `File content type (${detectedType.mime}) does not match declared type (${file.type})`,
+      };
     }
 
     return { isValid: true };
@@ -290,7 +385,152 @@ export const validateFileContent = async (
 };
 
 /**
- * Enhanced file validation with security checks
+ * Enhanced validation options interface with better type safety
+ */
+export interface ValidationOptions {
+  allowedTypes: string[];
+  maxFileSize?: number;
+  strictMimeValidation?: boolean;
+  allowHiddenFiles?: boolean;
+  customValidators?: ValidationFunction[];
+}
+
+/**
+ * Type for custom validation functions
+ */
+export type ValidationFunction = (
+  file: File,
+) => FileValidationResult | Promise<FileValidationResult>;
+
+/**
+ * Type for allowed file types (MIME types or extensions)
+ */
+export type AllowedFileType = string | `.${string}` | `${string}/*`;
+
+/**
+ * Enhanced validation result with metadata
+ */
+export interface EnhancedValidationResult extends FileValidationResult<ValidationMetadata> {
+  warnings?: string[];
+}
+
+/**
+ * Validates file extension and checks for dangerous extensions
+ */
+export const validateFileExtension = (file: File): FileValidationResult => {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+
+  if (!extension) {
+    return {
+      isValid: false,
+      error: 'File must have an extension',
+    };
+  }
+
+  // Reject dangerous extensions first (highest priority)
+  if (
+    VALIDATION_CONFIG.DANGEROUS_EXTENSIONS.includes(
+      extension as (typeof VALIDATION_CONFIG.DANGEROUS_EXTENSIONS)[number],
+    )
+  ) {
+    return {
+      isValid: false,
+      error: 'File type not allowed for security reasons',
+      securityRisk: true,
+    };
+  }
+
+  return { isValid: true };
+};
+
+/**
+ * Validates file name for suspicious patterns
+ */
+export const validateFileName = (filename: string): FileValidationResult => {
+  const suspiciousPatterns = [
+    /^\./, // Hidden files like .htaccess
+    /\.(php|jsp|asp|bat|cmd|exe|scr|pif|com)\./i, // Double extensions with executable parts
+    /\s*(script|javascript|vbscript)/i, // Script content in name
+  ];
+
+  if (suspiciousPatterns.some((pattern) => pattern.test(filename))) {
+    return {
+      isValid: false,
+      error: 'Suspicious file name detected',
+      securityRisk: true,
+    };
+  }
+
+  return { isValid: true };
+};
+
+/**
+ * Validates if file type is in allowed types list
+ */
+export const validateAllowedTypes = (file: File, allowedTypes: string[]): FileValidationResult => {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  if (!extension) {
+    return { isValid: false, error: 'File extension required' };
+  }
+
+  const isTypeAllowed = allowedTypes.some((type) => {
+    if (type.startsWith('.')) {
+      return extension === type.substring(1).toLowerCase();
+    }
+    if (type.includes('*')) {
+      const baseType = type.replace('*', '');
+      return file.type.startsWith(baseType);
+    }
+    return file.type === type;
+  });
+
+  if (!isTypeAllowed) {
+    return {
+      isValid: false,
+      error: `File type .${extension} is not allowed`,
+    };
+  }
+
+  return { isValid: true };
+};
+
+/**
+ * Validates file size with category-specific limits
+ */
+export const validateFileSize = (file: File, maxFileSize?: number): FileValidationResult => {
+  // Enhanced size validation with category-specific limits
+  const category = Object.keys(VALIDATION_CONFIG.MIME_CATEGORIES).find((mime) =>
+    file.type.startsWith(mime),
+  );
+  const categoryType = category
+    ? VALIDATION_CONFIG.MIME_CATEGORIES[category as keyof typeof VALIDATION_CONFIG.MIME_CATEGORIES]
+    : 'default';
+  const categoryLimit =
+    VALIDATION_CONFIG.SIZE_LIMITS[categoryType as keyof typeof VALIDATION_CONFIG.SIZE_LIMITS];
+  const sizeLimit = maxFileSize ? Math.min(maxFileSize, categoryLimit) : categoryLimit;
+
+  if (file.size > sizeLimit) {
+    const sizeMB = Math.round(sizeLimit / (1024 * 1024));
+    return {
+      isValid: false,
+      error: `File size exceeds ${sizeMB}MB limit`,
+    };
+  }
+
+  // Additional security checks
+  if (file.size === 0) {
+    return {
+      isValid: false,
+      error: 'Empty files are not allowed',
+    };
+  }
+
+  return { isValid: true };
+};
+
+/**
+ * Enhanced file validation with security checks using composition
+ * Following SOLID principles by breaking down into focused validators
  */
 export const validateFileSecure = async (
   file: File,
@@ -298,105 +538,25 @@ export const validateFileSecure = async (
   maxFileSize?: number,
 ): Promise<FileValidationResult> => {
   try {
-    // 1. Validate file path for traversal attacks
-    const pathValidation = validateFilePath(file.name);
-    if (!pathValidation.isValid) {
-      return {
-        isValid: false,
-        error: pathValidation.error,
-        securityRisk: true,
-      };
-    }
-
-    // 2. Check file extension
-    const extension = file.name.split('.').pop()?.toLowerCase();
-
-    if (!extension) {
-      return {
-        isValid: false,
-        error: 'File must have an extension',
-      };
-    }
-
-    // 3. Reject dangerous extensions regardless of config
-    if (DANGEROUS_EXTENSIONS.includes(extension)) {
-      return {
-        isValid: false,
-        error: 'File type not allowed for security reasons',
-        securityRisk: true,
-      };
-    }
-
-    // 4. Validate MIME type against extension
-    const mimeValidation = validateMimeType(file);
-    if (!mimeValidation.isValid) {
-      return {
-        isValid: false,
-        error: mimeValidation.error,
-        securityRisk: true,
-      };
-    }
-
-    // 5. Check against allowed types
-    const isTypeAllowed = allowedTypes.some((type) => {
-      if (type.startsWith('.')) {
-        return extension === type.substring(1).toLowerCase();
-      }
-      if (type.includes('*')) {
-        const baseType = type.replace('*', '');
-        return file.type.startsWith(baseType);
-      }
-      return file.type === type;
-    });
-
-    if (!isTypeAllowed) {
-      return {
-        isValid: false,
-        error: `File type .${extension} is not allowed`,
-      };
-    }
-
-    // 6. Enhanced size validation with category-specific limits
-    const category = Object.keys(MIME_CATEGORIES).find((mime) => file.type.startsWith(mime));
-    const categoryType = category
-      ? MIME_CATEGORIES[category as keyof typeof MIME_CATEGORIES]
-      : 'default';
-    const categoryLimit = SIZE_LIMITS[categoryType as keyof typeof SIZE_LIMITS];
-    const sizeLimit = maxFileSize ? Math.min(maxFileSize, categoryLimit) : categoryLimit;
-
-    if (file.size > sizeLimit) {
-      const sizeMB = Math.round(sizeLimit / (1024 * 1024));
-      return {
-        isValid: false,
-        error: `File size exceeds ${sizeMB}MB limit`,
-      };
-    }
-
-    // 7. Additional security checks
-    if (file.size === 0) {
-      return {
-        isValid: false,
-        error: 'Empty files are not allowed',
-      };
-    }
-
-    // 8. Check for suspicious file names
-    const suspiciousPatterns = [
-      /^\./, // Hidden files
-      /\.(php|jsp|asp)\./i, // Double extensions
-      /\s*(script|javascript|vbscript)/i, // Script content in name
-      /\.(bat|cmd|exe|scr|pif|com)$/i, // Additional executable patterns
+    // Define validation steps in order of execution
+    const validationSteps = [
+      () => validateFilePath(file.name),
+      () => validateFileExtension(file),
+      () => validateFileName(file.name),
+      () => validateMimeType(file),
+      () => validateAllowedTypes(file, allowedTypes),
+      () => validateFileSize(file, maxFileSize),
     ];
 
-    if (suspiciousPatterns.some((pattern) => pattern.test(file.name))) {
-      return {
-        isValid: false,
-        error: 'Suspicious file name detected',
-        securityRisk: true,
-      };
+    // Execute synchronous validations
+    for (const validate of validationSteps) {
+      const result = validate();
+      if (!result.isValid) {
+        return result;
+      }
     }
 
-    // 9. Validate file content (async operation)
+    // Execute asynchronous content validation last
     const contentValidation = await validateFileContent(file);
     if (!contentValidation.isValid) {
       return {
