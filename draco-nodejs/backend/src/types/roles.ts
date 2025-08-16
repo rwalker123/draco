@@ -80,6 +80,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'player.manage',
       'photo.manage',
       'workout.manage',
+      'player-classified.manage',
     ],
     context: 'account',
   },
@@ -95,12 +96,18 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'league.teams.manage',
       'league.players.manage',
       'league.schedule.manage',
+      'player-classified.create-players-wanted',
     ],
     context: 'league',
   },
   [RoleType.TEAM_ADMIN]: {
     roleId: RoleType.TEAM_ADMIN,
-    permissions: ['team.manage', 'team.players.manage', 'team.stats.manage'],
+    permissions: [
+      'team.manage',
+      'team.players.manage',
+      'team.stats.manage',
+      'player-classified.create-players-wanted',
+    ],
     context: 'team',
   },
   [RoleType.TEAM_PHOTO_ADMIN]: {
