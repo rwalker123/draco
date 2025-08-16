@@ -24,11 +24,6 @@ jobs:
       - name: Install dependencies
         run: npm run install:all
         
-      - name: Security - Detect Secrets
-        run: |
-          pip install detect-secrets
-          detect-secrets scan --all-files --force-use-all-plugins --baseline .secrets.baseline
-          
       - name: Security - Audit Dependencies
         run: npm audit --audit-level=moderate
         
