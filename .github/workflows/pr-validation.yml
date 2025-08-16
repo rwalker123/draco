@@ -1,0 +1,56 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Comprehensive Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm run install:all
+        
+      - name: Security - Audit Dependencies
+        run: npm audit --audit-level=moderate
+        
+      - name: Type Check
+        run: npm run type-check:all
+        
+      - name: Lint
+        run: npm run lint:all
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Test
+        run: npm run test:all
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        
+      - name: Test Coverage Summary
+        run: |
+          echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Backend and frontend tests completed successfully ✅" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Validation Summary
+        run: |
+          echo "## Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Type checking passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Linting passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Security checks passed" >> $GITHUB_STEP_SUMMARY
