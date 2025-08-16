@@ -1,12 +1,11 @@
-'use client';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Typography,
-  Button,
   Box,
+  Button,
   IconButton,
   Chip,
   Badge,
@@ -439,34 +438,6 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                       <PeopleIcon />
                     </Badge>
                   </Box>
-
-                  {/* Workout Actions */}
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/account/${accountId}/workouts/${workout.id}`)}
-                      color="info"
-                      title="Preview Workout"
-                    >
-                      <VisibilityIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        router.push(`/account/${accountId}/workouts/${workout.id}/edit`)
-                      }
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => setWorkoutToDelete(workout)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
                 </Box>
               </AccordionSummary>
 
@@ -474,8 +445,38 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                 sx={{ backgroundColor: 'background.default', borderRadius: '0 0 8px 8px' }}
               >
                 <Box sx={{ p: 2 }}>
-                  {/* Action Buttons */}
+                  {/* Workout Actions */}
                   <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => router.push(`/account/${accountId}/workouts/${workout.id}`)}
+                      startIcon={<VisibilityIcon />}
+                    >
+                      Preview Workout
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() =>
+                        router.push(`/account/${accountId}/workouts/${workout.id}/edit`)
+                      }
+                      startIcon={<EditIcon />}
+                    >
+                      Edit Workout
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => {
+                        setWorkoutToDelete(workout);
+                        setDeleteDialogOpen(true);
+                      }}
+                      startIcon={<DeleteIcon />}
+                    >
+                      Delete Workout
+                    </Button>
                     <Button
                       variant="outlined"
                       startIcon={<AddIcon />}
@@ -579,59 +580,22 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                             >
                               <ListItemText
                                 primary={
-                                  <Box
-                                    sx={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1,
-                                      flexWrap: 'wrap',
-                                    }}
-                                  >
-                                    <Typography variant="subtitle2" fontWeight="medium">
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
                                       {registration.name}
                                     </Typography>
-                                    <Chip
-                                      label={
-                                        registration.age
-                                          ? `${registration.age} years`
-                                          : 'Age not specified'
-                                      }
-                                      size="small"
-                                      variant="outlined"
-                                    />
                                     {registration.isManager && (
-                                      <Chip
-                                        label="Manager"
-                                        size="small"
-                                        color="primary"
-                                        variant="outlined"
-                                      />
+                                      <Chip label="Manager" size="small" color="primary" />
                                     )}
                                   </Box>
                                 }
                                 secondary={
-                                  <Box sx={{ mt: 1 }}>
+                                  <Box>
                                     <Typography variant="body2" color="text.secondary">
-                                      {registration.email && `Email: ${registration.email}`}
-                                    </Typography>
-                                    {registration.phone1 && (
-                                      <Typography variant="body2" color="text.secondary">
-                                        Phone: {formatPhoneNumber(registration.phone1)}
-                                      </Typography>
-                                    )}
-                                    {registration.positions && (
-                                      <Typography variant="body2" color="text.secondary">
-                                        Positions: {registration.positions}
-                                      </Typography>
-                                    )}
-                                    {registration.whereHeard && (
-                                      <Typography variant="body2" color="text.secondary">
-                                        Where heard: {registration.whereHeard}
-                                      </Typography>
-                                    )}
-                                    <Typography variant="body2" color="text.secondary">
-                                      Registered:{' '}
-                                      {new Date(registration.dateRegistered).toLocaleDateString()}
+                                      {registration.email && `${registration.email} • `}
+                                      {registration.phone1 &&
+                                        `${formatPhoneNumber(registration.phone1)} • `}
+                                      {registration.positions || 'No positions specified'}
                                     </Typography>
                                   </Box>
                                 }
@@ -640,11 +604,13 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                           ))}
                         </List>
                       ) : (
-                        <Box sx={{ textAlign: 'center', py: 3, color: 'text.secondary' }}>
-                          <Typography variant="body2">
-                            No registrations yet for this workout
-                          </Typography>
-                        </Box>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ textAlign: 'center', py: 3 }}
+                        >
+                          No registrations found
+                        </Typography>
                       )}
                     </Box>
                   )}
@@ -659,62 +625,64 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
             No workouts found
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Create your first workout to get started.
+            Get started by creating your first workout.
           </Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateWorkout}>
+          <Button variant="contained" onClick={handleCreateWorkout} startIcon={<AddIcon />}>
             Create Workout
           </Button>
         </Paper>
       )}
 
       {/* Registration Dialog */}
-      <Dialog
-        open={registrationDialogOpen}
-        onClose={() => setRegistrationDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {editingRegistration ? 'Edit Registration' : 'Add New Registration'}
-        </DialogTitle>
-        <DialogContent>
-          <WorkoutRegistrationForm
-            accountId={accountId}
-            workoutId={currentWorkoutId}
-            registration={editingRegistration}
-            onSubmit={handleSaveRegistration}
-            onCancel={() => {
-              setRegistrationDialogOpen(false);
-              setEditingRegistration(null);
-              setCurrentWorkoutId('');
-            }}
-            isLoading={savingRegistration}
-          />
-        </DialogContent>
-      </Dialog>
+      {registrationDialogOpen && (
+        <Dialog
+          open={registrationDialogOpen}
+          onClose={() => setRegistrationDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {editingRegistration ? 'Edit Registration' : 'Add Registration'}
+          </DialogTitle>
+          <DialogContent>
+            <WorkoutRegistrationForm
+              accountId={accountId}
+              workoutId={currentWorkoutId}
+              registration={editingRegistration}
+              onSubmit={handleSaveRegistration}
+              onCancel={() => setRegistrationDialogOpen(false)}
+              isLoading={savingRegistration}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Delete Workout Confirmation Dialog */}
+      {/* Delete Workout Confirmation */}
       <ConfirmationDialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={confirmDelete}
         title="Delete Workout"
-        message={`Are you sure you want to delete &quot;${workoutToDelete?.workoutDesc}&quot;? This action cannot be undone.`}
+        message="Are you sure you want to delete this workout? This action cannot be undone and will also delete all associated registrations."
         confirmText="Delete"
-        cancelText="Cancel"
         confirmButtonColor="error"
+        onConfirm={confirmDelete}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setWorkoutToDelete(null);
+        }}
       />
 
-      {/* Delete Registration Confirmation Dialog */}
+      {/* Delete Registration Confirmation */}
       <ConfirmationDialog
         open={deleteRegistrationDialogOpen}
-        onClose={() => setDeleteRegistrationDialogOpen(false)}
-        onConfirm={confirmDeleteRegistration}
         title="Delete Registration"
         message="Are you sure you want to delete this registration? This action cannot be undone."
         confirmText="Delete"
-        cancelText="Cancel"
         confirmButtonColor="error"
+        onConfirm={confirmDeleteRegistration}
+        onClose={() => {
+          setDeleteRegistrationDialogOpen(false);
+          setRegistrationToDelete(null);
+        }}
       />
     </Container>
   );
