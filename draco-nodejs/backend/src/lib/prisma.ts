@@ -21,7 +21,7 @@ const prisma =
         url: connectionUrl,
       },
     },
-    log: databaseConfig.enableQueryLogging ? ['query', 'info', 'warn', 'error'] : ['error'],
+    log: databaseConfig.logLevel,
   });
 
 // Note: We're using Prisma middleware instead of event handlers for better TypeScript support

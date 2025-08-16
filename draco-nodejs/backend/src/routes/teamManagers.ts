@@ -157,7 +157,6 @@ const teamManagerService = new TeamManagerService(prisma);
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    console.log('GET /managers req.params:', req.params);
     const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const managers = await teamManagerService.listManagers(teamSeasonId);
     res.json({ success: true, data: managers });
