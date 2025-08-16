@@ -4,11 +4,21 @@
 # very well with the psql import script, so this is a separate script to export the data.
 # Using sqlpipe script instead.
 
-# Database connection details
-SERVER="sql2k1202.discountasp.net"
-DATABASE="SQL2012_152800_ezrecsports"
-USERNAME="SQL2012_152800_ezrecsports_user"
-PASSWORD="Z3aB46yx!"
+# Load environment variables from backend .env file
+if [ -f "../draco-nodejs/backend/.env" ]; then
+    export $(grep -v '^#' ../draco-nodejs/backend/.env | xargs)
+elif [ -f "./draco-nodejs/backend/.env" ]; then
+    export $(grep -v '^#' ./draco-nodejs/backend/.env | xargs)
+else
+    echo "Error: Could not find .env file. Please ensure you're running from the project root or dbMigration directory."
+    exit 1
+fi
+
+# Database connection details from environment variables
+SERVER="${SQLSERVER_HOST}"
+DATABASE="${SQLSERVER_DATABASE}"
+USERNAME="${SQLSERVER_USERNAME}"
+PASSWORD="${SQLSERVER_PASSWORD}"
 
 # Output folder for CSV files
 OUTPUT_FOLDER="./DatabaseExports"
