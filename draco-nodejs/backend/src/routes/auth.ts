@@ -246,7 +246,7 @@ router.get(
         firstname = contact.firstname;
         lastname = contact.lastname;
       }
-    } catch (e) {
+    } catch (_e) {
       // If contacts table is missing or error, just skip
     }
 

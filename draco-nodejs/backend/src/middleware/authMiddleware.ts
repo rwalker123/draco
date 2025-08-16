@@ -146,7 +146,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     }
 
     next();
-  } catch (error) {
+  } catch (_error) {
     // Continue without user if token is invalid
     next();
   }
