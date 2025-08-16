@@ -8,6 +8,7 @@ import {
   RecipientSelectionState as BaseRecipientSelectionState,
   RecipientSelectionTab,
 } from '../../../../types/emails/recipients';
+import { hasValidEmail } from '../../common/mailtoUtils';
 
 // Extended state interface for the hook
 export interface ExtendedRecipientSelectionState extends BaseRecipientSelectionState {
@@ -132,7 +133,7 @@ export const useRecipientSelection = (
         // Recalculate effective recipients based on the updated state
         const newEffectiveRecipients = calculateEffectiveRecipients(updatedState);
 
-        const validEmails = newEffectiveRecipients.filter((r) => r.email && r.email.trim()).length;
+        const validEmails = newEffectiveRecipients.filter((r) => hasValidEmail(r)).length;
         const invalidEmails = newEffectiveRecipients.length - validEmails;
 
         const newState = {
@@ -298,7 +299,7 @@ export const useRecipientSelection = (
   // Note: Removed redundant useEffect that was causing double state updates
   // All calculations are now handled in updateSelectionState function
 
-  const validEmails = effectiveRecipients.filter((r) => r.email && r.email.trim()).length;
+  const validEmails = effectiveRecipients.filter((r) => hasValidEmail(r)).length;
   const invalidEmails = effectiveRecipients.length - validEmails;
 
   return {

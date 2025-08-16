@@ -37,6 +37,9 @@ import { useAuth } from '../../../context/AuthContext';
 import { createEmailService } from '../../../services/emailService';
 import { EmailTemplate } from '../../../types/emails/email';
 import { extractTemplateVariables } from '../../../types/emails/compose';
+import { ErrorBoundary } from '../../common/ErrorBoundary';
+import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
+import { createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
 
 interface ComposeSidebarProps {
   accountId: string;
@@ -49,7 +52,7 @@ interface ComposeSidebarProps {
 /**
  * ComposeSidebar - Template selection and recipient/attachment summary
  */
-export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
+const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
   accountId,
   showTemplates = true,
   showRecipientSummary = true,
@@ -61,7 +64,7 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
 
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
-  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [templatesError, setTemplatesError] = useState<EmailRecipientError | null>(null);
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(
     new Set(['templates', 'recipients']),
   );
@@ -69,19 +72,44 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
   const loadTemplates = useCallback(async () => {
     if (!token) return;
 
-    try {
-      setLoadingTemplates(true);
-      setTemplatesError(null);
+    const result = await safeAsync(
+      async () => {
+        setLoadingTemplates(true);
+        setTemplatesError(null);
 
-      const emailService = createEmailService(token);
-      const templateList = await emailService.listTemplates(accountId);
-      setTemplates(templateList.filter((t) => t.isActive));
-    } catch (error) {
-      console.error('Failed to load templates:', error);
-      setTemplatesError('Failed to load templates');
-    } finally {
-      setLoadingTemplates(false);
+        const emailService = createEmailService(token);
+        const templateList = await emailService.listTemplates(accountId);
+        setTemplates(templateList.filter((t) => t.isActive));
+      },
+      {
+        operation: 'loadTemplates',
+        accountId,
+        additionalData: { component: 'ComposeSidebar' },
+      },
+    );
+
+    if (!result.success) {
+      const templateError =
+        result.error.code === EmailRecipientErrorCode.API_UNAVAILABLE
+          ? createEmailRecipientError(
+              EmailRecipientErrorCode.SERVICE_UNAVAILABLE,
+              'Template service is temporarily unavailable',
+              {
+                userMessage: 'Unable to load email templates. Please try again later.',
+                retryable: true,
+                context: {
+                  operation: 'loadTemplates',
+                  accountId,
+                  additionalData: { component: 'ComposeSidebar' },
+                },
+              },
+            )
+          : result.error;
+
+      setTemplatesError(templateError);
     }
+
+    setLoadingTemplates(false);
   }, [token, accountId]);
 
   // Load templates
@@ -161,128 +189,148 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
       <Stack spacing={compact ? 1 : 2}>
         {/* Templates Section */}
         {showTemplates && (
-          <Paper variant="outlined">
-            <Accordion
-              expanded={expandedAccordions.has('templates')}
-              onChange={handleAccordionChange('templates')}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TemplateIcon fontSize="small" />
-                  <Typography variant="subtitle1" fontWeight="medium">
-                    Email Templates
-                  </Typography>
-                  {state.selectedTemplate && <Chip label="Active" size="small" color="secondary" />}
-                </Stack>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Stack spacing={2}>
-                  {/* Template Loading */}
-                  {loadingTemplates && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                      <CircularProgress size={24} />
-                    </Box>
-                  )}
+          <ErrorBoundary
+            componentName="TemplatesSection"
+            fallback={
+              <Alert severity="error" sx={{ m: 1 }}>
+                <Typography variant="body2">
+                  Email templates failed to load. Please refresh the page.
+                </Typography>
+              </Alert>
+            }
+            onError={(error) => {
+              console.error('Templates section error:', error);
+            }}
+          >
+            <Paper variant="outlined">
+              <Accordion
+                expanded={expandedAccordions.has('templates')}
+                onChange={handleAccordionChange('templates')}
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <TemplateIcon fontSize="small" />
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      Email Templates
+                    </Typography>
+                    {state.selectedTemplate && (
+                      <Chip label="Active" size="small" color="secondary" />
+                    )}
+                  </Stack>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={2}>
+                    {/* Template Loading */}
+                    {loadingTemplates && (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                        <CircularProgress size={24} />
+                      </Box>
+                    )}
 
-                  {/* Template Error */}
-                  {templatesError && (
-                    <Alert
-                      severity="error"
-                      action={
-                        <Button size="small" onClick={loadTemplates}>
-                          Retry
-                        </Button>
-                      }
-                    >
-                      {templatesError}
-                    </Alert>
-                  )}
+                    {/* Template Error */}
+                    {templatesError && (
+                      <Alert
+                        severity="error"
+                        action={
+                          templatesError.retryable && (
+                            <Button size="small" onClick={loadTemplates}>
+                              Retry
+                            </Button>
+                          )
+                        }
+                      >
+                        {templatesError.userMessage || templatesError.message}
+                      </Alert>
+                    )}
 
-                  {/* Current Template */}
-                  {state.selectedTemplate && (
-                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                        <Typography variant="subtitle2" fontWeight="medium">
-                          {state.selectedTemplate.name}
+                    {/* Current Template */}
+                    {state.selectedTemplate && (
+                      <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                          <Typography variant="subtitle2" fontWeight="medium">
+                            {state.selectedTemplate.name}
+                          </Typography>
+                          <Tooltip title="Clear template">
+                            <IconButton size="small" onClick={actions.clearTemplate}>
+                              <ClearIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                        {state.selectedTemplate.description && (
+                          <Typography variant="caption" color="text.secondary">
+                            {state.selectedTemplate.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Template Variables */}
+                    {templateVariables.length > 0 && (
+                      <Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Template Variables
                         </Typography>
-                        <Tooltip title="Clear template">
-                          <IconButton size="small" onClick={actions.clearTemplate}>
-                            <ClearIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                      {state.selectedTemplate.description && (
-                        <Typography variant="caption" color="text.secondary">
-                          {state.selectedTemplate.description}
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-
-                  {/* Template Variables */}
-                  {templateVariables.length > 0 && (
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Template Variables
-                      </Typography>
-                      <Stack spacing={1}>
-                        {templateVariables.map((variable) => (
-                          <TextField
-                            key={variable}
-                            label={variable}
-                            size="small"
-                            value={state.templateVariables[variable] || ''}
-                            onChange={(e) => handleTemplateVariableChange(variable, e.target.value)}
-                            placeholder={`Enter ${variable}...`}
-                          />
-                        ))}
-                      </Stack>
-                    </Box>
-                  )}
-
-                  {/* Template List */}
-                  {!loadingTemplates && !templatesError && (
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Available Templates
-                      </Typography>
-                      {templates.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">
-                          No templates available
-                        </Typography>
-                      ) : (
-                        <List dense>
-                          {templates.map((template) => (
-                            <ListItemButton
-                              key={template.id}
-                              onClick={() => handleTemplateSelect(template)}
-                              selected={state.selectedTemplate?.id === template.id}
-                            >
-                              <ListItemText
-                                primary={template.name}
-                                secondary={template.description}
-                                secondaryTypographyProps={{
-                                  noWrap: true,
-                                  variant: 'caption',
-                                }}
-                              />
-                              <ListItemSecondaryAction>
-                                <Tooltip title="Preview template">
-                                  <IconButton edge="end" size="small">
-                                    <PreviewIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </ListItemSecondaryAction>
-                            </ListItemButton>
+                        <Stack spacing={1}>
+                          {templateVariables.map((variable) => (
+                            <TextField
+                              key={variable}
+                              label={variable}
+                              size="small"
+                              value={state.templateVariables[variable] || ''}
+                              onChange={(e) =>
+                                handleTemplateVariableChange(variable, e.target.value)
+                              }
+                              placeholder={`Enter ${variable}...`}
+                            />
                           ))}
-                        </List>
-                      )}
-                    </Box>
-                  )}
-                </Stack>
-              </AccordionDetails>
-            </Accordion>
-          </Paper>
+                        </Stack>
+                      </Box>
+                    )}
+
+                    {/* Template List */}
+                    {!loadingTemplates && !templatesError && (
+                      <Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Available Templates
+                        </Typography>
+                        {templates.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary">
+                            No templates available
+                          </Typography>
+                        ) : (
+                          <List dense>
+                            {templates.map((template) => (
+                              <ListItemButton
+                                key={template.id}
+                                onClick={() => handleTemplateSelect(template)}
+                                selected={state.selectedTemplate?.id === template.id}
+                              >
+                                <ListItemText
+                                  primary={template.name}
+                                  secondary={template.description}
+                                  secondaryTypographyProps={{
+                                    noWrap: true,
+                                    variant: 'caption',
+                                  }}
+                                />
+                                <ListItemSecondaryAction>
+                                  <Tooltip title="Preview template">
+                                    <IconButton edge="end" size="small">
+                                      <PreviewIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </ListItemSecondaryAction>
+                              </ListItemButton>
+                            ))}
+                          </List>
+                        )}
+                      </Box>
+                    )}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
+            </Paper>
+          </ErrorBoundary>
         )}
 
         {/* Recipients Summary */}
@@ -443,3 +491,6 @@ export const ComposeSidebar: React.FC<ComposeSidebarProps> = ({
     </Box>
   );
 };
+
+export const ComposeSidebar = React.memo(ComposeSidebarComponent);
+ComposeSidebar.displayName = 'ComposeSidebar';

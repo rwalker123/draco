@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { RecipientContact } from '../../../../types/emails/recipients';
+import { hasValidEmail } from '../../common/mailtoUtils';
 
 export interface SearchFilters {
   query: string;
@@ -71,7 +72,7 @@ export const useRecipientSearch = (
 
     // Filter by email requirement
     if (filters.hasEmail) {
-      filtered = filtered.filter((contact) => contact.email && contact.email.trim().length > 0);
+      filtered = filtered.filter((contact) => hasValidEmail(contact));
     }
 
     // Filter by search query

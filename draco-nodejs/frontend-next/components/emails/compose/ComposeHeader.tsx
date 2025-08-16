@@ -34,7 +34,7 @@ interface ComposeHeaderProps {
 /**
  * ComposeHeader - Subject line, sender info, and compose metadata
  */
-export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
+const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   showFromField = true,
   showRecipientCount = true,
   showValidationErrors = true,
@@ -234,3 +234,6 @@ export const ComposeHeader: React.FC<ComposeHeaderProps> = ({
     </Paper>
   );
 };
+
+export const ComposeHeader = React.memo(ComposeHeaderComponent);
+ComposeHeader.displayName = 'ComposeHeader';
