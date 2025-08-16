@@ -187,7 +187,12 @@ export const validateFilePath = (filename: string): { isValid: boolean; error?: 
  * Validates MIME type against file extension
  */
 export const validateMimeType = (file: File): { isValid: boolean; error?: string } => {
-  const extension = file.name.split('.').pop()?.toLowerCase();
+  const parts = file.name.split('.');
+  if (parts.length < 2 || parts[parts.length - 1] === '') {
+    return { isValid: false, error: 'File extension required' };
+  }
+
+  const extension = parts.pop()?.toLowerCase();
   if (!extension) {
     return { isValid: false, error: 'File extension required' };
   }
@@ -230,7 +235,27 @@ export const validateFileContent = async (
     const buffer = await file.slice(0, 16).arrayBuffer();
     const bytes = new Uint8Array(buffer);
 
-    // Common file signature validation
+    // Check for embedded scripts FIRST (priority for security)
+    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+      const textContent = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+      const scriptPatterns = [
+        /<script/i,
+        /javascript:/i,
+        /vbscript:/i,
+        /onload=/i,
+        /onerror=/i,
+        /%3cscript/i,
+      ];
+
+      if (scriptPatterns.some((pattern) => pattern.test(textContent))) {
+        return {
+          isValid: false,
+          error: 'File contains potentially malicious content',
+        };
+      }
+    }
+
+    // Common file signature validation (after script check)
     const signatures: { [key: string]: number[][] } = {
       'image/jpeg': [[0xff, 0xd8, 0xff]],
       'image/png': [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
@@ -256,26 +281,6 @@ export const validateFileContent = async (
         return {
           isValid: false,
           error: `File content does not match expected format for ${file.type}`,
-        };
-      }
-    }
-
-    // Check for embedded scripts in various file types
-    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
-      const textContent = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
-      const scriptPatterns = [
-        /<script/i,
-        /javascript:/i,
-        /vbscript:/i,
-        /onload=/i,
-        /onerror=/i,
-        /%3cscript/i,
-      ];
-
-      if (scriptPatterns.some((pattern) => pattern.test(textContent))) {
-        return {
-          isValid: false,
-          error: 'File contains potentially malicious content',
         };
       }
     }
@@ -318,7 +323,7 @@ export const validateFileSecure = async (
       };
     }
 
-    // 3. Reject dangerous extensions regardless of config
+    // 3. Reject dangerous extensions first (highest priority)
     if (DANGEROUS_EXTENSIONS.includes(extension)) {
       return {
         isValid: false,
@@ -327,7 +332,22 @@ export const validateFileSecure = async (
       };
     }
 
-    // 4. Validate MIME type against extension
+    // 4. Check for suspicious file names (but exclude extensions already caught above)
+    const suspiciousPatterns = [
+      /^\./, // Hidden files like .htaccess
+      /\.(php|jsp|asp|bat|cmd|exe|scr|pif|com)\./i, // Double extensions with executable parts
+      /\s*(script|javascript|vbscript)/i, // Script content in name
+    ];
+
+    if (suspiciousPatterns.some((pattern) => pattern.test(file.name))) {
+      return {
+        isValid: false,
+        error: 'Suspicious file name detected',
+        securityRisk: true,
+      };
+    }
+
+    // 5. Validate MIME type against extension
     const mimeValidation = validateMimeType(file);
     if (!mimeValidation.isValid) {
       return {
@@ -337,7 +357,7 @@ export const validateFileSecure = async (
       };
     }
 
-    // 5. Check against allowed types
+    // 6. Check against allowed types
     const isTypeAllowed = allowedTypes.some((type) => {
       if (type.startsWith('.')) {
         return extension === type.substring(1).toLowerCase();
@@ -380,23 +400,7 @@ export const validateFileSecure = async (
       };
     }
 
-    // 8. Check for suspicious file names
-    const suspiciousPatterns = [
-      /^\./, // Hidden files
-      /\.(php|jsp|asp)\./i, // Double extensions
-      /\s*(script|javascript|vbscript)/i, // Script content in name
-      /\.(bat|cmd|exe|scr|pif|com)$/i, // Additional executable patterns
-    ];
-
-    if (suspiciousPatterns.some((pattern) => pattern.test(file.name))) {
-      return {
-        isValid: false,
-        error: 'Suspicious file name detected',
-        securityRisk: true,
-      };
-    }
-
-    // 9. Validate file content (async operation)
+    // 8. Validate file content (async operation)
     const contentValidation = await validateFileContent(file);
     if (!contentValidation.isValid) {
       return {

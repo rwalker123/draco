@@ -5,6 +5,8 @@
 
 import { RecipientContact } from '../types/emails/recipients';
 import { hasValidEmail } from '../components/emails/common/mailtoUtils';
+import DOMPurify from 'dompurify';
+import validator from 'validator';
 
 /**
  * Validates email recipients and returns counts
@@ -67,80 +69,59 @@ export const validateEmailInput = (input: string): boolean => {
  * Basic email format validation
  */
 export const isValidEmailFormat = (email: string): boolean => {
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailPattern.test(email.trim());
+  if (!email || typeof email !== 'string') {
+    return false;
+  }
+
+  const trimmed = email.trim();
+
+  // Use validator.js for more strict email validation
+  if (!validator.isEmail(trimmed)) {
+    return false;
+  }
+
+  // Additional checks for malformed emails
+  // Check for consecutive dots in local part
+  const [localPart] = trimmed.split('@');
+  if (localPart.includes('..')) {
+    return false;
+  }
+
+  return true;
 };
 
 /**
  * Sanitizes text to prevent XSS in user-controlled content
+ * Uses DOMPurify to strip all HTML and return safe text content
  */
 export const sanitizeDisplayText = (text: string): string => {
   if (!text || typeof text !== 'string') return '';
 
-  // Comprehensive XSS protection
-  let sanitized = text;
-
-  // 1. Remove dangerous script tags and content
-  sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-  sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-  sanitized = sanitized.replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '');
-  sanitized = sanitized.replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '');
-  sanitized = sanitized.replace(/<embed[^>]*>/gi, '');
-  sanitized = sanitized.replace(/<applet[^>]*>[\s\S]*?<\/applet>/gi, '');
-
-  // 2. Remove dangerous attributes and event handlers
-  sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, ''); // onclick, onload, etc.
-  sanitized = sanitized.replace(/\s*javascript\s*:/gi, '');
-  sanitized = sanitized.replace(/\s*vbscript\s*:/gi, '');
-  sanitized = sanitized.replace(/\s*data\s*:/gi, '');
-  sanitized = sanitized.replace(/\s*expression\s*\(/gi, '');
-
-  // 3. Remove potentially dangerous tags
-  const dangerousTags = [
-    'script',
-    'style',
-    'iframe',
-    'object',
-    'embed',
-    'applet',
-    'form',
-    'input',
-    'textarea',
-    'select',
-    'button',
-    'link',
-    'meta',
-    'base',
-    'frame',
-    'frameset',
-  ];
-
-  dangerousTags.forEach((tag) => {
-    const tagRegex = new RegExp(`<\\/?${tag}[^>]*>`, 'gi');
-    sanitized = sanitized.replace(tagRegex, '');
+  // Use DOMPurify to strip all HTML tags and return safe text content
+  return DOMPurify.sanitize(text, {
+    ALLOWED_TAGS: [], // Strip all HTML tags
+    ALLOWED_ATTR: [], // Strip all attributes
+    KEEP_CONTENT: true, // Keep text content
+    FORBID_CONTENTS: ['script', 'style'], // Remove content of dangerous tags
   });
+};
 
-  // 4. Enhanced HTML entity encoding
-  sanitized = sanitized
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;')
-    .replace(/`/g, '&#x60;')
-    .replace(/=/g, '&#x3D;');
+/**
+ * Sanitizes rich content to allow safe HTML while removing dangerous elements
+ * Used for workout announcements where formatting should be preserved
+ * Based on the backend sanitizeHtml implementation
+ */
+export const sanitizeRichContent = (text: string): string => {
+  if (!text || typeof text !== 'string') return '';
 
-  // 5. Remove control characters and non-printable characters
-  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-
-  // 6. Prevent CSS injection
-  sanitized = sanitized.replace(/expression\s*\(/gi, '');
-  sanitized = sanitized.replace(/-moz-binding/gi, '');
-  sanitized = sanitized.replace(/behavior\s*:/gi, '');
-
-  // 7. Remove URL schemes that could be dangerous
-  sanitized = sanitized.replace(/(?:javascript|vbscript|data|file|chrome|about):/gi, '');
-
-  return sanitized;
+  // Use DOMPurify with HTML profile to allow safe formatting while removing XSS
+  return DOMPurify.sanitize(text, {
+    USE_PROFILES: { html: true }, // Allow only safe HTML elements
+    FORBID_TAGS: ['svg', 'math'], // Explicitly forbid SVG and MathML for security
+    FORBID_ATTR: ['style'], // Remove style attributes to prevent CSS injection
+    KEEP_CONTENT: true, // Preserve text content when removing tags
+    RETURN_DOM: false, // Return string, not DOM object
+    SANITIZE_DOM: true, // Enable DOM clobbering protection
+    SANITIZE_NAMED_PROPS: true, // Enforce strict DOM clobbering protection
+  }).trim();
 };
