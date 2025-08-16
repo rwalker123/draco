@@ -30,13 +30,13 @@ describe('RoleIcon', () => {
   });
 
   it('renders without crashing', () => {
-    (roleIcons.getRoleIcon as vi.MockedFunction).mockReturnValue(() => (
-      <div data-testid="mock-icon">🏢</div>
-    ));
-    (roleIcons.getRoleTooltipText as vi.MockedFunction).mockReturnValue(
-      'Administrator - Full system access',
-    );
-    (roleIcons.getRoleColors as vi.MockedFunction).mockReturnValue({
+    const mockGetRoleIcon = roleIcons.getRoleIcon as ReturnType<typeof vi.fn>;
+    const mockGetRoleTooltipText = roleIcons.getRoleTooltipText as ReturnType<typeof vi.fn>;
+    const mockGetRoleColors = roleIcons.getRoleColors as ReturnType<typeof vi.fn>;
+
+    mockGetRoleIcon.mockReturnValue(() => <div data-testid="mock-icon">🏢</div>);
+    mockGetRoleTooltipText.mockReturnValue('Administrator - Full system access');
+    mockGetRoleColors.mockReturnValue({
       backgroundColor: '#ff0000',
       textColor: '#ffffff',
     });
@@ -47,9 +47,13 @@ describe('RoleIcon', () => {
   });
 
   it('handles unknown roles gracefully', () => {
-    (roleIcons.getRoleIcon as vi.MockedFunction).mockReturnValue(undefined);
-    (roleIcons.getRoleTooltipText as vi.MockedFunction).mockReturnValue('Unknown Role');
-    (roleIcons.getRoleColors as vi.MockedFunction).mockReturnValue({
+    const mockGetRoleIcon = roleIcons.getRoleIcon as ReturnType<typeof vi.fn>;
+    const mockGetRoleTooltipText = roleIcons.getRoleTooltipText as ReturnType<typeof vi.fn>;
+    const mockGetRoleColors = roleIcons.getRoleColors as ReturnType<typeof vi.fn>;
+
+    mockGetRoleIcon.mockReturnValue(undefined);
+    mockGetRoleTooltipText.mockReturnValue('Unknown Role');
+    mockGetRoleColors.mockReturnValue({
       backgroundColor: '#cccccc',
       textColor: '#000000',
     });

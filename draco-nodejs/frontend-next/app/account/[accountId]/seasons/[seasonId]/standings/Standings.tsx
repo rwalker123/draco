@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
-import Standings from '/Users/raywalker/source/Draco/draco-nodejs/frontend-next/components/Standings';
+import Standings from '../../../../../../components/Standings';
 
 interface StandingsPageProps {
   accountId: string;

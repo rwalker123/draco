@@ -8,7 +8,7 @@ import StatisticsLeaders from './StatisticsLeaders';
 import BattingStatistics from './BattingStatistics';
 import PitchingStatistics from './PitchingStatistics';
 import TeamStatistics from './TeamStatistics';
-import Standings from '/Users/raywalker/source/Draco/draco-nodejs/frontend-next/components/Standings';
+import Standings from '../../../../components/Standings';
 
 interface TabPanelProps {
   children?: React.ReactNode;
