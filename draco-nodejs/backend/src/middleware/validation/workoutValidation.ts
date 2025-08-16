@@ -1,5 +1,15 @@
 import { body, query } from 'express-validator';
 import { handleValidationErrors } from './contactValidation.js';
+import {
+  validateRequiredString,
+  validateOptionalString,
+  validateEmail,
+  validateInteger,
+  validateBoolean,
+  validateDate,
+  validateArray,
+  validatePhone,
+} from './commonValidation.js';
 
 export const validateListWorkouts = [
   query('status').optional().isIn(['upcoming', 'past', 'all']),
@@ -10,51 +20,51 @@ export const validateListWorkouts = [
 ];
 
 export const validateWorkoutCreate = [
-  body('workoutDesc').exists().isString().trim(),
-  body('workoutDate').exists().isISO8601(),
-  body('fieldId').optional().isString().trim(),
+  validateRequiredString('workoutDesc', 1000),
+  validateDate('workoutDate', true),
+  validateOptionalString('fieldId', 100),
   body('comments').optional().isString(),
   handleValidationErrors,
 ];
 
 export const validateWorkoutUpdate = [
-  body('workoutDesc').optional().isString().trim(),
-  body('workoutDate').optional().isISO8601(),
-  body('fieldId').optional().isString().trim(),
+  validateOptionalString('workoutDesc', 1000),
+  validateDate('workoutDate', false),
+  validateOptionalString('fieldId', 100),
   body('comments').optional({ nullable: true }).isString(),
   handleValidationErrors,
 ];
 
 export const validateRegistrationCreate = [
-  body('name').exists().isString().trim().isLength({ max: 100 }),
-  body('email').exists().isString().trim().isEmail().isLength({ max: 100 }),
-  body('age').exists().isInt({ min: 0, max: 200 }),
-  body('phone1').optional().isString().trim().isLength({ max: 14 }),
-  body('phone2').optional().isString().trim().isLength({ max: 14 }),
-  body('phone3').optional().isString().trim().isLength({ max: 14 }),
-  body('phone4').optional().isString().trim().isLength({ max: 14 }),
-  body('positions').exists().isString().trim().isLength({ max: 50 }),
-  body('isManager').exists().isBoolean(),
-  body('whereHeard').exists().isString().trim().isLength({ max: 25 }),
+  validateRequiredString('name', 100),
+  validateEmail('email', true),
+  validateInteger('age', 0, 200, true),
+  validatePhone('phone1', false),
+  validatePhone('phone2', false),
+  validatePhone('phone3', false),
+  validatePhone('phone4', false),
+  validateRequiredString('positions', 50),
+  validateBoolean('isManager', true),
+  validateRequiredString('whereHeard', 25),
   handleValidationErrors,
 ];
 
 export const validateRegistrationUpdate = [
-  body('name').optional().isString().trim().isLength({ max: 100 }),
-  body('email').optional().isString().trim().isEmail().isLength({ max: 100 }),
-  body('age').optional().isInt({ min: 0, max: 200 }),
-  body('phone1').optional().isString().trim().isLength({ max: 14 }),
-  body('phone2').optional().isString().trim().isLength({ max: 14 }),
-  body('phone3').optional().isString().trim().isLength({ max: 14 }),
-  body('phone4').optional().isString().trim().isLength({ max: 14 }),
-  body('positions').optional().isString().trim().isLength({ max: 50 }),
-  body('isManager').optional().isBoolean(),
-  body('whereHeard').optional().isString().trim().isLength({ max: 25 }),
+  validateOptionalString('name', 100),
+  validateEmail('email', false),
+  validateInteger('age', 0, 200, false),
+  validatePhone('phone1', false),
+  validatePhone('phone2', false),
+  validatePhone('phone3', false),
+  validatePhone('phone4', false),
+  validateOptionalString('positions', 50),
+  validateBoolean('isManager', false),
+  validateOptionalString('whereHeard', 25),
   handleValidationErrors,
 ];
 
 export const validateSourcesUpdate = [
-  body('options').isArray({ min: 1 }),
+  validateArray('options', 1, true),
   body('options.*').isString().trim().isLength({ max: 25 }),
   handleValidationErrors,
 ];

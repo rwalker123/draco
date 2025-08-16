@@ -8,6 +8,7 @@ import { globalErrorHandler } from '../../utils/globalErrorHandler.js';
 
 vi.mock('../../middleware/authMiddleware.js', () => ({
   authenticateToken: (req: Request, res: Response, next: NextFunction) => next(),
+  optionalAuth: (req: Request, res: Response, next: NextFunction) => next(),
 }));
 vi.mock('../../middleware/routeProtection.js', () => {
   return {

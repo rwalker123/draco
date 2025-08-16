@@ -10,6 +10,7 @@ import accountsResourcesRouter from './accounts-resources.js';
 import accountsSettingsRouter from './accounts-settings.js';
 import accountsAssetsRouter from './accounts-assets.js';
 import accountsWorkoutsRouter from './accounts-workouts.js';
+import accountsPlayerClassifiedsRouter from './accounts-player-classifieds.js';
 
 const router = Router({ mergeParams: true });
 
@@ -37,5 +38,8 @@ router.use('/', accountsAssetsRouter);
 
 // Workouts endpoints
 router.use('/', accountsWorkoutsRouter);
+
+// PlayerClassifieds endpoints
+router.use('/:accountId/player-classifieds', accountsPlayerClassifiedsRouter);
 
 export default router;
