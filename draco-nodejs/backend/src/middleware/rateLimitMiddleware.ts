@@ -8,6 +8,7 @@ interface RateLimitOptions {
   skipSuccessfulRequests?: boolean;
   standardHeaders?: boolean;
   legacyHeaders?: boolean;
+  keyGenerator?: (req: Request) => string;
 }
 
 /**
@@ -21,6 +22,7 @@ export const createRateLimit = (options: RateLimitOptions = {}) => {
     skipSuccessfulRequests = false,
     standardHeaders = true,
     legacyHeaders = false,
+    keyGenerator,
   } = options;
 
   return rateLimit({
@@ -33,6 +35,7 @@ export const createRateLimit = (options: RateLimitOptions = {}) => {
     skipSuccessfulRequests,
     standardHeaders,
     legacyHeaders,
+    keyGenerator,
     handler: (req: Request, res: Response) => {
       res.status(429).json({
         success: false,
@@ -73,4 +76,16 @@ export const generalRateLimit = createRateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // 100 requests per window
   message: 'Too many requests, please try again later.',
+});
+
+/**
+ * Teams Wanted rate limiting for anonymous submissions
+ * 3 posts per hour per IP address
+ */
+export const teamsWantedRateLimit = createRateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 posts per hour
+  message: 'Rate limit exceeded: Maximum 3 teams wanted posts per hour per IP',
+  keyGenerator: (req: Request) => `teams-wanted-${req.ip}`, // Always use IP for anonymous submissions
+  skipSuccessfulRequests: false,
 });

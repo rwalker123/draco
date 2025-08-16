@@ -1,5 +1,6 @@
 import { RoleService } from '../services/roleService.js';
 import { TeamService } from '../services/teamService.js';
+import { PlayerClassifiedService } from '../services/playerClassifiedService.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
 import { RoleMiddleware } from '../middleware/roleMiddleware.js';
 import {
@@ -18,6 +19,7 @@ import prisma from './prisma.js';
 export class ServiceFactory {
   private static roleService: RoleService;
   private static teamService: TeamService;
+  private static playerClassifiedService: PlayerClassifiedService;
   private static routeProtection: RouteProtection;
   private static roleMiddleware: RoleMiddleware;
 
@@ -57,6 +59,13 @@ export class ServiceFactory {
       this.teamService = new TeamService(prisma);
     }
     return this.teamService;
+  }
+
+  static getPlayerClassifiedService(): PlayerClassifiedService {
+    if (!this.playerClassifiedService) {
+      this.playerClassifiedService = new PlayerClassifiedService(prisma);
+    }
+    return this.playerClassifiedService;
   }
 
   static getRouteProtection(): RouteProtection {
