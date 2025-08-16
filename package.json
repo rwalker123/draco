@@ -39,7 +39,7 @@
     "frontend-next:format": "cd draco-nodejs/frontend-next && npm run format",
     "frontend-next:type-check": "cd draco-nodejs/frontend-next && npm run type-check",
     "dev": "bash scripts/stop-worktree-ports.sh && bash scripts/start-worktree-dev.sh",
-    "build": "npm run backend:build && npm run frontend-next:build",
+    "build": "npm run type-check:all && npm run backend:build && npm run frontend-next:build",
     "install:all": "npm install && npm run backend:install && npm run frontend-next:install",
     "lint:all": "npm run backend:lint && npm run frontend-next:lint",
     "lint": "npm run lint:all",
