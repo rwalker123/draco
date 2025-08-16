@@ -229,3 +229,4 @@ The `.mcp.json` file in the project root automatically configures:
 - ✅ **Zero Setup**: New team members get MCP servers automatically
 
 **Note**: If you're not seeing MCP servers in a worktree, ensure `.mcp.json` exists in the project root and restart Claude Code.
+- ensure you always use serena when appropriate

@@ -24,7 +24,7 @@ import {
   Groups as AllContactsIcon,
 } from '@mui/icons-material';
 
-import { useRecipientSelection } from './RecipientSelectionProvider';
+import { useEmailCompose } from '../compose/EmailComposeProvider';
 
 interface SelectedRecipientsPreviewProps {
   maxVisibleChips?: number;
@@ -37,26 +37,55 @@ interface SelectedRecipientsPreviewProps {
  * SelectedRecipientsPreview - Clean preview component showing selected recipients
  * Replaces the duplicate inline RecipientSelector for better UX
  */
-export const SelectedRecipientsPreview: React.FC<SelectedRecipientsPreviewProps> = ({
+const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProps> = ({
   maxVisibleChips = 8,
   showCounts = true,
   showValidationWarnings = true,
   compact = false,
 }) => {
   const theme = useTheme();
-  const { state, actions, validation, contacts } = useRecipientSelection();
+  const { state, actions } = useEmailCompose();
 
   // Get selected individual contacts
   const selectedContacts = useMemo(() => {
-    return contacts.filter((contact) => state.selectedContactIds.has(contact.id));
-  }, [contacts, state.selectedContactIds]);
+    if (!state.recipientState) return [];
+
+    if (state.recipientState.allContacts) {
+      return state.contacts;
+    }
+
+    // Use selectedContactDetails if available (for cross-page selections)
+    // Otherwise fall back to filtering the limited contacts array
+    if (state.selectedContactDetails && state.selectedContactDetails.length > 0) {
+      return state.selectedContactDetails.filter((contact) =>
+        state.recipientState!.selectedContactIds.has(contact.id),
+      );
+    }
+
+    return state.contacts.filter((contact) =>
+      state.recipientState!.selectedContactIds.has(contact.id),
+    );
+  }, [state.contacts, state.recipientState, state.selectedContactDetails]);
 
   // Calculate summary counts
   const summaryData = useMemo(() => {
+    if (!state.recipientState) {
+      return {
+        individualCount: 0,
+        teamGroupCount: 0,
+        roleGroupCount: 0,
+        allContactsSelected: false,
+        totalSelections: 0,
+        totalRecipients: 0,
+        validEmails: 0,
+        invalidEmails: 0,
+      };
+    }
+
     const individualCount = selectedContacts.length;
-    const teamGroupCount = state.selectedTeamGroups.length;
-    const roleGroupCount = state.selectedRoleGroups.length;
-    const allContactsSelected = state.allContacts;
+    const teamGroupCount = state.recipientState.selectedTeamGroups.length;
+    const roleGroupCount = state.recipientState.selectedRoleGroups.length;
+    const allContactsSelected = state.recipientState.allContacts;
 
     return {
       individualCount,
@@ -65,23 +94,23 @@ export const SelectedRecipientsPreview: React.FC<SelectedRecipientsPreviewProps>
       allContactsSelected,
       totalSelections:
         individualCount + teamGroupCount + roleGroupCount + (allContactsSelected ? 1 : 0),
-      totalRecipients: state.totalRecipients,
-      validEmails: state.validEmailCount,
-      invalidEmails: state.invalidEmailCount,
+      totalRecipients: state.recipientState.totalRecipients,
+      validEmails: state.recipientState.validEmailCount,
+      invalidEmails: state.recipientState.invalidEmailCount,
     };
-  }, [selectedContacts.length, state]);
+  }, [selectedContacts.length, state.recipientState]);
 
   // Combine all chips - moved chip creation inline to avoid dependency issues
   const allChips = useMemo(() => {
     const chips = [];
 
     // Add "All Contacts" chip if selected
-    if (state.allContacts) {
+    if (summaryData.allContactsSelected) {
       chips.push(
         <Chip
           key="all-contacts"
           icon={<AllContactsIcon />}
-          label={`All Contacts (${contacts.length})`}
+          label={`All Contacts (${state.contacts.length})`}
           size={compact ? 'small' : 'medium'}
           variant="filled"
           color="primary"
@@ -121,47 +150,49 @@ export const SelectedRecipientsPreview: React.FC<SelectedRecipientsPreviewProps>
     });
 
     // Add team group chips
-    state.selectedTeamGroups.forEach((team) => {
-      chips.push(
-        <Chip
-          key={`team-${team.id}`}
-          icon={<GroupIcon />}
-          label={`${team.name} (${team.members.length})`}
-          size={compact ? 'small' : 'medium'}
-          variant="outlined"
-          color="secondary"
-          onDelete={() => actions.deselectTeamGroup(team.id)}
-          deleteIcon={
-            <Tooltip title="Remove team">
-              <CloseIcon />
-            </Tooltip>
-          }
-        />,
-      );
-    });
+    if (state.recipientState) {
+      state.recipientState.selectedTeamGroups.forEach((team) => {
+        chips.push(
+          <Chip
+            key={`team-${team.id}`}
+            icon={<GroupIcon />}
+            label={`${team.name} (${team.members.length})`}
+            size={compact ? 'small' : 'medium'}
+            variant="outlined"
+            color="secondary"
+            onDelete={() => actions.deselectTeamGroup(team.id)}
+            deleteIcon={
+              <Tooltip title="Remove team">
+                <CloseIcon />
+              </Tooltip>
+            }
+          />,
+        );
+      });
 
-    // Add role group chips
-    state.selectedRoleGroups.forEach((role) => {
-      chips.push(
-        <Chip
-          key={`role-${role.roleId}`}
-          icon={<RoleIcon />}
-          label={`${role.name} (${role.members.length})`}
-          size={compact ? 'small' : 'medium'}
-          variant="outlined"
-          color="info"
-          onDelete={() => actions.deselectRoleGroup(role.roleId)}
-          deleteIcon={
-            <Tooltip title="Remove role group">
-              <CloseIcon />
-            </Tooltip>
-          }
-        />,
-      );
-    });
+      // Add role group chips
+      state.recipientState.selectedRoleGroups.forEach((role) => {
+        chips.push(
+          <Chip
+            key={`role-${role.roleId}`}
+            icon={<RoleIcon />}
+            label={`${role.name} (${role.members.length})`}
+            size={compact ? 'small' : 'medium'}
+            variant="outlined"
+            color="info"
+            onDelete={() => actions.deselectRoleGroup(role.roleId)}
+            deleteIcon={
+              <Tooltip title="Remove role group">
+                <CloseIcon />
+              </Tooltip>
+            }
+          />,
+        );
+      });
+    }
 
     return chips;
-  }, [state, selectedContacts, contacts.length, compact, actions]);
+  }, [state, selectedContacts, compact, actions, summaryData]);
 
   // Determine visible and hidden chips
   const visibleChips = allChips.slice(0, maxVisibleChips);
@@ -285,7 +316,7 @@ export const SelectedRecipientsPreview: React.FC<SelectedRecipientsPreviewProps>
         </Box>
 
         {/* Validation Warnings */}
-        {showValidationWarnings && !validation.isValid && (
+        {showValidationWarnings && summaryData.invalidEmails > 0 && (
           <Alert
             severity="warning"
             icon={<WarningIcon />}
@@ -296,20 +327,19 @@ export const SelectedRecipientsPreview: React.FC<SelectedRecipientsPreviewProps>
               },
             }}
           >
-            {validation.errors.length > 0 && (
-              <Box>
-                <Typography variant="caption" fontWeight="medium">
-                  Issues:
-                </Typography>
-                <ul style={{ margin: 0, paddingLeft: '1rem' }}>
-                  {validation.errors.map((error, index) => (
-                    <li key={index}>
-                      <Typography variant="caption">{error}</Typography>
-                    </li>
-                  ))}
-                </ul>
-              </Box>
-            )}
+            <Box>
+              <Typography variant="caption" fontWeight="medium">
+                Issues:
+              </Typography>
+              <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                <li>
+                  <Typography variant="caption">
+                    {summaryData.invalidEmails} contact{summaryData.invalidEmails !== 1 ? 's' : ''}{' '}
+                    with invalid email addresses
+                  </Typography>
+                </li>
+              </ul>
+            </Box>
           </Alert>
         )}
 
@@ -324,7 +354,7 @@ export const SelectedRecipientsPreview: React.FC<SelectedRecipientsPreviewProps>
               <Tooltip title="Clear all selections">
                 <IconButton
                   size="small"
-                  onClick={actions.clearAll}
+                  onClick={actions.clearAllRecipients}
                   color="error"
                   sx={{ fontSize: '0.75rem' }}
                 >
@@ -338,3 +368,6 @@ export const SelectedRecipientsPreview: React.FC<SelectedRecipientsPreviewProps>
     </Paper>
   );
 };
+
+export const SelectedRecipientsPreview = React.memo(SelectedRecipientsPreviewComponent);
+SelectedRecipientsPreview.displayName = 'SelectedRecipientsPreview';

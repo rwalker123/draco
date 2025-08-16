@@ -36,7 +36,6 @@ import {
 } from '@mui/icons-material';
 
 import { EmailComposeProvider, useEmailCompose } from './EmailComposeProvider';
-import { RecipientSelectionProvider } from '../recipients/RecipientSelectionProvider';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { ComposePageSkeleton } from '../../common/SkeletonLoaders';
@@ -72,14 +71,6 @@ interface EmailComposePageProps {
   onRetry?: () => void;
 }
 
-interface ComponentLoadingState {
-  contacts: boolean;
-  teams: boolean;
-  roles: boolean;
-  templates: boolean;
-  sending: boolean;
-}
-
 interface ComponentErrorState {
   contacts: string | null;
   teams: string | null;
@@ -88,11 +79,26 @@ interface ComponentErrorState {
   network: string | null;
 }
 
+interface DialogState {
+  sidebarOpen: boolean;
+  scheduleDialogOpen: boolean;
+  previewDialogOpen: boolean;
+  advancedRecipientDialogOpen: boolean;
+}
+
+interface ComponentState {
+  errors: ComponentErrorState;
+  isOnline: boolean;
+  retryCount: number;
+  useEnhancedUpload: boolean;
+  actionsCollapsed: boolean;
+}
+
 /**
  * Internal compose page component (wrapped with providers)
  */
 const EmailComposePageInternal: React.FC<
-  Omit<EmailComposePageProps, 'initialData' | 'onSendComplete'> & {
+  Omit<EmailComposePageProps, 'initialData' | 'onSendComplete' | 'onCancel'> & {
     onSendComplete?: (emailId: string) => void;
   }
 > = React.memo(
@@ -101,8 +107,6 @@ const EmailComposePageInternal: React.FC<
     contacts,
     teamGroups = [],
     roleGroups = [],
-    onSendComplete: _onSendComplete,
-    onCancel: _onCancel,
     loading = false,
     error = null,
     onRetry,
@@ -112,33 +116,29 @@ const EmailComposePageInternal: React.FC<
 
     const { state, actions } = useEmailCompose();
 
-    // Component loading and error states
-    const [componentLoading] = useState<ComponentLoadingState>({
-      contacts: false,
-      teams: false,
-      roles: false,
-      templates: false,
-      sending: false,
-    });
-
-    const [componentErrors, setComponentErrors] = useState<ComponentErrorState>({
-      contacts: null,
-      teams: null,
-      roles: null,
-      templates: null,
-      network: null,
-    });
-
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-    const [retryCount, setRetryCount] = useState(0);
+    // Consolidated state management
     const maxRetries = 3;
 
-    const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-    const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-    const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-    const [advancedRecipientDialogOpen, setAdvancedRecipientDialogOpen] = useState(false);
-    const [useEnhancedUpload, setUseEnhancedUpload] = useState(true);
-    const [actionsCollapsed, setActionsCollapsed] = useState(false);
+    const [dialogState, setDialogState] = useState<DialogState>({
+      sidebarOpen: !isMobile,
+      scheduleDialogOpen: false,
+      previewDialogOpen: false,
+      advancedRecipientDialogOpen: false,
+    });
+
+    const [componentState, setComponentState] = useState<ComponentState>({
+      errors: {
+        contacts: null,
+        teams: null,
+        roles: null,
+        templates: null,
+        network: null,
+      },
+      isOnline: navigator.onLine,
+      retryCount: 0,
+      useEnhancedUpload: true,
+      actionsCollapsed: false,
+    });
 
     // Use centralized notification management
     const { notification, showNotification, hideNotification } = useNotifications();
@@ -156,13 +156,10 @@ const EmailComposePageInternal: React.FC<
     const hasAnyRecipientData = hasContacts || hasTeamGroups || hasRoleGroups;
 
     // Overall loading state - memoized for performance
-    const isGeneralLoading = useMemo(
-      () => loading || Object.values(componentLoading).some(Boolean),
-      [loading, componentLoading],
-    );
+    const isGeneralLoading = useMemo(() => loading, [loading]);
     const hasErrors = useMemo(
-      () => error || Object.values(componentErrors).some(Boolean),
-      [error, componentErrors],
+      () => error || Object.values(componentState.errors).some(Boolean),
+      [error, componentState.errors],
     );
 
     // Network status monitoring with AbortController for cleanup
@@ -171,16 +168,22 @@ const EmailComposePageInternal: React.FC<
 
       const handleOnline = () => {
         if (abortController.signal.aborted) return;
-        setIsOnline(true);
+        setComponentState((prev) => ({ ...prev, isOnline: true }));
         showNotification('Connection restored', 'success');
         // Clear network errors when coming back online
-        setComponentErrors((prev) => ({ ...prev, network: null }));
+        setComponentState((prev) => ({
+          ...prev,
+          errors: { ...prev.errors, network: null },
+        }));
       };
 
       const handleOffline = () => {
         if (abortController.signal.aborted) return;
-        setIsOnline(false);
-        setComponentErrors((prev) => ({ ...prev, network: 'No internet connection' }));
+        setComponentState((prev) => ({
+          ...prev,
+          isOnline: false,
+          errors: { ...prev.errors, network: 'No internet connection' },
+        }));
         showNotification('Connection lost. Some features may not work.', 'warning');
       };
 
@@ -194,16 +197,16 @@ const EmailComposePageInternal: React.FC<
 
     // Handle sidebar toggle
     const handleSidebarToggle = useCallback(() => {
-      setSidebarOpen((prev) => !prev);
+      setDialogState((prev) => ({ ...prev, sidebarOpen: !prev.sidebarOpen }));
     }, []);
 
     // Handle schedule dialog
     const handleScheduleOpen = useCallback(() => {
-      setScheduleDialogOpen(true);
+      setDialogState((prev) => ({ ...prev, scheduleDialogOpen: true }));
     }, []);
 
     const handleScheduleClose = useCallback(() => {
-      setScheduleDialogOpen(false);
+      setDialogState((prev) => ({ ...prev, scheduleDialogOpen: false }));
     }, []);
 
     const handleScheduleComplete = useCallback(
@@ -221,11 +224,11 @@ const EmailComposePageInternal: React.FC<
 
     // Handle preview
     const handlePreviewOpen = useCallback(() => {
-      setPreviewDialogOpen(true);
+      setDialogState((prev) => ({ ...prev, previewDialogOpen: true }));
     }, []);
 
     const handlePreviewClose = useCallback(() => {
-      setPreviewDialogOpen(false);
+      setDialogState((prev) => ({ ...prev, previewDialogOpen: false }));
     }, []);
 
     // Handle advanced recipient dialog
@@ -234,30 +237,31 @@ const EmailComposePageInternal: React.FC<
         showNotification('No recipient data available. Please try refreshing the page.', 'warning');
         return;
       }
-      setAdvancedRecipientDialogOpen(true);
+      setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: true }));
     }, [hasAnyRecipientData, loading, showNotification]);
 
     const handleAdvancedRecipientClose = useCallback(() => {
-      setAdvancedRecipientDialogOpen(false);
-      // Show notification that recipients were updated
-      showNotification('Recipients updated successfully', 'success');
-    }, [showNotification]);
+      setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: false }));
+    }, []);
 
     // Error handling and retry functionality
     const handleRetry = useCallback(() => {
-      if (retryCount >= maxRetries) {
+      if (componentState.retryCount >= maxRetries) {
         showNotification('Maximum retry attempts reached. Please refresh the page.', 'error');
         return;
       }
 
-      setRetryCount((prev) => prev + 1);
-      setComponentErrors({
-        contacts: null,
-        teams: null,
-        roles: null,
-        templates: null,
-        network: null,
-      });
+      setComponentState((prev) => ({
+        ...prev,
+        retryCount: prev.retryCount + 1,
+        errors: {
+          contacts: null,
+          teams: null,
+          roles: null,
+          templates: null,
+          network: null,
+        },
+      }));
 
       if (onRetry) {
         onRetry();
@@ -266,15 +270,15 @@ const EmailComposePageInternal: React.FC<
         window.location.reload();
       }
 
-      showNotification(`Retrying... (${retryCount + 1}/${maxRetries})`, 'info');
-    }, [retryCount, maxRetries, onRetry, showNotification]);
+      showNotification(`Retrying... (${componentState.retryCount + 1}/${maxRetries})`, 'info');
+    }, [componentState.retryCount, maxRetries, onRetry, showNotification]);
 
     // Toggle enhanced upload mode (for testing/fallback)
     const toggleUploadMode = useCallback(() => {
-      setUseEnhancedUpload((prev) => {
-        const newMode = !prev;
+      setComponentState((prev) => {
+        const newMode = !prev.useEnhancedUpload;
         showNotification(`Switched to ${newMode ? 'enhanced' : 'basic'} upload mode`, 'info');
-        return newMode;
+        return { ...prev, useEnhancedUpload: newMode };
       });
     }, [showNotification]);
 
@@ -297,14 +301,24 @@ const EmailComposePageInternal: React.FC<
 
     // Handle recipient selection change
     const handleRecipientSelectionChange = useCallback(
-      (recipientState: RecipientSelectionState) => {
+      (recipientState: RecipientSelectionState, selectedContacts?: RecipientContact[]) => {
         try {
           // Update the compose state with recipient information
           actions.updateRecipientState(recipientState);
+
+          // If we have selected contact details, store them in the compose state
+          // This ensures SelectedRecipientsPreview can display contacts from other pages
+          if (selectedContacts && selectedContacts.length > 0) {
+            actions.updateSelectedContactDetails(selectedContacts);
+          }
+
           showNotification(`${recipientState.totalRecipients} recipients selected`, 'info');
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to update recipients';
-          setComponentErrors((prev) => ({ ...prev, contacts: errorMessage }));
+          setComponentState((prev) => ({
+            ...prev,
+            errors: { ...prev.errors, contacts: errorMessage },
+          }));
           showNotification(errorMessage, 'error');
         }
       },
@@ -359,7 +373,10 @@ const EmailComposePageInternal: React.FC<
         if (abortController.signal.aborted) return;
 
         const currentScrollY = window.scrollY;
-        setActionsCollapsed(currentScrollY > lastScrollY && currentScrollY > 100);
+        setComponentState((prev) => ({
+          ...prev,
+          actionsCollapsed: currentScrollY > lastScrollY && currentScrollY > 100,
+        }));
         lastScrollY = currentScrollY;
       };
 
@@ -509,9 +526,9 @@ const EmailComposePageInternal: React.FC<
               >
                 Refresh Page
               </Button>
-              {onRetry && retryCount < maxRetries && (
+              {onRetry && componentState.retryCount < maxRetries && (
                 <Button onClick={handleRetry} variant="contained" startIcon={<RefreshIcon />}>
-                  Retry ({retryCount}/{maxRetries})
+                  Retry ({componentState.retryCount}/{maxRetries})
                 </Button>
               )}
             </Stack>
@@ -523,13 +540,13 @@ const EmailComposePageInternal: React.FC<
     return (
       <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Global Error Banner */}
-        {!isOnline && (
+        {!componentState.isOnline && (
           <Alert severity="warning" icon={<OfflineIcon />} sx={{ borderRadius: 0 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
               <Typography variant="body2">
                 You are currently offline. Some features may not work properly.
               </Typography>
-              {isOnline && (
+              {componentState.isOnline && (
                 <Button
                   size="small"
                   startIcon={<OnlineIcon />}
@@ -552,18 +569,18 @@ const EmailComposePageInternal: React.FC<
                 color="inherit"
                 size="small"
                 onClick={handleRetry}
-                disabled={retryCount >= maxRetries}
+                disabled={componentState.retryCount >= maxRetries}
               >
                 Retry
               </Button>
             }
           >
             <AlertTitle>Some features may not work properly</AlertTitle>
-            {componentErrors.contacts && `Contacts: ${componentErrors.contacts}. `}
-            {componentErrors.teams && `Teams: ${componentErrors.teams}. `}
-            {componentErrors.roles && `Roles: ${componentErrors.roles}. `}
-            {componentErrors.templates && `Templates: ${componentErrors.templates}. `}
-            {componentErrors.network && `Network: ${componentErrors.network}. `}
+            {componentState.errors.contacts && `Contacts: ${componentState.errors.contacts}. `}
+            {componentState.errors.teams && `Teams: ${componentState.errors.teams}. `}
+            {componentState.errors.roles && `Roles: ${componentState.errors.roles}. `}
+            {componentState.errors.templates && `Templates: ${componentState.errors.templates}. `}
+            {componentState.errors.network && `Network: ${componentState.errors.network}. `}
           </Alert>
         )}
 
@@ -572,7 +589,7 @@ const EmailComposePageInternal: React.FC<
           <LinearProgress
             sx={{
               position: 'absolute',
-              top: hasErrors || !isOnline ? 'auto' : 0,
+              top: hasErrors || !componentState.isOnline ? 'auto' : 0,
               left: 0,
               right: 0,
               zIndex: theme.zIndex.appBar,
@@ -588,8 +605,8 @@ const EmailComposePageInternal: React.FC<
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                md: !isMobile && sidebarOpen ? '2fr 1fr' : '1fr',
-                lg: !isMobile && sidebarOpen ? '3fr 1fr' : '1fr',
+                md: !isMobile && dialogState.sidebarOpen ? '2fr 1fr' : '1fr',
+                lg: !isMobile && dialogState.sidebarOpen ? '3fr 1fr' : '1fr',
               },
             }}
           >
@@ -615,10 +632,10 @@ const EmailComposePageInternal: React.FC<
                   {/* Enhanced Recipient Selection */}
                   <ErrorBoundary
                     onError={(error) => {
-                      console.error('RecipientSelectionProvider error:', error);
-                      setComponentErrors((prev) => ({
+                      console.error('Recipient selection error:', error);
+                      setComponentState((prev) => ({
                         ...prev,
-                        contacts: 'Recipient selection failed to load',
+                        errors: { ...prev.errors, contacts: 'Recipient selection failed to load' },
                       }));
                     }}
                     fallback={
@@ -631,69 +648,54 @@ const EmailComposePageInternal: React.FC<
                       </Alert>
                     }
                   >
-                    <RecipientSelectionProvider
-                      contacts={hasContacts ? contacts : []}
-                      teamGroups={hasTeamGroups ? teamGroups : []}
-                      roleGroups={hasRoleGroups ? roleGroups : []}
-                      onSelectionChange={handleRecipientSelectionChange}
-                    >
-                      {/* Recipient Selection Section */}
-                      <Box sx={{ mb: 2 }}>
-                        {/* Advanced Recipient Selection Button */}
-                        <Stack spacing={2}>
-                          <Button
-                            variant="outlined"
-                            onClick={handleAdvancedRecipientOpen}
-                            fullWidth={isMobile}
-                            disabled={!hasAnyRecipientData && !loading}
-                            startIcon={
-                              componentLoading.contacts ? (
-                                <CircularProgress size={16} />
-                              ) : (
-                                <SettingsIcon />
-                              )
-                            }
-                            sx={{
-                              py: 1.5,
-                              fontWeight: 'medium',
+                    {/* Recipient Selection Section */}
+                    <Box sx={{ mb: 2 }}>
+                      {/* Advanced Recipient Selection Button */}
+                      <Stack spacing={2}>
+                        <Button
+                          variant="outlined"
+                          onClick={handleAdvancedRecipientOpen}
+                          fullWidth={isMobile}
+                          disabled={!hasAnyRecipientData && !loading}
+                          startIcon={loading ? <CircularProgress size={16} /> : <SettingsIcon />}
+                          sx={{
+                            py: 1.5,
+                            fontWeight: 'medium',
+                            borderWidth: 2,
+                            '&:hover': {
                               borderWidth: 2,
-                              '&:hover': {
-                                borderWidth: 2,
-                              },
-                            }}
+                            },
+                          }}
+                        >
+                          {loading ? 'Loading Recipients...' : 'Select Recipients'}
+                        </Button>
+
+                        {/* Selected Recipients Preview */}
+                        <SelectedRecipientsPreview
+                          maxVisibleChips={isMobile ? 4 : 8}
+                          showCounts={true}
+                          showValidationWarnings={true}
+                          compact={isMobile}
+                        />
+                      </Stack>
+
+                      {/* Data availability warnings */}
+                      {!hasAnyRecipientData && !loading && (
+                        <Alert severity="warning" sx={{ mt: 2 }}>
+                          <AlertTitle>No Recipients Available</AlertTitle>
+                          No contacts or groups are available for selection. Please check your
+                          account setup or try refreshing.
+                          <Button
+                            onClick={handleRetry}
+                            size="small"
+                            sx={{ mt: 1 }}
+                            variant="outlined"
                           >
-                            {componentLoading.contacts
-                              ? 'Loading Recipients...'
-                              : 'Select Recipients'}
+                            Refresh Data
                           </Button>
-
-                          {/* Selected Recipients Preview */}
-                          <SelectedRecipientsPreview
-                            maxVisibleChips={isMobile ? 4 : 8}
-                            showCounts={true}
-                            showValidationWarnings={true}
-                            compact={isMobile}
-                          />
-                        </Stack>
-
-                        {/* Data availability warnings */}
-                        {!hasAnyRecipientData && !loading && (
-                          <Alert severity="warning" sx={{ mt: 2 }}>
-                            <AlertTitle>No Recipients Available</AlertTitle>
-                            No contacts or groups are available for selection. Please check your
-                            account setup or try refreshing.
-                            <Button
-                              onClick={handleRetry}
-                              size="small"
-                              sx={{ mt: 1 }}
-                              variant="outlined"
-                            >
-                              Refresh Data
-                            </Button>
-                          </Alert>
-                        )}
-                      </Box>
-                    </RecipientSelectionProvider>
+                        </Alert>
+                      )}
+                    </Box>
                   </ErrorBoundary>
 
                   {/* Content Editor */}
@@ -723,12 +725,12 @@ const EmailComposePageInternal: React.FC<
                           variant="text"
                           sx={{ fontSize: '0.75rem' }}
                         >
-                          {useEnhancedUpload ? 'Use Basic' : 'Use Enhanced'}
+                          {componentState.useEnhancedUpload ? 'Use Basic' : 'Use Enhanced'}
                         </Button>
                       )}
                     </Stack>
 
-                    {useEnhancedUpload ? (
+                    {componentState.useEnhancedUpload ? (
                       <ErrorBoundary
                         fallback={
                           <AttachmentUploader
@@ -770,13 +772,13 @@ const EmailComposePageInternal: React.FC<
             </Box>
 
             {/* Sidebar */}
-            {!isMobile && sidebarOpen && (
+            {!isMobile && dialogState.sidebarOpen && (
               <Box sx={{ height: '100%', borderLeft: 1, borderColor: 'divider' }}>
                 <Box sx={{ height: '100%', overflow: 'auto', p: 2 }}>
                   <ComposeSidebar
                     accountId={accountId}
                     showTemplates={true}
-                    showRecipientSummary={true}
+                    showRecipientSummary={false}
                     showAttachmentSummary={true}
                   />
                 </Box>
@@ -792,7 +794,8 @@ const EmailComposePageInternal: React.FC<
             borderColor: 'divider',
             p: 2,
             backgroundColor: 'background.paper',
-            transform: isMobile && actionsCollapsed ? 'translateY(100%)' : 'translateY(0)',
+            transform:
+              isMobile && componentState.actionsCollapsed ? 'translateY(100%)' : 'translateY(0)',
             transition: 'transform 0.3s ease-in-out',
           }}
         >
@@ -808,7 +811,7 @@ const EmailComposePageInternal: React.FC<
         {isMobile && (
           <Drawer
             anchor="right"
-            open={sidebarOpen}
+            open={dialogState.sidebarOpen}
             onClose={handleSidebarToggle}
             PaperProps={{ sx: { width: '90%', maxWidth: 400 } }}
           >
@@ -827,7 +830,7 @@ const EmailComposePageInternal: React.FC<
               <ComposeSidebar
                 accountId={accountId}
                 showTemplates={true}
-                showRecipientSummary={true}
+                showRecipientSummary={false}
                 showAttachmentSummary={true}
                 compact={true}
               />
@@ -843,8 +846,14 @@ const EmailComposePageInternal: React.FC<
                 <MenuIcon />
               </Fab>
 
-              {actionsCollapsed && (
-                <Fab size="small" color="secondary" onClick={() => setActionsCollapsed(false)}>
+              {componentState.actionsCollapsed && (
+                <Fab
+                  size="small"
+                  color="secondary"
+                  onClick={() =>
+                    setComponentState((prev) => ({ ...prev, actionsCollapsed: false }))
+                  }
+                >
                   <ExpandIcon />
                 </Fab>
               )}
@@ -854,7 +863,7 @@ const EmailComposePageInternal: React.FC<
 
         {/* Schedule Dialog */}
         <ScheduleDialog
-          open={scheduleDialogOpen}
+          open={dialogState.scheduleDialogOpen}
           onClose={handleScheduleClose}
           onSchedule={handleScheduleComplete}
         />
@@ -863,30 +872,39 @@ const EmailComposePageInternal: React.FC<
         <ErrorBoundary
           onError={(error) => {
             console.error('AdvancedRecipientDialog error:', error);
-            setComponentErrors((prev) => ({
+            setComponentState((prev) => ({
               ...prev,
-              contacts: 'Advanced recipient dialog failed',
+              errors: { ...prev.errors, contacts: 'Advanced recipient dialog failed' },
             }));
             showNotification('Advanced recipient dialog failed to load', 'error');
-            setAdvancedRecipientDialogOpen(false);
+            setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: false }));
           }}
         >
           <AdvancedRecipientDialog
-            open={advancedRecipientDialogOpen}
+            open={dialogState.advancedRecipientDialogOpen}
             onClose={handleAdvancedRecipientClose}
-            _accountId={accountId}
-            contacts={hasContacts ? contacts : []}
+            onApply={handleRecipientSelectionChange}
+            accountId={accountId}
             teamGroups={hasTeamGroups ? teamGroups : []}
             roleGroups={hasRoleGroups ? roleGroups : []}
-            maxRecipients={500}
-            loading={componentLoading.contacts || componentLoading.teams || componentLoading.roles}
-            error={componentErrors.contacts || componentErrors.teams || componentErrors.roles}
+            loading={loading}
+            error={
+              componentState.errors.contacts ||
+              componentState.errors.teams ||
+              componentState.errors.roles
+            }
             onRetry={handleRetry}
+            initialRecipientState={state.recipientState}
           />
         </ErrorBoundary>
 
         {/* Preview Dialog */}
-        <Dialog open={previewDialogOpen} onClose={handlePreviewClose} maxWidth="md" fullWidth>
+        <Dialog
+          open={dialogState.previewDialogOpen}
+          onClose={handlePreviewClose}
+          maxWidth="md"
+          fullWidth
+        >
           <DialogTitle>
             <Stack direction="row" spacing={1} alignItems="center">
               <PreviewIcon />
@@ -952,7 +970,6 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   teamGroups = [],
   roleGroups = [],
   onSendComplete,
-  onCancel: _onCancel,
   loading = false,
   error = null,
   onRetry,
@@ -977,6 +994,9 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   return (
     <EmailComposeProvider
       accountId={accountId}
+      contacts={contacts}
+      teamGroups={teamGroups}
+      roleGroups={roleGroups}
       initialData={initialData}
       onSendComplete={handleProviderSendComplete}
       onDraftSaved={handleProviderDraftSaved}
@@ -987,8 +1007,6 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
         contacts={contacts}
         teamGroups={teamGroups}
         roleGroups={roleGroups}
-        onSendComplete={onSendComplete}
-        onCancel={_onCancel}
         loading={loading}
         error={error}
         onRetry={onRetry}

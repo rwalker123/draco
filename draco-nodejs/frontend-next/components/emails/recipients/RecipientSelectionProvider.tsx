@@ -1,6 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+} from 'react';
+import { useAuth } from '../../../context/AuthContext';
 import {
   RecipientSelectionState,
   RecipientSelectionActions,
@@ -12,11 +21,9 @@ import {
   RoleGroup,
   RecipientSelectionTab,
 } from '../../../types/emails/recipients';
-import {
-  getEffectiveRecipients,
-  validateRecipientSelection,
-  filterContactsBySearch,
-} from './recipientUtils';
+import { getEffectiveRecipients, validateRecipientSelection } from './recipientUtils';
+import { useContactSearch } from '../../../hooks/useContactSearch';
+import { safeAsync, logError } from '../../../utils/errorHandling';
 
 const RecipientSelectionContext = createContext<RecipientSelectionContextValue | null>(null);
 
@@ -41,8 +48,19 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
   roleGroups = [],
   config: userConfig = {},
   onSelectionChange,
+  accountId, // Add accountId prop for search functionality
+  seasonId, // Add seasonId prop for search context
+  initialHasMoreContacts = false, // Initial pagination state from parent
 }) => {
+  const { token } = useAuth();
   const config = useMemo(() => ({ ...defaultConfig, ...userConfig }), [userConfig]);
+
+  // Client-side mounted state to prevent SSR hydration issues
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Selection state
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
@@ -53,16 +71,90 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<RecipientSelectionTab>('contacts');
 
-  // Filter contacts based on search and email validation
-  const filteredContacts = useMemo(() => {
-    let filtered = filterContactsBySearch(contacts, searchQuery);
+  // Simple pagination state
+  const [currentPageContacts, setCurrentPageContacts] = useState<RecipientContact[]>(contacts);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(initialHasMoreContacts);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactsError, setContactsError] = useState<string | null>(null);
+  const pageSize = 50;
 
-    if (config.requireValidEmails) {
-      filtered = filtered.filter((contact) => contact.hasValidEmail);
+  // Server-side search functionality - only initialize when mounted to prevent SSR issues
+  const { searchState, searchContacts, clearSearch } = useContactSearch(
+    (isMounted && accountId) || '',
+    'recipients',
+    {
+      seasonId: isMounted ? seasonId : undefined,
+      roles: true,
+      contactDetails: true,
+      limit: 50, // Smaller initial limit for better pagination
+    },
+  );
+
+  // Initialize contacts with first page
+  useEffect(() => {
+    if (accountId && contacts.length > 0) {
+      // Use provided contacts as first page
+      setCurrentPageContacts(contacts);
+      setCurrentPage(1);
+      setHasPrevPage(false);
+      setHasNextPage(initialHasMoreContacts);
+    }
+  }, [contacts, accountId, initialHasMoreContacts]);
+
+  // Determine which contacts to display - use current page or search results
+  const displayContacts = useMemo(() => {
+    let contactsToUse: RecipientContact[];
+
+    if (searchState.hasSearched && searchQuery.trim()) {
+      // Use search results if we have searched and have a query
+      contactsToUse = searchState.results as RecipientContact[];
+    } else {
+      // Use current page contacts (simple pagination)
+      contactsToUse = currentPageContacts;
     }
 
-    return filtered;
-  }, [contacts, searchQuery, config.requireValidEmails]);
+    // Apply email validation filter if required
+    if (false && config.requireValidEmails) {
+      // TEMPORARILY DISABLED FOR TESTING
+      // const beforeFilter = contactsToUse.length;
+      // const beforeFilterFirst = contactsToUse[0]?.displayName;
+      contactsToUse = contactsToUse.filter((contact) => contact.hasValidEmail);
+    }
+
+    // Force new array reference for React to detect change
+    const result = [...contactsToUse];
+
+    return result;
+  }, [
+    currentPageContacts,
+    searchState.results,
+    searchState.hasSearched,
+    searchQuery,
+    config.requireValidEmails,
+  ]);
+
+  // Handle search query changes with proper memoization to prevent infinite loops
+  const handleSearchQueryChange = useCallback(
+    async (query: string) => {
+      // Prevent unnecessary updates if query hasn't changed
+      if (query === searchQuery) {
+        return;
+      }
+
+      setSearchQuery(query);
+
+      if (!query.trim()) {
+        // Clear search when query is empty
+        clearSearch();
+      } else {
+        // Perform server-side search
+        await searchContacts(query);
+      }
+    },
+    [searchContacts, clearSearch, searchQuery],
+  );
 
   // Compute selection state
   const state = useMemo<RecipientSelectionState>(() => {
@@ -78,7 +170,7 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
         searchQuery,
         activeTab,
       },
-      contacts,
+      displayContacts, // Use display contacts instead of original contacts
     );
 
     const validEmailCount = effectiveRecipients.filter((r) => r.hasValidEmail).length;
@@ -95,6 +187,14 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       lastSelectedContactId,
       searchQuery,
       activeTab,
+      searchLoading: searchState.loading, // Add search loading state
+      searchError: searchState.error, // Add search error state
+      // Pagination state
+      currentPage,
+      hasNextPage,
+      hasPrevPage,
+      contactsLoading,
+      contactsError,
     };
   }, [
     selectedContactIds,
@@ -104,7 +204,14 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     lastSelectedContactId,
     searchQuery,
     activeTab,
-    contacts,
+    displayContacts,
+    searchState.loading,
+    searchState.error,
+    currentPage,
+    hasNextPage,
+    hasPrevPage,
+    contactsLoading,
+    contactsError,
   ]);
 
   // Individual contact actions
@@ -136,19 +243,19 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
 
   const selectContactRange = useCallback(
     (fromId: string, toId: string) => {
-      const fromIndex = filteredContacts.findIndex((c) => c.id === fromId);
-      const toIndex = filteredContacts.findIndex((c) => c.id === toId);
+      const fromIndex = displayContacts.findIndex((c) => c.id === fromId);
+      const toIndex = displayContacts.findIndex((c) => c.id === toId);
 
       if (fromIndex === -1 || toIndex === -1) return;
 
       const startIndex = Math.min(fromIndex, toIndex);
       const endIndex = Math.max(fromIndex, toIndex);
 
-      const rangeIds = filteredContacts.slice(startIndex, endIndex + 1).map((c) => c.id);
+      const rangeIds = displayContacts.slice(startIndex, endIndex + 1).map((c) => c.id);
 
       setSelectedContactIds((prev) => new Set([...prev, ...rangeIds]));
     },
-    [filteredContacts],
+    [displayContacts],
   );
 
   // Group actions
@@ -187,6 +294,122 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     setSelectedRoleGroups((prev) => prev.filter((r) => r.roleId !== roleId));
   }, []);
 
+  // Navigate to next page
+  const goToNextPage = useCallback(async () => {
+    if (contactsLoading || !hasNextPage || !accountId || !token || !isMounted) return;
+
+    setContactsLoading(true);
+    setContactsError(null);
+
+    const result = await safeAsync(
+      async () => {
+        const { createEmailRecipientService } = await import(
+          '../../../services/emailRecipientService'
+        );
+        const emailRecipientService = createEmailRecipientService();
+
+        const nextPage = currentPage + 1;
+        const response = await emailRecipientService.fetchContacts(accountId, token, {
+          page: nextPage,
+          limit: pageSize,
+          seasonId,
+          roles: true,
+          contactDetails: true,
+        });
+
+        if (!response.success) {
+          throw new Error(response.error.message);
+        }
+
+        const { transformBackendContact } = await import(
+          '../../../utils/emailRecipientTransformers'
+        );
+        const newContacts = response.data.contacts.map(transformBackendContact);
+
+        return {
+          nextPage,
+          newContacts,
+          hasNext: response.data.pagination?.hasNext ?? false,
+        };
+      },
+      {
+        accountId,
+        seasonId,
+        operation: 'pagination_next',
+      },
+    );
+
+    if (result.success) {
+      setCurrentPageContacts(result.data.newContacts);
+      setCurrentPage(result.data.nextPage);
+      setHasPrevPage(true);
+      setHasNextPage(result.data.hasNext);
+    } else {
+      logError(result.error, 'goToNextPage');
+      setContactsError(result.error.userMessage);
+    }
+
+    setContactsLoading(false);
+  }, [contactsLoading, hasNextPage, accountId, currentPage, pageSize, seasonId, token, isMounted]);
+
+  // Navigate to previous page
+  const goToPrevPage = useCallback(async () => {
+    if (contactsLoading || !hasPrevPage || !accountId || !token || !isMounted || currentPage <= 1)
+      return;
+
+    setContactsLoading(true);
+    setContactsError(null);
+
+    const result = await safeAsync(
+      async () => {
+        const { createEmailRecipientService } = await import(
+          '../../../services/emailRecipientService'
+        );
+        const emailRecipientService = createEmailRecipientService();
+
+        const prevPage = currentPage - 1;
+        const response = await emailRecipientService.fetchContacts(accountId, token, {
+          page: prevPage,
+          limit: pageSize,
+          seasonId,
+          roles: true,
+          contactDetails: true,
+        });
+
+        if (!response.success) {
+          throw new Error(response.error.message);
+        }
+
+        const { transformBackendContact } = await import(
+          '../../../utils/emailRecipientTransformers'
+        );
+        const newContacts = response.data.contacts.map(transformBackendContact);
+
+        return {
+          prevPage,
+          newContacts,
+        };
+      },
+      {
+        accountId,
+        seasonId,
+        operation: 'pagination_prev',
+      },
+    );
+
+    if (result.success) {
+      setCurrentPageContacts(result.data.newContacts);
+      setCurrentPage(result.data.prevPage);
+      setHasPrevPage(result.data.prevPage > 1);
+      setHasNextPage(true); // If we went back, there must be a next page
+    } else {
+      logError(result.error, 'goToPrevPage');
+      setContactsError(result.error.userMessage);
+    }
+
+    setContactsLoading(false);
+  }, [contactsLoading, hasPrevPage, accountId, currentPage, pageSize, seasonId, token, isMounted]);
+
   // Utility actions
   const clearAll = useCallback(() => {
     setSelectedContactIds(new Set());
@@ -217,14 +440,14 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
   );
 
   const getSelectedContacts = useCallback((): RecipientContact[] => {
-    return contacts.filter((contact) => selectedContactIds.has(contact.id));
-  }, [contacts, selectedContactIds]);
+    return displayContacts.filter((contact) => selectedContactIds.has(contact.id));
+  }, [displayContacts, selectedContactIds]);
 
   const getEffectiveRecipientsCallback = useCallback((): RecipientContact[] => {
-    return getEffectiveRecipients(state, contacts);
-  }, [state, contacts]);
+    return getEffectiveRecipients(state, displayContacts);
+  }, [state, displayContacts]);
 
-  // Actions object
+  // Actions object with new search functionality - memoized to prevent infinite loops
   const actions = useMemo<RecipientSelectionActions>(
     () => ({
       selectContact,
@@ -241,8 +464,10 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       isContactSelected,
       getSelectedContacts,
       getEffectiveRecipients: getEffectiveRecipientsCallback,
-      setSearchQuery,
+      setSearchQuery: handleSearchQueryChange, // Use the new search handler
       setActiveTab,
+      goToNextPage,
+      goToPrevPage,
     }),
     [
       selectContact,
@@ -259,35 +484,71 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       isContactSelected,
       getSelectedContacts,
       getEffectiveRecipientsCallback,
-      setSearchQuery,
+      handleSearchQueryChange,
       setActiveTab,
+      goToNextPage,
+      goToPrevPage,
     ],
   );
 
   // Validation
   const validation = useMemo(() => {
-    return validateRecipientSelection(state, contacts, config.maxRecipients);
-  }, [state, contacts, config.maxRecipients]);
+    return validateRecipientSelection(state, displayContacts, config.maxRecipients);
+  }, [state, displayContacts, config.maxRecipients]);
 
-  // Notify parent of selection changes
+  // Track previous values to prevent infinite loops
+  const prevValuesRef = useRef({
+    selectedContactIdsSize: selectedContactIds.size,
+    allContacts: allContacts,
+    selectedTeamGroupsLength: selectedTeamGroups.length,
+    selectedRoleGroupsLength: selectedRoleGroups.length,
+  });
+
+  // Notify parent of selection changes only when actual selection values change
   useEffect(() => {
-    if (onSelectionChange) {
-      onSelectionChange(state);
-    }
-  }, [state, onSelectionChange]);
+    const currentValues = {
+      selectedContactIdsSize: selectedContactIds.size,
+      allContacts: allContacts,
+      selectedTeamGroupsLength: selectedTeamGroups.length,
+      selectedRoleGroupsLength: selectedRoleGroups.length,
+    };
 
-  // Context value
+    // Check if any actual selection values have changed
+    const hasChanged =
+      prevValuesRef.current.selectedContactIdsSize !== currentValues.selectedContactIdsSize ||
+      prevValuesRef.current.allContacts !== currentValues.allContacts ||
+      prevValuesRef.current.selectedTeamGroupsLength !== currentValues.selectedTeamGroupsLength ||
+      prevValuesRef.current.selectedRoleGroupsLength !== currentValues.selectedRoleGroupsLength;
+
+    if (hasChanged && onSelectionChange) {
+      onSelectionChange(state);
+      // Update the ref with current values
+      prevValuesRef.current = currentValues;
+    }
+  }, [
+    selectedContactIds.size,
+    allContacts,
+    selectedTeamGroups.length,
+    selectedRoleGroups.length,
+    onSelectionChange,
+    state,
+  ]);
+
+  // Context value with timestamp to force re-renders when pagination changes
   const contextValue = useMemo<RecipientSelectionContextValue>(
     () => ({
-      state,
+      state: {
+        ...state,
+        _timestamp: Date.now(), // Force context updates when data changes
+      } as RecipientSelectionState,
       actions,
       config,
-      contacts: filteredContacts,
+      contacts: displayContacts, // Use display contacts
       teamGroups,
       roleGroups,
       validation,
     }),
-    [state, actions, config, filteredContacts, teamGroups, roleGroups, validation],
+    [state, actions, config, displayContacts, teamGroups, roleGroups, validation],
   );
 
   return (

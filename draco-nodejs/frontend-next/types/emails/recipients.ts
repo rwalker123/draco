@@ -48,6 +48,17 @@ export interface RecipientSelectionState {
   lastSelectedContactId?: string;
   searchQuery: string;
   activeTab: RecipientSelectionTab;
+
+  // Search state
+  searchLoading?: boolean;
+  searchError?: string | null;
+
+  // Pagination state
+  currentPage?: number;
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
+  contactsLoading?: boolean;
+  contactsError?: string | null;
 }
 
 // Selection actions
@@ -75,6 +86,10 @@ export interface RecipientSelectionActions {
   // Search and filter
   setSearchQuery: (query: string) => void;
   setActiveTab: (tab: RecipientSelectionTab) => void;
+
+  // Pagination
+  goToNextPage?: () => Promise<void>;
+  goToPrevPage?: () => Promise<void>;
 }
 
 // Tab types for the recipient selector
@@ -108,6 +123,9 @@ export interface RecipientSelectionProviderProps {
   roleGroups?: RoleGroup[];
   config?: Partial<RecipientSelectionConfig>;
   onSelectionChange?: (selection: RecipientSelectionState) => void;
+  accountId?: string; // For server-side search functionality
+  seasonId?: string; // For search context
+  initialHasMoreContacts?: boolean; // Initial pagination state from parent
 }
 
 // Context value
