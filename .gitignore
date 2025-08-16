@@ -4,7 +4,7 @@
 
 .serena
 .worktree-ports.json
-
+.worktree-ports.json.*
 # Old ASP.NET Draco project
 Draco/
 Draco.sln
