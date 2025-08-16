@@ -38,6 +38,8 @@ jobs:
         
       - name: Test
         run: npm run test:all
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         
       - name: Test Coverage Summary
         run: |
