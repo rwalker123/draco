@@ -49,12 +49,10 @@ print_header() {
     echo -e "${CYAN}$1${NC}"
 }
 
-# Get the main repository path
-MAIN_REPO_PATH="/Users/raywalker/source/Draco"
+# Get the current worktree path
 CURRENT_DIR="$(pwd)"
 
 print_status "Initializing git worktree: $CURRENT_DIR"
-print_status "Main repository: $MAIN_REPO_PATH"
 
 # Check if we're in a git worktree
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -62,11 +60,35 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     exit 1
 fi
 
-# Check if main repo exists
-if [ ! -d "$MAIN_REPO_PATH" ]; then
-    print_error "Main repository not found at: $MAIN_REPO_PATH"
+# Function to find the main repository path
+find_main_repo() {
+    local current="$1"
+    local max_depth=10
+    local depth=0
+    
+    while [ "$depth" -lt "$max_depth" ] && [ "$current" != "/" ]; do
+        if [ -f "$current/.git" ] || [ -d "$current/.git" ]; then
+            # Check if this is the main repo (has the draco-nodejs directory)
+            if [ -d "$current/draco-nodejs" ]; then
+                echo "$current"
+                return 0
+            fi
+        fi
+        current=$(dirname "$current")
+        depth=$((depth + 1))
+    done
+    
+    return 1
+}
+
+# Find the main repository
+MAIN_REPO_PATH=$(find_main_repo "$CURRENT_DIR")
+if [ -z "$MAIN_REPO_PATH" ]; then
+    print_error "Could not find main repository path"
     exit 1
 fi
+
+print_status "Main repository: $MAIN_REPO_PATH"
 
 # Step 1: Port Management and Environment Setup
 print_status "Setting up port management and environment files..."
