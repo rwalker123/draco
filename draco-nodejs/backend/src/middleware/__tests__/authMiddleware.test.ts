@@ -13,10 +13,13 @@ vi.mock('jsonwebtoken', () => ({
 
 vi.mock('@prisma/client', () => {
   const mockFindUnique = vi.fn();
+  const mockClient = {
+    aspnetusers: { findUnique: mockFindUnique },
+    $extends: vi.fn().mockReturnThis(),
+    $disconnect: vi.fn().mockResolvedValue(undefined),
+  };
   return {
-    PrismaClient: vi.fn().mockImplementation(() => ({
-      aspnetusers: { findUnique: mockFindUnique },
-    })),
+    PrismaClient: vi.fn().mockImplementation(() => mockClient),
     mockFindUnique,
   };
 });
