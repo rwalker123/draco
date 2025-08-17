@@ -56,7 +56,7 @@ export const useTableLoadingState = ({
         clearTimeout(loadingTimer);
       }
     };
-  }, [loading, loadingDelay, loadingTimer]);
+  }, [loading, loadingDelay]);
 
   // Reset skeleton state when loading state changes
   useEffect(() => {
