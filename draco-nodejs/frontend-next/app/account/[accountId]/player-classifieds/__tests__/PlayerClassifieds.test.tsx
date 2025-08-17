@@ -1,6 +1,7 @@
 // PlayerClassifieds Component Tests
 // Comprehensive testing of the PlayerClassifieds component functionality
 
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import PlayerClassifieds from '../PlayerClassifieds';

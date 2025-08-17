@@ -70,6 +70,16 @@ describe('useClassifiedsPermissions', () => {
 
     it('should handle missing account ID', () => {
       const props = { accountId: '' };
+
+      // Set up mock role context with no roles for this test
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: [],
+          contactRoles: [],
+        },
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
       const { result } = renderHook(() => useClassifiedsPermissions(props));
 
       // Teams Wanted permissions are always true (public)
