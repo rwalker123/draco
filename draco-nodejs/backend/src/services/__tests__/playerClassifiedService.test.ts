@@ -6,6 +6,7 @@ import {
   ITeamsWantedCreateRequest,
   IClassifiedSearchParams,
 } from '../../interfaces/playerClassifiedInterfaces.js';
+import { DateUtils } from '../../utils/dateUtils.js';
 
 // Mock the ServiceFactory
 vi.mock('../../lib/serviceFactory.js', () => ({
@@ -760,13 +761,7 @@ describe('PlayerClassifiedService', () => {
     it('should add days to date correctly', () => {
       // Create a date explicitly to avoid timezone issues
       const testDate = new Date(2024, 0, 1); // January 1, 2024 (month is 0-indexed)
-      const result = playerClassifiedService['addDays'](testDate, 5);
-
-      // Debug: log the actual values
-      console.log('Original date:', testDate.toDateString());
-      console.log('Result date:', result.toDateString());
-      console.log('Result day:', result.getDate());
-      console.log('Expected day: 6');
+      const result = DateUtils.addDays(testDate, 5);
 
       // The addDays method should increment the date by 5 days
       // January 1st + 5 days = January 6th

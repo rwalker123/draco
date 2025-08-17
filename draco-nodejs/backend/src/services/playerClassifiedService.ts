@@ -214,7 +214,7 @@ export class PlayerClassifiedService {
       );
     }
 
-    // Rate limiting is now handled by middleware for authenticated endpoints
+    // Authentication and rate limiting handled by middleware
 
     // Transform request to database format
     const dbData = this.transformPlayersWantedCreateRequest(request, accountId, contactId);
@@ -260,18 +260,14 @@ export class PlayerClassifiedService {
 
     // Build order by clause
     const orderBy: Record<string, unknown> = {};
-    console.log('Debug: sortBy =', sortBy, 'sortOrder =', sortOrder);
     switch (sortBy) {
       case 'dateCreated':
-        console.log('Debug: Setting orderBy.datecreated =', sortOrder);
         orderBy.datecreated = sortOrder;
         break;
       default:
-        console.log('Debug: Default case - setting orderBy.datecreated = desc');
         orderBy.datecreated = 'desc';
         break;
     }
-    console.log('Debug: Final orderBy =', orderBy);
 
     // Execute query with pagination
     const [classifications, total] = await Promise.all([
@@ -402,7 +398,7 @@ export class PlayerClassifiedService {
       );
     }
 
-    // Rate limiting is now handled by middleware for anonymous endpoints
+    // Rate limiting handled by middleware for public endpoints
 
     // Generate secure access code
     const accessCode = randomUUID();
@@ -630,15 +626,6 @@ export class PlayerClassifiedService {
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
-
-  /**
-   * Add days to a date (utility method)
-   */
-  private addDays(date: Date, days: number): Date {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }
 
   /**
    * Validate positions string (comma-separated position IDs)

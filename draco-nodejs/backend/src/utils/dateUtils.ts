@@ -49,4 +49,16 @@ export class DateUtils {
     if (!date) return false;
     return date.toISOString().startsWith('1900-01-01');
   }
+
+  /**
+   * Add days to a date
+   * @param date - The base date
+   * @param days - Number of days to add (can be negative to subtract)
+   * @returns A new Date object with the days added
+   */
+  static addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
 }

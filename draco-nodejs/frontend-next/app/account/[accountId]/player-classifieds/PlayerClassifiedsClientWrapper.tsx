@@ -2,7 +2,6 @@
 
 import { useParams } from 'next/navigation';
 import PlayerClassifieds from './PlayerClassifieds';
-import ProtectedRoute from '../../../../components/auth/ProtectedRoute';
 
 export default function PlayerClassifiedsClientWrapper() {
   const { accountId } = useParams();
@@ -12,9 +11,7 @@ export default function PlayerClassifiedsClientWrapper() {
     return <div>Account ID not found</div>;
   }
 
-  return (
-    <ProtectedRoute requiredRole="TeamAdmin" checkAccountBoundary={true}>
-      <PlayerClassifieds accountId={accountIdStr} />
-    </ProtectedRoute>
-  );
+  // Player Classifieds allows public access to TeamsWanted tab
+  // Authentication is handled at the component level for specific features
+  return <PlayerClassifieds accountId={accountIdStr} />;
 }
