@@ -25,7 +25,7 @@ interface UserRoles {
   contactRoles: ContactRole[];
 }
 
-interface RoleContextType {
+export interface RoleContextType {
   userRoles: UserRoles | null;
   loading: boolean;
   error: string | null;

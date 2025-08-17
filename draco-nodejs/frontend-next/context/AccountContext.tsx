@@ -9,7 +9,7 @@ interface Account {
   accountType?: string;
 }
 
-interface AccountContextType {
+export interface AccountContextType {
   currentAccount: Account | null;
   userAccounts: Account[];
   loading: boolean;

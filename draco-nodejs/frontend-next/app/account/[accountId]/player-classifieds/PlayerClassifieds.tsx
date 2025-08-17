@@ -82,7 +82,7 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
       <TabPanel value={tabValue} index={0}>
         <PlayersWanted accountId={accountId} />
       </TabPanel>
-      <TabPanel value={tabValue} index={1}>
+      <TabPanel value={tabValue} index={1} data-testid="teams-wanted-tabpanel">
         <TeamsWanted accountId={accountId} />
       </TabPanel>
     </main>

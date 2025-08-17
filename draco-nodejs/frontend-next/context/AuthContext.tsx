@@ -10,7 +10,7 @@ interface User {
   lastname?: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
