@@ -48,12 +48,12 @@ export const useClassifiedsPermissions =
 
     // Check if user can search classifieds
     const canSearchClassifieds = useCallback(() => {
-      return userRoles !== null; // Any authenticated user can search
+      return userRoles !== null && userRoles !== undefined; // Any authenticated user can search
     }, [userRoles]);
 
     // Check if user can view classifieds
     const canViewClassifieds = useCallback(() => {
-      return userRoles !== null; // Any authenticated user can view
+      return userRoles !== null && userRoles !== undefined; // Any authenticated user can view
     }, [userRoles]);
 
     // Check if user can moderate classifieds
