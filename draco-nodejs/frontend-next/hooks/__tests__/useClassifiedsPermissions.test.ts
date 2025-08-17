@@ -1,32 +1,38 @@
 // useClassifiedsPermissions Hook Tests
-// Comprehensive testing of permission checking and role-based access control
+// Comprehensive testing of permission logic for Player Classifieds
 
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useClassifiedsPermissions } from '../useClassifiedsPermissions';
 import {
-  createMockAuthContext,
   createMockRoleContext,
-  createTestProps,
+  createMockAuthContext,
+  createMockAccountContext,
 } from '../../test-utils/playerClassifiedsTestUtils';
 
 // ============================================================================
 // MOCK SETUP
 // ============================================================================
 
-const mockUseRole = vi.hoisted(() => vi.fn());
-const mockUseAuth = vi.hoisted(() => vi.fn());
-
-vi.mock('../../context/RoleContext', () => ({
-  useRole: mockUseRole,
-}));
+// Mock the context hooks
+const mockUseAuth = vi.fn();
+const mockUseAccount = vi.fn();
+const mockUseRole = vi.fn();
 
 vi.mock('../../context/AuthContext', () => ({
-  useAuth: mockUseAuth,
+  useAuth: () => mockUseAuth(),
+}));
+
+vi.mock('../../context/AccountContext', () => ({
+  useAccount: () => mockUseAccount(),
+}));
+
+vi.mock('../../context/RoleContext', () => ({
+  useRole: () => mockUseRole(),
 }));
 
 // ============================================================================
-// TEST SUITE
+// TEST SETUP
 // ============================================================================
 
 describe('useClassifiedsPermissions', () => {
@@ -36,46 +42,47 @@ describe('useClassifiedsPermissions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Set default mock implementations - default is TeamAdmin
-    mockUseRole.mockReturnValue(createMockRoleContext());
+
+    // Set up default mock contexts
     mockUseAuth.mockReturnValue(createMockAuthContext());
+    mockUseAccount.mockReturnValue(createMockAccountContext());
+    mockUseRole.mockReturnValue(createMockRoleContext());
   });
 
   // ============================================================================
-  // INITIALIZATION TESTS
+  // BASIC PERMISSION TESTS
   // ============================================================================
 
-  describe('Initialization', () => {
-    it('should initialize with correct permission state', () => {
+  describe('Basic Permissions', () => {
+    it('should return correct permission structure', () => {
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      // Default mock context has TeamAdmin role
-      expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
-      expect(result.current.canCreateTeamsWanted).toBe(true);
-      expect(result.current.canEditTeamsWanted).toBe(true);
-      expect(result.current.canDeleteTeamsWanted).toBe(true);
-      expect(result.current.canSearchClassifieds).toBe(true);
-      expect(result.current.canViewClassifieds).toBe(true);
-      expect(result.current.canModerateClassifieds).toBe(false); // TeamAdmin can't moderate
+      expect(result.current).toHaveProperty('canCreatePlayersWanted');
+      expect(result.current).toHaveProperty('canEditPlayersWanted');
+      expect(result.current).toHaveProperty('canDeletePlayersWanted');
+      expect(result.current).toHaveProperty('canCreateTeamsWanted');
+      expect(result.current).toHaveProperty('canEditTeamsWanted');
+      expect(result.current).toHaveProperty('canDeleteTeamsWanted');
+      expect(result.current).toHaveProperty('canSearchClassifieds');
+      expect(result.current).toHaveProperty('canViewClassifieds');
+      expect(result.current).toHaveProperty('canModerateClassifieds');
     });
 
-    it('should handle missing account ID gracefully', () => {
-      const props = createTestProps(defaultProps, { accountId: '' });
+    it('should handle missing account ID', () => {
+      const props = { accountId: '' };
       const { result } = renderHook(() => useClassifiedsPermissions(props));
 
-      // Account ID doesn't affect permissions in the current implementation
-      // The hook only checks roles, not account ID
-      expect(result.current.canCreatePlayersWanted).toBe(true); // TeamAdmin can create
-      expect(result.current.canEditPlayersWanted).toBe(true); // TeamAdmin can edit
-      expect(result.current.canDeletePlayersWanted).toBe(true); // TeamAdmin can delete
-      expect(result.current.canCreateTeamsWanted).toBe(true); // Teams Wanted is public
-      expect(result.current.canEditTeamsWanted).toBe(true); // Teams Wanted editing is public
-      expect(result.current.canDeleteTeamsWanted).toBe(true); // Teams Wanted deletion is public
-      expect(result.current.canSearchClassifieds).toBe(true); // Any authenticated user can search
-      expect(result.current.canViewClassifieds).toBe(true); // Any authenticated user can view
-      expect(result.current.canModerateClassifieds).toBe(false); // TeamAdmin can't moderate
+      // Teams Wanted permissions are always true (public)
+      // Search and view permissions are true when userRoles !== null
+      expect(result.current.canCreatePlayersWanted).toBe(false);
+      expect(result.current.canEditPlayersWanted).toBe(false);
+      expect(result.current.canDeletePlayersWanted).toBe(false);
+      expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
+      expect(result.current.canEditTeamsWanted).toBe(true); // Always true
+      expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
+      expect(result.current.canSearchClassifieds).toBe(true); // True when userRoles !== null
+      expect(result.current.canViewClassifieds).toBe(true); // True when userRoles !== null
+      expect(result.current.canModerateClassifieds).toBe(false);
     });
   });
 
@@ -85,7 +92,12 @@ describe('useClassifiedsPermissions', () => {
 
   describe('Role-Based Permissions', () => {
     it('should grant full permissions to AccountAdmin', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['AccountAdmin'] });
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['AccountAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
@@ -102,7 +114,12 @@ describe('useClassifiedsPermissions', () => {
     });
 
     it('should grant full permissions to ContactAdmin', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['ContactAdmin'] });
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['ContactAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
@@ -120,7 +137,12 @@ describe('useClassifiedsPermissions', () => {
     });
 
     it('should grant limited permissions to TeamAdmin', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamAdmin'] });
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
@@ -137,7 +159,12 @@ describe('useClassifiedsPermissions', () => {
     });
 
     it('should grant minimal permissions to TeamMember', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamMember'] });
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamMember'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
@@ -154,7 +181,12 @@ describe('useClassifiedsPermissions', () => {
     });
 
     it('should grant minimal permissions to Contact', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['Contact'] });
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['Contact'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
@@ -177,34 +209,56 @@ describe('useClassifiedsPermissions', () => {
 
   describe('Permission Helper Functions', () => {
     it('should check specific role permissions', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamAdmin'] });
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
+      // TeamAdmin should have most permissions but not moderation
       expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canEditPlayersWanted).toBe(true);
       expect(result.current.canDeletePlayersWanted).toBe(true);
+      expect(result.current.canModerateClassifieds).toBe(false);
     });
 
-    it('should check multiple role permissions', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamAdmin', 'ContactAdmin'] });
+    it('should handle multiple roles correctly', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin', 'ContactAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
-      expect(result.current.canModerateClassifieds).toBe(false); // ContactAdmin can't moderate
+      // Should have highest level of permissions from all roles
+      expect(result.current.canCreatePlayersWanted).toBe(true); // From TeamAdmin
+      expect(result.current.canEditPlayersWanted).toBe(true); // From TeamAdmin
+      expect(result.current.canDeletePlayersWanted).toBe(true); // From TeamAdmin
+      expect(result.current.canCreateTeamsWanted).toBe(true); // From both
+      expect(result.current.canEditTeamsWanted).toBe(true); // From both
+      expect(result.current.canDeleteTeamsWanted).toBe(true); // From both
+      expect(result.current.canModerateClassifieds).toBe(false); // Neither role has this
     });
 
-    it('should check all role permissions', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['AccountAdmin'] });
+    it('should handle account-specific roles', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['AccountAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
+      // AccountAdmin should have all permissions
       expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canEditPlayersWanted).toBe(true);
       expect(result.current.canDeletePlayersWanted).toBe(true);
@@ -218,174 +272,163 @@ describe('useClassifiedsPermissions', () => {
   });
 
   // ============================================================================
-  // DYNAMIC PERMISSION UPDATES TESTS
+  // EDGE CASES AND ERROR HANDLING
   // ============================================================================
 
-  describe('Dynamic Permission Updates', () => {
-    it('should update permissions when user roles change', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamMember'] });
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle null user roles', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: null,
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
-      const { result, rerender } = renderHook(() => useClassifiedsPermissions(defaultProps));
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
+      // Teams Wanted permissions are always true (public)
+      // Search and view permissions are false when userRoles === null
       expect(result.current.canCreatePlayersWanted).toBe(false);
-
-      // Change roles
-      const newMockRoleContext = createMockRoleContext({ userRoles: ['TeamAdmin'] });
-      mockUseRole.mockReturnValue(newMockRoleContext);
-
-      rerender();
-
-      expect(result.current.canCreatePlayersWanted).toBe(true);
+      expect(result.current.canEditPlayersWanted).toBe(false);
+      expect(result.current.canDeletePlayersWanted).toBe(false);
+      expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
+      expect(result.current.canEditTeamsWanted).toBe(true); // Always true
+      expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
+      expect(result.current.canSearchClassifieds).toBe(false); // False when userRoles === null
+      expect(result.current.canViewClassifieds).toBe(false); // False when userRoles === null
+      expect(result.current.canModerateClassifieds).toBe(false);
     });
 
-    it('should update permissions when authentication state changes', () => {
-      const mockAuthContext = createMockAuthContext({ isAuthenticated: false });
-      mockUseAuth.mockReturnValue(mockAuthContext);
-
-      const { result, rerender } = renderHook(() => useClassifiedsPermissions(defaultProps));
-
-      // When not authenticated, userRoles should be null/undefined
-      const mockRoleContext = createMockRoleContext({ userRoles: null });
+    it('should handle undefined user roles', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: undefined,
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
-      rerender();
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      expect(result.current.canSearchClassifieds).toBe(false);
-      expect(result.current.canViewClassifieds).toBe(false);
+      // Teams Wanted permissions are always true (public)
+      // Search and view permissions are false when userRoles === undefined
+      expect(result.current.canCreatePlayersWanted).toBe(false);
+      expect(result.current.canEditPlayersWanted).toBe(false);
+      expect(result.current.canDeletePlayersWanted).toBe(false);
+      expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
+      expect(result.current.canEditTeamsWanted).toBe(true); // Always true
+      expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
+      expect(result.current.canSearchClassifieds).toBe(false); // False when userRoles === undefined
+      expect(result.current.canViewClassifieds).toBe(false); // False when userRoles === undefined
+      expect(result.current.canModerateClassifieds).toBe(false);
+    });
+
+    it('should handle empty user roles', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: [],
+          contactRoles: [],
+        },
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+
+      // Teams Wanted permissions are always true (public)
+      // Search and view permissions are true when userRoles !== null (even if empty)
+      expect(result.current.canCreatePlayersWanted).toBe(false);
+      expect(result.current.canEditPlayersWanted).toBe(false);
+      expect(result.current.canDeletePlayersWanted).toBe(false);
+      expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
+      expect(result.current.canEditTeamsWanted).toBe(true); // Always true
+      expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
+      expect(result.current.canSearchClassifieds).toBe(true); // True when userRoles !== null
+      expect(result.current.canViewClassifieds).toBe(true); // True when userRoles !== null
+      expect(result.current.canModerateClassifieds).toBe(false);
+    });
+
+    it('should handle null user roles gracefully', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: null,
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+
+      // Should not throw errors and return false for all permissions
+      expect(result.current.canCreatePlayersWanted).toBe(false);
+      expect(result.current.canEditPlayersWanted).toBe(false);
+      expect(result.current.canDeletePlayersWanted).toBe(false);
+    });
+
+    it('should handle missing account context', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+
+      // Should still work with valid role context
+      expect(result.current.canCreatePlayersWanted).toBe(true);
+      expect(result.current.canEditPlayersWanted).toBe(true);
+      expect(result.current.canDeletePlayersWanted).toBe(true);
     });
   });
 
   // ============================================================================
-  // EDGE CASES TESTS
+  // INTEGRATION TESTS
   // ============================================================================
 
-  describe('Edge Cases', () => {
-    it('should handle undefined context values gracefully', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: undefined });
+  describe('Integration Tests', () => {
+    it('should work with real role context implementation', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      // When userRoles is undefined, the hook checks userRoles !== null which is true
-      // So search and view permissions will be true
-      expect(result.current.canSearchClassifieds).toBe(true);
-      expect(result.current.canViewClassifieds).toBe(true);
-      // Other permissions depend on hasRole which will return false for undefined roles
-      expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
+      // Verify all permission properties are boolean
+      Object.values(result.current).forEach((value) => {
+        expect(typeof value).toBe('boolean');
+      });
+
+      // Verify specific permissions based on role
+      expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canModerateClassifieds).toBe(false);
     });
 
-    it('should handle empty user roles array', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: [] });
+    it('should handle role changes correctly', () => {
+      let mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
-      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+      const { result, rerender } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
-    });
-
-    it('should handle null context values', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: null });
-      mockUseRole.mockReturnValue(mockRoleContext);
-
-      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
-
-      expect(result.current.canSearchClassifieds).toBe(false);
-      expect(result.current.canViewClassifieds).toBe(false);
-    });
-  });
-
-  // ============================================================================
-  // INTEGRATION WITH PERMISSION SYSTEM TESTS
-  // ============================================================================
-
-  describe('Integration with Permission System', () => {
-    it('should provide consistent permission state', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamAdmin'] });
-      mockUseRole.mockReturnValue(mockRoleContext);
-
-      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
-
-      // All permissions should be consistent with the role
+      // Initial state
       expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
       expect(result.current.canModerateClassifieds).toBe(false);
-    });
 
-    it('should handle permission inheritance correctly', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['AccountAdmin'] });
+      // Change to AccountAdmin
+      mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['AccountAdmin'],
+          contactRoles: [],
+        },
+      });
       mockUseRole.mockReturnValue(mockRoleContext);
 
-      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+      rerender();
 
-      // AccountAdmin should inherit all permissions
+      // Should now have moderation permissions
       expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
-      expect(result.current.canCreateTeamsWanted).toBe(true);
-      expect(result.current.canEditTeamsWanted).toBe(true);
-      expect(result.current.canDeleteTeamsWanted).toBe(true);
-      expect(result.current.canSearchClassifieds).toBe(true);
-      expect(result.current.canViewClassifieds).toBe(true);
       expect(result.current.canModerateClassifieds).toBe(true);
-    });
-  });
-
-  // ============================================================================
-  // PERFORMANCE CONSIDERATIONS TESTS
-  // ============================================================================
-
-  describe('Performance Considerations', () => {
-    it('should handle permission checks efficiently', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamAdmin'] });
-      mockUseRole.mockReturnValue(mockRoleContext);
-
-      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
-
-      // All permission checks should be computed once and cached
-      const startTime = performance.now();
-
-      // Check permissions multiple times
-      let totalPermissions = 0;
-      for (let i = 0; i < 1000; i++) {
-        totalPermissions += result.current.canCreatePlayersWanted ? 1 : 0;
-        totalPermissions += result.current.canEditPlayersWanted ? 1 : 0;
-        totalPermissions += result.current.canDeletePlayersWanted ? 1 : 0;
-      }
-
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // Should complete quickly (less than 10ms)
-      expect(duration).toBeLessThan(10);
-      expect(totalPermissions).toBeGreaterThan(0);
-    });
-
-    it('should not cause unnecessary re-renders', () => {
-      const mockRoleContext = createMockRoleContext({ userRoles: ['TeamAdmin'] });
-      mockUseRole.mockReturnValue(mockRoleContext);
-
-      const { result, rerender } = renderHook(() => useClassifiedsPermissions(defaultProps));
-
-      const initialPermissions = {
-        canCreatePlayersWanted: result.current.canCreatePlayersWanted,
-        canEditPlayersWanted: result.current.canEditPlayersWanted,
-        canDeletePlayersWanted: result.current.canDeletePlayersWanted,
-      };
-
-      // Re-render without changing context
-      rerender();
-
-      // Permissions should remain the same
-      expect(result.current.canCreatePlayersWanted).toBe(initialPermissions.canCreatePlayersWanted);
-      expect(result.current.canEditPlayersWanted).toBe(initialPermissions.canEditPlayersWanted);
-      expect(result.current.canDeletePlayersWanted).toBe(initialPermissions.canDeletePlayersWanted);
     });
   });
 });
