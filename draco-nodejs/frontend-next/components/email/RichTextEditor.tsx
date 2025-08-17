@@ -30,9 +30,10 @@ import {
   $insertNodes,
   UNDO_COMMAND,
   REDO_COMMAND,
+  $createTextNode,
 } from 'lexical';
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
-import { HeadingNode, $createHeadingNode } from '@lexical/rich-text';
+import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
 import { $setBlocksType } from '@lexical/selection';
@@ -66,10 +67,9 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       const element =
         anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow();
 
-      if (element.getType() === 'heading') {
-        // Cast to HeadingNode type - HeadingNode has getTag method
-        const headingNode = element as unknown as { getTag(): string };
-        setHeadingLevel(headingNode.getTag());
+      if ($isHeadingNode(element)) {
+        // Use proper type guard to check HeadingNode
+        setHeadingLevel(element.getTag());
       } else {
         setHeadingLevel('');
       }
@@ -333,7 +333,10 @@ const editorConfig = {
   },
 };
 
-const RichTextEditor = React.forwardRef<{ getCurrentContent: () => string }, RichTextEditorProps>(
+const RichTextEditor = React.forwardRef<
+  { getCurrentContent: () => string; insertText: (text: string) => void },
+  RichTextEditorProps
+>(
   (
     {
       value,
@@ -358,13 +361,39 @@ const RichTextEditor = React.forwardRef<{ getCurrentContent: () => string }, Ric
       return '';
     }, []);
 
-    // Expose getCurrentContent method to parent via ref
+    // Function to insert text at current cursor position
+    const insertText = useCallback(
+      (text: string) => {
+        if (editorRef.current && !disabled) {
+          editorRef.current.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const textNode = $createTextNode(text);
+              selection.insertNodes([textNode]);
+            } else {
+              // If no selection, insert at the end
+              const root = $getRoot();
+              const lastChild = root.getLastChild();
+              if (lastChild) {
+                lastChild.selectEnd();
+                const textNode = $createTextNode(text);
+                $insertNodes([textNode]);
+              }
+            }
+          });
+        }
+      },
+      [disabled],
+    );
+
+    // Expose getCurrentContent and insertText methods to parent via ref
     React.useImperativeHandle(
       ref,
       () => ({
         getCurrentContent,
+        insertText,
       }),
-      [getCurrentContent],
+      [getCurrentContent, insertText],
     );
 
     // Remove the onChange handler entirely - no more cursor jumping!
