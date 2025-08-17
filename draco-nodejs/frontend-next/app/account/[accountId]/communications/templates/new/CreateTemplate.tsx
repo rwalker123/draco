@@ -65,6 +65,9 @@ export default function CreateTemplate() {
   // Ref for the rich text editor
   const editorRef = useRef<TemplateRichTextEditorRef>(null);
 
+  // Ref for the subject TextField to track cursor position
+  const subjectTextFieldRef = useRef<HTMLInputElement>(null);
+
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,10 +136,37 @@ export default function CreateTemplate() {
     const field = targetField || 'body';
 
     if (field === 'subject') {
+      // For subject field, use cursor-aware insertion
+      const currentContent = formData.subjectTemplate;
+
+      // Get cursor position from the TextField input element
+      let cursorPosition = currentContent.length; // Default to end
+      if (subjectTextFieldRef.current) {
+        const selectionStart = subjectTextFieldRef.current.selectionStart;
+        if (selectionStart !== null) {
+          cursorPosition = selectionStart;
+        }
+      }
+
+      // Insert the variable at the cursor position
+      const beforeCursor = currentContent.substring(0, cursorPosition);
+      const afterCursor = currentContent.substring(cursorPosition);
+      const newContent = beforeCursor + variableTag + afterCursor;
+
+      // Update form data
       setFormData((prev) => ({
         ...prev,
-        subjectTemplate: prev.subjectTemplate + variableTag,
+        subjectTemplate: newContent,
       }));
+
+      // Restore cursor position after the inserted variable
+      setTimeout(() => {
+        if (subjectTextFieldRef.current) {
+          const newCursorPosition = cursorPosition + variableTag.length;
+          subjectTextFieldRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+          subjectTextFieldRef.current.focus();
+        }
+      }, 0);
     } else {
       // For body, use the editor's insertion method for cursor-aware insertion
       if (editorRef.current) {
@@ -338,6 +368,7 @@ export default function CreateTemplate() {
                     rows={2}
                     fullWidth
                     helperText="Use {{variableName}} for dynamic content"
+                    inputRef={subjectTextFieldRef}
                   />
                 </TabPanel>
 
