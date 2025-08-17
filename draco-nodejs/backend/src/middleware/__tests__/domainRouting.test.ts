@@ -10,6 +10,8 @@ vi.mock('@prisma/client', () => {
     accountsurl: {
       findFirst: vi.fn(),
     },
+    $extends: vi.fn().mockReturnThis(),
+    $disconnect: vi.fn().mockResolvedValue(undefined),
   };
   return { PrismaClient: vi.fn(() => mPrisma) };
 });

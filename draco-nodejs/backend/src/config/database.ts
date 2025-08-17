@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import os from 'node:os';
+import * as os from 'node:os';
 
 export interface DatabaseConfig {
   connectionLimit: number;
