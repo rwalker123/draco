@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -26,6 +26,13 @@ import ProtectedRoute from '../../../../../../components/auth/ProtectedRoute';
 import { EmailService } from '../../../../../../services/emailService';
 import { useAuth } from '../../../../../../context/AuthContext';
 import TemplateRichTextEditor from '../../../../../../components/emails/templates/TemplateRichTextEditor';
+
+// Define the ref interface for TemplateRichTextEditor
+interface TemplateRichTextEditorRef {
+  getCurrentContent: () => string;
+  insertText: (text: string) => void;
+  insertVariable: (variable: string) => void;
+}
 import VariableInsertionHelper from '../../../../../../components/emails/templates/VariableInsertionHelper';
 
 interface TabPanelProps {
@@ -54,6 +61,9 @@ export default function CreateTemplate() {
   const { accountId } = useParams();
   const router = useRouter();
   const { token } = useAuth();
+
+  // Ref for the rich text editor
+  const editorRef = useRef<TemplateRichTextEditorRef>(null);
 
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -116,12 +126,19 @@ export default function CreateTemplate() {
         subjectTemplate: prev.subjectTemplate + variableTag,
       }));
     } else {
-      // For body, we'll need to insert into the rich text editor
-      // This would need to be handled by the TemplateRichTextEditor component
-      setFormData((prev) => ({
-        ...prev,
-        bodyTemplate: prev.bodyTemplate + variableTag,
-      }));
+      // For body, use the editor's insertion method for cursor-aware insertion
+      if (editorRef.current) {
+        editorRef.current.insertVariable(variable);
+
+        // Sync form state after insertion using a slight delay to ensure editor has updated
+        setTimeout(() => {
+          const currentContent = editorRef.current?.getCurrentContent() || '';
+          setFormData((prev) => ({
+            ...prev,
+            bodyTemplate: currentContent,
+          }));
+        }, 10);
+      }
     }
   };
 
@@ -302,6 +319,7 @@ export default function CreateTemplate() {
                 <TabPanel value={activeTab} index={1}>
                   <Box sx={{ height: 400, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                     <TemplateRichTextEditor
+                      ref={editorRef}
                       content={formData.bodyTemplate}
                       onChange={handleEditorChange}
                       placeholder="Enter your email template content here..."
