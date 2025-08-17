@@ -1,15 +1,5 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Chip,
-  Card,
-  CardContent,
-  TextField,
-  Autocomplete,
-  Divider,
-} from '@mui/material';
+import React from 'react';
+import { Box, Typography, Button, Card, CardContent, Divider } from '@mui/material';
 import {
   Add as AddIcon,
   Person as PersonIcon,
@@ -34,8 +24,6 @@ interface VariableCategory {
 }
 
 export default function VariableInsertionHelper({ onInsert }: VariableInsertionHelperProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-
   // Common template variables organized by category
   const variableCategories: VariableCategory[] = [
     {
@@ -130,34 +118,8 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
     },
   ];
 
-  // Flatten all variables for search
-  const allVariables = variableCategories.flatMap((category) =>
-    category.variables.map((variable) => ({
-      ...variable,
-      category: category.name,
-      categoryIcon: category.icon,
-    })),
-  );
-
-  // Filter variables based on search term
-  const filteredCategories = variableCategories
-    .map((category) => ({
-      ...category,
-      variables: category.variables.filter(
-        (variable) =>
-          variable.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          variable.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          variable.description.toLowerCase().includes(searchTerm.toLowerCase()),
-      ),
-    }))
-    .filter((category) => category.variables.length > 0);
-
   const handleInsertVariable = (variableKey: string) => {
     onInsert(variableKey);
-  };
-
-  const handleQuickInsert = (variable: { key: string; label: string }) => {
-    handleInsertVariable(variable.key);
   };
 
   return (
@@ -167,54 +129,9 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
         actual data when emails are sent.
       </Typography>
 
-      {/* Search */}
-      <Autocomplete
-        options={allVariables}
-        getOptionLabel={(option) => option.label}
-        renderOption={(props, option) => {
-          const { key, ...otherProps } = props;
-          return (
-            <Box component="li" key={key} {...otherProps}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                <Box sx={{ color: 'text.secondary' }}>{option.categoryIcon}</Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2">{option.label}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {option.description}
-                  </Typography>
-                </Box>
-                <Chip
-                  label={`{${option.key}}`}
-                  size="small"
-                  variant="outlined"
-                  sx={{ fontSize: '0.75rem' }}
-                />
-              </Box>
-            </Box>
-          );
-        }}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Search variables..."
-            variant="outlined"
-            fullWidth
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        )}
-        onChange={(_, value) => {
-          if (value) {
-            handleQuickInsert(value);
-            setSearchTerm(''); // Clear search after insertion
-          }
-        }}
-        sx={{ mb: 3 }}
-      />
-
       {/* Variable Categories */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
-        {filteredCategories.map((category) => (
+        {variableCategories.map((category) => (
           <Card key={category.name} variant="outlined" sx={{ width: 'fit-content', minWidth: 300 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -267,14 +184,6 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
           </Card>
         ))}
       </Box>
-
-      {filteredCategories.length === 0 && searchTerm && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
-            No variables found matching &quot;{searchTerm}&quot;
-          </Typography>
-        </Box>
-      )}
 
       <Divider sx={{ my: 3 }} />
 
