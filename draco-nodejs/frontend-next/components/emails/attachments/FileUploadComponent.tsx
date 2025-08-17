@@ -95,6 +95,11 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
     [cancelUpload],
   );
 
+  // Stable callback references to prevent unnecessary re-renders
+  const handleQuotaExceeded = useCallback(() => {
+    onError?.(new Error('Storage quota exceeded. Please free up space.'));
+  }, [onError]);
+
   const hasActiveUploads = attachments.some(
     (att) => att.status === 'uploading' || att.status === 'pending',
   );
@@ -109,9 +114,7 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
           accountId={accountId}
           compact={compact}
           showDetails={!compact}
-          onQuotaExceeded={() => {
-            onError?.(new Error('Storage quota exceeded. Please free up space.'));
-          }}
+          onQuotaExceeded={handleQuotaExceeded}
         />
       )}
 

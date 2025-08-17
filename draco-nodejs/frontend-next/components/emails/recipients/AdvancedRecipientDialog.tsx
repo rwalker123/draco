@@ -146,6 +146,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   // AbortController for race condition protection
   const fetchAbortControllerRef = useRef<AbortController | null>(null);
 
+  // Ref for stable access to localRecipientState in pagination handlers
+  const localRecipientStateRef = useRef(localRecipientState);
+
   // Email recipient service
   const emailRecipientService = useMemo(() => createEmailRecipientService(), []);
 
@@ -381,6 +384,11 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     [handleSearchWithPagination, lastSearchQuery, searchCurrentPage, rowsPerPage],
   );
 
+  // Keep ref updated with latest localRecipientState
+  useEffect(() => {
+    localRecipientStateRef.current = localRecipientState;
+  }, [localRecipientState]);
+
   // Load initial page when dialog opens
   useEffect(() => {
     if (open && token && accountId) {
@@ -554,10 +562,11 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       handleNextPage: () => {
         // Check if we're showing search results using reliable method
         if (isInSearchMode()) {
-          // Handle search pagination
+          // Handle search pagination - use ref for stable access
           if (searchPaginationState.hasNext && !paginationLoading) {
+            const currentState = localRecipientStateRef.current;
             handleSearchWithPagination(
-              localRecipientState!.searchQuery,
+              currentState!.searchQuery,
               searchCurrentPage + 1,
               rowsPerPage,
             );
@@ -572,10 +581,11 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       handlePrevPage: () => {
         // Check if we're showing search results using reliable method
         if (isInSearchMode()) {
-          // Handle search pagination
+          // Handle search pagination - use ref for stable access
           if (searchPaginationState.hasPrev && !paginationLoading && searchCurrentPage > 1) {
+            const currentState = localRecipientStateRef.current;
             handleSearchWithPagination(
-              localRecipientState!.searchQuery,
+              currentState!.searchQuery,
               searchCurrentPage - 1,
               rowsPerPage,
             );
@@ -591,8 +601,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         setRowsPerPage(newRowsPerPage);
         // Check if we're showing search results using reliable method
         if (isInSearchMode()) {
-          // Handle search rows per page change - restart from page 1
-          handleSearchWithPagination(localRecipientState!.searchQuery, 1, newRowsPerPage);
+          // Handle search rows per page change - restart from page 1 - use ref for stable access
+          const currentState = localRecipientStateRef.current;
+          handleSearchWithPagination(currentState!.searchQuery, 1, newRowsPerPage);
         } else {
           // Handle regular rows per page change
           fetchContactsPage(1, newRowsPerPage);
@@ -611,7 +622,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       searchPaginationState.hasNext,
       searchPaginationState.hasPrev,
       isInSearchMode,
-      localRecipientState,
+      // Removed localRecipientState - now using ref for stable access
     ],
   );
 

@@ -83,8 +83,64 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   const endItem = startItem + currentItems - 1;
   const currentRange = `${itemLabel} ${startItem}-${endItem}`;
 
-  // Track visited pages
-  const trackVisitedPage = useCallback(() => {
+  // Memoized button styles for consistent theming
+  const prevButtonSx = useMemo(
+    () => ({
+      backgroundColor: hasPrev ? theme.palette.primary.main : 'transparent',
+      color: hasPrev ? 'white' : 'text.disabled',
+      transition: theme.transitions.create(['background-color'], {
+        duration: theme.transitions.duration.short,
+      }),
+      '&:hover': {
+        backgroundColor: hasPrev ? theme.palette.primary.dark : 'transparent',
+      },
+    }),
+    [hasPrev, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
+  );
+
+  const nextButtonSx = useMemo(
+    () => ({
+      backgroundColor: hasNext ? theme.palette.primary.main : 'transparent',
+      color: hasNext ? 'white' : 'text.disabled',
+      transition: theme.transitions.create(['background-color'], {
+        duration: theme.transitions.duration.short,
+      }),
+      '&:hover': {
+        backgroundColor: hasNext ? theme.palette.primary.dark : 'transparent',
+      },
+    }),
+    [hasNext, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
+  );
+
+  // Desktop button styles
+  const desktopPrevButtonSx = useMemo(
+    () => ({
+      minWidth: 100,
+      background: hasPrev
+        ? `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`
+        : 'transparent',
+      transition: theme.transitions.create(['background', 'opacity'], {
+        duration: theme.transitions.duration.short,
+      }),
+    }),
+    [hasPrev, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
+  );
+
+  const desktopNextButtonSx = useMemo(
+    () => ({
+      minWidth: 100,
+      background: hasNext
+        ? `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`
+        : 'transparent',
+      transition: theme.transitions.create(['background', 'opacity'], {
+        duration: theme.transitions.duration.short,
+      }),
+    }),
+    [hasNext, theme.palette.primary.main, theme.palette.primary.dark, theme.transitions],
+  );
+
+  // Track current page - use direct useEffect to avoid callback recreation
+  React.useEffect(() => {
     const newPage: VisitedPage = {
       page,
       itemRange: currentRange,
@@ -103,11 +159,6 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
       return updated;
     });
   }, [page, currentRange, maxVisitedPages]);
-
-  // Track current page
-  React.useEffect(() => {
-    trackVisitedPage();
-  }, [trackVisitedPage]);
 
   // Page size options
   const pageSizeOptions = [10, 25, 50, 100];
@@ -226,13 +277,7 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
               onClick={onPrevPage}
               disabled={!hasPrev || loading}
               size="large"
-              sx={{
-                backgroundColor: hasPrev ? theme.palette.primary.main : 'transparent',
-                color: hasPrev ? 'white' : 'text.disabled',
-                '&:hover': {
-                  backgroundColor: hasPrev ? theme.palette.primary.dark : 'transparent',
-                },
-              }}
+              sx={prevButtonSx}
             >
               <PrevIcon />
             </IconButton>
@@ -254,13 +299,7 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
               onClick={onNextPage}
               disabled={!hasNext || loading}
               size="large"
-              sx={{
-                backgroundColor: hasNext ? theme.palette.primary.main : 'transparent',
-                color: hasNext ? 'white' : 'text.disabled',
-                '&:hover': {
-                  backgroundColor: hasNext ? theme.palette.primary.dark : 'transparent',
-                },
-              }}
+              sx={nextButtonSx}
             >
               <NextIcon />
             </IconButton>
@@ -337,16 +376,11 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
 
           {/* Previous button */}
           <Button
-            variant={hasPrev ? 'contained' : 'outlined'}
+            variant="contained"
             onClick={onPrevPage}
             disabled={!hasPrev || loading}
             startIcon={<PrevIcon />}
-            sx={{
-              minWidth: 100,
-              background: hasPrev
-                ? `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`
-                : 'transparent',
-            }}
+            sx={desktopPrevButtonSx}
           >
             Previous
           </Button>
@@ -367,16 +401,11 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
 
           {/* Next button */}
           <Button
-            variant={hasNext ? 'contained' : 'outlined'}
+            variant="contained"
             onClick={onNextPage}
             disabled={!hasNext || loading}
             endIcon={<NextIcon />}
-            sx={{
-              minWidth: 100,
-              background: hasNext
-                ? `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`
-                : 'transparent',
-            }}
+            sx={desktopNextButtonSx}
           >
             Next
           </Button>
@@ -401,15 +430,5 @@ const StreamPaginationControl: React.FC<StreamPaginationControlProps> = ({
   );
 };
 
-// Memoize to prevent unnecessary re-renders
-export default React.memo(StreamPaginationControl, (prevProps, nextProps) => {
-  // Only re-render if pagination state or handlers change
-  return (
-    prevProps.page === nextProps.page &&
-    prevProps.rowsPerPage === nextProps.rowsPerPage &&
-    prevProps.hasNext === nextProps.hasNext &&
-    prevProps.hasPrev === nextProps.hasPrev &&
-    prevProps.loading === nextProps.loading &&
-    prevProps.currentItems === nextProps.currentItems
-  );
-});
+// Memoize to prevent unnecessary re-renders while keeping it simple
+export default React.memo(StreamPaginationControl);

@@ -67,13 +67,16 @@ find_main_repo() {
     local depth=0
     
     while [ "$depth" -lt "$max_depth" ] && [ "$current" != "/" ]; do
-        if [ -f "$current/.git" ] || [ -d "$current/.git" ]; then
-            # Check if this is the main repo (has the draco-nodejs directory)
-            if [ -d "$current/draco-nodejs" ]; then
-                echo "$current"
-                return 0
+        # Check if current directory has a "draco" subdirectory
+        for draco_dir in "$current"/[Dd]raco; do
+            if [ -d "$draco_dir" ]; then
+                # Check if this draco directory has draco-nodejs subdirectory
+                if [ -d "$draco_dir/draco-nodejs" ]; then
+                    echo "$draco_dir"
+                    return 0
+                fi
             fi
-        fi
+        done
         current=$(dirname "$current")
         depth=$((depth + 1))
     done
@@ -215,7 +218,7 @@ if [ -f "$MAIN_REPO_PATH/draco-nodejs/frontend-next/.env.local" ]; then
     cp "$MAIN_REPO_PATH/draco-nodejs/frontend-next/.env.local" "draco-nodejs/frontend-next/.env.local"
     
     # Update NEXT_PUBLIC_API_URL in frontend .env.local
-    sed -i.bak "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://localhost:$BACKEND_PORT|" "draco-nodejs/frontend-next/.env.local"
+    sed -i.bak "s|^[[:space:]]*NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://localhost:$BACKEND_PORT|" "draco-nodejs/frontend-next/.env.local"
     rm -f "draco-nodejs/frontend-next/.env.local.bak"
     
     print_success "Frontend .env.local configured with backend port $BACKEND_PORT"

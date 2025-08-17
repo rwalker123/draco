@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   host = host.replace(/:\d+$/, '');
 
   // Use backend URL from env or default
-  const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   try {
     const res = await fetch(`${backendUrl}/api/accounts/by-domain`, {
       method: 'GET',
