@@ -105,7 +105,7 @@
 ### 🎯 Immediate Next Steps (Phase 2 Completion - 1% Remaining)
 
 **Known UI Performance Issues (Visual Bugs):**
-- 🐛 **File Attachments Card Flashing**: Storage usage card flashes excessively when typing in email editor
+- ✅ **File Attachments Card Flashing**: FIXED - Storage usage card flashing resolved by stabilizing callback references in FileUploadComponent and StorageQuotaIndicator
 - 🐛 **Recipient Dialog Field Flashing**: Search field and selection controls flash during pagination
 
 **Priority 1: Finalize Core Functionality**

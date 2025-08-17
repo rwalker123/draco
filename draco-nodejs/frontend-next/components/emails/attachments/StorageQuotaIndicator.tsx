@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Stack,
@@ -55,7 +55,20 @@ export const StorageQuotaIndicator: React.FC<StorageQuotaIndicatorProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
 
-  // Simulate storage quota data fetch
+  // Use refs to store the latest callback functions to avoid dependency issues
+  const onQuotaExceededRef = useRef(onQuotaExceeded);
+  const onQuotaWarningRef = useRef(onQuotaWarning);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onQuotaExceededRef.current = onQuotaExceeded;
+  }, [onQuotaExceeded]);
+
+  useEffect(() => {
+    onQuotaWarningRef.current = onQuotaWarning;
+  }, [onQuotaWarning]);
+
+  // Simulate storage quota data fetch - only depends on stable values
   useEffect(() => {
     const fetchQuotaData = async () => {
       try {
@@ -75,13 +88,13 @@ export const StorageQuotaIndicator: React.FC<StorageQuotaIndicatorProps> = ({
 
         setQuotaData(mockData);
 
-        // Check for warnings/errors
+        // Check for warnings/errors using refs to avoid stale closures
         if (mockData.percentUsed >= criticalThreshold) {
           setShowAlert(true);
-          onQuotaExceeded?.();
+          onQuotaExceededRef.current?.();
         } else if (mockData.percentUsed >= warningThreshold) {
           setShowAlert(true);
-          onQuotaWarning?.(mockData);
+          onQuotaWarningRef.current?.(mockData);
         }
       } catch {
         setError('Failed to load storage quota information');
@@ -91,7 +104,7 @@ export const StorageQuotaIndicator: React.FC<StorageQuotaIndicatorProps> = ({
     };
 
     fetchQuotaData();
-  }, [accountId, warningThreshold, criticalThreshold, onQuotaExceeded, onQuotaWarning]);
+  }, [accountId, warningThreshold, criticalThreshold]); // Removed callback dependencies
 
   // Format bytes to human readable format
   const formatBytes = (bytes: number): string => {

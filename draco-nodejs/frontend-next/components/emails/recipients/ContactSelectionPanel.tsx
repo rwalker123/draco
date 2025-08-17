@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Stack,
@@ -100,6 +100,11 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
   // const theme = useTheme(); // Available for future styling needs
 
   const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Stable fallback functions to prevent pagination control flashing
+  const stableOnNextPage = useCallback(() => {}, []);
+  const stableOnPrevPage = useCallback(() => {}, []);
+  const stableOnRowsPerPageChange = useCallback(() => {}, []);
 
   // Use contacts from props if provided, otherwise empty array (provider-independent)
   const contactsToUse = useMemo(() => propContacts || [], [propContacts]);
@@ -428,33 +433,32 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
         </Box>
       )}
 
-      {/* Pagination Controls - Show if there's pagination available or if we have contacts */}
-      {(hasNext || hasPrev) && displayContacts.length > 0 && (
-        <Box
-          sx={{
-            borderTop: 1,
-            borderColor: 'divider',
-            backgroundColor: 'background.paper',
-            flexShrink: 0,
-          }}
-        >
-          <StreamPaginationControl
-            page={currentPage}
-            rowsPerPage={rowsPerPage}
-            hasNext={hasNext}
-            hasPrev={hasPrev}
-            onNextPage={onNextPage || (() => {})}
-            onPrevPage={onPrevPage || (() => {})}
-            onRowsPerPageChange={onRowsPerPageChange || (() => {})}
-            currentItems={displayContacts.length}
-            itemLabel="contacts"
-            loading={loading}
-            variant="compact"
-            showPageSize={false}
-            showJumpControls={false}
-          />
-        </Box>
-      )}
+      {/* Pagination Controls - Always mounted but conditionally visible */}
+      <Box
+        sx={{
+          borderTop: 1,
+          borderColor: 'divider',
+          backgroundColor: 'background.paper',
+          flexShrink: 0,
+          display: (hasNext || hasPrev) && displayContacts.length > 0 ? 'block' : 'none',
+        }}
+      >
+        <StreamPaginationControl
+          page={currentPage}
+          rowsPerPage={rowsPerPage}
+          hasNext={hasNext}
+          hasPrev={hasPrev}
+          onNextPage={onNextPage || stableOnNextPage}
+          onPrevPage={onPrevPage || stableOnPrevPage}
+          onRowsPerPageChange={onRowsPerPageChange || stableOnRowsPerPageChange}
+          currentItems={displayContacts.length}
+          itemLabel="contacts"
+          loading={loading}
+          variant="compact"
+          showPageSize={false}
+          showJumpControls={false}
+        />
+      </Box>
     </Box>
   );
 };
