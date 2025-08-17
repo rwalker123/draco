@@ -383,6 +383,9 @@ export interface UserTableEnhancedProps extends UserTableProps {
   // Enhanced props
   accountId?: string;
 
+  // Title customization
+  title?: string | null;
+
   // Search props
   searchTerm?: string;
   onSearchChange?: (term: string) => void;

@@ -11,13 +11,71 @@ interface AccountOwnerDisplayProps {
     email: string | null;
     photoUrl?: string;
   } | null; // Keep nullable for component safety, but expect it to always have value
+  variant?: 'header' | 'card';
 }
 
-const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({ accountOwner }) => {
+const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({
+  accountOwner,
+  variant = 'card',
+}) => {
   if (!accountOwner) {
     return null;
   }
 
+  if (variant === 'header') {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 0.5,
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{
+            color: 'common.white',
+            opacity: 0.8,
+            fontWeight: 400,
+            textAlign: 'center',
+            fontSize: '0.875rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
+        >
+          Account Owner
+        </Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            color: 'common.white',
+            opacity: 0.95,
+            fontWeight: 600,
+            textAlign: 'center',
+            fontSize: { xs: '1rem', sm: '1.125rem' },
+          }}
+        >
+          {accountOwner.firstName} {accountOwner.lastName}
+        </Typography>
+        {accountOwner.email && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'common.white',
+              opacity: 0.8,
+              textAlign: 'center',
+              fontSize: '0.875rem',
+            }}
+          >
+            {accountOwner.email}
+          </Typography>
+        )}
+      </Box>
+    );
+  }
+
+  // Default card variant
   return (
     <Card
       sx={{

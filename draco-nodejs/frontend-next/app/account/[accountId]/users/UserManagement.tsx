@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Alert } from '@mui/material';
+import { Alert, Box, Typography } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import {
   UserTableEnhanced,
@@ -11,7 +11,11 @@ import {
 import EditContactDialog from '../../../../components/users/EditContactDialog';
 import DeleteContactDialog from '../../../../components/users/DeleteContactDialog';
 import ConfirmationDialog from '../../../../components/common/ConfirmationDialog';
-import { AutomaticRolesSection } from '../../../../components/users/automatic-roles';
+import {
+  AutomaticRolesSection,
+  AccountOwnerDisplay,
+} from '../../../../components/users/automatic-roles';
+import AccountPageHeader from '../../../../components/AccountPageHeader';
 
 interface UserManagementProps {
   accountId: string;
@@ -146,6 +150,25 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
 
   return (
     <main className="min-h-screen bg-background">
+      {/* Account Header */}
+      <AccountPageHeader accountId={accountId}>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          sx={{ position: 'relative' }}
+        >
+          <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              User Management
+            </Typography>
+          </Box>
+
+          {/* Account Owner Information */}
+          {accountOwner && <AccountOwnerDisplay accountOwner={accountOwner} variant="header" />}
+        </Box>
+      </AccountPageHeader>
+
       {/* Error and Success Alerts */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -204,6 +227,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         // Filter props
         onlyWithRoles={onlyWithRoles}
         onOnlyWithRolesChange={handleFilterToggle}
+        // Disable the title header above the search bar
+        title={null}
       />
 
       {/* Dialog Sections */}

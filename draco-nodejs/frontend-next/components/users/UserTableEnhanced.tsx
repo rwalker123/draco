@@ -28,6 +28,9 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   onlyWithRoles,
   onOnlyWithRolesChange,
 
+  // Title prop to override default behavior
+  title: customTitle,
+
   // All original UserTable props
   ...originalProps
 }) => {
@@ -81,7 +84,13 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
           .onRevokeRegistration
       }
       // Title props for enhanced container
-      title={hasModernFeatures ? 'User Management' : undefined}
+      title={
+        customTitle !== undefined
+          ? customTitle || undefined
+          : hasModernFeatures
+            ? 'User Management'
+            : undefined
+      }
       showTitle={hasModernFeatures}
     />
   );
