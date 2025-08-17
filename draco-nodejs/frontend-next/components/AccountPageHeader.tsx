@@ -160,7 +160,14 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
 
       {/* Page-specific content */}
       {children && (
-        <Box sx={{ p: 4, pt: showLogo || (showSeasonInfo && seasonName) ? 0 : 4 }}>{children}</Box>
+        <Box
+          sx={{
+            p: 4,
+            pt: showLogo || (showSeasonInfo && seasonName) ? 0 : 4,
+          }}
+        >
+          {children}
+        </Box>
       )}
     </Box>
   );

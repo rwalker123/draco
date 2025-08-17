@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, Typography, Divider } from '@mui/material';
-import AccountOwnerDisplay from './AccountOwnerDisplay';
+import { Box, Divider } from '@mui/material';
 import TeamManagersList from './TeamManagersList';
 
 interface AutomaticRolesSectionProps {
@@ -34,19 +33,7 @@ const AutomaticRolesSection: React.FC<AutomaticRolesSectionProps> = ({
   }
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography
-        variant="h5"
-        sx={{
-          mb: 2,
-          color: 'text.primary',
-          fontWeight: 'bold',
-        }}
-      >
-        Automatic Role Holders
-      </Typography>
-
-      <AccountOwnerDisplay accountOwner={accountOwner} />
+    <Box sx={{ mt: 4, mb: 4 }}>
       <TeamManagersList teamManagers={teamManagers} />
 
       <Divider sx={{ mt: 3, mb: 3 }} />

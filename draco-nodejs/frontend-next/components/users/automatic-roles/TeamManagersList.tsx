@@ -62,9 +62,9 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
               gap: 2,
             }}
           >
-            {teamManagers.map((manager) => (
+            {teamManagers.map((manager, index) => (
               <Box
-                key={manager.contactId}
+                key={`${manager.contactId}-${index}`}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -103,7 +103,7 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                     {manager.teams.map((team) => (
                       <Chip
-                        key={team.teamSeasonId}
+                        key={`${manager.contactId}-${team.teamSeasonId}`}
                         label={team.teamName}
                         size="small"
                         variant="outlined"
