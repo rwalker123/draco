@@ -45,7 +45,10 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
 
   // Refs to preserve cursor position and get RichTextEditor content
   const workoutDescRef = useRef<HTMLInputElement>(null);
-  const richTextEditorRef = useRef<{ getCurrentContent: () => string }>(null);
+  const richTextEditorRef = useRef<{
+    getCurrentContent: () => string;
+    insertText: (text: string) => void;
+  }>(null);
 
   const router = useRouter();
   const params = useParams();
