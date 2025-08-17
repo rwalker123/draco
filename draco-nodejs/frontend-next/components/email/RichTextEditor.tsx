@@ -301,6 +301,30 @@ function InitialContentPlugin({ initialHtml }: { initialHtml?: string }) {
   return null;
 }
 
+// Plugin to handle content changes using registerTextContentListener
+// This avoids cursor jumping issues that occur with registerUpdateListener
+function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!onChange) return;
+
+    // Use registerTextContentListener to avoid cursor jumping
+    // This listener only fires when text content actually changes
+    const unregister = editor.registerTextContentListener(() => {
+      // Get the HTML content when text changes
+      const htmlContent = editor.getEditorState().read(() => {
+        return $generateHtmlFromNodes(editor);
+      });
+      onChange(htmlContent);
+    });
+
+    return unregister;
+  }, [editor, onChange]);
+
+  return null;
+}
+
 const theme = {
   text: {
     bold: 'editor-text-bold',
@@ -396,9 +420,8 @@ const RichTextEditor = React.forwardRef<
       [getCurrentContent, insertText],
     );
 
-    // Remove the onChange handler entirely - no more cursor jumping!
-    // onChange will only be called when parent explicitly requests content
-    // Parent can access getCurrentContent via a ref if needed
+    // Content changes are now handled by ContentChangePlugin using registerTextContentListener
+    // This avoids cursor jumping while providing real-time content updates
 
     // Store editor reference when it's created
     const onEditorCreated = useCallback((editor: LexicalEditor) => {
@@ -504,6 +527,8 @@ const RichTextEditor = React.forwardRef<
 
             {/* Store editor reference when created */}
             <OnChangePlugin onChange={(editorState, editor) => onEditorCreated(editor)} />
+            {/* Handle content changes without cursor jumping */}
+            <ContentChangePlugin onChange={_onChange} />
             <HistoryPlugin />
             <ListPlugin />
             <LinkPlugin />
