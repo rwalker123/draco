@@ -3,24 +3,27 @@
 # sqlpipe-migration.sh
 # Usage: ./sqlpipe-migration.sh
 
-# Set your variables here
-SQLSERVER_HOST="sql2k1202.discountasp.net"
-SQLSERVER_PORT="1433"
-SQLSERVER_DB="SQL2012_152800_ezrecsports"
-SQLSERVER_USER="SQL2012_152800_ezrecsports_user"
-SQLSERVER_PASS="Z3aB46yx!"
+# Database connection settings from environment variables
+SQLSERVER_HOST="${SQLSERVER_HOST:-}"
+SQLSERVER_PORT="${SQLSERVER_PORT:-1433}"
+SQLSERVER_DB="${SQLSERVER_DB:-}"
+SQLSERVER_USER="${SQLSERVER_USER:-}"
+SQLSERVER_PASS="${SQLSERVER_PASS:-}"
 
-#SQLSERVER_CONN="$SQLSERVER_USER:$SQLSERVER_PASS@tcp($SQLSERVER_HOST:$SQLSERVER_PORT)/$SQLSERVER_DB"
-# echo "SQL Server connection string: $SQLSERVER_CONN"
+POSTGRES_HOST="${POSTGRES_HOST:-host.docker.internal}"
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+POSTGRES_DB="${POSTGRES_DB:-ezrecsports}"
+POSTGRES_USER="${POSTGRES_USER:-postgres}"
+POSTGRES_PASS="${POSTGRES_PASS:-}"
 
-SQLSERVER_CONN="Server=$SQLSERVER_HOST,$SQLSERVER_PORT;Database=$SQLSERVER_DB;User Id=$SQLSERVER_USER;Password=$SQLSERVER_PASS" 
-#echo "SQL Server connection string: $SQLSERVER_CONN"
+# Check that required SQL Server variables are set
+if [ -z "$SQLSERVER_HOST" ] || [ -z "$SQLSERVER_DB" ] || [ -z "$SQLSERVER_USER" ] || [ -z "$SQLSERVER_PASS" ]; then
+    echo "Error: Missing required SQL Server environment variables"
+    echo "Please set: SQLSERVER_HOST, SQLSERVER_DB, SQLSERVER_USER, SQLSERVER_PASS"
+    exit 1
+fi
 
-POSTGRES_HOST="host.docker.internal"
-POSTGRES_PORT="5432"
-POSTGRES_DB="ezrecsports"
-POSTGRES_USER="postgres"
-POSTGRES_PASS=""
+SQLSERVER_CONN="Server=$SQLSERVER_HOST,$SQLSERVER_PORT;Database=$SQLSERVER_DB;User Id=$SQLSERVER_USER;Password=$SQLSERVER_PASS"
 
 POSTGRES_CONN="postgresql://$POSTGRES_USER@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB"
 
