@@ -55,12 +55,6 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
           example: 'Smith',
         },
         {
-          key: 'parentName',
-          label: 'Parent Name',
-          description: 'Parent or guardian name',
-          example: 'Jane Smith',
-        },
-        {
           key: 'playerName',
           label: 'Player Name',
           description: "Player's full name",
@@ -95,12 +89,6 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
           label: 'Manager Name',
           description: "Team manager's name",
           example: 'Coach Johnson',
-        },
-        {
-          key: 'coachName',
-          label: 'Coach Name',
-          description: "Team coach's name",
-          example: 'Coach Wilson',
         },
       ],
     },
@@ -174,7 +162,7 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
 
   return (
     <Box>
-      <Typography variant="body2" color="text.secondary" paragraph>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Click any variable below to insert it into your template. Variables will be replaced with
         actual data when emails are sent.
       </Typography>
@@ -225,9 +213,9 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
       />
 
       {/* Variable Categories */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
         {filteredCategories.map((category) => (
-          <Card key={category.name} variant="outlined">
+          <Card key={category.name} variant="outlined" sx={{ width: 'fit-content', minWidth: 300 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <Box sx={{ color: 'primary.main' }}>{category.icon}</Box>
@@ -238,51 +226,41 @@ export default function VariableInsertionHelper({ onInsert }: VariableInsertionH
 
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {category.variables.map((variable) => (
-                  <Box
+                  <Button
                     key={variable.key}
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleInsertVariable(variable.key)}
                     sx={{
-                      flex: {
-                        xs: '1 1 100%',
-                        sm: '1 1 calc(50% - 4px)',
-                        md: '1 1 calc(33.333% - 6px)',
-                      },
-                      minWidth: 200,
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      height: 'auto',
+                      py: 1,
+                      px: 1.5,
+                      minWidth: 'auto',
+                      width: 'fit-content',
                     }}
                   >
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                      onClick={() => handleInsertVariable(variable.key)}
-                      sx={{
-                        justifyContent: 'flex-start',
-                        textAlign: 'left',
-                        height: 'auto',
-                        py: 1,
-                        px: 1.5,
-                      }}
-                    >
-                      <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                        <Typography variant="body2" component="div" noWrap>
-                          {variable.label}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          component="div"
-                          sx={{
-                            fontSize: '0.7rem',
-                            lineHeight: 1.2,
-                            mt: 0.5,
-                          }}
-                        >
-                          {'{'}
-                          {variable.key}
-                          {'}'}
-                        </Typography>
-                      </Box>
-                    </Button>
-                  </Box>
+                    <Box sx={{ overflow: 'hidden' }}>
+                      <Typography variant="body2" component="div">
+                        {variable.label}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        component="div"
+                        sx={{
+                          fontSize: '0.7rem',
+                          lineHeight: 1.2,
+                          mt: 0.5,
+                        }}
+                      >
+                        {'{'}
+                        {variable.key}
+                        {'}'}
+                      </Typography>
+                    </Box>
+                  </Button>
                 ))}
               </Box>
             </CardContent>

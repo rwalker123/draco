@@ -19,7 +19,6 @@ import { useAuth } from '../../../context/AuthContext';
 import { EmailTemplate } from '../../../types/emails/email';
 import TemplateRichTextEditor from './TemplateRichTextEditor';
 import VariableInsertionHelper from './VariableInsertionHelper';
-import { useTemplateVariableInsertion } from '../../../hooks/useTemplateVariableInsertion';
 import { TEMPLATE_HELPER_TEXT, getAllTemplateVariables } from '../../../utils/templateUtils';
 import { formatDateSafely } from '../../../utils/dateUtils';
 import { useDebounce } from '../../../hooks/useDebounce';
@@ -89,6 +88,9 @@ export default function BaseTemplateDialog({
     insertVariable: (variable: string) => void;
   }>(null);
 
+  // Ref for the subject TextField to track cursor position
+  const subjectTextFieldRef = React.useRef<HTMLInputElement>(null);
+
   // Memoize EmailService with proper token validation
   const emailService = useMemo(() => {
     if (!token) {
@@ -96,8 +98,6 @@ export default function BaseTemplateDialog({
     }
     return new EmailService(token);
   }, [token]);
-
-  const { createVariableInsertHandler } = useTemplateVariableInsertion();
 
   // Initialize form data when template changes (edit mode)
   useEffect(() => {
@@ -182,15 +182,44 @@ export default function BaseTemplateDialog({
     }
   }, 100); // Reduced delay since real-time updates now handled by registerTextContentListener
 
-  // Enhanced variable insertion handler that uses the rich text editor when possible
+  // Enhanced variable insertion handler that uses cursor position for subject field
   const handleVariableInsert = React.useCallback(
     (variable: string, fieldOverride?: 'subject' | 'body') => {
       const field = fieldOverride || (activeTab === 0 ? 'subject' : 'body');
 
       if (field === 'subject') {
-        // For subject field, use the existing string-based insertion
-        const subjectHandler = createVariableInsertHandler(formData, setFormData, 'subject');
-        subjectHandler(variable, 'subject');
+        // For subject field, use cursor-aware insertion
+        const currentContent = formData.subjectTemplate;
+        const variableTag = `{{${variable}}}`;
+
+        // Get cursor position from the TextField input element
+        let cursorPosition = currentContent.length; // Default to end
+        if (subjectTextFieldRef.current) {
+          const selectionStart = subjectTextFieldRef.current.selectionStart;
+          if (selectionStart !== null) {
+            cursorPosition = selectionStart;
+          }
+        }
+
+        // Insert the variable at the cursor position
+        const beforeCursor = currentContent.substring(0, cursorPosition);
+        const afterCursor = currentContent.substring(cursorPosition);
+        const newContent = beforeCursor + variableTag + afterCursor;
+
+        // Update form data
+        setFormData((prev) => ({
+          ...prev,
+          subjectTemplate: newContent,
+        }));
+
+        // Restore cursor position after the inserted variable
+        setTimeout(() => {
+          if (subjectTextFieldRef.current) {
+            const newCursorPosition = cursorPosition + variableTag.length;
+            subjectTextFieldRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+            subjectTextFieldRef.current.focus();
+          }
+        }, 0);
       } else {
         // For body field, use the rich text editor's cursor-aware insertion
         if (richTextEditorRef.current) {
@@ -209,7 +238,7 @@ export default function BaseTemplateDialog({
         }
       }
     },
-    [activeTab, formData, setFormData, createVariableInsertHandler],
+    [activeTab, formData.subjectTemplate],
   );
 
   const validateForm = () => {
@@ -352,6 +381,7 @@ export default function BaseTemplateDialog({
               rows={2}
               fullWidth
               helperText={TEMPLATE_HELPER_TEXT.SUBJECT}
+              inputRef={subjectTextFieldRef}
             />
           </TabPanel>
 
