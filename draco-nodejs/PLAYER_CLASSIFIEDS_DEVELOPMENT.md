@@ -14,11 +14,13 @@ The PlayerClassifieds feature allows teams to post "Players Wanted" ads and indi
 - [x] Backend interfaces
 - [x] Backend services
 - [x] Backend routes
-- [ ] Frontend components
-- [ ] Frontend pages
+- [x] **Phase 2a - Core Structure** - All components, hooks, services, and types created and building successfully
+- [ ] **Phase 2a - Testing** - Components created but not yet tested
+- [ ] Frontend pages (beyond basic structure)
 - [ ] Email integration
-- [x] Testing
+- [x] Testing (backend only)
 - [x] Documentation
+- [x] **Phase 2 Frontend Implementation Plan** - Comprehensive plan documented with detailed task breakdown
 
 ## Recent Improvements (December 19, 2024)
 - ✅ **Security Implementation Completed**: All security features implemented and tested
@@ -138,6 +140,169 @@ CREATE INDEX idx_teamswanted_accesscode ON teamswantedclassified(accesscode);
 - [ ] Loading states and error handling
 - [ ] Success/failure notifications
 - [ ] Progressive enhancement for offline viewing
+
+#### **Detailed Implementation Plan**
+
+##### **File Structure & Organization**
+```
+draco-nodejs/frontend-next/
+├── app/account/[accountId]/player-classifieds/
+│   ├── page.tsx                           # Main page with routing
+│   ├── PlayersWanted.tsx                  # Players Wanted listing & management
+│   ├── TeamsWanted.tsx                    # Teams Wanted listing & public access
+│   ├── CreatePlayersWantedDialog.tsx      # Creation dialog (role-restricted)
+│   ├── CreateTeamsWantedDialog.tsx        # Creation dialog (public with CAPTCHA)
+│   ├── EditPlayersWantedDialog.tsx        # Edit dialog (creator/admin only)
+│   ├── EditTeamsWantedDialog.tsx          # Edit dialog (access code required)
+│   ├── DeleteClassifiedDialog.tsx         # Deletion confirmation
+│   └── layout.tsx                         # Page-specific layout
+├── components/player-classifieds/
+│   ├── ClassifiedsHeader.tsx              # Page header with actions
+│   ├── PlayersWantedCard.tsx              # Individual Players Wanted display
+│   ├── TeamsWantedCard.tsx                # Individual Teams Wanted display
+│   ├── ClassifiedsFilter.tsx              # Search & filtering controls
+│   ├── ClassifiedsPagination.tsx          # Pagination component
+│   ├── PositionSelector.tsx                # Position selection component
+│   ├── ExperienceLevelSelector.tsx        # Experience level dropdown
+│   ├── AccessCodeInput.tsx                 # Access code input for editing
+│   └── CAPTCHAWrapper.tsx                 # CAPTCHA integration wrapper
+├── services/
+│   └── playerClassifiedService.ts         # API service layer
+├── hooks/
+│   ├── usePlayerClassifieds.ts            # Main data management hook
+│   ├── useClassifiedsPagination.ts        # Pagination logic
+│   ├── useClassifiedsSearch.ts            # Search & filtering logic
+│   └── useClassifiedsPermissions.ts       # Permission checking
+└── types/
+    └── playerClassifieds.ts               # Frontend-specific types
+```
+
+##### **Core Components & UX Flow**
+- **Main Page**: Two-tab structure (Players Wanted | Teams Wanted)
+- **Header**: Account context, create buttons, search bar
+- **Content**: Tabbed content with appropriate permissions
+- **Mobile**: Responsive design with mobile-first approach
+
+##### **Component Architecture**
+- **ClassifiedsHeader**: Account context, create buttons, search, view toggle, bulk actions
+- **PlayersWantedCard**: Team event name, positions needed, description, creator info, actions
+- **TeamsWantedCard**: Player name, contact info, positions played, experience, access code entry
+- **ClassifiedsFilter**: Text search, position filter, experience filter, date range, status, sort options
+
+##### **Dialog Components**
+- **CreatePlayersWantedDialog**: Form fields, validation, permissions, submission
+- **CreateTeamsWantedDialog**: Form fields, CAPTCHA, email verification, public access
+- **Edit Dialogs**: Creator/admin permissions, access code validation, form pre-population
+
+##### **Service Layer (playerClassifiedService.ts)**
+- CRUD operations for both classified types
+- Search and filtering API calls
+- Email verification handling
+- Error handling and rate limiting feedback
+
+##### **Custom Hooks**
+- **usePlayerClassifieds**: Main data management, CRUD operations, permissions
+- **useClassifiedsPagination**: Page navigation, rows per page, infinite scroll
+- **useClassifiedsSearch**: Debounced search, filter state, URL sync
+- **useClassifiedsPermissions**: Role-based access control, action permissions
+
+##### **Integration Points**
+- Leverage existing components: AccountPageHeader, ConfirmationDialog, SkeletonLoaders
+- Extend existing hooks: useNotifications, useTableLoadingState, useVirtualScroll
+- Follow established patterns from UserManagement and other account pages
+
+##### **Mobile-First Design**
+- **Responsive Breakpoints**: Mobile (single column), Tablet (two column), Desktop (three column)
+- **Touch Interactions**: Swipe gestures, large touch targets, pull-to-refresh
+- **Progressive Enhancement**: Core functionality without JavaScript, offline viewing
+
+##### **Performance Optimizations**
+- Lazy loading of classified details
+- Virtual scrolling for large lists
+- Debounced search (300ms delay)
+- Local and session storage caching
+
+##### **Security & Validation**
+- Real-time form validation
+- Input sanitization
+- CAPTCHA integration
+- Access code validation
+- Role-based permission checking
+
+##### **Implementation Phases**
+- **Phase 2a: Core Structure (Week 1)**: Directory structure, basic layout, component skeletons
+- **Phase 2b: Basic Functionality (Week 2)**: Listings, basic create dialogs
+- **Phase 2c: Advanced Features (Week 3)**: Search, filtering, pagination, edit/delete
+- **Phase 2d: Polish & Testing (Week 4)**: Mobile responsiveness, error handling, testing
+
+##### **Success Metrics**
+- **User Experience**: Page load < 2s, search < 500ms, mobile usability > 90%
+- **Functionality**: 100% CRUD operations, search accuracy > 95%, permissions working
+
+##### **Detailed Task Breakdown**
+
+###### **Phase 2a: Core Structure (Week 1)**
+- [x] Create `app/account/[accountId]/player-classifieds/` directory
+- [x] Create `components/player-classifieds/` directory
+- [x] Create `types/playerClassifieds.ts` with frontend interfaces
+- [x] Create `services/playerClassifiedService.ts` service layer
+- [x] Create `hooks/usePlayerClassifieds.ts` main hook
+- [x] Create `hooks/useClassifiedsPagination.ts` pagination hook
+- [x] Create `hooks/useClassifiedsSearch.ts` search hook
+- [x] Create `hooks/useClassifiedsPermissions.ts` permissions hook
+- [x] Create basic `page.tsx` with tab structure
+- [x] Create `layout.tsx` for page-specific layout
+- [x] Create component skeletons for all planned components
+
+**Status**: ✅ **Coded & Building Successfully** - All components, hooks, services, and types created and compile without errors
+**Next**: 🧪 **Testing Required** - Components need to be tested for functionality, UI rendering, and integration
+
+###### **Phase 2b: Basic Functionality (Week 2)**
+- [ ] Implement `ClassifiedsHeader.tsx` with account context and actions
+- [ ] Implement `PlayersWanted.tsx` main listing component
+- [ ] Implement `TeamsWanted.tsx` main listing component
+- [ ] Create `PlayersWantedCard.tsx` individual card component
+- [ ] Create `TeamsWantedCard.tsx` individual card component
+- [ ] Implement `CreatePlayersWantedDialog.tsx` creation dialog
+- [ ] Implement `CreateTeamsWantedDialog.tsx` creation dialog with CAPTCHA
+- [ ] Integrate with backend API endpoints
+- [ ] Implement basic error handling and loading states
+
+###### **Phase 2c: Advanced Features (Week 3)**
+- [ ] Implement `ClassifiedsFilter.tsx` search and filtering
+- [ ] Implement `ClassifiedsPagination.tsx` pagination component
+- [ ] Create `PositionSelector.tsx` position selection component
+- [ ] Create `ExperienceLevelSelector.tsx` experience dropdown
+- [ ] Implement `EditPlayersWantedDialog.tsx` edit functionality
+- [ ] Implement `EditTeamsWantedDialog.tsx` edit with access code
+- [ ] Create `DeleteClassifiedDialog.tsx` deletion confirmation
+- [ ] Implement search functionality with debouncing
+- [ ] Add filtering by position, experience, date range
+- [ ] Implement sorting options (newest, relevance, views)
+
+###### **Phase 2d: Polish & Testing (Week 4)**
+- [ ] Implement mobile-first responsive design
+- [ ] Add touch interactions and gestures
+- [ ] Implement progressive enhancement features
+- [ ] Add comprehensive error handling
+- [ ] Implement success/failure notifications
+- [ ] Add loading states and skeleton loaders
+- [ ] Implement virtual scrolling for performance
+- [ ] Add accessibility features (ARIA labels, keyboard navigation)
+- [ ] Cross-browser testing and compatibility
+- [ ] Mobile device testing and optimization
+- [ ] Performance optimization and caching
+- [ ] Final testing and bug fixes
+
+###### **Integration Tasks (Throughout Development)**
+- [ ] Integrate with existing `AccountPageHeader` component
+- [ ] Use existing `ConfirmationDialog` for deletions
+- [ ] Implement `SkeletonLoaders` for loading states
+- [ ] Use existing `EmptyState` for no results
+- [ ] Integrate with existing notification system
+- [ ] Follow established patterns from `UserManagement.tsx`
+- [ ] Ensure consistent styling with existing components
+- [ ] Test with different user roles and permissions
 
 ### **Phase 3: Advanced Features & Matching**
 #### Smart Matching System
@@ -584,6 +749,12 @@ const backgroundJobs = {
 - Security validation tests: All passing ✅
 - Composite validation chains: 4 failing (test structure issue, not functionality)
 
+**Frontend Testing Status**: 
+- **Phase 2a Components**: ❌ **Not Yet Tested** - All components created and building successfully, but no functional testing completed
+- **Component Rendering**: ❌ **Not Tested** - Need to verify UI components render correctly
+- **Hook Integration**: ❌ **Not Tested** - Need to verify custom hooks work as expected
+- **Service Integration**: ❌ **Not Tested** - Need to verify API service calls work correctly
+
 ### **Manual Testing**
 - **Cross-browser Testing**: Chrome, Firefox, Safari, Edge
 - **Mobile Testing**: iOS Safari, Chrome Mobile, responsive design
@@ -706,5 +877,5 @@ const backgroundJobs = {
 ---
 
 **Last Updated**: December 19, 2024
-**Status**: Phase 1 - Backend Infrastructure (98% Complete)
-**Next Steps**: Complete audit logging system, then move to Phase 2 - Frontend Core Features
+**Status**: Phase 1 - Backend Infrastructure (98% Complete) | Phase 2a - Core Structure (100% Coded, 0% Tested)
+**Next Steps**: Test Phase 2a components, then begin Phase 2b - Basic Functionality implementation
