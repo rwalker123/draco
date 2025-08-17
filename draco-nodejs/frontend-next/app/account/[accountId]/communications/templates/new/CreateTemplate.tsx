@@ -83,6 +83,18 @@ export default function CreateTemplate() {
   const emailService = useMemo(() => new EmailService(token || ''), [token]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    // Sync content from rich text editor before switching tabs
+    // This ensures content is preserved when switching between Subject and Content tabs
+    if (editorRef.current) {
+      const currentContent = editorRef.current.getCurrentContent();
+      if (currentContent !== formData.bodyTemplate) {
+        setFormData((prev) => ({
+          ...prev,
+          bodyTemplate: currentContent,
+        }));
+      }
+    }
+
     setActiveTab(newValue);
   };
 
@@ -143,13 +155,26 @@ export default function CreateTemplate() {
   };
 
   const validateForm = useCallback(() => {
+    // Sync content from editor before validation as a safety net
+    let currentBodyContent = formData.bodyTemplate;
+    if (editorRef.current) {
+      const editorContent = editorRef.current.getCurrentContent();
+      if (editorContent !== formData.bodyTemplate) {
+        currentBodyContent = editorContent;
+        setFormData((prev) => ({
+          ...prev,
+          bodyTemplate: editorContent,
+        }));
+      }
+    }
+
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Template name is required';
     }
 
-    if (!formData.bodyTemplate.trim()) {
+    if (!currentBodyContent.trim()) {
       newErrors.bodyTemplate = 'Template content is required';
     }
 

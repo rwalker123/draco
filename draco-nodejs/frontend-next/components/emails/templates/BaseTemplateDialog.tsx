@@ -125,6 +125,18 @@ export default function BaseTemplateDialog({
   }, [template, open, mode]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    // Sync content from rich text editor before switching tabs
+    // This ensures content is preserved when switching between Subject and Content tabs
+    if (richTextEditorRef.current) {
+      const currentContent = richTextEditorRef.current.getCurrentContent();
+      if (currentContent !== formData.bodyTemplate) {
+        setFormData((prev) => ({
+          ...prev,
+          bodyTemplate: currentContent,
+        }));
+      }
+    }
+
     setActiveTab(newValue);
   };
 
@@ -168,7 +180,7 @@ export default function BaseTemplateDialog({
         bodyTemplate: '',
       }));
     }
-  }, 500); // Longer delay for rich text editor (500ms)
+  }, 100); // Reduced delay since real-time updates now handled by registerTextContentListener
 
   // Enhanced variable insertion handler that uses the rich text editor when possible
   const handleVariableInsert = React.useCallback(
@@ -201,13 +213,26 @@ export default function BaseTemplateDialog({
   );
 
   const validateForm = () => {
+    // Sync content from editor before validation as a safety net
+    let currentBodyContent = formData.bodyTemplate;
+    if (richTextEditorRef.current) {
+      const editorContent = richTextEditorRef.current.getCurrentContent();
+      if (editorContent !== formData.bodyTemplate) {
+        currentBodyContent = editorContent;
+        setFormData((prev) => ({
+          ...prev,
+          bodyTemplate: editorContent,
+        }));
+      }
+    }
+
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Template name is required';
     }
 
-    if (!formData.bodyTemplate.trim()) {
+    if (!currentBodyContent.trim()) {
       newErrors.bodyTemplate = 'Template content is required';
     }
 
