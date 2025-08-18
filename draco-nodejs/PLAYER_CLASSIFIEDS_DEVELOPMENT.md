@@ -16,6 +16,8 @@ The PlayerClassifieds feature allows teams to post "Players Wanted" ads and indi
 - [x] Backend routes
 - [x] **Phase 2a - Core Structure** - All components, hooks, services, and types created and building successfully
 - [ ] **Phase 2a - Testing** - Components created but not yet tested
+- [x] **Phase 2b - Development Plan** - Comprehensive implementation plan created with architecture analysis and task breakdown
+- [ ] **Phase 2b - Basic Functionality** - Ready for implementation following detailed plan
 - [ ] Frontend pages (beyond basic structure)
 - [ ] Email integration
 - [x] Testing (backend only)
@@ -267,6 +269,346 @@ draco-nodejs/frontend-next/
 - [ ] Implement `CreateTeamsWantedDialog.tsx` creation dialog with CAPTCHA
 - [ ] Integrate with backend API endpoints
 - [ ] Implement basic error handling and loading states
+
+**Status**: 🚀 **Phase 2b.1 Implementation Started** - Enhanced PlayersWanted and TeamsWanted components implemented and tested
+**Next**: 🚀 **Continue with Phase 2b.2** - Creation dialogs implementation
+
+**Implementation Summary (Phase 2b.1):**
+- ✅ **Enhanced PlayersWanted Component**: Full listing with loading states, error handling, and role-based permissions
+- ✅ **Enhanced TeamsWanted Component**: Public access listing with loading states and error handling
+- ✅ **PlayersWantedCard Component**: Individual ad display with edit/delete actions
+- ✅ **TeamsWantedCardPublic Component**: Public view of teams wanted ads (no sensitive data)
+- ✅ **Hook Integration**: Full integration with usePlayerClassifieds hook including error state management
+- ✅ **Responsive Design**: CSS Grid layout for responsive card display
+- ✅ **Error Handling**: Comprehensive error state management with user-friendly alerts
+- ✅ **Loading States**: Loading indicators and skeleton states for better UX
+- ✅ **Empty States**: Proper empty state handling with call-to-action buttons
+
+##### **Phase 2b: Detailed Development Plan**
+
+###### **Architecture Analysis & Pattern Consistency**
+
+**Established Patterns Identified:**
+1. **Component Structure**: Client wrapper pattern with server-side metadata generation
+2. **State Management**: Custom hooks with centralized business logic
+3. **Service Layer**: API service classes with consistent error handling
+4. **Dialog Pattern**: Reusable confirmation and form dialogs
+5. **Permission System**: Role-based access control with ProtectedRoute
+6. **UI Components**: Material-UI with consistent theming and layout
+7. **Error Handling**: Centralized notification system with user feedback
+8. **Loading States**: Consistent loading state management across components
+
+**DRY & SOLID Principles Applied:**
+- **Single Responsibility**: Each component/hook has one clear purpose
+- **Open/Closed**: Components accept props for extensibility
+- **Liskov Substitution**: Interfaces ensure consistent behavior
+- **Interface Segregation**: Specific interfaces for different use cases
+- **Dependency Inversion**: Dependencies injected through props and hooks
+
+###### **Implementation Strategy**
+
+**Component Architecture Pattern:**
+```typescript
+// Consistent with existing patterns
+interface ComponentProps {
+  accountId: string;
+  // Component-specific props
+}
+
+const Component: React.FC<ComponentProps> = ({ accountId, ...props }) => {
+  // Use custom hooks for business logic
+  const { data, loading, actions } = useCustomHook(accountId);
+  
+  // Consistent error handling
+  const { showNotification } = useNotifications();
+  
+  // Consistent loading states
+  if (loading) return <SkeletonLoader />;
+  
+  return (
+    // Component JSX
+  );
+};
+```
+
+**Hook Integration Pattern:**
+```typescript
+// Consistent with useUserManagement pattern
+export const usePlayerClassifieds = (accountId: string) => {
+  // State management
+  const [state, setState] = useState(initialState);
+  
+  // API operations
+  const operations = useMemo(() => ({
+    create: async (data) => { /* implementation */ },
+    update: async (id, data) => { /* implementation */ },
+    delete: async (id) => { /* implementation */ },
+  }), [accountId]);
+  
+  // Return consistent interface
+  return {
+    ...state,
+    ...operations,
+  };
+};
+```
+
+**Service Layer Pattern:**
+```typescript
+// Consistent with existing service patterns
+export const playerClassifiedService = {
+  async createPlayersWanted(accountId: string, data: IPlayersWantedCreateRequest) {
+    const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}/player-classifieds/players-wanted`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create Players Wanted: ${response.statusText}`);
+    }
+    
+    return response.json();
+  },
+};
+```
+
+###### **Detailed Task Breakdown**
+
+**Phase 2b.1: Core Listing Components (Week 1, Days 1-3)**
+
+**1.1 Enhanced PlayersWanted Component** ✅ **COMPLETED**
+- **File**: `draco-nodejs/frontend-next/app/account/[accountId]/player-classifieds/PlayersWanted.tsx`
+- **Responsibilities**:
+  - ✅ Display paginated list of Players Wanted ads
+  - ✅ Handle loading states and empty states
+  - ✅ Integrate with `usePlayerClassifieds` hook
+  - ✅ Implement role-based permissions (TeamAdmin+)
+  - 🔄 Add search and filtering capabilities (ready for Phase 2b.4)
+
+**1.2 Enhanced TeamsWanted Component** ✅ **COMPLETED**
+- **File**: `draco-nodejs/frontend-next/app/account/[accountId]/player-classifieds/TeamsWanted.tsx`
+- **Responsibilities**:
+  - ✅ Display paginated list of Teams Wanted ads
+  - ✅ Handle public access (no authentication required for viewing)
+  - 🔄 Implement search and filtering (ready for Phase 2b.4)
+  - ✅ Show appropriate actions based on user permissions
+
+**1.3 Enhanced PlayersWantedCard Component** ✅ **COMPLETED**
+- **File**: `draco-nodejs/frontend-next/components/player-classifieds/PlayersWantedCard.tsx`
+- **Responsibilities**:
+  - ✅ Display individual Players Wanted ad with all details
+  - ✅ Show edit/delete actions for authorized users
+  - ✅ Handle position display and formatting
+  - ✅ Implement responsive design for mobile/desktop
+
+**1.4 Enhanced TeamsWantedCard Component** ✅ **COMPLETED**
+- **File**: `draco-nodejs/frontend-next/components/player-classifieds/TeamsWantedCard.tsx` (original)
+- **File**: `draco-nodejs/frontend-next/components/player-classifieds/TeamsWantedCardPublic.tsx` (public view)
+- **Responsibilities**:
+  - ✅ Display individual Teams Wanted ad with contact information
+  - ✅ Show edit/delete actions with access code validation
+  - ✅ Handle position and experience display
+  - ✅ Implement responsive design
+
+**Phase 2b.2: Creation Dialogs (Week 1, Days 4-5)**
+
+**2.1 CreatePlayersWantedDialog Component**
+- **File**: `draco-nodejs/frontend-next/app/account/[accountId]/player-classifieds/CreatePlayersWantedDialog.tsx`
+- **Responsibilities**:
+  - Form for creating new Players Wanted ads
+  - Position selection with predefined options
+  - Form validation and error handling
+  - Integration with `usePlayerClassifieds` hook
+  - Role-based access control
+
+**2.2 CreateTeamsWantedDialog Component**
+- **File**: `draco-nodejs/frontend-next/app/account/[accountId]/player-classifieds/CreateTeamsWantedDialog.tsx`
+- **Responsibilities**:
+  - Form for creating new Teams Wanted ads (public access)
+  - CAPTCHA integration for anonymous submissions
+  - Email verification workflow
+  - Form validation and sanitization
+  - Access code generation and email sending
+
+**Phase 2b.3: Enhanced Header & Navigation (Week 2, Day 1)**
+
+**3.1 Enhanced ClassifiedsHeader Component**
+- **File**: `draco-nodejs/frontend-next/components/player-classifieds/ClassifiedsHeader.tsx`
+- **Responsibilities**:
+  - Account context and branding
+  - Create buttons with role-based visibility
+  - Search functionality with debouncing
+  - View mode toggle (grid/list)
+  - Filter controls for positions and experience
+  - Bulk action buttons for administrators
+
+**Phase 2b.4: Search & Filtering (Week 2, Days 2-3)**
+
+**4.1 ClassifiedsFilter Component**
+- **File**: `draco-nodejs/frontend-next/components/player-classifieds/ClassifiedsFilter.tsx`
+- **Responsibilities**:
+  - Text search with debouncing
+  - Position filtering (multi-select)
+  - Experience level filtering
+  - Date range filtering
+  - Status filtering (active/expired)
+  - Sort options (newest, relevance, views)
+  - Filter persistence in URL
+
+**4.2 Enhanced useClassifiedsSearch Hook**
+- **File**: `draco-nodejs/frontend-next/hooks/useClassifiedsSearch.ts`
+- **Responsibilities**:
+  - Debounced search implementation
+  - Filter state management
+  - URL synchronization for filters
+  - Search result caching
+  - Integration with pagination
+
+**Phase 2b.5: Pagination & Performance (Week 2, Days 4-5)**
+
+**5.1 ClassifiedsPagination Component**
+- **File**: `draco-nodejs/frontend-next/components/player-classifieds/ClassifiedsPagination.tsx`
+- **Responsibilities**:
+  - Page navigation controls
+  - Rows per page selection
+  - Infinite scroll option for mobile
+  - Loading states during pagination
+  - URL synchronization for page state
+
+**5.2 Enhanced useClassifiedsPagination Hook**
+- **File**: `draco-nodejs/frontend-next/hooks/useClassifiedsPagination.ts`
+- **Responsibilities**:
+  - Page state management
+  - Rows per page handling
+  - Navigation logic
+  - Integration with search and filtering
+  - Performance optimization for large datasets
+
+###### **Integration Points**
+
+**Existing Components to Leverage:**
+1. **AccountPageHeader**: Consistent page branding and layout
+2. **ConfirmationDialog**: Delete confirmations and warnings
+3. **ProtectedRoute**: Role-based access control
+4. **SkeletonLoaders**: Loading state consistency
+5. **EmptyState**: No results display consistency
+
+**Existing Hooks to Extend:**
+1. **useNotifications**: Consistent user feedback
+2. **useTableLoadingState**: Loading state management
+3. **useVirtualScroll**: Performance optimization
+
+**Existing Services to Integrate:**
+1. **Email Service**: For Teams Wanted verification
+2. **Notification Service**: For user alerts
+3. **Role Service**: For permission checking
+
+###### **Security & Validation**
+
+**Input Validation:**
+- Form validation using existing validation patterns
+- HTML sanitization for all text inputs
+- Position validation against predefined list
+- Email format validation
+- Phone number format validation
+
+**Access Control:**
+- Role-based permissions for Players Wanted
+- Access code validation for Teams Wanted editing
+- CAPTCHA integration for anonymous submissions
+- Rate limiting feedback to users
+
+**Data Sanitization:**
+- XSS prevention through input sanitization
+- SQL injection prevention through Prisma ORM
+- Output encoding for display
+
+###### **Performance Considerations**
+
+**Optimization Strategies:**
+1. **Debounced Search**: 300ms delay to reduce API calls
+2. **Lazy Loading**: Load classified details on demand
+3. **Virtual Scrolling**: For large lists (100+ items)
+4. **Caching**: Local storage for user preferences
+5. **Pagination**: Efficient data loading
+
+**Mobile-First Design:**
+1. **Responsive Breakpoints**: Mobile (single column), Tablet (two column), Desktop (three column)
+2. **Touch Interactions**: Large touch targets, swipe gestures
+3. **Progressive Enhancement**: Core functionality without JavaScript
+4. **Performance**: Optimized for mobile devices
+
+###### **Testing Strategy**
+
+**Component Testing:**
+- Unit tests for all new components
+- Integration tests for dialog workflows
+- Role-based permission testing
+- Mobile responsiveness testing
+
+**Hook Testing:**
+- State management testing
+- API integration testing
+- Error handling testing
+- Performance testing
+
+**Integration Testing:**
+- End-to-end user flows
+- Cross-browser compatibility
+- Mobile device testing
+- Accessibility testing
+
+###### **Success Metrics**
+
+**Functionality:**
+- 100% CRUD operations working
+- Search and filtering accuracy > 95%
+- Permission system working correctly
+- Mobile responsiveness > 90%
+
+**Performance:**
+- Page load time < 2 seconds
+- Search response time < 500ms
+- Smooth pagination transitions
+- Efficient memory usage
+
+**User Experience:**
+- Intuitive interface design
+- Consistent with existing patterns
+- Accessible to all users
+- Professional appearance
+
+###### **Risk Mitigation**
+
+**Technical Risks:**
+1. **API Integration**: Thorough testing of all endpoints
+2. **Performance**: Load testing with realistic data volumes
+3. **Mobile Compatibility**: Cross-device testing
+4. **Browser Compatibility**: Cross-browser testing
+
+**Business Risks:**
+1. **User Adoption**: Clear user guidance and documentation
+2. **Data Quality**: Input validation and moderation
+3. **Security**: Comprehensive security testing
+4. **Scalability**: Performance testing with growth scenarios
+
+###### **Next Steps After Phase 2b**
+
+**Phase 2c: Advanced Features**
+- Edit and delete dialogs
+- Advanced search capabilities
+- Bulk operations for administrators
+- Enhanced filtering options
+
+**Phase 2d: Polish & Testing**
+- Mobile optimization
+- Performance tuning
+- Accessibility improvements
+- Comprehensive testing
 
 ###### **Phase 2c: Advanced Features (Week 3)**
 - [ ] Implement `ClassifiedsFilter.tsx` search and filtering
@@ -877,5 +1219,5 @@ const backgroundJobs = {
 ---
 
 **Last Updated**: December 19, 2024
-**Status**: Phase 1 - Backend Infrastructure (98% Complete) | Phase 2a - Core Structure (100% Coded, 0% Tested)
-**Next Steps**: Test Phase 2a components, then begin Phase 2b - Basic Functionality implementation
+**Status**: Phase 1 - Backend Infrastructure (98% Complete) | Phase 2a - Core Structure (100% Coded, 0% Tested) | Phase 2b.1 - Core Listing Components (100% Complete)
+**Next Steps**: Continue with Phase 2b.2 - Creation Dialogs implementation

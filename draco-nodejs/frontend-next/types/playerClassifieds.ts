@@ -331,6 +331,13 @@ export interface ITeamsWantedCardProps {
   onDelete: (id: string, accessCode: string) => void;
 }
 
+// Props for Teams Wanted card component (public view)
+export interface ITeamsWantedCardPublicProps {
+  classified: ITeamsWantedResponse;
+  onEdit: (id: string, accessCodeRequired: string) => void;
+  onDelete: (id: string, accessCodeRequired: string) => void;
+}
+
 // Props for the Classifieds Header component
 export interface IClassifiedsHeaderProps {
   accountId: string;
@@ -444,6 +451,9 @@ export interface IUsePlayerClassifiedsReturn {
   loading: boolean;
   formLoading: boolean;
 
+  // Error state
+  error: string | null;
+
   // UI state
   uiState: IClassifiedsUIState;
 
@@ -465,6 +475,9 @@ export interface IUsePlayerClassifiedsReturn {
 
   // Refresh data
   refreshData: () => Promise<void>;
+
+  // Error handling
+  clearError: () => void;
 }
 
 // Return type for useClassifiedsPagination hook

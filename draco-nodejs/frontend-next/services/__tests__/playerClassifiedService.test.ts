@@ -367,16 +367,15 @@ describe('playerClassifiedService', () => {
       it('should delete teams wanted successfully', async () => {
         mockFetchResponse({ success: true });
 
-        await playerClassifiedService.deleteTeamsWanted(accountId, '1', 'valid-access-code');
+        await playerClassifiedService.deleteTeamsWanted(accountId, '1');
 
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining(`/api/accounts/${accountId}/player-classifieds/teams-wanted/1`),
           expect.objectContaining({
             method: 'DELETE',
             headers: {
-              'Content-Type': 'application/json',
+              Authorization: `Bearer ${mockAuthToken}`,
             },
-            body: JSON.stringify({ accessCode: 'valid-access-code' }),
           }),
         );
       });
@@ -432,7 +431,7 @@ describe('playerClassifiedService', () => {
         const mockResponse = createMockMatches(3);
         mockFetchResponse(mockResponse);
 
-        const result = await playerClassifiedService.getMatchSuggestions(accountId, '1', 'players');
+        const result = await playerClassifiedService.getMatches(accountId, '1', 'players-wanted');
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
@@ -523,7 +522,7 @@ describe('playerClassifiedService', () => {
         const mockResponse = createMockAnalytics();
         mockFetchResponse(mockResponse);
 
-        const result = await playerClassifiedService.getClassifiedsAnalytics(accountId);
+        const result = await playerClassifiedService.getAnalytics(accountId);
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(

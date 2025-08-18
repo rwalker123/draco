@@ -1,10 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Tabs, Tab } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import PlayersWanted from './PlayersWanted';
 import TeamsWanted from './TeamsWanted';
+
+// Test if console logging is working
+console.log('🔧 PlayerClassifieds.tsx file loaded');
+console.error('🚨 ERROR TEST 5 - This should definitely show up');
 
 interface PlayerClassifiedsProps {
   accountId: string;
@@ -18,6 +22,10 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
+
+  console.log(
+    `🔍 TabPanel render: index=${index}, value=${value}, shouldRender=${value === index}`,
+  );
 
   return (
     <div
@@ -35,12 +43,35 @@ function TabPanel(props: TabPanelProps) {
 const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
   const [tabValue, setTabValue] = useState(0);
 
+  console.log(
+    `🚀 PlayerClassifieds component render: accountId=${accountId}, tabValue=${tabValue}`,
+  );
+
+  useEffect(() => {
+    console.log(`📱 PlayerClassifieds component mounted with accountId: ${accountId}`);
+  }, [accountId]);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    console.log(`🔄 Tab change: ${tabValue} -> ${newValue}`);
     setTabValue(newValue);
   };
 
   return (
     <main className="min-h-screen bg-background">
+      {/* TEST BANNER - IF YOU SEE THIS, THE FILE IS UPDATED */}
+      <Box
+        sx={{
+          backgroundColor: 'green',
+          color: 'white',
+          p: 2,
+          textAlign: 'center',
+          fontSize: '24px',
+          fontWeight: 'bold',
+        }}
+      >
+        🟢 TEST BANNER - MAIN PLAYER CLASSIFIEDS FILE UPDATED! 🟢
+      </Box>
+
       {/* Account Header */}
       <AccountPageHeader accountId={accountId}>
         <Box

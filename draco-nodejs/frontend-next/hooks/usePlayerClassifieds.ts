@@ -1,6 +1,10 @@
 // usePlayerClassifieds Hook
 // Main hook for managing Player Classifieds data and operations
 
+// Test if console logging is working
+console.log('🔧 usePlayerClassifieds.ts file loaded');
+console.error('🚨 ERROR TEST 7 - This should definitely show up');
+
 import { useState, useCallback, useEffect } from 'react';
 import { useNotifications } from './useNotifications';
 import { playerClassifiedService } from '../services/playerClassifiedService';
@@ -27,6 +31,9 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
   // Loading states
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+
+  // Error state
+  const [error, setError] = useState<string | null>(null);
 
   // UI State
   const [uiState] = useState<IClassifiedsUIState>({
@@ -233,9 +240,9 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
 
   // Delete Teams Wanted
   const deleteTeamsWanted = useCallback(
-    async (id: string, accessCode: string): Promise<void> => {
+    async (id: string, _accessCode: string): Promise<void> => {
       try {
-        await playerClassifiedService.deleteTeamsWanted(accountId, id, accessCode);
+        await playerClassifiedService.deleteTeamsWanted(accountId, id);
         setTeamsWanted((prev) => prev.filter((item) => item.id.toString() !== id));
         showNotification('Teams Wanted deleted successfully', 'success');
       } catch (error) {
@@ -263,13 +270,16 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
         const playersResults: IPlayersWantedResponse[] = [];
         const teamsResults: ITeamsWantedResponse[] = [];
 
-        searchResults.data.forEach((result: IClassifiedSearchResult) => {
-          if ('teamEventName' in result.classified) {
-            playersResults.push(result.classified as IPlayersWantedResponse);
-          } else {
-            teamsResults.push(result.classified as ITeamsWantedResponse);
-          }
-        });
+        // Handle search results - they should be an array of IClassifiedSearchResult
+        if (Array.isArray(searchResults)) {
+          searchResults.forEach((result: IClassifiedSearchResult) => {
+            if ('teamEventName' in result.classified) {
+              playersResults.push(result.classified as IPlayersWantedResponse);
+            } else {
+              teamsResults.push(result.classified as ITeamsWantedResponse);
+            }
+          });
+        }
 
         setPlayersWanted(playersResults);
         setTeamsWanted(teamsResults);
@@ -298,6 +308,11 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
     await loadData();
   }, [loadData]);
 
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     // Data
     playersWanted,
@@ -306,6 +321,9 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
     // Loading states
     loading,
     formLoading,
+
+    // Error state
+    error,
 
     // UI state
     uiState,
@@ -324,5 +342,8 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
 
     // Refresh data
     refreshData,
+
+    // Error handling
+    clearError,
   };
 };
