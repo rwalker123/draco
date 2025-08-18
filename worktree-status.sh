@@ -182,65 +182,62 @@ show_human_status() {
         print_header "Worktree Port Assignments"
         echo ""
         
-        # Table header
-        printf "%-50s %-15s %-15s %-10s %-10s %-15s %-20s\n" "Worktree Path" "Backend Port" "Frontend Port" "Status" "Git Changes" "Git Branch" "Last Active"
-        printf "%-50s %-15s %-15s %-10s %-10s %-15s %-20s\n" "-------------" "-------------" "--------------" "------" "-----------" "----------" "-----------"
-        
-        # Process each worktree individually
-        echo "$registry_data" | jq -r '.worktrees | to_entries[] | .key' | while read -r worktree_path; do
-            local worktree_data=$(echo "$registry_data" | jq -r ".worktrees[\"$worktree_path\"]")
-            local worktree_name=$(echo "$worktree_data" | jq -r '.worktreeName')
-            local backend_port=$(echo "$worktree_data" | jq -r '.backendPort')
-            local frontend_port=$(echo "$worktree_data" | jq -r '.frontendPort')
-            local status=$(echo "$worktree_data" | jq -r '.status')
-            local last_active=$(format_timestamp "$(echo "$worktree_data" | jq -r '.lastActive')")
+        # Build table data using tab-separated format for proper alignment
+        {
+            # Table header
+            echo -e "Worktree Path\tBackend Port\tFrontend Port\tStatus\tGit Changes\tGit Branch\tLast Active"
+            echo -e "-------------\t-------------\t--------------\t------\t-----------\t----------\t-----------"
             
-            # Check port usage
-            local backend_status=$(check_port_usage "$backend_port")
-            local frontend_status=$(check_port_usage "$frontend_port")
-            
-            # Get git info
-            local git_changes=$(get_git_status "$worktree_path")
-            local git_branch=$(get_git_branch "$worktree_path")
-            
-            # Format status indicators
-            local backend_indicator=""
-            if [ "$backend_status" = "in-use" ]; then
-                backend_indicator="${GREEN}●${NC}"
-            else
-                backend_indicator="${YELLOW}○${NC}"
-            fi
-            
-            local frontend_indicator=""
-            if [ "$frontend_status" = "in-use" ]; then
-                frontend_indicator="${GREEN}●${NC}"
-            else
-                frontend_indicator="${YELLOW}○${NC}"
-            fi
-            
-            # Format git changes
-            local changes_indicator=""
-            if [ "$git_changes" -gt 0 ]; then
-                changes_indicator="${YELLOW}$git_changes${NC}"
-            else
-                changes_indicator="${GREEN}0${NC}"
-            fi
-            
-            # Truncate worktree path for display
-            local display_path=$(echo "$worktree_path" | sed "s|$MAIN_REPO_PATH|~|")
-            if [ ${#display_path} -gt 49 ]; then
-                display_path="...${display_path: -46}"
-            fi
-            
-            printf "%-50s %-15s %-15s %-10s %-10s %-15s %-20s\n" \
-                "$display_path" \
-                "$backend_port $backend_indicator" \
-                "$frontend_port $frontend_indicator" \
-                "$status" \
-                "$changes_indicator" \
-                "$git_branch" \
-                "$last_active"
-        done
+            # Process each worktree individually
+            echo "$registry_data" | jq -r '.worktrees | to_entries[] | .key' | while read -r worktree_path; do
+                local worktree_data=$(echo "$registry_data" | jq -r ".worktrees[\"$worktree_path\"]")
+                local worktree_name=$(echo "$worktree_data" | jq -r '.worktreeName')
+                local backend_port=$(echo "$worktree_data" | jq -r '.backendPort')
+                local frontend_port=$(echo "$worktree_data" | jq -r '.frontendPort')
+                local status=$(echo "$worktree_data" | jq -r '.status')
+                local last_active=$(format_timestamp "$(echo "$worktree_data" | jq -r '.lastActive')")
+                
+                # Check port usage
+                local backend_status=$(check_port_usage "$backend_port")
+                local frontend_status=$(check_port_usage "$frontend_port")
+                
+                # Get git info
+                local git_changes=$(get_git_status "$worktree_path")
+                local git_branch=$(get_git_branch "$worktree_path")
+                
+                # Format status indicators
+                local backend_indicator=""
+                if [ "$backend_status" = "in-use" ]; then
+                    backend_indicator="${GREEN}●${NC}"
+                else
+                    backend_indicator="${YELLOW}○${NC}"
+                fi
+                
+                local frontend_indicator=""
+                if [ "$frontend_status" = "in-use" ]; then
+                    frontend_indicator="${GREEN}●${NC}"
+                else
+                    frontend_indicator="${YELLOW}○${NC}"
+                fi
+                
+                # Format git changes
+                local changes_indicator=""
+                if [ "$git_changes" -gt 0 ]; then
+                    changes_indicator="${YELLOW}$git_changes${NC}"
+                else
+                    changes_indicator="${GREEN}0${NC}"
+                fi
+                
+                # Truncate worktree path for display
+                local display_path=$(echo "$worktree_path" | sed "s|$MAIN_REPO_PATH|~|")
+                if [ ${#display_path} -gt 49 ]; then
+                    display_path="...${display_path: -46}"
+                fi
+                
+                # Output tab-separated row
+                echo -e "$display_path\t$backend_port $backend_indicator\t$frontend_port $frontend_indicator\t$status\t$changes_indicator\t$git_branch\t$last_active"
+            done
+        } | column -t -s $'\t'
         
         echo ""
         print_header "Port Status Legend"

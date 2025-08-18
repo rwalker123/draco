@@ -246,17 +246,6 @@ npx prisma generate
 cd "$CURRENT_DIR"
 print_success "Prisma client generated"
 
-# Step 5: Clean up port registry
-print_status "Cleaning up port registry..."
-if [ -f "$MAIN_REPO_PATH/worktree-cleanup.sh" ]; then
-    cd "$MAIN_REPO_PATH"
-    ./worktree-cleanup.sh > /dev/null 2>&1 || true
-    cd "$CURRENT_DIR"
-    print_success "Port registry cleanup completed"
-else
-    print_warning "Cleanup script not found, skipping registry cleanup"
-fi
-
 # Step 6: Verify setup
 print_status "Verifying setup..."
 
