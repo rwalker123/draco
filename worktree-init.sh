@@ -144,7 +144,8 @@ jq --arg path "$CURRENT_DIR" \
      }
    } | .lastUpdated = $now' "$REGISTRY_PATH" > "$TEMP_REGISTRY"
 mv "$TEMP_REGISTRY" "$REGISTRY_PATH"
-print_success "Port registry updated"
+print_success "Port registry updated, moved from $TEMP_REGISTRY to $REGISTRY_PATH"
+
 
 # Copy and modify .env files with new ports
 print_status "Setting up environment files with assigned ports..."
@@ -279,7 +280,6 @@ print_status "Summary of actions:"
 echo "  ✓ Port management configured"
 echo "  ✓ Environment files updated with assigned ports"
 echo "  ✓ Port registry updated"
-echo "  ✓ Port registry cleanup completed"
 echo "  ✓ Copied SSL certificates from main repo"
 echo "  ✓ Copied Claude settings from main repo"
 echo "  ✓ Installed all dependencies"
