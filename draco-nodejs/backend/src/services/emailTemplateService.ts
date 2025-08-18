@@ -1,6 +1,7 @@
 // Email Template Service for Draco Sports Manager
 // Follows SRP - handles template processing and management only
 
+import prisma from '../lib/prisma.js';
 import {
   IEmailTemplateEngine,
   TemplateValidationResult,
@@ -9,7 +10,6 @@ import {
   EmailTemplateUpdateRequest,
   EmailTemplateDbRecord,
 } from '../interfaces/emailInterfaces.js';
-import prisma from '../lib/prisma.js';
 
 export class EmailTemplateService implements IEmailTemplateEngine {
   /**
@@ -183,17 +183,13 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   }
 
   /**
-   * Delete template (soft delete by setting inactive)
+   * Delete template (permanent delete)
    */
   async deleteTemplate(templateId: bigint, accountId: bigint): Promise<void> {
-    await prisma.email_templates.update({
+    await prisma.email_templates.delete({
       where: {
         id: templateId,
         account_id: accountId, // Ensure account boundary
-      },
-      data: {
-        is_active: false,
-        updated_at: new Date(),
       },
     });
   }
