@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:3001';
+    console.log('🔄 [NEXT_CONFIG] Setting up rewrites with backend URL:', backendUrl);
+    console.log('🔄 [NEXT_CONFIG] API rewrite: /api/:path* -> ' + `${backendUrl}/api/:path*`);
     return [
       {
         source: '/api/:path*',

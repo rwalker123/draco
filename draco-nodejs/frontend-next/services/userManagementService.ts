@@ -125,39 +125,42 @@ export class UserManagementService {
       sortOrder?: 'asc' | 'desc';
     },
   ): Promise<{ users: User[]; pagination: PaginationInfo }> {
-    const url = new URL(`/api/accounts/${accountId}/contacts/search`, window.location.origin);
-    url.searchParams.set('q', query);
-    url.searchParams.set('roles', 'true');
-    url.searchParams.set('contactDetails', 'true');
+    const searchParams = new URLSearchParams();
+    searchParams.set('q', query);
+    searchParams.set('roles', 'true');
+    searchParams.set('contactDetails', 'true');
     if (seasonId) {
-      url.searchParams.set('seasonId', seasonId);
+      searchParams.set('seasonId', seasonId);
     }
     if (onlyWithRoles) {
-      url.searchParams.set('onlyWithRoles', 'true');
+      searchParams.set('onlyWithRoles', 'true');
     }
 
     // Add pagination parameters if provided
     if (pagination) {
       if (pagination.page !== undefined) {
-        url.searchParams.set('page', (pagination.page + 1).toString()); // Backend uses 1-based pagination
+        searchParams.set('page', (pagination.page + 1).toString()); // Backend uses 1-based pagination
       }
       if (pagination.limit !== undefined) {
-        url.searchParams.set('limit', pagination.limit.toString());
+        searchParams.set('limit', pagination.limit.toString());
       }
       if (pagination.sortBy) {
-        url.searchParams.set('sortBy', pagination.sortBy);
+        searchParams.set('sortBy', pagination.sortBy);
       }
       if (pagination.sortOrder) {
-        url.searchParams.set('sortOrder', pagination.sortOrder);
+        searchParams.set('sortOrder', pagination.sortOrder);
       }
     }
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `/api/accounts/${accountId}/contacts/search?${searchParams.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

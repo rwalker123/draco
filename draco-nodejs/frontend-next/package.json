@@ -4,11 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next dev",
-    "dev:port": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next dev -p ${FRONTEND_PORT:-4001} & sleep 3 && open http://localhost:${FRONTEND_PORT:-4001}",
+    "dev": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" dotenv -e .env.local -- next dev",
     "build": "next build",
-    "start": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next start",
-    "start:port": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next start -p ${FRONTEND_PORT:-4001} & sleep 3 && open http://localhost:${FRONTEND_PORT:-4001}",
+    "start": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" dotenv -e .env.local -- next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
@@ -34,9 +32,10 @@
     "@tanstack/react-query": "^5.84.1",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
-    "dompurify": "^3.2.6",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "dompurify": "^3.2.6",
+    "file-type": "^21.0.0",
     "framer-motion": "^12.23.3",
     "lexical": "^0.34.0",
     "lucide-react": "^0.525.0",
@@ -46,8 +45,7 @@
     "react-dropzone": "^14.3.8",
     "react-transition-group": "^4.4.5",
     "tailwind-merge": "^3.3.1",
-    "validator": "^13.15.15",
-    "file-type": "^21.0.0"
+    "validator": "^13.15.15"
   },
   "devDependencies": {
     "@babel/core": "^7.27.7",
@@ -68,6 +66,7 @@
     "@types/validator": "^13.15.2",
     "@vitest/coverage-v8": "^2.0.5",
     "@vitest/ui": "^2.0.5",
+    "dotenv-cli": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "^15.3.4",
     "jsdom": "^25.0.1",
