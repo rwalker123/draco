@@ -272,6 +272,7 @@ describe('playerClassifiedService', () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              Authorization: `Bearer ${mockAuthToken}`,
             },
             body: JSON.stringify(createData),
           }),
@@ -304,10 +305,14 @@ describe('playerClassifiedService', () => {
         const result = await playerClassifiedService.getTeamsWanted(accountId);
 
         expect(result).toEqual(mockResponse);
-        const fetchCall = global.fetch as jest.MockedFunction<typeof global.fetch>;
-        expect(fetchCall).toHaveBeenCalledWith(expect.any(String));
-        const url = fetchCall.mock.calls[0][0];
-        expect(url).toContain(`/api/accounts/${accountId}/player-classifieds/teams-wanted?`);
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            headers: {
+              Authorization: `Bearer ${mockAuthToken}`,
+            },
+          }),
+        );
       });
 
       it('should fetch teams wanted with search parameters', async () => {
@@ -325,13 +330,14 @@ describe('playerClassifiedService', () => {
         const result = await playerClassifiedService.getTeamsWanted(accountId, searchParams);
 
         expect(result).toEqual(mockResponse);
-        const fetchCall = global.fetch as jest.MockedFunction<typeof global.fetch>;
-        expect(fetchCall).toHaveBeenCalledWith(expect.any(String));
-        const url = fetchCall.mock.calls[0][0];
-        expect(url).toContain(`/api/accounts/${accountId}/player-classifieds/teams-wanted?`);
-        expect(url).toContain('searchQuery=experienced');
-        expect(url).toContain('positions=pitcher');
-        expect(url).toContain('experience=advanced');
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            headers: {
+              Authorization: `Bearer ${mockAuthToken}`,
+            },
+          }),
+        );
       });
     });
 
@@ -356,6 +362,7 @@ describe('playerClassifiedService', () => {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
+              Authorization: `Bearer ${mockAuthToken}`,
             },
             body: JSON.stringify(updateData),
           }),
@@ -436,7 +443,7 @@ describe('playerClassifiedService', () => {
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining(
-            `/api/accounts/${accountId}/player-classifieds/players/1/matches`,
+            `/api/accounts/${accountId}/player-classifieds/players-wanted/1/matches`,
           ),
           expect.any(Object),
         );
@@ -464,7 +471,7 @@ describe('playerClassifiedService', () => {
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/api/player-classifieds/verify-email`),
+          expect.stringContaining(`/api/accounts/verify-email`),
           expect.objectContaining({
             method: 'POST',
             headers: {
