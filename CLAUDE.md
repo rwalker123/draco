@@ -166,6 +166,29 @@ Git commit hooks provide **fast developer feedback** with the following checks:
 
 This two-tier approach provides fast developer feedback while ensuring comprehensive validation before code reaches production.
 
+### Auto-merge for Pull Requests
+**GitHub's auto-merge feature** allows PRs to be automatically merged when all requirements are met:
+
+#### Repository Setup (One-time)
+1. **Enable auto-merge**: Go to repository Settings → General → Pull Requests → Check "Allow auto-merge"
+2. **Branch protection**: Ensure main branch requires PR validation checks to pass
+3. **Required reviews**: Configure any required code review settings
+
+#### Using Auto-merge on PRs
+1. Create PR and ensure all validation checks are queued
+2. Click **"Enable auto-merge"** button in the PR
+3. Select merge method (Squash and merge recommended)
+4. Customize commit message if needed
+5. PR will automatically merge when all checks pass
+
+#### Auto-merge Benefits
+- ✅ **Hands-free merging**: No need to wait around for CI to complete
+- ✅ **Consistent process**: Always waits for full validation before merge
+- ✅ **Team efficiency**: Developers can move on to other tasks immediately
+- ✅ **Safety**: Only merges when ALL requirements are satisfied
+
+**Note**: Auto-merge will be disabled if someone without write permissions pushes changes to the PR.
+
 ## Common Tasks
 
 ### Adding a New API Endpoint
