@@ -8,7 +8,6 @@ import {
   ITeamsWantedCreateRequest,
   ITeamsWantedResponse,
   ITeamsWantedUpdateRequest,
-  ITeamsWantedOwnerResponse,
   IClassifiedSearchParams,
   IClassifiedListResponse,
   IClassifiedSearchResult,
@@ -23,7 +22,7 @@ import {
 // SERVICE CONFIGURATION
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:3001';
+// Remove the API_BASE_URL constant and use relative URLs like other services
 const API_ENDPOINTS = {
   playersWanted: '/api/accounts',
   teamsWanted: '/api/accounts',
@@ -45,7 +44,7 @@ export const playerClassifiedService = {
     data: IPlayersWantedCreateRequest,
   ): Promise<IPlayersWantedResponse> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted`,
+      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted`,
       {
         method: 'POST',
         headers: {
@@ -83,20 +82,21 @@ export const playerClassifiedService = {
       });
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted?${searchParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
+    const url = `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted?${searchParams.toString()}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
       },
-    );
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Players Wanted: ${response.statusText}`);
+      const errorText = `Failed to fetch Players Wanted: ${response.statusText}`;
+      throw new Error(errorText);
     }
 
-    return response.json();
+    const data = await response.json();
+    return data;
   },
 
   // Get a specific Players Wanted by ID
@@ -105,7 +105,7 @@ export const playerClassifiedService = {
     classifiedId: string,
   ): Promise<IPlayersWantedResponse> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
+      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
@@ -127,7 +127,7 @@ export const playerClassifiedService = {
     data: IPlayersWantedUpdateRequest,
   ): Promise<IPlayersWantedResponse> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
+      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
       {
         method: 'PUT',
         headers: {
@@ -148,7 +148,7 @@ export const playerClassifiedService = {
   // Delete a Players Wanted classified
   async deletePlayersWanted(accountId: string, classifiedId: string): Promise<void> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
+      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
       {
         method: 'DELETE',
         headers: {
@@ -172,11 +172,12 @@ export const playerClassifiedService = {
     data: ITeamsWantedCreateRequest,
   ): Promise<ITeamsWantedResponse> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted`,
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
         body: JSON.stringify(data),
       },
@@ -209,49 +210,36 @@ export const playerClassifiedService = {
       });
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted?${searchParams.toString()}`,
-    );
+    const url = `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted?${searchParams.toString()}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+      },
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Teams Wanted: ${response.statusText}`);
+      const errorText = `Failed to fetch Teams Wanted: ${response.statusText}`;
+      throw new Error(errorText);
     }
 
-    return response.json();
+    const data = await response.json();
+    return data;
   },
 
-  // Get a specific Teams Wanted by ID (public view)
+  // Get a specific Teams Wanted by ID
   async getTeamsWantedById(accountId: string, classifiedId: string): Promise<ITeamsWantedResponse> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch Teams Wanted: ${response.statusText}`);
-    }
-
-    return response.json();
-  },
-
-  // Get Teams Wanted by ID with owner access (requires access code)
-  async getTeamsWantedOwnerById(
-    accountId: string,
-    classifiedId: string,
-    accessCode: string,
-  ): Promise<ITeamsWantedOwnerResponse> {
-    const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}/owner`,
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
       {
-        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
-        body: JSON.stringify({ accessCode }),
       },
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Teams Wanted owner view: ${response.statusText}`);
+      throw new Error(`Failed to fetch Teams Wanted: ${response.statusText}`);
     }
 
     return response.json();
@@ -264,11 +252,12 @@ export const playerClassifiedService = {
     data: ITeamsWantedUpdateRequest,
   ): Promise<ITeamsWantedResponse> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
       {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
         body: JSON.stringify(data),
       },
@@ -282,19 +271,14 @@ export const playerClassifiedService = {
   },
 
   // Delete a Teams Wanted classified
-  async deleteTeamsWanted(
-    accountId: string,
-    classifiedId: string,
-    accessCode: string,
-  ): Promise<void> {
+  async deleteTeamsWanted(accountId: string, classifiedId: string): Promise<void> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
       {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
-        body: JSON.stringify({ accessCode }),
       },
     );
 
@@ -304,14 +288,14 @@ export const playerClassifiedService = {
   },
 
   // ============================================================================
-  // SEARCH AND FILTERING
+  // SEARCH AND MATCHING OPERATIONS
   // ============================================================================
 
-  // Search classifieds across both types
+  // Search across all classifieds
   async searchClassifieds(
     accountId: string,
     params: IClassifiedSearchParams,
-  ): Promise<IClassifiedListResponse<IClassifiedSearchResult>> {
+  ): Promise<IClassifiedSearchResult> {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -326,7 +310,7 @@ export const playerClassifiedService = {
     });
 
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.search}/${accountId}/player-classifieds/search?${searchParams.toString()}`,
+      `${API_ENDPOINTS.search}/${accountId}/player-classifieds/search?${searchParams.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
@@ -341,36 +325,14 @@ export const playerClassifiedService = {
     return response.json();
   },
 
-  // Get search suggestions
-  async getSearchSuggestions(accountId: string, query: string): Promise<string[]> {
-    const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.search}/${accountId}/player-classifieds/search/suggestions?q=${encodeURIComponent(query)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to get search suggestions: ${response.statusText}`);
-    }
-
-    return response.json();
-  },
-
-  // ============================================================================
-  // MATCHING AND NOTIFICATIONS
-  // ============================================================================
-
-  // Get match suggestions for a classified
-  async getMatchSuggestions(
+  // Get matches for a specific classified
+  async getMatches(
     accountId: string,
     classifiedId: string,
-    type: 'players' | 'teams',
+    type: 'players-wanted' | 'teams-wanted',
   ): Promise<IClassifiedMatch[]> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.matches}/${accountId}/player-classifieds/${type}/${classifiedId}/matches`,
+      `${API_ENDPOINTS.matches}/${accountId}/player-classifieds/${type}/${classifiedId}/matches`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
@@ -379,7 +341,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to get match suggestions: ${response.statusText}`);
+      throw new Error(`Failed to fetch matches: ${response.statusText}`);
     }
 
     return response.json();
@@ -391,7 +353,7 @@ export const playerClassifiedService = {
 
   // Verify email for Teams Wanted access
   async verifyEmail(request: IEmailVerificationRequest): Promise<IEmailVerificationResult> {
-    const response = await fetch(`${API_BASE_URL}/api/player-classifieds/verify-email`, {
+    const response = await fetch(`${API_ENDPOINTS.teamsWanted}/verify-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -413,7 +375,7 @@ export const playerClassifiedService = {
   // Get admin view of all classifieds
   async getAdminClassifieds(accountId: string): Promise<IAdminClassifiedsResponse> {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.admin}/accounts/${accountId}/player-classifieds`,
+      `${API_ENDPOINTS.admin}/accounts/${accountId}/player-classifieds`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
@@ -429,13 +391,29 @@ export const playerClassifiedService = {
   },
 
   // ============================================================================
-  // ANALYTICS
+  // ANALYTICS OPERATIONS
   // ============================================================================
 
-  // Get analytics for an account
-  async getClassifiedsAnalytics(accountId: string): Promise<IClassifiedAnalytics> {
+  // Get analytics for classifieds
+  async getAnalytics(
+    accountId: string,
+    params?: Partial<IClassifiedAnalytics>,
+  ): Promise<IClassifiedAnalytics> {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            value.forEach((v) => searchParams.append(key, v.toString()));
+          } else {
+            searchParams.append(key, value.toString());
+          }
+        }
+      });
+    }
+
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics`,
+      `${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics?${searchParams.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
