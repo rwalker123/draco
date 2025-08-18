@@ -19,7 +19,19 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    domains: ['localhost', 'draco-account-resources-dev.s3.us-east-1.amazonaws.com'],
+    remotePatterns: [
+      // Only allow localhost in development (LocalStack)
+      ...(process.env.NODE_ENV === 'development'
+        ? [
+            {
+              protocol: 'http' as const,
+              hostname: 'localhost',
+              port: '4566',
+              pathname: '/**',
+            },
+          ]
+        : []),
+    ],
   },
 };
 
