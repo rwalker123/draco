@@ -196,6 +196,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
+              autoComplete="email"
               required
             />
             <Button
@@ -258,6 +259,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               margin="normal"
+              autoComplete="new-password"
               required
             />
             <TextField
@@ -267,6 +269,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               margin="normal"
+              autoComplete="new-password"
               required
             />
             <Button

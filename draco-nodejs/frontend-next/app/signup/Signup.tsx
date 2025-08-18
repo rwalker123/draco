@@ -165,6 +165,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
           value={formData.email}
           onChange={handleInputChange('email')}
           margin="normal"
+          autoComplete="email"
           required
         />
 
@@ -175,6 +176,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
           value={formData.password}
           onChange={handleInputChange('password')}
           margin="normal"
+          autoComplete="new-password"
           required
           helperText="Password must be at least 6 characters long"
         />
@@ -186,6 +188,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
           value={formData.confirmPassword}
           onChange={handleInputChange('confirmPassword')}
           margin="normal"
+          autoComplete="new-password"
           required
         />
 

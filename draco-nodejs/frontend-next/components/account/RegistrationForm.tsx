@@ -111,15 +111,19 @@ export const RegistrationForm: React.FC<Props> = (props) => {
               <input
                 placeholder="Email"
                 type="email"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
               <input
                 placeholder="Password"
                 type="password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 required
               />
             </div>
@@ -127,15 +131,20 @@ export const RegistrationForm: React.FC<Props> = (props) => {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <input
                 placeholder="Username or Email"
+                type="text"
+                name="usernameOrEmail"
                 value={usernameOrEmail}
                 onChange={(e) => setUsernameOrEmail(e.target.value)}
+                autoComplete="username"
                 required
               />
               <input
                 placeholder="Password"
                 type="password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 required
               />
             </div>
@@ -149,19 +158,28 @@ export const RegistrationForm: React.FC<Props> = (props) => {
       >
         <input
           placeholder="First name"
+          type="text"
+          name="firstName"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
+          autoComplete="given-name"
           required
         />
         <input
           placeholder="Middle name (optional)"
+          type="text"
+          name="middleName"
           value={middleName}
           onChange={(e) => setMiddleName(e.target.value)}
+          autoComplete="additional-name"
         />
         <input
           placeholder="Last name"
+          type="text"
+          name="lastName"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
+          autoComplete="family-name"
           required={isAuthenticated || mode === 'newUser'}
         />
       </div>
@@ -193,17 +211,22 @@ export const RegistrationForm: React.FC<Props> = (props) => {
         {validationType === 'streetAddress' ? (
           <input
             placeholder="Street Address"
+            type="text"
+            name="streetAddress"
             value={streetAddress}
             onChange={(e) => setStreetAddress(e.target.value)}
+            autoComplete="street-address"
             required
             style={{ width: '100%' }}
           />
         ) : (
           <input
             type="date"
+            name="dateOfBirth"
             placeholder="Date of Birth"
             value={dateOfBirth}
             onChange={(e) => setDateOfBirth(e.target.value)}
+            autoComplete="bday"
             required
             style={{ width: '100%' }}
           />
