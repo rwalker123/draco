@@ -27,18 +27,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  // Initialize loading as true when in browser to wait for localStorage check
-  const [loading, setLoading] = useState(typeof window !== 'undefined');
+  // Initialize loading as false to prevent server/client hydration mismatch
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      setLoading(true); // Set loading when we start checking localStorage
       const storedToken = localStorage.getItem('jwtToken');
       setToken(storedToken);
-      // Only set loading to false after we've checked localStorage
+      // If no token, set loading to false immediately
       if (!storedToken) {
         setLoading(false);
       }
+      // If there is a token, loading will be set to false by fetchUser
     }
   }, []);
 

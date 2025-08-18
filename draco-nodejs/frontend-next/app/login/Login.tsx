@@ -74,6 +74,11 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleLogin();
+  };
+
   // Handle redirect after successful login when contexts are loaded
   useEffect(() => {
     if (needsRedirect && user && !roleLoading && userRoles) {
@@ -105,34 +110,38 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
             {error}
           </Alert>
         )}
-        <TextField
-          fullWidth
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          margin="normal"
-          required
-        />
-        <TextField
-          fullWidth
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          margin="normal"
-          required
-        />
-        <Button
-          fullWidth
-          variant="contained"
-          color="primary"
-          onClick={handleLogin}
-          disabled={loading}
-          sx={{ mt: 2 }}
-        >
-          {loading ? <CircularProgress size={24} /> : 'Sign In'}
-        </Button>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            margin="normal"
+            required
+            autoComplete="username"
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            margin="normal"
+            required
+            autoComplete="current-password"
+          />
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            type="submit"
+            disabled={loading}
+            sx={{ mt: 2 }}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Sign In'}
+          </Button>
+        </form>
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Link
             href={`/reset-password${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`}
