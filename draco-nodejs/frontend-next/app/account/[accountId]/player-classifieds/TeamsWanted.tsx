@@ -99,8 +99,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
             hasNext: response.pagination?.hasNext || false,
             hasPrev: response.pagination?.hasPrev || false,
           });
-          console.log('API Response:', response);
-          console.log('Page:', page, 'Limit:', limit, 'Data length:', response.data.length);
         }
       } catch (error) {
         console.error('Failed to load page data:', error);
