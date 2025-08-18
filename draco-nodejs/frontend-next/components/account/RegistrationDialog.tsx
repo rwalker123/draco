@@ -74,7 +74,8 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
     onClose();
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setLoading(true);
     setError(null);
 
@@ -162,132 +163,143 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
           </Tabs>
         )}
 
-        {/* Login credentials section (only for unauthenticated users) */}
-        {!user && (
-          <>
-            {mode === 'newUser' ? (
-              <>
-                <TextField
-                  fullWidth
-                  margin="dense"
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  margin="dense"
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </>
-            ) : (
-              <>
-                <TextField
-                  fullWidth
-                  margin="dense"
-                  label="Username or Email"
-                  value={usernameOrEmail}
-                  onChange={(e) => setUsernameOrEmail(e.target.value)}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  margin="dense"
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </>
-            )}
-          </>
-        )}
+        <form id="registration-form" onSubmit={handleSubmit}>
+          {/* Login credentials section (only for unauthenticated users) */}
+          {!user && (
+            <>
+              {mode === 'newUser' ? (
+                <>
+                  <TextField
+                    fullWidth
+                    margin="dense"
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                  />
+                  <TextField
+                    fullWidth
+                    margin="dense"
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                  />
+                </>
+              ) : (
+                <>
+                  <TextField
+                    fullWidth
+                    margin="dense"
+                    label="Username or Email"
+                    value={usernameOrEmail}
+                    onChange={(e) => setUsernameOrEmail(e.target.value)}
+                    autoComplete="username"
+                    required
+                  />
+                  <TextField
+                    fullWidth
+                    margin="dense"
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                </>
+              )}
+            </>
+          )}
 
-        {/* Name fields (for all users) */}
-        <TextField
-          fullWidth
-          margin="dense"
-          label="First name"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          required
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Middle name (optional)"
-          value={middleName}
-          onChange={(e) => setMiddleName(e.target.value)}
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Last name"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          required={!user || mode === 'newUser'}
-        />
-
-        {/* Validation section */}
-        <Box sx={{ mt: 3, mb: 2 }}>
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Additional Verification Required</FormLabel>
-            <RadioGroup
-              row
-              value={validationType}
-              onChange={(e) => setValidationType(e.target.value as ValidationType)}
-            >
-              <FormControlLabel
-                value="streetAddress"
-                control={<Radio />}
-                label="Verify with Street Address"
-              />
-              <FormControlLabel
-                value="dateOfBirth"
-                control={<Radio />}
-                label="Verify with Date of Birth"
-              />
-            </RadioGroup>
-          </FormControl>
-        </Box>
-
-        {validationType === 'streetAddress' ? (
+          {/* Name fields (for all users) */}
           <TextField
             fullWidth
             margin="dense"
-            label="Street Address"
-            value={streetAddress}
-            onChange={(e) => setStreetAddress(e.target.value)}
+            label="First name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            autoComplete="given-name"
             required
-            helperText="Enter your street address as it appears in our records"
           />
-        ) : (
           <TextField
             fullWidth
             margin="dense"
-            label="Date of Birth"
-            type="date"
-            value={dateOfBirth}
-            onChange={(e) => setDateOfBirth(e.target.value)}
-            required
-            InputLabelProps={{ shrink: true }}
-            helperText="Enter your date of birth as it appears in our records"
+            label="Middle name (optional)"
+            value={middleName}
+            onChange={(e) => setMiddleName(e.target.value)}
+            autoComplete="additional-name"
           />
-        )}
+          <TextField
+            fullWidth
+            margin="dense"
+            label="Last name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            autoComplete="family-name"
+            required={!user || mode === 'newUser'}
+          />
+
+          {/* Validation section */}
+          <Box sx={{ mt: 3, mb: 2 }}>
+            <FormControl component="fieldset">
+              <FormLabel component="legend">Additional Verification Required</FormLabel>
+              <RadioGroup
+                row
+                value={validationType}
+                onChange={(e) => setValidationType(e.target.value as ValidationType)}
+              >
+                <FormControlLabel
+                  value="streetAddress"
+                  control={<Radio />}
+                  label="Verify with Street Address"
+                />
+                <FormControlLabel
+                  value="dateOfBirth"
+                  control={<Radio />}
+                  label="Verify with Date of Birth"
+                />
+              </RadioGroup>
+            </FormControl>
+          </Box>
+
+          {validationType === 'streetAddress' ? (
+            <TextField
+              fullWidth
+              margin="dense"
+              label="Street Address"
+              value={streetAddress}
+              onChange={(e) => setStreetAddress(e.target.value)}
+              autoComplete="street-address"
+              required
+              helperText="Enter your street address as it appears in our records"
+            />
+          ) : (
+            <TextField
+              fullWidth
+              margin="dense"
+              label="Date of Birth"
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              autoComplete="bday"
+              required
+              InputLabelProps={{ shrink: true }}
+              helperText="Enter your date of birth as it appears in our records"
+            />
+          )}
+        </form>
       </DialogContent>
 
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+        <Button type="submit" form="registration-form" variant="contained" disabled={loading}>
           {loading ? 'Submitting...' : 'Continue'}
         </Button>
       </DialogActions>
