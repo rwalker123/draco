@@ -97,15 +97,15 @@ export interface EmailRecipientGroups {
 
 // Email template interfaces
 export interface EmailTemplate {
-  id: bigint;
-  accountId: bigint;
+  id: string;
+  accountId: string;
   name: string;
   description?: string;
   subjectTemplate?: string;
   bodyTemplate: string;
   createdByUserId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
   isActive: boolean;
 }
 

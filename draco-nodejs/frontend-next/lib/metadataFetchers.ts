@@ -1,15 +1,24 @@
 // Utility functions for fetching metadata for page titles
 
 export async function getAccountName(accountId: string): Promise<string> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL environment variable is required for SSR');
+  }
+
   try {
-    const res = await fetch(`/api/accounts/${accountId}/name`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiUrl}/api/accounts/${accountId}/name`, {
+      next: { revalidate: 60 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (data?.success && data?.data?.name) {
         return data.data.name;
       }
     }
-  } catch {}
+  } catch (error) {
+    console.warn('Failed to fetch account name:', error);
+  }
   return 'Account';
 }
 
@@ -25,7 +34,14 @@ export async function getTeamInfo(
     // Fetch account name
     account = await getAccountName(accountId);
     // Fetch team info
-    const res = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+      throw new Error('NEXT_PUBLIC_API_URL environment variable is required for SSR');
+    }
+
+    const res = await fetch(
+      `${apiUrl}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`,
+    );
     if (res.ok) {
       const data = await res.json();
       if (data?.success && data?.data?.teamSeason) {
@@ -33,7 +49,9 @@ export async function getTeamInfo(
         league = data.data.teamSeason.leagueName || league;
       }
     }
-  } catch {}
+  } catch (error) {
+    console.warn('Failed to fetch team info:', error);
+  }
   return { account, league, team };
 }
 
@@ -42,9 +60,14 @@ export async function getLeagueName(
   seasonId: string,
   leagueSeasonId: string,
 ): Promise<string> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL environment variable is required for SSR');
+  }
+
   try {
     const res = await fetch(
-      `/api/accounts/${accountId}/seasons/${seasonId}/league-seasons/${leagueSeasonId}`,
+      `${apiUrl}/api/accounts/${accountId}/seasons/${seasonId}/league-seasons/${leagueSeasonId}`,
     );
     if (res.ok) {
       const data = await res.json();
@@ -52,6 +75,8 @@ export async function getLeagueName(
         return data.data.leagueSeason.league.name;
       }
     }
-  } catch {}
+  } catch (error) {
+    console.warn('Failed to fetch league name:', error);
+  }
   return 'League';
 }

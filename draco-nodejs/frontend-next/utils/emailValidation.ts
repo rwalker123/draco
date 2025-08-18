@@ -5,7 +5,6 @@
 
 import { RecipientContact } from '../types/emails/recipients';
 import { hasValidEmail } from '../components/emails/common/mailtoUtils';
-import DOMPurify from 'dompurify';
 import validator from 'validator';
 
 /**
@@ -88,40 +87,4 @@ export const isValidEmailFormat = (email: string): boolean => {
   }
 
   return true;
-};
-
-/**
- * Sanitizes text to prevent XSS in user-controlled content
- * Uses DOMPurify to strip all HTML and return safe text content
- */
-export const sanitizeDisplayText = (text: string): string => {
-  if (!text || typeof text !== 'string') return '';
-
-  // Use DOMPurify to strip all HTML tags and return safe text content
-  return DOMPurify.sanitize(text, {
-    ALLOWED_TAGS: [], // Strip all HTML tags
-    ALLOWED_ATTR: [], // Strip all attributes
-    KEEP_CONTENT: true, // Keep text content
-    FORBID_CONTENTS: ['script', 'style'], // Remove content of dangerous tags
-  });
-};
-
-/**
- * Sanitizes rich content to allow safe HTML while removing dangerous elements
- * Used for workout announcements where formatting should be preserved
- * Based on the backend sanitizeHtml implementation
- */
-export const sanitizeRichContent = (text: string): string => {
-  if (!text || typeof text !== 'string') return '';
-
-  // Use DOMPurify with HTML profile to allow safe formatting while removing XSS
-  return DOMPurify.sanitize(text, {
-    USE_PROFILES: { html: true }, // Allow only safe HTML elements
-    FORBID_TAGS: ['svg', 'math'], // Explicitly forbid SVG and MathML for security
-    FORBID_ATTR: ['style'], // Remove style attributes to prevent CSS injection
-    KEEP_CONTENT: true, // Preserve text content when removing tags
-    RETURN_DOM: false, // Return string, not DOM object
-    SANITIZE_DOM: true, // Enable DOM clobbering protection
-    SANITIZE_NAMED_PROPS: true, // Enforce strict DOM clobbering protection
-  }).trim();
 };
