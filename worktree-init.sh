@@ -172,9 +172,17 @@ if [ -f "$MAIN_REPO_PATH/draco-nodejs/frontend-next/.env.local" ]; then
     
     # Update NEXT_PUBLIC_API_URL in frontend .env.local
     sed -i.bak "s|^[[:space:]]*NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://localhost:$BACKEND_PORT|" "draco-nodejs/frontend-next/.env.local"
+    
+    # Add or update PORT variable for frontend
+    if grep -q "^[[:space:]]*PORT=" "draco-nodejs/frontend-next/.env.local"; then
+        sed -i.bak "s/^[[:space:]]*PORT=.*/PORT=$FRONTEND_PORT/" "draco-nodejs/frontend-next/.env.local"
+    else
+        echo "PORT=$FRONTEND_PORT" >> "draco-nodejs/frontend-next/.env.local"
+    fi
+    
     rm -f "draco-nodejs/frontend-next/.env.local.bak"
     
-    print_success "Frontend .env.local configured with backend port $BACKEND_PORT"
+    print_success "Frontend .env.local configured with backend port $BACKEND_PORT and frontend port $FRONTEND_PORT"
 else
     print_warning "Frontend .env.local file not found in main repo"
 fi

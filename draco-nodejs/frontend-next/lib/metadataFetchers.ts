@@ -2,10 +2,7 @@
 
 export async function getAccountName(accountId: string): Promise<string> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || ''}/api/accounts/${accountId}/name`,
-      { next: { revalidate: 60 } },
-    );
+    const res = await fetch(`/api/accounts/${accountId}/name`, { next: { revalidate: 60 } });
     if (res.ok) {
       const data = await res.json();
       if (data?.success && data?.data?.name) {
@@ -28,9 +25,7 @@ export async function getTeamInfo(
     // Fetch account name
     account = await getAccountName(accountId);
     // Fetch team info
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || ''}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`,
-    );
+    const res = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`);
     if (res.ok) {
       const data = await res.json();
       if (data?.success && data?.data?.teamSeason) {
@@ -49,7 +44,7 @@ export async function getLeagueName(
 ): Promise<string> {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || ''}/api/accounts/${accountId}/seasons/${seasonId}/league-seasons/${leagueSeasonId}`,
+      `/api/accounts/${accountId}/seasons/${seasonId}/league-seasons/${leagueSeasonId}`,
     );
     if (res.ok) {
       const data = await res.json();
