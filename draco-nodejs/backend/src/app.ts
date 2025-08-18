@@ -39,6 +39,24 @@ const container = new Container(prisma);
 
 const app = express();
 
+// Configure Express proxy trust based on environment
+// Development: Trust 1 proxy (Next.js dev server)
+// Production: Only trust if TRUST_PROXY env var is set
+const isDevelopment = process.env.NODE_ENV !== 'production';
+if (isDevelopment) {
+  app.set('trust proxy', 1); // Trust Next.js dev server proxy
+} else if (process.env.TRUST_PROXY) {
+  // Production: only trust if explicitly configured
+  const trustProxyValue = process.env.TRUST_PROXY;
+  if (trustProxyValue === 'true') {
+    app.set('trust proxy', true);
+  } else if (!isNaN(Number(trustProxyValue))) {
+    app.set('trust proxy', Number(trustProxyValue));
+  } else {
+    app.set('trust proxy', trustProxyValue);
+  }
+}
+
 // Make container available to all routes
 app.locals.container = container;
 

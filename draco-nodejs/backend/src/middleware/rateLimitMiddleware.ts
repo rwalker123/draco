@@ -25,6 +25,20 @@ export const createRateLimit = (options: RateLimitOptions = {}) => {
     keyGenerator,
   } = options;
 
+  // Configure validation based on environment
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const validate = isDevelopment
+    ? {
+        // In development, disable problematic validations from Next.js proxy
+        xForwardedForHeader: false,
+        trustProxy: false,
+        default: true,
+      }
+    : {
+        // In production, enable all validations for security
+        default: true,
+      };
+
   return rateLimit({
     windowMs,
     max,
@@ -36,6 +50,7 @@ export const createRateLimit = (options: RateLimitOptions = {}) => {
     standardHeaders,
     legacyHeaders,
     keyGenerator,
+    validate,
     handler: (req: Request, res: Response) => {
       res.status(429).json({
         success: false,
