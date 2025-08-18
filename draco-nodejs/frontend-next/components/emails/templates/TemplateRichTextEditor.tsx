@@ -78,7 +78,7 @@ const TemplateRichTextEditor = React.forwardRef<
         >
           <RichTextEditor
             ref={editorRef}
-            value={content}
+            initialValue={content}
             onChange={onChange}
             placeholder={placeholder}
             disabled={disabled}
