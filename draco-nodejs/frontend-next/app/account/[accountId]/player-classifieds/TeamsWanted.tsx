@@ -17,15 +17,13 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   const { teamsWanted, loading, error, refreshData, clearError } = usePlayerClassifieds(accountId);
 
   // Handle edit (requires access code)
-  const handleEdit = (id: string, accessCodeRequired: string) => {
+  const handleEdit = (_id: string, _accessCodeRequired: string) => {
     // TODO: Open edit dialog with access code input
-    console.log('Edit Teams Wanted:', id, accessCodeRequired);
   };
 
   // Handle delete (requires access code)
-  const handleDelete = async (id: string, accessCodeRequired: string) => {
+  const handleDelete = async (_id: string, _accessCodeRequired: string) => {
     // TODO: Implement access code validation before deletion
-    console.log('Delete Teams Wanted:', id, accessCodeRequired);
   };
 
   // Handle refresh
@@ -64,21 +62,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
 
   return (
     <Box>
-      {/* TEST BANNER - IF YOU SEE THIS, THE FILE IS UPDATED */}
-      <Box
-        sx={{
-          backgroundColor: 'blue',
-          color: 'white',
-          p: 2,
-          mb: 3,
-          textAlign: 'center',
-          fontSize: '24px',
-          fontWeight: 'bold',
-        }}
-      >
-        🔵 TEST BANNER - TEAMS WANTED FILE UPDATED! 🔵
-      </Box>
-
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h5" component="h2">

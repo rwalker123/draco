@@ -1,10 +1,6 @@
 // Player Classifieds Service
 // Handles all API interactions for Player Classifieds feature
 
-// Test if console logging is working
-console.log('🔧 playerClassifiedService.ts file loaded');
-console.error('🚨 ERROR TEST 8 - This should definitely show up');
-
 import {
   IPlayersWantedCreateRequest,
   IPlayersWantedResponse,
@@ -71,8 +67,6 @@ export const playerClassifiedService = {
     accountId: string,
     params?: Partial<IClassifiedSearchParams>,
   ): Promise<IClassifiedListResponse<IPlayersWantedResponse>> {
-    console.log(`🔍 playerClassifiedService.getPlayersWanted called with:`, { accountId, params });
-
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -89,7 +83,6 @@ export const playerClassifiedService = {
     }
 
     const url = `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted?${searchParams.toString()}`;
-    console.log(`🌐 getPlayersWanted making fetch request to: ${url}`);
 
     const response = await fetch(url, {
       headers: {
@@ -97,16 +90,12 @@ export const playerClassifiedService = {
       },
     });
 
-    console.log(`📡 getPlayersWanted response status: ${response.status} ${response.statusText}`);
-
     if (!response.ok) {
       const errorText = `Failed to fetch Players Wanted: ${response.statusText}`;
-      console.error(`❌ getPlayersWanted error: ${errorText}`);
       throw new Error(errorText);
     }
 
     const data = await response.json();
-    console.log(`✅ getPlayersWanted response data:`, data);
     return data;
   },
 
@@ -206,8 +195,6 @@ export const playerClassifiedService = {
     accountId: string,
     params?: Partial<IClassifiedSearchParams>,
   ): Promise<IClassifiedListResponse<ITeamsWantedResponse>> {
-    console.log(`🔍 playerClassifiedService.getTeamsWanted called with:`, { accountId, params });
-
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -224,7 +211,6 @@ export const playerClassifiedService = {
     }
 
     const url = `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted?${searchParams.toString()}`;
-    console.log(`🌐 getTeamsWanted making fetch request to: ${url}`);
 
     const response = await fetch(url, {
       headers: {
@@ -232,16 +218,12 @@ export const playerClassifiedService = {
       },
     });
 
-    console.log(`📡 getTeamsWanted response status: ${response.status} ${response.statusText}`);
-
     if (!response.ok) {
       const errorText = `Failed to fetch Teams Wanted: ${response.statusText}`;
-      console.error(`❌ getTeamsWanted error: ${errorText}`);
       throw new Error(errorText);
     }
 
     const data = await response.json();
-    console.log(`✅ getTeamsWanted response data:`, data);
     return data;
   },
 

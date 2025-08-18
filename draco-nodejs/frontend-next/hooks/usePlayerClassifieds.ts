@@ -1,10 +1,6 @@
 // usePlayerClassifieds Hook
 // Main hook for managing Player Classifieds data and operations
 
-// Test if console logging is working
-console.log('🔧 usePlayerClassifieds.ts file loaded');
-console.error('🚨 ERROR TEST 7 - This should definitely show up');
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNotifications } from './useNotifications';
 import { playerClassifiedService } from '../services/playerClassifiedService';
