@@ -25,6 +25,10 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            console.log('Checking for auto-merge eligible PRs...');
+            console.log(`Branch: ${context.payload.workflow_run.head_branch}`);
+            console.log(`Head reference: ${context.repo.owner}:${context.payload.workflow_run.head_branch}`);
+            
             const { data: prs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -33,12 +37,13 @@ jobs:
             });
             
             if (prs.length === 0) {
-              console.log('No open PR found for this branch');
-              return;
+              console.log('❌ No open PR found for this branch');
+              return null;
             }
             
             const pr = prs[0];
-            console.log(`Found PR #${pr.number}: ${pr.title}`);
+            console.log(`✅ Found PR #${pr.number}: ${pr.title}`);
+            console.log(`PR labels: ${pr.labels.map(l => l.name).join(', ') || 'none'}`);
             
             // Check if PR has auto-merge label
             const hasAutoMergeLabel = pr.labels.some(label => 
@@ -46,9 +51,14 @@ jobs:
             );
             
             if (!hasAutoMergeLabel) {
-              console.log('PR does not have auto-merge label, skipping');
-              return;
+              console.log('❌ PR does not have required auto-merge label ("auto-merge" or "automerge")');
+              console.log('Available labels:', pr.labels.map(l => l.name).join(', ') || 'none');
+              return null;
             }
+            
+            console.log('✅ PR has auto-merge label');
+            console.log(`PR mergeable: ${pr.mergeable}`);
+            console.log(`PR mergeable_state: ${pr.mergeable_state}`);
             
             return {
               number: pr.number,
@@ -57,11 +67,22 @@ jobs:
             };
             
       - name: Auto-merge PR
-        if: steps.pr-info.outputs.result != 'undefined'
+        if: steps.pr-info.outputs.result != 'undefined' && steps.pr-info.outputs.result != '' && steps.pr-info.outputs.result != 'null'
         uses: actions/github-script@v7
         with:
           script: |
-            const prInfo = JSON.parse('${{ steps.pr-info.outputs.result }}');
+            let prInfo;
+            try {
+              const result = '${{ steps.pr-info.outputs.result }}';
+              if (!result || result === 'undefined' || result === 'null' || result === '') {
+                console.log('No valid PR information available, skipping');
+                return;
+              }
+              prInfo = JSON.parse(result);
+            } catch (error) {
+              console.log('Failed to parse PR information:', error.message);
+              return;
+            }
             
             if (!prInfo) {
               console.log('No PR information available, skipping');
