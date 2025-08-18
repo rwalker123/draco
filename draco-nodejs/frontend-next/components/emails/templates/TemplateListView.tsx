@@ -25,7 +25,7 @@ interface TemplateListViewProps {
   templates: EmailTemplate[];
   onEdit: (template: EmailTemplate) => void;
   onPreview: (template: EmailTemplate) => void;
-  onDelete: (templateId: string) => void;
+  onDelete: (template: EmailTemplate) => void;
 }
 
 export default function TemplateListView({
@@ -64,7 +64,7 @@ export default function TemplateListView({
 
   const handleDelete = () => {
     if (selectedTemplate) {
-      onDelete(selectedTemplate.id.toString());
+      onDelete(selectedTemplate);
     }
     handleMenuClose();
   };

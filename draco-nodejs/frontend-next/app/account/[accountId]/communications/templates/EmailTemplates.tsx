@@ -9,6 +9,10 @@ import {
   Fab,
   Tooltip,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -36,7 +40,11 @@ export default function EmailTemplates() {
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
+  const [selectedTemplateForDelete, setSelectedTemplateForDelete] = useState<EmailTemplate | null>(
+    null,
+  );
 
   const emailService = useMemo(() => new EmailService(token || ''), [token]);
 
@@ -79,16 +87,33 @@ export default function EmailTemplates() {
     setPreviewDialogOpen(true);
   };
 
-  const handleDeleteTemplate = async (templateId: string) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
+  const openDeleteDialog = (template: EmailTemplate) => {
+    setSelectedTemplateForDelete(template);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedTemplateForDelete) return;
 
     try {
-      await emailService.deleteTemplate(accountId as string, templateId);
+      await emailService.deleteTemplate(
+        accountId as string,
+        selectedTemplateForDelete.id.toString(),
+      );
+      setDeleteDialogOpen(false);
+      setSelectedTemplateForDelete(null);
       await loadTemplates(); // Reload the list
     } catch (err) {
       console.error('Failed to delete template:', err);
       setError('Failed to delete template. Please try again.');
+      setDeleteDialogOpen(false);
+      setSelectedTemplateForDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setSelectedTemplateForDelete(null);
   };
 
   const handleEditSuccess = () => {
@@ -176,7 +201,7 @@ export default function EmailTemplates() {
               templates={templates}
               onEdit={handleEditTemplate}
               onPreview={handlePreviewTemplate}
-              onDelete={handleDeleteTemplate}
+              onDelete={openDeleteDialog}
             />
           )}
 
@@ -215,6 +240,23 @@ export default function EmailTemplates() {
               />
             </>
           )}
+
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel} maxWidth="sm" fullWidth>
+            <DialogTitle>Delete Email Template</DialogTitle>
+            <DialogContent>
+              <Typography>
+                Are you sure you want to delete the template &quot;{selectedTemplateForDelete?.name}
+                &quot;? This action cannot be undone.
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleDeleteCancel}>Cancel</Button>
+              <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       </main>
     </ProtectedRoute>
