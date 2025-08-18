@@ -117,6 +117,7 @@ router.get(
             youtubeUserId: string | null;
             defaultVideo: string | null;
             autoPlayVideo: boolean;
+            logoUrl: string;
           }>;
         }>;
         unassignedTeams?: Array<{
@@ -127,6 +128,7 @@ router.get(
           youtubeUserId: string | null;
           defaultVideo: string | null;
           autoPlayVideo: boolean;
+          logoUrl: string;
         }>;
       } = {
         id: ls.id.toString(),
@@ -153,6 +155,7 @@ router.get(
                 youtubeUserId: ts.teams.youtubeuserid,
                 defaultVideo: ts.teams.defaultvideo,
                 autoPlayVideo: ts.teams.autoplayvideo,
+                logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
               })),
           }),
         );
@@ -169,6 +172,7 @@ router.get(
               youtubeUserId: ts.teams.youtubeuserid,
               defaultVideo: ts.teams.defaultvideo,
               autoPlayVideo: ts.teams.autoplayvideo,
+              logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
             }));
         }
       }
