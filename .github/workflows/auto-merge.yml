@@ -57,13 +57,57 @@ jobs:
             }
             
             console.log('✅ PR has auto-merge label');
-            console.log(`PR mergeable: ${pr.mergeable}`);
-            console.log(`PR mergeable_state: ${pr.mergeable_state}`);
+            console.log(`Initial PR mergeable: ${pr.mergeable}`);
+            console.log(`Initial PR mergeable_state: ${pr.mergeable_state}`);
+            
+            // Get detailed PR information with retry logic for mergeable state
+            // GitHub computes mergeable state asynchronously, so we may need to wait
+            let detailedPR;
+            let retries = 0;
+            const maxRetries = 5;
+            
+            while (retries < maxRetries) {
+              console.log(`🔄 Fetching detailed PR info (attempt ${retries + 1}/${maxRetries})...`);
+              
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+              
+              detailedPR = data;
+              console.log(`Detailed PR mergeable: ${detailedPR.mergeable}`);
+              console.log(`Detailed PR mergeable_state: ${detailedPR.mergeable_state}`);
+              
+              // If mergeable state is available and not null, we're good
+              if (detailedPR.mergeable !== null && detailedPR.mergeable_state !== null) {
+                console.log('✅ Got complete mergeable state information');
+                break;
+              }
+              
+              retries++;
+              
+              // Wait before retrying (GitHub needs time to compute mergeable state)
+              if (retries < maxRetries) {
+                console.log('⏳ Mergeable state not ready, waiting 10 seconds before retry...');
+                await new Promise(resolve => setTimeout(resolve, 10000));
+              }
+            }
+            
+            if (retries >= maxRetries) {
+              console.log('⚠️ Max retries reached, proceeding with available data');
+            }
+            
+            const finalMergeable = detailedPR.mergeable;
+            const finalMergeableState = detailedPR.mergeable_state;
+            
+            console.log(`📊 Final PR state: mergeable=${finalMergeable}, mergeable_state=${finalMergeableState}`);
             
             return {
-              number: pr.number,
-              mergeable: pr.mergeable,
-              mergeable_state: pr.mergeable_state
+              number: detailedPR.number,
+              mergeable: finalMergeable,
+              mergeable_state: finalMergeableState,
+              retries_used: retries
             };
             
       - name: Auto-merge PR
@@ -89,12 +133,50 @@ jobs:
               return;
             }
             
-            const { number, mergeable, mergeable_state } = prInfo;
+            const { number, mergeable, mergeable_state, retries_used } = prInfo;
             
-            if (!mergeable || mergeable_state !== 'clean') {
-              console.log(`PR #${number} is not mergeable (state: ${mergeable_state}), skipping`);
+            console.log(`🔍 Processing PR #${number}`);
+            console.log(`📊 Mergeable: ${mergeable}`);
+            console.log(`📊 Mergeable state: ${mergeable_state}`);
+            console.log(`🔄 Retries used: ${retries_used || 0}`);
+            
+            // Check if mergeable state is still unknown
+            if (mergeable === null || mergeable_state === null) {
+              console.log(`⚠️ PR #${number} mergeable state is still unknown after retries`);
+              console.log(`  - mergeable: ${mergeable}`);
+              console.log(`  - mergeable_state: ${mergeable_state}`);
+              console.log('❌ Cannot proceed with auto-merge due to unknown state');
               return;
             }
+            
+            // Check if PR is not mergeable
+            if (!mergeable) {
+              console.log(`❌ PR #${number} is not mergeable (mergeable: ${mergeable})`);
+              return;
+            }
+            
+            // Check if mergeable state is not clean
+            if (mergeable_state !== 'clean') {
+              console.log(`❌ PR #${number} mergeable state is not clean (state: ${mergeable_state})`);
+              console.log('   Expected: "clean", but got:', mergeable_state);
+              
+              // Log common mergeable states for debugging
+              const commonStates = {
+                'dirty': 'PR has conflicts that need to be resolved',
+                'unknown': 'GitHub is still computing the mergeable state',
+                'blocked': 'PR is blocked by required status checks',
+                'behind': 'PR branch is behind the base branch',
+                'unstable': 'Required status checks are failing'
+              };
+              
+              if (commonStates[mergeable_state]) {
+                console.log(`   Reason: ${commonStates[mergeable_state]}`);
+              }
+              
+              return;
+            }
+            
+            console.log(`✅ PR #${number} is ready for auto-merge!`);
             
             try {
               await github.rest.pulls.merge({
