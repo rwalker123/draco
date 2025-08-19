@@ -700,7 +700,13 @@ const EmailComposePageInternal: React.FC<
 
                   {/* Content Editor */}
                   <Box sx={{ flex: 1, minHeight: 300 }}>
+                    {/* 
+                      Key prop forces React to remount RichTextEditor when template changes.
+                      This is necessary because RichTextEditor only reads initialValue on mount,
+                      so without this key, template content wouldn't populate when users select templates.
+                    */}
                     <RichTextEditor
+                      key={state.selectedTemplate?.id || 'no-template'}
                       initialValue={state.content}
                       onChange={handleContentChange}
                       placeholder="Write your email content..."
