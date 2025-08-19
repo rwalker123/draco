@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -19,6 +19,9 @@ import { Close as CloseIcon, Refresh as RefreshIcon } from '@mui/icons-material'
 import { EmailService } from '../../../services/emailService';
 import { useAuth } from '../../../context/AuthContext';
 import { EmailTemplate } from '../../../types/emails/email';
+import { formatDateTime } from '../../../utils/dateUtils';
+import { sanitizeRichContent } from '../../../utils/sanitization';
+import { extractVariables } from '../../../utils/templateUtils';
 
 interface TemplatePreviewDialogProps {
   open: boolean;
@@ -78,13 +81,7 @@ export default function TemplatePreviewDialog({
     coachName: 'Coach Wilson',
   });
 
-  const emailService = useMemo(() => new EmailService(token || ''), [token]);
-
-  // Extract variables from template
-  const extractVariables = (content: string): string[] => {
-    const matches = content.match(/\{\{[^}]+\}\}/g);
-    return matches ? matches.map((match) => match.replace(/[{}]/g, '').trim()) : [];
-  };
+  // Extract variables from template using shared utility
 
   const allVariables = [
     ...(template.subjectTemplate ? extractVariables(template.subjectTemplate) : []),
@@ -104,11 +101,14 @@ export default function TemplatePreviewDialog({
     };
 
   const generatePreview = useCallback(async () => {
+    if (!token) return;
+
     setLoading(true);
     setError(null);
 
     try {
-      const preview = await emailService.previewTemplate(
+      const service = new EmailService(token);
+      const preview = await service.previewTemplate(
         accountId,
         template.id.toString(),
         sampleVariables,
@@ -120,7 +120,7 @@ export default function TemplatePreviewDialog({
     } finally {
       setLoading(false);
     }
-  }, [accountId, template.id, sampleVariables, emailService]);
+  }, [accountId, template.id, sampleVariables, token]);
 
   // Generate preview when dialog opens or variables change
   useEffect(() => {
@@ -128,29 +128,6 @@ export default function TemplatePreviewDialog({
       generatePreview();
     }
   }, [open, template, sampleVariables, generatePreview]);
-
-  const formatDate = (date: Date | string | undefined | null) => {
-    try {
-      if (!date) return 'No date';
-
-      const dateObj = new Date(date);
-      if (isNaN(dateObj.getTime())) {
-        console.warn('Invalid date received:', date, typeof date);
-        return 'No date';
-      }
-
-      return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(dateObj);
-    } catch (error) {
-      console.warn('Date formatting error:', error, 'for date:', date);
-      return 'No date';
-    }
-  };
 
   return (
     <Dialog
@@ -230,7 +207,7 @@ export default function TemplatePreviewDialog({
                     maxHeight: 400,
                     overflow: 'auto',
                   }}
-                  dangerouslySetInnerHTML={{ __html: previewData.body }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichContent(previewData.body) }}
                 />
               </Paper>
             </Box>
@@ -304,14 +281,14 @@ export default function TemplatePreviewDialog({
                 <Typography variant="body2" color="text.secondary">
                   Created
                 </Typography>
-                <Typography variant="body1">{formatDate(template.createdAt)}</Typography>
+                <Typography variant="body1">{formatDateTime(template.createdAt)}</Typography>
               </Box>
 
               <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
                 <Typography variant="body2" color="text.secondary">
                   Last Updated
                 </Typography>
-                <Typography variant="body1">{formatDate(template.updatedAt)}</Typography>
+                <Typography variant="body1">{formatDateTime(template.updatedAt)}</Typography>
               </Box>
 
               <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>

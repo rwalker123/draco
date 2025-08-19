@@ -262,7 +262,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
                 Description
               </Typography>
               <RichTextEditor
-                value={formData.comments}
+                initialValue={formData.comments}
                 placeholder="Enter workout description..."
                 ref={richTextEditorRef}
               />

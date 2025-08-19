@@ -3,12 +3,8 @@
  * Tests critical security vulnerabilities and their fixes
  */
 
-import {
-  validateEmailInput,
-  sanitizeDisplayText,
-  sanitizeRichContent,
-  isValidEmailFormat,
-} from '../emailValidation';
+import { validateEmailInput, isValidEmailFormat } from '../emailValidation';
+import { sanitizeDisplayText, sanitizeRichContent } from '../sanitization';
 
 describe('Email Security Tests', () => {
   describe('validateEmailInput - Header Injection Protection', () => {

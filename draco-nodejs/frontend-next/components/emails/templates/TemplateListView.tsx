@@ -20,6 +20,8 @@ import {
   Description as TemplateIcon,
 } from '@mui/icons-material';
 import { EmailTemplate } from '../../../types/emails/email';
+import { formatDateTime } from '../../../utils/dateUtils';
+import { extractVariables } from '../../../utils/templateUtils';
 
 interface TemplateListViewProps {
   templates: EmailTemplate[];
@@ -77,34 +79,7 @@ export default function TemplateListView({
         template.description.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
-  // Extract variables from template content
-  const extractVariables = (content: string): string[] => {
-    const matches = content.match(/\{\{[^}]+\}\}/g);
-    return matches ? matches.map((match) => match.replace(/[{}]/g, '').trim()) : [];
-  };
-
-  const formatDate = (date: Date | string | undefined | null) => {
-    try {
-      if (!date) return 'No date';
-
-      const dateObj = new Date(date);
-      if (isNaN(dateObj.getTime())) {
-        console.warn('Invalid date received:', date, typeof date);
-        return 'No date';
-      }
-
-      return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(dateObj);
-    } catch (error) {
-      console.warn('Date formatting error:', error, 'for date:', date);
-      return 'No date';
-    }
-  };
+  // Extract variables from template content using shared utility
 
   return (
     <Box>
@@ -261,7 +236,7 @@ export default function TemplateListView({
                   {/* Footer */}
                   <Box sx={{ mt: 'auto', pt: 2 }}>
                     <Typography variant="caption" color="text.secondary">
-                      Updated {formatDate(template.updatedAt)}
+                      Updated {formatDateTime(template.updatedAt)}
                     </Typography>
                   </Box>
                 </CardContent>

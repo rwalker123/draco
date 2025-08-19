@@ -78,6 +78,43 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   }
 
   /**
+   * Validate input fields for security and constraints
+   */
+  private validateInputFields(
+    request: EmailTemplateCreateRequest | EmailTemplateUpdateRequest,
+  ): void {
+    if ('name' in request && request.name !== undefined) {
+      if (request.name.length > 100) {
+        throw new Error('Template name must be 100 characters or less');
+      }
+      if (request.name.trim().length === 0) {
+        throw new Error('Template name cannot be empty');
+      }
+    }
+
+    if ('description' in request && request.description !== undefined) {
+      if (request.description.length > 500) {
+        throw new Error('Template description must be 500 characters or less');
+      }
+    }
+
+    if ('subjectTemplate' in request && request.subjectTemplate !== undefined) {
+      if (request.subjectTemplate.length > 255) {
+        throw new Error('Subject template must be 255 characters or less');
+      }
+    }
+
+    if ('bodyTemplate' in request && request.bodyTemplate !== undefined) {
+      if (request.bodyTemplate.length > 50000) {
+        throw new Error('Body template must be 50,000 characters or less');
+      }
+      if (request.bodyTemplate.trim().length === 0) {
+        throw new Error('Body template cannot be empty');
+      }
+    }
+  }
+
+  /**
    * Create new email template
    */
   async createTemplate(
@@ -85,6 +122,9 @@ export class EmailTemplateService implements IEmailTemplateEngine {
     createdByUserId: string,
     request: EmailTemplateCreateRequest,
   ): Promise<EmailTemplate> {
+    // Validate input fields
+    this.validateInputFields(request);
+
     // Validate template syntax
     const subjectValidation = request.subjectTemplate
       ? this.validateTemplate(request.subjectTemplate)
@@ -120,6 +160,9 @@ export class EmailTemplateService implements IEmailTemplateEngine {
     accountId: bigint,
     request: EmailTemplateUpdateRequest,
   ): Promise<EmailTemplate> {
+    // Validate input fields
+    this.validateInputFields(request);
+
     // Validate template syntax if templates are being updated
     if (request.subjectTemplate !== undefined) {
       const validation = this.validateTemplate(request.subjectTemplate);
@@ -243,15 +286,15 @@ export class EmailTemplateService implements IEmailTemplateEngine {
    */
   private mapToEmailTemplate(template: EmailTemplateDbRecord): EmailTemplate {
     return {
-      id: template.id,
-      accountId: template.account_id,
+      id: template.id.toString(),
+      accountId: template.account_id.toString(),
       name: template.name,
       description: template.description || undefined,
       subjectTemplate: template.subject_template || undefined,
       bodyTemplate: template.body_template,
       createdByUserId: template.created_by_user_id || undefined,
-      createdAt: template.created_at,
-      updatedAt: template.updated_at,
+      createdAt: template.created_at.toISOString(),
+      updatedAt: template.updated_at.toISOString(),
       isActive: template.is_active,
     };
   }
