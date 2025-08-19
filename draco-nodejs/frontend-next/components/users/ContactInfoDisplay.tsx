@@ -4,7 +4,8 @@ import React from 'react';
 import { Stack, Typography, Card, CardContent, Divider, Chip, Box } from '@mui/material';
 import { Person as PersonIcon, Email as EmailIcon, Cake as CakeIcon } from '@mui/icons-material';
 import { ContactDetails } from '../../types/users';
-import { formatDateOfBirth, getFullName } from '../../utils/contactUtils';
+import { formatDateOfBirth } from '../../utils/dateUtils';
+import { getFullName } from '../../utils/contactUtils';
 import PhoneDisplay from './PhoneDisplay';
 import AddressDisplay from './AddressDisplay';
 

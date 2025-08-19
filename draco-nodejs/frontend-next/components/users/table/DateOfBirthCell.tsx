@@ -3,7 +3,7 @@
 import React from 'react';
 import { Typography, Box } from '@mui/material';
 import { ContactDetails } from '../../../types/users';
-import { formatDateOfBirth } from '../../../utils/contactUtils';
+import { formatDateOfBirth } from '../../../utils/dateUtils';
 
 interface DateOfBirthCellProps {
   contactDetails?: ContactDetails;

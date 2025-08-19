@@ -18,6 +18,7 @@ import { isValidPositionId } from '../interfaces/playerClassifiedConstants.js';
 import { EmailService } from './emailService.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import {
   validateRequiredString,
   validateEmail,
@@ -111,7 +112,7 @@ export class PlayerClassifiedService {
     return {
       id: dbRecord.id,
       accountId: dbRecord.accountid,
-      dateCreated: dbRecord.datecreated,
+      dateCreated: DateUtils.formatDateForResponse(dbRecord.datecreated),
       createdByContactId: dbRecord.createdbycontactid,
       teamEventName: dbRecord.teameventname,
       description: dbRecord.description,
@@ -139,14 +140,14 @@ export class PlayerClassifiedService {
     return {
       id: dbRecord.id,
       accountId: dbRecord.accountid,
-      dateCreated: dbRecord.datecreated,
+      dateCreated: DateUtils.formatDateForResponse(dbRecord.datecreated),
       name: dbRecord.name,
       email: dbRecord.email,
       phone: dbRecord.phone,
       experience: dbRecord.experience,
       positionsPlayed: dbRecord.positionsplayed,
       accessCode: dbRecord.accesscode, // Return hashed version for security
-      birthDate: dbRecord.birthdate,
+      birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
       account: {
         id: account.id,
         name: account.name,
@@ -189,7 +190,7 @@ export class PlayerClassifiedService {
       experience: request.experience,
       positionsplayed: request.positionsPlayed,
       accesscode: hashedAccessCode,
-      birthdate: request.birthDate,
+      birthdate: DateUtils.parseDateForDatabase(request.birthDate) || new Date('1900-01-01'),
     };
   }
 
@@ -498,8 +499,11 @@ export class PlayerClassifiedService {
       throw new ValidationError('Invalid positions specified');
     }
 
-    if (updateData.birthDate && validateBirthDate(updateData.birthDate, 'birthDate', 13, 80)) {
-      throw new ValidationError('Invalid birth date (must be 13-80 years old)');
+    if (updateData.birthDate) {
+      const parsedBirthDate = DateUtils.parseDateForDatabase(updateData.birthDate);
+      if (parsedBirthDate && validateBirthDate(parsedBirthDate, 'birthDate', 13, 80)) {
+        throw new ValidationError('Invalid birth date (must be 13-80 years old)');
+      }
     }
 
     // Prepare update data
@@ -510,7 +514,12 @@ export class PlayerClassifiedService {
     if (updateData.phone) dbUpdateData.phone = updateData.phone;
     if (updateData.experience) dbUpdateData.experience = updateData.experience;
     if (updateData.positionsPlayed) dbUpdateData.positionsplayed = updateData.positionsPlayed;
-    if (updateData.birthDate) dbUpdateData.birthdate = updateData.birthDate;
+    if (updateData.birthDate) {
+      const parsedBirthDate = DateUtils.parseDateForDatabase(updateData.birthDate);
+      if (parsedBirthDate) {
+        dbUpdateData.birthdate = parsedBirthDate;
+      }
+    }
 
     // Will be implemented when schema is updated
     // dbUpdateData.lastmodified = new Date();
@@ -617,7 +626,10 @@ export class PlayerClassifiedService {
         'positionsPlayed',
         this.validatePositions.bind(this),
       ),
-      validateBirthDate(request.birthDate, 'birthDate', 13, 80),
+      (() => {
+        const parsedBirthDate = DateUtils.parseDateForDatabase(request.birthDate);
+        return parsedBirthDate ? validateBirthDate(parsedBirthDate, 'birthDate', 13, 80) : null;
+      })(),
     );
 
     return createValidationResult(errors);

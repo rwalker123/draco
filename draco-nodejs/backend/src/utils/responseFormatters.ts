@@ -2,6 +2,7 @@ import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService.js
 import { RosterMember } from '../services/rosterService.js';
 import { ContactEntry, NamedContact, RawManager } from '../interfaces/contactInterfaces.js';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
+import { DateUtils } from './dateUtils.js';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -132,7 +133,7 @@ export class RosterResponseFormatter {
           playerNumber: member.playerNumber,
           inactive: member.inactive,
           submittedWaiver: member.submittedWaiver,
-          dateAdded: member.dateAdded ? member.dateAdded.toISOString() : null,
+          dateAdded: DateUtils.formatDateTimeForResponse(member.dateAdded),
           player: {
             id: member.player.id.toString(),
             contactId: member.player.contactId.toString(),
@@ -189,7 +190,7 @@ export class RosterResponseFormatter {
           playerNumber: rosterMember.playerNumber,
           inactive: rosterMember.inactive,
           submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
+          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
           player: {
             id: rosterMember.player.id.toString(),
             contactId: rosterMember.player.contactId.toString(),
@@ -228,7 +229,7 @@ export class RosterResponseFormatter {
           playerNumber: rosterMember.playerNumber,
           inactive: rosterMember.inactive,
           submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
+          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
           player: {
             id: rosterMember.player.id.toString(),
             contact: {
@@ -261,7 +262,7 @@ export class RosterResponseFormatter {
           playerNumber: rosterMember.playerNumber,
           inactive: rosterMember.inactive,
           submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
+          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
           player: {
             id: rosterMember.player.id.toString(),
             contact: {
@@ -294,7 +295,7 @@ export class RosterResponseFormatter {
           playerNumber: rosterMember.playerNumber,
           inactive: rosterMember.inactive,
           submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
+          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
           player: {
             id: rosterMember.player.id.toString(),
             contact: {

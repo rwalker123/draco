@@ -16,6 +16,7 @@ import {
 } from '../interfaces/workoutInterfaces.js';
 import { createStorageService } from './storageService.js';
 import { mapWorkoutField, FIELD_INCLUDE, WORKOUT_CONSTANTS } from '../utils/workoutMappers.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import {
   WorkoutRegistrationNotFoundError,
   WorkoutUnauthorizedError,
@@ -73,7 +74,7 @@ export class WorkoutService {
       const workout: WorkoutSummary = {
         id: r.id.toString(),
         workoutDesc: r.workoutdesc,
-        workoutDate: r.workoutdate.toISOString(),
+        workoutDate: DateUtils.formatDateTimeForResponse(r.workoutdate) || '',
         fieldId: r.fieldid ? r.fieldid.toString() : null,
         field: mapWorkoutField(r.availablefields),
       };
@@ -179,7 +180,7 @@ export class WorkoutService {
           positions: r.positions,
           isManager: r.ismanager,
           whereHeard: r.whereheard,
-          dateRegistered: r.dateregistered.toISOString(),
+          dateRegistered: DateUtils.formatDateTimeForResponse(r.dateregistered) || '',
         }),
       ),
     };
@@ -331,7 +332,7 @@ export class WorkoutService {
       positions: prismaRegistration.positions,
       isManager: prismaRegistration.ismanager,
       whereHeard: prismaRegistration.whereheard,
-      dateRegistered: prismaRegistration.dateregistered.toISOString(),
+      dateRegistered: DateUtils.formatDateTimeForResponse(prismaRegistration.dateregistered) || '',
     };
   }
 
@@ -344,7 +345,7 @@ export class WorkoutService {
       id: prismaWorkout.id.toString(),
       accountId: prismaWorkout.accountid.toString(),
       workoutDesc: prismaWorkout.workoutdesc,
-      workoutDate: prismaWorkout.workoutdate.toISOString(),
+      workoutDate: DateUtils.formatDateTimeForResponse(prismaWorkout.workoutdate) || '',
       fieldId: prismaWorkout.fieldid ? prismaWorkout.fieldid.toString() : null,
       field: mapWorkoutField(prismaWorkout.availablefields),
       comments: prismaWorkout.comments,
