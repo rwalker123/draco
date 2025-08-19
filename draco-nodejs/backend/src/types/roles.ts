@@ -64,7 +64,7 @@ export const ROLE_HIERARCHY: Record<string, string[]> = {
 export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   [RoleType.ADMINISTRATOR]: {
     roleId: RoleType.ADMINISTRATOR,
-    permissions: ['*'], // All permissions
+    permissions: ['*'], // All permissions including database.cleanup
     context: 'global',
   },
   [RoleType.ACCOUNT_ADMIN]: {
