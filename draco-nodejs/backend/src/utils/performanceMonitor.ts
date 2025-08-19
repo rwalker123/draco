@@ -1,4 +1,5 @@
 import { QueryMetrics, ConnectionPoolMetrics, databaseConfig } from '../config/database.js';
+import { DateUtils } from './dateUtils.js';
 
 interface PerformanceStats {
   totalQueries: number;
@@ -135,7 +136,7 @@ class PerformanceMonitor {
     console.warn(`
 🐌 SLOW QUERY DETECTED
 ├─ Duration: ${duration.toFixed(2)}ms (threshold: ${databaseConfig.slowQueryThreshold}ms)
-├─ Time: ${timestamp.toISOString()}
+├─ Time: ${DateUtils.formatDateTimeForResponse(timestamp)}
 ├─ Model: ${model || 'Unknown'}
 ├─ Operation: ${operation || 'Unknown'}
 ├─ Query: ${query.substring(0, 200)}${query.length > 200 ? '...' : ''}

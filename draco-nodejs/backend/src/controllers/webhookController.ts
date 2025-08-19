@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import { SendGridProvider } from '../services/email/providers/SendGridProvider.js';
 import { SendGridWebhookEvent } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from '../services/email/EmailProviderFactory.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 export class WebhookController {
   /**
@@ -81,7 +82,7 @@ export class WebhookController {
   static async healthCheck(req: Request, res: Response): Promise<void> {
     res.status(200).json({
       status: 'healthy',
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       provider: process.env.EMAIL_PROVIDER || 'ethereal',
       webhooks: {
         sendgrid: {
