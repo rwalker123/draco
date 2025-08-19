@@ -30,6 +30,7 @@ import monitoringRouter from './routes/monitoring.js';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
 import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhookRoutes.js';
+import cleanupRouter from './routes/cleanup.js';
 import { DateUtils } from './utils/dateUtils.js';
 
 // Load environment variables
@@ -37,6 +38,11 @@ dotenv.config();
 
 // Initialize dependency injection container
 const container = new Container(prisma);
+
+// Start cleanup service
+import { ServiceFactory } from './lib/serviceFactory.js';
+const cleanupService = ServiceFactory.getCleanupService();
+cleanupService.start();
 
 const app = express();
 
@@ -144,6 +150,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/roleTest', roleTestRouter);
 app.use('/api/monitoring', monitoringRouter);
+app.use('/api/cleanup', cleanupRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);
 app.use('/api/accounts/:accountId/seasons', seasonsRouter);
 app.use('/api/accounts/:accountId/statistics', statisticsRouter);

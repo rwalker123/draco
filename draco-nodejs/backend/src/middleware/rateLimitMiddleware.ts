@@ -104,3 +104,14 @@ export const teamsWantedRateLimit = createRateLimit({
   keyGenerator: (req: Request) => `teams-wanted-${ipKeyGenerator(req.ip || '')}`, // Use ipKeyGenerator for IPv6 support
   skipSuccessfulRequests: false,
 });
+
+/**
+ * Cleanup service rate limiting for manual cleanup operations
+ * 10 requests per day per authenticated user
+ */
+export const cleanupRateLimit = createRateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 10, // 10 requests per day
+  message: 'Rate limit exceeded: Maximum 10 cleanup operations per day per user',
+  skipSuccessfulRequests: false, // Count all requests
+});
