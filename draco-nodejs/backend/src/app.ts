@@ -21,7 +21,7 @@ import gamesRouter from './routes/games.js';
 import { bigIntSerializer } from './middleware/bigint-serializer.js';
 import { domainRouting } from './middleware/domainRouting.js';
 import swaggerUi from 'swagger-ui-express';
-import { specs } from './config/swagger.js';
+import { specs } from './config/openapi.js';
 import { globalErrorHandler } from './utils/globalErrorHandler.js';
 import teamManagersRouter from './routes/teamManagers.js';
 import statisticsRouter from './routes/statistics.js';
