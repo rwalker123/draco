@@ -33,7 +33,7 @@ import {
 
 import { ExtendedRecipientSelectionState } from './hooks/useRecipientSelection';
 import { RecipientContact, TeamGroup, RoleGroup } from '../../../types/emails/recipients';
-import { sanitizeDisplayText } from '../../../utils/emailValidation';
+import { sanitizeDisplayText } from '../../../utils/sanitization';
 import { hasValidEmail } from '../common/mailtoUtils';
 
 export interface RecipientPreviewPanelProps {

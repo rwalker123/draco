@@ -18,7 +18,7 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
+import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
@@ -31,15 +31,16 @@ import {
   UNDO_COMMAND,
   REDO_COMMAND,
   $createTextNode,
+  $createParagraphNode,
 } from 'lexical';
-import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
+import { $generateHtmlFromNodes } from '@lexical/html';
 import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
 import { $setBlocksType } from '@lexical/selection';
 
 interface RichTextEditorProps {
-  value?: string;
+  initialValue?: string;
   onChange?: (html: string) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -281,26 +282,6 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   );
 }
 
-// Plugin to handle HTML content initialization
-function InitialContentPlugin({ initialHtml }: { initialHtml?: string }) {
-  const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    if (initialHtml) {
-      editor.update(() => {
-        const parser = new DOMParser();
-        const dom = parser.parseFromString(initialHtml, 'text/html');
-        const nodes = $generateNodesFromDOM(editor, dom);
-        const root = $getRoot();
-        root.clear();
-        $insertNodes(nodes);
-      });
-    }
-  }, [editor, initialHtml]);
-
-  return null;
-}
-
 // Plugin to handle content changes using registerTextContentListener
 // This avoids cursor jumping issues that occur with registerUpdateListener
 function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }) {
@@ -346,6 +327,36 @@ const theme = {
   },
 };
 
+// Function to create initial editor state from HTML
+function createInitialEditorState(html?: string): (() => void) | null {
+  if (!html || html.trim() === '') {
+    return null; // Use default empty state
+  }
+
+  // Return a function that creates the editor state
+  return () => {
+    const root = $getRoot();
+    root.clear();
+
+    // Extract text content from HTML for initial state
+    // This preserves the basic content while avoiding cursor jumping issues
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(html, 'text/html');
+    const textContent = dom.body.textContent || dom.body.innerText || '';
+
+    if (textContent.trim()) {
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode(textContent);
+      paragraph.append(textNode);
+      root.append(paragraph);
+    } else {
+      // Create empty paragraph for empty content
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+    }
+  };
+}
+
 const nodes = [HeadingNode, ListNode, ListItemNode, LinkNode, AutoLinkNode];
 
 const editorConfig = {
@@ -363,7 +374,7 @@ const RichTextEditor = React.forwardRef<
 >(
   (
     {
-      value,
+      initialValue,
       onChange: _onChange,
       placeholder = 'Write your email...',
       disabled = false,
@@ -423,11 +434,6 @@ const RichTextEditor = React.forwardRef<
     // Content changes are now handled by ContentChangePlugin using registerTextContentListener
     // This avoids cursor jumping while providing real-time content updates
 
-    // Store editor reference when it's created
-    const onEditorCreated = useCallback((editor: LexicalEditor) => {
-      editorRef.current = editor;
-    }, []);
-
     return (
       <Paper
         variant="outlined"
@@ -442,6 +448,7 @@ const RichTextEditor = React.forwardRef<
         <LexicalComposer
           initialConfig={{
             ...editorConfig,
+            editorState: createInitialEditorState(initialValue),
             onError: (error: Error) => {
               console.error('Lexical error:', error);
             },
@@ -525,14 +532,13 @@ const RichTextEditor = React.forwardRef<
               ErrorBoundary={({ children }: { children: React.ReactNode }) => <div>{children}</div>}
             />
 
-            {/* Store editor reference when created */}
-            <OnChangePlugin onChange={(editorState, editor) => onEditorCreated(editor)} />
+            {/* Store editor reference for external access */}
+            <EditorRefPlugin editorRef={editorRef} />
             {/* Handle content changes without cursor jumping */}
             <ContentChangePlugin onChange={_onChange} />
             <HistoryPlugin />
             <ListPlugin />
             <LinkPlugin />
-            <InitialContentPlugin initialHtml={value} />
           </Box>
         </LexicalComposer>
       </Paper>

@@ -701,7 +701,7 @@ const EmailComposePageInternal: React.FC<
                   {/* Content Editor */}
                   <Box sx={{ flex: 1, minHeight: 300 }}>
                     <RichTextEditor
-                      value={state.content}
+                      initialValue={state.content}
                       onChange={handleContentChange}
                       placeholder="Write your email content..."
                       disabled={state.isSending}
