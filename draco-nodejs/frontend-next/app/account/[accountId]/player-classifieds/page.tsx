@@ -5,7 +5,7 @@ export async function generateMetadata({ params }: { params: Promise<{ accountId
   const { accountId } = await params;
   const accountName = await getAccountName(accountId);
   return {
-    title: `Player Classifieds - ${accountName}`,
+    title: `${accountName} Player Classifieds`,
     description: `Find players and teams through classified ads for ${accountName}`,
   };
 }

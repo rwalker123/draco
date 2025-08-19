@@ -18,12 +18,11 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  CalendarToday as CalendarIcon,
   Phone as PhoneIcon,
 } from '@mui/icons-material';
 import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
 import { sanitizeDisplayText } from '../../utils/sanitization';
-import { calculateAge, formatDate } from '../../utils/dateUtils';
+import { calculateAge } from '../../utils/dateUtils';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -114,20 +113,12 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           </Box>
         </Box>
 
-        {/* Age and Date Created */}
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" alignItems="center" gap={1}>
-            <PersonIcon fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
-              Age: {calculateAge(classified.birthDate)}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <CalendarIcon fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
-              {formatDate(classified.dateCreated)}
-            </Typography>
-          </Box>
+        {/* Age */}
+        <Box display="flex" alignItems="center" gap={1}>
+          <PersonIcon fontSize="small" color="action" />
+          <Typography variant="caption" color="text.secondary">
+            Age: {calculateAge(classified.birthDate)}
+          </Typography>
         </Box>
       </CardContent>
 
