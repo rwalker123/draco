@@ -102,7 +102,18 @@ export default function TemplateListView({
       </Box>
 
       {/* Templates Grid */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(auto-fill, minmax(300px, 480px))',
+            md: 'repeat(auto-fill, minmax(350px, 480px))',
+          },
+          gap: 3,
+          justifyContent: 'start',
+        }}
+      >
         {filteredTemplates.map((template) => {
           const subjectVariables = template.subjectTemplate
             ? extractVariables(template.subjectTemplate)
@@ -111,137 +122,126 @@ export default function TemplateListView({
           const allVariables = [...new Set([...subjectVariables, ...bodyVariables])];
 
           return (
-            <Box
+            <Card
               key={template.id.toString()}
               sx={{
-                flex: {
-                  xs: '1 1 100%',
-                  md: '1 1 calc(50% - 12px)',
-                  lg: '1 1 calc(33.333% - 16px)',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: 4,
                 },
-                minWidth: 300,
               }}
             >
-              <Card
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: 4,
-                  },
-                }}
-              >
-                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  {/* Header */}
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" gutterBottom noWrap>
-                        {template.name}
-                      </Typography>
-                      {template.description && (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {template.description}
-                        </Typography>
-                      )}
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleMenuOpen(e, template)}
-                      sx={{ ml: 1 }}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </Box>
-
-                  {/* Subject Preview */}
-                  {template.subjectTemplate && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" color="text.secondary" gutterBottom>
-                        Subject:
-                      </Typography>
+              <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {/* Header */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" gutterBottom noWrap>
+                      {template.name}
+                    </Typography>
+                    {template.description && (
                       <Typography
                         variant="body2"
+                        color="text.secondary"
                         sx={{
-                          fontStyle: 'italic',
                           display: '-webkit-box',
-                          WebkitLineClamp: 1,
+                          WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
                         }}
                       >
-                        {template.subjectTemplate}
+                        {template.description}
                       </Typography>
-                    </Box>
-                  )}
+                    )}
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleMenuOpen(e, template)}
+                    sx={{ ml: 1 }}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                </Box>
 
-                  {/* Body Preview */}
-                  <Box sx={{ mb: 2, flex: 1 }}>
+                {/* Subject Preview */}
+                {template.subjectTemplate && (
+                  <Box sx={{ mb: 2 }}>
                     <Typography variant="caption" color="text.secondary" gutterBottom>
-                      Content:
+                      Subject:
                     </Typography>
                     <Typography
                       variant="body2"
                       sx={{
+                        fontStyle: 'italic',
                         display: '-webkit-box',
-                        WebkitLineClamp: 3,
+                        WebkitLineClamp: 1,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
                       }}
                     >
-                      {template.bodyTemplate.replace(/<[^>]*>/g, '')}{' '}
-                      {/* Strip HTML tags for preview */}
+                      {template.subjectTemplate}
                     </Typography>
                   </Box>
+                )}
 
-                  {/* Variables */}
-                  {allVariables.length > 0 && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" color="text.secondary" gutterBottom>
-                        Variables:
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {allVariables.slice(0, 3).map((variable) => (
-                          <Chip
-                            key={variable}
-                            label={`{${variable}}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: '0.75rem' }}
-                          />
-                        ))}
-                        {allVariables.length > 3 && (
-                          <Chip
-                            label={`+${allVariables.length - 3}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: '0.75rem' }}
-                          />
-                        )}
-                      </Box>
+                {/* Body Preview */}
+                <Box sx={{ mb: 2, flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary" gutterBottom>
+                    Content:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {template.bodyTemplate.replace(/<[^>]*>/g, '')}{' '}
+                    {/* Strip HTML tags for preview */}
+                  </Typography>
+                </Box>
+
+                {/* Variables */}
+                {allVariables.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary" gutterBottom>
+                      Variables:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {allVariables.slice(0, 3).map((variable) => (
+                        <Chip
+                          key={variable}
+                          label={`{${variable}}`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: '0.75rem' }}
+                        />
+                      ))}
+                      {allVariables.length > 3 && (
+                        <Chip
+                          label={`+${allVariables.length - 3}`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: '0.75rem' }}
+                        />
+                      )}
                     </Box>
-                  )}
-
-                  {/* Footer */}
-                  <Box sx={{ mt: 'auto', pt: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Updated {formatDateTime(template.updatedAt)}
-                    </Typography>
                   </Box>
-                </CardContent>
-              </Card>
-            </Box>
+                )}
+
+                {/* Footer */}
+                <Box sx={{ mt: 'auto', pt: 2 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Updated {formatDateTime(template.updatedAt)}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
           );
         })}
       </Box>
