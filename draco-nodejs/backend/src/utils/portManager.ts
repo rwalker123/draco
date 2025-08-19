@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { exec } from 'child_process';
+import { DateUtils } from './dateUtils.js';
 
 const execAsync = promisify(exec);
 
@@ -112,7 +113,7 @@ export class PortManager {
    */
   private createDefaultRegistry(): PortRegistry {
     return {
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: DateUtils.formatDateTimeForResponse(new Date()) || '',
       registryVersion: '1.0',
       worktrees: {},
       portRanges: {
@@ -132,7 +133,7 @@ export class PortManager {
         fs.mkdirSync(dir, { recursive: true });
       }
 
-      registry.lastUpdated = new Date().toISOString();
+      registry.lastUpdated = DateUtils.formatDateTimeForResponse(new Date()) || '';
       fs.writeFileSync(this.registryPath, JSON.stringify(registry, null, 2));
     } catch (error) {
       throw new Error(`Failed to save port registry: ${error}`);
@@ -153,7 +154,7 @@ export class PortManager {
         (await this.isPortAvailable(existing.backendPort)) &&
         (await this.isPortAvailable(existing.frontendPort))
       ) {
-        existing.lastActive = new Date().toISOString();
+        existing.lastActive = DateUtils.formatDateTimeForResponse(new Date()) || '';
         existing.status = 'active';
         await this.saveRegistry(registry);
         return existing;
@@ -180,7 +181,7 @@ export class PortManager {
       worktreeName,
       backendPort,
       frontendPort,
-      lastActive: new Date().toISOString(),
+      lastActive: DateUtils.formatDateTimeForResponse(new Date()) || '',
       status: 'active',
       envFiles: {
         backend: path.join(worktreePath, 'draco-nodejs/backend/.env'),

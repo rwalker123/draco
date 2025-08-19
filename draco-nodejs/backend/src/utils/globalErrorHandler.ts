@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from './customErrors.js';
+import { DateUtils } from './dateUtils.js';
 
 export function hasCodeProperty(err: unknown): err is { code: string } {
   return (
@@ -27,7 +28,7 @@ function logError(err: Error, req: Request): void {
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString(),
+    timestamp: DateUtils.formatDateTimeForResponse(new Date()),
   };
 
   console.error('Error occurred:', logData);
