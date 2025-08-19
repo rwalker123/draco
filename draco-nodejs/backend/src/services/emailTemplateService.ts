@@ -2,6 +2,7 @@
 // Follows SRP - handles template processing and management only
 
 import prisma from '../lib/prisma.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import {
   IEmailTemplateEngine,
   TemplateValidationResult,
@@ -293,8 +294,8 @@ export class EmailTemplateService implements IEmailTemplateEngine {
       subjectTemplate: template.subject_template || undefined,
       bodyTemplate: template.body_template,
       createdByUserId: template.created_by_user_id || undefined,
-      createdAt: template.created_at.toISOString(),
-      updatedAt: template.updated_at.toISOString(),
+      createdAt: DateUtils.formatDateTimeForResponse(template.created_at) || '',
+      updatedAt: DateUtils.formatDateTimeForResponse(template.updated_at) || '',
       isActive: template.is_active,
     };
   }
