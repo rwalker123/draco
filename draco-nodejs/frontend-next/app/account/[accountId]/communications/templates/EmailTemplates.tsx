@@ -25,7 +25,6 @@ import { EmailService } from '../../../../../services/emailService';
 import { useAuth } from '../../../../../context/AuthContext';
 import { EmailTemplate } from '../../../../../types/emails/email';
 import TemplateListView from '../../../../../components/emails/templates/TemplateListView';
-import TemplateEditDialog from '../../../../../components/emails/templates/TemplateEditDialog';
 import TemplatePreviewDialog from '../../../../../components/emails/templates/TemplatePreviewDialog';
 
 export default function EmailTemplates() {
@@ -38,7 +37,6 @@ export default function EmailTemplates() {
   const [error, setError] = useState<string | null>(null);
 
   // Dialog states
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
@@ -78,8 +76,7 @@ export default function EmailTemplates() {
   };
 
   const handleEditTemplate = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setEditDialogOpen(true);
+    router.push(`/account/${accountId}/communications/templates/${template.id}/edit`);
   };
 
   const handlePreviewTemplate = (template: EmailTemplate) => {
@@ -116,14 +113,7 @@ export default function EmailTemplates() {
     setSelectedTemplateForDelete(null);
   };
 
-  const handleEditSuccess = () => {
-    setEditDialogOpen(false);
-    setSelectedTemplate(null);
-    loadTemplates(); // Reload templates
-  };
-
   const handleDialogClose = () => {
-    setEditDialogOpen(false);
     setPreviewDialogOpen(false);
     setSelectedTemplate(null);
   };
@@ -223,22 +213,12 @@ export default function EmailTemplates() {
 
           {/* Dialogs */}
           {selectedTemplate && (
-            <>
-              <TemplateEditDialog
-                open={editDialogOpen}
-                onClose={handleDialogClose}
-                onSuccess={handleEditSuccess}
-                template={selectedTemplate}
-                accountId={accountId as string}
-              />
-
-              <TemplatePreviewDialog
-                open={previewDialogOpen}
-                onClose={handleDialogClose}
-                template={selectedTemplate}
-                accountId={accountId as string}
-              />
-            </>
+            <TemplatePreviewDialog
+              open={previewDialogOpen}
+              onClose={handleDialogClose}
+              template={selectedTemplate}
+              accountId={accountId as string}
+            />
           )}
 
           {/* Delete Confirmation Dialog */}
