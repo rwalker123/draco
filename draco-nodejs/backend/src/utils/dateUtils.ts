@@ -61,4 +61,75 @@ export class DateUtils {
     result.setDate(result.getDate() + days);
     return result;
   }
+
+  // ============================================================================
+  // NEW METHODS FOR CONSISTENT DATE TRANSFORMATION ACROSS ALL SERVICES
+  // ============================================================================
+
+  /**
+   * Convert database date to frontend-safe value for general date fields
+   * Returns null for null/undefined dates, YYYY-MM-DD string for valid dates
+   * @param date - Date from database or null
+   * @returns YYYY-MM-DD string for valid dates, null for null dates
+   */
+  static formatDateForResponse(date: Date | null | undefined): string | null {
+    if (!date) return null;
+
+    // Return date-only (YYYY-MM-DD) to avoid timezone shifts in clients
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Convert database datetime to frontend-safe value for timestamp fields
+   * Returns null for null/undefined dates, ISO string for valid dates
+   * @param date - Date from database or null
+   * @returns ISO string for valid dates, null for null dates
+   */
+  static formatDateTimeForResponse(date: Date | null | undefined): string | null {
+    if (!date) return null;
+
+    // Return ISO string with proper timezone handling
+    return date.toISOString();
+  }
+
+  /**
+   * Parse frontend date string to database value for general date fields
+   * Returns null for null/empty values, parsed Date for valid strings
+   * @param dateString - Date string from frontend or null
+   * @returns Date object or null
+   */
+  static parseDateForDatabase(dateString: string | null | undefined): Date | null {
+    if (!dateString || dateString.trim() === '') return null;
+
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  /**
+   * Parse frontend datetime string to database value for timestamp fields
+   * Returns null for null/empty values, parsed Date for valid strings
+   * @param dateString - Date string from frontend or null
+   * @returns Date object or null
+   */
+  static parseDateTimeForDatabase(dateString: string | null | undefined): Date | null {
+    if (!dateString || dateString.trim() === '') return null;
+
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  /**
+   * Validate if a date string is in a valid format
+   * @param dateString - Date string to validate
+   * @returns true if the date string is valid
+   */
+  static isValidDateString(dateString: string | null | undefined): boolean {
+    if (!dateString || dateString.trim() === '') return false;
+
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+  }
 }

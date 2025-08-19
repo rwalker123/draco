@@ -111,3 +111,69 @@ export function isValidDate(dateValue: unknown): boolean {
     return false;
   }
 }
+
+// ============================================================================
+// MOVED DATE UTILITY METHODS FROM OTHER COMPONENTS
+// ============================================================================
+
+/**
+ * Format date of birth for display
+ */
+export const formatDateOfBirth = (dateString: string | null): string => {
+  if (!dateString) return '';
+
+  try {
+    // If we get a date-only string (YYYY-MM-DD), avoid timezone conversion
+    const dateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+    if (dateOnlyMatch) {
+      const [year, month, day] = dateString.split('-').map((p) => parseInt(p, 10));
+      // Format using Intl without constructing a Date in local TZ
+      // Construct a UTC date to avoid off-by-one and format in UTC
+      const utcDate = new Date(Date.UTC(year, month - 1, day));
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }).format(utcDate);
+    }
+
+    // Legacy ISO timestamps (with time/Z): format in UTC to avoid shifting the day
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(date);
+  } catch {
+    return dateString;
+  }
+};
+
+/**
+ * Calculate age from birth date
+ */
+export const calculateAge = (birthDate: Date | string) => {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+
+  return age;
+};
+
+/**
+ * Format date for display
+ */
+export const formatDate = (date: Date | string) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};

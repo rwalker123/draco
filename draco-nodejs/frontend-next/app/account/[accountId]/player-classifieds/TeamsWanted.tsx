@@ -133,8 +133,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
             hasNext: response.pagination?.hasNext || false,
             hasPrev: response.pagination?.hasPrev || false,
           });
-          console.log('Initial data loaded:', response.data.length, 'items');
-          console.log('Initial pagination state:', response.pagination);
+          // Data loaded successfully
         }
       } catch (error) {
         console.error('Failed to load initial data:', error);

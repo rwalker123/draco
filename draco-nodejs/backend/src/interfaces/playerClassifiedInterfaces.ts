@@ -9,7 +9,7 @@
 export interface IPlayersWantedClassified {
   id: bigint;
   accountId: bigint;
-  dateCreated: Date;
+  dateCreated: string | null;
   createdByContactId: bigint;
   teamEventName: string;
   description: string;
@@ -20,14 +20,14 @@ export interface IPlayersWantedClassified {
 export interface ITeamsWantedClassified {
   id: bigint;
   accountId: bigint;
-  dateCreated: Date;
+  dateCreated: string | null;
   name: string;
   email: string;
   phone: string;
   experience: string;
   positionsPlayed: string;
   accessCode: string; // UUID for editing
-  birthDate: Date;
+  birthDate: string | null;
 }
 
 // ============================================================================
@@ -48,7 +48,7 @@ export interface ITeamsWantedCreateRequest {
   phone: string;
   experience: string;
   positionsPlayed: string;
-  birthDate: Date;
+  birthDate: string;
 }
 
 // Update request for Players Wanted
@@ -65,7 +65,7 @@ export interface ITeamsWantedUpdateRequest {
   phone?: string;
   experience?: string;
   positionsPlayed?: string;
-  birthDate?: Date;
+  birthDate?: string;
   // Access code for security
   accessCode: string;
 }
