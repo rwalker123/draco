@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -25,7 +25,9 @@ import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '../../../../../../components/auth/ProtectedRoute';
 import { EmailService } from '../../../../../../services/emailService';
 import { useAuth } from '../../../../../../context/AuthContext';
+import { EmailTemplate } from '../../../../../../types/emails/email';
 import TemplateRichTextEditor from '../../../../../../components/emails/templates/TemplateRichTextEditor';
+import { sanitizeRichContent } from '../../../../../../utils/sanitization';
 
 // Define the ref interface for TemplateRichTextEditor
 interface TemplateRichTextEditorRef {
@@ -57,7 +59,12 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-export default function CreateTemplate() {
+interface TemplateFormProps {
+  mode: 'create' | 'edit';
+  templateId?: string;
+}
+
+export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
   const { accountId } = useParams();
   const router = useRouter();
   const { token } = useAuth();
@@ -70,7 +77,9 @@ export default function CreateTemplate() {
 
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [templateLoading, setTemplateLoading] = useState(mode === 'edit');
   const [error, setError] = useState<string | null>(null);
+  const [, setTemplate] = useState<EmailTemplate | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -84,6 +93,40 @@ export default function CreateTemplate() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const emailService = useMemo(() => new EmailService(token || ''), [token]);
+
+  // Load template data for edit mode
+  useEffect(() => {
+    const loadTemplate = async () => {
+      if (mode === 'edit' && templateId && accountId && token) {
+        try {
+          setTemplateLoading(true);
+          setError(null);
+          const templateData = await emailService.getTemplate(accountId as string, templateId);
+
+          // Add validation to ensure we have template data
+          if (!templateData) {
+            throw new Error('Template data not found');
+          }
+
+          setTemplate(templateData);
+          setFormData({
+            name: templateData.name || '',
+            description: templateData.description || '',
+            subjectTemplate: templateData.subjectTemplate || '',
+            bodyTemplate: templateData.bodyTemplate || '',
+          });
+        } catch (err) {
+          console.error('Failed to load template:', err);
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load template';
+          setError(`${errorMessage}. Please try again or contact support if the problem persists.`);
+        } finally {
+          setTemplateLoading(false);
+        }
+      }
+    };
+
+    loadTemplate();
+  }, [mode, templateId, accountId, token, emailService]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     // Sync content from rich text editor before switching tabs
@@ -219,22 +262,32 @@ export default function CreateTemplate() {
     setError(null);
 
     try {
-      await emailService.createTemplate(accountId as string, {
+      const templateData = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         subjectTemplate: formData.subjectTemplate.trim() || undefined,
-        bodyTemplate: formData.bodyTemplate,
-      });
+        bodyTemplate: sanitizeRichContent(formData.bodyTemplate),
+      };
+
+      if (mode === 'create') {
+        await emailService.createTemplate(accountId as string, templateData);
+      } else {
+        if (!templateId) {
+          throw new Error('Template ID is required for edit mode');
+        }
+        await emailService.updateTemplate(accountId as string, templateId, templateData);
+      }
 
       // Navigate back to templates list
       router.push(`/account/${accountId}/communications/templates`);
     } catch (err) {
-      console.error('Failed to create template:', err);
-      setError('Failed to create template. Please check your input and try again.');
+      console.error(`Failed to ${mode} template:`, err);
+      const errorMessage = err instanceof Error ? err.message : `Failed to ${mode} template`;
+      setError(`${errorMessage}. Please check your input and try again.`);
     } finally {
       setLoading(false);
     }
-  }, [formData, accountId, emailService, router, validateForm]);
+  }, [formData, accountId, emailService, router, validateForm, mode, templateId]);
 
   const handleCancel = () => {
     router.push(`/account/${accountId}/communications/templates`);
@@ -243,6 +296,31 @@ export default function CreateTemplate() {
   const handleBack = () => {
     router.push(`/account/${accountId}/communications/templates`);
   };
+
+  // Show loading state while template is being loaded for edit mode
+  if (templateLoading) {
+    return (
+      <ProtectedRoute requiredRole={['ContactAdmin', 'AccountAdmin']} checkAccountBoundary={true}>
+        <main className="min-h-screen bg-background">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '50vh',
+              gap: 2,
+            }}
+          >
+            <LinearProgress sx={{ width: '200px' }} />
+            <Typography variant="body1" color="text.secondary">
+              Loading template...
+            </Typography>
+          </Box>
+        </main>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute requiredRole={['ContactAdmin', 'AccountAdmin']} checkAccountBoundary={true}>
@@ -280,7 +358,7 @@ export default function CreateTemplate() {
                 Templates
               </Link>
               <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
-                Create New Template
+                {mode === 'create' ? 'Create New Template' : 'Edit Template'}
               </Typography>
             </Breadcrumbs>
 
@@ -288,7 +366,7 @@ export default function CreateTemplate() {
               sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
             >
               <Typography variant="h4" component="h1">
-                Create Email Template
+                {mode === 'create' ? 'Create Email Template' : 'Edit Email Template'}
               </Typography>
 
               <Box sx={{ display: 'flex', gap: 2 }}>
@@ -306,18 +384,19 @@ export default function CreateTemplate() {
                   disabled={loading || !formData.name.trim() || !formData.bodyTemplate.trim()}
                   startIcon={<SaveIcon />}
                 >
-                  Create Template
+                  {mode === 'create' ? 'Create Template' : 'Save Changes'}
                 </Button>
               </Box>
             </Box>
 
             <Typography variant="body1" color="text.secondary">
-              Create a reusable email template with variable substitution for consistent
-              communication.
+              {mode === 'create'
+                ? 'Create a reusable email template with variable substitution for consistent communication.'
+                : 'Edit your email template. Changes will be saved when you click Save Changes.'}
             </Typography>
           </Box>
 
-          {loading && <LinearProgress sx={{ mb: 2 }} />}
+          {(loading || templateLoading) && <LinearProgress sx={{ mb: 2 }} />}
 
           {error && (
             <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>

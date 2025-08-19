@@ -114,11 +114,11 @@ export class EmailService {
   }
 
   async getTemplate(accountId: string, templateId: string): Promise<EmailTemplate> {
-    const response = await axios.get<ApiResponse<{ template: EmailTemplate }>>(
+    const response = await axios.get<ApiResponse<EmailTemplate>>(
       `${this.baseUrl}/accounts/${accountId}/email-templates/${templateId}`,
       { headers: this.getHeaders() },
     );
-    return this.handleResponse(response).template;
+    return this.handleResponse(response);
   }
 
   async updateTemplate(
@@ -126,12 +126,12 @@ export class EmailService {
     templateId: string,
     updates: EmailTemplateUpdateRequest,
   ): Promise<EmailTemplate> {
-    const response = await axios.put<ApiResponse<{ template: EmailTemplate }>>(
+    const response = await axios.put<ApiResponse<EmailTemplate>>(
       `${this.baseUrl}/accounts/${accountId}/email-templates/${templateId}`,
       updates,
       { headers: this.getHeaders() },
     );
-    return this.handleResponse(response).template;
+    return this.handleResponse(response);
   }
 
   async deleteTemplate(accountId: string, templateId: string): Promise<void> {

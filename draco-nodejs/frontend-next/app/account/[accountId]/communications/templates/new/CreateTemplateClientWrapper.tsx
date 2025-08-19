@@ -1,7 +1,7 @@
 'use client';
 
-import CreateTemplate from './CreateTemplate';
+import TemplateForm from './TemplateForm';
 
 export default function CreateTemplateClientWrapper() {
-  return <CreateTemplate />;
+  return <TemplateForm mode="create" />;
 }
