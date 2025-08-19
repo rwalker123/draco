@@ -17,6 +17,7 @@ import {
 import { extractGameOnlyParams, extractRecapParams } from '../utils/paramExtraction.js';
 import { BatchQueryHelper } from '../utils/batchQueries.js';
 import { PaginationHelper } from '../utils/pagination.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
@@ -523,7 +524,7 @@ router.get(
 
       const baseGame = {
         id: game.id.toString(),
-        gameDate: game.gamedate ? game.gamedate.toISOString() : null,
+        gameDate: DateUtils.formatDateTimeForResponse(game.gamedate),
         homeTeamId: game.hteamid.toString(),
         visitorTeamId: game.vteamid.toString(),
         homeTeamName: homeTeamName,
@@ -685,7 +686,7 @@ router.post(
       data: {
         game: {
           id: game.id.toString(),
-          gameDate: game.gamedate ? game.gamedate.toISOString() : null,
+          gameDate: DateUtils.formatDateTimeForResponse(game.gamedate),
           homeTeamId: game.hteamid.toString(),
           visitorTeamId: game.vteamid.toString(),
           homeScore: game.hscore,
@@ -812,7 +813,7 @@ router.put(
       data: {
         game: {
           id: updatedGame.id.toString(),
-          gameDate: updatedGame.gamedate ? updatedGame.gamedate.toISOString() : null,
+          gameDate: DateUtils.formatDateTimeForResponse(updatedGame.gamedate),
           homeTeamId: updatedGame.hteamid.toString(),
           visitorTeamId: updatedGame.vteamid.toString(),
           homeScore: updatedGame.hscore,
