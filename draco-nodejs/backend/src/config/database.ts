@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import * as os from 'node:os';
+import { DateUtils } from '../utils/dateUtils.js';
 
 export interface DatabaseConfig {
   connectionLimit: number;
@@ -86,7 +87,7 @@ export const formatQueryLog = (query: QueryMetrics): string => {
   const logLevel = isSlowQuery ? 'SLOW QUERY' : 'QUERY';
   const modelOp = model && operation ? `${model}.${operation}` : 'RAW';
 
-  return `[${logLevel}] ${timestamp.toISOString()} - ${modelOp} (${durationMs}ms): ${sql.substring(0, 200)}${sql.length > 200 ? '...' : ''}`;
+  return `[${logLevel}] ${DateUtils.formatDateTimeForResponse(timestamp)} - ${modelOp} (${durationMs}ms): ${sql.substring(0, 200)}${sql.length > 200 ? '...' : ''}`;
 };
 
 export const isSlowQuery = (duration: number): boolean => {

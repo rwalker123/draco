@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { performanceMonitor, getConnectionPoolMetrics } from '../utils/performanceMonitor.js';
 import { databaseConfig } from '../config/database.js';
 import prisma from '../lib/prisma.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 const router = Router();
 
@@ -49,7 +50,7 @@ router.get('/health', async (req: Request, res: Response) => {
 
     const response = {
       status: healthStatus.status,
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       uptime: uptime,
       database: {
         status: 'connected',
@@ -80,7 +81,7 @@ router.get('/health', async (req: Request, res: Response) => {
     console.error('Health check failed:', error);
     res.status(503).json({
       status: 'critical',
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       error: 'Database connectivity failed',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
@@ -117,7 +118,7 @@ router.get('/performance', (req: Request, res: Response) => {
 
     res.json({
       timeWindow: `${windowMinutes} minutes`,
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       summary: {
         totalQueries: stats.totalQueries,
         slowQueries: stats.slowQueries,
@@ -178,7 +179,7 @@ router.get('/slow-queries', (req: Request, res: Response) => {
     const slowQueries = performanceMonitor.getSlowQueries(limit);
 
     res.json({
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       threshold: databaseConfig.slowQueryThreshold,
       count: slowQueries.length,
       queries: slowQueries.map((q) => ({
@@ -214,7 +215,7 @@ router.get('/connection-pool', (req: Request, res: Response) => {
     const metrics = getConnectionPoolMetrics();
 
     res.json({
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       metrics,
       configuration: {
         maxConnections: databaseConfig.connectionLimit,
@@ -280,7 +281,7 @@ router.post('/reset', (req: Request, res: Response) => {
 
     res.json({
       message: 'Performance monitoring data reset successfully',
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
     });
   } catch (error) {
     console.error('Reset monitoring data failed:', error);
@@ -304,7 +305,7 @@ router.post('/reset', (req: Request, res: Response) => {
 router.get('/config', (req: Request, res: Response) => {
   try {
     res.json({
-      timestamp: new Date().toISOString(),
+      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       configuration: {
         connectionLimit: databaseConfig.connectionLimit,
         poolTimeout: databaseConfig.poolTimeout,

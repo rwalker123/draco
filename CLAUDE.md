@@ -137,6 +137,12 @@ Key patterns:
    - Check both frontend and backend consumers
    - Maintain backward compatibility by adding new fields rather than changing existing ones
    - If changes are absolutely necessary, update ALL consumers in the same commit
+8. **ALWAYS** update the OpenAPI specification when making API changes. After creating, modifying, or deleting any API endpoints:
+   - Update `draco-nodejs/backend/openapi.yaml` to reflect the changes
+   - Add new paths, update existing paths, or remove deprecated paths
+   - Update request/response schemas in the components section
+   - Maintain accurate documentation for all API endpoints
+   - Test the API documentation at `/apidocs` to ensure it renders correctly
 
 ## Git Hooks and CI/CD Workflow
 
@@ -195,8 +201,9 @@ This two-tier approach provides fast developer feedback while ensuring comprehen
 1. Create route in `/backend/src/routes`
 2. Add business logic in `/backend/src/services`
 3. Apply appropriate middleware (auth, role, account boundary)
-4. Update frontend API client if needed
-5. Add frontend component/page to consume the endpoint
+4. **Update `draco-nodejs/backend/openapi.yaml`** with the new endpoint documentation
+5. Update frontend API client if needed
+6. Add frontend component/page to consume the endpoint
 
 ### Adding a New Frontend Page
 1. Create page in `/frontend-next/app`

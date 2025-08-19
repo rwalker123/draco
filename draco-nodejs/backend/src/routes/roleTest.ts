@@ -8,6 +8,7 @@ import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 // Type definitions for Prisma query results
 interface ContactRole {
@@ -279,7 +280,7 @@ router.get(
     const { ROLE_INHERITANCE_BY_ID, ROLE_PERMISSIONS_BY_ID } = await import('../config/roles.js');
 
     // Create a timestamp for cache invalidation
-    const timestamp = new Date().toISOString();
+    const timestamp = DateUtils.formatDateTimeForResponse(new Date());
     const version = '1.0.0'; // Increment this when role metadata changes
 
     res.json({

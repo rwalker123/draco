@@ -23,33 +23,14 @@ import {
   Phone as PhoneIcon,
 } from '@mui/icons-material';
 import { ITeamsWantedCardProps } from '../../types/playerClassifieds';
+import { sanitizeDisplayText } from '../../utils/sanitization';
+import { calculateAge, formatDate } from '../../utils/dateUtils';
 
 const TeamsWantedCard: React.FC<ITeamsWantedCardProps> = ({ classified, onEdit, onDelete }) => {
-  // Parse positions from comma-separated string
-  const positionsPlayed = classified.positionsPlayed.split(',').map((pos) => pos.trim());
-
-  // Calculate age from birth date
-  const calculateAge = (birthDate: Date) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
-  };
-
-  // Format date
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  // Parse positions from comma-separated string and sanitize each position
+  const positionsPlayed = classified.positionsPlayed
+    .split(',')
+    .map((pos) => sanitizeDisplayText(pos.trim()));
 
   // Get experience color
   const getExperienceColor = (experience: string) => {
@@ -71,7 +52,7 @@ const TeamsWantedCard: React.FC<ITeamsWantedCardProps> = ({ classified, onEdit, 
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Typography variant="h6" component="h3" gutterBottom>
-            {classified.name}
+            {sanitizeDisplayText(classified.name)}
           </Typography>
           <Box display="flex" gap={1}>
             <IconButton
@@ -95,7 +76,7 @@ const TeamsWantedCard: React.FC<ITeamsWantedCardProps> = ({ classified, onEdit, 
         {/* Experience Level */}
         <Box mb={2}>
           <Chip
-            label={classified.experience}
+            label={sanitizeDisplayText(classified.experience)}
             size="small"
             color={getExperienceColor(classified.experience)}
             variant="outlined"
@@ -125,13 +106,13 @@ const TeamsWantedCard: React.FC<ITeamsWantedCardProps> = ({ classified, onEdit, 
           <Box display="flex" alignItems="center" gap={1} mb={1}>
             <EmailIcon fontSize="small" color="action" />
             <Typography variant="caption" color="text.secondary">
-              {classified.email}
+              {sanitizeDisplayText(classified.email)}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1} mb={1}>
             <PhoneIcon fontSize="small" color="action" />
             <Typography variant="caption" color="text.secondary">
-              {classified.phone}
+              {sanitizeDisplayText(classified.phone)}
             </Typography>
           </Box>
         </Box>

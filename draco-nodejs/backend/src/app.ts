@@ -21,7 +21,7 @@ import gamesRouter from './routes/games.js';
 import { bigIntSerializer } from './middleware/bigint-serializer.js';
 import { domainRouting } from './middleware/domainRouting.js';
 import swaggerUi from 'swagger-ui-express';
-import { specs } from './config/swagger.js';
+import { specs } from './config/openapi.js';
 import { globalErrorHandler } from './utils/globalErrorHandler.js';
 import teamManagersRouter from './routes/teamManagers.js';
 import statisticsRouter from './routes/statistics.js';
@@ -30,6 +30,7 @@ import monitoringRouter from './routes/monitoring.js';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
 import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhookRoutes.js';
+import { DateUtils } from './utils/dateUtils.js';
 
 // Load environment variables
 dotenv.config();
@@ -117,7 +118,7 @@ app.use('/uploads', express.static('uploads'));
 app.get('/health', (req: express.Request, res: express.Response) => {
   const baseResponse = {
     status: 'OK',
-    timestamp: new Date().toISOString(),
+    timestamp: DateUtils.formatDateTimeForResponse(new Date()),
     environment: process.env.NODE_ENV || 'development',
     uptime: process.uptime(),
   };

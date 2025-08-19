@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 const testDatabaseRouter = Router();
 testDatabaseRouter.get(
@@ -51,7 +52,7 @@ testDatabaseRouter.get(
       success: true,
       data: games.map((game) => ({
         id: game.id.toString(),
-        gamedate: game.gamedate ? game.gamedate.toISOString() : null,
+        gamedate: game.gamedate ? DateUtils.formatDateTimeForResponse(game.gamedate) : null,
         hteamid: game.hteamid.toString(),
         vteamid: game.vteamid.toString(),
         hscore: game.hscore,
