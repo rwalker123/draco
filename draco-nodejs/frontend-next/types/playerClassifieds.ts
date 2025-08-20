@@ -503,15 +503,26 @@ export interface IUseClassifiedsSearchReturn {
 
 // Return type for useClassifiedsPermissions hook
 export interface IUseClassifiedsPermissionsReturn {
+  // Basic permissions
   canCreatePlayersWanted: boolean;
-  canEditPlayersWanted: boolean;
-  canDeletePlayersWanted: boolean;
   canCreateTeamsWanted: boolean;
   canEditTeamsWanted: boolean;
   canDeleteTeamsWanted: boolean;
   canSearchClassifieds: boolean;
   canViewClassifieds: boolean;
   canModerateClassifieds: boolean;
+
+  // Enhanced permission checking with ownership
+  canEditPlayersWantedById: (classified: IPlayersWantedResponse) => boolean;
+  canDeletePlayersWantedById: (classified: IPlayersWantedResponse) => boolean;
+  canEditTeamsWantedById: (classified: ITeamsWantedResponse) => boolean;
+  canDeleteTeamsWantedById: (classified: ITeamsWantedResponse) => boolean;
+
+  // Access code verification state
+  verifiedAccessCodes: Set<string>;
+  verifyAccessCode: (classifiedId: string, accessCode: string) => Promise<boolean>;
+  clearVerifiedAccessCode: (classifiedId: string) => void;
+  clearAllVerifiedAccessCodes: () => void;
 }
 
 // ============================================================================
@@ -541,5 +552,16 @@ export interface IApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  message?: string;
+}
+
+// Verify access code response
+export interface IVerifyAccessResponse {
+  success: boolean;
+  data?: {
+    accessCode: string;
+    classifiedId: string;
+    verifiedAt: string;
+  };
   message?: string;
 }

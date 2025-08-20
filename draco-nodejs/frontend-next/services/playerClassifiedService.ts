@@ -16,6 +16,7 @@ import {
   IEmailVerificationResult,
   IAdminClassifiedsResponse,
   IClassifiedAnalytics,
+  IVerifyAccessResponse,
 } from '../types/playerClassifieds';
 
 // ============================================================================
@@ -350,6 +351,32 @@ export const playerClassifiedService = {
   // ============================================================================
   // EMAIL VERIFICATION
   // ============================================================================
+
+  // Verify Teams Wanted access code
+  async verifyTeamsWantedAccess(
+    accountId: string,
+    classifiedId: string,
+    accessCode: string,
+  ): Promise<IVerifyAccessResponse> {
+    const response = await fetch(
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}/verify`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: JSON.stringify({ accessCode }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to verify access code: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
 
   // Verify email for Teams Wanted access
   async verifyEmail(request: IEmailVerificationRequest): Promise<IEmailVerificationResult> {
