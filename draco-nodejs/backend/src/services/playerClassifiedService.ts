@@ -9,6 +9,7 @@ import {
   ITeamsWantedCreateRequest,
   IClassifiedListResponse,
   IPlayersWantedResponse,
+  ITeamsWantedResponse,
   ITeamsWantedOwnerResponse,
   IClassifiedSearchParams,
   IClassifiedSearchFilters,
@@ -132,9 +133,33 @@ export class PlayerClassifiedService {
   }
 
   /**
-   * Transform database Teams Wanted record to interface response
+   * Transform database Teams Wanted record to interface response (for authenticated account members)
    */
   private transformTeamsWantedToResponse(
+    dbRecord: TeamsWantedDbRecord,
+    account: AccountDbRecord,
+  ): ITeamsWantedResponse {
+    return {
+      id: dbRecord.id,
+      accountId: dbRecord.accountid,
+      dateCreated: DateUtils.formatDateForResponse(dbRecord.datecreated),
+      name: dbRecord.name,
+      email: dbRecord.email,
+      phone: dbRecord.phone,
+      experience: dbRecord.experience,
+      positionsPlayed: dbRecord.positionsplayed,
+      birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
+      account: {
+        id: account.id,
+        name: account.name,
+      },
+    };
+  }
+
+  /**
+   * Transform database Teams Wanted record to owner response (excludes accessCode for security)
+   */
+  private transformTeamsWantedToOwnerResponse(
     dbRecord: TeamsWantedDbRecord,
     account: AccountDbRecord,
   ): ITeamsWantedOwnerResponse {
@@ -147,7 +172,6 @@ export class PlayerClassifiedService {
       phone: dbRecord.phone,
       experience: dbRecord.experience,
       positionsPlayed: dbRecord.positionsplayed,
-      accessCode: dbRecord.accesscode, // Return hashed version for security
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
       account: {
         id: account.id,
@@ -321,7 +345,7 @@ export class PlayerClassifiedService {
   async getTeamsWanted(
     accountId: bigint,
     params: IClassifiedSearchParams,
-  ): Promise<IClassifiedListResponse<ITeamsWantedOwnerResponse>> {
+  ): Promise<IClassifiedListResponse<ITeamsWantedResponse>> {
     const { page = 1, limit = 20, sortBy = 'dateCreated', sortOrder = 'desc' } = params;
 
     // Build where clause
@@ -356,7 +380,7 @@ export class PlayerClassifiedService {
     ]);
 
     // Transform to response format using transform method
-    const data: ITeamsWantedOwnerResponse[] = classifications.map(
+    const data: ITeamsWantedResponse[] = classifications.map(
       (c: TeamsWantedDbRecord & { accounts: AccountDbRecord }) =>
         this.transformTeamsWantedToResponse(c, c.accounts),
     );
@@ -428,7 +452,7 @@ export class PlayerClassifiedService {
     await this.sendVerificationEmail(classified.id, request.email, accessCode);
 
     // Transform database record to response format
-    return this.transformTeamsWantedToResponse(classified, account);
+    return this.transformTeamsWantedToOwnerResponse(classified, account);
   }
 
   /**
@@ -468,7 +492,7 @@ export class PlayerClassifiedService {
     }
 
     // Transform database record to response format
-    return this.transformTeamsWantedToResponse(classified, account);
+    return this.transformTeamsWantedToOwnerResponse(classified, account);
   }
 
   /**
@@ -542,7 +566,7 @@ export class PlayerClassifiedService {
     }
 
     // Transform database record to response format
-    return this.transformTeamsWantedToResponse(updatedClassified, account);
+    return this.transformTeamsWantedToOwnerResponse(updatedClassified, account);
   }
 
   /**
@@ -875,5 +899,49 @@ export class PlayerClassifiedService {
       // Don't throw error here as it would prevent classified creation
       // Instead, log it and continue - the user can request a new access code later
     }
+  }
+
+  /**
+   * Find Teams Wanted classified by access code (for unauthenticated users)
+   * Returns the Teams Wanted data with PII for users who have the access code
+   */
+  async findTeamsWantedByAccessCode(
+    accountId: bigint,
+    accessCode: string,
+  ): Promise<ITeamsWantedOwnerResponse> {
+    // Find all classifieds for the account (we need to verify access code with bcrypt)
+    const classifieds = await this.prisma.teamswantedclassified.findMany({
+      where: {
+        accountid: accountId,
+      },
+    });
+
+    // Find the classified by comparing the access code with each hashed version
+    let matchedClassified: TeamsWantedDbRecord | null = null;
+    for (const classified of classifieds) {
+      const isValid = await bcrypt.compare(accessCode, classified.accesscode);
+      if (isValid) {
+        matchedClassified = classified;
+        break;
+      }
+    }
+
+    if (!matchedClassified) {
+      throw new NotFoundError('Teams Wanted classified not found with this access code');
+    }
+
+    // Get account details for response
+    const account = await this.prisma.accounts.findUnique({
+      where: { id: accountId },
+      select: { id: true, name: true },
+    });
+
+    if (!account) {
+      throw new Error('Failed to retrieve account information');
+    }
+
+    // Transform database record to response format
+    // Note: This returns full PII (email, phone, birthDate) but never the accessCode
+    return this.transformTeamsWantedToOwnerResponse(matchedClassified, account);
   }
 }

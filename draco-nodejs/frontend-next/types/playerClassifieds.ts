@@ -102,9 +102,9 @@ export interface IPlayersWantedResponse extends IPlayersWantedClassified {
   };
 }
 
-// Teams Wanted response (public view)
-export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode' | 'email'> {
-  // Omit sensitive fields for public display
+// Teams Wanted response (authenticated account members view)
+export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
+  // Include email for authenticated account members, but omit accessCode
   account: {
     id: string;
     name: string;
@@ -320,8 +320,8 @@ export interface IPlayersWantedCardProps {
   classified: IPlayersWantedResponse;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  canEdit: boolean;
-  canDelete: boolean;
+  canEdit: (classified: IPlayersWantedResponse) => boolean;
+  canDelete: (classified: IPlayersWantedResponse) => boolean;
 }
 
 // Props for Teams Wanted card component
@@ -336,6 +336,10 @@ export interface ITeamsWantedCardPublicProps {
   classified: ITeamsWantedResponse;
   onEdit: (id: string, accessCodeRequired: string) => void;
   onDelete: (id: string, accessCodeRequired: string) => void;
+  canEdit: (classified: ITeamsWantedResponse) => boolean;
+  canDelete: (classified: ITeamsWantedResponse) => boolean;
+  isAuthenticated: boolean;
+  isAccountMember: boolean;
 }
 
 // Props for the Classifieds Header component
