@@ -11,24 +11,29 @@ import {
   Paper,
   Divider,
   Alert,
+  Button,
+  CircularProgress,
 } from '@mui/material';
 import {
   Person as PersonIcon,
   Schedule as ScheduleIcon,
-  Description as TemplateIcon,
-  Clear as ClearIcon,
-  Info as InfoIcon,
+  Close as CloseIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 
 import { useEmailCompose } from './EmailComposeProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { useAccount } from '../../../context/AccountContext';
+import { SelectedRecipientsPreview } from '../recipients/SelectedRecipientsPreview';
 
 interface ComposeHeaderProps {
   showFromField?: boolean;
   showRecipientCount?: boolean;
   showValidationErrors?: boolean;
   compact?: boolean;
+  onRecipientSelectionClick?: () => void;
+  hasAnyRecipientData?: boolean;
+  loading?: boolean;
 }
 
 /**
@@ -39,6 +44,9 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   showRecipientCount = true,
   showValidationErrors = true,
   compact = false,
+  onRecipientSelectionClick,
+  hasAnyRecipientData = true,
+  loading = false,
 }) => {
   const { state, actions } = useEmailCompose();
   const { user } = useAuth();
@@ -51,11 +59,6 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
     },
     [actions],
   );
-
-  // Clear template
-  const handleClearTemplate = useCallback(() => {
-    actions.clearTemplate();
-  }, [actions]);
 
   // Clear schedule
   const handleClearSchedule = useCallback(() => {
@@ -73,9 +76,6 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
 
   // Format account display
   const accountDisplay = currentAccount?.name || 'Unknown Account';
-
-  // Format recipient count
-  const recipientCount = state.recipientState?.totalRecipients || 0;
 
   // Format scheduled date
   const formatScheduledDate = (date: Date) => {
@@ -109,23 +109,50 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
           </Box>
         )}
 
-        {/* Recipient Count */}
+        {/* Recipient Selection */}
         {showRecipientCount && (
           <Box>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="body2" color="text.secondary" fontWeight="medium">
-                To:
-              </Typography>
-              <Chip
-                size="small"
-                label={`${recipientCount} recipient${recipientCount !== 1 ? 's' : ''}`}
-                color={recipientCount === 0 ? 'error' : 'primary'}
-                variant={recipientCount === 0 ? 'outlined' : 'filled'}
-              />
+            <Stack spacing={2}>
+              {/* Select Recipients Button and Preview */}
+              <Box>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  {/* Select Recipients Button */}
+                  <Box sx={{ minWidth: 'fit-content' }}>
+                    <Button
+                      variant="outlined"
+                      onClick={onRecipientSelectionClick}
+                      disabled={!hasAnyRecipientData && !loading}
+                      startIcon={loading ? <CircularProgress size={16} /> : <SettingsIcon />}
+                      sx={{
+                        py: 1,
+                        px: 2,
+                        fontWeight: 'medium',
+                        borderWidth: 2,
+                        '&:hover': {
+                          borderWidth: 2,
+                        },
+                      }}
+                    >
+                      {loading ? 'Loading...' : 'Select Recipients'}
+                    </Button>
+                  </Box>
+
+                  {/* Selected Recipients Preview */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <SelectedRecipientsPreview
+                      maxVisibleChips={compact ? 4 : 8}
+                      showCounts={true}
+                      showValidationWarnings={true}
+                      compact={compact}
+                    />
+                  </Box>
+                </Stack>
+              </Box>
+
               {recipientError && (
-                <Tooltip title={recipientError.message}>
-                  <InfoIcon color="error" fontSize="small" />
-                </Tooltip>
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {recipientError.message}
+                </Alert>
               )}
             </Stack>
           </Box>
@@ -152,44 +179,24 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
           />
         </Box>
 
-        {/* Template and Schedule Indicators */}
-        {(state.selectedTemplate || state.isScheduled) && (
+        {/* Schedule Indicator */}
+        {state.isScheduled && state.scheduledDate && (
           <>
             <Divider />
             <Stack direction="row" spacing={2} flexWrap="wrap">
-              {/* Template Indicator */}
-              {state.selectedTemplate && (
-                <Chip
-                  icon={<TemplateIcon />}
-                  label={`Template: ${state.selectedTemplate.name}`}
-                  color="secondary"
-                  variant="outlined"
-                  size="small"
-                  onDelete={handleClearTemplate}
-                  deleteIcon={
-                    <Tooltip title="Remove template">
-                      <ClearIcon />
-                    </Tooltip>
-                  }
-                />
-              )}
-
-              {/* Schedule Indicator */}
-              {state.isScheduled && state.scheduledDate && (
-                <Chip
-                  icon={<ScheduleIcon />}
-                  label={`Scheduled: ${formatScheduledDate(state.scheduledDate)}`}
-                  color="warning"
-                  variant="outlined"
-                  size="small"
-                  onDelete={handleClearSchedule}
-                  deleteIcon={
-                    <Tooltip title="Remove schedule">
-                      <ClearIcon />
-                    </Tooltip>
-                  }
-                />
-              )}
+              <Chip
+                icon={<ScheduleIcon />}
+                label={`Scheduled: ${formatScheduledDate(state.scheduledDate)}`}
+                color="warning"
+                variant="outlined"
+                size="small"
+                onDelete={handleClearSchedule}
+                deleteIcon={
+                  <Tooltip title="Remove schedule">
+                    <CloseIcon />
+                  </Tooltip>
+                }
+              />
             </Stack>
           </>
         )}
@@ -207,28 +214,6 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
                 ))}
             </Stack>
           </Alert>
-        )}
-
-        {/* Draft Status */}
-        {state.isDraft && state.lastSaved && (
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              Draft saved{' '}
-              {new Intl.DateTimeFormat('en-US', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              }).format(state.lastSaved)}
-            </Typography>
-          </Box>
-        )}
-
-        {/* Unsaved Changes Indicator */}
-        {state.hasUnsavedChanges && !state.isSending && (
-          <Box>
-            <Typography variant="caption" color="warning.main">
-              You have unsaved changes
-            </Typography>
-          </Box>
         )}
       </Stack>
     </Paper>

@@ -23,7 +23,6 @@ import {
   Schedule as ScheduleIcon,
   Edit as DraftIcon,
   MoreVert as MoreVertIcon,
-  Preview as PreviewIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   KeyboardArrowDown as ArrowDownIcon,
@@ -31,6 +30,7 @@ import {
 
 import { useEmailCompose } from './EmailComposeProvider';
 import { validateComposeData } from '../../../types/emails/compose';
+import EmailPreviewControl from './EmailPreviewControl';
 
 interface ComposeActionsProps {
   onScheduleClick?: () => void;
@@ -219,14 +219,7 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
           {showAdvancedActions && (
             <>
               {!compact && (
-                <Button
-                  startIcon={<PreviewIcon />}
-                  variant="text"
-                  onClick={handlePreview}
-                  size="small"
-                >
-                  Preview
-                </Button>
+                <EmailPreviewControl variant="button" onPreviewClick={handlePreview} size="small" />
               )}
 
               <Tooltip title="More actions">
@@ -279,17 +272,11 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
       {/* More Actions Menu */}
       <Menu anchorEl={moreMenuAnchor} open={Boolean(moreMenuAnchor)} onClose={handleMoreMenuClose}>
         {compact && (
-          <MenuItem
-            onClick={() => {
-              handlePreview();
-              handleMoreMenuClose();
-            }}
-          >
-            <ListItemIcon>
-              <PreviewIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Preview Email</ListItemText>
-          </MenuItem>
+          <EmailPreviewControl
+            variant="menuItem"
+            onPreviewClick={handlePreview}
+            onMenuClose={handleMoreMenuClose}
+          />
         )}
 
         {compact && <Divider />}
