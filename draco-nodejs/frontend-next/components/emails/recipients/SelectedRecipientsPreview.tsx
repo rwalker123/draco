@@ -241,12 +241,6 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
                 </Typography>
               </Stack>
 
-              {summaryData.validEmails > 0 && (
-                <Typography variant="caption" color="success.main">
-                  {summaryData.validEmails} valid email{summaryData.validEmails !== 1 ? 's' : ''}
-                </Typography>
-              )}
-
               {summaryData.invalidEmails > 0 && (
                 <Typography variant="caption" color="warning.main">
                   {summaryData.invalidEmails} invalid email
