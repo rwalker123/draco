@@ -13,6 +13,7 @@ import {
   IClassifiedSearchParams,
   IClassifiedSearchFilters,
   IClassifiedValidationResult,
+  IPlayersWantedUpdateRequest,
 } from '../interfaces/playerClassifiedInterfaces.js';
 import { isValidPositionId } from '../interfaces/playerClassifiedConstants.js';
 import { EmailService } from './emailService.js';
@@ -200,7 +201,7 @@ export class PlayerClassifiedService {
 
   /**
    * Create a new Players Wanted classified
-   * Requires player-classified.create-players-wanted permission
+   * Any authenticated account user can create Players Wanted ads
    */
   async createPlayersWanted(
     accountId: bigint,
@@ -587,6 +588,159 @@ export class PlayerClassifiedService {
     });
   }
 
+  /**
+   * Update Players Wanted classified
+   * Creator can edit own, AccountAdmin can edit any
+   */
+  async updatePlayersWanted(
+    classifiedId: bigint,
+    accountId: bigint,
+    contactId: bigint,
+    request: IPlayersWantedUpdateRequest,
+  ): Promise<IPlayersWantedResponse> {
+    // Validate input data
+    const validation = this.validatePlayersWantedUpdateRequest(request);
+    if (!validation.isValid) {
+      throw new ValidationError(
+        `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
+      );
+    }
+
+    // Check if user can edit this classified
+    const canEdit = await this.canEditPlayersWanted(classifiedId, contactId, accountId);
+    if (!canEdit) {
+      throw new ValidationError('Insufficient permissions to edit this classified');
+    }
+
+    // Get existing classified
+    const existingClassified = await this.prisma.playerswantedclassified.findUnique({
+      where: { id: classifiedId },
+      include: {
+        contacts: {
+          select: { id: true, firstname: true, lastname: true, email: true },
+        },
+        accounts: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    if (!existingClassified) {
+      throw new NotFoundError('Players Wanted classified not found');
+    }
+
+    if (existingClassified.accountid !== accountId) {
+      throw new ValidationError('Classified does not belong to this account');
+    }
+
+    // Prepare update data
+    const updateData: Prisma.playerswantedclassifiedUpdateInput = {};
+    if (request.teamEventName !== undefined) {
+      updateData.teameventname = request.teamEventName;
+    }
+    if (request.description !== undefined) {
+      updateData.description = request.description;
+    }
+    if (request.positionsNeeded !== undefined) {
+      updateData.positionsneeded = request.positionsNeeded;
+    }
+
+    // Update the classified
+    const updatedClassified = await this.prisma.playerswantedclassified.update({
+      where: { id: classifiedId },
+      data: updateData,
+      include: {
+        contacts: {
+          select: { id: true, firstname: true, lastname: true, email: true },
+        },
+        accounts: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    // Transform database record to response format
+    return this.transformPlayersWantedToResponse(
+      updatedClassified,
+      updatedClassified.contacts,
+      updatedClassified.accounts,
+    );
+  }
+
+  /**
+   * Check if user can edit a Players Wanted classified
+   * Creator can edit own, AccountAdmin can edit any
+   */
+  async canEditPlayersWanted(
+    classifiedId: bigint,
+    contactId: bigint,
+    accountId: bigint,
+  ): Promise<boolean> {
+    // Get the classified to check ownership
+    const classified = await this.prisma.playerswantedclassified.findUnique({
+      where: { id: classifiedId },
+      select: { createdbycontactid: true, accountid: true },
+    });
+
+    if (!classified) {
+      return false;
+    }
+
+    if (classified.accountid !== accountId) {
+      return false;
+    }
+
+    // Creator can always edit their own classified
+    if (classified.createdbycontactid === contactId) {
+      return true;
+    }
+
+    // Check if user has AccountAdmin role
+    // This would require integration with the role service
+    // For now, we'll implement a basic check
+    const userRoles = await this.getUserRoles(contactId, accountId);
+    return userRoles.some(
+      (role) => role.roleId === 'AccountAdmin' || role.roleId === 'Administrator',
+    );
+  }
+
+  /**
+   * Check if user can delete a Players Wanted classified
+   * Creator can delete own, AccountAdmin can delete any
+   */
+  async canDeletePlayersWanted(
+    classifiedId: bigint,
+    contactId: bigint,
+    accountId: bigint,
+  ): Promise<boolean> {
+    // Same logic as canEdit
+    return this.canEditPlayersWanted(classifiedId, contactId, accountId);
+  }
+
+  /**
+   * Get user roles for permission checking
+   * This is a simplified implementation - in production, use the role service
+   */
+  private async getUserRoles(
+    contactId: bigint,
+    accountId: bigint,
+  ): Promise<Array<{ roleId: string }>> {
+    try {
+      const roles = await this.prisma.contactroles.findMany({
+        where: {
+          contactid: contactId,
+          accountid: accountId,
+        },
+        select: { roleid: true },
+      });
+
+      return roles.map((role) => ({ roleId: role.roleid }));
+    } catch (error) {
+      console.error('Error fetching user roles:', error);
+      return [];
+    }
+  }
+
   // ============================================================================
   // VALIDATION METHODS
   // ============================================================================
@@ -630,6 +784,31 @@ export class PlayerClassifiedService {
         const parsedBirthDate = DateUtils.parseDateForDatabase(request.birthDate);
         return parsedBirthDate ? validateBirthDate(parsedBirthDate, 'birthDate', 13, 80) : null;
       })(),
+    );
+
+    return createValidationResult(errors);
+  }
+
+  /**
+   * Validate Players Wanted update request
+   */
+  private validatePlayersWantedUpdateRequest(
+    request: IPlayersWantedUpdateRequest,
+  ): IClassifiedValidationResult {
+    const errors = collectValidationErrors(
+      request.teamEventName !== undefined
+        ? validateRequiredString(request.teamEventName, 'teamEventName', 50, 1)
+        : null,
+      request.description !== undefined
+        ? validateRequiredString(request.description, 'description', 1000, 10)
+        : null,
+      request.positionsNeeded !== undefined
+        ? validatePositions(
+            request.positionsNeeded,
+            'positionsNeeded',
+            this.validatePositions.bind(this),
+          )
+        : null,
     );
 
     return createValidationResult(errors);
