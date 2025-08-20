@@ -431,12 +431,17 @@ const EmailComposePageInternal: React.FC<
                 border: 1,
                 borderColor: 'divider',
                 borderRadius: 1,
-                p: 2,
                 maxHeight: 300,
                 overflow: 'auto',
               }}
-              dangerouslySetInnerHTML={{ __html: processedContent || '<p><em>No content</em></p>' }}
-            />
+            >
+              <RichTextEditor
+                initialValue={processedContent || '<p><em>No content</em></p>'}
+                disabled={true}
+                minHeight={200}
+                placeholder=""
+              />
+            </Box>
           </Box>
 
           {state.attachments.length > 0 && (
