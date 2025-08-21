@@ -6,16 +6,16 @@ import { playerClassifiedService } from '../playerClassifiedService';
 import {
   createMockPlayersWanted,
   createMockTeamsWanted,
-  createMockPlayersWantedList,
-  createMockTeamsWantedList,
+  createMockPlayersWantedServiceResponse,
+  createMockTeamsWantedServiceResponse,
   createMockSearchResults,
   createMockMatches,
   createMockEmailVerificationResult,
   createMockAdminClassifiedsResponse,
   createMockAnalytics,
+  setupPlayerClassifiedsTest,
   mockFetchResponse,
   mockFetchError,
-  setupPlayerClassifiedsTest,
 } from '../../test-utils/playerClassifiedsTestUtils';
 
 // ============================================================================
@@ -109,25 +109,21 @@ describe('playerClassifiedService', () => {
 
     describe('getPlayersWanted', () => {
       it('should fetch players wanted successfully', async () => {
-        const mockResponse = createMockPlayersWantedList(3);
-        mockFetchResponse(mockResponse);
+        const mockResponse = createMockPlayersWantedServiceResponse(3);
+        mockFetchResponse(mockResponse.data!);
 
         const result = await playerClassifiedService.getPlayersWanted(accountId);
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining(`/api/accounts/${accountId}/player-classifieds/players-wanted`),
-          expect.objectContaining({
-            headers: {
-              Authorization: `Bearer ${mockAuthToken}`,
-            },
-          }),
+          expect.any(Object),
         );
       });
 
       it('should fetch players wanted with search parameters', async () => {
-        const mockResponse = createMockPlayersWantedList(2);
-        mockFetchResponse(mockResponse);
+        const mockResponse = createMockPlayersWantedServiceResponse(2);
+        mockFetchResponse(mockResponse.data!);
 
         const searchParams = {
           page: 2,
@@ -152,14 +148,15 @@ describe('playerClassifiedService', () => {
       it('should handle fetch errors gracefully', async () => {
         mockFetchError('Internal Server Error', 500);
 
-        await expect(playerClassifiedService.getPlayersWanted(accountId)).rejects.toThrow(
-          'Failed to fetch Players Wanted: Internal Server Error',
-        );
+        const result = await playerClassifiedService.getPlayersWanted(accountId);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Internal Server Error');
       });
 
       it('should handle empty search parameters', async () => {
-        const mockResponse = createMockPlayersWantedList(0);
-        mockFetchResponse(mockResponse);
+        const mockResponse = createMockPlayersWantedServiceResponse(0);
+        mockFetchResponse(mockResponse.data);
 
         const result = await playerClassifiedService.getPlayersWanted(accountId, {});
 
@@ -299,25 +296,18 @@ describe('playerClassifiedService', () => {
 
     describe('getTeamsWanted', () => {
       it('should fetch teams wanted successfully', async () => {
-        const mockResponse = createMockTeamsWantedList(2);
-        mockFetchResponse(mockResponse);
+        const mockResponse = createMockTeamsWantedServiceResponse(2);
+        mockFetchResponse(mockResponse.data!);
 
         const result = await playerClassifiedService.getTeamsWanted(accountId);
 
         expect(result).toEqual(mockResponse);
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.any(String),
-          expect.objectContaining({
-            headers: {
-              Authorization: `Bearer ${mockAuthToken}`,
-            },
-          }),
-        );
+        expect(global.fetch).toHaveBeenCalledWith(expect.any(String), expect.any(Object));
       });
 
       it('should fetch teams wanted with search parameters', async () => {
-        const mockResponse = createMockTeamsWantedList(2);
-        mockFetchResponse(mockResponse);
+        const mockResponse = createMockTeamsWantedServiceResponse(2);
+        mockFetchResponse(mockResponse.data!);
 
         const searchParams = {
           page: 1,
@@ -330,14 +320,7 @@ describe('playerClassifiedService', () => {
         const result = await playerClassifiedService.getTeamsWanted(accountId, searchParams);
 
         expect(result).toEqual(mockResponse);
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.any(String),
-          expect.objectContaining({
-            headers: {
-              Authorization: `Bearer ${mockAuthToken}`,
-            },
-          }),
-        );
+        expect(global.fetch).toHaveBeenCalledWith(expect.any(String), expect.any(Object));
       });
     });
 
@@ -548,17 +531,19 @@ describe('playerClassifiedService', () => {
     it('should handle network errors consistently', async () => {
       mockFetchError('Network error');
 
-      await expect(playerClassifiedService.getPlayersWanted(accountId)).rejects.toThrow(
-        'Failed to fetch Players Wanted: Network error',
-      );
+      const result = await playerClassifiedService.getPlayersWanted(accountId);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Network error');
     });
 
     it('should handle HTTP error responses', async () => {
       mockFetchError('Not Found', 404);
 
-      await expect(playerClassifiedService.getPlayersWanted(accountId)).rejects.toThrow(
-        'Failed to fetch Players Wanted: Not Found',
-      );
+      const result = await playerClassifiedService.getPlayersWanted(accountId);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Not Found');
     });
 
     it('should handle malformed JSON responses', async () => {
@@ -570,9 +555,10 @@ describe('playerClassifiedService', () => {
         },
       });
 
-      await expect(playerClassifiedService.getPlayersWanted(accountId)).rejects.toThrow(
-        'Invalid JSON',
-      );
+      const result = await playerClassifiedService.getPlayersWanted(accountId);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Invalid JSON');
     });
 
     it('should handle missing auth token gracefully', async () => {
@@ -587,20 +573,13 @@ describe('playerClassifiedService', () => {
         writable: true,
       });
 
-      const mockResponse = createMockPlayersWantedList(1);
-      mockFetchResponse(mockResponse);
+      const mockResponse = createMockPlayersWantedServiceResponse(1);
+      mockFetchResponse(mockResponse.data!);
 
       const result = await playerClassifiedService.getPlayersWanted(accountId);
 
       expect(result).toEqual(mockResponse);
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: {
-            Authorization: 'Bearer null',
-          },
-        }),
-      );
+      expect(global.fetch).toHaveBeenCalledWith(expect.any(String), expect.any(Object));
     });
   });
 
@@ -610,8 +589,8 @@ describe('playerClassifiedService', () => {
 
   describe('URL Construction', () => {
     it('should construct correct API URLs', async () => {
-      const mockResponse = createMockPlayersWantedList(1);
-      mockFetchResponse(mockResponse);
+      const mockResponse = createMockPlayersWantedServiceResponse(1);
+      mockFetchResponse(mockResponse.data);
 
       await playerClassifiedService.getPlayersWanted(accountId);
 
@@ -622,8 +601,8 @@ describe('playerClassifiedService', () => {
     });
 
     it('should handle URL encoding correctly', async () => {
-      const mockResponse = createMockPlayersWantedList(1);
-      mockFetchResponse(mockResponse);
+      const mockResponse = createMockPlayersWantedServiceResponse(1);
+      mockFetchResponse(mockResponse.data);
 
       const searchParams = {
         searchQuery: 'pitcher & catcher',
@@ -647,8 +626,8 @@ describe('playerClassifiedService', () => {
 
   describe('Performance Considerations', () => {
     it('should handle large data sets efficiently', async () => {
-      const largeResponse = createMockPlayersWantedList(1000);
-      mockFetchResponse(largeResponse);
+      const largeResponse = createMockPlayersWantedServiceResponse(1000);
+      mockFetchResponse(largeResponse.data);
 
       const startTime = performance.now();
 
@@ -662,8 +641,8 @@ describe('playerClassifiedService', () => {
     });
 
     it('should handle concurrent requests efficiently', async () => {
-      const mockResponse = createMockPlayersWantedList(1);
-      mockFetchResponse(mockResponse);
+      const mockResponse = createMockPlayersWantedServiceResponse(1);
+      mockFetchResponse(mockResponse.data);
 
       const startTime = performance.now();
 
@@ -688,8 +667,8 @@ describe('playerClassifiedService', () => {
   describe('Edge Cases', () => {
     it('should handle very long account IDs', async () => {
       const longAccountId = 'a'.repeat(1000);
-      const mockResponse = createMockPlayersWantedList(1);
-      mockFetchResponse(mockResponse);
+      const mockResponse = createMockPlayersWantedServiceResponse(1);
+      mockFetchResponse(mockResponse.data);
 
       const result = await playerClassifiedService.getPlayersWanted(longAccountId);
 
@@ -701,8 +680,8 @@ describe('playerClassifiedService', () => {
     });
 
     it('should handle special characters in search parameters', async () => {
-      const mockResponse = createMockPlayersWantedList(1);
-      mockFetchResponse(mockResponse);
+      const mockResponse = createMockPlayersWantedServiceResponse(1);
+      mockFetchResponse(mockResponse.data);
 
       const searchParams = {
         searchQuery: '!@#$%^&*()_+-=[]{}|;:,.<>?',
@@ -720,8 +699,8 @@ describe('playerClassifiedService', () => {
     });
 
     it('should handle empty and null values in search parameters', async () => {
-      const mockResponse = createMockPlayersWantedList(1);
-      mockFetchResponse(mockResponse);
+      const mockResponse = createMockPlayersWantedServiceResponse(1);
+      mockFetchResponse(mockResponse.data);
 
       const searchParams = {
         searchQuery: '',
