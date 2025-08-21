@@ -290,13 +290,14 @@ function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }
   useEffect(() => {
     if (!onChange) return;
 
-    // Use registerTextContentListener to avoid cursor jumping
-    // This listener only fires when text content actually changes
-    const unregister = editor.registerTextContentListener(() => {
-      // Get the HTML content when text changes
-      const htmlContent = editor.getEditorState().read(() => {
+    // Use registerUpdateListener to capture HTML content changes
+    // This listener fires when editor state changes and preserves formatting
+    const unregister = editor.registerUpdateListener(({ editorState }) => {
+      // Get actual HTML content when editor state changes
+      const htmlContent = editorState.read(() => {
         return $generateHtmlFromNodes(editor);
       });
+
       onChange(htmlContent);
     });
 
@@ -333,24 +334,73 @@ function createInitialEditorState(html?: string): (() => void) | null {
     return null; // Use default empty state
   }
 
-  // Return a function that creates the editor state
+  // Return a function that creates the editor state using Lexical's HTML parsing
   return () => {
     const root = $getRoot();
     root.clear();
 
-    // Extract text content from HTML for initial state
-    // This preserves the basic content while avoiding cursor jumping issues
-    const parser = new DOMParser();
-    const dom = parser.parseFromString(html, 'text/html');
-    const textContent = dom.body.textContent || dom.body.innerText || '';
+    try {
+      // Use Lexical's official HTML parsing to preserve formatting
+      const parser = new DOMParser();
+      const dom = parser.parseFromString(html, 'text/html');
 
-    if (textContent.trim()) {
-      const paragraph = $createParagraphNode();
-      const textNode = $createTextNode(textContent);
-      paragraph.append(textNode);
-      root.append(paragraph);
-    } else {
-      // Create empty paragraph for empty content
+      // For the initialization function, we need to create nodes manually
+      // since we don't have editor context yet
+
+      // Parse the HTML manually for basic elements
+      const bodyElement = dom.body;
+
+      if (bodyElement && bodyElement.children.length > 0) {
+        // Process each child element
+        for (const element of Array.from(bodyElement.children)) {
+          if (element.tagName === 'H1') {
+            const heading = $createHeadingNode('h1');
+            heading.append($createTextNode(element.textContent || ''));
+            root.append(heading);
+          } else if (element.tagName === 'H2') {
+            const heading = $createHeadingNode('h2');
+            heading.append($createTextNode(element.textContent || ''));
+            root.append(heading);
+          } else if (element.tagName === 'H3') {
+            const heading = $createHeadingNode('h3');
+            heading.append($createTextNode(element.textContent || ''));
+            root.append(heading);
+          } else if (element.tagName === 'UL') {
+            // Create bullet list
+            const listItems = Array.from(element.children);
+            if (listItems.length > 0) {
+              const paragraph = $createParagraphNode();
+              root.append(paragraph);
+              // Note: For now, we'll convert list items to simple text
+              // Full list support would need more complex node creation
+              for (const item of listItems) {
+                const listPara = $createParagraphNode();
+                listPara.append($createTextNode('• ' + (item.textContent || '')));
+                root.append(listPara);
+              }
+            }
+          } else {
+            // Default to paragraph for other elements
+            const paragraph = $createParagraphNode();
+            paragraph.append($createTextNode(element.textContent || ''));
+            root.append(paragraph);
+          }
+        }
+      } else {
+        // Fallback for simple text content
+        const textContent = bodyElement?.textContent || html;
+        if (textContent.trim()) {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode(textContent));
+          root.append(paragraph);
+        } else {
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing HTML for initial editor state:', error);
+      // Fallback to empty paragraph if parsing fails
       const paragraph = $createParagraphNode();
       root.append(paragraph);
     }
@@ -442,7 +492,7 @@ const RichTextEditor = React.forwardRef<
           borderWidth: error ? 2 : 1,
           borderRadius: 1,
           overflow: 'hidden',
-          opacity: disabled ? 0.6 : 1,
+          opacity: 1,
         }}
       >
         <LexicalComposer
@@ -454,7 +504,7 @@ const RichTextEditor = React.forwardRef<
             },
           }}
         >
-          <ToolbarPlugin disabled={disabled} />
+          {!disabled && <ToolbarPlugin disabled={disabled} />}
 
           <Box
             sx={{

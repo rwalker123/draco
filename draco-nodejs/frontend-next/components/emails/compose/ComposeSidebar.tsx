@@ -9,59 +9,118 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Button,
   TextField,
   Chip,
-  Divider,
   Alert,
   CircularProgress,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Description as TemplateIcon,
-  People as PeopleIcon,
-  Attachment as AttachmentIcon,
-  Preview as PreviewIcon,
   Clear as ClearIcon,
+  Info as InfoIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 
-import { useEmailCompose } from './EmailComposeProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { createEmailService } from '../../../services/emailService';
 import { EmailTemplate } from '../../../types/emails/email';
-import { extractTemplateVariables } from '../../../types/emails/compose';
+import {
+  extractTemplateVariables,
+  EmailComposeState,
+  EmailComposeActions,
+} from '../../../types/emails/compose';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
 import { createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
+import EmailPreviewControl from './EmailPreviewControl';
+
+// Shared styling constants to eliminate DRY violations
+const SECTION_STYLES = {
+  padding: 2,
+  borderRadius: 1,
+  border: '2px solid',
+} as const;
+
+const SPACING_CONSTANTS = {
+  ICON_TEXT_ALIGNMENT: 4, // Consistent alignment for icon + text combinations
+  SECTION_SPACING: 2,
+  COMPACT_SPACING: 1,
+} as const;
+
+const COMMON_BORDER_STYLES = {
+  outlined: {
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 1,
+  },
+  section: {
+    ...SECTION_STYLES,
+  },
+} as const;
+
+// Accessibility constants
+const ARIA_LABELS = {
+  CLEAR_TEMPLATE: 'Clear selected template',
+  TEMPLATE_VARIABLES_INFO:
+    'These values are for preview only. Actual values will come from the database when emails are sent to recipients.',
+  SELECT_TEMPLATE: 'Select template:',
+} as const;
+
+// Template TextField styling function for consistency
+const createTemplateTextFieldStyles = (theme: { palette: { mode: string } }) => ({
+  '& .MuiOutlinedInput-root': {
+    bgcolor: 'background.default',
+    '& fieldset': {
+      borderColor: 'divider',
+    },
+    '&:hover fieldset': {
+      borderColor: 'text.secondary',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: 'primary.main',
+    },
+    '& input': {
+      color: 'text.primary',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: 'text.secondary',
+    '&.Mui-focused': {
+      color: 'primary.main',
+    },
+  },
+  '& .MuiOutlinedInput-input::placeholder': {
+    color: 'text.disabled',
+    opacity: theme.palette.mode === 'dark' ? 0.7 : 1, // Better dark mode visibility
+  },
+});
 
 interface ComposeSidebarProps {
+  state: EmailComposeState;
+  actions: EmailComposeActions;
   accountId: string;
   showTemplates?: boolean;
-  showRecipientSummary?: boolean;
-  showAttachmentSummary?: boolean;
   compact?: boolean;
+  onPreviewClick?: () => void;
 }
 
-/**
- * ComposeSidebar - Template selection and recipient/attachment summary
- */
-const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
+export default function ComposeSidebar({
+  state,
+  actions,
   accountId,
   showTemplates = true,
-  showRecipientSummary = true,
-  showAttachmentSummary = true,
   compact = false,
-}) => {
-  const { state, actions } = useEmailCompose();
+  onPreviewClick,
+}: ComposeSidebarProps) {
   const { token } = useAuth();
+  const theme = useTheme();
 
+  // Template state
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [templatesError, setTemplatesError] = useState<EmailRecipientError | null>(null);
@@ -135,10 +194,32 @@ const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
     [],
   );
 
-  // Handle template selection
+  // Handle template selection with keyboard support
   const handleTemplateSelect = useCallback(
     (template: EmailTemplate) => {
       actions.selectTemplate(template);
+    },
+    [actions],
+  );
+
+  // Handle keyboard navigation for template selection
+  const handleTemplateKeyDown = useCallback(
+    (event: React.KeyboardEvent, template: EmailTemplate) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleTemplateSelect(template);
+      }
+    },
+    [handleTemplateSelect],
+  );
+
+  // Handle keyboard navigation for clear template button
+  const handleClearTemplateKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        actions.clearTemplate();
+      }
     },
     [actions],
   );
@@ -159,34 +240,11 @@ const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
       )
     : [];
 
-  // Get recipient summary
-  const recipientSummary = {
-    totalRecipients: state.recipientState?.totalRecipients || 0,
-    individualContacts: state.recipientState?.selectedContactIds.size || 0,
-    allContacts: state.recipientState?.allContacts || false,
-    teamGroups: state.recipientState?.selectedTeamGroups.length || 0,
-    roleGroups: state.recipientState?.selectedRoleGroups.length || 0,
-  };
-
-  // Get attachment summary
-  const attachmentSummary = {
-    totalAttachments: state.attachments.length,
-    uploadedCount: state.attachments.filter((a) => a.status === 'uploaded').length,
-    totalSize: state.attachments.reduce((sum, att) => sum + att.size, 0),
-  };
-
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
     <Box sx={{ width: compact ? '100%' : 320, minWidth: compact ? 'auto' : 320 }}>
-      <Stack spacing={compact ? 1 : 2}>
+      <Stack
+        spacing={compact ? SPACING_CONSTANTS.COMPACT_SPACING : SPACING_CONSTANTS.SECTION_SPACING}
+      >
         {/* Templates Section */}
         {showTemplates && (
           <ErrorBoundary
@@ -209,8 +267,12 @@ const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
               >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <TemplateIcon fontSize="small" />
-                    <Typography variant="subtitle1" fontWeight="medium">
+                    <TemplateIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="medium"
+                      sx={{ color: 'primary.main' }}
+                    >
                       Email Templates
                     </Typography>
                     {state.selectedTemplate && (
@@ -245,19 +307,60 @@ const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
 
                     {/* Current Template */}
                     {state.selectedTemplate && (
-                      <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                      <Box
+                        sx={{
+                          ...COMMON_BORDER_STYLES.section,
+                          bgcolor: 'primary.main',
+                          color: 'primary.contrastText',
+                          borderColor: 'primary.main',
+                        }}
+                        role="region"
+                        aria-label="Selected template"
+                      >
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                          <Typography variant="subtitle2" fontWeight="medium">
+                          <CheckCircleIcon
+                            sx={{
+                              color: 'primary.contrastText',
+                              fontSize: '1.25rem',
+                            }}
+                          />
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight="medium"
+                            sx={{ color: 'inherit', flex: 1 }}
+                          >
                             {state.selectedTemplate.name}
                           </Typography>
-                          <Tooltip title="Clear template">
-                            <IconButton size="small" onClick={actions.clearTemplate}>
+                          <Tooltip title={ARIA_LABELS.CLEAR_TEMPLATE}>
+                            <IconButton
+                              size="small"
+                              onClick={actions.clearTemplate}
+                              onKeyDown={handleClearTemplateKeyDown}
+                              aria-label={ARIA_LABELS.CLEAR_TEMPLATE}
+                              sx={{
+                                color: 'primary.contrastText',
+                                '&:hover': {
+                                  bgcolor:
+                                    theme.palette.mode === 'dark'
+                                      ? 'rgba(255, 255, 255, 0.15)'
+                                      : 'rgba(255, 255, 255, 0.1)',
+                                },
+                              }}
+                            >
                               <ClearIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         </Stack>
                         {state.selectedTemplate.description && (
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'primary.contrastText',
+                              opacity: theme.palette.mode === 'dark' ? 0.95 : 0.9, // Better dark mode visibility
+                              display: 'block',
+                              ml: SPACING_CONSTANTS.ICON_TEXT_ALIGNMENT, // Align with the text above (icon + spacing)
+                            }}
+                          >
                             {state.selectedTemplate.description}
                           </Typography>
                         )}
@@ -266,24 +369,83 @@ const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
 
                     {/* Template Variables */}
                     {templateVariables.length > 0 && (
-                      <Box>
-                        <Typography variant="subtitle2" gutterBottom>
-                          Template Variables
-                        </Typography>
-                        <Stack spacing={1}>
-                          {templateVariables.map((variable) => (
-                            <TextField
-                              key={variable}
-                              label={variable}
-                              size="small"
-                              value={state.templateVariables[variable] || ''}
-                              onChange={(e) =>
-                                handleTemplateVariableChange(variable, e.target.value)
-                              }
-                              placeholder={`Enter ${variable}...`}
+                      <Box
+                        sx={{
+                          ...COMMON_BORDER_STYLES.section,
+                          bgcolor: 'primary.light',
+                          color: 'text.primary',
+                          borderColor: 'primary.light',
+                          mt: SPACING_CONSTANTS.COMPACT_SPACING, // Small gap from the Current Template section above
+                        }}
+                        role="region"
+                        aria-label="Template variables for preview"
+                      >
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ color: 'primary.contrastText' }}>
+                            Preview Values
+                          </Typography>
+                          <Tooltip title={ARIA_LABELS.TEMPLATE_VARIABLES_INFO}>
+                            <InfoIcon
+                              fontSize="small"
+                              sx={{ color: 'primary.contrastText' }}
+                              aria-label={ARIA_LABELS.TEMPLATE_VARIABLES_INFO}
+                              role="button"
+                              tabIndex={0}
                             />
-                          ))}
+                          </Tooltip>
                         </Stack>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'primary.contrastText',
+                            mb: 2,
+                            display: 'block',
+                          }}
+                        >
+                          Enter sample values to preview how your template will look. Actual
+                          recipient data will be used when sending.
+                        </Typography>
+                        <Box
+                          sx={{
+                            p: SECTION_STYLES.padding,
+                            bgcolor: 'background.paper',
+                            ...COMMON_BORDER_STYLES.outlined,
+                          }}
+                        >
+                          <Stack spacing={2}>
+                            <Stack
+                              spacing={1}
+                              role="group"
+                              aria-labelledby="template-variables-heading"
+                            >
+                              {templateVariables.map((variable) => (
+                                <TextField
+                                  key={variable}
+                                  label={`${variable} (preview)`}
+                                  size="small"
+                                  value={state.templateVariables[variable] || ''}
+                                  onChange={(e) =>
+                                    handleTemplateVariableChange(variable, e.target.value)
+                                  }
+                                  placeholder={`Sample ${variable.toLowerCase()}`}
+                                  variant="outlined"
+                                  inputProps={{
+                                    'aria-describedby': `template-var-${variable}-description`,
+                                    tabIndex: 0,
+                                  }}
+                                  sx={createTemplateTextFieldStyles(theme)}
+                                />
+                              ))}
+                            </Stack>
+                            {onPreviewClick && (
+                              <EmailPreviewControl
+                                variant="button"
+                                onPreviewClick={onPreviewClick}
+                                size="small"
+                              />
+                            )}
+                          </Stack>
+                        </Box>
                       </Box>
                     )}
 
@@ -294,35 +456,64 @@ const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
                           Available Templates
                         </Typography>
                         {templates.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary">
-                            No templates available
-                          </Typography>
+                          <Alert severity="info">
+                            No templates found. You can create templates in the template manager.
+                          </Alert>
                         ) : (
-                          <List dense>
-                            {templates.map((template) => (
-                              <ListItemButton
-                                key={template.id}
-                                onClick={() => handleTemplateSelect(template)}
-                                selected={state.selectedTemplate?.id === template.id}
-                              >
-                                <ListItemText
-                                  primary={template.name}
-                                  secondary={template.description}
-                                  secondaryTypographyProps={{
-                                    noWrap: true,
-                                    variant: 'caption',
+                          <Stack spacing={1}>
+                            {templates
+                              .filter((template) => state.selectedTemplate?.id !== template.id)
+                              .map((template) => (
+                                <Paper
+                                  key={template.id}
+                                  variant="outlined"
+                                  component="button"
+                                  sx={{
+                                    p: 1.5,
+                                    cursor: 'pointer',
+                                    '&:hover': { bgcolor: 'action.hover' },
+                                    '&:focus': {
+                                      bgcolor: 'action.hover',
+                                      outline: `2px solid ${theme.palette.primary.main}`,
+                                      outlineOffset: 1,
+                                    },
+                                    bgcolor: 'transparent',
+                                    borderColor: 'divider',
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    border: 'none',
+                                    borderRadius: 1,
+                                    '&:focus-visible': {
+                                      outline: `2px solid ${theme.palette.primary.main}`,
+                                      outlineOffset: 1,
+                                    },
                                   }}
-                                />
-                                <ListItemSecondaryAction>
-                                  <Tooltip title="Preview template">
-                                    <IconButton edge="end" size="small">
-                                      <PreviewIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </ListItemSecondaryAction>
-                              </ListItemButton>
-                            ))}
-                          </List>
+                                  onClick={() => handleTemplateSelect(template)}
+                                  onKeyDown={(e) => handleTemplateKeyDown(e, template)}
+                                  aria-label={`${ARIA_LABELS.SELECT_TEMPLATE} ${template.name}`}
+                                  tabIndex={0}
+                                  role="button"
+                                >
+                                  <Typography variant="body2" fontWeight="medium" gutterBottom>
+                                    {template.name}
+                                  </Typography>
+                                  {template.description && (
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                      }}
+                                    >
+                                      {template.description}
+                                    </Typography>
+                                  )}
+                                </Paper>
+                              ))}
+                          </Stack>
                         )}
                       </Box>
                     )}
@@ -332,165 +523,7 @@ const ComposeSidebarComponent: React.FC<ComposeSidebarProps> = ({
             </Paper>
           </ErrorBoundary>
         )}
-
-        {/* Recipients Summary */}
-        {showRecipientSummary && (
-          <Paper variant="outlined">
-            <Accordion
-              expanded={expandedAccordions.has('recipients')}
-              onChange={handleAccordionChange('recipients')}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <PeopleIcon fontSize="small" />
-                  <Typography variant="subtitle1" fontWeight="medium">
-                    Recipients
-                  </Typography>
-                  <Chip
-                    label={recipientSummary.totalRecipients}
-                    size="small"
-                    color={recipientSummary.totalRecipients === 0 ? 'error' : 'primary'}
-                  />
-                </Stack>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Stack spacing={2}>
-                  {recipientSummary.totalRecipients === 0 ? (
-                    <Alert severity="warning">
-                      <Typography variant="body2">
-                        No recipients selected. Please select recipients before sending.
-                      </Typography>
-                    </Alert>
-                  ) : (
-                    <Stack spacing={1}>
-                      {recipientSummary.allContacts && (
-                        <Chip
-                          label="All Contacts"
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      )}
-
-                      {recipientSummary.individualContacts > 0 && (
-                        <Typography variant="body2">
-                          {recipientSummary.individualContacts} individual contact
-                          {recipientSummary.individualContacts !== 1 ? 's' : ''}
-                        </Typography>
-                      )}
-
-                      {recipientSummary.teamGroups > 0 && (
-                        <Typography variant="body2">
-                          {recipientSummary.teamGroups} team group
-                          {recipientSummary.teamGroups !== 1 ? 's' : ''}
-                        </Typography>
-                      )}
-
-                      {recipientSummary.roleGroups > 0 && (
-                        <Typography variant="body2">
-                          {recipientSummary.roleGroups} role group
-                          {recipientSummary.roleGroups !== 1 ? 's' : ''}
-                        </Typography>
-                      )}
-
-                      <Divider />
-
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="caption" color="text.secondary">
-                          Total Recipients:
-                        </Typography>
-                        <Typography variant="caption" fontWeight="medium">
-                          {recipientSummary.totalRecipients}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  )}
-                </Stack>
-              </AccordionDetails>
-            </Accordion>
-          </Paper>
-        )}
-
-        {/* Attachments Summary */}
-        {showAttachmentSummary && state.attachments.length > 0 && (
-          <Paper variant="outlined">
-            <Accordion
-              expanded={expandedAccordions.has('attachments')}
-              onChange={handleAccordionChange('attachments')}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <AttachmentIcon fontSize="small" />
-                  <Typography variant="subtitle1" fontWeight="medium">
-                    Attachments
-                  </Typography>
-                  <Chip label={attachmentSummary.totalAttachments} size="small" color="primary" />
-                </Stack>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Stack spacing={1}>
-                  <List dense>
-                    {state.attachments.map((attachment) => (
-                      <ListItem key={attachment.id}>
-                        <ListItemText
-                          primary={attachment.name}
-                          secondary={`${formatFileSize(attachment.size)} • ${attachment.status}`}
-                          primaryTypographyProps={{
-                            variant: 'body2',
-                            noWrap: true,
-                          }}
-                          secondaryTypographyProps={{
-                            variant: 'caption',
-                            color: attachment.status === 'error' ? 'error' : 'text.secondary',
-                          }}
-                        />
-                        <ListItemSecondaryAction>
-                          <Tooltip title="Remove attachment">
-                            <IconButton
-                              edge="end"
-                              size="small"
-                              onClick={() => actions.removeAttachment(attachment.id)}
-                            >
-                              <ClearIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-
-                  <Divider />
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Total Size:
-                    </Typography>
-                    <Typography variant="caption" fontWeight="medium">
-                      {formatFileSize(attachmentSummary.totalSize)}
-                    </Typography>
-                  </Box>
-
-                  {attachmentSummary.uploadedCount < attachmentSummary.totalAttachments && (
-                    <Alert severity="warning" sx={{ mt: 1 }}>
-                      <Typography variant="caption">
-                        {attachmentSummary.totalAttachments - attachmentSummary.uploadedCount}{' '}
-                        attachment
-                        {attachmentSummary.totalAttachments - attachmentSummary.uploadedCount !== 1
-                          ? 's'
-                          : ''}{' '}
-                        still uploading
-                      </Typography>
-                    </Alert>
-                  )}
-                </Stack>
-              </AccordionDetails>
-            </Accordion>
-          </Paper>
-        )}
       </Stack>
     </Box>
   );
-};
-
-export const ComposeSidebar = React.memo(ComposeSidebarComponent);
-ComposeSidebar.displayName = 'ComposeSidebar';
+}
