@@ -182,3 +182,8 @@ CREATE INDEX IF NOT EXISTS idx_rosterseason_playerid_teamseasonid ON rosterseaso
 CREATE INDEX IF NOT EXISTS idx_rosterseason_teamseasonid ON rosterseason(teamseasonid);
 -- Index for teamsseason league season filtering
 CREATE INDEX IF NOT EXISTS idx_teamsseason_leagueseasonid ON teamsseason(leagueseasonid);
+
+-- Fix accesscode field to accept bcrypt hashes instead of UUIDs
+-- This allows storing hashed access codes with special characters like $
+ALTER TABLE teamswantedclassified 
+ALTER COLUMN accesscode TYPE VARCHAR(255);

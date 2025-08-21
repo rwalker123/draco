@@ -104,7 +104,7 @@ export interface IPlayersWantedResponse extends IPlayersWantedClassified {
 
 // Teams Wanted response (authenticated account members view)
 export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
-  // Include email for authenticated account members, but omit accessCode
+  // Include full PII for authenticated account members, but omit accessCode
   account: {
     id: string;
     name: string;
@@ -569,3 +569,24 @@ export interface IVerifyAccessResponse {
   };
   message?: string;
 }
+
+// ============================================================================
+// SERVICE RESPONSE INTERFACES
+// ============================================================================
+
+// Generic service response wrapper
+export interface IServiceResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  errorCode?: string;
+  statusCode?: number;
+}
+
+// Teams Wanted service response
+export type ITeamsWantedServiceResponse = IServiceResponse<
+  IClassifiedListResponse<ITeamsWantedResponse>
+>;
+
+// Players Wanted service response
+export type IPlayersWantedServiceResponse = IServiceResponse<IPlayersWantedResponse>;

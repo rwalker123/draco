@@ -111,15 +111,26 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           </Box>
         </Box>
 
-        {/* Contact Info - Only show phone for authenticated account members */}
-        {isAuthenticated && isAccountMember && (
+        {/* Contact Info - Show email and phone for authenticated users */}
+        {isAuthenticated && (
           <Box mb={2}>
+            {/* Email */}
             <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <PhoneIcon fontSize="small" color="action" />
+              <PersonIcon fontSize="small" color="action" />
               <Typography variant="caption" color="text.secondary">
-                {sanitizeDisplayText(classified.phone)}
+                {sanitizeDisplayText(classified.email)}
               </Typography>
             </Box>
+
+            {/* Phone - Only show for account members */}
+            {isAccountMember && (
+              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <PhoneIcon fontSize="small" color="action" />
+                <Typography variant="caption" color="text.secondary">
+                  {sanitizeDisplayText(classified.phone)}
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
 

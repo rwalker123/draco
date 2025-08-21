@@ -1,7 +1,13 @@
 import { body, query } from 'express-validator';
 import { handleValidationErrors } from './contactValidation.js';
 // Simple validation helpers to replace commonValidation.js imports
-const validateRequiredString = (fieldName: string, maxLength: number, pattern?: RegExp, patternMessage?: string, minLength?: number) => {
+const validateRequiredString = (
+  fieldName: string,
+  maxLength: number,
+  pattern?: RegExp,
+  patternMessage?: string,
+  minLength?: number,
+) => {
   let validation = body(fieldName)
     .exists()
     .withMessage(`${fieldName} is required`)
@@ -29,7 +35,12 @@ const validateRequiredString = (fieldName: string, maxLength: number, pattern?: 
   return validation;
 };
 
-const validateOptionalString = (fieldName: string, maxLength: number, pattern?: RegExp, patternMessage?: string) => {
+const validateOptionalString = (
+  fieldName: string,
+  maxLength: number,
+  pattern?: RegExp,
+  patternMessage?: string,
+) => {
   let validation = body(fieldName)
     .optional()
     .isString()
@@ -67,7 +78,12 @@ const validateEmail = (fieldName: string = 'email', isRequired: boolean = true) 
     .withMessage(`${fieldName} must not exceed 255 characters`);
 };
 
-const validateInteger = (fieldName: string, min: number, max: number, isRequired: boolean = true) => {
+const validateInteger = (
+  fieldName: string,
+  min: number,
+  max: number,
+  isRequired: boolean = true,
+) => {
   const validation = isRequired
     ? body(fieldName).exists().withMessage(`${fieldName} is required`)
     : body(fieldName).optional();
@@ -115,7 +131,9 @@ const validatePhone = (fieldName: string, isRequired: boolean = false) => {
     .custom((value: string) => {
       if (!value) return true;
       if (!/^[\d\s\-()'.ext]*$/.test(value)) {
-        throw new Error(`${fieldName} can only contain digits, spaces, hyphens, parentheses, plus signs, dots, and "ext"`);
+        throw new Error(
+          `${fieldName} can only contain digits, spaces, hyphens, parentheses, plus signs, dots, and "ext"`,
+        );
       }
       return true;
     })

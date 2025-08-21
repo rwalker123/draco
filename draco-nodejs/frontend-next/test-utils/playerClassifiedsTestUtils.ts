@@ -12,6 +12,7 @@ import {
   IEmailVerificationResult,
   IAdminClassifiedsResponse,
   IClassifiedAnalytics,
+  IServiceResponse,
 } from '../types/playerClassifieds';
 import { AuthContextType } from '../context/AuthContext';
 import { AccountContextType } from '../context/AccountContext';
@@ -122,6 +123,14 @@ export const createMockPlayersWantedList = (
   },
 });
 
+// New utility function for service responses
+export const createMockPlayersWantedServiceResponse = (
+  count: number = 3,
+): IServiceResponse<IClassifiedListResponse<IPlayersWantedResponse>> => ({
+  success: true,
+  data: createMockPlayersWantedList(count),
+});
+
 export const createMockTeamsWantedList = (
   count: number = 3,
 ): IClassifiedListResponse<ITeamsWantedResponse> => ({
@@ -146,6 +155,14 @@ export const createMockTeamsWantedList = (
     dateRange: { from: null, to: null },
     searchQuery: null,
   },
+});
+
+// New utility function for service responses
+export const createMockTeamsWantedServiceResponse = (
+  count: number = 3,
+): IServiceResponse<IClassifiedListResponse<ITeamsWantedResponse>> => ({
+  success: true,
+  data: createMockTeamsWantedList(count),
 });
 
 export const createMockSearchResults = (
