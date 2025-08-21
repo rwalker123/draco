@@ -207,18 +207,21 @@ export const validateNameField = (
   isRequired: boolean = false,
   maxLength: number = 100,
 ): ValidationChain => {
+  // Use a safer regex pattern without asterisk
+  const namePattern = /^[a-zA-Z0-9\s'-]+$/;
+
   const validation = isRequired
     ? validateRequiredString(
         fieldName,
         maxLength,
-        /^[a-zA-Z0-9\s\-'*]+$/,
-        `${fieldName} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
+        namePattern,
+        `${fieldName} can only contain letters, numbers, spaces, hyphens, and apostrophes`,
       )
     : validateOptionalString(
         fieldName,
         maxLength,
-        /^[a-zA-Z0-9\s\-'*]+$/,
-        `${fieldName} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
+        namePattern,
+        `${fieldName} can only contain letters, numbers, spaces, hyphens, and apostrophes`,
       );
 
   return validation;
@@ -250,13 +253,13 @@ export const validateAddressField = (
     ? validateRequiredString(
         fieldName,
         maxLength,
-        /^[a-zA-Z0-9\s\-.,#']*$/,
+        /^[a-zA-Z0-9\s.,#'-]*$/,
         `${fieldName} contains invalid characters`,
       )
     : validateOptionalString(
         fieldName,
         maxLength,
-        /^[a-zA-Z0-9\s\-.,#']*$/,
+        /^[a-zA-Z0-9\s.,#'-]*$/,
         `${fieldName} contains invalid characters`,
       );
 
@@ -275,13 +278,13 @@ export const validateCityField = (
     ? validateRequiredString(
         fieldName,
         maxLength,
-        /^[a-zA-Z\s\-']*$/,
+        /^[a-zA-Z\s'-]*$/,
         `${fieldName} can only contain letters, spaces, hyphens, and apostrophes`,
       )
     : validateOptionalString(
         fieldName,
         maxLength,
-        /^[a-zA-Z\s\-']*$/,
+        /^[a-zA-Z\s'-]*$/,
         `${fieldName} can only contain letters, spaces, hyphens, and apostrophes`,
       );
 

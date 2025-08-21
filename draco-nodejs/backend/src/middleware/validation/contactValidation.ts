@@ -15,6 +15,7 @@ import {
 // Validation error handler middleware
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
+
   if (!errors.isEmpty()) {
     res.status(400).json({
       error: 'Validation failed',
@@ -22,6 +23,7 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
     });
     return;
   }
+
   next();
 };
 
@@ -79,7 +81,7 @@ export const validateContactSearch = [
     .trim()
     .isLength({ max: 100 })
     .withMessage('Search query must not exceed 100 characters')
-    .matches(/^[a-zA-Z0-9\s\-.'@]*$/)
+    .matches(/^[a-zA-Z0-9\s.'@-]*$/)
     .withMessage('Search query contains invalid characters'),
 
   body('seasonId').optional().isInt({ min: 1 }).withMessage('Season ID must be a positive integer'),

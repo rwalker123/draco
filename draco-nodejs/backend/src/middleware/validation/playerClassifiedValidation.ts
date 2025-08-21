@@ -51,7 +51,7 @@ export const validatePlayersWantedCreate = [
   validateRequiredString(
     'teamEventName',
     50,
-    /^[a-zA-Z0-9\s\-'&()]+$/,
+    /^[a-zA-Z0-9\s'&()-]+$/,
     'Team event name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and parentheses',
   ),
 
@@ -70,7 +70,7 @@ export const validatePlayersWantedUpdate = [
     .optional()
     .isLength({ max: 50 })
     .withMessage('Team event name must not exceed 50 characters')
-    .matches(/^[a-zA-Z0-9\s\-'&()]+$/)
+    .matches(/^[a-zA-Z0-9\s'&()-]+$/)
     .withMessage(
       'Team event name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and parentheses',
     ),
@@ -113,7 +113,7 @@ export const validateTeamsWantedCreate = [
   validateRequiredString(
     'name',
     50,
-    /^[a-zA-Z\s\-']+$/,
+    /^[a-zA-Z\s'-]+$/,
     'Name can only contain letters, spaces, hyphens, and apostrophes',
   ),
 
@@ -121,7 +121,7 @@ export const validateTeamsWantedCreate = [
 
   validatePhone('phone', true),
 
-  validateRequiredString('experience', 500, undefined, undefined, 10),
+  validateRequiredString('experience', 50),
 
   validatePositionIds('positionsPlayed'),
 
@@ -143,8 +143,8 @@ export const validateTeamsWantedCreate = [
         actualAge = age - 1;
       }
 
-      if (actualAge < 13 || actualAge > 80) {
-        throw new Error('Birth date must be between 13 and 80 years old');
+      if (actualAge < 13 || actualAge > 90) {
+        throw new Error('Birth date must be between 13 and 90 years old');
       }
 
       return true;
@@ -168,7 +168,7 @@ export const validateTeamsWantedUpdate = [
     .optional()
     .isLength({ max: 50 })
     .withMessage('Name must not exceed 50 characters')
-    .matches(/^[a-zA-Z\s\-']+$/)
+    .matches(/^[a-zA-Z\s'-]+$/)
     .withMessage('Name can only contain letters, spaces, hyphens, and apostrophes'),
 
   body('email')
@@ -197,8 +197,8 @@ export const validateTeamsWantedUpdate = [
 
   sanitizeText('experience')
     .optional()
-    .isLength({ min: 10, max: 500 })
-    .withMessage('Experience must be between 10 and 500 characters'),
+    .isLength({ max: 50 })
+    .withMessage('Experience must not exceed 50 characters'),
 
   body('positionsPlayed')
     .optional()

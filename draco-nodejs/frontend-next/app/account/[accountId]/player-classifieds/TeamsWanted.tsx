@@ -9,8 +9,7 @@ import { useClassifiedsPermissions } from '../../../../hooks/useClassifiedsPermi
 import { useAuth } from '../../../../context/AuthContext';
 import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { StreamPaginationControl } from '../../../../components/pagination';
-import TeamsWantedCardPublic from '../../../../components/player-classifieds/TeamsWantedCardPublic';
-import EmptyState from '../../../../components/common/EmptyState';
+import TeamsWantedStateManager from '../../../../components/player-classifieds/TeamsWantedStateManager';
 import { ITeamsWantedResponse } from '../../../../types/playerClassifieds';
 import { playerClassifiedService } from '../../../../services/playerClassifiedService';
 
@@ -33,6 +32,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   // Local state for teamsWanted data (bypassing hook for pagination)
   const [localTeamsWanted, setLocalTeamsWanted] = React.useState<ITeamsWantedResponse[]>([]);
   const [localLoading, setLocalLoading] = React.useState(false);
+  const [localError, setLocalError] = React.useState<string | null>(null);
   const [paginationInfo, setPaginationInfo] = React.useState<{
     total: number;
     totalPages: number;
@@ -103,20 +103,38 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
           type: 'teams',
         });
 
-        // Update the local teamsWanted data
-        if (response.data) {
-          setLocalTeamsWanted(response.data);
+        if (response.success && response.data) {
+          // Update the local teamsWanted data
+          setLocalTeamsWanted(response.data.data);
           // Update pagination info from API response
           setPaginationInfo({
-            total: response.total || 0,
-            totalPages: response.pagination?.totalPages || 0,
-            hasNext: response.pagination?.hasNext || false,
-            hasPrev: response.pagination?.hasPrev || false,
+            total: response.data.total || 0,
+            totalPages: response.data.pagination?.totalPages || 0,
+            hasNext: response.data.pagination?.hasNext || false,
+            hasPrev: response.data.pagination?.hasPrev || false,
           });
+          // Clear any previous errors on success
+          setLocalError(null);
+        } else {
+          // Handle error response
+          let errorMessage = response.error || 'Failed to load Teams Wanted ads';
+
+          // Handle specific error types
+          if (response.errorCode === 'Unauthorized') {
+            errorMessage =
+              'You are not authorized to view Teams Wanted ads for this account. Please sign in or join the account.';
+          } else if (response.errorCode === 'Forbidden') {
+            errorMessage =
+              'Access denied. You do not have permission to view Teams Wanted ads for this account.';
+          } else if (response.statusCode === 404) {
+            errorMessage = 'Account not found or Teams Wanted feature is not available.';
+          }
+
+          setLocalError(errorMessage);
         }
       } catch (error) {
-        console.error('Failed to load page data:', error);
-        // Error handling is done in the hook
+        console.error('Unexpected error in loadPageData:', error);
+        setLocalError('An unexpected error occurred while loading Teams Wanted ads');
       } finally {
         // Clear the timeout and reset loading state
         clearTimeout(loadingTimeout);
@@ -138,19 +156,38 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
           type: 'teams',
         });
 
-        if (response.data) {
-          setLocalTeamsWanted(response.data);
+        if (response.success && response.data) {
+          setLocalTeamsWanted(response.data.data);
           // Update pagination info from API response
           setPaginationInfo({
-            total: response.total || 0,
-            totalPages: response.pagination?.totalPages || 0,
-            hasNext: response.pagination?.hasNext || false,
-            hasPrev: response.pagination?.hasPrev || false,
+            total: response.data.total || 0,
+            totalPages: response.data.pagination?.totalPages || 0,
+            hasNext: response.data.pagination?.hasNext || false,
+            hasPrev: response.data.pagination?.hasNext || false,
           });
           // Data loaded successfully
+          // Clear any previous errors on success
+          setLocalError(null);
+        } else {
+          // Handle error response
+          let errorMessage = response.error || 'Failed to load Teams Wanted ads';
+
+          // Handle specific error types
+          if (response.errorCode === 'Unauthorized') {
+            errorMessage =
+              'You are not authorized to view Teams Wanted ads for this account. Please sign in or join the account.';
+          } else if (response.errorCode === 'Forbidden') {
+            errorMessage =
+              'Access denied. You do not have permission to view Teams Wanted ads for this account.';
+          } else if (response.statusCode === 404) {
+            errorMessage = 'Account not found or Teams Wanted feature is not available.';
+          }
+
+          setLocalError(errorMessage);
         }
       } catch (error) {
-        console.error('Failed to load initial data:', error);
+        console.error('Unexpected error in loadInitialData:', error);
+        setLocalError('An unexpected error occurred while loading Teams Wanted ads');
       }
     };
 
@@ -171,6 +208,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
 
   // Handle refresh
   const handleRefresh = () => {
+    setLocalError(null); // Clear any local errors
     loadPageData(pagination.page, pagination.limit);
   };
 
@@ -225,85 +263,59 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
       </Box>
 
       {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
-          {error}
+      {(localError || error) && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          onClose={() => {
+            if (localError) setLocalError(null);
+            if (error) clearError();
+          }}
+        >
+          {localError || error}
         </Alert>
       )}
 
-      {/* Content */}
-      {localTeamsWanted.length === 0 ? (
-        <EmptyState
-          title="No Teams Wanted Ads"
-          subtitle="Be the first to post a Teams Wanted ad to find a team to join."
-          minHeight={300}
-        >
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {}} // TODO: Implement create dialog
-            sx={{ mt: 2 }}
-          >
-            Post Your First Ad
-          </Button>
-        </EmptyState>
-      ) : (
-        <Box>
-          {/* Results Count and Pagination Info */}
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            {localLoading && (
-              <Box display="flex" alignItems="center" gap={1}>
-                <CircularProgress size={16} />
-                <Typography variant="caption" color="text.secondary">
-                  Loading...
-                </Typography>
-              </Box>
-            )}
-          </Box>
+      {/* Helpful message when there's an error */}
+      {(localError || error) && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            Even if you can&apos;t see all Teams Wanted ads, you can still access and manage your
+            own ad using your access code below.
+          </Typography>
+        </Alert>
+      )}
 
-          {/* Grid of Cards */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 3,
-            }}
-          >
-            {localTeamsWanted.map((classified: ITeamsWantedResponse) => (
-              <Box key={classified.id}>
-                <TeamsWantedCardPublic
-                  classified={classified}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  canEdit={canEditTeamsWantedById}
-                  canDelete={canDeleteTeamsWantedById}
-                  isAuthenticated={isAuthenticated}
-                  isAccountMember={isAccountMember}
-                />
-              </Box>
-            ))}
-          </Box>
+      {/* Content - Delegated to TeamsWantedStateManager */}
+      <TeamsWantedStateManager
+        accountId={accountId}
+        teamsWanted={localTeamsWanted}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        canEdit={canEditTeamsWantedById}
+        canDelete={canDeleteTeamsWantedById}
+        loading={localLoading}
+        error={error || undefined}
+      />
 
-          {/* Pagination Controls */}
-          {localTeamsWanted.length > 0 && (
-            <Box display="flex" justifyContent="center" mt={4}>
-              <StreamPaginationControl
-                page={pagination.page}
-                rowsPerPage={pagination.limit}
-                hasNext={paginationInfo.hasNext}
-                hasPrev={paginationInfo.hasPrev}
-                onNextPage={handleNextPage}
-                onPrevPage={handlePrevPage}
-                onRowsPerPageChange={handleLimitChange}
-                onJumpToPage={handlePageChange}
-                currentItems={localTeamsWanted.length}
-                itemLabel="Ads"
-                loading={localLoading}
-                showPageSize={true}
-                showJumpControls={false}
-              />
-            </Box>
-          )}
+      {/* Pagination Controls - Only show for authenticated account members */}
+      {isAuthenticated && isAccountMember && localTeamsWanted.length > 0 && (
+        <Box display="flex" justifyContent="center" mt={4}>
+          <StreamPaginationControl
+            page={pagination.page}
+            rowsPerPage={pagination.limit}
+            hasNext={paginationInfo.hasNext}
+            hasPrev={paginationInfo.hasPrev}
+            onNextPage={handleNextPage}
+            onPrevPage={handlePrevPage}
+            onRowsPerPageChange={handleLimitChange}
+            onJumpToPage={handlePageChange}
+            currentItems={localTeamsWanted.length}
+            itemLabel="Ads"
+            loading={localLoading}
+            showPageSize={true}
+            showJumpControls={false}
+          />
         </Box>
       )}
 
