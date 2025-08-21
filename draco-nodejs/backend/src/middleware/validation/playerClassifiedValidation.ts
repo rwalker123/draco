@@ -5,12 +5,74 @@ import { body, param, query } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
 import { handleValidationErrors } from './contactValidation.js';
 import { isValidPositionId } from '../../interfaces/playerClassifiedConstants.js';
-import {
-  sanitizeText,
-  validateRequiredString,
-  validateEmail,
-  validatePhone,
-} from './commonValidation.js';
+// Simple validation helpers to replace commonValidation.js imports
+const validateRequiredString = (fieldName: string, maxLength: number, pattern?: RegExp, patternMessage?: string, minLength?: number) => {
+  let validation = body(fieldName)
+    .exists()
+    .withMessage(`${fieldName} is required`)
+    .isString()
+    .withMessage(`${fieldName} must be a string`)
+    .trim()
+    .notEmpty()
+    .withMessage(`${fieldName} cannot be empty`)
+    .isLength({ max: maxLength, ...(minLength && { min: minLength }) })
+    .withMessage(
+      minLength
+        ? `${fieldName} must be between ${minLength} and ${maxLength} characters`
+        : `${fieldName} must not exceed ${maxLength} characters`,
+    );
+
+  if (pattern) {
+    validation = validation.custom((value: string) => {
+      if (!pattern.test(value)) {
+        throw new Error(patternMessage || `${fieldName} contains invalid characters`);
+      }
+      return true;
+    });
+  }
+
+  return validation;
+};
+
+const validateEmail = (fieldName: string = 'email', isRequired: boolean = true) => {
+  const validation = isRequired
+    ? body(fieldName).exists().withMessage(`${fieldName} is required`)
+    : body(fieldName).optional();
+
+  return validation
+    .isString()
+    .withMessage(`${fieldName} must be a string`)
+    .trim()
+    .normalizeEmail()
+    .isEmail()
+    .withMessage(`Invalid ${fieldName} format`)
+    .isLength({ max: 255 })
+    .withMessage(`${fieldName} must not exceed 255 characters`);
+};
+
+const validatePhone = (fieldName: string, isRequired: boolean = false) => {
+  const validation = isRequired
+    ? body(fieldName).exists().withMessage(`${fieldName} is required`)
+    : body(fieldName).optional();
+
+  return validation
+    .isString()
+    .withMessage(`${fieldName} must be a string`)
+    .trim()
+    .custom((value: string) => {
+      if (!value) return true;
+      if (!/^[\d\s\-()'.ext]*$/.test(value)) {
+        throw new Error(`${fieldName} can only contain digits, spaces, hyphens, parentheses, plus signs, dots, and "ext"`);
+      }
+      return true;
+    })
+    .isLength({ max: 50 })
+    .withMessage(`${fieldName} must not exceed 50 characters`);
+};
+
+const sanitizeText = (fieldName: string) => {
+  return body(fieldName).trim().escape();
+};
 
 /**
  * Validate baseball position IDs (comma-separated)
