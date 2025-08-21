@@ -32,7 +32,6 @@ import {
   Warning as WarningIcon,
   CloudOff as OfflineIcon,
   Wifi as OnlineIcon,
-  Settings as SettingsIcon,
 } from '@mui/icons-material';
 
 import { EmailComposeProvider, useEmailCompose } from './EmailComposeProvider';
@@ -41,10 +40,9 @@ import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { ComposePageSkeleton } from '../../common/SkeletonLoaders';
 import { ComposeHeader } from './ComposeHeader';
 import { ComposeActions } from './ComposeActions';
-import { ComposeSidebar } from './ComposeSidebar';
+import ComposeSidebar from './ComposeSidebar';
 import { ScheduleDialog } from './ScheduleDialog';
 import AdvancedRecipientDialog from '../recipients/AdvancedRecipientDialog';
-import { SelectedRecipientsPreview } from '../recipients/SelectedRecipientsPreview';
 import { AttachmentUploader } from '../attachments/AttachmentUploader';
 import { FileUploadComponent } from '../attachments/FileUploadComponent';
 import RichTextEditor from '../../email/RichTextEditor';
@@ -57,6 +55,7 @@ import {
 } from '../../../types/emails/recipients';
 import { EmailAttachment } from '../../../types/emails/attachments';
 import { EmailComposeRequest } from '../../../types/emails/email';
+import { processTemplate } from '../../../types/emails/compose';
 
 interface EmailComposePageProps {
   accountId: string;
@@ -393,15 +392,13 @@ const EmailComposePageInternal: React.FC<
     // Render preview content - memoized for performance
     const renderPreviewContent = useMemo(() => {
       const processedSubject =
-        state.selectedTemplate && state.templateVariables
-          ? // Process template variables in subject
-            state.subject
+        state.selectedTemplate && Object.keys(state.templateVariables).length > 0
+          ? processTemplate(state.subject, state.templateVariables)
           : state.subject;
 
       const processedContent =
-        state.selectedTemplate && state.templateVariables
-          ? // Process template variables in content
-            state.content
+        state.selectedTemplate && Object.keys(state.templateVariables).length > 0
+          ? processTemplate(state.content, state.templateVariables)
           : state.content;
 
       return (
@@ -434,12 +431,17 @@ const EmailComposePageInternal: React.FC<
                 border: 1,
                 borderColor: 'divider',
                 borderRadius: 1,
-                p: 2,
                 maxHeight: 300,
                 overflow: 'auto',
               }}
-              dangerouslySetInnerHTML={{ __html: processedContent || '<p><em>No content</em></p>' }}
-            />
+            >
+              <RichTextEditor
+                initialValue={processedContent || '<p><em>No content</em></p>'}
+                disabled={true}
+                minHeight={200}
+                placeholder=""
+              />
+            </Box>
           </Box>
 
           {state.attachments.length > 0 && (
@@ -627,76 +629,22 @@ const EmailComposePageInternal: React.FC<
                     showRecipientCount={true}
                     showValidationErrors={true}
                     compact={isMobile}
+                    onRecipientSelectionClick={handleAdvancedRecipientOpen}
+                    hasAnyRecipientData={hasAnyRecipientData}
+                    loading={loading}
                   />
 
-                  {/* Enhanced Recipient Selection */}
-                  <ErrorBoundary
-                    onError={(error) => {
-                      console.error('Recipient selection error:', error);
-                      setComponentState((prev) => ({
-                        ...prev,
-                        errors: { ...prev.errors, contacts: 'Recipient selection failed to load' },
-                      }));
-                    }}
-                    fallback={
-                      <Alert severity="error" sx={{ mb: 2 }}>
-                        <AlertTitle>Recipient Selection Unavailable</AlertTitle>
-                        Unable to load recipient selection. Please refresh the page.
-                        <Button onClick={handleRetry} size="small" sx={{ mt: 1 }}>
-                          Retry
-                        </Button>
-                      </Alert>
-                    }
-                  >
-                    {/* Recipient Selection Section */}
-                    <Box sx={{ mb: 2 }}>
-                      {/* Advanced Recipient Selection Button */}
-                      <Stack spacing={2}>
-                        <Button
-                          variant="outlined"
-                          onClick={handleAdvancedRecipientOpen}
-                          fullWidth={isMobile}
-                          disabled={!hasAnyRecipientData && !loading}
-                          startIcon={loading ? <CircularProgress size={16} /> : <SettingsIcon />}
-                          sx={{
-                            py: 1.5,
-                            fontWeight: 'medium',
-                            borderWidth: 2,
-                            '&:hover': {
-                              borderWidth: 2,
-                            },
-                          }}
-                        >
-                          {loading ? 'Loading Recipients...' : 'Select Recipients'}
-                        </Button>
-
-                        {/* Selected Recipients Preview */}
-                        <SelectedRecipientsPreview
-                          maxVisibleChips={isMobile ? 4 : 8}
-                          showCounts={true}
-                          showValidationWarnings={true}
-                          compact={isMobile}
-                        />
-                      </Stack>
-
-                      {/* Data availability warnings */}
-                      {!hasAnyRecipientData && !loading && (
-                        <Alert severity="warning" sx={{ mt: 2 }}>
-                          <AlertTitle>No Recipients Available</AlertTitle>
-                          No contacts or groups are available for selection. Please check your
-                          account setup or try refreshing.
-                          <Button
-                            onClick={handleRetry}
-                            size="small"
-                            sx={{ mt: 1 }}
-                            variant="outlined"
-                          >
-                            Refresh Data
-                          </Button>
-                        </Alert>
-                      )}
-                    </Box>
-                  </ErrorBoundary>
+                  {/* Data availability warnings - moved from recipient section */}
+                  {!hasAnyRecipientData && !loading && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                      <AlertTitle>No Recipients Available</AlertTitle>
+                      No contacts or groups are available for selection. Please check your account
+                      setup or try refreshing.
+                      <Button onClick={handleRetry} size="small" sx={{ mt: 1 }} variant="outlined">
+                        Refresh Data
+                      </Button>
+                    </Alert>
+                  )}
 
                   {/* Content Editor */}
                   <Box sx={{ flex: 1, minHeight: 300 }}>
@@ -782,10 +730,11 @@ const EmailComposePageInternal: React.FC<
               <Box sx={{ height: '100%', borderLeft: 1, borderColor: 'divider' }}>
                 <Box sx={{ height: '100%', overflow: 'auto', p: 2 }}>
                   <ComposeSidebar
+                    state={state}
+                    actions={actions}
                     accountId={accountId}
                     showTemplates={true}
-                    showRecipientSummary={false}
-                    showAttachmentSummary={true}
+                    onPreviewClick={handlePreviewOpen}
                   />
                 </Box>
               </Box>
@@ -834,11 +783,12 @@ const EmailComposePageInternal: React.FC<
                 </IconButton>
               </Stack>
               <ComposeSidebar
+                state={state}
+                actions={actions}
                 accountId={accountId}
                 showTemplates={true}
-                showRecipientSummary={false}
-                showAttachmentSummary={true}
                 compact={true}
+                onPreviewClick={handlePreviewOpen}
               />
             </Box>
           </Drawer>
@@ -920,15 +870,6 @@ const EmailComposePageInternal: React.FC<
           <DialogContent>{renderPreviewContent}</DialogContent>
           <DialogActions>
             <Button onClick={handlePreviewClose}>Close</Button>
-            <Button
-              variant="contained"
-              onClick={() => {
-                handlePreviewClose();
-                actions.sendEmail();
-              }}
-            >
-              Send Email
-            </Button>
           </DialogActions>
         </Dialog>
 
