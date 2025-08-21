@@ -18,17 +18,20 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  CalendarToday as CalendarIcon,
   Phone as PhoneIcon,
 } from '@mui/icons-material';
 import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
 import { sanitizeDisplayText } from '../../utils/sanitization';
-import { calculateAge, formatDate } from '../../utils/dateUtils';
+import { calculateAge } from '../../utils/dateUtils';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
   onEdit,
   onDelete,
+  canEdit,
+  canDelete,
+  isAuthenticated,
+  isAccountMember,
 }) => {
   // Parse positions from comma-separated string and sanitize each position
   const positionsPlayed = classified.positionsPlayed
@@ -58,21 +61,25 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
             {sanitizeDisplayText(classified.name)}
           </Typography>
           <Box display="flex" gap={1}>
-            <IconButton
-              size="small"
-              onClick={() => onEdit(classified.id.toString(), 'access-code-required')}
-              aria-label="Edit classified"
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => onDelete(classified.id.toString(), 'access-code-required')}
-              aria-label="Delete classified"
-              color="error"
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+            {canEdit(classified) && (
+              <IconButton
+                size="small"
+                onClick={() => onEdit(classified.id.toString(), 'access-code-required')}
+                aria-label="Edit classified"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            )}
+            {canDelete(classified) && (
+              <IconButton
+                size="small"
+                onClick={() => onDelete(classified.id.toString(), 'access-code-required')}
+                aria-label="Delete classified"
+                color="error"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            )}
           </Box>
         </Box>
 
@@ -104,37 +111,28 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           </Box>
         </Box>
 
-        {/* Contact Info - Only show phone for public view */}
-        <Box mb={2}>
-          <Box display="flex" alignItems="center" gap={1} mb={1}>
-            <PhoneIcon fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
-              {sanitizeDisplayText(classified.phone)}
-            </Typography>
+        {/* Contact Info - Only show phone for authenticated account members */}
+        {isAuthenticated && isAccountMember && (
+          <Box mb={2}>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <PhoneIcon fontSize="small" color="action" />
+              <Typography variant="caption" color="text.secondary">
+                {sanitizeDisplayText(classified.phone)}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        )}
 
-        {/* Age and Date Created */}
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" alignItems="center" gap={1}>
-            <PersonIcon fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
-              Age: {calculateAge(classified.birthDate)}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <CalendarIcon fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
-              {formatDate(classified.dateCreated)}
-            </Typography>
-          </Box>
+        {/* Age */}
+        <Box display="flex" alignItems="center" gap={1}>
+          <PersonIcon fontSize="small" color="action" />
+          <Typography variant="caption" color="text.secondary">
+            Age: {calculateAge(classified.birthDate)}
+          </Typography>
         </Box>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-        <Button size="small" variant="outlined">
-          Contact Player
-        </Button>
+      <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2 }}>
         <Button size="small" variant="text">
           View Details
         </Button>

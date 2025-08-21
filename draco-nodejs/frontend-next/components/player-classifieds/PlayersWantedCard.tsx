@@ -46,7 +46,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
             {sanitizeDisplayText(classified.teamEventName)}
           </Typography>
           <Box display="flex" gap={1}>
-            {canEdit && (
+            {canEdit(classified) && (
               <IconButton
                 size="small"
                 onClick={() => onEdit(classified.id.toString())}
@@ -55,7 +55,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
                 <EditIcon fontSize="small" />
               </IconButton>
             )}
-            {canDelete && (
+            {canDelete(classified) && (
               <IconButton
                 size="small"
                 onClick={() => onDelete(classified.id.toString())}

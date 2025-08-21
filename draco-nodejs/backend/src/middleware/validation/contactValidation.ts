@@ -1,16 +1,6 @@
 import { body, validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
 import { ContactInputData } from '../../interfaces/contactInterfaces.js';
-import {
-  validateNameField,
-  validateEmail,
-  validatePhone,
-  validateAddressField,
-  validateCityField,
-  validateStateField,
-  validateZipField,
-  validateDateOfBirth,
-} from './commonValidation.js';
 
 // Validation error handler middleware
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
@@ -25,18 +15,153 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
   next();
 };
 
-// Define shared optional field validations using common validation functions
+// Shared name field validation function (DRY principle)
+const validateNameField = (fieldName: string, isRequired: boolean = false) => {
+  let validation = body(fieldName).trim();
+
+  if (isRequired) {
+    validation = validation
+      .notEmpty()
+      .withMessage(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`)
+      .isLength({ min: 1, max: 100 })
+      .withMessage(
+        `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be between 1 and 100 characters`,
+      )
+      .matches(/^[a-zA-Z0-9\s\-'*]+$/)
+      .withMessage(
+        `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
+      );
+  } else {
+    validation = validation.optional().custom((value: string) => {
+      // Allow empty strings for optional fields
+      if (!value || value === '') {
+        return true;
+      }
+      // Only validate length and format if value is provided
+      if (value.length < 1 || value.length > 100) {
+        throw new Error(
+          `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be between 1 and 100 characters`,
+        );
+      }
+      if (!/^[a-zA-Z0-9\s\-'*]+$/.test(value)) {
+        throw new Error(
+          `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
+        );
+      }
+      return true;
+    });
+  }
+
+  return validation;
+};
+
+// Define shared optional field validations
 const sharedOptionalValidations = [
   validateNameField('middlename', false),
-  validateEmail('email', false),
-  validatePhone('phone1', false),
-  validatePhone('phone2', false),
-  validatePhone('phone3', false),
-  validateAddressField('streetaddress', false),
-  validateCityField('city', false),
-  validateStateField('state', false),
-  validateZipField('zip', false),
-  validateDateOfBirth('dateofbirth', false),
+
+  body('email')
+    .optional()
+    .trim()
+    .normalizeEmail()
+    .isEmail()
+    .withMessage('Invalid email format')
+    .isLength({ max: 255 })
+    .withMessage('Email must not exceed 255 characters'),
+
+  body('phone1')
+    .optional()
+    .trim()
+    .matches(/^[\d\s\-()'.ext]*$/)
+    .withMessage(
+      'Phone number can only contain digits, spaces, hyphens, parentheses, plus signs, dots, and "ext"',
+    )
+    .isLength({ max: 50 })
+    .withMessage('Phone number must not exceed 50 characters'),
+
+  body('phone2')
+    .optional()
+    .trim()
+    .matches(/^[\d\s\-()'.ext]*$/)
+    .withMessage(
+      'Phone number can only contain digits, spaces, hyphens, parentheses, plus signs, dots, and "ext"',
+    )
+    .isLength({ max: 50 })
+    .withMessage('Phone number must not exceed 50 characters'),
+
+  body('phone3')
+    .optional()
+    .trim()
+    .matches(/^[\d\s\-()'.ext]*$/)
+    .withMessage(
+      'Phone number can only contain digits, spaces, hyphens, parentheses, plus signs, dots, and "ext"',
+    )
+    .isLength({ max: 50 })
+    .withMessage('Phone number must not exceed 50 characters'),
+
+  body('streetaddress')
+    .optional()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Street address must not exceed 255 characters')
+    .matches(/^[a-zA-Z0-9\s\-.,#']*$/)
+    .withMessage('Street address contains invalid characters'),
+
+  body('city')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('City must not exceed 100 characters')
+    .matches(/^[a-zA-Z\s\-']*$/)
+    .withMessage('City can only contain letters, spaces, hyphens, and apostrophes'),
+
+  body('state')
+    .optional()
+    .trim()
+    .custom((value: string) => {
+      if (!value || value === '') {
+        return true; // Allow empty state
+      }
+      if (value.length !== 2) {
+        throw new Error('State must be a 2-letter abbreviation (e.g., CA, NY, TX)');
+      }
+      if (!/^[A-Za-z]{2}$/.test(value)) {
+        throw new Error('State must contain only letters');
+      }
+      return true;
+    })
+    .toUpperCase(),
+
+  body('zip')
+    .optional()
+    .trim()
+    .matches(/^(\d{5}(-\d{4})?)?$/)
+    .withMessage('ZIP code must be in format 12345 or 12345-6789'),
+
+  body('dateofbirth')
+    .optional()
+    .trim()
+    .custom((value: string) => {
+      // Allow empty strings - they will be converted to 1900-01-01 sentinel date by DateUtils
+      if (!value || value === '') {
+        return true;
+      }
+
+      // Validate date format if a value is provided
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date format');
+      }
+
+      // Validate date range if a valid date is provided
+      const now = new Date();
+      const minDate = new Date(now.getFullYear() - 120, now.getMonth(), now.getDate());
+      const maxDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+
+      if (date < minDate || date > maxDate) {
+        throw new Error('Date of birth must be between 1 and 120 years ago');
+      }
+      return true;
+    }),
 ];
 
 // Contact update validation rules for photo-only updates (optional fields)

@@ -90,6 +90,91 @@ components:
           type: string
           description: Last name
           example: Doe
+    IPlayersWantedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the classified
+          example: "789"
+        accountId:
+          type: string
+          description: Account ID the classified belongs to
+          example: "123"
+        dateCreated:
+          type: string
+          format: date
+          description: Date when the classified was created
+          example: "2024-01-01"
+        createdByContactId:
+          type: string
+          description: Contact ID of the creator
+          example: "456"
+        teamEventName:
+          type: string
+          maxLength: 50
+          description: Name of the team event or team
+          example: "Spring Training Team"
+        description:
+          type: string
+          description: Detailed description of what's needed
+          example: "Looking for experienced players for spring training season"
+        positionsNeeded:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position IDs needed
+          example: "1,2,3"
+        creator:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Contact ID of the creator
+              example: "456"
+            firstName:
+              type: string
+              description: First name of the creator
+              example: "John"
+            lastName:
+              type: string
+              description: Last name of the creator
+              example: "Doe"
+            email:
+              type: string
+              format: email
+              description: Email of the creator
+              example: "john@example.com"
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Account ID
+              example: "123"
+            name:
+              type: string
+              description: Account name
+              example: "Test Account"
+    IBaseballPosition:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Position ID
+          example: "1"
+        name:
+          type: string
+          description: Position name
+          example: "Pitcher"
+        category:
+          type: string
+          enum: ["pitching", "infield", "outfield", "catching", "utility"]
+          description: Position category
+          example: "pitching"
+        abbreviation:
+          type: string
+          description: Position abbreviation
+          example: "P"
   securitySchemes:
     bearerAuth:
       type: http
@@ -349,8 +434,9 @@ paths:
                 $ref: "#/components/schemas/Error"
   "/api/accounts/{accountId}/player-classifieds/players-wanted":
     post:
+      operationId: createPlayersWanted
       summary: Create a new Players Wanted classified
-      description: Allows team admins to post "Players Wanted" ads
+      description: Allows any authenticated account user to post "Players Wanted" ads
       tags:
         - PlayerClassifieds
       security:
@@ -405,6 +491,7 @@ paths:
         "429":
           description: Rate limit exceeded
     get:
+      operationId: getPlayersWanted
       summary: Get Players Wanted classifieds
       description: Retrieve Players Wanted classifieds with pagination and filtering
       tags:
@@ -475,6 +562,7 @@ paths:
                     $ref: "#/components/schemas/IClassifiedSearchFilters"
   "/api/accounts/{accountId}/player-classifieds/teams-wanted":
     post:
+      operationId: createTeamsWanted
       summary: Create a new Teams Wanted classified
       description: Allows players to post "Teams Wanted" ads (public endpoint)
       tags:
@@ -546,6 +634,7 @@ paths:
         "429":
           description: Rate limit exceeded
     get:
+      operationId: getTeamsWanted
       summary: Get Teams Wanted classifieds (public)
       description: Retrieve Teams Wanted classifieds for public viewing
       tags:
@@ -616,6 +705,7 @@ paths:
                     $ref: "#/components/schemas/IClassifiedSearchFilters"
   "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/verify":
     post:
+      operationId: verifyTeamsWantedAccess
       summary: Verify Teams Wanted classified access
       description: Verify access code to manage a Teams Wanted classified
       tags:
@@ -663,6 +753,7 @@ paths:
           description: Classified not found
   "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}":
     put:
+      operationId: updateTeamsWanted
       summary: Update Teams Wanted classified
       description: Update a Teams Wanted classified using access code
       tags:
@@ -731,6 +822,7 @@ paths:
         "404":
           description: Classified not found
     delete:
+      operationId: deleteTeamsWanted
       summary: Delete Teams Wanted classified
       description: Delete a Teams Wanted classified using access code
       tags:
@@ -777,10 +869,69 @@ paths:
         "404":
           description: Classified not found
   "/api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}":
+    put:
+      operationId: updatePlayersWanted
+      summary: Update Players Wanted classified
+      description: Update a Players Wanted classified (creator can edit own, AccountAdmin can edit any)
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teamEventName:
+                  type: string
+                  maxLength: 50
+                  description: Name of the team event or team
+                description:
+                  type: string
+                  description: Detailed description of what's needed
+                positionsNeeded:
+                  type: string
+                  maxLength: 50
+                  description: Comma-separated list of position IDs needed
+      responses:
+        "200":
+          description: Players Wanted classified updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/IPlayersWantedResponse"
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Classified not found
     delete:
+      operationId: deletePlayersWanted
       summary: Delete Players Wanted classified
-      description: Delete a Players Wanted classified (requires account management
-        permission)
+      description: Delete a Players Wanted classified (creator can delete own, AccountAdmin can delete any)
       tags:
         - PlayerClassifieds
       security:
@@ -818,6 +969,7 @@ paths:
           description: Classified not found
   "/api/accounts/{accountId}/player-classifieds/positions":
     get:
+      operationId: getBaseballPositions
       summary: Get available baseball positions
       description: Retrieve list of available baseball positions for classifieds
       tags:
@@ -845,6 +997,7 @@ paths:
                       $ref: "#/components/schemas/IBaseballPosition"
   "/api/accounts/{accountId}/player-classifieds/experience-levels":
     get:
+      operationId: getExperienceLevels
       summary: Get available experience levels
       description: Retrieve list of available experience levels for classifieds
       tags:
@@ -2487,7 +2640,95 @@ paths:
                     type: object
         "500":
           description: Failed to get statistics
+  /api/cleanup/trigger:
+    post:
+      tags:
+        - Cleanup
+      summary: Manually trigger cleanup of expired data
+      description: Triggers immediate cleanup of expired player classifieds (older than 45 days). Requires database.cleanup permission.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cleanup completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Cleanup completed successfully
+                  data:
+                    type: object
+                    properties:
+                      expiredPlayersWanted:
+                        type: number
+                        description: Number of expired Players Wanted classifieds deleted
+                        example: 5
+                      expiredTeamsWanted:
+                        type: number
+                        description: Number of expired Teams Wanted classifieds deleted
+                        example: 3
+                      totalDeleted:
+                        type: number
+                        description: Total number of expired classifieds deleted
+                        example: 8
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+        "403":
+          description: Forbidden - database.cleanup permission required
+        "500":
+          description: Internal server error during cleanup
+  /api/cleanup/status:
+    get:
+      tags:
+        - Cleanup
+      summary: Get cleanup service status
+      description: Returns the current status of the cleanup service including next scheduled cleanup time. Requires database.cleanup permission.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cleanup service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      isRunning:
+                        type: boolean
+                        description: Whether the cleanup service is currently running
+                        example: true
+                      nextCleanup:
+                        type: string
+                        format: date-time
+                        description: Next scheduled cleanup time
+                        example: "2024-12-20T02:00:00.000Z"
+                      lastCleanup:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        description: Last cleanup execution time (if available)
+                        example: "2024-12-19T02:00:00.000Z"
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+        "403":
+          description: Forbidden - database.cleanup permission required
+        "500":
+          description: Internal server error
 tags:
+  - name: Cleanup
+    description: Data cleanup and maintenance endpoints
   - name: Workouts
     description: Account workouts and registrations
   - name: TeamManagers

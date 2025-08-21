@@ -4,6 +4,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useClassifiedsPermissions } from '../useClassifiedsPermissions';
+import { IPlayersWantedResponse, ITeamsWantedResponse } from '../../types/playerClassifieds';
 import {
   createMockRoleContext,
   createMockAuthContext,
@@ -29,6 +30,12 @@ vi.mock('../../context/AccountContext', () => ({
 
 vi.mock('../../context/RoleContext', () => ({
   useRole: () => mockUseRole(),
+}));
+
+vi.mock('../../services/playerClassifiedService', () => ({
+  playerClassifiedService: {
+    verifyTeamsWantedAccess: vi.fn(),
+  },
 }));
 
 // ============================================================================
@@ -58,14 +65,16 @@ describe('useClassifiedsPermissions', () => {
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
       expect(result.current).toHaveProperty('canCreatePlayersWanted');
-      expect(result.current).toHaveProperty('canEditPlayersWanted');
-      expect(result.current).toHaveProperty('canDeletePlayersWanted');
       expect(result.current).toHaveProperty('canCreateTeamsWanted');
       expect(result.current).toHaveProperty('canEditTeamsWanted');
       expect(result.current).toHaveProperty('canDeleteTeamsWanted');
       expect(result.current).toHaveProperty('canSearchClassifieds');
       expect(result.current).toHaveProperty('canViewClassifieds');
       expect(result.current).toHaveProperty('canModerateClassifieds');
+      expect(result.current).toHaveProperty('canEditPlayersWantedById');
+      expect(result.current).toHaveProperty('canDeletePlayersWantedById');
+      expect(result.current).toHaveProperty('canEditTeamsWantedById');
+      expect(result.current).toHaveProperty('canDeleteTeamsWantedById');
     });
 
     it('should handle missing account ID', () => {
@@ -84,9 +93,8 @@ describe('useClassifiedsPermissions', () => {
 
       // Teams Wanted permissions are always true (public)
       // Search and view permissions are true when userRoles !== null
-      expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
+      // Any authenticated user can create Players Wanted
+      expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
       expect(result.current.canEditTeamsWanted).toBe(true); // Always true
       expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
@@ -113,8 +121,6 @@ describe('useClassifiedsPermissions', () => {
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
       expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true);
       expect(result.current.canEditTeamsWanted).toBe(true);
       expect(result.current.canDeleteTeamsWanted).toBe(true);
@@ -134,10 +140,8 @@ describe('useClassifiedsPermissions', () => {
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      // ContactAdmin is not included in Players Wanted permissions (only TeamAdmin, AccountAdmin, SuperAdmin)
-      expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
+      // Any authenticated user can create Players Wanted
+      expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true);
       expect(result.current.canEditTeamsWanted).toBe(true);
       expect(result.current.canDeleteTeamsWanted).toBe(true);
@@ -158,8 +162,6 @@ describe('useClassifiedsPermissions', () => {
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
       expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true);
       expect(result.current.canEditTeamsWanted).toBe(true);
       expect(result.current.canDeleteTeamsWanted).toBe(true);
@@ -179,9 +181,8 @@ describe('useClassifiedsPermissions', () => {
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
+      // Any authenticated user can create Players Wanted
+      expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true);
       expect(result.current.canEditTeamsWanted).toBe(true);
       expect(result.current.canDeleteTeamsWanted).toBe(true);
@@ -201,9 +202,8 @@ describe('useClassifiedsPermissions', () => {
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
+      // Any authenticated user can create Players Wanted
+      expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true);
       expect(result.current.canEditTeamsWanted).toBe(true);
       expect(result.current.canDeleteTeamsWanted).toBe(true);
@@ -231,8 +231,6 @@ describe('useClassifiedsPermissions', () => {
 
       // TeamAdmin should have most permissions but not moderation
       expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
       expect(result.current.canModerateClassifieds).toBe(false);
     });
 
@@ -249,8 +247,6 @@ describe('useClassifiedsPermissions', () => {
 
       // Should have highest level of permissions from all roles
       expect(result.current.canCreatePlayersWanted).toBe(true); // From TeamAdmin
-      expect(result.current.canEditPlayersWanted).toBe(true); // From TeamAdmin
-      expect(result.current.canDeletePlayersWanted).toBe(true); // From TeamAdmin
       expect(result.current.canCreateTeamsWanted).toBe(true); // From both
       expect(result.current.canEditTeamsWanted).toBe(true); // From both
       expect(result.current.canDeleteTeamsWanted).toBe(true); // From both
@@ -270,8 +266,6 @@ describe('useClassifiedsPermissions', () => {
 
       // AccountAdmin should have all permissions
       expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true);
       expect(result.current.canEditTeamsWanted).toBe(true);
       expect(result.current.canDeleteTeamsWanted).toBe(true);
@@ -297,8 +291,6 @@ describe('useClassifiedsPermissions', () => {
       // Teams Wanted permissions are always true (public)
       // Search and view permissions are false when userRoles === null
       expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
       expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
       expect(result.current.canEditTeamsWanted).toBe(true); // Always true
       expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
@@ -318,8 +310,6 @@ describe('useClassifiedsPermissions', () => {
       // Teams Wanted permissions are always true (public)
       // Search and view permissions are false when userRoles === undefined
       expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
       expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
       expect(result.current.canEditTeamsWanted).toBe(true); // Always true
       expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
@@ -341,9 +331,8 @@ describe('useClassifiedsPermissions', () => {
 
       // Teams Wanted permissions are always true (public)
       // Search and view permissions are true when userRoles !== null (even if empty)
-      expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
+      // Any authenticated user can create Players Wanted
+      expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canCreateTeamsWanted).toBe(true); // Always true
       expect(result.current.canEditTeamsWanted).toBe(true); // Always true
       expect(result.current.canDeleteTeamsWanted).toBe(true); // Always true
@@ -362,8 +351,6 @@ describe('useClassifiedsPermissions', () => {
 
       // Should not throw errors and return false for all permissions
       expect(result.current.canCreatePlayersWanted).toBe(false);
-      expect(result.current.canEditPlayersWanted).toBe(false);
-      expect(result.current.canDeletePlayersWanted).toBe(false);
     });
 
     it('should handle missing account context', () => {
@@ -379,8 +366,6 @@ describe('useClassifiedsPermissions', () => {
 
       // Should still work with valid role context
       expect(result.current.canCreatePlayersWanted).toBe(true);
-      expect(result.current.canEditPlayersWanted).toBe(true);
-      expect(result.current.canDeletePlayersWanted).toBe(true);
     });
   });
 
@@ -400,10 +385,28 @@ describe('useClassifiedsPermissions', () => {
 
       const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
 
-      // Verify all permission properties are boolean
-      Object.values(result.current).forEach((value) => {
-        expect(typeof value).toBe('boolean');
-      });
+      // Verify basic permission properties are boolean
+      expect(typeof result.current.canCreatePlayersWanted).toBe('boolean');
+      expect(typeof result.current.canCreateTeamsWanted).toBe('boolean');
+      expect(typeof result.current.canEditTeamsWanted).toBe('boolean');
+      expect(typeof result.current.canDeleteTeamsWanted).toBe('boolean');
+      expect(typeof result.current.canSearchClassifieds).toBe('boolean');
+      expect(typeof result.current.canViewClassifieds).toBe('boolean');
+      expect(typeof result.current.canModerateClassifieds).toBe('boolean');
+
+      // Verify enhanced permission checking methods are functions
+      expect(typeof result.current.canEditPlayersWantedById).toBe('function');
+      expect(typeof result.current.canDeletePlayersWantedById).toBe('function');
+      expect(typeof result.current.canEditTeamsWantedById).toBe('function');
+      expect(typeof result.current.canDeleteTeamsWantedById).toBe('function');
+
+      // Verify access code verification methods are functions
+      expect(typeof result.current.verifyAccessCode).toBe('function');
+      expect(typeof result.current.clearVerifiedAccessCode).toBe('function');
+      expect(typeof result.current.clearAllVerifiedAccessCodes).toBe('function');
+
+      // Verify verifiedAccessCodes is a Set
+      expect(result.current.verifiedAccessCodes).toBeInstanceOf(Set);
 
       // Verify specific permissions based on role
       expect(result.current.canCreatePlayersWanted).toBe(true);
@@ -439,6 +442,148 @@ describe('useClassifiedsPermissions', () => {
       // Should now have moderation permissions
       expect(result.current.canCreatePlayersWanted).toBe(true);
       expect(result.current.canModerateClassifieds).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // ENHANCED PERMISSION TESTS
+  // ============================================================================
+
+  describe('Enhanced Permission Tests', () => {
+    it('should check ownership for Players Wanted permissions', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
+      const mockUser = { id: 'user-123' };
+      mockUseAuth.mockReturnValue({ user: mockUser });
+
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+
+      const mockClassified = {
+        id: 'classified-1',
+        accountId: 'account-123',
+        dateCreated: '2024-01-01',
+        createdByContactId: 'contact-123',
+        teamEventName: 'Test Event',
+        description: 'Test Description',
+        positionsNeeded: 'Pitcher',
+        creator: { id: 'user-123', firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+        account: { id: 'account-123', name: 'Test Account' },
+      } as IPlayersWantedResponse;
+
+      const mockOtherClassified = {
+        id: 'classified-2',
+        accountId: 'account-123',
+        dateCreated: '2024-01-01',
+        createdByContactId: 'contact-456',
+        teamEventName: 'Test Event 2',
+        description: 'Test Description 2',
+        positionsNeeded: 'Catcher',
+        creator: {
+          id: 'other-user',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane@example.com',
+        },
+        account: { id: 'account-123', name: 'Test Account' },
+      } as IPlayersWantedResponse;
+
+      // User should be able to edit their own classified
+      expect(result.current.canEditPlayersWantedById(mockClassified)).toBe(true);
+
+      // User should not be able to edit other's classified (TeamAdmin role no longer grants this permission)
+      expect(result.current.canEditPlayersWantedById(mockOtherClassified)).toBe(false);
+    });
+
+    it('should check admin override for Teams Wanted permissions', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['AccountAdmin'],
+          contactRoles: [],
+        },
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+
+      const mockClassified = {
+        id: 'classified-1',
+        accountId: 'account-123',
+        dateCreated: '2024-01-01',
+        name: 'Test Team',
+        phone: '555-1234',
+        experience: 'Intermediate',
+        positionsPlayed: 'Pitcher',
+        birthDate: '1990-01-01',
+        account: { id: 'account-123', name: 'Test Account' },
+      } as ITeamsWantedResponse;
+
+      // AccountAdmin should be able to edit any Teams Wanted
+      expect(result.current.canEditTeamsWantedById(mockClassified)).toBe(true);
+      expect(result.current.canDeleteTeamsWantedById(mockClassified)).toBe(true);
+    });
+
+    it('should handle access code verification for Teams Wanted', async () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+
+      const mockClassified = {
+        id: 'classified-1',
+        accountId: 'account-123',
+        dateCreated: '2024-01-01',
+        name: 'Test Team',
+        phone: '555-1234',
+        experience: 'Intermediate',
+        positionsPlayed: 'Pitcher',
+        birthDate: '1990-01-01',
+        account: { id: 'account-123', name: 'Test Account' },
+      } as ITeamsWantedResponse;
+
+      // Initially should not have access (no verified access code)
+      expect(result.current.canEditTeamsWantedById(mockClassified)).toBe(false);
+      expect(result.current.canDeleteTeamsWantedById(mockClassified)).toBe(false);
+
+      // Test that the verifyAccessCode function exists and is callable
+      expect(typeof result.current.verifyAccessCode).toBe('function');
+      expect(typeof result.current.clearVerifiedAccessCode).toBe('function');
+      expect(typeof result.current.clearAllVerifiedAccessCodes).toBe('function');
+    });
+
+    it('should clear verified access codes', () => {
+      const mockRoleContext = createMockRoleContext({
+        userRoles: {
+          globalRoles: ['TeamAdmin'],
+          contactRoles: [],
+        },
+      });
+      mockUseRole.mockReturnValue(mockRoleContext);
+
+      const { result } = renderHook(() => useClassifiedsPermissions(defaultProps));
+
+      // Initially empty
+      expect(result.current.verifiedAccessCodes.size).toBe(0);
+
+      // We can't directly modify the Set from the hook, so we'll test the clear functions
+
+      // Test clear specific code
+      result.current.clearVerifiedAccessCode('classified-1');
+      expect(result.current.verifiedAccessCodes.size).toBe(0); // Still empty since we didn't add any
+
+      // Test clear all codes
+      result.current.clearAllVerifiedAccessCodes();
+      expect(result.current.verifiedAccessCodes.size).toBe(0);
     });
   });
 });

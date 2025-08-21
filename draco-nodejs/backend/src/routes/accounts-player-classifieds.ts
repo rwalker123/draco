@@ -7,10 +7,12 @@ import { teamsWantedRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../lib/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
+import { ValidationError } from '../utils/customErrors.js';
 import {
   IPlayersWantedCreateRequest,
   ITeamsWantedCreateRequest,
   IClassifiedSearchParams,
+  IPlayersWantedUpdateRequest,
 } from '../interfaces/playerClassifiedInterfaces.js';
 import {
   validatePlayersWantedCreate,
@@ -34,7 +36,11 @@ const extractClassifiedParams = (params: Record<string, string | undefined>) => 
     throw new Error('Missing required parameter: classifiedId');
   }
 
-  return { accountId, classifiedId: BigInt(classifiedId) };
+  try {
+    return { accountId, classifiedId: BigInt(classifiedId) };
+  } catch (_error) {
+    throw new ValidationError(`Invalid classified ID format: ${classifiedId}`);
+  }
 };
 
 // Helper function to validate sortBy parameter
@@ -49,63 +55,8 @@ const validateSortBy = (sortBy: string): 'dateCreated' | 'relevance' => {
 };
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/players-wanted:
- *   post:
- *     summary: Create a new Players Wanted classified
- *     description: Allows team admins to post "Players Wanted" ads
- *     tags: [PlayerClassifieds]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - teamEventName
- *               - description
- *               - positionsNeeded
- *             properties:
- *               teamEventName:
- *                 type: string
- *                 maxLength: 50
- *                 description: Name of the team event or team
- *               description:
- *                 type: string
- *                 description: Detailed description of what's needed
- *               positionsNeeded:
- *                 type: string
- *                 maxLength: 50
- *                 description: Comma-separated list of position IDs needed
- *     responses:
- *       201:
- *         description: Players Wanted classified created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/IPlayersWantedResponse'
- *       400:
- *         description: Validation error or invalid input
- *       401:
- *         description: Unauthorized - authentication required
- *       403:
- *         description: Forbidden - insufficient permissions
- *       429:
- *         description: Rate limit exceeded
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/createPlayersWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L434 OpenAPI Source}
  */
 router.post(
   '/players-wanted',
@@ -130,80 +81,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/teams-wanted:
- *   post:
- *     summary: Create a new Teams Wanted classified
- *     description: Allows players to post "Teams Wanted" ads (public endpoint)
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - phone
- *               - experience
- *               - positionsPlayed
- *               - birthDate
-
- *             properties:
- *               name:
- *                 type: string
- *                 maxLength: 50
- *                 description: Player's name
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Player's email address
- *               phone:
- *                 type: string
- *                 description: Player's phone number
- *               experience:
- *                 type: string
- *                 description: Description of player's experience
- *               positionsPlayed:
- *                 type: string
- *                 maxLength: 50
- *                 description: Comma-separated list of position IDs played
- *               birthDate:
- *                 type: string
- *                 format: date
- *                 description: Player's birth date (must be 13-80 years old)
-
- *               expirationDate:
- *                 type: string
- *                 format: date
- *                 description: Optional expiration date (max 120 days)
- *     responses:
- *       201:
- *         description: Teams Wanted classified created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/ITeamsWantedOwnerResponse'
- *                 message:
- *                   type: string
- *                   description: Instructions for accessing the classified
- *       400:
- *         description: Validation error or invalid input
- *       429:
- *         description: Rate limit exceeded
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/createTeamsWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L560 OpenAPI Source}
  */
 router.post(
   '/teams-wanted',
@@ -227,73 +106,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/players-wanted:
- *   get:
- *     summary: Get Players Wanted classifieds
- *     description: Retrieve Players Wanted classifieds with pagination and filtering
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *         description: Page number for pagination
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *           default: 20
- *         description: Number of items per page
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *           enum: [dateCreated]
- *           default: dateCreated
- *         description: Field to sort by
- *       - in: query
- *         name: sortOrder
- *         schema:
- *           type: string
- *           enum: [asc, desc]
- *           default: desc
- *         description: Sort order
- *       - in: query
- *         name: searchQuery
- *         schema:
- *           type: string
- *         description: Search query for filtering
- *     responses:
- *       200:
- *         description: Players Wanted classifieds retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/IPlayersWantedResponse'
- *                 total:
- *                   type: integer
- *                 pagination:
- *                   $ref: '#/components/schemas/IPaginationMeta'
- *                 filters:
- *                   $ref: '#/components/schemas/IClassifiedSearchFilters'
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getPlayersWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L434 OpenAPI Source}
  */
 router.get(
   '/players-wanted',
@@ -322,76 +136,13 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/teams-wanted:
- *   get:
- *     summary: Get Teams Wanted classifieds (public)
- *     description: Retrieve Teams Wanted classifieds for public viewing
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *         description: Page number for pagination
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *           default: 20
- *         description: Number of items per page
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *           enum: [dateCreated]
- *           default: dateCreated
- *         description: Field to sort by
- *       - in: query
- *         name: sortOrder
- *         schema:
- *           type: string
- *           enum: [asc, desc]
- *           default: desc
- *         description: Sort order
- *       - in: query
- *         name: searchQuery
- *         schema:
- *           type: string
- *         description: Search query for filtering
- *     responses:
- *       200:
- *         description: Teams Wanted classifieds retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/ITeamsWantedResponse'
- *                 total:
- *                   type: integer
- *                 pagination:
- *                   $ref: '#/components/schemas/IPaginationMeta'
- *                 filters:
- *                   $ref: '#/components/schemas/IClassifiedSearchFilters'
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getTeamsWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L434 OpenAPI Source}
  */
 router.get(
   '/teams-wanted',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   validateSearchParams,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -417,53 +168,8 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/verify:
- *   post:
- *     summary: Verify Teams Wanted classified access
- *     description: Verify access code to manage a Teams Wanted classified
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *       - in: path
- *         name: classifiedId
- *         required: true
- *         schema:
- *           type: string
- *         description: Classified ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - accessCode
- *             properties:
- *               accessCode:
- *                 type: string
- *                 description: Access code received via email
- *     responses:
- *       200:
- *         description: Access verified successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/ITeamsWantedOwnerResponse'
- *       400:
- *         description: Invalid access code
- *       404:
- *         description: Classified not found
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/verifyTeamsWantedAccess API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L701 OpenAPI Source}
  */
 router.post(
   '/teams-wanted/:classifiedId/verify',
@@ -487,75 +193,49 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}:
- *   put:
- *     summary: Update Teams Wanted classified
- *     description: Update a Teams Wanted classified using access code
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *       - in: path
- *         name: classifiedId
- *         required: true
- *         schema:
- *           type: string
- *         description: Classified ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - accessCode
- *             properties:
- *               accessCode:
- *                 type: string
- *                 description: Access code for verification
- *               name:
- *                 type: string
- *                 maxLength: 50
- *                 description: Player's name
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Player's email address
- *               phone:
- *                 type: string
- *                 description: Player's phone number
- *               experience:
- *                 type: string
- *                 description: Description of player's experience
- *               positionsPlayed:
- *                 type: string
- *                 maxLength: 50
- *                 description: Comma-separated list of position IDs played
- *               birthDate:
- *                 type: string
- *                 format: date
- *                 description: Player's birth date
- *     responses:
- *       200:
- *         description: Teams Wanted classified updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/ITeamsWantedOwnerResponse'
- *       400:
- *         description: Validation error or invalid access code
- *       404:
- *         description: Classified not found
+ * Get Teams Wanted data for users with valid access codes (unauthenticated, rate-limited)
+ * This endpoint allows users to view their own Teams Wanted ad using an access code
+ */
+router.post(
+  '/teams-wanted/access-code',
+  teamsWantedRateLimit,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { accessCode } = req.body;
+
+    if (!accessCode) {
+      res.status(400).json({
+        success: false,
+        message: 'Access code is required',
+      });
+      return;
+    }
+
+    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+
+    try {
+      // Find the Teams Wanted entry by access code
+      const result = await playerClassifiedService.findTeamsWantedByAccessCode(
+        accountId,
+        accessCode,
+      );
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (_error) {
+      res.status(404).json({
+        success: false,
+        message: 'Invalid access code or Teams Wanted ad not found',
+      });
+    }
+  }),
+);
+
+/**
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/updateTeamsWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L748 OpenAPI Source}
  */
 router.put(
   '/teams-wanted/:classifiedId',
@@ -580,53 +260,52 @@ router.put(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}:
- *   delete:
- *     summary: Delete Teams Wanted classified
- *     description: Delete a Teams Wanted classified using access code
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *       - in: path
- *         name: classifiedId
- *         required: true
- *         schema:
- *           type: string
- *         description: Classified ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - accessCode
- *             properties:
- *               accessCode:
- *                 type: string
- *                 description: Access code for verification
- *     responses:
- *       200:
- *         description: Teams Wanted classified deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *       400:
- *         description: Invalid access code
- *       404:
- *         description: Classified not found
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/updatePlayersWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L863 OpenAPI Source}
+ */
+router.put(
+  '/players-wanted/:classifiedId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, classifiedId } = extractClassifiedParams(req.params);
+    const contactId = BigInt(req.user!.id);
+
+    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+
+    // Check if user can edit this classified (creator or AccountAdmin)
+    const canEdit = await playerClassifiedService.canEditPlayersWanted(
+      classifiedId,
+      contactId,
+      accountId,
+    );
+
+    if (!canEdit) {
+      res.status(403).json({
+        success: false,
+        message: 'Forbidden - insufficient permissions to edit this classified',
+      });
+      return;
+    }
+
+    const updateData: IPlayersWantedUpdateRequest = req.body;
+    const result = await playerClassifiedService.updatePlayersWanted(
+      classifiedId,
+      accountId,
+      contactId,
+      updateData,
+    );
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  }),
+);
+
+/**
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/deleteTeamsWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L748 OpenAPI Source}
  */
 router.delete(
   '/teams-wanted/:classifiedId',
@@ -646,45 +325,8 @@ router.delete(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}:
- *   delete:
- *     summary: Delete Players Wanted classified
- *     description: Delete a Players Wanted classified (requires account management permission)
- *     tags: [PlayerClassifieds]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *       - in: path
- *         name: classifiedId
- *         required: true
- *         schema:
- *           type: string
- *         description: Classified ID
- *     responses:
- *       200:
- *         description: Players Wanted classified deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *       401:
- *         description: Unauthorized - authentication required
- *       403:
- *         description: Forbidden - insufficient permissions
- *       404:
- *         description: Classified not found
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/deletePlayersWanted API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L863 OpenAPI Source}
  */
 router.delete(
   '/players-wanted/:classifiedId',
@@ -697,6 +339,22 @@ router.delete(
     const contactId = BigInt(req.user!.id);
 
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+
+    // Check if user can delete this classified (creator or AccountAdmin)
+    const canDelete = await playerClassifiedService.canDeletePlayersWanted(
+      classifiedId,
+      contactId,
+      accountId,
+    );
+
+    if (!canDelete) {
+      res.status(403).json({
+        success: false,
+        message: 'Forbidden - insufficient permissions to delete this classified',
+      });
+      return;
+    }
+
     await playerClassifiedService.deletePlayersWanted(classifiedId, accountId, contactId);
 
     res.json({
@@ -707,33 +365,8 @@ router.delete(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/positions:
- *   get:
- *     summary: Get available baseball positions
- *     description: Retrieve list of available baseball positions for classifieds
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     responses:
- *       200:
- *         description: Baseball positions retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/IBaseballPosition'
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getBaseballPositions API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L960 OpenAPI Source}
  */
 router.get(
   '/positions',
@@ -748,33 +381,8 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/player-classifieds/experience-levels:
- *   get:
- *     summary: Get available experience levels
- *     description: Retrieve list of available experience levels for classifieds
- *     tags: [PlayerClassifieds]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     responses:
- *       200:
- *         description: Experience levels retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/IExperienceLevel'
+ * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getExperienceLevels API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L987 OpenAPI Source}
  */
 router.get(
   '/experience-levels',

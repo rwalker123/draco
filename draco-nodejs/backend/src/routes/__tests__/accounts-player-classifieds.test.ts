@@ -177,8 +177,11 @@ describe('PlayerClassifieds Routes', () => {
       getTeamsWanted: vi.fn(),
       verifyTeamsWantedAccess: vi.fn(),
       updateTeamsWanted: vi.fn(),
+      updatePlayersWanted: vi.fn(),
       deleteTeamsWanted: vi.fn(),
       deletePlayersWanted: vi.fn(),
+      canEditPlayersWanted: vi.fn(),
+      canDeletePlayersWanted: vi.fn(),
     };
 
     // Mock ServiceFactory methods
@@ -602,6 +605,70 @@ describe('PlayerClassifieds Routes', () => {
     });
   });
 
+  describe('PUT /players-wanted/:classifiedId', () => {
+    const updateData = {
+      teamEventName: 'Updated Team Name',
+      description: 'Updated description for the team',
+      positionsNeeded: '1,2,3,4',
+    };
+
+    it('should update Players Wanted classified successfully', async () => {
+      const mockResponse = {
+        id: '789',
+        accountId: '123',
+        teamEventName: 'Updated Team Name',
+        description: 'Updated description for the team',
+        positionsNeeded: '1,2,3,4',
+        dateCreated: '2024-01-01T00:00:00.000Z',
+        creator: {
+          id: '456',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com',
+        },
+        account: {
+          id: '123',
+          name: 'Test Account',
+        },
+      };
+
+      mockPlayerClassifiedService.canEditPlayersWanted.mockResolvedValue(true);
+      mockPlayerClassifiedService.updatePlayersWanted.mockResolvedValue(mockResponse);
+
+      const response = await request(app)
+        .put('/api/accounts/123/player-classifieds/players-wanted/789')
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toEqual(mockResponse);
+      expect(mockPlayerClassifiedService.canEditPlayersWanted).toHaveBeenCalledWith(
+        BigInt(789),
+        BigInt(456),
+        BigInt(123),
+      );
+      expect(mockPlayerClassifiedService.updatePlayersWanted).toHaveBeenCalledWith(
+        BigInt(789),
+        BigInt(123),
+        BigInt(456),
+        updateData,
+      );
+    });
+
+    it('should handle insufficient permissions gracefully', async () => {
+      mockPlayerClassifiedService.canEditPlayersWanted.mockResolvedValue(false);
+
+      const response = await request(app)
+        .put('/api/accounts/123/player-classifieds/players-wanted/789')
+        .send(updateData)
+        .expect(403);
+
+      expect(response.body.message).toBe(
+        'Forbidden - insufficient permissions to edit this classified',
+      );
+    });
+  });
+
   describe('DELETE /teams-wanted/:classifiedId', () => {
     it('should delete Teams Wanted classified successfully', async () => {
       mockPlayerClassifiedService.deleteTeamsWanted.mockResolvedValue(undefined);
@@ -636,6 +703,7 @@ describe('PlayerClassifieds Routes', () => {
 
   describe('DELETE /players-wanted/:classifiedId', () => {
     it('should delete Players Wanted classified successfully', async () => {
+      mockPlayerClassifiedService.canDeletePlayersWanted.mockResolvedValue(true);
       mockPlayerClassifiedService.deletePlayersWanted.mockResolvedValue(undefined);
 
       const response = await request(app)
@@ -644,6 +712,11 @@ describe('PlayerClassifieds Routes', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Players Wanted classified deleted successfully');
+      expect(mockPlayerClassifiedService.canDeletePlayersWanted).toHaveBeenCalledWith(
+        BigInt(789),
+        BigInt(456),
+        BigInt(123),
+      );
       expect(mockPlayerClassifiedService.deletePlayersWanted).toHaveBeenCalledWith(
         BigInt(789),
         BigInt(123),
@@ -652,15 +725,15 @@ describe('PlayerClassifieds Routes', () => {
     });
 
     it('should handle deletion errors gracefully', async () => {
-      mockPlayerClassifiedService.deletePlayersWanted.mockRejectedValue(
-        new NotFoundError('Classified not found'),
-      );
+      mockPlayerClassifiedService.canDeletePlayersWanted.mockResolvedValue(false);
 
       const response = await request(app)
         .delete('/api/accounts/123/player-classifieds/players-wanted/999')
-        .expect(404);
+        .expect(403);
 
-      expect(response.body.message).toBe('Classified not found');
+      expect(response.body.message).toBe(
+        'Forbidden - insufficient permissions to delete this classified',
+      );
     });
   });
 

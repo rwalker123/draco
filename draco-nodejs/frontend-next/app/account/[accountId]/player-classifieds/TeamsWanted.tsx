@@ -5,6 +5,9 @@ import { Box, Typography, Button, Alert, CircularProgress, Stack } from '@mui/ma
 import AddIcon from '@mui/icons-material/Add';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPagination } from '../../../../hooks/useClassifiedsPagination';
+import { useClassifiedsPermissions } from '../../../../hooks/useClassifiedsPermissions';
+import { useAuth } from '../../../../context/AuthContext';
+import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { StreamPaginationControl } from '../../../../components/pagination';
 import TeamsWantedCardPublic from '../../../../components/player-classifieds/TeamsWantedCardPublic';
 import EmptyState from '../../../../components/common/EmptyState';
@@ -16,6 +19,17 @@ interface TeamsWantedProps {
 }
 
 const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
+  // Get permission functions for edit/delete controls
+  const { canEditTeamsWantedById, canDeleteTeamsWantedById } = useClassifiedsPermissions({
+    accountId,
+  });
+
+  // Get authentication and account membership status
+  const { user } = useAuth();
+  const { isMember } = useAccountMembership(accountId);
+  const isAuthenticated = !!user;
+  const isAccountMember = !!isMember;
+
   // Local state for teamsWanted data (bypassing hook for pagination)
   const [localTeamsWanted, setLocalTeamsWanted] = React.useState<ITeamsWantedResponse[]>([]);
   const [localLoading, setLocalLoading] = React.useState(false);
@@ -144,13 +158,15 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   }, [accountId]);
 
   // Handle edit (requires access code)
-  const handleEdit = (_id: string, _accessCodeRequired: string) => {
+  const handleEdit = (id: string, accessCodeRequired: string) => {
     // TODO: Open edit dialog with access code input
+    console.log('Edit requested for:', id, 'with access code:', accessCodeRequired);
   };
 
   // Handle delete (requires access code)
-  const handleDelete = async (_id: string, _accessCodeRequired: string) => {
+  const handleDelete = async (id: string, accessCodeRequired: string) => {
     // TODO: Implement access code validation before deletion
+    console.log('Delete requested for:', id, 'with access code:', accessCodeRequired);
   };
 
   // Handle refresh
@@ -259,6 +275,10 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
                   classified={classified}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  canEdit={canEditTeamsWantedById}
+                  canDelete={canDeleteTeamsWantedById}
+                  isAuthenticated={isAuthenticated}
+                  isAccountMember={isAccountMember}
                 />
               </Box>
             ))}

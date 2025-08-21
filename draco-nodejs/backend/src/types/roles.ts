@@ -64,7 +64,7 @@ export const ROLE_HIERARCHY: Record<string, string[]> = {
 export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   [RoleType.ADMINISTRATOR]: {
     roleId: RoleType.ADMINISTRATOR,
-    permissions: ['*'], // All permissions
+    permissions: ['*'], // All permissions including database.cleanup
     context: 'global',
   },
   [RoleType.ACCOUNT_ADMIN]: {
@@ -81,6 +81,9 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'photo.manage',
       'workout.manage',
       'player-classified.manage',
+      'player-classified.create-players-wanted',
+      'player-classified.edit-players-wanted',
+      'player-classified.delete-players-wanted',
     ],
     context: 'account',
   },
@@ -97,6 +100,8 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'league.players.manage',
       'league.schedule.manage',
       'player-classified.create-players-wanted',
+      'player-classified.edit-players-wanted',
+      'player-classified.delete-players-wanted',
     ],
     context: 'league',
   },
@@ -107,6 +112,8 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'team.players.manage',
       'team.stats.manage',
       'player-classified.create-players-wanted',
+      'player-classified.edit-players-wanted',
+      'player-classified.delete-players-wanted',
     ],
     context: 'team',
   },
