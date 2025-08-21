@@ -33,7 +33,7 @@ import {
   $createTextNode,
   $createParagraphNode,
 } from 'lexical';
-import { $generateHtmlFromNodes } from '@lexical/html';
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
 import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
@@ -282,6 +282,55 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   );
 }
 
+// Plugin to handle one-time HTML import during editor initialization
+// This preserves formatting without causing cursor jumping during live editing
+function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!initialHtml || initialHtml.trim() === '') return;
+
+    // Only run once on mount - parse HTML and set editor state
+    editor.update(() => {
+      try {
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(initialHtml, 'text/html');
+        const nodes = $generateNodesFromDOM(editor, dom);
+
+        const root = $getRoot();
+        root.clear();
+
+        if (nodes.length > 0) {
+          // Insert the parsed nodes which preserve all formatting
+          $insertNodes(nodes);
+        } else {
+          // Fallback: create empty paragraph if parsing produces no nodes
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+        }
+      } catch (error) {
+        console.warn('Failed to parse HTML content, falling back to plain text:', error);
+
+        // Fallback: extract plain text and create basic paragraph
+        const textContent = initialHtml.replace(/<[^>]*>/g, '').trim();
+        const root = $getRoot();
+        root.clear();
+
+        if (textContent) {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode(textContent));
+          root.append(paragraph);
+        } else {
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+        }
+      }
+    });
+  }, [editor, initialHtml]);
+
+  return null;
+}
+
 // Plugin to handle content changes using registerTextContentListener
 // This avoids cursor jumping issues that occur with registerUpdateListener
 function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }) {
@@ -328,83 +377,12 @@ const theme = {
   },
 };
 
-// Function to create initial editor state from HTML
-function createInitialEditorState(html?: string): (() => void) | null {
-  if (!html || html.trim() === '') {
-    return null; // Use default empty state
-  }
-
-  // Return a function that creates the editor state using Lexical's HTML parsing
-  return () => {
-    const root = $getRoot();
-    root.clear();
-
-    try {
-      // Use Lexical's official HTML parsing to preserve formatting
-      const parser = new DOMParser();
-      const dom = parser.parseFromString(html, 'text/html');
-
-      // For the initialization function, we need to create nodes manually
-      // since we don't have editor context yet
-
-      // Parse the HTML manually for basic elements
-      const bodyElement = dom.body;
-
-      if (bodyElement && bodyElement.children.length > 0) {
-        // Process each child element
-        for (const element of Array.from(bodyElement.children)) {
-          if (element.tagName === 'H1') {
-            const heading = $createHeadingNode('h1');
-            heading.append($createTextNode(element.textContent || ''));
-            root.append(heading);
-          } else if (element.tagName === 'H2') {
-            const heading = $createHeadingNode('h2');
-            heading.append($createTextNode(element.textContent || ''));
-            root.append(heading);
-          } else if (element.tagName === 'H3') {
-            const heading = $createHeadingNode('h3');
-            heading.append($createTextNode(element.textContent || ''));
-            root.append(heading);
-          } else if (element.tagName === 'UL') {
-            // Create bullet list
-            const listItems = Array.from(element.children);
-            if (listItems.length > 0) {
-              const paragraph = $createParagraphNode();
-              root.append(paragraph);
-              // Note: For now, we'll convert list items to simple text
-              // Full list support would need more complex node creation
-              for (const item of listItems) {
-                const listPara = $createParagraphNode();
-                listPara.append($createTextNode('• ' + (item.textContent || '')));
-                root.append(listPara);
-              }
-            }
-          } else {
-            // Default to paragraph for other elements
-            const paragraph = $createParagraphNode();
-            paragraph.append($createTextNode(element.textContent || ''));
-            root.append(paragraph);
-          }
-        }
-      } else {
-        // Fallback for simple text content
-        const textContent = bodyElement?.textContent || html;
-        if (textContent.trim()) {
-          const paragraph = $createParagraphNode();
-          paragraph.append($createTextNode(textContent));
-          root.append(paragraph);
-        } else {
-          const paragraph = $createParagraphNode();
-          root.append(paragraph);
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing HTML for initial editor state:', error);
-      // Fallback to empty paragraph if parsing fails
-      const paragraph = $createParagraphNode();
-      root.append(paragraph);
-    }
-  };
+// Function to create initial editor state - now simplified since HTML parsing
+// is handled by HtmlImportPlugin to avoid cursor jumping issues
+function createInitialEditorState(_html?: string): (() => void) | null {
+  // Always return null to use default empty state
+  // HTML content will be loaded by HtmlImportPlugin after editor initialization
+  return null;
 }
 
 const nodes = [HeadingNode, ListNode, ListItemNode, LinkNode, AutoLinkNode];
@@ -584,6 +562,8 @@ const RichTextEditor = React.forwardRef<
 
             {/* Store editor reference for external access */}
             <EditorRefPlugin editorRef={editorRef} />
+            {/* Import HTML content on initialization only (preserves formatting) */}
+            <HtmlImportPlugin initialHtml={initialValue} />
             {/* Handle content changes without cursor jumping */}
             <ContentChangePlugin onChange={_onChange} />
             <HistoryPlugin />
