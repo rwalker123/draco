@@ -65,6 +65,7 @@ export const createMockTeamsWanted = (
   accountId: '1',
   dateCreated: new Date('2024-01-15'),
   name: 'John Smith',
+  email: 'john.smith@example.com',
   phone: '+1-555-0123',
   experience: 'Intermediate player with 3 years experience',
   positionsPlayed: 'pitcher,outfield',

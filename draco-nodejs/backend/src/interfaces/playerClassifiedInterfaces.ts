@@ -102,17 +102,17 @@ export interface IPlayersWantedResponse extends IPlayersWantedClassified {
   };
 }
 
-// Teams Wanted response (public view)
-export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode' | 'email'> {
-  // Omit sensitive fields for public display
+// Teams Wanted response (authenticated account members)
+export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
+  // Return full PII for authenticated account members, but never the accessCode
   account: {
     id: bigint;
     name: string;
   };
 }
 
-// Teams Wanted response (owner view with access code)
-export interface ITeamsWantedOwnerResponse extends ITeamsWantedClassified {
+// Teams Wanted response (owner view without access code for security)
+export interface ITeamsWantedOwnerResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
   account: {
     id: bigint;
     name: string;

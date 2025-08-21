@@ -141,6 +141,8 @@ router.get(
  */
 router.get(
   '/teams-wanted',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   validateSearchParams,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -187,6 +189,47 @@ router.post(
       success: true,
       data: result,
     });
+  }),
+);
+
+/**
+ * Get Teams Wanted data for users with valid access codes (unauthenticated, rate-limited)
+ * This endpoint allows users to view their own Teams Wanted ad using an access code
+ */
+router.post(
+  '/teams-wanted/access-code',
+  teamsWantedRateLimit,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { accessCode } = req.body;
+
+    if (!accessCode) {
+      res.status(400).json({
+        success: false,
+        message: 'Access code is required',
+      });
+      return;
+    }
+
+    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+
+    try {
+      // Find the Teams Wanted entry by access code
+      const result = await playerClassifiedService.findTeamsWantedByAccessCode(
+        accountId,
+        accessCode,
+      );
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (_error) {
+      res.status(404).json({
+        success: false,
+        message: 'Invalid access code or Teams Wanted ad not found',
+      });
+    }
   }),
 );
 
