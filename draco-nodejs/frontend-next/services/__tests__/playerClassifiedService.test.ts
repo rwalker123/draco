@@ -156,7 +156,7 @@ describe('playerClassifiedService', () => {
 
       it('should handle empty search parameters', async () => {
         const mockResponse = createMockPlayersWantedServiceResponse(0);
-        mockFetchResponse(mockResponse.data);
+        mockFetchResponse(mockResponse.data!);
 
         const result = await playerClassifiedService.getPlayersWanted(accountId, {});
 
@@ -590,7 +590,7 @@ describe('playerClassifiedService', () => {
   describe('URL Construction', () => {
     it('should construct correct API URLs', async () => {
       const mockResponse = createMockPlayersWantedServiceResponse(1);
-      mockFetchResponse(mockResponse.data);
+      mockFetchResponse(mockResponse.data!);
 
       await playerClassifiedService.getPlayersWanted(accountId);
 
@@ -602,7 +602,7 @@ describe('playerClassifiedService', () => {
 
     it('should handle URL encoding correctly', async () => {
       const mockResponse = createMockPlayersWantedServiceResponse(1);
-      mockFetchResponse(mockResponse.data);
+      mockFetchResponse(mockResponse.data!);
 
       const searchParams = {
         searchQuery: 'pitcher & catcher',
@@ -627,7 +627,7 @@ describe('playerClassifiedService', () => {
   describe('Performance Considerations', () => {
     it('should handle large data sets efficiently', async () => {
       const largeResponse = createMockPlayersWantedServiceResponse(1000);
-      mockFetchResponse(largeResponse.data);
+      mockFetchResponse(largeResponse.data!);
 
       const startTime = performance.now();
 
@@ -642,7 +642,7 @@ describe('playerClassifiedService', () => {
 
     it('should handle concurrent requests efficiently', async () => {
       const mockResponse = createMockPlayersWantedServiceResponse(1);
-      mockFetchResponse(mockResponse.data);
+      mockFetchResponse(mockResponse.data!);
 
       const startTime = performance.now();
 
@@ -668,7 +668,7 @@ describe('playerClassifiedService', () => {
     it('should handle very long account IDs', async () => {
       const longAccountId = 'a'.repeat(1000);
       const mockResponse = createMockPlayersWantedServiceResponse(1);
-      mockFetchResponse(mockResponse.data);
+      mockFetchResponse(mockResponse.data!);
 
       const result = await playerClassifiedService.getPlayersWanted(longAccountId);
 
@@ -681,7 +681,7 @@ describe('playerClassifiedService', () => {
 
     it('should handle special characters in search parameters', async () => {
       const mockResponse = createMockPlayersWantedServiceResponse(1);
-      mockFetchResponse(mockResponse.data);
+      mockFetchResponse(mockResponse.data!);
 
       const searchParams = {
         searchQuery: '!@#$%^&*()_+-=[]{}|;:,.<>?',
@@ -700,7 +700,7 @@ describe('playerClassifiedService', () => {
 
     it('should handle empty and null values in search parameters', async () => {
       const mockResponse = createMockPlayersWantedServiceResponse(1);
-      mockFetchResponse(mockResponse.data);
+      mockFetchResponse(mockResponse.data!);
 
       const searchParams = {
         searchQuery: '',
