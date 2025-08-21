@@ -1,4 +1,4 @@
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
 
 interface RateLimitOptions {
@@ -101,6 +101,16 @@ export const teamsWantedRateLimit = createRateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 posts per hour
   message: 'Rate limit exceeded: Maximum 3 teams wanted posts per hour per IP',
-  keyGenerator: (req: Request) => `teams-wanted-${ipKeyGenerator(req.ip || '')}`, // Use ipKeyGenerator for IPv6 support
   skipSuccessfulRequests: false,
+});
+
+/**
+ * Cleanup service rate limiting for manual cleanup operations
+ * 10 requests per day per authenticated user
+ */
+export const cleanupRateLimit = createRateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 10, // 10 requests per day
+  message: 'Rate limit exceeded: Maximum 10 cleanup operations per day per user',
+  skipSuccessfulRequests: false, // Count all requests
 });

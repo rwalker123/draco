@@ -22,6 +22,8 @@ import {
   CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import { IPlayersWantedCardProps } from '../../types/playerClassifieds';
+import { sanitizeDisplayText } from '../../utils/sanitization';
+import { formatDate } from '../../utils/dateUtils';
 
 const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
   classified,
@@ -30,17 +32,10 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
   canEdit,
   canDelete,
 }) => {
-  // Parse positions from comma-separated string
-  const positionsNeeded = classified.positionsNeeded.split(',').map((pos) => pos.trim());
-
-  // Format date
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  // Parse positions from comma-separated string and sanitize each position
+  const positionsNeeded = classified.positionsNeeded
+    .split(',')
+    .map((pos) => sanitizeDisplayText(pos.trim()));
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -48,10 +43,10 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Typography variant="h6" component="h3" gutterBottom>
-            {classified.teamEventName}
+            {sanitizeDisplayText(classified.teamEventName)}
           </Typography>
           <Box display="flex" gap={1}>
-            {canEdit && (
+            {canEdit(classified) && (
               <IconButton
                 size="small"
                 onClick={() => onEdit(classified.id.toString())}
@@ -60,7 +55,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
                 <EditIcon fontSize="small" />
               </IconButton>
             )}
-            {canDelete && (
+            {canDelete(classified) && (
               <IconButton
                 size="small"
                 onClick={() => onDelete(classified.id.toString())}
@@ -75,7 +70,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
 
         {/* Description */}
         <Typography variant="body2" color="text.secondary" paragraph>
-          {classified.description}
+          {sanitizeDisplayText(classified.description)}
         </Typography>
 
         {/* Positions Needed */}
@@ -102,7 +97,8 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
             <PersonIcon fontSize="small" />
           </Avatar>
           <Typography variant="caption" color="text.secondary">
-            {classified.creator.firstName} {classified.creator.lastName}
+            {sanitizeDisplayText(classified.creator.firstName)}{' '}
+            {sanitizeDisplayText(classified.creator.lastName)}
           </Typography>
         </Box>
 

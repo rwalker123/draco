@@ -9,7 +9,7 @@
 export interface IPlayersWantedClassified {
   id: string; // Frontend uses string IDs, not bigint
   accountId: string;
-  dateCreated: Date;
+  dateCreated: Date | string;
   createdByContactId: string;
   teamEventName: string;
   description: string;
@@ -20,14 +20,14 @@ export interface IPlayersWantedClassified {
 export interface ITeamsWantedClassified {
   id: string;
   accountId: string;
-  dateCreated: Date;
+  dateCreated: Date | string;
   name: string;
   email: string;
   phone: string;
   experience: string;
   positionsPlayed: string;
   accessCode: string; // UUID for editing
-  birthDate: Date;
+  birthDate: Date | string;
 }
 
 // ============================================================================
@@ -48,7 +48,7 @@ export interface ITeamsWantedCreateRequest {
   phone: string;
   experience: string;
   positionsPlayed: string;
-  birthDate: Date;
+  birthDate: Date | string;
 }
 
 // Update request for Players Wanted
@@ -65,7 +65,7 @@ export interface ITeamsWantedUpdateRequest {
   phone?: string;
   experience?: string;
   positionsPlayed?: string;
-  birthDate?: Date;
+  birthDate?: Date | string;
   // Access code for security
   accessCode: string;
 }
@@ -102,9 +102,9 @@ export interface IPlayersWantedResponse extends IPlayersWantedClassified {
   };
 }
 
-// Teams Wanted response (public view)
-export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode' | 'email'> {
-  // Omit sensitive fields for public display
+// Teams Wanted response (authenticated account members view)
+export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
+  // Include full PII for authenticated account members, but omit accessCode
   account: {
     id: string;
     name: string;
@@ -320,8 +320,8 @@ export interface IPlayersWantedCardProps {
   classified: IPlayersWantedResponse;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  canEdit: boolean;
-  canDelete: boolean;
+  canEdit: (classified: IPlayersWantedResponse) => boolean;
+  canDelete: (classified: IPlayersWantedResponse) => boolean;
 }
 
 // Props for Teams Wanted card component
@@ -336,6 +336,10 @@ export interface ITeamsWantedCardPublicProps {
   classified: ITeamsWantedResponse;
   onEdit: (id: string, accessCodeRequired: string) => void;
   onDelete: (id: string, accessCodeRequired: string) => void;
+  canEdit: (classified: ITeamsWantedResponse) => boolean;
+  canDelete: (classified: ITeamsWantedResponse) => boolean;
+  isAuthenticated: boolean;
+  isAccountMember: boolean;
 }
 
 // Props for the Classifieds Header component
@@ -503,15 +507,26 @@ export interface IUseClassifiedsSearchReturn {
 
 // Return type for useClassifiedsPermissions hook
 export interface IUseClassifiedsPermissionsReturn {
+  // Basic permissions
   canCreatePlayersWanted: boolean;
-  canEditPlayersWanted: boolean;
-  canDeletePlayersWanted: boolean;
   canCreateTeamsWanted: boolean;
   canEditTeamsWanted: boolean;
   canDeleteTeamsWanted: boolean;
   canSearchClassifieds: boolean;
   canViewClassifieds: boolean;
   canModerateClassifieds: boolean;
+
+  // Enhanced permission checking with ownership
+  canEditPlayersWantedById: (classified: IPlayersWantedResponse) => boolean;
+  canDeletePlayersWantedById: (classified: IPlayersWantedResponse) => boolean;
+  canEditTeamsWantedById: (classified: ITeamsWantedResponse) => boolean;
+  canDeleteTeamsWantedById: (classified: ITeamsWantedResponse) => boolean;
+
+  // Access code verification state
+  verifiedAccessCodes: Set<string>;
+  verifyAccessCode: (classifiedId: string, accessCode: string) => Promise<boolean>;
+  clearVerifiedAccessCode: (classifiedId: string) => void;
+  clearAllVerifiedAccessCodes: () => void;
 }
 
 // ============================================================================
@@ -543,3 +558,35 @@ export interface IApiResponse<T> {
   error?: string;
   message?: string;
 }
+
+// Verify access code response
+export interface IVerifyAccessResponse {
+  success: boolean;
+  data?: {
+    accessCode: string;
+    classifiedId: string;
+    verifiedAt: string;
+  };
+  message?: string;
+}
+
+// ============================================================================
+// SERVICE RESPONSE INTERFACES
+// ============================================================================
+
+// Generic service response wrapper
+export interface IServiceResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  errorCode?: string;
+  statusCode?: number;
+}
+
+// Teams Wanted service response
+export type ITeamsWantedServiceResponse = IServiceResponse<
+  IClassifiedListResponse<ITeamsWantedResponse>
+>;
+
+// Players Wanted service response
+export type IPlayersWantedServiceResponse = IServiceResponse<IPlayersWantedResponse>;

@@ -59,10 +59,24 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
         playerClassifiedService.getTeamsWanted(accountId),
       ]);
 
-      setPlayersWanted(playersResponse.data);
-      setTeamsWanted(teamsResponse.data);
+      // Handle Players Wanted response
+      if (playersResponse.success && playersResponse.data) {
+        setPlayersWanted(playersResponse.data.data);
+      } else {
+        console.warn('Failed to load Players Wanted:', playersResponse.error);
+        setPlayersWanted([]);
+      }
+
+      // Handle Teams Wanted response
+      if (teamsResponse.success && teamsResponse.data) {
+        setTeamsWanted(teamsResponse.data.data);
+      } else {
+        console.warn('Failed to load Teams Wanted:', teamsResponse.error);
+        setTeamsWanted([]);
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load classifieds';
+      console.error('Unexpected error in loadData:', error);
+      const errorMessage = 'Failed to load classifieds';
       showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);

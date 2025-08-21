@@ -3,7 +3,7 @@ export { EmailComposePage } from './EmailComposePage';
 export { EmailComposeProvider, useEmailCompose } from './EmailComposeProvider';
 export { ComposeHeader } from './ComposeHeader';
 export { ComposeActions } from './ComposeActions';
-export { ComposeSidebar } from './ComposeSidebar';
+export { default as ComposeSidebar } from './ComposeSidebar';
 export { ScheduleDialog } from './ScheduleDialog';
 
 // Re-export types for convenience

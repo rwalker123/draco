@@ -14,6 +14,7 @@ import {
   extractBigIntParams,
 } from '../utils/paramExtraction.js';
 import { validateTeamSeasonWithDivision } from '../utils/teamValidation.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';
 import { DivisionSeason } from '../interfaces/divisionInterfaces.js';
 import { LeagueSeasonWithRelations, PrismaWhereClause } from '../interfaces/leagueInterfaces.js';
@@ -721,7 +722,7 @@ router.get(
         const teamNames = await getTeamNames(game.hteamid, game.vteamid);
         processedGames.push({
           id: game.id.toString(),
-          gameDate: game.gamedate ? game.gamedate.toISOString() : null,
+          gameDate: DateUtils.formatDateTimeForResponse(game.gamedate),
           homeTeamId: game.hteamid.toString(),
           visitorTeamId: game.vteamid.toString(),
           homeTeamName: teamNames.homeTeamName,

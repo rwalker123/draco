@@ -613,6 +613,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   // Refs for intervals and service
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const emailServiceRef = useRef(token ? createEmailService(token) : null);
+  const initialTemplateLoadedRef = useRef<string | null>(null);
 
   // Update email service when token changes
   useEffect(() => {
@@ -620,6 +621,72 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       emailServiceRef.current = createEmailService(token);
     }
   }, [token]);
+
+  /**
+   * Load template automatically when templateId is provided in initialData
+   * This typically happens when navigating from template selection to compose
+   */
+  useEffect(() => {
+    const loadInitialTemplate = async () => {
+      // Only load if we have a templateId and email service is available
+      if (!initialData?.templateId || !emailServiceRef.current || !token) {
+        return;
+      }
+
+      // Skip if this templateId has already been loaded initially
+      if (initialTemplateLoadedRef.current === initialData.templateId) {
+        return;
+      }
+
+      // Skip if template is already loaded
+      if (state.selectedTemplate?.id === initialData.templateId) {
+        initialTemplateLoadedRef.current = initialData.templateId;
+        return;
+      }
+
+      dispatch({ type: 'SET_LOADING', payload: true });
+
+      const result = await safeAsync(
+        async () => {
+          const template = await emailServiceRef.current!.getTemplate(
+            accountId,
+            initialData.templateId!,
+          );
+          return { template };
+        },
+        {
+          accountId,
+          operation: 'load_template',
+          additionalData: { templateId: initialData.templateId },
+        },
+      );
+
+      dispatch({ type: 'SET_LOADING', payload: false });
+
+      if (result.success) {
+        // Mark this templateId as loaded and apply the template
+        initialTemplateLoadedRef.current = initialData.templateId;
+        dispatch({ type: 'SELECT_TEMPLATE', payload: result.data.template });
+      } else {
+        logError(result.error, 'loadInitialTemplate');
+        dispatch({
+          type: 'ADD_ERROR',
+          payload: {
+            field: 'template',
+            message: result.error.userMessage || 'Failed to load template',
+            severity: 'error',
+          },
+        });
+
+        if (onError) {
+          onError(new Error(result.error.message));
+        }
+      }
+    };
+
+    loadInitialTemplate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Using ref to track loading state instead of state dependency
+  }, [initialData?.templateId, accountId, token, onError]);
 
   const saveDraft = useCallback(async (): Promise<boolean> => {
     if (!emailServiceRef.current || !token) return false;

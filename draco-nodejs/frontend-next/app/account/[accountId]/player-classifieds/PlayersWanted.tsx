@@ -4,6 +4,7 @@ import React from 'react';
 import { Box, Typography, CircularProgress, Button, Alert } from '@mui/material';
 import { Refresh as RefreshIcon } from '@mui/icons-material';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
+import { useClassifiedsPermissions } from '../../../../hooks/useClassifiedsPermissions';
 import { PlayersWantedCard } from '../../../../components/player-classifieds';
 import EmptyState from '../../../../components/common/EmptyState';
 import { IPlayersWantedResponse } from '../../../../types/playerClassifieds';
@@ -15,6 +16,11 @@ interface PlayersWantedProps {
 const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
   const { playersWanted, loading, error, refreshData, clearError } =
     usePlayerClassifieds(accountId);
+
+  // Get permission functions for edit/delete controls
+  const { canEditPlayersWantedById, canDeletePlayersWantedById } = useClassifiedsPermissions({
+    accountId,
+  });
 
   if (loading) {
     return (
@@ -81,8 +87,8 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
             classified={classified}
             onEdit={() => {}}
             onDelete={() => {}}
-            canEdit={true}
-            canDelete={true}
+            canEdit={canEditPlayersWantedById}
+            canDelete={canDeletePlayersWantedById}
           />
         ))}
       </Box>

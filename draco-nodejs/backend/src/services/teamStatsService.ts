@@ -2,6 +2,7 @@ import { PrismaClient, leagueschedule, availablefields } from '@prisma/client';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.js';
 import { getTeamRecord } from '../utils/teamRecord.js';
 import { StatisticsService } from './statisticsService.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import { NotFoundError } from '../utils/customErrors.js';
 
 export interface TeamRecord {
@@ -141,7 +142,7 @@ export class TeamStatsService {
       });
       return {
         id: game.id.toString(),
-        date: game.gamedate ? game.gamedate.toISOString() : null,
+        date: DateUtils.formatDateTimeForResponse(game.gamedate),
         homeTeamId: game.hteamid ? game.hteamid.toString() : null,
         awayTeamId: game.vteamid ? game.vteamid.toString() : null,
         homeTeamName: teamNames.homeTeamName,

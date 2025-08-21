@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { DateUtils } from './dateUtils.js';
 
 type RegistrationEvent =
   | 'registration_newUser'
@@ -44,7 +45,7 @@ export function logRegistrationEvent(
   }
 
   const payload = {
-    ts: new Date().toISOString(),
+    ts: DateUtils.formatDateTimeForResponse(new Date()),
     requestId: (req as Request & { requestId?: string }).requestId,
     ip: getClientIp(req),
     event,

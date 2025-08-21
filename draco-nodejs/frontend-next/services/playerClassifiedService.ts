@@ -16,7 +16,12 @@ import {
   IEmailVerificationResult,
   IAdminClassifiedsResponse,
   IClassifiedAnalytics,
+  IVerifyAccessResponse,
+  ITeamsWantedServiceResponse,
+  IServiceResponse,
 } from '../types/playerClassifieds';
+
+import { IAccessCodeVerificationResponse } from '../types/accessCode';
 
 // ============================================================================
 // SERVICE CONFIGURATION
@@ -66,7 +71,7 @@ export const playerClassifiedService = {
   async getPlayersWanted(
     accountId: string,
     params?: Partial<IClassifiedSearchParams>,
-  ): Promise<IClassifiedListResponse<IPlayersWantedResponse>> {
+  ): Promise<IServiceResponse<IClassifiedListResponse<IPlayersWantedResponse>>> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -84,19 +89,35 @@ export const playerClassifiedService = {
 
     const url = `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted?${searchParams.toString()}`;
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        // No Authorization header - this is a public endpoint
+      });
 
-    if (!response.ok) {
-      const errorText = `Failed to fetch Players Wanted: ${response.statusText}`;
-      throw new Error(errorText);
+      if (!response.ok) {
+        // Return error response instead of throwing
+        return {
+          success: false,
+          error: `Failed to fetch Players Wanted: ${response.statusText}`,
+          errorCode: response.statusText,
+          statusCode: response.status,
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      // Handle network errors
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error occurred',
+        errorCode: 'NETWORK_ERROR',
+        statusCode: 0,
+      };
     }
-
-    const data = await response.json();
-    return data;
   },
 
   // Get a specific Players Wanted by ID
@@ -194,7 +215,7 @@ export const playerClassifiedService = {
   async getTeamsWanted(
     accountId: string,
     params?: Partial<IClassifiedSearchParams>,
-  ): Promise<IClassifiedListResponse<ITeamsWantedResponse>> {
+  ): Promise<ITeamsWantedServiceResponse> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -212,19 +233,37 @@ export const playerClassifiedService = {
 
     const url = `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted?${searchParams.toString()}`;
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
 
-    if (!response.ok) {
-      const errorText = `Failed to fetch Teams Wanted: ${response.statusText}`;
-      throw new Error(errorText);
+      if (!response.ok) {
+        // Return error response instead of throwing
+        return {
+          success: false,
+          error: `Failed to fetch Teams Wanted: ${response.statusText}`,
+          errorCode: response.statusText,
+          statusCode: response.status,
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      // Handle network errors
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error occurred',
+        errorCode: 'NETWORK_ERROR',
+        statusCode: 0,
+      };
     }
-
-    const data = await response.json();
-    return data;
   },
 
   // Get a specific Teams Wanted by ID
@@ -348,8 +387,88 @@ export const playerClassifiedService = {
   },
 
   // ============================================================================
+  // ACCESS CODE OPERATIONS
+  // ============================================================================
+
+  // Verify Teams Wanted access code and retrieve the classified ad
+  async verifyTeamsWantedAccessCode(
+    accountId: string,
+    accessCode: string,
+  ): Promise<IAccessCodeVerificationResponse> {
+    const response = await fetch(
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accessCode }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to verify access code: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  // Get Teams Wanted classified by access code (for verified users)
+  async getTeamsWantedByAccessCode(
+    accountId: string,
+    accessCode: string,
+  ): Promise<ITeamsWantedResponse> {
+    const response = await fetch(
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accessCode }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Failed to retrieve Teams Wanted: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  },
+
+  // ============================================================================
   // EMAIL VERIFICATION
   // ============================================================================
+
+  // Verify Teams Wanted access code
+  async verifyTeamsWantedAccess(
+    accountId: string,
+    classifiedId: string,
+    accessCode: string,
+  ): Promise<IVerifyAccessResponse> {
+    const response = await fetch(
+      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}/verify`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: JSON.stringify({ accessCode }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to verify access code: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
 
   // Verify email for Teams Wanted access
   async verifyEmail(request: IEmailVerificationRequest): Promise<IEmailVerificationResult> {

@@ -200,7 +200,7 @@ describe('PlayerClassifiedService', () => {
       phone: '+1234567890',
       experience: '5 years playing experience',
       positionsPlayed: '1,2',
-      birthDate: new Date('1995-06-15'),
+      birthDate: '1995-06-15',
     };
 
     const mockAccountId = BigInt(123);
@@ -216,7 +216,7 @@ describe('PlayerClassifiedService', () => {
         experience: mockRequest.experience,
         positionsplayed: mockRequest.positionsPlayed,
         accesscode: 'hashed_access_code',
-        birthdate: mockRequest.birthDate,
+        birthdate: new Date(mockRequest.birthDate),
       });
 
       mockPrisma.accounts.findUnique.mockResolvedValue({
@@ -236,7 +236,7 @@ describe('PlayerClassifiedService', () => {
           phone: mockRequest.phone,
           experience: mockRequest.experience,
           positionsplayed: mockRequest.positionsPlayed,
-          birthdate: mockRequest.birthDate,
+          birthdate: new Date(mockRequest.birthDate),
         }),
       });
 
@@ -249,7 +249,7 @@ describe('PlayerClassifiedService', () => {
           phone: mockRequest.phone,
           experience: mockRequest.experience,
           positionsPlayed: mockRequest.positionsPlayed,
-          birthDate: mockRequest.birthDate,
+          birthDate: '1995-06-15',
         }),
       );
     });
@@ -282,7 +282,10 @@ describe('PlayerClassifiedService', () => {
       const tooYoungDate = new Date();
       tooYoungDate.setFullYear(tooYoungDate.getFullYear() - 10); // 10 years old
 
-      const invalidRequest = { ...mockRequest, birthDate: tooYoungDate };
+      const invalidRequest = {
+        ...mockRequest,
+        birthDate: tooYoungDate.toISOString().split('T')[0],
+      };
 
       await expect(
         playerClassifiedService.createTeamsWanted(mockAccountId, invalidRequest),

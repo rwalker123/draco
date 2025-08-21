@@ -33,7 +33,7 @@ import {
   $createTextNode,
   $createParagraphNode,
 } from 'lexical';
-import { $generateHtmlFromNodes } from '@lexical/html';
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html';
 import { HeadingNode, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode, $insertList } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
@@ -282,6 +282,55 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
   );
 }
 
+// Plugin to handle one-time HTML import during editor initialization
+// This preserves formatting without causing cursor jumping during live editing
+function HtmlImportPlugin({ initialHtml }: { initialHtml?: string }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!initialHtml || initialHtml.trim() === '') return;
+
+    // Only run once on mount - parse HTML and set editor state
+    editor.update(() => {
+      try {
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(initialHtml, 'text/html');
+        const nodes = $generateNodesFromDOM(editor, dom);
+
+        const root = $getRoot();
+        root.clear();
+
+        if (nodes.length > 0) {
+          // Insert the parsed nodes which preserve all formatting
+          $insertNodes(nodes);
+        } else {
+          // Fallback: create empty paragraph if parsing produces no nodes
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+        }
+      } catch (error) {
+        console.warn('Failed to parse HTML content, falling back to plain text:', error);
+
+        // Fallback: extract plain text and create basic paragraph
+        const textContent = initialHtml.replace(/<[^>]*>/g, '').trim();
+        const root = $getRoot();
+        root.clear();
+
+        if (textContent) {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode(textContent));
+          root.append(paragraph);
+        } else {
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+        }
+      }
+    });
+  }, [editor, initialHtml]);
+
+  return null;
+}
+
 // Plugin to handle content changes using registerTextContentListener
 // This avoids cursor jumping issues that occur with registerUpdateListener
 function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }) {
@@ -290,13 +339,14 @@ function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }
   useEffect(() => {
     if (!onChange) return;
 
-    // Use registerTextContentListener to avoid cursor jumping
-    // This listener only fires when text content actually changes
-    const unregister = editor.registerTextContentListener(() => {
-      // Get the HTML content when text changes
-      const htmlContent = editor.getEditorState().read(() => {
+    // Use registerUpdateListener to capture HTML content changes
+    // This listener fires when editor state changes and preserves formatting
+    const unregister = editor.registerUpdateListener(({ editorState }) => {
+      // Get actual HTML content when editor state changes
+      const htmlContent = editorState.read(() => {
         return $generateHtmlFromNodes(editor);
       });
+
       onChange(htmlContent);
     });
 
@@ -327,34 +377,12 @@ const theme = {
   },
 };
 
-// Function to create initial editor state from HTML
-function createInitialEditorState(html?: string): (() => void) | null {
-  if (!html || html.trim() === '') {
-    return null; // Use default empty state
-  }
-
-  // Return a function that creates the editor state
-  return () => {
-    const root = $getRoot();
-    root.clear();
-
-    // Extract text content from HTML for initial state
-    // This preserves the basic content while avoiding cursor jumping issues
-    const parser = new DOMParser();
-    const dom = parser.parseFromString(html, 'text/html');
-    const textContent = dom.body.textContent || dom.body.innerText || '';
-
-    if (textContent.trim()) {
-      const paragraph = $createParagraphNode();
-      const textNode = $createTextNode(textContent);
-      paragraph.append(textNode);
-      root.append(paragraph);
-    } else {
-      // Create empty paragraph for empty content
-      const paragraph = $createParagraphNode();
-      root.append(paragraph);
-    }
-  };
+// Function to create initial editor state - now simplified since HTML parsing
+// is handled by HtmlImportPlugin to avoid cursor jumping issues
+function createInitialEditorState(_html?: string): (() => void) | null {
+  // Always return null to use default empty state
+  // HTML content will be loaded by HtmlImportPlugin after editor initialization
+  return null;
 }
 
 const nodes = [HeadingNode, ListNode, ListItemNode, LinkNode, AutoLinkNode];
@@ -442,7 +470,7 @@ const RichTextEditor = React.forwardRef<
           borderWidth: error ? 2 : 1,
           borderRadius: 1,
           overflow: 'hidden',
-          opacity: disabled ? 0.6 : 1,
+          opacity: 1,
         }}
       >
         <LexicalComposer
@@ -454,7 +482,7 @@ const RichTextEditor = React.forwardRef<
             },
           }}
         >
-          <ToolbarPlugin disabled={disabled} />
+          {!disabled && <ToolbarPlugin disabled={disabled} />}
 
           <Box
             sx={{
@@ -534,6 +562,8 @@ const RichTextEditor = React.forwardRef<
 
             {/* Store editor reference for external access */}
             <EditorRefPlugin editorRef={editorRef} />
+            {/* Import HTML content on initialization only (preserves formatting) */}
+            <HtmlImportPlugin initialHtml={initialValue} />
             {/* Handle content changes without cursor jumping */}
             <ContentChangePlugin onChange={_onChange} />
             <HistoryPlugin />
