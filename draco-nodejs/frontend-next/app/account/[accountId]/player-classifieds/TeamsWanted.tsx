@@ -10,8 +10,10 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { StreamPaginationControl } from '../../../../components/pagination';
 import TeamsWantedStateManager from '../../../../components/player-classifieds/TeamsWantedStateManager';
+import CreateTeamsWantedDialog from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
 import { ITeamsWantedResponse } from '../../../../types/playerClassifieds';
 import { playerClassifiedService } from '../../../../services/playerClassifiedService';
+import { ITeamsWantedFormState } from '../../../../types/playerClassifieds';
 
 interface TeamsWantedProps {
   accountId: string;
@@ -45,6 +47,10 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
     hasPrev: false,
   });
 
+  // Dialog state
+  const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
+  const [formLoading, setFormLoading] = React.useState(false);
+
   // Pagination state
   const { pagination, setPage, setLimit } = useClassifiedsPagination({
     initialPage: 1,
@@ -52,7 +58,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   });
 
   // Use the main hook for data management with pagination
-  const { teamsWanted, error, clearError } = usePlayerClassifieds(accountId);
+  const { teamsWanted, error, clearError, createTeamsWanted } = usePlayerClassifieds(accountId);
 
   // Initialize local state with hook data
   React.useEffect(() => {
@@ -212,6 +218,21 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
     loadPageData(pagination.page, pagination.limit);
   };
 
+  // Handle create teams wanted
+  const handleCreateTeamsWanted = async (formData: ITeamsWantedFormState) => {
+    setFormLoading(true);
+    try {
+      await createTeamsWanted(formData);
+      // Refresh the data to show the new ad
+      loadPageData(pagination.page, pagination.limit);
+    } catch (error) {
+      // Error is already handled by the hook
+      throw error;
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   // Loading state
   if (localLoading && localTeamsWanted.length === 0) {
     return (
@@ -223,7 +244,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => {}} // TODO: Implement create dialog
+            onClick={() => setCreateDialogOpen(true)}
           >
             Post Teams Wanted
           </Button>
@@ -252,7 +273,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => {}} // TODO: Implement create dialog
+            onClick={() => setCreateDialogOpen(true)}
           >
             Post Teams Wanted
           </Button>
@@ -319,13 +340,13 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
         </Box>
       )}
 
-      {/* TODO: Create Dialog */}
-      {/* <CreateTeamsWantedDialog
+      {/* Create Dialog */}
+      <CreateTeamsWantedDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSubmit={createTeamsWanted}
+        onSubmit={handleCreateTeamsWanted}
         loading={formLoading}
-      /> */}
+      />
     </Box>
   );
 };
