@@ -228,12 +228,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
     console.log('Delete requested for:', id, 'with access code:', accessCodeRequired);
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    setLocalError(null); // Clear any local errors
-    loadPageData(pagination.page, pagination.limit);
-  };
-
   // Handle create teams wanted
   const handleCreateTeamsWanted = async (formData: ITeamsWantedFormState) => {
     setFormLoading(true);
@@ -292,9 +286,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
             onClick={() => setCreateDialogOpen(true)}
           >
             Post Teams Wanted
-          </Button>
-          <Button variant="outlined" onClick={handleRefresh} disabled={localLoading}>
-            Refresh
           </Button>
         </Box>
       </Box>
