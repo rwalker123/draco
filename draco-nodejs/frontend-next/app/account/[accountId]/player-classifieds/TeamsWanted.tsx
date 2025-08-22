@@ -34,6 +34,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   // Local state for teamsWanted data (bypassing hook for pagination)
   const [localTeamsWanted, setLocalTeamsWanted] = React.useState<ITeamsWantedResponse[]>([]);
   const [localLoading, setLocalLoading] = React.useState(false);
+  const [localError, setLocalError] = React.useState<string | null>(null);
   const [paginationInfo, setPaginationInfo] = React.useState<{
     total: number;
     totalPages: number;
@@ -57,7 +58,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   });
 
   // Use the main hook for data management with pagination
-  const { teamsWanted, error, createTeamsWanted } = usePlayerClassifieds(accountId);
+  const { teamsWanted, createTeamsWanted } = usePlayerClassifieds(accountId);
 
   // Initialize local state with hook data
   React.useEffect(() => {
@@ -307,7 +308,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
         canEdit={canEditTeamsWantedById}
         canDelete={canDeleteTeamsWantedById}
         loading={localLoading}
-        error={error || undefined}
+        error={localError || undefined}
       />
 
       {/* Pagination Controls - Only show for authenticated account members */}
