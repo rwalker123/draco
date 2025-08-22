@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, Button, Alert, CircularProgress, Stack } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPagination } from '../../../../hooks/useClassifiedsPagination';
@@ -58,7 +58,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   });
 
   // Use the main hook for data management with pagination
-  const { teamsWanted, error, clearError, createTeamsWanted } = usePlayerClassifieds(accountId);
+  const { teamsWanted, createTeamsWanted } = usePlayerClassifieds(accountId);
 
   // Initialize local state with hook data
   React.useEffect(() => {
@@ -228,12 +228,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
     console.log('Delete requested for:', id, 'with access code:', accessCodeRequired);
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    setLocalError(null); // Clear any local errors
-    loadPageData(pagination.page, pagination.limit);
-  };
-
   // Handle create teams wanted
   const handleCreateTeamsWanted = async (formData: ITeamsWantedFormState) => {
     setFormLoading(true);
@@ -293,35 +287,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
           >
             Post Teams Wanted
           </Button>
-          <Button variant="outlined" onClick={handleRefresh} disabled={localLoading}>
-            Refresh
-          </Button>
         </Box>
       </Box>
-
-      {/* Error Alert */}
-      {(localError || error) && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={() => {
-            if (localError) setLocalError(null);
-            if (error) clearError();
-          }}
-        >
-          {localError || error}
-        </Alert>
-      )}
-
-      {/* Helpful message when there's an error */}
-      {(localError || error) && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            Even if you can&apos;t see all Teams Wanted ads, you can still access and manage your
-            own ad using your access code below.
-          </Typography>
-        </Alert>
-      )}
 
       {/* Content - Delegated to TeamsWantedStateManager */}
       <TeamsWantedStateManager
@@ -332,7 +299,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
         canEdit={canEditTeamsWantedById}
         canDelete={canDeleteTeamsWantedById}
         loading={localLoading}
-        error={error || undefined}
+        error={localError || undefined}
       />
 
       {/* Pagination Controls - Only show for authenticated account members */}
