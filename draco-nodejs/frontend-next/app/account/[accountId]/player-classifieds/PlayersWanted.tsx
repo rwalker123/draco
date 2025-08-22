@@ -19,7 +19,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
 
   const { playersWanted, loading, error, refreshData, clearError } = usePlayerClassifieds(
     accountId,
-    token,
+    token || undefined,
   );
 
   // Get permission functions for edit/delete controls

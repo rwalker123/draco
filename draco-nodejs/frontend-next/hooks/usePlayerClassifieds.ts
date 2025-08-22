@@ -76,7 +76,10 @@ export const usePlayerClassifieds = (
       if (teamsResponse.success && teamsResponse.data) {
         setTeamsWanted(teamsResponse.data.data);
       } else {
-        console.warn('Failed to load Teams Wanted:', teamsResponse.error);
+        console.warn(
+          'Failed to load Teams Wanted:',
+          'error' in teamsResponse ? teamsResponse.error : 'Unknown error',
+        );
         setTeamsWanted([]);
       }
     } catch (error) {

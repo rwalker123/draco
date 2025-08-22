@@ -62,7 +62,11 @@ describe('playerClassifiedService', () => {
           positionsNeeded: 'pitcher,catcher',
         };
 
-        const result = await playerClassifiedService.createPlayersWanted(accountId, createData);
+        const result = await playerClassifiedService.createPlayersWanted(
+          accountId,
+          createData,
+          mockAuthToken,
+        );
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
@@ -88,7 +92,7 @@ describe('playerClassifiedService', () => {
         };
 
         await expect(
-          playerClassifiedService.createPlayersWanted(accountId, createData),
+          playerClassifiedService.createPlayersWanted(accountId, createData, mockAuthToken),
         ).rejects.toThrow('Failed to create Players Wanted: Bad Request');
       });
 
@@ -102,7 +106,7 @@ describe('playerClassifiedService', () => {
         };
 
         await expect(
-          playerClassifiedService.createPlayersWanted(accountId, createData),
+          playerClassifiedService.createPlayersWanted(accountId, createData, mockAuthToken),
         ).rejects.toThrow('Failed to create Players Wanted: Network error');
       });
     });
@@ -183,6 +187,7 @@ describe('playerClassifiedService', () => {
           accountId,
           '1',
           updateData,
+          mockAuthToken,
         );
 
         expect(result).toEqual(mockResponse);
@@ -209,7 +214,7 @@ describe('playerClassifiedService', () => {
         };
 
         await expect(
-          playerClassifiedService.updatePlayersWanted(accountId, '1', updateData),
+          playerClassifiedService.updatePlayersWanted(accountId, '1', updateData, mockAuthToken),
         ).rejects.toThrow('Failed to update Players Wanted: Not Found');
       });
     });
@@ -218,7 +223,7 @@ describe('playerClassifiedService', () => {
       it('should delete players wanted successfully', async () => {
         mockFetchResponse({ success: true });
 
-        await playerClassifiedService.deletePlayersWanted(accountId, '1');
+        await playerClassifiedService.deletePlayersWanted(accountId, '1', mockAuthToken);
 
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining(`/api/accounts/${accountId}/player-classifieds/players-wanted/1`),
@@ -234,9 +239,9 @@ describe('playerClassifiedService', () => {
       it('should handle deletion errors gracefully', async () => {
         mockFetchError('Forbidden', 403);
 
-        await expect(playerClassifiedService.deletePlayersWanted(accountId, '1')).rejects.toThrow(
-          'Failed to delete Players Wanted: Forbidden',
-        );
+        await expect(
+          playerClassifiedService.deletePlayersWanted(accountId, '1', mockAuthToken),
+        ).rejects.toThrow('Failed to delete Players Wanted: Forbidden');
       });
     });
   });
@@ -269,7 +274,6 @@ describe('playerClassifiedService', () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${mockAuthToken}`,
             },
             body: JSON.stringify(createData),
           }),
@@ -299,7 +303,11 @@ describe('playerClassifiedService', () => {
         const mockResponse = createMockTeamsWantedServiceResponse(2);
         mockFetchResponse(mockResponse.data!);
 
-        const result = await playerClassifiedService.getTeamsWanted(accountId);
+        const result = await playerClassifiedService.getTeamsWanted(
+          accountId,
+          undefined,
+          mockAuthToken,
+        );
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(expect.any(String), expect.any(Object));
@@ -317,7 +325,11 @@ describe('playerClassifiedService', () => {
           experience: ['advanced'],
         };
 
-        const result = await playerClassifiedService.getTeamsWanted(accountId, searchParams);
+        const result = await playerClassifiedService.getTeamsWanted(
+          accountId,
+          searchParams,
+          mockAuthToken,
+        );
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(expect.any(String), expect.any(Object));
@@ -345,7 +357,6 @@ describe('playerClassifiedService', () => {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${mockAuthToken}`,
             },
             body: JSON.stringify(updateData),
           }),
@@ -364,7 +375,7 @@ describe('playerClassifiedService', () => {
           expect.objectContaining({
             method: 'DELETE',
             headers: {
-              Authorization: `Bearer ${mockAuthToken}`,
+              'Content-Type': 'application/json',
             },
           }),
         );
@@ -390,7 +401,11 @@ describe('playerClassifiedService', () => {
           accountId,
         };
 
-        const result = await playerClassifiedService.searchClassifieds(accountId, searchParams);
+        const result = await playerClassifiedService.searchClassifieds(
+          accountId,
+          searchParams,
+          mockAuthToken,
+        );
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
@@ -411,7 +426,7 @@ describe('playerClassifiedService', () => {
         };
 
         await expect(
-          playerClassifiedService.searchClassifieds(accountId, searchParams),
+          playerClassifiedService.searchClassifieds(accountId, searchParams, mockAuthToken),
         ).rejects.toThrow('Failed to search classifieds: Search failed');
       });
     });
@@ -421,7 +436,12 @@ describe('playerClassifiedService', () => {
         const mockResponse = createMockMatches(3);
         mockFetchResponse(mockResponse);
 
-        const result = await playerClassifiedService.getMatches(accountId, '1', 'players-wanted');
+        const result = await playerClassifiedService.getMatches(
+          accountId,
+          '1',
+          'players-wanted',
+          mockAuthToken,
+        );
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
@@ -491,7 +511,7 @@ describe('playerClassifiedService', () => {
         const mockResponse = createMockAdminClassifiedsResponse();
         mockFetchResponse(mockResponse);
 
-        const result = await playerClassifiedService.getAdminClassifieds(accountId);
+        const result = await playerClassifiedService.getAdminClassifieds(accountId, mockAuthToken);
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(
@@ -512,7 +532,11 @@ describe('playerClassifiedService', () => {
         const mockResponse = createMockAnalytics();
         mockFetchResponse(mockResponse);
 
-        const result = await playerClassifiedService.getAnalytics(accountId);
+        const result = await playerClassifiedService.getAnalytics(
+          accountId,
+          undefined,
+          mockAuthToken,
+        );
 
         expect(result).toEqual(mockResponse);
         expect(global.fetch).toHaveBeenCalledWith(

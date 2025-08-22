@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useState, useRef } from 'react';
+import { useAuth } from '../../../context/AuthContext';
 import {
   Box,
   Paper,
@@ -112,6 +113,7 @@ export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
   showPreview = true,
   compact = false,
 }) => {
+  const { token } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -169,7 +171,7 @@ export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
           onAttachmentsChange(uploadingAttachments);
 
           // Upload file
-          const result = await uploadEmailAttachment(file, (progress) => {
+          const result = await uploadEmailAttachment(file, token || '', (progress: number) => {
             // Update progress
             const progressAttachments = uploadingAttachments.map((att) =>
               att.id === attachment.id ? { ...att, uploadProgress: progress } : att,
@@ -207,7 +209,7 @@ export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
 
       setUploading(false);
     },
-    [attachments, config, onAttachmentsChange],
+    [attachments, config, onAttachmentsChange, token],
   );
 
   // Handle file input change
