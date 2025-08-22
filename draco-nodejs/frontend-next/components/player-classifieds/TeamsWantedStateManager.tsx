@@ -6,7 +6,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Alert, Stack, Divider, Paper } from '@mui/material';
 import {
-  Login as LoginIcon,
   PersonAdd as PersonAddIcon,
   Lock as LockIcon,
   Info as InfoIcon,
@@ -229,14 +228,6 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
           <Typography variant="body1" color="text.secondary" mb={2}>
             Sign in to your account to see all Teams Wanted ads and connect with team members.
           </Typography>
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained" startIcon={<LoginIcon />} href="/login">
-              Sign In
-            </Button>
-            <Button variant="outlined" startIcon={<PersonAddIcon />} href="/signup">
-              Create Account
-            </Button>
-          </Stack>
         </Paper>
 
         <Divider sx={{ my: 3 }} />

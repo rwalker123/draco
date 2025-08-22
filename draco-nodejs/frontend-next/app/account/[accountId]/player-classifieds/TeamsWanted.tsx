@@ -102,7 +102,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
 
       try {
         if (!token) {
-          setLocalError('Authentication required');
           return;
         }
         const response = await playerClassifiedService.getTeamsWanted(
@@ -163,7 +162,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
     const loadInitialData = async () => {
       try {
         if (!token) {
-          setLocalError('Authentication required');
           return;
         }
         const response = await playerClassifiedService.getTeamsWanted(
