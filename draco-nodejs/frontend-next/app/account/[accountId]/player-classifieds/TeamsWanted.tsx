@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, Button, Alert, CircularProgress, Stack } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPagination } from '../../../../hooks/useClassifiedsPagination';
@@ -34,7 +34,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   // Local state for teamsWanted data (bypassing hook for pagination)
   const [localTeamsWanted, setLocalTeamsWanted] = React.useState<ITeamsWantedResponse[]>([]);
   const [localLoading, setLocalLoading] = React.useState(false);
-  const [localError, setLocalError] = React.useState<string | null>(null);
   const [paginationInfo, setPaginationInfo] = React.useState<{
     total: number;
     totalPages: number;
@@ -58,7 +57,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   });
 
   // Use the main hook for data management with pagination
-  const { teamsWanted, error, clearError, createTeamsWanted } = usePlayerClassifieds(accountId);
+  const { teamsWanted, error, createTeamsWanted } = usePlayerClassifieds(accountId);
 
   // Initialize local state with hook data
   React.useEffect(() => {
@@ -298,30 +297,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
           </Button>
         </Box>
       </Box>
-
-      {/* Error Alert */}
-      {(localError || error) && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={() => {
-            if (localError) setLocalError(null);
-            if (error) clearError();
-          }}
-        >
-          {localError || error}
-        </Alert>
-      )}
-
-      {/* Helpful message when there's an error */}
-      {(localError || error) && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            Even if you can&apos;t see all Teams Wanted ads, you can still access and manage your
-            own ad using your access code below.
-          </Typography>
-        </Alert>
-      )}
 
       {/* Content - Delegated to TeamsWantedStateManager */}
       <TeamsWantedStateManager

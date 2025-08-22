@@ -192,10 +192,10 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
 
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom textAlign="center">
           Access Your Own Ad
         </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3}>
+        <Typography variant="body2" color="text.secondary" mb={3} textAlign="center">
           If you have a Teams Wanted ad, enter your access code to view and manage it.
         </Typography>
 
@@ -241,10 +241,10 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
 
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom textAlign="center">
           Access Your Own Ad
         </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3}>
+        <Typography variant="body2" color="text.secondary" mb={3} textAlign="center">
           If you have a Teams Wanted ad, enter your access code to view and manage it without
           creating an account.
         </Typography>
