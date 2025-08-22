@@ -132,8 +132,8 @@ CREATE INDEX idx_teamswanted_accesscode ON teamswantedclassified(accesscode);
 #### Basic UI Implementation
 - [ ] Create responsive page structure in `app/account/[accountId]/player-classifieds/`
 - [ ] Implement main classifieds listing page with pagination
-- [ ] Create PlayersWanted component with role-based creation restrictions
-- [ ] Create TeamsWanted component with email verification flow
+- [ ] Create PlayersWanted component with account member access control
+- [ ] Create TeamsWanted component with account member + anonymous access
 - [ ] Implement secure create/edit dialogs
 - [ ] Add basic filtering and search functionality
 
@@ -270,8 +270,8 @@ draco-nodejs/frontend-next/
 - [ ] Integrate with backend API endpoints
 - [ ] Implement basic error handling and loading states
 
-**Status**: 🚀 **Phase 2b.1 Implementation Started** - Enhanced PlayersWanted and TeamsWanted components implemented and tested
-**Next**: 🚀 **Continue with Phase 2b.2** - Creation dialogs implementation
+**Status**: 🚀 **Phase 2b.2 Implementation In Progress** - CreateTeamsWantedDialog completed, CreatePlayersWantedDialog pending
+**Next**: 🚀 **Complete Phase 2b.2** - Finish CreatePlayersWantedDialog implementation
 
 **Implementation Summary (Phase 2b.1):**
 - ✅ **Enhanced PlayersWanted Component**: Full listing with loading states, error handling, and role-based permissions
@@ -283,6 +283,10 @@ draco-nodejs/frontend-next/
 - ✅ **Error Handling**: Comprehensive error state management with user-friendly alerts
 - ✅ **Loading States**: Loading indicators and skeleton states for better UX
 - ✅ **Empty States**: Proper empty state handling with call-to-action buttons
+
+**Implementation Summary (Phase 2b.2):**
+- ✅ **CreateTeamsWantedDialog Component**: Complete form implementation with comprehensive validation, security features, and Material-UI integration
+- ❌ **CreatePlayersWantedDialog Component**: Not yet implemented
 
 ##### **Phase 2b: Detailed Development Plan**
 
@@ -423,16 +427,18 @@ export const playerClassifiedService = {
   - Position selection with predefined options
   - Form validation and error handling
   - Integration with `usePlayerClassifieds` hook
-  - Role-based access control
+  - Access control: any authenticated account member can create (contactcreatorid = account)
 
-**2.2 CreateTeamsWantedDialog Component**
-- **File**: `draco-nodejs/frontend-next/app/account/[accountId]/player-classifieds/CreateTeamsWantedDialog.tsx`
+**2.2 CreateTeamsWantedDialog Component** ✅ **COMPLETED**
+- **File**: `draco-nodejs/frontend-next/components/player-classifieds/CreateTeamsWantedDialog.tsx`
 - **Responsibilities**:
-  - Form for creating new Teams Wanted ads (public access)
-  - CAPTCHA integration for anonymous submissions
-  - Email verification workflow
-  - Form validation and sanitization
-  - Access code generation and email sending
+  - ✅ Form for creating new Teams Wanted ads (authenticated account members + anonymous with verification)
+  - ✅ CAPTCHA integration structure (ready for backend integration)
+  - ✅ Email verification workflow preparation
+  - ✅ Comprehensive form validation and sanitization
+  - ✅ Access code handling (email instructions provided)
+  - ✅ Security features: input sanitization, age validation (13+), HTML injection prevention
+  - ✅ Access control: any authenticated account member can create (contactcreatorid = account)
 
 **Phase 2b.3: Enhanced Header & Navigation (Week 2, Day 1)**
 
@@ -858,11 +864,11 @@ const emailVerification = {
 ## Business Logic
 
 ### Access Control
-- **PlayersWantedClassified**: Only Team Admin and above can create/edit/delete
-- **TeamsWantedClassified**: Anyone can create (with email verification), edit/delete requires access code
+- **PlayersWantedClassified**: Any authenticated account member (contactcreatorid = account) can create/edit/delete their own ads; Account admins can manage all
+- **TeamsWantedClassified**: Any authenticated account member (contactcreatorid = account) can create; edit/delete requires access code for anonymous submissions or creator/admin permissions for authenticated users
 - **Admin Override**: Account admins can manage all classifieds regardless of creator
 - **Account Boundary**: All operations strictly within account boundaries
-- **Role Validation**: Use existing RoleContext for permission checks (TeamAdmin, ContactAdmin, AccountAdmin)
+- **Role Validation**: Use existing RoleContext for permission checks and account membership validation
 
 ### **Automatic Expiration System**
 ```typescript
