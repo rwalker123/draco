@@ -19,7 +19,10 @@ import {
   IClassifiedSearchParams,
 } from '../types/playerClassifieds';
 
-export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsReturn => {
+export const usePlayerClassifieds = (
+  accountId: string,
+  token?: string,
+): IUsePlayerClassifiedsReturn => {
   // Data
   const [playersWanted, setPlayersWanted] = useState<IPlayersWantedResponse[]>([]);
   const [teamsWanted, setTeamsWanted] = useState<ITeamsWantedResponse[]>([]);
@@ -56,7 +59,9 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
     try {
       const [playersResponse, teamsResponse] = await Promise.all([
         playerClassifiedService.getPlayersWanted(accountId),
-        playerClassifiedService.getTeamsWanted(accountId),
+        token
+          ? playerClassifiedService.getTeamsWanted(accountId, undefined, token)
+          : Promise.resolve({ success: true, data: { data: [] } }),
       ]);
 
       // Handle Players Wanted response
@@ -71,7 +76,10 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
       if (teamsResponse.success && teamsResponse.data) {
         setTeamsWanted(teamsResponse.data.data);
       } else {
-        console.warn('Failed to load Teams Wanted:', teamsResponse.error);
+        console.warn(
+          'Failed to load Teams Wanted:',
+          'error' in teamsResponse ? teamsResponse.error : 'Unknown error',
+        );
         setTeamsWanted([]);
       }
     } catch (error) {
@@ -95,6 +103,10 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
   // Create Players Wanted
   const createPlayersWanted = useCallback(
     async (data: IPlayersWantedFormState): Promise<void> => {
+      if (!token) {
+        throw new Error('Authentication required to create Players Wanted');
+      }
+
       setFormLoading(true);
       try {
         const createData: IPlayersWantedCreateRequest = {
@@ -106,6 +118,7 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
         const newClassified = await playerClassifiedService.createPlayersWanted(
           accountId,
           createData,
+          token,
         );
         setPlayersWanted((prev) => [newClassified, ...prev]);
         showNotification('Players Wanted created successfully', 'success');
@@ -118,12 +131,16 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
         setFormLoading(false);
       }
     },
-    [accountId, showNotification],
+    [accountId, token, showNotification],
   );
 
   // Update Players Wanted
   const updatePlayersWanted = useCallback(
     async (id: string, data: Partial<IPlayersWantedFormState>): Promise<void> => {
+      if (!token) {
+        throw new Error('Authentication required to update Players Wanted');
+      }
+
       setFormLoading(true);
       try {
         const updateData: IPlayersWantedUpdateRequest = {};
@@ -136,6 +153,7 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
           accountId,
           id,
           updateData,
+          token,
         );
         setPlayersWanted((prev) =>
           prev.map((item) => (item.id.toString() === id ? updatedClassified : item)),
@@ -150,14 +168,18 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
         setFormLoading(false);
       }
     },
-    [accountId, showNotification],
+    [accountId, token, showNotification],
   );
 
   // Delete Players Wanted
   const deletePlayersWanted = useCallback(
     async (id: string): Promise<void> => {
+      if (!token) {
+        throw new Error('Authentication required to delete Players Wanted');
+      }
+
       try {
-        await playerClassifiedService.deletePlayersWanted(accountId, id);
+        await playerClassifiedService.deletePlayersWanted(accountId, id, token);
         setPlayersWanted((prev) => prev.filter((item) => item.id.toString() !== id));
         showNotification('Players Wanted deleted successfully', 'success');
       } catch (error) {
@@ -167,7 +189,7 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
         throw error;
       }
     },
-    [accountId, showNotification],
+    [accountId, token, showNotification],
   );
 
   // ============================================================================
@@ -272,9 +294,17 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
   // Search classifieds
   const searchClassifieds = useCallback(
     async (params: IClassifiedSearchParams): Promise<void> => {
+      if (!token) {
+        throw new Error('Authentication required to search classifieds');
+      }
+
       setLoading(true);
       try {
-        const searchResults = await playerClassifiedService.searchClassifieds(accountId, params);
+        const searchResults = await playerClassifiedService.searchClassifieds(
+          accountId,
+          params,
+          token,
+        );
 
         // Update both lists based on search results
         const playersResults: IPlayersWantedResponse[] = [];
@@ -301,7 +331,7 @@ export const usePlayerClassifieds = (accountId: string): IUsePlayerClassifiedsRe
         setLoading(false);
       }
     },
-    [accountId, showNotification],
+    [accountId, token, showNotification],
   );
 
   // Clear search and reload original data

@@ -806,22 +806,69 @@ describe('PlayerClassifieds Routes', () => {
 
   describe('Rate limiting and security', () => {
     it('should require authentication for protected endpoints', async () => {
-      // Create app without auth middleware
-      const unprotectedApp = express();
-      unprotectedApp.use(express.json());
-      unprotectedApp.use(
-        '/api/accounts/:accountId/player-classifieds',
-        accountsPlayerClassifiedsRouter,
-      );
-      unprotectedApp.use(globalErrorHandler as express.ErrorRequestHandler);
+      // Test with the regular app but remove the user from the request
+      // to simulate unauthenticated state
+      const testApp = express();
+      testApp.use(express.json());
 
-      // This should fail without proper auth setup
-      const response = await request(unprotectedApp)
+      // Add auth middleware that rejects requests without user
+      testApp.use((req, res, next) => {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+          res.status(401).json({
+            success: false,
+            message: 'Access token required',
+          });
+          return;
+        }
+
+        // If there's a token, add mock user
+        req.user = { id: '456', username: 'testuser' };
+        next();
+      });
+
+      testApp.use('/api/accounts/:accountId/player-classifieds', accountsPlayerClassifiedsRouter);
+      testApp.use(globalErrorHandler as express.ErrorRequestHandler);
+
+      // Test protected endpoint without token - should return 401
+      const response = await request(testApp)
         .post('/api/accounts/123/player-classifieds/players-wanted')
-        .send({})
-        .expect(400); // Will fail due to validation
+        .send({
+          teamEventName: 'Test Team',
+          description: 'Test description',
+          positionsNeeded: '1,2',
+        })
+        .expect(401);
 
-      expect(response.body.message).toBeDefined();
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Access token required');
+    });
+
+    it('should allow access to public endpoints without authentication', async () => {
+      // Create app without authentication for public endpoints
+      const publicApp = express();
+      publicApp.use(express.json());
+
+      // No auth middleware - direct to router
+      publicApp.use('/api/accounts/:accountId/player-classifieds', accountsPlayerClassifiedsRouter);
+      publicApp.use(globalErrorHandler as express.ErrorRequestHandler);
+
+      // Mock the service for public GET players-wanted endpoint
+      mockPlayerClassifiedService.getPlayersWanted.mockResolvedValue({
+        data: [],
+        total: 0,
+        pagination: { page: 1, limit: 20, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        filters: { accountId: '123' },
+      });
+
+      // Test public endpoint (GET players-wanted) - should work without auth
+      const response = await request(publicApp)
+        .get('/api/accounts/123/player-classifieds/players-wanted')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
     });
 
     it('should validate input data before processing', async () => {

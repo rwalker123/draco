@@ -5,6 +5,7 @@ export { default as ClassifiedsHeader } from './ClassifiedsHeader';
 export { default as PlayersWantedCard } from './PlayersWantedCard';
 export { default as TeamsWantedCard } from './TeamsWantedCard';
 export { default as CreateTeamsWantedDialog } from './CreateTeamsWantedDialog';
+export { default as CreatePlayersWantedDialog } from './CreatePlayersWantedDialog';
 
 // TODO: Add more components as they are created
 // export { default as ClassifiedsFilter } from './ClassifiedsFilter';

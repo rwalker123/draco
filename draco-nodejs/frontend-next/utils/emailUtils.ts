@@ -277,6 +277,7 @@ export const generateMailtoUrl = (to: string[], subject?: string, body?: string)
  */
 export const uploadEmailAttachment = async (
   file: File,
+  token: string,
   onProgress?: (progress: number) => void,
 ): Promise<{ url: string; previewUrl?: string }> => {
   const formData = new FormData();
@@ -310,11 +311,8 @@ export const uploadEmailAttachment = async (
 
     xhr.open('POST', '/api/emails/attachments/upload');
 
-    // Add authorization header if available
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
+    // Add authorization header
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
     xhr.send(formData);
   });

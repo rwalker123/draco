@@ -26,7 +26,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   });
 
   // Get authentication and account membership status
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { isMember } = useAccountMembership(accountId);
   const isAuthenticated = !!user;
   const isAccountMember = !!isMember;
@@ -101,13 +101,21 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
       }, 5000);
 
       try {
-        const response = await playerClassifiedService.getTeamsWanted(accountId, {
-          page,
-          limit,
-          sortBy: 'dateCreated',
-          sortOrder: 'desc',
-          type: 'teams',
-        });
+        if (!token) {
+          setLocalError('Authentication required');
+          return;
+        }
+        const response = await playerClassifiedService.getTeamsWanted(
+          accountId,
+          {
+            page,
+            limit,
+            sortBy: 'dateCreated',
+            sortOrder: 'desc',
+            type: 'teams',
+          },
+          token,
+        );
 
         if (response.success && response.data) {
           // Update the local teamsWanted data
@@ -147,20 +155,28 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
         setLocalLoading(false);
       }
     },
-    [accountId],
+    [accountId, token],
   );
 
   // Load initial data on mount only
   React.useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const response = await playerClassifiedService.getTeamsWanted(accountId, {
-          page: 1,
-          limit: 25,
-          sortBy: 'dateCreated',
-          sortOrder: 'desc',
-          type: 'teams',
-        });
+        if (!token) {
+          setLocalError('Authentication required');
+          return;
+        }
+        const response = await playerClassifiedService.getTeamsWanted(
+          accountId,
+          {
+            page: 1,
+            limit: 25,
+            sortBy: 'dateCreated',
+            sortOrder: 'desc',
+            type: 'teams',
+          },
+          token,
+        );
 
         if (response.success && response.data) {
           setLocalTeamsWanted(response.data.data);
@@ -198,7 +214,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
     };
 
     loadInitialData();
-  }, [accountId]);
+  }, [accountId, token]);
 
   // Handle edit (requires access code)
   const handleEdit = (id: string, accessCodeRequired: string) => {
