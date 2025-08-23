@@ -78,6 +78,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   // Form validation errors
   const [errors, setErrors] = useState<Partial<Record<keyof ITeamsWantedFormState, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
 
   // Handle form field changes
   const handleFieldChange = (
@@ -157,6 +158,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
+    setSubmitSuccess(false);
 
     if (!validateForm()) {
       return;
@@ -164,7 +166,8 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     try {
       await onSubmit(formData);
-      handleClose();
+      setSubmitSuccess(true);
+      // Don't close immediately - let user see success message
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to create Teams Wanted ad');
     }
@@ -183,6 +186,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     });
     setErrors({});
     setSubmitError(null);
+    setSubmitSuccess(false);
     onClose();
   };
 
@@ -191,6 +195,15 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       <DialogTitle>Post Teams Wanted</DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
+          {/* Success Alert */}
+          {submitSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSubmitSuccess(false)}>
+              <strong>Teams Wanted ad created successfully!</strong>
+              <br />
+              {`You'll receive an access code via email shortly. Keep this code safe - you'll need it to edit or delete your ad later.`}
+            </Alert>
+          )}
+
           {/* Error Alert */}
           {submitError && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
@@ -344,11 +357,13 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>
-            Cancel
+            {submitSuccess ? 'Close' : 'Cancel'}
           </Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? 'Creating...' : 'Post Teams Wanted'}
-          </Button>
+          {!submitSuccess && (
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading ? 'Creating...' : 'Post Teams Wanted'}
+            </Button>
+          )}
         </DialogActions>
       </form>
     </Dialog>

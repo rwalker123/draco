@@ -19,6 +19,7 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
   Phone as PhoneIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
 import { sanitizeDisplayText } from '../../utils/sanitization';
@@ -31,7 +32,6 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   canEdit,
   canDelete,
   isAuthenticated,
-  isAccountMember,
 }) => {
   // Parse positions from comma-separated string and sanitize each position
   const positionsPlayed = (classified.positionsPlayed || '')
@@ -117,21 +117,43 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           <Box mb={2}>
             {/* Email */}
             <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <PersonIcon fontSize="small" color="action" />
-              <Typography variant="caption" color="text.secondary">
+              <EmailIcon fontSize="small" color="action" />
+              <Typography
+                variant="caption"
+                color="primary"
+                component="a"
+                href={`mailto:${sanitizeDisplayText(classified.email)}`}
+                sx={{
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
                 {sanitizeDisplayText(classified.email)}
               </Typography>
             </Box>
 
-            {/* Phone - Only show for account members */}
-            {isAccountMember && (
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <PhoneIcon fontSize="small" color="action" />
-                <Typography variant="caption" color="text.secondary">
-                  {sanitizeDisplayText(classified.phone)}
-                </Typography>
-              </Box>
-            )}
+            {/* Phone */}
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <PhoneIcon fontSize="small" color="action" />
+              <Typography
+                variant="caption"
+                color="primary"
+                component="a"
+                href={`tel:${sanitizeDisplayText(classified.phone)}`}
+                sx={{
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {sanitizeDisplayText(classified.phone)}
+              </Typography>
+            </Box>
           </Box>
         )}
 

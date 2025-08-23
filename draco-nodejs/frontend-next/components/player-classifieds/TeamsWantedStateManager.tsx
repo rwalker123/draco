@@ -178,7 +178,6 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
                 canEdit={canEdit}
                 canDelete={canDelete}
                 isAuthenticated={true}
-                isAccountMember={true}
               />
             </Box>
           ))}
@@ -325,7 +324,6 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
               canEdit={() => true} // Owner can always edit their own ad
               canDelete={() => true} // Owner can always delete their own ad
               isAuthenticated={true}
-              isAccountMember={false} // Not an account member, but verified owner
             />
           </Box>
         </Box>

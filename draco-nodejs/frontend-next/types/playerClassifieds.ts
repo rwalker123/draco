@@ -339,7 +339,6 @@ export interface ITeamsWantedCardPublicProps {
   canEdit: (classified: ITeamsWantedResponse) => boolean;
   canDelete: (classified: ITeamsWantedResponse) => boolean;
   isAuthenticated: boolean;
-  isAccountMember: boolean;
 }
 
 // Props for the Classifieds Header component
