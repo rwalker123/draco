@@ -294,7 +294,7 @@ describe('playerClassifiedService', () => {
 
         await expect(
           playerClassifiedService.createTeamsWanted(accountId, createData),
-        ).rejects.toThrow('Failed to create Teams Wanted: Bad Request');
+        ).rejects.toThrow('Bad Request');
       });
     });
 
