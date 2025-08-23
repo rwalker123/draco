@@ -195,7 +195,7 @@ router.post(
       logRegistrationEvent(req, 'registration_linkByName', 'success', {
         accountId,
         userId: req.user!.id,
-        validationType,
+        validationType: validationType as string | undefined,
         timingMs: Date.now() - start,
       });
 
@@ -404,7 +404,7 @@ router.post(
       logRegistrationEvent(req, 'registration_selfRegister', 'success', {
         accountId,
         userId: req.user!.id,
-        validationType,
+        validationType: validationType as string | undefined,
         timingMs: Date.now() - start,
       });
 

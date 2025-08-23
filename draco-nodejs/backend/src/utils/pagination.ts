@@ -90,6 +90,21 @@ export class PaginationHelper {
   }
 
   /**
+   * Execute paginated Prisma query with count
+   */
+  static async executePaginatedQuery<TTransformed>(
+    queryFn: () => Promise<unknown[]>,
+    countFn: () => Promise<number>,
+    transformFn?: (items: unknown[]) => TTransformed[],
+  ): Promise<{ data: TTransformed[]; total: number }> {
+    const [items, total] = await Promise.all([queryFn(), countFn()]);
+
+    const data = transformFn ? transformFn(items) : (items as unknown as TTransformed[]);
+
+    return { data, total };
+  }
+
+  /**
    * Get Prisma orderBy clause from sort parameters
    */
   static getPrismaOrderBy(

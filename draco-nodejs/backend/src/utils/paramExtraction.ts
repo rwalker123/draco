@@ -23,11 +23,6 @@ export const extractBigIntParams = <T extends string>(
 
     const value = params[key]!;
 
-    // Check for temporary IDs created by frontend optimistic updates
-    if (value.startsWith('temp-')) {
-      throw new Error(`Operation in progress for ${key}, please try again in a moment`);
-    }
-
     try {
       result[key] = BigInt(value);
     } catch (_error) {

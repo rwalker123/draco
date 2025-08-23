@@ -15,6 +15,7 @@ import {
   Badge,
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, TouchApp } from '@mui/icons-material';
+import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
 
 interface GesturePaginationProps {
   page: number;
@@ -49,7 +50,7 @@ const GesturePaginationControl: React.FC<GesturePaginationProps> = ({
 
   useEffect(() => {
     // Hide hint after first interaction
-    const timer = setTimeout(() => setShowHint(false), 5000);
+    const timer = setTimeout(() => setShowHint(false), UI_TIMEOUTS.PAGINATION_HINT_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, []);
 

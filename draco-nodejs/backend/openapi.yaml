@@ -175,6 +175,228 @@ components:
           type: string
           description: Position abbreviation
           example: "P"
+    IExperienceLevel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experience level ID
+          example: "intermediate"
+        name:
+          type: string
+          description: Experience level name
+          example: "Intermediate"
+        description:
+          type: string
+          description: Experience level description
+          example: "Solid fundamental skills, understands game strategy"
+        yearsRequired:
+          type: number
+          description: Years of experience required
+          example: 2
+        skillLevel:
+          type: string
+          enum: ["beginner", "intermediate", "advanced", "expert"]
+          description: Skill level category
+          example: "intermediate"
+    IPaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Items per page
+          example: 20
+        hasNext:
+          type: boolean
+          description: Whether there are more pages
+          example: true
+        hasPrev:
+          type: boolean
+          description: Whether there are previous pages
+          example: false
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 5
+    IClassifiedSearchFilters:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["players", "teams", "all"]
+          description: Type of classified
+          example: "all"
+        positions:
+          type: array
+          items:
+            type: string
+          description: Position IDs to filter by
+          example: ["pitcher", "catcher"]
+        experience:
+          type: array
+          items:
+            type: string
+          description: Experience level IDs to filter by
+          example: ["intermediate", "advanced"]
+        dateRange:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+              nullable: true
+              description: Start date for filtering
+              example: "2024-01-01"
+            to:
+              type: string
+              format: date
+              nullable: true
+              description: End date for filtering
+              example: "2024-12-31"
+        searchQuery:
+          type: string
+          nullable: true
+          description: Search query text
+          example: "baseball team"
+    ITeamsWantedOwnerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the classified
+          example: "789"
+        accountId:
+          type: string
+          description: Account ID the classified belongs to
+          example: "123"
+        dateCreated:
+          type: string
+          format: date
+          description: Date when the classified was created
+          example: "2024-01-01"
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position IDs played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: Player's birth date
+          example: "1990-05-15"
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Account ID
+              example: "123"
+            name:
+              type: string
+              description: Account name
+              example: "Local Baseball League"
+    ITeamsWantedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the classified
+          example: "789"
+        accountId:
+          type: string
+          description: Account ID the classified belongs to
+          example: "123"
+        dateCreated:
+          type: string
+          format: date
+          description: Date when the classified was created
+          example: "2024-01-01"
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position IDs played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: Player's birth date
+          example: "1990-05-15"
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Account ID
+              example: "123"
+            name:
+              type: string
+              description: Account name
+              example: "Local Baseball League"
+    WorkoutRegistrationUpdateDTO:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ["pending", "confirmed", "cancelled", "no-show"]
+          description: Registration status
+          example: "confirmed"
+        notes:
+          type: string
+          description: Administrative notes about the registration
+          example: "Player confirmed attendance"
+        checkedIn:
+          type: boolean
+          description: Whether the participant has checked in
+          example: true
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   securitySchemes:
     bearerAuth:
       type: http
@@ -524,6 +746,7 @@ paths:
             type: string
             enum:
               - dateCreated
+              - relevance
             default: dateCreated
           description: Field to sort by
         - in: query
@@ -667,6 +890,7 @@ paths:
             type: string
             enum:
               - dateCreated
+              - relevance
             default: dateCreated
           description: Field to sort by
         - in: query
@@ -751,6 +975,62 @@ paths:
           description: Invalid access code
         "404":
           description: Classified not found
+  "/api/accounts/{accountId}/player-classifieds/teams-wanted/access-code":
+    post:
+      operationId: getTeamsWantedByAccessCode
+      summary: Get Teams Wanted classified by access code
+      description: Retrieve a Teams Wanted classified using the access code (public endpoint)
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - accessCode
+              properties:
+                accessCode:
+                  type: string
+                  description: Access code received via email
+      responses:
+        "200":
+          description: Teams Wanted classified retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/ITeamsWantedOwnerResponse"
+        "400":
+          description: Missing access code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Invalid access code or Teams Wanted ad not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}":
     put:
       operationId: updateTeamsWanted

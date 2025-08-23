@@ -39,6 +39,18 @@ vi.mock('../../utils/pagination.js', () => ({
       hasNext: true,
       hasPrev: false,
     }),
+    executePaginatedQuery: vi.fn().mockImplementation(async (queryFn, countFn, transformFn) => {
+      // Actually execute the function closures to simulate real behavior
+      const mockItems = await queryFn();
+      const total = await countFn();
+
+      if (transformFn) {
+        const data = transformFn(mockItems);
+        return { data, total };
+      }
+
+      return { data: mockItems, total };
+    }),
   },
 }));
 
@@ -57,6 +69,18 @@ vi.mock('bcrypt', () => ({
   hash: vi.fn(),
 }));
 
+// Create mock email provider for EmailProviderFactory
+const mockEmailProvider = vi.hoisted(() => ({
+  sendEmail: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+// Mock the EmailProviderFactory for dynamic imports
+vi.mock('../email/EmailProviderFactory.js', () => ({
+  EmailProviderFactory: {
+    getProvider: vi.fn().mockResolvedValue(mockEmailProvider),
+  },
+}));
+
 describe('PlayerClassifiedService', () => {
   let playerClassifiedService: PlayerClassifiedService;
   let mockPrisma: any;
@@ -64,6 +88,9 @@ describe('PlayerClassifiedService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Set required environment variables for tests
+    process.env.FRONTEND_URL = 'https://localhost:3000';
 
     // Get the mocked bcrypt module
     mockBcrypt = await import('bcrypt');
@@ -709,12 +736,14 @@ describe('PlayerClassifiedService', () => {
   describe('helper methods', () => {
     it('should validate positions correctly', () => {
       // Test valid positions
-      expect(playerClassifiedService['validatePositions']('1,2,3')).toBe(true);
-      expect(playerClassifiedService['validatePositions']('1')).toBe(true);
+      expect(playerClassifiedService.validationService.validatePositions('1,2,3')).toBe(true);
+      expect(playerClassifiedService.validationService.validatePositions('1')).toBe(true);
 
       // Test invalid positions
-      expect(playerClassifiedService['validatePositions']('1,invalid,3')).toBe(false);
-      expect(playerClassifiedService['validatePositions']('')).toBe(false);
+      expect(playerClassifiedService.validationService.validatePositions('1,invalid,3')).toBe(
+        false,
+      );
+      expect(playerClassifiedService.validationService.validatePositions('')).toBe(false);
     });
 
     it('should validate email format correctly', async () => {
@@ -771,6 +800,445 @@ describe('PlayerClassifiedService', () => {
       expect(result.getDate()).toBe(6);
       expect(result.getMonth()).toBe(0); // January (0-indexed)
       expect(result.getFullYear()).toBe(2024);
+    });
+  });
+
+  describe('security improvements', () => {
+    describe('sanitizeHtmlContent', () => {
+      it('should remove script tags', () => {
+        const input = '<script>alert("xss")</script>John Doe';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('John Doe');
+      });
+
+      it('should remove HTML tags', () => {
+        const input = '<div>Hello</div><span>World</span>';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('HelloWorld');
+      });
+
+      it('should remove javascript: protocol', () => {
+        const input = 'javascript:alert("xss")';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('');
+      });
+
+      it('should remove vbscript: protocol', () => {
+        const input = 'vbscript:msgbox("xss")';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('msgbox("xss")');
+      });
+
+      it('should remove data: protocol', () => {
+        const input = 'data:text/html,<script>alert("xss")</script>';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('text/html,');
+      });
+
+      it('should remove event handlers', () => {
+        const input = 'onclick="alert()" John Doe';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('John Doe');
+      });
+
+      it('should replace newlines with spaces', () => {
+        const input = 'Line 1\nLine 2\r\nLine 3';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('Line 1 Line 2 Line 3');
+      });
+
+      it('should handle empty and null inputs', () => {
+        expect(playerClassifiedService.emailService.sanitizeHtmlContent('')).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeHtmlContent(null as any)).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeHtmlContent(undefined as any)).toBe('');
+      });
+
+      it('should handle non-string inputs gracefully', () => {
+        expect(playerClassifiedService.emailService.sanitizeHtmlContent(123 as any)).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeHtmlContent({} as any)).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeHtmlContent([] as any)).toBe('');
+      });
+
+      it('should preserve safe content', () => {
+        const input = 'John Doe - Baseball Player';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('John Doe - Baseball Player');
+      });
+
+      it('should handle complex XSS attempts', () => {
+        const input = '<img src="x" onerror="javascript:alert(\'XSS\')" />';
+        const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
+        expect(result).toBe('');
+      });
+    });
+
+    describe('sanitizeTextContent', () => {
+      it('should remove newlines', () => {
+        const input = 'Line 1\nLine 2\r\nLine 3';
+        const result = playerClassifiedService.emailService.sanitizeTextContent(input);
+        expect(result).toBe('Line 1 Line 2 Line 3');
+      });
+
+      it('should remove HTML tags', () => {
+        const input = '<div>Hello</div> World';
+        const result = playerClassifiedService.emailService.sanitizeTextContent(input);
+        expect(result).toBe('Hello World');
+      });
+
+      it('should handle empty and null inputs', () => {
+        expect(playerClassifiedService.emailService.sanitizeTextContent('')).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeTextContent(null as any)).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeTextContent(undefined as any)).toBe('');
+      });
+
+      it('should handle non-string inputs gracefully', () => {
+        expect(playerClassifiedService.emailService.sanitizeTextContent(123 as any)).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeTextContent({} as any)).toBe('');
+        expect(playerClassifiedService.emailService.sanitizeTextContent([] as any)).toBe('');
+      });
+
+      it('should preserve safe text content', () => {
+        const input = 'John Doe - Baseball Player (Contact: john@example.com)';
+        const result = playerClassifiedService.emailService.sanitizeTextContent(input);
+        expect(result).toBe('John Doe - Baseball Player (Contact: john@example.com)');
+      });
+
+      it('should trim whitespace', () => {
+        const input = '   John Doe   ';
+        const result = playerClassifiedService.emailService.sanitizeTextContent(input);
+        expect(result).toBe('John Doe');
+      });
+    });
+
+    describe('generateEmailStyles', () => {
+      it('should generate consistent CSS styles from constants', () => {
+        const styles = playerClassifiedService.emailService.generateEmailStyles();
+
+        expect(styles).toContain('max-width: 600px');
+        expect(styles).toContain('background-color: #4285F4');
+        expect(styles).toContain('color: white');
+        expect(styles).toContain('font-family: Arial, sans-serif');
+        expect(styles).toContain('border-radius: 8px');
+      });
+
+      it('should include all necessary CSS classes', () => {
+        const styles = playerClassifiedService.emailService.generateEmailStyles();
+
+        expect(styles).toContain('.email-container');
+        expect(styles).toContain('.header-banner');
+        expect(styles).toContain('.content-area');
+        expect(styles).toContain('.access-code-box');
+        expect(styles).toContain('.verification-link');
+        expect(styles).toContain('.footer');
+      });
+    });
+  });
+
+  describe('configuration constants integration', () => {
+    it('should use VALIDATION_LIMITS constants in validation', async () => {
+      const mockRequest = {
+        teamEventName: 'A'.repeat(51), // Exceeds TEAM_EVENT_NAME_MAX_LENGTH (50)
+        description: 'Valid description',
+        positionsNeeded: '1,2,3',
+      };
+
+      await expect(
+        playerClassifiedService.createPlayersWanted(BigInt(123), BigInt(456), mockRequest),
+      ).rejects.toThrow('Validation failed');
+    });
+
+    it('should use BCRYPT_CONSTANTS for access code hashing', async () => {
+      const mockRequest: ITeamsWantedCreateRequest = {
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+1234567890',
+        experience: '5 years experience',
+        positionsPlayed: '1,2',
+        birthDate: '1995-06-15',
+      };
+
+      const mockAccountId = BigInt(123);
+
+      // Mock successful creation
+      mockPrisma.teamswantedclassified.create.mockResolvedValue({
+        id: BigInt(789),
+        accountid: mockAccountId,
+        datecreated: new Date(),
+        name: mockRequest.name,
+        email: mockRequest.email,
+        phone: mockRequest.phone,
+        experience: mockRequest.experience,
+        positionsplayed: mockRequest.positionsPlayed,
+        accesscode: 'hashed_access_code',
+        birthdate: new Date(mockRequest.birthDate),
+      });
+
+      mockPrisma.accounts.findUnique.mockResolvedValue({
+        id: mockAccountId,
+        name: 'Test Account',
+      });
+
+      await playerClassifiedService.createTeamsWanted(mockAccountId, mockRequest);
+
+      // Verify bcrypt.hash was called with the correct salt rounds (12)
+      expect(mockBcrypt.default.hash).toHaveBeenCalledWith(
+        expect.any(String), // UUID access code
+        12, // BCRYPT_CONSTANTS.ACCESS_CODE_SALT_ROUNDS
+      );
+    });
+
+    it('should use DEFAULT_VALUES constants for pagination', async () => {
+      const mockAccountId = BigInt(123);
+
+      // Reset mocks to ensure clean state
+      vi.clearAllMocks();
+      mockPrisma.playerswantedclassified.findMany.mockResolvedValue([]);
+      mockPrisma.playerswantedclassified.count.mockResolvedValue(0);
+
+      // Call with minimal params to trigger defaults
+      await playerClassifiedService.getPlayersWanted(mockAccountId, {
+        accountId: mockAccountId,
+      });
+
+      // Verify that default pagination values were used
+      expect(mockPrisma.playerswantedclassified.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 0, // (DEFAULT_PAGE - 1) * DEFAULT_LIMIT = (1 - 1) * 20 = 0
+          take: 20, // DEFAULT_LIMIT
+        }),
+      );
+    });
+
+    it('should use EMAIL_CONTENT constants for email generation', async () => {
+      const mockRequest: ITeamsWantedCreateRequest = {
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+1234567890',
+        experience: '5 years experience',
+        positionsPlayed: '1,2',
+        birthDate: '1995-06-15',
+      };
+
+      const mockAccountId = BigInt(123);
+
+      mockPrisma.teamswantedclassified.create.mockResolvedValue({
+        id: BigInt(789),
+        accountid: mockAccountId,
+        datecreated: new Date(),
+        name: mockRequest.name,
+        email: mockRequest.email,
+        phone: mockRequest.phone,
+        experience: mockRequest.experience,
+        positionsplayed: mockRequest.positionsPlayed,
+        accesscode: 'hashed_access_code',
+        birthdate: new Date(mockRequest.birthDate),
+      });
+
+      mockPrisma.accounts.findUnique.mockResolvedValue({
+        id: mockAccountId,
+        name: 'Test Account',
+      });
+
+      await playerClassifiedService.createTeamsWanted(mockAccountId, mockRequest);
+
+      // Verify email was called with constants-based subject
+      expect(mockEmailProvider.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: 'Test Account - Teams Wanted Classified Access Code',
+          from: 'noreply@dracosports.com',
+          fromName: 'Draco Sports Manager',
+          replyTo: 'support@dracosports.com',
+        }),
+      );
+    });
+  });
+
+  describe('enhanced error handling', () => {
+    it('should throw InternalServerError when creator information cannot be retrieved', async () => {
+      const mockRequest: IPlayersWantedCreateRequest = {
+        teamEventName: 'Spring Training Team',
+        description: 'Looking for experienced players for spring training',
+        positionsNeeded: '1,2,3',
+      };
+
+      const mockAccountId = BigInt(123);
+      const mockContactId = BigInt(456);
+
+      mockPrisma.playerswantedclassified.create.mockResolvedValue({
+        id: BigInt(789),
+        accountid: mockAccountId,
+        datecreated: new Date(),
+        createdbycontactid: mockContactId,
+        teameventname: mockRequest.teamEventName,
+        description: mockRequest.description,
+        positionsneeded: mockRequest.positionsNeeded,
+      });
+
+      // Mock missing creator (returns null)
+      mockPrisma.contacts.findUnique.mockResolvedValue(null);
+      mockPrisma.accounts.findUnique.mockResolvedValue({
+        id: mockAccountId,
+        name: 'Test Account',
+      });
+
+      await expect(
+        playerClassifiedService.createPlayersWanted(mockAccountId, mockContactId, mockRequest),
+      ).rejects.toThrow('Failed to retrieve creator or account information');
+    });
+
+    it('should throw InternalServerError when account information cannot be retrieved', async () => {
+      const mockRequest: ITeamsWantedCreateRequest = {
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+1234567890',
+        experience: '5 years experience',
+        positionsPlayed: '1,2',
+        birthDate: '1995-06-15',
+      };
+
+      const mockAccountId = BigInt(123);
+
+      mockPrisma.teamswantedclassified.create.mockResolvedValue({
+        id: BigInt(789),
+        accountid: mockAccountId,
+        datecreated: new Date(),
+        name: mockRequest.name,
+        email: mockRequest.email,
+        phone: mockRequest.phone,
+        experience: mockRequest.experience,
+        positionsplayed: mockRequest.positionsPlayed,
+        accesscode: 'hashed_access_code',
+        birthdate: new Date(mockRequest.birthDate),
+      });
+
+      // Mock missing account (returns null)
+      mockPrisma.accounts.findUnique.mockResolvedValue(null);
+
+      await expect(
+        playerClassifiedService.createTeamsWanted(mockAccountId, mockRequest),
+      ).rejects.toThrow('Failed to retrieve account information');
+    });
+
+    it('should throw InternalServerError when FRONTEND_URL is not configured', async () => {
+      // Save original environment variable
+      const originalFrontendUrl = process.env.FRONTEND_URL;
+
+      // Remove FRONTEND_URL environment variable
+      delete process.env.FRONTEND_URL;
+
+      const userData = {
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+1234567890',
+        experience: '5 years experience',
+        positionsPlayed: '1,2',
+        birthDate: '1995-06-15',
+      };
+
+      const account = { id: BigInt(123), name: 'Test Account' };
+
+      await expect(
+        playerClassifiedService.emailService.sendTeamsWantedVerificationEmail(
+          'jane@example.com',
+          BigInt(789),
+          'access-code',
+          account,
+          userData,
+        ),
+      ).rejects.toThrow('FRONTEND_URL environment variable is required but not set');
+
+      // Restore original environment variable
+      if (originalFrontendUrl) {
+        process.env.FRONTEND_URL = originalFrontendUrl;
+      }
+    });
+  });
+
+  describe('type safety improvements', () => {
+    it('should maintain proper Prisma type safety in database operations', async () => {
+      const mockRequest: IPlayersWantedCreateRequest = {
+        teamEventName: 'Spring Training Team',
+        description: 'Looking for experienced players',
+        positionsNeeded: '1,2,3',
+      };
+
+      const mockAccountId = BigInt(123);
+      const mockContactId = BigInt(456);
+
+      // Mock successful creation with proper types
+      mockPrisma.playerswantedclassified.create.mockResolvedValue({
+        id: BigInt(789),
+        accountid: mockAccountId,
+        datecreated: new Date('2024-01-15T10:30:00Z'),
+        createdbycontactid: mockContactId,
+        teameventname: mockRequest.teamEventName,
+        description: mockRequest.description,
+        positionsneeded: mockRequest.positionsNeeded,
+      });
+
+      mockPrisma.contacts.findUnique.mockResolvedValue({
+        id: mockContactId,
+        firstname: 'John',
+        lastname: 'Doe',
+        email: 'john@example.com',
+      });
+
+      mockPrisma.accounts.findUnique.mockResolvedValue({
+        id: mockAccountId,
+        name: 'Test Account',
+      });
+
+      const result = await playerClassifiedService.createPlayersWanted(
+        mockAccountId,
+        mockContactId,
+        mockRequest,
+      );
+
+      // Verify that the result maintains proper typing
+      expect(typeof result.id).toBe('bigint');
+      expect(typeof result.accountId).toBe('bigint');
+      expect(typeof result.createdByContactId).toBe('bigint');
+      expect(typeof result.dateCreated).toBe('string'); // Formatted by DateUtils
+      expect(typeof result.teamEventName).toBe('string');
+      expect(typeof result.description).toBe('string');
+      expect(typeof result.positionsNeeded).toBe('string');
+
+      // Verify nested object structures
+      expect(result.creator).toHaveProperty('id');
+      expect(result.creator).toHaveProperty('firstName');
+      expect(result.creator).toHaveProperty('lastName');
+      expect(result.creator).toHaveProperty('email');
+
+      expect(result.account).toHaveProperty('id');
+      expect(result.account).toHaveProperty('name');
+    });
+
+    it('should use proper Prisma where clauses with type safety', async () => {
+      const mockAccountId = BigInt(123);
+      const searchParams = {
+        accountId: mockAccountId,
+        page: 1,
+        limit: 10,
+        sortBy: 'dateCreated' as const,
+        sortOrder: 'desc' as const,
+      };
+
+      mockPrisma.playerswantedclassified.findMany.mockResolvedValue([]);
+      mockPrisma.playerswantedclassified.count.mockResolvedValue(0);
+
+      await playerClassifiedService.getPlayersWanted(mockAccountId, searchParams);
+
+      // Verify that the where clause uses proper bigint type
+      expect(mockPrisma.playerswantedclassified.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { accountid: mockAccountId }, // bigint type preserved
+          orderBy: { datecreated: 'desc' },
+        }),
+      );
+
+      expect(mockPrisma.playerswantedclassified.count).toHaveBeenCalledWith({
+        where: { accountid: mockAccountId },
+      });
     });
   });
 });

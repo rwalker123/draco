@@ -124,7 +124,7 @@ export const accessCodeService = {
 
       return {
         success: true,
-        classified: data,
+        classified: data.data,
         message: 'Access code verified successfully',
       };
     } catch {

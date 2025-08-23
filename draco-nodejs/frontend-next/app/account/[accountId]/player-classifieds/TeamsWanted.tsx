@@ -11,15 +11,28 @@ import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { StreamPaginationControl } from '../../../../components/pagination';
 import TeamsWantedStateManager from '../../../../components/player-classifieds/TeamsWantedStateManager';
 import CreateTeamsWantedDialog from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
-import { ITeamsWantedResponse } from '../../../../types/playerClassifieds';
+import {
+  ITeamsWantedResponse,
+  ITeamsWantedOwnerResponse,
+} from '../../../../types/playerClassifieds';
 import { playerClassifiedService } from '../../../../services/playerClassifiedService';
 import { ITeamsWantedFormState } from '../../../../types/playerClassifieds';
+import { UI_TIMEOUTS } from '../../../../constants/timeoutConstants';
 
 interface TeamsWantedProps {
   accountId: string;
+  autoVerificationData?: {
+    accessCode: string;
+    classifiedData: ITeamsWantedOwnerResponse;
+  } | null;
+  onVerificationProcessed?: () => void;
 }
 
-const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
+const TeamsWanted: React.FC<TeamsWantedProps> = ({
+  accountId,
+  autoVerificationData,
+  onVerificationProcessed,
+}) => {
   // Get permission functions for edit/delete controls
   const { canEditTeamsWantedById, canDeleteTeamsWantedById } = useClassifiedsPermissions({
     accountId,
@@ -95,10 +108,10 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
   // Load data for specific page
   const loadPageData = React.useCallback(
     async (page: number, limit: number) => {
-      // Set loading after 5 seconds to avoid flashing on fast page changes
+      // Set loading after configured timeout to avoid flashing on fast page changes
       const loadingTimeout = setTimeout(() => {
         setLocalLoading(true);
-      }, 5000);
+      }, UI_TIMEOUTS.LOADING_DISPLAY_TIMEOUT_MS);
 
       try {
         if (!token) {
@@ -298,6 +311,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({ accountId }) => {
         canDelete={canDeleteTeamsWantedById}
         loading={localLoading}
         error={localError || undefined}
+        autoVerificationData={autoVerificationData}
+        onVerificationProcessed={onVerificationProcessed}
       />
 
       {/* Pagination Controls - Only show for authenticated account members */}

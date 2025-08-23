@@ -157,7 +157,7 @@ if [ -f "$MAIN_REPO_PATH/draco-nodejs/backend/.env" ]; then
     
     # Update PORT and FRONTEND_URL in backend .env
     sed -i.bak "s/^PORT=.*/PORT=$BACKEND_PORT/" "draco-nodejs/backend/.env"
-    sed -i.bak "s|^FRONTEND_URL=.*|FRONTEND_URL=https://localhost:$FRONTEND_PORT|" "draco-nodejs/backend/.env"
+    sed -i.bak "s|^FRONTEND_URL=.*|FRONTEND_URL=http://localhost:$FRONTEND_PORT|" "draco-nodejs/backend/.env"
     rm -f "draco-nodejs/backend/.env.bak"
     
     print_success "Backend .env configured with port $BACKEND_PORT"
