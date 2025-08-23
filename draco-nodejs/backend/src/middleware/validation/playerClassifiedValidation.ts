@@ -191,7 +191,7 @@ export const validateTeamsWantedCreate = [
 
   validatePhone('phone', true),
 
-  validateRequiredString('experience', 50),
+  validateRequiredString('experience', 255),
 
   validatePositionIds('positionsPlayed'),
 
@@ -267,8 +267,8 @@ export const validateTeamsWantedUpdate = [
 
   sanitizeText('experience')
     .optional()
-    .isLength({ max: 50 })
-    .withMessage('Experience must not exceed 50 characters'),
+    .isLength({ max: 255 })
+    .withMessage('Experience must not exceed 255 characters'),
 
   body('positionsPlayed')
     .optional()

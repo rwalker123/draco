@@ -35,7 +35,7 @@ describe('PlayerClassified Configuration Constants', () => {
       expect(VALIDATION_LIMITS.DESCRIPTION_MAX_LENGTH).toBe(1000);
       expect(VALIDATION_LIMITS.DESCRIPTION_MIN_LENGTH).toBe(10);
       expect(VALIDATION_LIMITS.NAME_MAX_LENGTH).toBe(50);
-      expect(VALIDATION_LIMITS.EXPERIENCE_MAX_LENGTH).toBe(50);
+      expect(VALIDATION_LIMITS.EXPERIENCE_MAX_LENGTH).toBe(255);
       expect(VALIDATION_LIMITS.MIN_AGE).toBe(13);
       expect(VALIDATION_LIMITS.MAX_AGE).toBe(80);
     });

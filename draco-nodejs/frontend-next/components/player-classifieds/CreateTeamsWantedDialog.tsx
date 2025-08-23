@@ -26,6 +26,7 @@ import { ITeamsWantedFormState } from '../../types/playerClassifieds';
 import { formatPhoneNumber } from '../../utils/contactUtils';
 import { isValidEmailFormat } from '../../utils/emailValidation';
 import { validatePhoneNumber } from '../../utils/contactValidation';
+import { sanitizeDisplayText } from '../../utils/sanitization';
 
 interface CreateTeamsWantedDialogProps {
   open: boolean;
@@ -49,15 +50,7 @@ const AVAILABLE_POSITIONS = [
   'designated-hitter',
 ];
 
-// Experience levels - using IDs that match backend validation
-const EXPERIENCE_LEVELS = [
-  'beginner',
-  'beginner-plus',
-  'intermediate',
-  'intermediate-plus',
-  'advanced',
-  'expert',
-];
+// Experience level is now a free-form text input
 
 const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   open,
@@ -129,8 +122,12 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       }
     }
 
-    if (!formData.experience) {
+    if (!formData.experience.trim()) {
       newErrors.experience = 'Experience level is required';
+    } else if (formData.experience.trim().length < 2) {
+      newErrors.experience = 'Experience level must be at least 2 characters';
+    } else if (formData.experience.trim().length > 255) {
+      newErrors.experience = 'Experience level must be 255 characters or less';
     }
 
     if (formData.positionsPlayed.length === 0) {
@@ -169,6 +166,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       setSubmitSuccess(true);
       // Don't close immediately - let user see success message
     } catch (error) {
+      // The service layer now handles parsing detailed server errors
       setSubmitError(error instanceof Error ? error.message : 'Failed to create Teams Wanted ad');
     }
   };
@@ -265,29 +263,32 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
           />
 
           {/* Experience Level */}
-          <FormControl fullWidth margin="dense" error={!!errors.experience} sx={{ mb: 2 }}>
-            <InputLabel id="experience-level-label">Experience Level</InputLabel>
-            <Select
-              labelId="experience-level-label"
-              id="experience-level-select"
-              value={formData.experience}
-              onChange={(e) => handleFieldChange('experience', e.target.value)}
-              label="Experience Level"
-              required
-            >
-              {EXPERIENCE_LEVELS.map((level) => (
-                <MenuItem key={level} value={level}>
-                  {level === 'beginner' && 'Beginner'}
-                  {level === 'beginner-plus' && 'Beginner+'}
-                  {level === 'intermediate' && 'Intermediate'}
-                  {level === 'intermediate-plus' && 'Intermediate+'}
-                  {level === 'advanced' && 'Advanced'}
-                  {level === 'expert' && 'Expert'}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.experience && <FormHelperText>{errors.experience}</FormHelperText>}
-          </FormControl>
+          <TextField
+            fullWidth
+            margin="dense"
+            label="Experience Level"
+            multiline
+            rows={4}
+            value={formData.experience}
+            onChange={(e) => {
+              // Use DOMPurify-based sanitization for plain text input
+              const sanitizedValue = sanitizeDisplayText(e.target.value);
+              handleFieldChange('experience', sanitizedValue);
+            }}
+            error={!!errors.experience}
+            helperText={
+              errors.experience || `${255 - formData.experience.length} characters remaining`
+            }
+            placeholder="Describe your baseball experience in detail...
+Examples: 
+• 5 years playing recreational softball in local league
+• 2 years competitive baseball, primarily shortstop and second base  
+• High school varsity team experience, all-state recognition
+• Coached youth teams for 3 years"
+            required
+            inputProps={{ maxLength: 255 }}
+            sx={{ mb: 2 }}
+          />
 
           {/* Positions Played */}
           <FormControl fullWidth margin="dense" error={!!errors.positionsPlayed} sx={{ mb: 2 }}>

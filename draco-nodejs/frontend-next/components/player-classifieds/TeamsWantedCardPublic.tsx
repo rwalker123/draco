@@ -39,20 +39,6 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
     .map((pos) => sanitizeDisplayText(pos.trim()))
     .filter((pos) => pos.length > 0); // Remove empty positions
 
-  // Get experience color
-  const getExperienceColor = (experience: string) => {
-    const colors: Record<
-      string,
-      'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'
-    > = {
-      beginner: 'success',
-      intermediate: 'info',
-      advanced: 'warning',
-      expert: 'error',
-    };
-    return colors[experience.toLowerCase()] || 'default';
-  };
-
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ flexGrow: 1 }}>
@@ -86,12 +72,25 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
 
         {/* Experience Level */}
         <Box mb={2}>
-          <Chip
-            label={sanitizeDisplayText(classified.experience)}
-            size="small"
-            color={getExperienceColor(classified.experience)}
-            variant="outlined"
-          />
+          <Typography variant="subtitle2" gutterBottom>
+            Experience:
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              whiteSpace: 'pre-line',
+              wordBreak: 'break-word',
+              maxHeight: '100px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 4,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {sanitizeDisplayText(classified.experience)}
+          </Typography>
         </Box>
 
         {/* Positions Played */}

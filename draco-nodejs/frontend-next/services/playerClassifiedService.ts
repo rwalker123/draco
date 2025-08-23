@@ -207,7 +207,33 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to create Teams Wanted: ${response.statusText}`);
+      let errorMessage = `Failed to create Teams Wanted: ${response.statusText}`;
+
+      try {
+        const errorData = await response.json();
+        if (errorData.details && Array.isArray(errorData.details)) {
+          // Extract field-specific error messages
+          const fieldErrors = errorData.details
+            .filter(
+              (detail: { type?: string; msg?: string }) => detail.type === 'field' && detail.msg,
+            )
+            .map(
+              (detail: { path?: string; msg?: string }) =>
+                `${detail.path || 'field'}: ${detail.msg || 'validation error'}`,
+            )
+            .join('; ');
+
+          errorMessage = fieldErrors || errorData.error || errorData.message || errorMessage;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If parsing fails, keep the original error message
+      }
+
+      throw new Error(errorMessage);
     }
 
     return response.json();

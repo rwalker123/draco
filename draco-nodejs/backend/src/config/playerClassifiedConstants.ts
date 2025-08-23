@@ -31,7 +31,7 @@ export const VALIDATION_LIMITS = Object.freeze({
   NAME_MAX_LENGTH: 50,
 
   /** Maximum length for experience */
-  EXPERIENCE_MAX_LENGTH: 50,
+  EXPERIENCE_MAX_LENGTH: 255,
 
   /** Minimum age for birth date validation */
   MIN_AGE: 13,
