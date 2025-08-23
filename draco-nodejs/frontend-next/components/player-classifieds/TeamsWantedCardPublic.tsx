@@ -4,16 +4,7 @@
 // Displays an individual Teams Wanted classified ad for public viewing (no sensitive data)
 
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  CardActions,
-  Typography,
-  Chip,
-  Box,
-  IconButton,
-  Button,
-} from '@mui/material';
+import { Card, CardContent, Typography, Chip, Box, IconButton } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -164,12 +155,6 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           </Typography>
         </Box>
       </CardContent>
-
-      <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2 }}>
-        <Button size="small" variant="text">
-          View Details
-        </Button>
-      </CardActions>
     </Card>
   );
 };
