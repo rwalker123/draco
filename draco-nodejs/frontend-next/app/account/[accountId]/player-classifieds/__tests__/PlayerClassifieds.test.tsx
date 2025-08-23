@@ -10,6 +10,24 @@ import PlayerClassifieds from '../PlayerClassifieds';
 // MOCK SETUP
 // ============================================================================
 
+// Mock Next.js useSearchParams hook
+const mockSearchParams = {
+  get: vi.fn(() => null),
+};
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => mockSearchParams,
+}));
+
+// Mock localStorage
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: vi.fn(() => null),
+    removeItem: vi.fn(),
+  },
+  writable: true,
+});
+
 // Mock the AccountPageHeader component
 vi.mock('../../../../../components/AccountPageHeader', () => ({
   default: ({ children, accountId }: { children: React.ReactNode; accountId: string }) => (
@@ -48,6 +66,9 @@ describe('PlayerClassifieds', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset mock implementations
+    mockSearchParams.get.mockReturnValue(null);
+    vi.mocked(window.localStorage.getItem).mockReturnValue(null);
   });
 
   // ============================================================================

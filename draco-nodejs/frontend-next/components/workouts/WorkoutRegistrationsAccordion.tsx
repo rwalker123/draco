@@ -47,6 +47,7 @@ import {
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
 import { formatPhoneNumber } from '../../utils/contactUtils';
+import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
 
 interface WorkoutRegistrationsAccordionProps {
   accountId: string;
@@ -282,14 +283,14 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
 
       setRegistrationDialogOpen(false);
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Clear success message after configured timeout
+      setTimeout(() => setSuccessMessage(null), UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS);
     } catch (err) {
       console.error('Error saving registration:', err);
       setOperationError(err instanceof Error ? err.message : 'Failed to save registration');
 
-      // Clear error message after 5 seconds
-      setTimeout(() => setOperationError(null), 5000);
+      // Clear error message after configured timeout
+      setTimeout(() => setOperationError(null), UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS);
     } finally {
       setSavingRegistration(false);
     }

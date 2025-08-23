@@ -47,6 +47,7 @@ import { ContactUpdateData, Contact } from '../../../../../../../../types/users'
 import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDataManager';
 import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
 import { RosterFormData, RosterPlayer, RosterMember } from '../../../../../../../../types/roster';
+import { COMPONENT_TIMEOUTS } from '../../../../../../../../constants/timeoutConstants';
 
 interface TeamRosterManagementProps {
   accountId: string;
@@ -193,13 +194,13 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     saveScrollPosition();
     clearMessages();
 
-    // Set up timeout for 15 seconds
+    // Set up timeout for team roster operations
     const timeoutId = setTimeout(() => {
       setIsSigningPlayer(false);
       setFormLoading(false);
       setError('Signing player took too long. Please try again or check your connection.');
       restoreScrollPosition();
-    }, 15000);
+    }, COMPONENT_TIMEOUTS.TEAM_ROSTER_LOADING_TIMEOUT_MS);
 
     setSigningTimeout(timeoutId);
 

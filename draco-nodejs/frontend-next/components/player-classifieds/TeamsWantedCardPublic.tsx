@@ -34,9 +34,10 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   isAccountMember,
 }) => {
   // Parse positions from comma-separated string and sanitize each position
-  const positionsPlayed = classified.positionsPlayed
+  const positionsPlayed = (classified.positionsPlayed || '')
     .split(',')
-    .map((pos) => sanitizeDisplayText(pos.trim()));
+    .map((pos) => sanitizeDisplayText(pos.trim()))
+    .filter((pos) => pos.length > 0); // Remove empty positions
 
   // Get experience color
   const getExperienceColor = (experience: string) => {

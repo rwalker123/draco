@@ -3,7 +3,7 @@
 // TeamsWantedStateManager Component
 // Centralized logic for determining UI state based on user authentication
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Alert, Stack, Divider, Paper } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
@@ -12,7 +12,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useAccountMembership } from '../../hooks/useAccountMembership';
-import { ITeamsWantedResponse } from '../../types/playerClassifieds';
+import { ITeamsWantedResponse, ITeamsWantedOwnerResponse } from '../../types/playerClassifieds';
 import { IAccessCodeVerificationResponse } from '../../types/accessCode';
 import AccessCodeInput from './AccessCodeInput';
 import TeamsWantedCardPublic from './TeamsWantedCardPublic';
@@ -31,6 +31,11 @@ interface ITeamsWantedStateManagerProps {
   canDelete: (classified: ITeamsWantedResponse) => boolean;
   loading?: boolean;
   error?: string;
+  autoVerificationData?: {
+    accessCode: string;
+    classifiedData: ITeamsWantedOwnerResponse;
+  } | null;
+  onVerificationProcessed?: () => void;
 }
 
 // User authentication states
@@ -49,6 +54,8 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   canDelete,
   loading = false,
   error,
+  autoVerificationData,
+  onVerificationProcessed,
 }) => {
   // Get authentication and account membership status
   const { user } = useAuth();
@@ -60,6 +67,21 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   );
   const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
   const [isVerifyingAccessCode, setIsVerifyingAccessCode] = useState(false);
+
+  // Handle auto-verification from email links
+  useEffect(() => {
+    if (autoVerificationData && !accessCodeResult) {
+      // Automatically set the verification result from email verification
+      setAccessCodeResult({
+        success: true,
+        classified: autoVerificationData.classifiedData,
+        message: 'Access code verified successfully from email link',
+      });
+
+      // Notify parent that verification has been processed
+      onVerificationProcessed?.();
+    }
+  }, [autoVerificationData, accessCodeResult, onVerificationProcessed]);
 
   // Determine current user state
   const userState: UserState = React.useMemo(() => {
@@ -266,18 +288,20 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
 
     return (
       <Box>
-        <Alert severity="success" sx={{ mb: 3 }}>
-          Access code verified successfully! Here&apos;s your Teams Wanted ad:
-        </Alert>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <Alert severity="success">
+            Access code verified successfully! Here&apos;s your Teams Wanted ad:
+          </Alert>
+        </Box>
 
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: 3,
+            display: 'flex',
+            justifyContent: 'center',
+            mb: 3,
           }}
         >
-          <Box>
+          <Box sx={{ maxWidth: 400, width: '100%' }}>
             <TeamsWantedCardPublic
               classified={{
                 ...classified,
@@ -306,7 +330,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
           </Box>
         </Box>
 
-        <Box mt={3} textAlign="center">
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <Button variant="outlined" onClick={handleAccessCodeCancel} startIcon={<LockIcon />}>
             Enter Different Access Code
           </Button>

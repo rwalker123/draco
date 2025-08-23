@@ -1,15 +1,13 @@
 // Access Code Validation Utilities
 // Centralized validation for access codes with security features
 
+import { validate as validateUUID } from 'uuid';
 import { IAccessCodeValidationResult, IAccessCodeRateLimitInfo } from '../types/accessCode';
+import { RATE_LIMIT_TIMEOUTS } from '../constants/timeoutConstants';
 
 // ============================================================================
 // VALIDATION CONSTANTS
 // ============================================================================
-
-// UUID validation regex (RFC 4122 compliant)
-export const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // Access code length constants
 export const ACCESS_CODE_LENGTH = 36; // UUID format: 8-4-4-4-12
@@ -18,8 +16,8 @@ export const ACCESS_CODE_MIN_LENGTH = 32; // Minimum length for partial validati
 // Rate limiting constants
 export const RATE_LIMIT_CONFIG = {
   maxAttempts: 5,
-  blockDuration: 15 * 60 * 1000, // 15 minutes in milliseconds
-  resetInterval: 60 * 60 * 1000, // 1 hour in milliseconds
+  blockDuration: RATE_LIMIT_TIMEOUTS.STANDARD_WINDOW_MS,
+  resetInterval: RATE_LIMIT_TIMEOUTS.AUTH_WINDOW_MS,
 } as const;
 
 // ============================================================================
@@ -57,39 +55,12 @@ export const validateAccessCode = (accessCode: string): IAccessCodeValidationRes
     };
   }
 
-  // Format validation using UUID regex
-  if (!UUID_REGEX.test(trimmedCode)) {
+  // Use uuid library for proper validation
+  if (!validateUUID(trimmedCode)) {
     return {
       isValid: false,
       error:
         'Access code must be in valid UUID format (e.g., 123e4567-e89b-12d3-a456-426614174000)',
-    };
-  }
-
-  // Additional format checks for UUID version and variant
-  const parts = trimmedCode.split('-');
-  if (parts.length !== 5) {
-    return {
-      isValid: false,
-      error: 'Access code format is invalid',
-    };
-  }
-
-  // Validate UUID version (should be 4 for random UUIDs)
-  const version = parseInt(parts[1].substring(0, 1), 16);
-  if (version !== 4) {
-    return {
-      isValid: false,
-      error: 'Access code format is invalid (unsupported UUID version)',
-    };
-  }
-
-  // Validate UUID variant (should be RFC 4122 compliant)
-  const variant = parseInt(parts[3].substring(0, 1), 16);
-  if (variant < 8 || variant > 11) {
-    return {
-      isValid: false,
-      error: 'Access code format is invalid (unsupported UUID variant)',
     };
   }
 
