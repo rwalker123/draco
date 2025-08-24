@@ -365,18 +365,22 @@ export class PlayerClassifiedService {
   }
 
   /**
-   * Delete Teams Wanted classified using access code
+   * Delete Teams Wanted classified using access code or admin permissions
    *
-   * Allows anonymous users to delete their Teams Wanted classified through
-   * coordinated access verification and data deletion services.
+   * Allows both anonymous users (with access code) and authenticated admin users
+   * to delete Teams Wanted classifieds through coordinated access verification and data deletion services.
    *
    * @param classifiedId - ID of the classified to delete
-   * @param accessCode - Plain-text access code for authentication
+   * @param accessCode - Plain-text access code for authentication (empty string for admin users)
    * @param accountId - Account ID for boundary enforcement
    *
    * @example
    * ```typescript
+   * // Anonymous user with access code
    * await service.deleteTeamsWanted(456n, 'uuid-access-code', 123n);
+   *
+   * // Admin user without access code
+   * await service.deleteTeamsWanted(456n, '', 123n);
    * ```
    */
   async deleteTeamsWanted(
@@ -384,8 +388,16 @@ export class PlayerClassifiedService {
     accessCode: string,
     accountId: bigint,
   ): Promise<void> {
-    // First verify access using access service
-    await this.accessService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
+    // If access code is provided and not empty, verify it (anonymous user path)
+    if (accessCode && accessCode.trim() !== '') {
+      await this.accessService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
+    } else {
+      // For admin users (empty access code), just verify the classified exists and belongs to account
+      const classified = await this.dataService.findTeamsWantedById(classifiedId, accountId);
+      if (!classified) {
+        throw new NotFoundError('Teams Wanted classified not found');
+      }
+    }
 
     // Delete the classified using data service
     await this.dataService.deleteTeamsWanted(classifiedId);

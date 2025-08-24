@@ -1,7 +1,7 @@
 // PlayerClassifieds Routes for Draco Sports Manager
 // Handles all classified-related operations including CRUD, matching, and notifications
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { teamsWantedRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../lib/serviceFactory.js';
@@ -19,9 +19,10 @@ import {
   validateTeamsWantedCreate,
   validateTeamsWantedUpdateEndpoint,
   validateTeamsWantedVerification,
-  validateTeamsWantedDeletion,
   validatePlayersWantedDeletion,
   validateSearchParams,
+  validateAccountId,
+  validateClassifiedId,
 } from '../middleware/validation/playerClassifiedValidation.js';
 
 const router = Router({ mergeParams: true });
@@ -309,13 +310,66 @@ router.put(
  */
 router.delete(
   '/teams-wanted/:classifiedId',
-  ...validateTeamsWantedDeletion,
+  // Validate path parameters for all requests
+  ...validateAccountId,
+  ...validateClassifiedId,
+  // Custom middleware to conditionally apply authentication or access code validation
+  (req: Request, res: Response, next: NextFunction): void => {
+    const authHeader = req.headers.authorization;
+    const hasToken = authHeader && authHeader.startsWith('Bearer ');
+
+    if (hasToken) {
+      // If user has a token, authenticate and require permissions
+      authenticateToken(req, res, (authErr: Error | string | undefined) => {
+        if (authErr) return next(authErr);
+
+        routeProtection.enforceAccountBoundary()(
+          req,
+          res,
+          (boundaryErr: Error | string | undefined) => {
+            if (boundaryErr) return next(boundaryErr);
+
+            routeProtection.requirePermission('player-classified.manage')(req, res, next);
+          },
+        );
+      });
+    } else {
+      // For anonymous users, validate access code in request body
+      const { body } = req;
+      const { accessCode } = body;
+
+      if (
+        !accessCode ||
+        typeof accessCode !== 'string' ||
+        accessCode.trim().length < 10 ||
+        accessCode.trim().length > 1000
+      ) {
+        res.status(400).json({
+          success: false,
+          message: 'Access code is required and must be between 10 and 1000 characters',
+        });
+        return;
+      }
+
+      next();
+    }
+  },
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const { accessCode } = req.body;
 
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
-    await playerClassifiedService.deleteTeamsWanted(classifiedId, accessCode, accountId);
+
+    // Check if user is authenticated
+    const isAuthenticated = !!req.user;
+
+    if (isAuthenticated) {
+      // Authenticated user - delete without access code (empty string will be handled by service)
+      await playerClassifiedService.deleteTeamsWanted(classifiedId, '', accountId);
+    } else {
+      // Anonymous user - use provided access code
+      await playerClassifiedService.deleteTeamsWanted(classifiedId, accessCode || '', accountId);
+    }
 
     res.json({
       success: true,

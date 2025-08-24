@@ -89,7 +89,7 @@ export const usePlayerClassifieds = (
     } finally {
       setLoading(false);
     }
-  }, [accountId, showNotification]);
+  }, [accountId, token, showNotification]);
 
   // Load data on mount
   useEffect(() => {
@@ -272,19 +272,23 @@ export const usePlayerClassifieds = (
 
   // Delete Teams Wanted
   const deleteTeamsWanted = useCallback(
-    async (id: string, _accessCode: string): Promise<void> => {
+    async (id: string, accessCode: string): Promise<{ success: boolean; error?: string }> => {
       try {
-        await playerClassifiedService.deleteTeamsWanted(accountId, id);
+        // If we have a token (authenticated user), use token; otherwise use access code
+        if (token) {
+          await playerClassifiedService.deleteTeamsWanted(accountId, id, token);
+        } else {
+          await playerClassifiedService.deleteTeamsWanted(accountId, id, undefined, accessCode);
+        }
         setTeamsWanted((prev) => prev.filter((item) => item.id.toString() !== id));
-        showNotification('Teams Wanted deleted successfully', 'success');
+        return { success: true };
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to delete Teams Wanted';
-        showNotification(errorMessage, 'error');
-        throw error;
+        return { success: false, error: errorMessage };
       }
     },
-    [accountId, showNotification],
+    [accountId, token],
   );
 
   // ============================================================================

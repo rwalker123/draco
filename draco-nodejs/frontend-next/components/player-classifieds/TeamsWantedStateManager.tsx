@@ -4,7 +4,19 @@
 // Centralized logic for determining UI state based on user authentication
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Alert, Stack, Divider, Paper } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Alert,
+  Stack,
+  Divider,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
   Lock as LockIcon,
@@ -17,6 +29,7 @@ import { IAccessCodeVerificationResponse } from '../../types/accessCode';
 import AccessCodeInput from './AccessCodeInput';
 import TeamsWantedCardPublic from './TeamsWantedCardPublic';
 import { accessCodeService } from '../../services/accessCodeService';
+import { playerClassifiedService } from '../../services/playerClassifiedService';
 
 // ============================================================================
 // COMPONENT INTERFACES
@@ -67,6 +80,13 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   );
   const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
   const [isVerifyingAccessCode, setIsVerifyingAccessCode] = useState(false);
+  const [verifiedAccessCode, setVerifiedAccessCode] = useState<string | null>(null);
+
+  // Local state for delete operations
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Handle auto-verification from email links
   useEffect(() => {
@@ -77,6 +97,9 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         classified: autoVerificationData.classifiedData,
         message: 'Access code verified successfully from email link',
       });
+
+      // Store the access code for later use
+      setVerifiedAccessCode(autoVerificationData.accessCode);
 
       // Notify parent that verification has been processed
       onVerificationProcessed?.();
@@ -99,7 +122,10 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
       const result = await accessCodeService.verifyAccessCode(accountId, accessCode);
       setAccessCodeResult(result);
 
-      if (!result.success) {
+      if (result.success) {
+        // Store the verified access code for later use in edit/delete operations
+        setVerifiedAccessCode(accessCode);
+      } else {
         setAccessCodeError(result.message || 'Access code verification failed');
       }
     } catch (error) {
@@ -113,6 +139,48 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   const handleAccessCodeCancel = () => {
     setAccessCodeResult(null);
     setAccessCodeError(null);
+    setVerifiedAccessCode(null);
+  };
+
+  // Handle local delete for access code verified users
+  const handleAccessCodeDelete = async (id: string) => {
+    if (!verifiedAccessCode) {
+      setDeleteError('Access code not available');
+      return;
+    }
+
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      // Use the service directly with the verified access code
+      await playerClassifiedService.deleteTeamsWanted(accountId, id, undefined, verifiedAccessCode);
+
+      setDeleteSuccess('Teams Wanted deleted successfully!');
+      setDeleteDialogOpen(false);
+
+      // Clear the access code result to hide the card
+      setTimeout(() => {
+        setAccessCodeResult(null);
+        setVerifiedAccessCode(null);
+        setDeleteSuccess(null);
+      }, 2000);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete Teams Wanted';
+      setDeleteError(errorMessage);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Handle local edit and delete button clicks for access code users
+  const handleLocalEdit = (_id: string, _accessCodeRequired: string) => {
+    // TODO: Implement local edit functionality
+    alert('Edit functionality for access code users will be implemented');
+  };
+
+  const handleLocalDelete = (_id: string, _accessCodeRequired: string) => {
+    setDeleteDialogOpen(true);
   };
 
   // Render content based on user state
@@ -319,8 +387,8 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
                   name: 'Your Ad', // Since this is from access code, we don't have account name
                 },
               }}
-              onEdit={onEdit}
-              onDelete={onDelete}
+              onEdit={handleLocalEdit} // Use local handler for access code users
+              onDelete={handleLocalDelete} // Use local handler for access code users
               canEdit={() => true} // Owner can always edit their own ad
               canDelete={() => true} // Owner can always delete their own ad
               isAuthenticated={true}
@@ -346,8 +414,44 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         </Alert>
       )}
 
+      {/* Local Success/Error Messages for Access Code Operations */}
+      {deleteSuccess && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {deleteSuccess}
+        </Alert>
+      )}
+
+      {deleteError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {deleteError}
+        </Alert>
+      )}
+
       {/* Main Content */}
       {renderContent()}
+
+      {/* Delete Confirmation Dialog for Access Code Users */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Teams Wanted Ad</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete your Teams Wanted ad? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() =>
+              handleAccessCodeDelete(accessCodeResult?.classified?.id?.toString() || '')
+            }
+            color="error"
+            variant="contained"
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? 'Deleting...' : 'Delete Ad'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
