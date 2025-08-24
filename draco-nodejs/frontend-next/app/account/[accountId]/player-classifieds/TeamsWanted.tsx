@@ -1,7 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, Button, CircularProgress, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPagination } from '../../../../hooks/useClassifiedsPagination';
@@ -48,6 +58,10 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const [localTeamsWanted, setLocalTeamsWanted] = React.useState<ITeamsWantedResponse[]>([]);
   const [localLoading, setLocalLoading] = React.useState(false);
   const [localError, setLocalError] = React.useState<string | null>(null);
+
+  // Notification state
+  const [success, setSuccess] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
   const [paginationInfo, setPaginationInfo] = React.useState<{
     total: number;
     totalPages: number;
@@ -62,7 +76,13 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
 
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [formLoading, setFormLoading] = React.useState(false);
+
+  // State for delete operation
+  const [selectedClassified, setSelectedClassified] = React.useState<ITeamsWantedResponse | null>(
+    null,
+  );
 
   // Pagination state
   const { pagination, setPage, setLimit } = useClassifiedsPagination({
@@ -71,7 +91,10 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   });
 
   // Use the main hook for data management with pagination
-  const { teamsWanted, createTeamsWanted } = usePlayerClassifieds(accountId);
+  const { teamsWanted, createTeamsWanted, deleteTeamsWanted } = usePlayerClassifieds(
+    accountId,
+    token || undefined,
+  );
 
   // Initialize local state with hook data
   React.useEffect(() => {
@@ -227,16 +250,75 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     loadInitialData();
   }, [accountId, token]);
 
-  // Handle edit (requires access code)
-  const handleEdit = (id: string, accessCodeRequired: string) => {
-    // TODO: Open edit dialog with access code input
-    console.log('Edit requested for:', id, 'with access code:', accessCodeRequired);
+  // Check if user can perform operation without access code
+  const canOperateWithoutAccessCode = (classified: ITeamsWantedResponse) => {
+    // AccountAdmins and owners can operate without access code
+    return (
+      isAccountMember &&
+      (canEditTeamsWantedById(classified) || canDeleteTeamsWantedById(classified))
+    );
   };
 
-  // Handle delete (requires access code)
-  const handleDelete = async (id: string, accessCodeRequired: string) => {
-    // TODO: Implement access code validation before deletion
-    console.log('Delete requested for:', id, 'with access code:', accessCodeRequired);
+  // Handle edit
+  const handleEdit = (id: string, _accessCodeRequired: string) => {
+    const classified = localTeamsWanted.find((c) => c.id.toString() === id);
+    if (!classified) return;
+
+    if (canOperateWithoutAccessCode(classified)) {
+      // AccountAdmins can edit directly - for now just show alert
+      alert(
+        `Edit functionality for classified ${id} will be implemented. AccountAdmins have permission.`,
+      );
+    } else {
+      // Others need access code verification
+      alert(`Access code verification for edit will be implemented for classified ${id}.`);
+    }
+  };
+
+  // Handle delete
+  const handleDelete = async (id: string, _accessCodeRequired: string) => {
+    const classified = localTeamsWanted.find((c) => c.id.toString() === id);
+    if (!classified) {
+      // No classified found - this should be handled by TeamsWantedStateManager for access code users
+      return;
+    }
+
+    if (canOperateWithoutAccessCode(classified)) {
+      // AccountAdmins can delete directly - open confirmation dialog
+      setSelectedClassified(classified);
+      setDeleteDialogOpen(true);
+    }
+    // Access code verification is handled by TeamsWantedStateManager for non-AccountAdmins
+  };
+
+  // Handle delete dialog close
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSelectedClassified(null);
+  };
+
+  // Handle confirmed delete
+  const confirmDelete = async () => {
+    if (!selectedClassified) return;
+
+    const result = await deleteTeamsWanted(selectedClassified.id.toString(), ''); // Empty access code for AccountAdmins
+
+    if (result.success) {
+      // Show success notification
+      setSuccess('Teams Wanted deleted successfully');
+      setError(null);
+      // Refresh the data to show updated list
+      loadPageData(pagination.page, pagination.limit);
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+    } else {
+      // Show error notification
+      setError(result.error || 'Failed to delete Teams Wanted');
+      setSuccess(null);
+    }
+
+    // Always close dialog whether success or error
+    closeDeleteDialog();
   };
 
   // Handle create teams wanted
@@ -266,18 +348,13 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
+            disabled={!isAccountMember}
           >
-            Post Teams Wanted
+            Create Ad
           </Button>
         </Box>
-
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
-          <Stack spacing={2} alignItems="center">
-            <CircularProgress />
-            <Typography variant="body2" color="text.secondary">
-              Loading teams wanted ads...
-            </Typography>
-          </Stack>
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress />
         </Box>
       </Box>
     );
@@ -300,6 +377,19 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
           </Button>
         </Box>
       </Box>
+
+      {/* Notifications */}
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
 
       {/* Content - Delegated to TeamsWantedStateManager */}
       <TeamsWantedStateManager
@@ -343,6 +433,26 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         onSubmit={handleCreateTeamsWanted}
         loading={formLoading}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
+        <DialogTitle>Delete Teams Wanted Ad</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the Teams Wanted ad by &quot;{selectedClassified?.name}
+            &quot;? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteDialog}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete Ad
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* TODO: Add EditTeamsWantedDialog component */}
+      {/* TODO: Add AccessCodeVerificationDialog component */}
     </Box>
   );
 };

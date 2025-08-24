@@ -145,6 +145,35 @@ vi.mock('../../middleware/validation/playerClassifiedValidation.js', () => ({
       next();
     },
   ],
+  // Add the missing validation middleware that were imported in the route
+  validateAccountId: [
+    (req: Request, res: Response, next: NextFunction): void => {
+      // Validate account ID format
+      const accountId = req.params.accountId;
+      if (accountId === 'invalid' || isNaN(Number(accountId))) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid parameter accountId: must be a valid number',
+        });
+        return;
+      }
+      next();
+    },
+  ],
+  validateClassifiedId: [
+    (req: Request, res: Response, next: NextFunction): void => {
+      // Validate classified ID format
+      const classifiedId = req.params.classifiedId;
+      if (classifiedId === 'invalid' || isNaN(Number(classifiedId))) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid parameter classifiedId: must be a valid number',
+        });
+        return;
+      }
+      next();
+    },
+  ],
 }));
 
 // Mock the constants
@@ -680,9 +709,10 @@ describe('PlayerClassifieds Routes', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Teams Wanted classified deleted successfully');
+      // For authenticated users (mocked auth middleware), the service is called with empty access code
       expect(mockPlayerClassifiedService.deleteTeamsWanted).toHaveBeenCalledWith(
         BigInt(789),
-        'valid_access_code',
+        '',
         BigInt(123),
       );
     });

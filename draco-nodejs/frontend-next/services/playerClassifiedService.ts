@@ -341,20 +341,36 @@ export const playerClassifiedService = {
     return response.json();
   },
 
-  // Delete a Teams Wanted classified (uses access code, no auth required)
-  async deleteTeamsWanted(accountId: string, classifiedId: string): Promise<void> {
+  // Delete a Teams Wanted classified (supports both authenticated users and access codes)
+  async deleteTeamsWanted(
+    accountId: string,
+    classifiedId: string,
+    token?: string,
+    accessCode?: string,
+  ): Promise<void> {
+    const requestBody: { accessCode?: string } = {};
+
+    // Add access code to request body if provided (for anonymous users)
+    if (accessCode) {
+      requestBody.accessCode = accessCode;
+    }
+
     const response = await fetch(
       `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
       {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
+        // Only send body if we have an access code
+        ...(accessCode && { body: JSON.stringify(requestBody) }),
       },
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to delete Teams Wanted: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to delete Teams Wanted: ${response.statusText}`);
     }
   },
 

@@ -470,7 +470,10 @@ export interface IUsePlayerClassifiedsReturn {
     data: Partial<ITeamsWantedFormState>,
     accessCode: string,
   ) => Promise<void>;
-  deleteTeamsWanted: (id: string, accessCode: string) => Promise<void>;
+  deleteTeamsWanted: (
+    id: string,
+    accessCode: string,
+  ) => Promise<{ success: boolean; error?: string }>;
 
   // Search and filtering
   searchClassifieds: (params: IClassifiedSearchParams) => Promise<void>;
