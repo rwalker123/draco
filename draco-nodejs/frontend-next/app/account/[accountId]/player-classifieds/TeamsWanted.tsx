@@ -77,10 +77,16 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
   const [formLoading, setFormLoading] = React.useState(false);
 
   // State for delete operation
   const [selectedClassified, setSelectedClassified] = React.useState<ITeamsWantedResponse | null>(
+    null,
+  );
+
+  // State for edit operation
+  const [editingClassified, setEditingClassified] = React.useState<ITeamsWantedResponse | null>(
     null,
   );
 
@@ -91,10 +97,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   });
 
   // Use the main hook for data management with pagination
-  const { teamsWanted, createTeamsWanted, deleteTeamsWanted } = usePlayerClassifieds(
-    accountId,
-    token || undefined,
-  );
+  const { teamsWanted, createTeamsWanted, updateTeamsWanted, deleteTeamsWanted } =
+    usePlayerClassifieds(accountId, token || undefined);
 
   // Initialize local state with hook data
   React.useEffect(() => {
@@ -250,6 +254,21 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     loadInitialData();
   }, [accountId, token]);
 
+  // Utility function to convert ITeamsWantedResponse to ITeamsWantedFormState
+  const convertToFormState = (classified: ITeamsWantedResponse): ITeamsWantedFormState => {
+    return {
+      name: classified.name,
+      email: classified.email,
+      phone: classified.phone,
+      experience: classified.experience,
+      positionsPlayed: classified.positionsPlayed
+        .split(',')
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0),
+      birthDate: new Date(classified.birthDate),
+    };
+  };
+
   // Check if user can perform operation without access code
   const canOperateWithoutAccessCode = (classified: ITeamsWantedResponse) => {
     // AccountAdmins and owners can operate without access code
@@ -265,13 +284,49 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     if (!classified) return;
 
     if (canOperateWithoutAccessCode(classified)) {
-      // AccountAdmins can edit directly - for now just show alert
-      alert(
-        `Edit functionality for classified ${id} will be implemented. AccountAdmins have permission.`,
+      // AccountAdmins can edit directly - open edit dialog
+      setEditingClassified(classified);
+      setEditDialogOpen(true);
+    }
+    // Access code verification is handled by TeamsWantedStateManager for non-AccountAdmins
+  };
+
+  // Handle edit dialog close
+  const closeEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditingClassified(null);
+  };
+
+  // Handle edit form submission
+  const handleEditSubmit = async (formData: ITeamsWantedFormState) => {
+    if (!editingClassified) return;
+
+    try {
+      // For AccountAdmins, no access code is needed - use empty string
+      const updatedClassified = await updateTeamsWanted(
+        editingClassified.id.toString(),
+        formData,
+        '',
       );
-    } else {
-      // Others need access code verification
-      alert(`Access code verification for edit will be implemented for classified ${id}.`);
+
+      // Update the local state with the updated classified (no server call needed)
+      setLocalTeamsWanted((prev) =>
+        prev.map((item) =>
+          item.id.toString() === editingClassified.id.toString() ? updatedClassified : item,
+        ),
+      );
+
+      // Close the edit dialog and show detailed success message
+      closeEditDialog();
+      setSuccess(
+        'Teams Wanted ad updated successfully! Your Teams Wanted ad has been updated with the new information.',
+      );
+      setError(null);
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (error) {
+      // Let the hook handle error notifications, but re-throw so dialog can handle it
+      throw error;
     }
   };
 
@@ -326,6 +381,14 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     setFormLoading(true);
     try {
       await createTeamsWanted(formData);
+      // Close dialog and show detailed success message
+      setCreateDialogOpen(false);
+      setSuccess(
+        "Teams Wanted ad created successfully! You'll receive an access code via email shortly. Keep this code safe - you'll need it to edit or delete your ad later.",
+      );
+      setError(null);
+      // Auto-hide success message after 8 seconds (longer for detailed message)
+      setTimeout(() => setSuccess(null), 8000);
       // Refresh the data to show the new ad
       loadPageData(pagination.page, pagination.limit);
     } catch (error) {
@@ -451,7 +514,17 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         </DialogActions>
       </Dialog>
 
-      {/* TODO: Add EditTeamsWantedDialog component */}
+      {/* Edit Dialog */}
+      <CreateTeamsWantedDialog
+        open={editDialogOpen}
+        onClose={closeEditDialog}
+        onSubmit={handleEditSubmit}
+        loading={formLoading}
+        editMode={true}
+        initialData={editingClassified ? convertToFormState(editingClassified) : undefined}
+        _classifiedId={editingClassified?.id}
+      />
+
       {/* TODO: Add AccessCodeVerificationDialog component */}
     </Box>
   );

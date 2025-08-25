@@ -317,28 +317,63 @@ export const playerClassifiedService = {
     return response.json();
   },
 
-  // Update a Teams Wanted classified (uses access code, no auth required)
+  // Update a Teams Wanted classified (supports both authenticated users and access codes)
   async updateTeamsWanted(
     accountId: string,
     classifiedId: string,
     data: ITeamsWantedUpdateRequest,
+    token?: string,
   ): Promise<ITeamsWantedResponse> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    };
+
     const response = await fetch(
       `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
       {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(data),
       },
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to update Teams Wanted: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+
+      // Parse server error response
+      let errorMessage = `Failed to update Teams Wanted: ${response.statusText}`;
+
+      if (errorData.error) {
+        errorMessage = errorData.error;
+
+        // If there are validation details, format them nicely
+        if (errorData.details && Array.isArray(errorData.details)) {
+          const fieldErrors = errorData.details
+            .map((detail: { msg?: string }) => detail.msg)
+            .filter(Boolean)
+            .join(', ');
+
+          if (fieldErrors) {
+            errorMessage = `${errorData.error}: ${fieldErrors}`;
+          }
+        }
+      } else if (errorData.message) {
+        // Fallback to message field if error field doesn't exist
+        errorMessage = errorData.message;
+      }
+
+      throw new Error(errorMessage);
     }
 
-    return response.json();
+    const result = await response.json();
+
+    // Handle both direct classified objects and wrapped responses
+    if (result && typeof result === 'object' && 'success' in result && result.data) {
+      return result.data;
+    }
+
+    return result;
   },
 
   // Delete a Teams Wanted classified (supports both authenticated users and access codes)

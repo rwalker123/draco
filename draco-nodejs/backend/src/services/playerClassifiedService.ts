@@ -323,8 +323,16 @@ export class PlayerClassifiedService {
     updateData: Partial<ITeamsWantedCreateRequest>,
     accountId: bigint,
   ): Promise<ITeamsWantedOwnerResponse> {
-    // First verify access using access service
-    await this.accessService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
+    // If access code is provided and not empty, verify it (anonymous user path)
+    if (accessCode && accessCode.trim() !== '') {
+      await this.accessService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
+    } else {
+      // For admin users (empty access code), just verify the classified exists and belongs to account
+      const classified = await this.dataService.findTeamsWantedById(classifiedId, accountId);
+      if (!classified) {
+        throw new NotFoundError('Teams Wanted classified not found');
+      }
+    }
 
     // Validate update data using validation service for each provided field
     for (const [field, value] of Object.entries(updateData)) {

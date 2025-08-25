@@ -58,7 +58,7 @@ export interface IPlayersWantedUpdateRequest {
   positionsNeeded?: string;
 }
 
-// Update request for Teams Wanted (requires access code)
+// Update request for Teams Wanted (access code required for non-authenticated users)
 export interface ITeamsWantedUpdateRequest {
   name?: string;
   email?: string;
@@ -66,8 +66,8 @@ export interface ITeamsWantedUpdateRequest {
   experience?: string;
   positionsPlayed?: string;
   birthDate?: Date | string;
-  // Access code for security
-  accessCode: string;
+  // Access code for security (optional for authenticated users)
+  accessCode?: string;
 }
 
 // ============================================================================
@@ -469,7 +469,7 @@ export interface IUsePlayerClassifiedsReturn {
     id: string,
     data: Partial<ITeamsWantedFormState>,
     accessCode: string,
-  ) => Promise<void>;
+  ) => Promise<ITeamsWantedResponse>;
   deleteTeamsWanted: (
     id: string,
     accessCode: string,

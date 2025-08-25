@@ -33,6 +33,9 @@ interface CreateTeamsWantedDialogProps {
   onClose: () => void;
   onSubmit: (data: ITeamsWantedFormState) => Promise<void>;
   loading?: boolean;
+  editMode?: boolean;
+  initialData?: ITeamsWantedFormState;
+  _classifiedId?: string;
 }
 
 // Available positions for teams wanted - using IDs that match backend validation
@@ -57,21 +60,32 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   onClose,
   onSubmit,
   loading = false,
+  editMode = false,
+  initialData,
+  _classifiedId,
 }) => {
   // Form state
-  const [formData, setFormData] = useState<ITeamsWantedFormState>({
-    name: '',
-    email: '',
-    phone: '',
-    experience: '',
-    positionsPlayed: [],
-    birthDate: null,
-  });
+  const [formData, setFormData] = useState<ITeamsWantedFormState>(
+    initialData || {
+      name: '',
+      email: '',
+      phone: '',
+      experience: '',
+      positionsPlayed: [],
+      birthDate: null,
+    },
+  );
 
   // Form validation errors
   const [errors, setErrors] = useState<Partial<Record<keyof ITeamsWantedFormState, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+
+  // Update form data when initialData changes (for edit mode)
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   // Handle form field changes
   const handleFieldChange = (
@@ -155,7 +169,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
-    setSubmitSuccess(false);
 
     if (!validateForm()) {
       return;
@@ -163,45 +176,41 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     try {
       await onSubmit(formData);
-      setSubmitSuccess(true);
-      // Don't close immediately - let user see success message
+      // Close dialog immediately on success
+      handleClose();
     } catch (error) {
       // The service layer now handles parsing detailed server errors
-      setSubmitError(error instanceof Error ? error.message : 'Failed to create Teams Wanted ad');
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`,
+      );
     }
   };
 
   // Handle dialog close
   const handleClose = () => {
-    // Reset form state
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      experience: '',
-      positionsPlayed: [],
-      birthDate: null,
-    });
+    // Reset form state to initial values or empty
+    setFormData(
+      initialData || {
+        name: '',
+        email: '',
+        phone: '',
+        experience: '',
+        positionsPlayed: [],
+        birthDate: null,
+      },
+    );
     setErrors({});
     setSubmitError(null);
-    setSubmitSuccess(false);
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Post Teams Wanted</DialogTitle>
+      <DialogTitle>{editMode ? 'Edit Teams Wanted' : 'Post Teams Wanted'}</DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
-          {/* Success Alert */}
-          {submitSuccess && (
-            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSubmitSuccess(false)}>
-              <strong>Teams Wanted ad created successfully!</strong>
-              <br />
-              {`You'll receive an access code via email shortly. Keep this code safe - you'll need it to edit or delete your ad later.`}
-            </Alert>
-          )}
-
           {/* Error Alert */}
           {submitError && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
@@ -348,23 +357,29 @@ Examples:
           </LocalizationProvider>
 
           {/* Help Text */}
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
-            <Alert severity="info" icon={false}>
-              <strong>Important:</strong> After submitting, you&apos;ll receive an access code via
-              email. Keep this code safe - you&apos;ll need it to edit or delete your ad later.
-            </Alert>
-          </Box>
+          {!editMode && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
+              <Alert severity="info" icon={false}>
+                <strong>Important:</strong> After submitting, you&apos;ll receive an access code via
+                email. Keep this code safe - you&apos;ll need it to edit or delete your ad later.
+              </Alert>
+            </Box>
+          )}
         </DialogContent>
 
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>
-            {submitSuccess ? 'Close' : 'Cancel'}
+            Cancel
           </Button>
-          {!submitSuccess && (
-            <Button type="submit" variant="contained" disabled={loading}>
-              {loading ? 'Creating...' : 'Post Teams Wanted'}
-            </Button>
-          )}
+          <Button type="submit" variant="contained" disabled={loading}>
+            {loading
+              ? editMode
+                ? 'Updating...'
+                : 'Creating...'
+              : editMode
+                ? 'Update Teams Wanted'
+                : 'Post Teams Wanted'}
+          </Button>
         </DialogActions>
       </form>
     </Dialog>

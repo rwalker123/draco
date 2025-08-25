@@ -24,10 +24,15 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useAccountMembership } from '../../hooks/useAccountMembership';
-import { ITeamsWantedResponse, ITeamsWantedOwnerResponse } from '../../types/playerClassifieds';
+import {
+  ITeamsWantedResponse,
+  ITeamsWantedOwnerResponse,
+  ITeamsWantedFormState,
+} from '../../types/playerClassifieds';
 import { IAccessCodeVerificationResponse } from '../../types/accessCode';
 import AccessCodeInput from './AccessCodeInput';
 import TeamsWantedCardPublic from './TeamsWantedCardPublic';
+import CreateTeamsWantedDialog from './CreateTeamsWantedDialog';
 import { accessCodeService } from '../../services/accessCodeService';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
 
@@ -88,6 +93,15 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Local state for edit operations
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editSuccess, setEditSuccess] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editingClassified, setEditingClassified] = useState<ITeamsWantedOwnerResponse | null>(
+    null,
+  );
+
   // Handle auto-verification from email links
   useEffect(() => {
     if (autoVerificationData && !accessCodeResult) {
@@ -105,6 +119,21 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
       onVerificationProcessed?.();
     }
   }, [autoVerificationData, accessCodeResult, onVerificationProcessed]);
+
+  // Utility function to convert ITeamsWantedOwnerResponse to ITeamsWantedFormState
+  const convertToFormState = (classified: ITeamsWantedOwnerResponse): ITeamsWantedFormState => {
+    return {
+      name: classified.name,
+      email: classified.email,
+      phone: classified.phone,
+      experience: classified.experience,
+      positionsPlayed: classified.positionsPlayed
+        .split(',')
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0),
+      birthDate: new Date(classified.birthDate),
+    };
+  };
 
   // Determine current user state
   const userState: UserState = React.useMemo(() => {
@@ -173,10 +202,74 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     }
   };
 
+  // Handle local edit for access code verified users
+  const handleAccessCodeEdit = async (formData: ITeamsWantedFormState) => {
+    if (!verifiedAccessCode || !accessCodeResult?.classified) {
+      setEditError('Access code not available');
+      return;
+    }
+
+    setEditLoading(true);
+    setEditError(null);
+
+    try {
+      // Transform form data for API
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        experience: formData.experience,
+        positionsPlayed: formData.positionsPlayed.join(', '),
+        birthDate: formData.birthDate?.toISOString(),
+        accessCode: verifiedAccessCode,
+      };
+
+      // Use the service directly with the verified access code
+      const updatedClassified = await playerClassifiedService.updateTeamsWanted(
+        accountId,
+        accessCodeResult.classified.id,
+        updateData,
+      );
+
+      setEditSuccess('Teams Wanted updated successfully!');
+      setEditDialogOpen(false);
+
+      // Update the access code result with the new data
+      setAccessCodeResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              classified: updatedClassified,
+            }
+          : null,
+      );
+
+      // Clear success message after delay
+      setTimeout(() => {
+        setEditSuccess(null);
+      }, 3000);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update Teams Wanted';
+      setEditError(errorMessage);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   // Handle local edit and delete button clicks for access code users
   const handleLocalEdit = (_id: string, _accessCodeRequired: string) => {
-    // TODO: Implement local edit functionality
-    alert('Edit functionality for access code users will be implemented');
+    if (accessCodeResult?.classified) {
+      // Transform ITeamsWantedClassified to ITeamsWantedOwnerResponse by adding account info
+      const classifiedWithAccount = {
+        ...accessCodeResult.classified,
+        account: {
+          id: accessCodeResult.classified.accountId,
+          name: 'Your Ad', // We don't have the account name in this context
+        },
+      } as ITeamsWantedOwnerResponse;
+      setEditingClassified(classifiedWithAccount);
+      setEditDialogOpen(true);
+    }
   };
 
   const handleLocalDelete = (_id: string, _accessCodeRequired: string) => {
@@ -427,6 +520,18 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         </Alert>
       )}
 
+      {editSuccess && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {editSuccess}
+        </Alert>
+      )}
+
+      {editError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {editError}
+        </Alert>
+      )}
+
       {/* Main Content */}
       {renderContent()}
 
@@ -452,6 +557,21 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Dialog for Access Code Users */}
+      <CreateTeamsWantedDialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setEditingClassified(null);
+          setEditError(null);
+        }}
+        onSubmit={handleAccessCodeEdit}
+        loading={editLoading}
+        editMode={true}
+        initialData={editingClassified ? convertToFormState(editingClassified) : undefined}
+        _classifiedId={editingClassified?.id}
+      />
     </Box>
   );
 };
