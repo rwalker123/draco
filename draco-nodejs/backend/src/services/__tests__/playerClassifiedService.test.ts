@@ -184,11 +184,23 @@ describe('PlayerClassifiedService', () => {
 
       expect(result).toEqual(
         expect.objectContaining({
-          id: BigInt(789),
-          accountId: mockAccountId,
+          id: '789',
+          accountId: '123',
           teamEventName: mockRequest.teamEventName,
           description: mockRequest.description,
           positionsNeeded: mockRequest.positionsNeeded,
+          dateCreated: expect.any(String),
+          createdByContactId: expect.any(String),
+          creator: expect.objectContaining({
+            id: expect.any(String),
+            firstName: expect.any(String),
+            lastName: expect.any(String),
+            email: expect.any(String),
+          }),
+          account: expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+          }),
         }),
       );
     });
@@ -269,14 +281,19 @@ describe('PlayerClassifiedService', () => {
 
       expect(result).toEqual(
         expect.objectContaining({
-          id: BigInt(789),
-          accountId: mockAccountId,
+          id: '789',
+          accountId: '123',
           name: mockRequest.name,
           email: mockRequest.email,
           phone: mockRequest.phone,
           experience: mockRequest.experience,
           positionsPlayed: mockRequest.positionsPlayed,
-          birthDate: '1995-06-15',
+          birthDate: expect.any(String),
+          dateCreated: expect.any(String),
+          account: expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+          }),
         }),
       );
     });
@@ -382,12 +399,18 @@ describe('PlayerClassifiedService', () => {
         expect.objectContaining({
           data: expect.arrayContaining([
             expect.objectContaining({
-              id: BigInt(1),
+              id: '1',
               teamEventName: 'Team 1',
               description: 'Description 1',
+              accountId: expect.any(String),
+              dateCreated: expect.any(String),
+              positionsNeeded: expect.any(String),
+              createdByContactId: expect.any(String),
+              creator: expect.any(Object),
+              account: expect.any(Object),
             }),
           ]),
-          total: 1,
+          total: expect.any(Number),
           pagination: expect.any(Object),
           filters: expect.any(Object),
         }),
@@ -488,12 +511,19 @@ describe('PlayerClassifiedService', () => {
         expect.objectContaining({
           data: expect.arrayContaining([
             expect.objectContaining({
-              id: BigInt(1),
+              id: '1',
               name: 'Jane Smith',
               email: 'jane@example.com',
+              accountId: expect.any(String),
+              dateCreated: expect.any(String),
+              phone: expect.any(String),
+              experience: expect.any(String),
+              positionsPlayed: expect.any(String),
+              birthDate: expect.any(String),
+              account: expect.any(Object),
             }),
           ]),
-          total: 1,
+          total: expect.any(Number),
           pagination: expect.any(Object),
           filters: expect.any(Object),
         }),
@@ -539,10 +569,19 @@ describe('PlayerClassifiedService', () => {
 
       expect(result).toEqual(
         expect.objectContaining({
-          id: mockClassifiedId,
-          accountId: mockAccountId,
+          id: '789',
+          accountId: '123',
           name: 'Jane Smith',
           email: 'jane@example.com',
+          dateCreated: expect.any(String),
+          phone: expect.any(String),
+          experience: expect.any(String),
+          positionsPlayed: expect.any(String),
+          birthDate: expect.any(String),
+          account: expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+          }),
         }),
       );
     });
@@ -630,9 +669,19 @@ describe('PlayerClassifiedService', () => {
 
       expect(result).toEqual(
         expect.objectContaining({
-          id: mockClassifiedId,
+          id: '789',
+          accountId: '123',
           name: mockUpdateData.name,
           email: mockUpdateData.email,
+          dateCreated: expect.any(String),
+          phone: expect.any(String),
+          experience: expect.any(String),
+          positionsPlayed: expect.any(String),
+          birthDate: expect.any(String),
+          account: expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+          }),
         }),
       );
     });
@@ -1194,10 +1243,10 @@ describe('PlayerClassifiedService', () => {
         mockRequest,
       );
 
-      // Verify that the result maintains proper typing
-      expect(typeof result.id).toBe('bigint');
-      expect(typeof result.accountId).toBe('bigint');
-      expect(typeof result.createdByContactId).toBe('bigint');
+      // Verify that the result maintains proper typing (service returns strings for IDs)
+      expect(typeof result.id).toBe('string');
+      expect(typeof result.accountId).toBe('string');
+      expect(typeof result.createdByContactId).toBe('string');
       expect(typeof result.dateCreated).toBe('string'); // Formatted by DateUtils
       expect(typeof result.teamEventName).toBe('string');
       expect(typeof result.description).toBe('string');

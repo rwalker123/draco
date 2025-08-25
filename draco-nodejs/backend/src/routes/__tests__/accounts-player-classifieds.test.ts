@@ -614,7 +614,7 @@ describe('PlayerClassifieds Routes', () => {
       expect(response.body.data).toEqual(mockResponse);
       expect(mockPlayerClassifiedService.updateTeamsWanted).toHaveBeenCalledWith(
         BigInt(789),
-        'valid_access_code',
+        '', // Empty string when authenticated
         updateData,
         BigInt(123),
       );
