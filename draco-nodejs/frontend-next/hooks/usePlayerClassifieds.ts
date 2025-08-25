@@ -219,7 +219,6 @@ export const usePlayerClassifieds = (
           createData,
         );
         setTeamsWanted((prev) => [newClassified, ...prev]);
-        showNotification('Teams Wanted created successfully', 'success');
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to create Teams Wanted';
@@ -234,12 +233,15 @@ export const usePlayerClassifieds = (
 
   // Update Teams Wanted
   const updateTeamsWanted = useCallback(
-    async (id: string, data: Partial<ITeamsWantedFormState>, accessCode: string): Promise<void> => {
+    async (
+      id: string,
+      data: Partial<ITeamsWantedFormState>,
+      accessCode: string,
+    ): Promise<ITeamsWantedResponse> => {
       setFormLoading(true);
+
       try {
-        const updateData: ITeamsWantedUpdateRequest = {
-          accessCode,
-        };
+        const updateData: ITeamsWantedUpdateRequest = {};
 
         if (data.name !== undefined) updateData.name = data.name;
         if (data.email !== undefined) updateData.email = data.email;
@@ -249,15 +251,24 @@ export const usePlayerClassifieds = (
           updateData.positionsPlayed = data.positionsPlayed.join(', ');
         if (data.birthDate !== undefined) updateData.birthDate = data.birthDate || undefined;
 
+        // Only add accessCode for non-authenticated users
+        if (!token) {
+          updateData.accessCode = accessCode;
+        }
+
+        // If we have a token (authenticated user), use token; otherwise use access code
         const updatedClassified = await playerClassifiedService.updateTeamsWanted(
           accountId,
           id,
           updateData,
+          token || undefined,
         );
         setTeamsWanted((prev) =>
-          prev.map((item) => (item.id.toString() === id ? updatedClassified : item)),
+          prev.map((item) =>
+            item && item.id && item.id.toString() === id ? updatedClassified : item,
+          ),
         );
-        showNotification('Teams Wanted updated successfully', 'success');
+        return updatedClassified;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to update Teams Wanted';
@@ -267,7 +278,7 @@ export const usePlayerClassifieds = (
         setFormLoading(false);
       }
     },
-    [accountId, showNotification],
+    [accountId, token, showNotification],
   );
 
   // Delete Teams Wanted

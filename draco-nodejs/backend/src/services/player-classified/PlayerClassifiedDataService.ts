@@ -119,21 +119,21 @@ export class PlayerClassifiedDataService {
     account: AccountDbRecord,
   ): IPlayersWantedResponse {
     return {
-      id: dbRecord.id,
-      accountId: dbRecord.accountid,
+      id: dbRecord.id.toString(),
+      accountId: dbRecord.accountid.toString(),
       dateCreated: DateUtils.formatDateForResponse(dbRecord.datecreated),
-      createdByContactId: dbRecord.createdbycontactid,
+      createdByContactId: dbRecord.createdbycontactid.toString(),
       teamEventName: dbRecord.teameventname,
       description: dbRecord.description,
       positionsNeeded: dbRecord.positionsneeded,
       creator: {
-        id: creator.id,
+        id: creator.id.toString(),
         firstName: creator.firstname,
         lastName: creator.lastname,
         email: creator.email,
       },
       account: {
-        id: account.id,
+        id: account.id.toString(),
         name: account.name,
       },
     };
@@ -164,8 +164,8 @@ export class PlayerClassifiedDataService {
     account: AccountDbRecord,
   ): ITeamsWantedResponse {
     return {
-      id: dbRecord.id,
-      accountId: dbRecord.accountid,
+      id: dbRecord.id.toString(),
+      accountId: dbRecord.accountid.toString(),
       dateCreated: DateUtils.formatDateForResponse(dbRecord.datecreated),
       name: dbRecord.name,
       email: dbRecord.email,
@@ -174,7 +174,7 @@ export class PlayerClassifiedDataService {
       positionsPlayed: dbRecord.positionsplayed,
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
       account: {
-        id: account.id,
+        id: account.id.toString(),
         name: account.name,
       },
     };
@@ -206,8 +206,8 @@ export class PlayerClassifiedDataService {
     account: AccountDbRecord,
   ): ITeamsWantedOwnerResponse {
     return {
-      id: dbRecord.id,
-      accountId: dbRecord.accountid,
+      id: dbRecord.id.toString(),
+      accountId: dbRecord.accountid.toString(),
       dateCreated: DateUtils.formatDateForResponse(dbRecord.datecreated),
       name: dbRecord.name,
       email: dbRecord.email,
@@ -216,7 +216,7 @@ export class PlayerClassifiedDataService {
       positionsPlayed: dbRecord.positionsplayed,
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
       account: {
-        id: account.id,
+        id: account.id.toString(),
         name: account.name,
       },
     };

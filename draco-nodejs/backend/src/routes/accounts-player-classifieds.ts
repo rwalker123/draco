@@ -17,7 +17,6 @@ import {
 import {
   validatePlayersWantedCreate,
   validateTeamsWantedCreate,
-  validateTeamsWantedUpdateEndpoint,
   validateTeamsWantedVerification,
   validatePlayersWantedDeletion,
   validateSearchParams,
@@ -53,6 +52,86 @@ const validateSortBy = (sortBy: string): 'dateCreated' | 'relevance' => {
   }
 
   return 'dateCreated';
+};
+
+// Helper function for Teams Wanted conditional authentication middleware
+const createTeamsWantedAuthMiddleware = () => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const authHeader = req.headers.authorization;
+    const hasToken = authHeader && authHeader.startsWith('Bearer ');
+
+    // Helper function to validate access code
+    const validateAccessCode = () => {
+      const { body } = req;
+      const { accessCode } = body;
+
+      if (
+        !accessCode ||
+        typeof accessCode !== 'string' ||
+        accessCode.trim().length < 10 ||
+        accessCode.trim().length > 1000
+      ) {
+        res.status(400).json({
+          success: false,
+          message: 'Access code is required and must be between 10 and 1000 characters',
+        });
+        return false;
+      }
+      return true;
+    };
+
+    if (hasToken) {
+      // Try JWT authentication first
+      authenticateToken(req, res, (authErr: Error | string | undefined) => {
+        if (!authErr) {
+          // JWT authentication successful, now check permissions
+          routeProtection.enforceAccountBoundary()(
+            req,
+            res,
+            (boundaryErr: Error | string | undefined) => {
+              if (!boundaryErr) {
+                // Account boundary check passed, now check manage permissions
+                routeProtection.requirePermission('player-classified.manage')(
+                  req,
+                  res,
+                  (permissionErr: Error | string | undefined) => {
+                    if (!permissionErr) {
+                      // Full authentication successful
+                      next();
+                    } else {
+                      // Permission check failed, fall back to access code
+                      if (validateAccessCode()) {
+                        next();
+                      }
+                      // If access code validation fails, response is already sent
+                    }
+                  },
+                );
+              } else {
+                // Account boundary check failed, fall back to access code
+                if (validateAccessCode()) {
+                  next();
+                }
+                // If access code validation fails, response is already sent
+              }
+            },
+          );
+        } else {
+          // JWT authentication failed, fall back to access code
+          if (validateAccessCode()) {
+            next();
+          }
+          // If access code validation fails, response is already sent
+        }
+      });
+    } else {
+      // No token provided, validate access code
+      if (validateAccessCode()) {
+        next();
+      }
+      // If access code validation fails, response is already sent
+    }
+  };
 };
 
 /**
@@ -240,15 +319,24 @@ router.post(
  */
 router.put(
   '/teams-wanted/:classifiedId',
-  ...validateTeamsWantedUpdateEndpoint,
+  // Validate path parameters for all requests
+  ...validateAccountId,
+  ...validateClassifiedId,
+  // Custom middleware to conditionally apply authentication or access code validation
+  createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const { accessCode, ...updateData } = req.body;
 
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+
+    // Determine access code based on authentication status
+    const isAuthenticated = !!req.user;
+    const effectiveAccessCode = isAuthenticated ? '' : accessCode || '';
+
     const result = await playerClassifiedService.updateTeamsWanted(
       classifiedId,
-      accessCode,
+      effectiveAccessCode,
       updateData,
       accountId,
     );
@@ -314,62 +402,18 @@ router.delete(
   ...validateAccountId,
   ...validateClassifiedId,
   // Custom middleware to conditionally apply authentication or access code validation
-  (req: Request, res: Response, next: NextFunction): void => {
-    const authHeader = req.headers.authorization;
-    const hasToken = authHeader && authHeader.startsWith('Bearer ');
-
-    if (hasToken) {
-      // If user has a token, authenticate and require permissions
-      authenticateToken(req, res, (authErr: Error | string | undefined) => {
-        if (authErr) return next(authErr);
-
-        routeProtection.enforceAccountBoundary()(
-          req,
-          res,
-          (boundaryErr: Error | string | undefined) => {
-            if (boundaryErr) return next(boundaryErr);
-
-            routeProtection.requirePermission('player-classified.manage')(req, res, next);
-          },
-        );
-      });
-    } else {
-      // For anonymous users, validate access code in request body
-      const { body } = req;
-      const { accessCode } = body;
-
-      if (
-        !accessCode ||
-        typeof accessCode !== 'string' ||
-        accessCode.trim().length < 10 ||
-        accessCode.trim().length > 1000
-      ) {
-        res.status(400).json({
-          success: false,
-          message: 'Access code is required and must be between 10 and 1000 characters',
-        });
-        return;
-      }
-
-      next();
-    }
-  },
+  createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const { accessCode } = req.body;
 
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
 
-    // Check if user is authenticated
+    // Determine access code based on authentication status
     const isAuthenticated = !!req.user;
+    const effectiveAccessCode = isAuthenticated ? '' : accessCode || '';
 
-    if (isAuthenticated) {
-      // Authenticated user - delete without access code (empty string will be handled by service)
-      await playerClassifiedService.deleteTeamsWanted(classifiedId, '', accountId);
-    } else {
-      // Anonymous user - use provided access code
-      await playerClassifiedService.deleteTeamsWanted(classifiedId, accessCode || '', accountId);
-    }
+    await playerClassifiedService.deleteTeamsWanted(classifiedId, effectiveAccessCode, accountId);
 
     res.json({
       success: true,

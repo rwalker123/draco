@@ -5,7 +5,7 @@
 // CORE DATA STRUCTURES
 // ============================================================================
 
-// Base interface for Players Wanted classifieds
+// Base interface for Players Wanted classifieds (database representation)
 export interface IPlayersWantedClassified {
   id: bigint;
   accountId: bigint;
@@ -88,33 +88,59 @@ export interface IClassifiedListResponse<T> {
   filters: IClassifiedSearchFilters;
 }
 
-// Players Wanted response with creator details
-export interface IPlayersWantedResponse extends IPlayersWantedClassified {
+// Players Wanted response with creator details (transformed for API response)
+export interface IPlayersWantedResponse {
+  id: string; // Converted from database bigint to string for frontend
+  accountId: string;
+  dateCreated: string | null;
+  createdByContactId: string;
+  teamEventName: string;
+  description: string;
+  positionsNeeded: string;
   creator: {
-    id: bigint;
+    id: string;
     firstName: string;
     lastName: string;
     email: string | null;
   };
   account: {
-    id: bigint;
+    id: string;
     name: string;
   };
 }
 
-// Teams Wanted response (authenticated account members)
-export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
-  // Return full PII for authenticated account members, but never the accessCode
+// Teams Wanted response (authenticated account members - transformed for API response)
+export interface ITeamsWantedResponse {
+  id: string; // Converted from database bigint to string for frontend
+  accountId: string;
+  dateCreated: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  experience: string;
+  positionsPlayed: string;
+  birthDate: string | null;
+  // accessCode never included for security
   account: {
-    id: bigint;
+    id: string;
     name: string;
   };
 }
 
-// Teams Wanted response (owner view without access code for security)
-export interface ITeamsWantedOwnerResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
+// Teams Wanted response (owner view without access code for security - transformed for API response)
+export interface ITeamsWantedOwnerResponse {
+  id: string; // Converted from database bigint to string for frontend
+  accountId: string;
+  dateCreated: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  experience: string;
+  positionsPlayed: string;
+  birthDate: string | null;
+  // accessCode never included for security
   account: {
-    id: bigint;
+    id: string;
     name: string;
   };
 }
