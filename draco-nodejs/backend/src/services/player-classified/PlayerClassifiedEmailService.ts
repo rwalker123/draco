@@ -1,6 +1,7 @@
 // PlayerClassifiedEmailService for Draco Sports Manager
 // Single responsibility: Handles all email operations for player classifieds
 
+import validator from 'validator';
 import { logSecurely } from '../../utils/auditLogger.js';
 import { InternalServerError } from '../../utils/customErrors.js';
 import { EMAIL_STYLES, EMAIL_CONTENT } from '../../config/playerClassifiedConstants.js';
@@ -481,36 +482,10 @@ For support, contact: ${sanitizedReplyTo}
       return '';
     }
 
-    let sanitized = content;
-
-    // Remove script tags and their content entirely
-    sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gis, '');
-
-    // Remove all other HTML tags (but keep content)
-    sanitized = sanitized.replace(/<[^>]*>/g, '');
-
-    // Remove javascript: URLs completely (entire content if it's pure javascript:)
-    if (sanitized.trim().toLowerCase().startsWith('javascript:')) {
-      return '';
-    }
-    sanitized = sanitized.replace(/javascript:[^"\s]*/gi, '');
-
-    // Remove vbscript: protocol (keep rest of content)
-    sanitized = sanitized.replace(/vbscript:/gi, '');
-
-    // Remove data: protocol (keep rest of content)
-    sanitized = sanitized.replace(/data:/gi, '');
-
-    // Remove event handlers (on* attributes)
-    sanitized = sanitized.replace(/on\w+="[^"]*"/gi, '');
-
-    // Replace newlines with spaces
-    sanitized = sanitized.replace(/[\r\n]/g, ' ');
-
-    // Clean up multiple spaces and trim
-    sanitized = sanitized.replace(/\s+/g, ' ');
-
-    return sanitized.trim();
+    // Use validator's battle-tested HTML escaping
+    // This properly escapes <, >, &, ", ' for safe HTML display
+    // while preserving all user content exactly as entered
+    return validator.escape(content.trim());
   }
 
   /**

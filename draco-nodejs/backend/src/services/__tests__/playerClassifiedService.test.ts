@@ -854,46 +854,48 @@ describe('PlayerClassifiedService', () => {
 
   describe('security improvements', () => {
     describe('sanitizeHtmlContent', () => {
-      it('should remove script tags', () => {
+      it('should escape script tags', () => {
         const input = '<script>alert("xss")</script>John Doe';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('John Doe');
+        expect(result).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;&#x2F;script&gt;John Doe');
       });
 
-      it('should remove HTML tags', () => {
+      it('should escape HTML tags', () => {
         const input = '<div>Hello</div><span>World</span>';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('HelloWorld');
+        expect(result).toBe('&lt;div&gt;Hello&lt;&#x2F;div&gt;&lt;span&gt;World&lt;&#x2F;span&gt;');
       });
 
-      it('should remove javascript: protocol', () => {
+      it('should escape javascript: protocol', () => {
         const input = 'javascript:alert("xss")';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('');
+        expect(result).toBe('javascript:alert(&quot;xss&quot;)');
       });
 
-      it('should remove vbscript: protocol', () => {
+      it('should escape vbscript: protocol', () => {
         const input = 'vbscript:msgbox("xss")';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('msgbox("xss")');
+        expect(result).toBe('vbscript:msgbox(&quot;xss&quot;)');
       });
 
-      it('should remove data: protocol', () => {
+      it('should escape data: protocol', () => {
         const input = 'data:text/html,<script>alert("xss")</script>';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('text/html,');
+        expect(result).toBe(
+          'data:text&#x2F;html,&lt;script&gt;alert(&quot;xss&quot;)&lt;&#x2F;script&gt;',
+        );
       });
 
-      it('should remove event handlers', () => {
+      it('should escape event handlers', () => {
         const input = 'onclick="alert()" John Doe';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('John Doe');
+        expect(result).toBe('onclick=&quot;alert()&quot; John Doe');
       });
 
-      it('should replace newlines with spaces', () => {
+      it('should preserve newlines (validator.escape does not modify whitespace)', () => {
         const input = 'Line 1\nLine 2\r\nLine 3';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('Line 1 Line 2 Line 3');
+        expect(result).toBe('Line 1\nLine 2\r\nLine 3');
       });
 
       it('should handle empty and null inputs', () => {
@@ -914,10 +916,12 @@ describe('PlayerClassifiedService', () => {
         expect(result).toBe('John Doe - Baseball Player');
       });
 
-      it('should handle complex XSS attempts', () => {
+      it('should escape complex XSS attempts', () => {
         const input = '<img src="x" onerror="javascript:alert(\'XSS\')" />';
         const result = playerClassifiedService.emailService.sanitizeHtmlContent(input);
-        expect(result).toBe('');
+        expect(result).toBe(
+          '&lt;img src=&quot;x&quot; onerror=&quot;javascript:alert(&#x27;XSS&#x27;)&quot; &#x2F;&gt;',
+        );
       });
     });
 

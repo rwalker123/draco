@@ -265,8 +265,9 @@ export const validateTeamsWantedUpdate = [
       return true;
     }),
 
-  sanitizeText('experience')
+  body('experience')
     .optional()
+    .trim()
     .isLength({ max: 255 })
     .withMessage('Experience must not exceed 255 characters'),
 

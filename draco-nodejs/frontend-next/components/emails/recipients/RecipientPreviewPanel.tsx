@@ -33,7 +33,6 @@ import {
 
 import { ExtendedRecipientSelectionState } from './hooks/useRecipientSelection';
 import { RecipientContact, TeamGroup, RoleGroup } from '../../../types/emails/recipients';
-import { sanitizeDisplayText } from '../../../utils/sanitization';
 import { hasValidEmail } from '../common/mailtoUtils';
 
 export interface RecipientPreviewPanelProps {
@@ -241,8 +240,8 @@ const RecipientPreviewPanel: React.FC<RecipientPreviewPanelProps> = ({
                               </Avatar>
                             </ListItemIcon>
                             <ListItemText
-                              primary={sanitizeDisplayText(contact.displayName)}
-                              secondary={sanitizeDisplayText(contact.email || '')}
+                              primary={contact.displayName}
+                              secondary={contact.email || ''}
                               primaryTypographyProps={{ variant: 'body2' }}
                               secondaryTypographyProps={{ variant: 'caption' }}
                             />
