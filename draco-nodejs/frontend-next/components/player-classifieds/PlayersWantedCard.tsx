@@ -22,7 +22,6 @@ import {
   CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import { IPlayersWantedCardProps } from '../../types/playerClassifieds';
-import { sanitizeDisplayText } from '../../utils/sanitization';
 import { formatDate } from '../../utils/dateUtils';
 
 const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
@@ -32,10 +31,8 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
   canEdit,
   canDelete,
 }) => {
-  // Parse positions from comma-separated string and sanitize each position
-  const positionsNeeded = classified.positionsNeeded
-    .split(',')
-    .map((pos) => sanitizeDisplayText(pos.trim()));
+  // Parse positions from comma-separated string
+  const positionsNeeded = classified.positionsNeeded.split(',').map((pos) => pos.trim());
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -43,7 +40,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Typography variant="h6" component="h3" gutterBottom>
-            {sanitizeDisplayText(classified.teamEventName)}
+            {classified.teamEventName}
           </Typography>
           <Box display="flex" gap={1}>
             {canEdit(classified) && (
@@ -70,7 +67,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
 
         {/* Description */}
         <Typography variant="body2" color="text.secondary" paragraph>
-          {sanitizeDisplayText(classified.description)}
+          {classified.description}
         </Typography>
 
         {/* Positions Needed */}
@@ -97,8 +94,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
             <PersonIcon fontSize="small" />
           </Avatar>
           <Typography variant="caption" color="text.secondary">
-            {sanitizeDisplayText(classified.creator.firstName)}{' '}
-            {sanitizeDisplayText(classified.creator.lastName)}
+            {classified.creator.firstName} {classified.creator.lastName}
           </Typography>
         </Box>
 

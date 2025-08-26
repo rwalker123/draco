@@ -26,7 +26,6 @@ import { ITeamsWantedFormState } from '../../types/playerClassifieds';
 import { formatPhoneNumber } from '../../utils/contactUtils';
 import { isValidEmailFormat } from '../../utils/emailValidation';
 import { validatePhoneNumber } from '../../utils/contactValidation';
-import { sanitizeDisplayText } from '../../utils/sanitization';
 
 interface CreateTeamsWantedDialogProps {
   open: boolean;
@@ -279,11 +278,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
             multiline
             rows={4}
             value={formData.experience}
-            onChange={(e) => {
-              // Use DOMPurify-based sanitization for plain text input
-              const sanitizedValue = sanitizeDisplayText(e.target.value);
-              handleFieldChange('experience', sanitizedValue);
-            }}
+            onChange={(e) => handleFieldChange('experience', e.target.value)}
             error={!!errors.experience}
             helperText={
               errors.experience || `${255 - formData.experience.length} characters remaining`

@@ -13,7 +13,6 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
-import { sanitizeDisplayText } from '../../utils/sanitization';
 import { calculateAge } from '../../utils/dateUtils';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
@@ -24,10 +23,10 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   canDelete,
   isAuthenticated,
 }) => {
-  // Parse positions from comma-separated string and sanitize each position
+  // Parse positions from comma-separated string
   const positionsPlayed = (classified.positionsPlayed || '')
     .split(',')
-    .map((pos) => sanitizeDisplayText(pos.trim()))
+    .map((pos) => pos.trim())
     .filter((pos) => pos.length > 0); // Remove empty positions
 
   return (
@@ -36,7 +35,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Typography variant="h6" component="h3" gutterBottom>
-            {sanitizeDisplayText(classified.name)}
+            {classified.name}
           </Typography>
           <Box display="flex" gap={1}>
             {canEdit(classified) && (
@@ -80,7 +79,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
               WebkitBoxOrient: 'vertical',
             }}
           >
-            {sanitizeDisplayText(classified.experience)}
+            {classified.experience}
           </Typography>
         </Box>
 
@@ -112,7 +111,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
                 variant="caption"
                 color="primary"
                 component="a"
-                href={`mailto:${sanitizeDisplayText(classified.email)}`}
+                href={`mailto:${classified.email}`}
                 sx={{
                   textDecoration: 'none',
                   cursor: 'pointer',
@@ -121,7 +120,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
                   },
                 }}
               >
-                {sanitizeDisplayText(classified.email)}
+                {classified.email}
               </Typography>
             </Box>
 
@@ -132,7 +131,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
                 variant="caption"
                 color="primary"
                 component="a"
-                href={`tel:${sanitizeDisplayText(classified.phone)}`}
+                href={`tel:${classified.phone}`}
                 sx={{
                   textDecoration: 'none',
                   cursor: 'pointer',
@@ -141,7 +140,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
                   },
                 }}
               >
-                {sanitizeDisplayText(classified.phone)}
+                {classified.phone}
               </Typography>
             </Box>
           </Box>
