@@ -28,6 +28,7 @@ import { ContactValidationService, ValidationType } from '../utils/contactValida
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
 const routeProtection = ServiceFactory.getRouteProtection();
+const contactSecurityService = ServiceFactory.getContactSecurityService();
 
 /**
  * @swagger
@@ -482,18 +483,12 @@ router.delete(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
 
-    const existingContact = await prisma.contacts.findFirst({
-      where: {
-        id: contactId,
-        creatoraccountid: accountId,
-      },
-      select: {
-        id: true,
-        userid: true,
-        firstname: true,
-        lastname: true,
-        email: true,
-      },
+    const existingContact = await contactSecurityService.getValidatedContact(contactId, accountId, {
+      id: true,
+      userid: true,
+      firstname: true,
+      lastname: true,
+      email: true,
     });
 
     if (!existingContact) {
@@ -835,13 +830,21 @@ router.put(
     } = sanitizedData;
 
     // Verify the contact exists and belongs to this account
-    const existingContact = await prisma.contacts.findFirst({
-      where: {
-        id: contactId,
-        creatoraccountid: accountId,
-      },
+    const existingContact = await contactSecurityService.getValidatedContact(contactId, accountId, {
+      id: true,
+      firstname: true,
+      lastname: true,
+      middlename: true,
+      email: true,
+      phone1: true,
+      phone2: true,
+      phone3: true,
+      streetaddress: true,
+      city: true,
+      state: true,
+      zip: true,
+      dateofbirth: true,
     });
-
     if (!existingContact) {
       throw new NotFoundError('Contact not found');
     }
@@ -863,15 +866,17 @@ router.put(
     if (dateofbirth !== undefined)
       updateData.dateofbirth = DateUtils.parseDateOfBirthForDatabase(dateofbirth as string | null);
 
-    console.log('Backend: Update data being applied:', updateData);
-    console.log('Backend: Has photo file:', !!req.file);
-
     // Update the contact (only if we have data to update)
-    let updatedContact = existingContact;
+    let updatedContact;
     if (Object.keys(updateData).length > 0) {
       updatedContact = await prisma.contacts.update({
         where: { id: contactId },
         data: updateData,
+      });
+    } else {
+      // No updates needed, fetch fresh data with same fields as update query would return
+      updatedContact = await prisma.contacts.findUniqueOrThrow({
+        where: { id: contactId },
       });
     }
 
@@ -1119,17 +1124,11 @@ router.delete(
     const onlyCheck = check === 'true';
 
     // Verify the contact exists and belongs to this account first
-    const existingContact = await prisma.contacts.findFirst({
-      where: {
-        id: contactId,
-        creatoraccountid: accountId,
-      },
-      select: {
-        id: true,
-        firstname: true,
-        lastname: true,
-        email: true,
-      },
+    const existingContact = await contactSecurityService.getValidatedContact(contactId, accountId, {
+      id: true,
+      firstname: true,
+      lastname: true,
+      email: true,
     });
 
     if (!existingContact) {

@@ -7,6 +7,7 @@ import validator from 'validator';
 import { ITeamsWantedOwnerResponse } from '../../interfaces/playerClassifiedInterfaces.js';
 import { NotFoundError, ValidationError, InternalServerError } from '../../utils/customErrors.js';
 import { logSecurely } from '../../utils/auditLogger.js';
+import { ServiceFactory } from '../../lib/serviceFactory.js';
 import type { PlayerClassifiedDataService } from './PlayerClassifiedDataService.js';
 
 // Database record types for access control operations
@@ -384,24 +385,8 @@ export class PlayerClassifiedAccessService {
    * ```
    */
   async isContactInAccount(contactId: bigint, accountId: bigint): Promise<boolean> {
-    try {
-      const contact = await this.prisma.contacts.findFirst({
-        where: {
-          id: contactId,
-          creatoraccountid: accountId,
-        },
-        select: { id: true },
-      });
-
-      return !!contact;
-    } catch (error) {
-      logSecurely('error', 'Error checking contact account membership', {
-        error: error instanceof Error ? error.message : String(error),
-        contactId: String(contactId),
-        accountId: String(accountId),
-      });
-      return false;
-    }
+    const contactSecurityService = ServiceFactory.getContactSecurityService();
+    return await contactSecurityService.isContactInAccount(contactId, accountId);
   }
 
   /**

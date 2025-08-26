@@ -2,6 +2,7 @@ import { RoleService } from '../services/roleService.js';
 import { TeamService } from '../services/teamService.js';
 import { PlayerClassifiedService } from '../services/playerClassifiedService.js';
 import { CleanupService } from '../services/cleanupService.js';
+import { ContactSecurityService } from '../services/core/ContactSecurityService.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
 import { RoleMiddleware } from '../middleware/roleMiddleware.js';
 import {
@@ -24,6 +25,7 @@ export class ServiceFactory {
   private static teamService: TeamService;
   private static playerClassifiedService: PlayerClassifiedService;
   private static cleanupService: ICleanupService;
+  private static contactSecurityService: ContactSecurityService;
   private static routeProtection: RouteProtection;
   private static roleMiddleware: RoleMiddleware;
 
@@ -77,6 +79,13 @@ export class ServiceFactory {
       this.cleanupService = new CleanupService(prisma, cleanupConfig);
     }
     return this.cleanupService;
+  }
+
+  static getContactSecurityService(): ContactSecurityService {
+    if (!this.contactSecurityService) {
+      this.contactSecurityService = new ContactSecurityService(prisma);
+    }
+    return this.contactSecurityService;
   }
 
   static getRouteProtection(): RouteProtection {

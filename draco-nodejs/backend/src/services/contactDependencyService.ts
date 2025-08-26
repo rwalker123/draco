@@ -6,6 +6,7 @@
 import prisma from '../lib/prisma.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { ContactPhotoService } from './contactPhotoService.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 
 export interface ContactDependency {
   table: string;
@@ -132,15 +133,10 @@ export class ContactDependencyService {
    */
   private static async checkIfAccountOwner(contactId: bigint, accountId: bigint): Promise<boolean> {
     try {
-      // Get the contact's userid
-      const contact = await prisma.contacts.findFirst({
-        where: {
-          id: contactId,
-          creatoraccountid: accountId,
-        },
-        select: {
-          userid: true,
-        },
+      // Get the contact's userid using centralized service
+      const contactSecurityService = ServiceFactory.getContactSecurityService();
+      const contact = await contactSecurityService.getValidatedContact(contactId, accountId, {
+        userid: true,
       });
 
       if (!contact?.userid) {

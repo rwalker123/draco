@@ -23,6 +23,7 @@ import prisma from '../lib/prisma.js';
 const router = Router({ mergeParams: true });
 const roleService = ServiceFactory.getRoleQuery();
 const routeProtection = ServiceFactory.getRouteProtection();
+const contactSecurityService = ServiceFactory.getContactSecurityService();
 
 // Helper function to parse ISO date string without timezone conversion
 const parseGameDate = (dateString: string): Date => {
@@ -596,7 +597,7 @@ router.post(
   '/',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireRole('AccountAdmin'),
+  routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const {
       leagueSeasonId,
@@ -728,7 +729,7 @@ router.put(
   '/:gameId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireRole('AccountAdmin'),
+  routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { gameId } = req.params;
     const {
@@ -856,7 +857,7 @@ router.delete(
   '/:gameId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireRole('AccountAdmin'),
+  routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { gameId } = req.params;
 
@@ -898,11 +899,8 @@ async function userHasTeamAdminRights(
   );
   if (isTeamAdmin) return true;
   // 2. Look up contactid for this user/account
-  const contact = await prisma.contacts.findFirst({
-    where: {
-      userid: userId,
-      creatoraccountid: BigInt(accountId),
-    },
+  const contact = await contactSecurityService.getUserContactInAccount(userId, BigInt(accountId), {
+    id: true,
   });
   if (!contact) return false;
   // 3. Check teamseasonmanager for this contactid

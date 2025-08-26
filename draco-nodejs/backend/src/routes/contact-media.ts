@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { createStorageService } from '../services/storageService.js';
 import { validateContactPhotoFile, getContactPhotoUrl } from '../config/logo.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 import multer from 'multer';
-import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
@@ -27,17 +27,13 @@ router.get(
       const contactId = req.params.contactId;
 
       // Verify the contact exists and belongs to this account
-      const contact = await prisma.contacts.findFirst({
-        where: {
-          id: BigInt(contactId),
-          creatoraccountid: BigInt(accountId),
-        },
-        select: {
-          id: true,
-        },
-      });
+      const contactSecurityService = ServiceFactory.getContactSecurityService();
+      const isValidContact = await contactSecurityService.isContactInAccount(
+        BigInt(contactId),
+        BigInt(accountId),
+      );
 
-      if (!contact) {
+      if (!isValidContact) {
         res.status(404).json({
           success: false,
           message: 'Contact not found',
@@ -85,17 +81,16 @@ router.delete(
       const contactId = req.params.contactId;
 
       // Verify the contact exists and belongs to this account
-      const contact = await prisma.contacts.findFirst({
-        where: {
-          id: BigInt(contactId),
-          creatoraccountid: BigInt(accountId),
-        },
-        select: {
+      const contactSecurityService = ServiceFactory.getContactSecurityService();
+      const contact = await contactSecurityService.getValidatedContact(
+        BigInt(contactId),
+        BigInt(accountId),
+        {
           id: true,
           firstname: true,
           lastname: true,
         },
-      });
+      );
 
       if (!contact) {
         res.status(404).json({
