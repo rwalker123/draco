@@ -10,6 +10,7 @@ import {
   hasRoleOrHigher,
 } from '../config/roles.js';
 import { IRoleService } from '../interfaces/roleInterfaces.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 
 export class RoleService implements IRoleService {
   private prisma: PrismaClient;
@@ -243,6 +244,14 @@ export class RoleService implements IRoleService {
       }
 
       // Check if this is the account owner - prevent role assignments
+      const contactSecurityService = ServiceFactory.getContactSecurityService();
+      // First validate the contact exists in the account
+      const isValidContact = await contactSecurityService.isContactInAccount(contactId, accountId);
+      if (!isValidContact) {
+        throw new Error('Contact not found in the specified account');
+      }
+
+      // Get contact with account owner information (using direct query due to complex relationship)
       const contact = await this.prisma.contacts.findFirst({
         where: {
           id: contactId,

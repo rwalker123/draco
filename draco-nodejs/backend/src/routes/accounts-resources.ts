@@ -14,6 +14,7 @@ import { AccountLeague, AccountField, AccountUmpire } from '../interfaces/accoun
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
+const contactSecurityService = ServiceFactory.getContactSecurityService();
 
 /**
  * GET /api/accounts/:accountId/user-teams
@@ -32,11 +33,8 @@ router.get(
     }
 
     // Get the user's contact record for this account
-    const userContact = await prisma.contacts.findFirst({
-      where: {
-        userid: userId,
-        creatoraccountid: accountId,
-      },
+    const userContact = await contactSecurityService.getUserContactInAccount(userId, accountId, {
+      id: true,
     });
 
     if (!userContact) {
