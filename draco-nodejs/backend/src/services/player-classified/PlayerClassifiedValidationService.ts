@@ -301,6 +301,10 @@ export class PlayerClassifiedValidationService {
     }
 
     const positionList = positions.split(',').map((p) => p.trim());
-    return positionList.length > 0 && positionList.every((pos) => isValidPositionId(pos));
+    return (
+      positionList.length > 0 &&
+      positionList.length <= 3 &&
+      positionList.every((pos) => isValidPositionId(pos))
+    );
   }
 }
