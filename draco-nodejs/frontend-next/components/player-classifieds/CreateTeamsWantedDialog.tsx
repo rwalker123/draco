@@ -268,9 +268,16 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
             value={formData.phone}
             onChange={(e) => {
               const rawValue = e.target.value;
-              // Only format if it looks like a complete phone number (10+ digits)
+              const digitsOnly = rawValue.replace(/\D/g, '');
+
+              // Limit to 10 digits maximum
+              if (digitsOnly.length > 10) {
+                return;
+              }
+
+              // Only format if it looks like a complete phone number (10 digits)
               const formattedValue =
-                rawValue.replace(/\D/g, '').length >= 10 ? formatPhoneNumber(rawValue) : rawValue;
+                digitsOnly.length === 10 ? formatPhoneNumber(digitsOnly) : digitsOnly;
               handleFieldChange('phone', formattedValue);
             }}
             error={!!errors.phone}
