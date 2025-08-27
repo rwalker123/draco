@@ -452,6 +452,7 @@ export interface IUsePlayerClassifiedsReturn {
 
   // Loading states
   loading: boolean;
+  paginationLoading: boolean;
   formLoading: boolean;
 
   // Error state
@@ -459,6 +460,14 @@ export interface IUsePlayerClassifiedsReturn {
 
   // UI state
   uiState: IClassifiedsUIState;
+
+  // Pagination info
+  paginationInfo: {
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 
   // Actions
   createPlayersWanted: (data: IPlayersWantedFormState) => Promise<void>;
@@ -474,6 +483,10 @@ export interface IUsePlayerClassifiedsReturn {
     id: string,
     accessCode: string,
   ) => Promise<{ success: boolean; error?: string }>;
+
+  // Pagination methods
+  loadTeamsWantedPage: (page: number, limit: number) => Promise<void>;
+  clearTeamsWantedState: () => void;
 
   // Search and filtering
   searchClassifieds: (params: IClassifiedSearchParams) => Promise<void>;

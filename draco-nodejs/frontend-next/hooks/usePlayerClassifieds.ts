@@ -29,10 +29,24 @@ export const usePlayerClassifieds = (
 
   // Loading states
   const [loading, setLoading] = useState(false);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
 
   // Error state
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination state
+  const [paginationInfo, setPaginationInfo] = useState<{
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  }>({
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
 
   // UI State
   const [uiState] = useState<IClassifiedsUIState>({
@@ -368,6 +382,73 @@ export const usePlayerClassifieds = (
     setError(null);
   }, []);
 
+  // ============================================================================
+  // PAGINATION AND LOADING
+  // ============================================================================
+
+  // Load paginated Teams Wanted data
+  const loadTeamsWantedPage = useCallback(
+    async (page: number, limit: number) => {
+      setError(null);
+      setPaginationLoading(true);
+
+      try {
+        if (!token) {
+          return;
+        }
+        const response = await playerClassifiedService.getTeamsWanted(
+          accountId,
+          {
+            page,
+            limit,
+            sortBy: 'dateCreated',
+            sortOrder: 'desc',
+            type: 'teams',
+          },
+          token,
+        );
+
+        if (response.success && response.data) {
+          setTeamsWanted(response.data.data);
+          setPaginationInfo({
+            total: response.data.total || 0,
+            totalPages: response.data.pagination?.totalPages || 0,
+            hasNext: response.data.pagination?.hasNext || false,
+            hasPrev: response.data.pagination?.hasPrev || false,
+          });
+          setError(null);
+        } else {
+          // Handle error response
+          let errorMessage = response.error || 'Failed to load Teams Wanted ads';
+          if (response.errorCode === 'Unauthorized') {
+            errorMessage =
+              'You are not authorized to view Teams Wanted ads for this account. Please sign in or join the account.';
+          } else if (response.errorCode === 'Forbidden') {
+            errorMessage =
+              'Access denied. You do not have permission to view Teams Wanted ads for this account.';
+          } else if (response.statusCode === 404) {
+            errorMessage = 'Account not found or Teams Wanted feature is not available.';
+          }
+          setError(errorMessage);
+          // Don't clear existing data on error - keep showing what we have
+        }
+      } catch (error) {
+        console.error('Unexpected error in loadTeamsWantedPage:', error);
+        setError('An unexpected error occurred while loading Teams Wanted ads');
+        // Don't clear existing data on error - keep showing what we have
+      } finally {
+        setPaginationLoading(false);
+      }
+    },
+    [accountId, token],
+  );
+
+  // Clear Teams Wanted state (for preventing duplicate keys)
+  const clearTeamsWantedState = useCallback(() => {
+    setTeamsWanted([]);
+    setError(null);
+  }, []);
+
   return {
     // Data
     playersWanted,
@@ -375,6 +456,7 @@ export const usePlayerClassifieds = (
 
     // Loading states
     loading,
+    paginationLoading,
     formLoading,
 
     // Error state
@@ -383,6 +465,9 @@ export const usePlayerClassifieds = (
     // UI state
     uiState,
 
+    // Pagination info
+    paginationInfo,
+
     // Actions
     createPlayersWanted,
     updatePlayersWanted,
@@ -390,6 +475,10 @@ export const usePlayerClassifieds = (
     createTeamsWanted,
     updateTeamsWanted,
     deleteTeamsWanted,
+
+    // Pagination methods
+    loadTeamsWantedPage,
+    clearTeamsWantedState,
 
     // Search and filtering
     searchClassifieds,
