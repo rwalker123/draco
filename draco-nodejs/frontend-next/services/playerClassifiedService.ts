@@ -65,7 +65,8 @@ export const playerClassifiedService = {
       throw new Error(`Failed to create Players Wanted: ${response.statusText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    return result.data;
   },
 
   // Get all Players Wanted for an account

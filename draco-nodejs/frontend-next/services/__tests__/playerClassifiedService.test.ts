@@ -54,7 +54,7 @@ describe('playerClassifiedService', () => {
     describe('createPlayersWanted', () => {
       it('should create players wanted successfully', async () => {
         const mockResponse = createMockPlayersWanted();
-        mockFetchResponse(mockResponse);
+        mockFetchResponse({ data: mockResponse });
 
         const createData = {
           teamEventName: 'Spring Training Team',
@@ -254,12 +254,12 @@ describe('playerClassifiedService', () => {
     describe('createTeamsWanted', () => {
       it('should create teams wanted successfully', async () => {
         const mockResponse = createMockTeamsWanted();
-        mockFetchResponse(mockResponse);
+        mockFetchResponse({ data: mockResponse });
 
         const createData = {
           name: 'John Smith',
           email: 'john.smith@example.com',
-          phone: '+1-555-0123',
+          phone: '2485550123',
           experience: 'Intermediate',
           positionsPlayed: 'pitcher,catcher',
           birthDate: new Date('2000-06-15'),
