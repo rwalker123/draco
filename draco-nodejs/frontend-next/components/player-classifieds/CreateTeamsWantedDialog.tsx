@@ -102,9 +102,16 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   // Handle positions selection
   const handlePositionsChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
+    const selectedPositions = typeof value === 'string' ? value.split(',') : value;
+
+    // Limit to maximum 3 positions
+    if (selectedPositions.length > 3) {
+      return; // Don't update if trying to select more than 3
+    }
+
     setFormData((prev) => ({
       ...prev,
-      positionsPlayed: typeof value === 'string' ? value.split(',') : value,
+      positionsPlayed: selectedPositions,
     }));
 
     if (errors.positionsPlayed) {
@@ -145,6 +152,8 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     if (formData.positionsPlayed.length === 0) {
       newErrors.positionsPlayed = 'Please select at least one position';
+    } else if (formData.positionsPlayed.length > 3) {
+      newErrors.positionsPlayed = 'Please select no more than 3 positions';
     }
 
     if (!formData.birthDate) {
@@ -329,7 +338,9 @@ Examples:
                 </MenuItem>
               ))}
             </Select>
-            {errors.positionsPlayed && <FormHelperText>{errors.positionsPlayed}</FormHelperText>}
+            <FormHelperText error={!!errors.positionsPlayed}>
+              {errors.positionsPlayed || `${formData.positionsPlayed.length}/3 positions selected`}
+            </FormHelperText>
           </FormControl>
 
           {/* Birth Date */}

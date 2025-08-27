@@ -101,6 +101,10 @@ const validatePositionIds = (fieldName: string) => {
         throw new Error(`${fieldName} must contain at least one position`);
       }
 
+      if (positions.length > 3) {
+        throw new Error(`${fieldName} must not exceed 3 positions`);
+      }
+
       // Validate each position ID is a valid string ID
       for (const pos of positions) {
         if (!pos || !isValidPositionId(pos)) {
