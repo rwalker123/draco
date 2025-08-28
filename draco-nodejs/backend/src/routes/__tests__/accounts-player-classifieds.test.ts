@@ -3,6 +3,25 @@ import request from 'supertest';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
 import { globalErrorHandler } from '../../utils/globalErrorHandler.js';
+import { UserRoles } from '../../types/roles.js';
+
+// Extend Express Request interface for test
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        username: string;
+      };
+      userRoles?: UserRoles;
+      accountBoundary?: {
+        accountId: bigint;
+        contactId: bigint;
+        enforced: boolean;
+      };
+    }
+  }
+}
 
 // Mock the ServiceFactory
 vi.mock('../../lib/serviceFactory.js', () => ({
@@ -221,7 +240,14 @@ describe('PlayerClassifieds Routes', () => {
 
     // Mock route protection
     const mockRouteProtection = {
-      enforceAccountBoundary: () => (req: Request, res: Response, next: NextFunction) => next(),
+      enforceAccountBoundary: () => (req: Request, res: Response, next: NextFunction) => {
+        req.accountBoundary = {
+          contactId: BigInt(456), // Use test user's contact ID
+          accountId: BigInt(123), // Use test account ID
+          enforced: true,
+        };
+        next();
+      },
       requirePermission: () => (req: Request, res: Response, next: NextFunction) => next(),
     } as any;
     vi.mocked(ServiceFactory.getRouteProtection).mockReturnValue(mockRouteProtection);
