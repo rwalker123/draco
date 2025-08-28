@@ -27,10 +27,13 @@ interface CreatePlayersWantedDialogProps {
   onClose: () => void;
   onSubmit: (data: IPlayersWantedFormState) => Promise<void>;
   loading?: boolean;
+  editMode?: boolean;
+  initialData?: IPlayersWantedFormState;
 }
 
 // Available positions for players wanted - using IDs that match backend validation
 const AVAILABLE_POSITIONS = [
+  'any',
   'pitcher',
   'catcher',
   'first-base',
@@ -46,6 +49,7 @@ const AVAILABLE_POSITIONS = [
 
 // Position display names
 const POSITION_LABELS: Record<string, string> = {
+  any: 'Any Position',
   pitcher: 'Pitcher',
   catcher: 'Catcher',
   'first-base': 'First Base',
@@ -64,21 +68,32 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   onClose,
   onSubmit,
   loading = false,
+  editMode = false,
+  initialData,
 }) => {
   // Authentication check
   const { user } = useAuth();
   const isAuthenticated = !!user;
 
   // Form state
-  const [formData, setFormData] = useState<IPlayersWantedFormState>({
-    teamEventName: '',
-    description: '',
-    positionsNeeded: [],
-  });
+  const [formData, setFormData] = useState<IPlayersWantedFormState>(
+    initialData || {
+      teamEventName: '',
+      description: '',
+      positionsNeeded: [],
+    },
+  );
 
   // Form validation errors
   const [errors, setErrors] = useState<Partial<Record<keyof IPlayersWantedFormState, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Update form data when initialData changes (for edit mode)
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   // Handle form field changes
   const handleFieldChange = (field: keyof IPlayersWantedFormState, value: string | string[]) => {
@@ -93,9 +108,14 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   // Handle positions selection
   const handlePositionsChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
+    const selectedPositions = typeof value === 'string' ? value.split(',') : value;
+
+    // Limit to maximum of 3 positions
+    const limitedPositions = selectedPositions.slice(0, 3);
+
     setFormData((prev) => ({
       ...prev,
-      positionsNeeded: typeof value === 'string' ? value.split(',') : value,
+      positionsNeeded: limitedPositions,
     }));
 
     if (errors.positionsNeeded) {
@@ -151,18 +171,24 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
       await onSubmit(cleanedData);
       handleClose();
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Failed to create Players Wanted ad');
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : `Failed to ${editMode ? 'update' : 'create'} Players Wanted ad`,
+      );
     }
   };
 
   // Handle dialog close
   const handleClose = () => {
-    // Reset form state
-    setFormData({
-      teamEventName: '',
-      description: '',
-      positionsNeeded: [],
-    });
+    // Reset form state to initial values or empty
+    setFormData(
+      initialData || {
+        teamEventName: '',
+        description: '',
+        positionsNeeded: [],
+      },
+    );
     setErrors({});
     setSubmitError(null);
     onClose();
@@ -170,7 +196,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Post Players Wanted</DialogTitle>
+      <DialogTitle>{editMode ? 'Edit Players Wanted' : 'Post Players Wanted'}</DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
@@ -234,13 +260,21 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
                 )}
               >
                 {AVAILABLE_POSITIONS.map((position) => (
-                  <MenuItem key={position} value={position}>
+                  <MenuItem
+                    key={position}
+                    value={position}
+                    disabled={
+                      formData.positionsNeeded.length >= 3 &&
+                      !formData.positionsNeeded.includes(position)
+                    }
+                  >
                     {POSITION_LABELS[position]}
                   </MenuItem>
                 ))}
               </Select>
               <FormHelperText>
-                {errors.positionsNeeded || 'Select the positions you need players for'}
+                {errors.positionsNeeded ||
+                  'Select up to 3 positions you need players for (select "Any Position" if flexible)'}
               </FormHelperText>
             </FormControl>
 
@@ -256,7 +290,13 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
             Cancel
           </Button>
           <Button type="submit" variant="contained" disabled={loading || !isAuthenticated}>
-            {loading ? 'Creating...' : 'Create Ad'}
+            {loading
+              ? editMode
+                ? 'Updating...'
+                : 'Creating...'
+              : editMode
+                ? 'Update Ad'
+                : 'Create Ad'}
           </Button>
         </DialogActions>
       </form>

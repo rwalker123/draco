@@ -142,11 +142,10 @@ router.post(
   '/players-wanted',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('player-classified.create-players-wanted'),
   validatePlayersWantedCreate,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const contactId = BigInt(req.user!.id);
+    const contactId = req.accountBoundary!.contactId;
 
     const request: IPlayersWantedCreateRequest = req.body;
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();

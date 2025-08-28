@@ -133,7 +133,7 @@ CREATE INDEX idx_teamswanted_accesscode ON teamswantedclassified(accesscode);
 - [ ] Create responsive page structure in `app/account/[accountId]/player-classifieds/`
 - [ ] Implement main classifieds listing page with pagination
 - [ ] Create PlayersWanted component with account member access control
-- [ ] Create TeamsWanted component with account member + anonymous access
+- [x] Create TeamsWanted component with account member + anonymous access
 - [ ] Implement secure create/edit dialogs
 - [ ] Add basic filtering and search functionality
 

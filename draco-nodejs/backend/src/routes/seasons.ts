@@ -3,8 +3,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { RouteProtection } from '../middleware/routeProtection.js';
-import { RoleService } from '../services/roleService.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { NotFoundError } from '../utils/customErrors.js';
@@ -47,8 +46,7 @@ interface SeasonWithLeagues {
 }
 
 const router = Router({ mergeParams: true });
-const roleService = new RoleService(prisma);
-const routeProtection = new RouteProtection(roleService, prisma);
+const routeProtection = ServiceFactory.getRouteProtection();
 
 /**
  * @swagger
