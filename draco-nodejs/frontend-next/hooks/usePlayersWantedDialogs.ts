@@ -5,7 +5,9 @@ interface UsePlayersWantedDialogsReturn {
   // Dialog state
   createDialogOpen: boolean;
   editDialogOpen: boolean;
+  deleteDialogOpen: boolean;
   editingClassified: IPlayersWantedResponse | null;
+  deletingClassified: IPlayersWantedResponse | null;
 
   // Success/error state
   success: string | null;
@@ -16,6 +18,8 @@ interface UsePlayersWantedDialogsReturn {
   closeCreateDialog: () => void;
   openEditDialog: (classified: IPlayersWantedResponse) => void;
   closeEditDialog: () => void;
+  openDeleteDialog: (classified: IPlayersWantedResponse) => void;
+  closeDeleteDialog: () => void;
 
   // Success/error handlers
   setSuccess: (message: string | null) => void;
@@ -31,7 +35,9 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingClassified, setEditingClassified] = useState<IPlayersWantedResponse | null>(null);
+  const [deletingClassified, setDeletingClassified] = useState<IPlayersWantedResponse | null>(null);
 
   // Success/error notification state
   const [success, setSuccess] = useState<string | null>(null);
@@ -54,6 +60,16 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
   const closeEditDialog = useCallback(() => {
     setEditDialogOpen(false);
     setEditingClassified(null);
+  }, []);
+
+  const openDeleteDialog = useCallback((classified: IPlayersWantedResponse) => {
+    setDeletingClassified(classified);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const closeDeleteDialog = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setDeletingClassified(null);
   }, []);
 
   // Success/error handlers
@@ -86,7 +102,9 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
     // Dialog state
     createDialogOpen,
     editDialogOpen,
+    deleteDialogOpen,
     editingClassified,
+    deletingClassified,
 
     // Success/error state
     success,
@@ -97,6 +115,8 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
     closeCreateDialog,
     openEditDialog,
     closeEditDialog,
+    openDeleteDialog,
+    closeDeleteDialog,
 
     // Success/error handlers
     setSuccess,

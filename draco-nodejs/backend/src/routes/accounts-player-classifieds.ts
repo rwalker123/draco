@@ -430,11 +430,10 @@ router.delete(
   '/players-wanted/:classifiedId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('player-classified.manage'),
   ...validatePlayersWantedDeletion,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const contactId = BigInt(req.user!.id);
+    const contactId = req.accountBoundary!.contactId;
 
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
 
