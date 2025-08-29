@@ -5,3 +5,4 @@ export { default as ClassifiedsHeader } from './ClassifiedsHeader';
 export { default as PlayersWantedCard } from './PlayersWantedCard';
 export { default as CreateTeamsWantedDialog } from './CreateTeamsWantedDialog';
 export { default as CreatePlayersWantedDialog } from './CreatePlayersWantedDialog';
+export { default as DeletePlayersWantedDialog } from './DeletePlayersWantedDialog';

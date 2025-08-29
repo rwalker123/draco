@@ -10,6 +10,7 @@ import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { usePlayersWantedDialogs } from '../../../../hooks/usePlayersWantedDialogs';
 import { PlayersWantedCard } from '../../../../components/player-classifieds';
 import CreatePlayersWantedDialog from '../../../../components/player-classifieds/CreatePlayersWantedDialog';
+import DeletePlayersWantedDialog from '../../../../components/player-classifieds/DeletePlayersWantedDialog';
 import EmptyState from '../../../../components/common/EmptyState';
 import {
   IPlayersWantedResponse,
@@ -33,6 +34,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     clearError,
     createPlayersWanted,
     updatePlayersWanted,
+    deletePlayersWanted,
     formLoading,
   } = usePlayerClassifieds(accountId, token || undefined);
 
@@ -45,13 +47,17 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
   const {
     createDialogOpen,
     editDialogOpen,
+    deleteDialogOpen,
     editingClassified,
+    deletingClassified,
     success,
     localError,
     openCreateDialog,
     closeCreateDialog,
     openEditDialog,
     closeEditDialog,
+    openDeleteDialog,
+    closeDeleteDialog,
     showSuccessMessage,
     setLocalError,
     clearSuccess,
@@ -104,6 +110,33 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     [editingClassified, updatePlayersWanted, closeEditDialog, showSuccessMessage],
   );
 
+  // Handle delete
+  const handleDelete = useCallback(
+    (id: string) => {
+      const classified = playersWanted.find((c) => c.id.toString() === id);
+      if (!classified) return;
+
+      openDeleteDialog(classified);
+    },
+    [playersWanted, openDeleteDialog],
+  );
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deletingClassified) return;
+
+    try {
+      await deletePlayersWanted(deletingClassified.id.toString());
+
+      // Close the delete dialog and show success message
+      closeDeleteDialog();
+      showSuccessMessage('Players Wanted ad deleted successfully!');
+    } catch {
+      // Error is already handled by the hook (notification shown)
+      // No need to re-throw - just keep dialog open for user to retry
+    }
+  }, [deletingClassified, deletePlayersWanted, closeDeleteDialog, showSuccessMessage]);
+
   // Memoized function to render dialogs (DRY principle)
   const renderDialogs = useMemo(
     () => (
@@ -127,6 +160,15 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
             initialData={convertToFormState(editingClassified)}
           />
         )}
+
+        {/* Delete Players Wanted Dialog */}
+        <DeletePlayersWantedDialog
+          open={deleteDialogOpen}
+          classified={deletingClassified}
+          onClose={closeDeleteDialog}
+          onConfirm={handleDeleteConfirm}
+          loading={formLoading}
+        />
       </>
     ),
     [
@@ -139,6 +181,10 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
       closeEditDialog,
       handleEditSubmit,
       convertToFormState,
+      deleteDialogOpen,
+      deletingClassified,
+      closeDeleteDialog,
+      handleDeleteConfirm,
     ],
   );
 
@@ -241,7 +287,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
             key={classified.id.toString()}
             classified={classified}
             onEdit={() => handleEdit(classified.id.toString())}
-            onDelete={() => {}}
+            onDelete={() => handleDelete(classified.id.toString())}
             canEdit={canEditPlayersWantedById}
             canDelete={canDeletePlayersWantedById}
           />
