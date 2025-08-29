@@ -321,6 +321,7 @@ router.put(
   // Validate path parameters for all requests
   ...validateAccountId,
   ...validateClassifiedId,
+
   // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -357,7 +358,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const contactId = BigInt(req.user!.id);
+    const contactId = req.accountBoundary!.contactId;
 
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
 

@@ -408,7 +408,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
             </Typography>
           </Stack>
           <Typography variant="body1" color="text.secondary" mb={2}>
-            Sign in to your account to see all Teams Wanted ads and connect with team members.
+            Sign in to your account to see all players looking for a team.
           </Typography>
         </Paper>
 
