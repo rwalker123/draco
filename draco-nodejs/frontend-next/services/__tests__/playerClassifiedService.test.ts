@@ -175,7 +175,7 @@ describe('playerClassifiedService', () => {
     describe('updatePlayersWanted', () => {
       it('should update players wanted successfully', async () => {
         const mockResponse = createMockPlayersWanted({ id: '1' });
-        mockFetchResponse(mockResponse);
+        mockFetchResponse({ success: true, data: mockResponse });
 
         const updateData = {
           teamEventName: 'Updated Team Name',
@@ -339,7 +339,7 @@ describe('playerClassifiedService', () => {
     describe('updateTeamsWanted', () => {
       it('should update teams wanted successfully', async () => {
         const mockResponse = createMockTeamsWanted({ id: '1' });
-        mockFetchResponse(mockResponse);
+        mockFetchResponse({ success: true, data: mockResponse });
 
         const updateData = {
           name: 'Updated Player Name',

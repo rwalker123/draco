@@ -8,6 +8,14 @@ import { IBaseballPosition, IExperienceLevel } from './playerClassifiedInterface
 // ============================================================================
 
 export const BASEBALL_POSITIONS: IBaseballPosition[] = [
+  // Special positions
+  {
+    id: 'any',
+    name: 'Any Position',
+    category: 'utility',
+    abbreviation: 'ANY',
+  },
+
   // Pitching positions
   {
     id: 'pitcher',

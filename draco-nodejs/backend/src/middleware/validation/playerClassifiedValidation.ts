@@ -125,8 +125,8 @@ export const validatePlayersWantedCreate = [
   validateRequiredString(
     'teamEventName',
     50,
-    /^[a-zA-Z0-9\s'&()-]+$/,
-    'Team event name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and parentheses',
+    /^[a-zA-Z0-9\s'&()+.-]+$/,
+    'Team event name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, parentheses, plus signs, and periods',
   ),
 
   validateRequiredString('description', 1000, undefined, undefined, 10),
@@ -144,9 +144,9 @@ export const validatePlayersWantedUpdate = [
     .optional()
     .isLength({ max: 50 })
     .withMessage('Team event name must not exceed 50 characters')
-    .matches(/^[a-zA-Z0-9\s'&()-]+$/)
+    .matches(/^[a-zA-Z0-9\s'&()+.-]+$/)
     .withMessage(
-      'Team event name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and parentheses',
+      'Team event name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, parentheses, plus signs, and periods',
     ),
 
   sanitizeText('description')

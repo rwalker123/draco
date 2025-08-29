@@ -4,7 +4,6 @@ import { PlayerClassifiedService } from '../services/playerClassifiedService.js'
 import { CleanupService } from '../services/cleanupService.js';
 import { ContactSecurityService } from '../services/core/ContactSecurityService.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
-import { RoleMiddleware } from '../middleware/roleMiddleware.js';
 import {
   IRoleService,
   IRoleQuery,
@@ -27,7 +26,6 @@ export class ServiceFactory {
   private static cleanupService: ICleanupService;
   private static contactSecurityService: ContactSecurityService;
   private static routeProtection: RouteProtection;
-  private static roleMiddleware: RoleMiddleware;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -50,14 +48,6 @@ export class ServiceFactory {
 
   static getRoleMiddleware(): IRoleMiddleware {
     return this.getRoleService();
-  }
-
-  static getRoleMiddlewareClass(): RoleMiddleware {
-    if (!this.roleMiddleware) {
-      const roleService = this.getRoleMiddleware();
-      this.roleMiddleware = new RoleMiddleware(roleService);
-    }
-    return this.roleMiddleware;
   }
 
   static getTeamService(): TeamService {

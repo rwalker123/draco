@@ -167,7 +167,8 @@ export const playerClassifiedService = {
       throw new Error(`Failed to update Players Wanted: ${response.statusText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    return result.data;
   },
 
   // Delete a Players Wanted classified

@@ -1,7 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { RouteProtection } from '../middleware/routeProtection.js';
-import { RoleService } from '../services/roleService.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 import { RosterService } from '../services/rosterService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
@@ -10,8 +9,7 @@ import { RosterResponseFormatter } from '../utils/responseFormatters.js';
 import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
-const roleService = new RoleService(prisma);
-const routeProtection = new RouteProtection(roleService, prisma);
+const routeProtection = ServiceFactory.getRouteProtection();
 const rosterService = new RosterService(prisma);
 
 /**

@@ -18,6 +18,7 @@ declare global {
       userRoles?: UserRoles;
       accountBoundary?: {
         accountId: bigint;
+        contactId: bigint;
         enforced: boolean;
       };
     }
@@ -170,35 +171,22 @@ export class RouteProtection {
           return;
         }
 
-        // Check if user has access to this account
-        const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+        // Get the user's contact record for this account
+        const userContactId = await this.checkUserAccount(req.user.id, accountId);
 
-        // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(ROLE_IDS[RoleType.ADMINISTRATOR])) {
-          req.userRoles = userRoles;
-          req.accountBoundary = { accountId, enforced: true };
-          return next();
+        if (!userContactId) {
+          res.status(403).json({
+            success: false,
+            message: 'Access denied to this account',
+          });
+          return;
         }
 
-        // Allow if user has contact roles in this account
-        if (userRoles.contactRoles.length > 0) {
-          req.userRoles = userRoles;
-          req.accountBoundary = { accountId, enforced: true };
-          return next();
-        }
+        // First check account boundary
+        req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+        req.accountBoundary = { contactId: userContactId, accountId, enforced: true };
 
-        // Check if user is the account owner
-        const isAccountOwner = await this.checkAccountOwnership(req.user.id, accountId);
-        if (isAccountOwner) {
-          req.userRoles = userRoles;
-          req.accountBoundary = { accountId, enforced: true };
-          return next();
-        }
-
-        res.status(403).json({
-          success: false,
-          message: 'Access denied to this account',
-        });
+        return next();
       } catch (error) {
         console.error('Account boundary middleware error:', error);
         res.status(500).json({
@@ -374,25 +362,6 @@ export class RouteProtection {
   requireTeamPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]);
 
   /**
-   * Middleware to add role information to request (for informational purposes)
-   */
-  addRoleInfo = () => {
-    return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-      try {
-        if (req.user?.id) {
-          const accountId = this.extractAccountId(req);
-          req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-        }
-        next();
-      } catch (error) {
-        console.error('Error adding role info:', error);
-        // Don't fail the request, just continue without role info
-        next();
-      }
-    };
-  };
-
-  /**
    * Extract account ID from request (from URL params, body, or query)
    */
   private extractAccountId(req: Request): bigint | undefined {
@@ -463,19 +432,22 @@ export class RouteProtection {
   }
 
   /**
-   * Check if user is the owner of the account
+   * Check if user is member of account
    */
-  private async checkAccountOwnership(userId: string, accountId: bigint): Promise<boolean> {
+  private async checkUserAccount(userId: string, accountId: bigint): Promise<bigint | undefined> {
     try {
-      const account = await this.prisma.accounts.findUnique({
-        where: { id: accountId },
-        select: { owneruserid: true },
+      const contact = await this.prisma.contacts.findFirst({
+        where: {
+          userid: userId,
+          creatoraccountid: accountId,
+        },
+        select: { id: true },
       });
 
-      return account?.owneruserid === userId;
+      return contact?.id;
     } catch (error) {
-      console.error('Error checking account ownership:', error);
-      return false;
+      console.error('Error checking account membership:', error);
+      return undefined;
     }
   }
 }

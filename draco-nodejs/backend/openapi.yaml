@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API documentation for Draco Sports Manager
 servers:
-  - url: http://localhost:5000
+  - url: https://localhost:3001
     description: Development server
 components:
   schemas:
@@ -374,6 +374,143 @@ components:
               type: string
               description: Account name
               example: "Local Baseball League"
+    IPlayersWantedCreateRequest:
+      type: object
+      required:
+        - teamEventName
+        - description
+        - positionsNeeded
+      properties:
+        teamEventName:
+          type: string
+          maxLength: 50
+          description: Name of the team event or team
+          example: "Spring Training Team"
+        description:
+          type: string
+          description: Detailed description of what's needed
+          example: "Looking for experienced players for spring training season"
+        positionsNeeded:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names needed
+          example: "pitcher,catcher,first-base"
+    ITeamsWantedCreateRequest:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - experience
+        - positionsPlayed
+        - birthDate
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          description: Player's birth date
+          example: "1990-05-15"
+    IPlayersWantedUpdateRequest:
+      type: object
+      properties:
+        teamEventName:
+          type: string
+          maxLength: 50
+          description: Name of the team event or team
+          example: "Updated Spring Training Team"
+        description:
+          type: string
+          description: Detailed description of what's needed
+          example: "Looking for experienced players for spring training season"
+        positionsNeeded:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names needed
+          example: "pitcher,catcher,first-base"
+    ITeamsWantedUpdateRequest:
+      type: object
+      required:
+        - accessCode
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          description: Player's birth date
+          example: "1990-05-15"
+        accessCode:
+          type: string
+          description: Access code for authentication
+          example: "abc123def456" # pragma: allowlist secret
+    AccessCodeRequest:
+      type: object
+      required:
+        - accessCode
+      properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Access code for verification
+          example: "abc123def456" # pragma: allowlist secret
+    RateLimitError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Rate limit exceeded. Please try again later."
+        retryAfter:
+          type: integer
+          description: Seconds to wait before retrying
+          example: 60
     WorkoutRegistrationUpdateDTO:
       type: object
       properties:
@@ -403,6 +540,11 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token for authentication
+    accessCodeAuth:
+      type: apiKey
+      in: body
+      name: accessCode
+      description: Access code for Teams Wanted operations (alternative to JWT)
 paths:
   "/api/accounts/{accountId}/contacts/me":
     get:
@@ -675,23 +817,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - teamEventName
-                - description
-                - positionsNeeded
-              properties:
-                teamEventName:
-                  type: string
-                  maxLength: 50
-                  description: Name of the team event or team
-                description:
-                  type: string
-                  description: Detailed description of what's needed
-                positionsNeeded:
-                  type: string
-                  maxLength: 50
-                  description: Comma-separated list of position IDs needed
+              $ref: "#/components/schemas/IPlayersWantedCreateRequest"
       responses:
         "201":
           description: Players Wanted classified created successfully
@@ -802,41 +928,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - name
-                - email
-                - phone
-                - experience
-                - positionsPlayed
-                - birthDate
-              properties:
-                name:
-                  type: string
-                  maxLength: 50
-                  description: Player's name
-                email:
-                  type: string
-                  format: email
-                  description: Player's email address
-                phone:
-                  type: string
-                  description: Player's phone number
-                experience:
-                  type: string
-                  description: Description of player's experience
-                positionsPlayed:
-                  type: string
-                  maxLength: 50
-                  description: Comma-separated list of position IDs played
-                birthDate:
-                  type: string
-                  format: date
-                  description: Player's birth date (must be 13-80 years old)
-                expirationDate:
-                  type: string
-                  format: date
-                  description: Optional expiration date (max 120 days)
+              $ref: "#/components/schemas/ITeamsWantedCreateRequest"
       responses:
         "201":
           description: Teams Wanted classified created successfully
@@ -856,6 +948,10 @@ paths:
           description: Validation error or invalid input
         "429":
           description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
     get:
       operationId: getTeamsWanted
       summary: Get Teams Wanted classifieds (public)
@@ -952,13 +1048,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - accessCode
-              properties:
-                accessCode:
-                  type: string
-                  description: Access code received via email
+              $ref: "#/components/schemas/AccessCodeRequest"
       responses:
         "200":
           description: Access verified successfully
@@ -994,13 +1084,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - accessCode
-              properties:
-                accessCode:
-                  type: string
-                  description: Access code received via email
+              $ref: "#/components/schemas/AccessCodeRequest"
       responses:
         "200":
           description: Teams Wanted classified retrieved successfully
@@ -1030,14 +1114,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/RateLimitError"
   "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}":
     put:
       operationId: updateTeamsWanted
       summary: Update Teams Wanted classified
-      description: Update a Teams Wanted classified using access code
+      description: Update a Teams Wanted classified using JWT authentication (account members) or access code (owners)
       tags:
         - PlayerClassifieds
+      security:
+        - bearerAuth: []
+        - accessCodeAuth: []
       parameters:
         - in: path
           name: accountId
@@ -1056,35 +1143,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - accessCode
-              properties:
-                accessCode:
-                  type: string
-                  description: Access code for verification
-                name:
-                  type: string
-                  maxLength: 50
-                  description: Player's name
-                email:
-                  type: string
-                  format: email
-                  description: Player's email address
-                phone:
-                  type: string
-                  description: Player's phone number
-                experience:
-                  type: string
-                  description: Description of player's experience
-                positionsPlayed:
-                  type: string
-                  maxLength: 50
-                  description: Comma-separated list of position IDs played
-                birthDate:
-                  type: string
-                  format: date
-                  description: Player's birth date
+              $ref: "#/components/schemas/ITeamsWantedUpdateRequest"
       responses:
         "200":
           description: Teams Wanted classified updated successfully
@@ -1104,9 +1163,12 @@ paths:
     delete:
       operationId: deleteTeamsWanted
       summary: Delete Teams Wanted classified
-      description: Delete a Teams Wanted classified using access code
+      description: Delete a Teams Wanted classified using JWT authentication (account members) or access code (owners)
       tags:
         - PlayerClassifieds
+      security:
+        - bearerAuth: []
+        - accessCodeAuth: []
       parameters:
         - in: path
           name: accountId
@@ -1125,13 +1187,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - accessCode
-              properties:
-                accessCode:
-                  type: string
-                  description: Access code for verification
+              $ref: "#/components/schemas/AccessCodeRequest"
       responses:
         "200":
           description: Teams Wanted classified deleted successfully
@@ -1175,19 +1231,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                teamEventName:
-                  type: string
-                  maxLength: 50
-                  description: Name of the team event or team
-                description:
-                  type: string
-                  description: Detailed description of what's needed
-                positionsNeeded:
-                  type: string
-                  maxLength: 50
-                  description: Comma-separated list of position IDs needed
+              $ref: "#/components/schemas/IPlayersWantedUpdateRequest"
       responses:
         "200":
           description: Players Wanted classified updated successfully
