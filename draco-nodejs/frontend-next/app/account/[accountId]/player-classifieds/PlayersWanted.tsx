@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { Box, Typography, CircularProgress, Button, Alert } from '@mui/material';
-import { Refresh as RefreshIcon, Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPermissions } from '../../../../hooks/useClassifiedsPermissions';
 import { useAuth } from '../../../../context/AuthContext';
+import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { PlayersWantedCard } from '../../../../components/player-classifieds';
 import CreatePlayersWantedDialog from '../../../../components/player-classifieds/CreatePlayersWantedDialog';
 import EmptyState from '../../../../components/common/EmptyState';
@@ -19,13 +20,15 @@ interface PlayersWantedProps {
 }
 
 const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
+  const { isMember } = useAccountMembership(accountId);
+  const isAccountMember = !!isMember;
+  const isSignedIn = !!user;
 
   const {
     playersWanted,
     loading,
     error,
-    refreshData,
     clearError,
     createPlayersWanted,
     updatePlayersWanted,
@@ -155,18 +158,27 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     return (
       <>
         <Box sx={{ p: 2 }}>
+          {/* Sign In Banner for Non-Authenticated Users */}
+          {!isSignedIn && (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              To create a Players Wanted ad, please sign in to your account.
+            </Alert>
+          )}
+
           <EmptyState
             title="No Players Wanted"
             subtitle="No players are currently looking for teams."
           >
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setCreateDialogOpen(true)}
-              sx={{ mt: 2 }}
-            >
-              Post Players Wanted
-            </Button>
+            {isAccountMember && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setCreateDialogOpen(true)}
+                sx={{ mt: 2 }}
+              >
+                Post Players Wanted
+              </Button>
+            )}
           </EmptyState>
         </Box>
 
@@ -191,12 +203,19 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
         </Alert>
       )}
 
-      {/* Header with Create and Refresh Buttons */}
+      {/* Sign In Banner for Non-Authenticated Users */}
+      {!isSignedIn && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          To create a Players Wanted ad, please sign in to your account.
+        </Alert>
+      )}
+
+      {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6" component="h2">
-          Players Looking for Teams ({playersWanted.length})
+          Teams Looking for Players ({playersWanted.length})
         </Typography>
-        <Box display="flex" gap={2}>
+        {isAccountMember && (
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -209,30 +228,8 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
           >
             Post Players Wanted
           </Button>
-          <Button
-            startIcon={<RefreshIcon />}
-            onClick={() => {
-              refreshData();
-            }}
-            variant="outlined"
-          >
-            Refresh
-          </Button>
-        </Box>
+        )}
       </Box>
-
-      {/* Notifications */}
-      {localError && (
-        <Alert severity="error" onClose={() => setLocalError(null)} sx={{ mb: 3 }}>
-          {localError}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
-          {success}
-        </Alert>
-      )}
 
       {/* Players Wanted Grid */}
       <Box
