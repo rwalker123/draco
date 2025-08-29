@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Box, Typography, CircularProgress, Button, Alert } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPermissions } from '../../../../hooks/useClassifiedsPermissions';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAccountMembership } from '../../../../hooks/useAccountMembership';
+import { usePlayersWantedDialogs } from '../../../../hooks/usePlayersWantedDialogs';
 import { PlayersWantedCard } from '../../../../components/player-classifieds';
 import CreatePlayersWantedDialog from '../../../../components/player-classifieds/CreatePlayersWantedDialog';
 import EmptyState from '../../../../components/common/EmptyState';
@@ -40,100 +41,105 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     accountId,
   });
 
-  // Dialog state management
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingClassified, setEditingClassified] = useState<IPlayersWantedResponse | null>(null);
-
-  // Success/error notification state
-  const [success, setSuccess] = useState<string | null>(null);
-  const [localError, setLocalError] = useState<string | null>(null);
+  // Dialog state management using custom hook
+  const {
+    createDialogOpen,
+    editDialogOpen,
+    editingClassified,
+    success,
+    localError,
+    openCreateDialog,
+    closeCreateDialog,
+    openEditDialog,
+    closeEditDialog,
+    showSuccessMessage,
+    setLocalError,
+    clearSuccess,
+    convertToFormState,
+  } = usePlayersWantedDialogs();
 
   // Handle create players wanted
-  const handleCreatePlayersWanted = async (formData: IPlayersWantedFormState) => {
-    try {
-      await createPlayersWanted(formData);
-      // Close dialog and show success message
-      setCreateDialogOpen(false);
-      setSuccess('Players Wanted ad created successfully!');
-      setLocalError(null);
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => setSuccess(null), 5000);
-    } catch (error) {
-      // Error is already handled by the hook, but re-throw so dialog can handle it
-      throw error;
-    }
-  };
-
-  // Utility function to convert IPlayersWantedResponse to IPlayersWantedFormState
-  const convertToFormState = (classified: IPlayersWantedResponse): IPlayersWantedFormState => {
-    return {
-      teamEventName: classified.teamEventName,
-      description: classified.description,
-      positionsNeeded: classified.positionsNeeded
-        .split(',')
-        .map((p) => p.trim())
-        .filter((p) => p.length > 0),
-    };
-  };
+  const handleCreatePlayersWanted = useCallback(
+    async (formData: IPlayersWantedFormState) => {
+      try {
+        await createPlayersWanted(formData);
+        // Close dialog and show success message
+        closeCreateDialog();
+        showSuccessMessage('Players Wanted ad created successfully!');
+      } catch (error) {
+        // Error is already handled by the hook, but re-throw so dialog can handle it
+        throw error;
+      }
+    },
+    [createPlayersWanted, closeCreateDialog, showSuccessMessage],
+  );
 
   // Handle edit
-  const handleEdit = (id: string) => {
-    const classified = playersWanted.find((c) => c.id.toString() === id);
-    if (!classified) return;
+  const handleEdit = useCallback(
+    (id: string) => {
+      const classified = playersWanted.find((c) => c.id.toString() === id);
+      if (!classified) return;
 
-    setEditingClassified(classified);
-    setEditDialogOpen(true);
-  };
-
-  // Handle edit dialog close
-  const closeEditDialog = () => {
-    setEditDialogOpen(false);
-    setEditingClassified(null);
-  };
+      openEditDialog(classified);
+    },
+    [playersWanted, openEditDialog],
+  );
 
   // Handle edit form submission
-  const handleEditSubmit = async (formData: IPlayersWantedFormState) => {
-    if (!editingClassified) return;
+  const handleEditSubmit = useCallback(
+    async (formData: IPlayersWantedFormState) => {
+      if (!editingClassified) return;
 
-    try {
-      await updatePlayersWanted(editingClassified.id.toString(), formData);
+      try {
+        await updatePlayersWanted(editingClassified.id.toString(), formData);
 
-      // Close the edit dialog and show success message
-      closeEditDialog();
-      setSuccess('Players Wanted ad updated successfully!');
-      setLocalError(null);
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => setSuccess(null), 5000);
-    } catch (error) {
-      // Let the hook handle error notifications, but re-throw so dialog can handle it
-      throw error;
-    }
-  };
+        // Close the edit dialog and show success message
+        closeEditDialog();
+        showSuccessMessage('Players Wanted ad updated successfully!');
+      } catch (error) {
+        // Let the hook handle error notifications, but re-throw so dialog can handle it
+        throw error;
+      }
+    },
+    [editingClassified, updatePlayersWanted, closeEditDialog, showSuccessMessage],
+  );
 
-  // Helper function to render dialogs (DRY principle)
-  const renderDialogs = () => (
-    <>
-      {/* Create Players Wanted Dialog */}
-      <CreatePlayersWantedDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onSubmit={handleCreatePlayersWanted}
-        loading={formLoading}
-      />
-
-      {/* Edit Players Wanted Dialog */}
-      {editingClassified && (
+  // Memoized function to render dialogs (DRY principle)
+  const renderDialogs = useMemo(
+    () => (
+      <>
+        {/* Create Players Wanted Dialog */}
         <CreatePlayersWantedDialog
-          open={editDialogOpen}
-          onClose={closeEditDialog}
-          onSubmit={handleEditSubmit}
+          open={createDialogOpen}
+          onClose={closeCreateDialog}
+          onSubmit={handleCreatePlayersWanted}
           loading={formLoading}
-          editMode={true}
-          initialData={convertToFormState(editingClassified)}
         />
-      )}
-    </>
+
+        {/* Edit Players Wanted Dialog */}
+        {editingClassified && (
+          <CreatePlayersWantedDialog
+            open={editDialogOpen}
+            onClose={closeEditDialog}
+            onSubmit={handleEditSubmit}
+            loading={formLoading}
+            editMode={true}
+            initialData={convertToFormState(editingClassified)}
+          />
+        )}
+      </>
+    ),
+    [
+      createDialogOpen,
+      closeCreateDialog,
+      handleCreatePlayersWanted,
+      formLoading,
+      editingClassified,
+      editDialogOpen,
+      closeEditDialog,
+      handleEditSubmit,
+      convertToFormState,
+    ],
   );
 
   if (loading) {
@@ -173,7 +179,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => setCreateDialogOpen(true)}
+                onClick={openCreateDialog}
                 sx={{ mt: 2 }}
               >
                 Post Players Wanted
@@ -183,7 +189,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
         </Box>
 
         {/* Render dialogs for empty state */}
-        {renderDialogs()}
+        {renderDialogs}
       </>
     );
   }
@@ -198,7 +204,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
       )}
 
       {success && (
-        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
+        <Alert severity="success" onClose={clearSuccess} sx={{ mb: 3 }}>
           {success}
         </Alert>
       )}
@@ -216,16 +222,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
           Teams Looking for Players ({playersWanted.length})
         </Typography>
         {isAccountMember && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              console.log('🚀 Post Players Wanted button clicked!');
-              console.log('🔍 Current createDialogOpen state:', createDialogOpen);
-              setCreateDialogOpen(true);
-              console.log('✅ setCreateDialogOpen(true) called');
-            }}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
             Post Players Wanted
           </Button>
         )}
@@ -252,7 +249,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
       </Box>
 
       {/* Render dialogs for main state */}
-      {renderDialogs()}
+      {renderDialogs}
     </Box>
   );
 };
