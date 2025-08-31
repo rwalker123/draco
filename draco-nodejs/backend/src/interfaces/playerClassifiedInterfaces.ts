@@ -70,6 +70,13 @@ export interface ITeamsWantedUpdateRequest {
   accessCode: string;
 }
 
+// Contact creator request (anonymous/public)
+export interface IContactCreatorRequest {
+  senderName: string;
+  senderEmail: string;
+  message: string;
+}
+
 // ============================================================================
 // API RESPONSE INTERFACES
 // ============================================================================
@@ -101,7 +108,7 @@ export interface IPlayersWantedResponse {
     id: string;
     firstName: string;
     lastName: string;
-    email: string | null;
+    photoUrl: string;
   };
   account: {
     id: string;
@@ -110,6 +117,24 @@ export interface IPlayersWantedResponse {
 }
 
 // Teams Wanted response (authenticated account members - transformed for API response)
+// Teams Wanted response (public view without contact info - enhanced security)
+export interface ITeamsWantedPublicResponse {
+  id: string; // Converted from database bigint to string for frontend
+  accountId: string;
+  dateCreated: string | null;
+  name: string;
+  // email: excluded for privacy/security
+  // phone: excluded for privacy/security
+  experience: string;
+  positionsPlayed: string;
+  birthDate: string | null;
+  // accessCode never included for security
+  account: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface ITeamsWantedResponse {
   id: string; // Converted from database bigint to string for frontend
   accountId: string;

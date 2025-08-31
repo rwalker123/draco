@@ -22,7 +22,7 @@ export const VALIDATION_LIMITS = Object.freeze({
   TEAM_EVENT_NAME_MAX_LENGTH: 50,
 
   /** Maximum length for description */
-  DESCRIPTION_MAX_LENGTH: 1000,
+  DESCRIPTION_MAX_LENGTH: 2000,
 
   /** Minimum length for description */
   DESCRIPTION_MIN_LENGTH: 10,

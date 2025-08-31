@@ -5,6 +5,7 @@ import validator from 'validator';
 import { logSecurely } from '../../utils/auditLogger.js';
 import { InternalServerError } from '../../utils/customErrors.js';
 import { EMAIL_STYLES, EMAIL_CONTENT } from '../../config/playerClassifiedConstants.js';
+import { DateUtils } from '../../utils/dateUtils.js';
 
 /**
  * PlayerClassifiedEmailService
@@ -259,7 +260,9 @@ export class PlayerClassifiedEmailService {
     const sanitizedUserPhone = this.sanitizeHtmlContent(userData.phone);
     const sanitizedUserExperience = this.sanitizeHtmlContent(userData.experience);
     const sanitizedUserPositions = this.sanitizeHtmlContent(userData.positionsPlayed);
-    const sanitizedUserBirthDate = this.sanitizeHtmlContent(userData.birthDate);
+
+    // Calculate age instead of showing raw birth date
+    const userAge = DateUtils.calculateAge(userData.birthDate);
 
     return `
       <!DOCTYPE html>
@@ -308,8 +311,8 @@ export class PlayerClassifiedEmailService {
                 <span class="data-value">${sanitizedUserPositions}</span>
               </div>
               <div class="data-row">
-                <span class="data-label">Birth Date:</span>
-                <span class="data-value">${sanitizedUserBirthDate}</span>
+                <span class="data-label">Age:</span>
+                <span class="data-value">${userAge} years old</span>
               </div>
             </div>
             
@@ -390,7 +393,9 @@ export class PlayerClassifiedEmailService {
     const sanitizedUserPhone = this.sanitizeTextContent(userData.phone);
     const sanitizedUserExperience = this.sanitizeTextContent(userData.experience);
     const sanitizedUserPositions = this.sanitizeTextContent(userData.positionsPlayed);
-    const sanitizedUserBirthDate = this.sanitizeTextContent(userData.birthDate);
+
+    // Calculate age instead of showing raw birth date
+    const userAge = DateUtils.calculateAge(userData.birthDate);
 
     return `
 ${sanitizedAccountName} - Teams Wanted Classified Created
@@ -406,7 +411,7 @@ Email: ${sanitizedUserEmail}
 Phone: ${sanitizedUserPhone}
 Experience Level: ${sanitizedUserExperience}
 Positions: ${sanitizedUserPositions}
-Birth Date: ${sanitizedUserBirthDate}
+Age: ${userAge} years old
 
 Your access code is: ${sanitizedAccessCode}
 Keep this access code safe! You'll need it to:

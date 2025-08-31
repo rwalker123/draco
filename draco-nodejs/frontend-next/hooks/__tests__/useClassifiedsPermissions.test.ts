@@ -472,7 +472,12 @@ describe('useClassifiedsPermissions', () => {
         teamEventName: 'Test Event',
         description: 'Test Description',
         positionsNeeded: 'Pitcher',
-        creator: { id: 'user-123', firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+        creator: {
+          id: 'user-123',
+          firstName: 'John',
+          lastName: 'Doe',
+          photoUrl: '/123/contact-photos/user-123-photo.png',
+        },
         account: { id: 'account-123', name: 'Test Account' },
       } as IPlayersWantedResponse;
 
@@ -488,7 +493,7 @@ describe('useClassifiedsPermissions', () => {
           id: 'other-user',
           firstName: 'Jane',
           lastName: 'Smith',
-          email: 'jane@example.com',
+          photoUrl: '/123/contact-photos/other-user-photo.png',
         },
         account: { id: 'account-123', name: 'Test Account' },
       } as IPlayersWantedResponse;

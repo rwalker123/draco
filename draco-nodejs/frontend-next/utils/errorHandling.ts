@@ -532,3 +532,175 @@ function inferErrorCodeFromMessage(message: string): EmailRecipientErrorCode {
 
   return EmailRecipientErrorCode.UNKNOWN_ERROR;
 }
+
+/**
+ * Generic API Error Parsing Utilities
+ * These utilities eliminate duplicate error parsing code across the frontend
+ */
+
+/**
+ * Generic interface for API error responses
+ */
+export interface ApiErrorResponse {
+  message?: string;
+  error?: string;
+  errors?: Record<string, string[]> | string[];
+  details?: Array<{
+    type?: string;
+    value?: unknown;
+    msg?: string;
+    path?: string;
+    location?: string;
+  }>;
+}
+
+/**
+ * Parses API error response data to extract meaningful error information
+ */
+export function parseApiError(responseData: unknown): {
+  message: string;
+  validationErrors?: Record<string, string[]>;
+  hasValidationErrors: boolean;
+} {
+  // Handle null/undefined response
+  if (!responseData) {
+    return {
+      message: 'An unexpected error occurred',
+      hasValidationErrors: false,
+    };
+  }
+
+  // Handle string response
+  if (typeof responseData === 'string') {
+    return {
+      message: responseData,
+      hasValidationErrors: false,
+    };
+  }
+
+  // Handle object response
+  if (typeof responseData === 'object') {
+    const errorData = responseData as ApiErrorResponse;
+
+    // Extract main error message
+    let message = errorData.message || errorData.error || 'An unexpected error occurred';
+
+    // Handle validation errors with details array (express-validator format)
+    if (errorData.details && Array.isArray(errorData.details)) {
+      const fieldErrors = errorData.details
+        .filter(
+          (detail: { type?: string; msg?: string; path?: string }) =>
+            detail.type === 'field' && detail.msg && detail.path,
+        )
+        .map((detail: { path: string; msg: string }) => `${detail.path}: ${detail.msg}`)
+        .join('; ');
+
+      if (fieldErrors) {
+        message = fieldErrors;
+      }
+
+      return {
+        message,
+        hasValidationErrors: true,
+      };
+    }
+
+    // Handle validation errors (structured format)
+    if (
+      errorData.errors &&
+      typeof errorData.errors === 'object' &&
+      !Array.isArray(errorData.errors)
+    ) {
+      const validationErrors = errorData.errors as Record<string, string[]>;
+
+      // If we have validation errors, create a user-friendly message
+      const errorMessages = Object.entries(validationErrors)
+        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+        .join('; ');
+
+      if (errorMessages) {
+        message = errorMessages;
+      }
+
+      return {
+        message,
+        validationErrors,
+        hasValidationErrors: true,
+      };
+    }
+
+    // Handle validation errors (array format)
+    if (errorData.errors && Array.isArray(errorData.errors)) {
+      const errorMessages = errorData.errors.join('; ');
+      if (errorMessages) {
+        message = errorMessages;
+      }
+
+      return {
+        message,
+        hasValidationErrors: true,
+      };
+    }
+
+    return {
+      message,
+      hasValidationErrors: false,
+    };
+  }
+
+  // Fallback for unknown types
+  return {
+    message: 'An unexpected error occurred',
+    hasValidationErrors: false,
+  };
+}
+
+/**
+ * Handles API error responses by parsing response data and creating appropriate error messages
+ * This function eliminates duplicate error handling patterns across service methods
+ */
+export async function handleApiErrorResponse(
+  response: Response,
+  fallbackMessage: string = 'Request failed',
+): Promise<never> {
+  let responseData: unknown;
+
+  try {
+    responseData = await response.json();
+  } catch {
+    // If we can't parse JSON, fall back to status text
+    throw new Error(`${fallbackMessage}: ${response.statusText || `HTTP ${response.status}`}`);
+  }
+
+  const { message } = parseApiError(responseData);
+  throw new Error(`${fallbackMessage}: ${message}`);
+}
+
+/**
+ * Safe JSON parsing for API responses - returns null if parsing fails
+ */
+export async function safeParseJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Creates a standardized error message for failed API requests
+ */
+export function createApiErrorMessage(
+  operation: string,
+  response: Response,
+  responseData?: unknown,
+): string {
+  const { message } = parseApiError(responseData);
+  const statusInfo = response.statusText || `HTTP ${response.status}`;
+
+  if (message && message !== 'An unexpected error occurred') {
+    return `${operation}: ${message}`;
+  }
+
+  return `${operation}: ${statusInfo}`;
+}

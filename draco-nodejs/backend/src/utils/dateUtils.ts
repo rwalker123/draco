@@ -132,4 +132,22 @@ export class DateUtils {
     const date = new Date(dateString);
     return !isNaN(date.getTime());
   }
+
+  /**
+   * Calculate age from birth date
+   * @param birthDate - Birth date as Date object or string
+   * @returns Age in years as number
+   */
+  static calculateAge(birthDate: Date | string): number {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+
+    return age;
+  }
 }

@@ -9,10 +9,11 @@ import {
   ITeamsWantedCreateRequest,
   IClassifiedListResponse,
   IPlayersWantedResponse,
-  ITeamsWantedResponse,
+  ITeamsWantedPublicResponse,
   ITeamsWantedOwnerResponse,
   IClassifiedSearchParams,
   IPlayersWantedUpdateRequest,
+  IContactCreatorRequest,
 } from '../interfaces/playerClassifiedInterfaces.js';
 import { NotFoundError, ValidationError, InternalServerError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
@@ -196,9 +197,41 @@ export class PlayerClassifiedService {
   async getTeamsWanted(
     accountId: bigint,
     params: IClassifiedSearchParams,
-  ): Promise<IClassifiedListResponse<ITeamsWantedResponse>> {
+  ): Promise<IClassifiedListResponse<ITeamsWantedPublicResponse>> {
     // Delegate to specialized data service
     return await this.dataService.getTeamsWanted(accountId, params);
+  }
+
+  /**
+   * Get Teams Wanted contact information for a specific classified
+   *
+   * Retrieves only the contact information (email and phone) for a specific Teams Wanted
+   * classified. This method provides secure access to sensitive PII data on demand,
+   * reducing exposure in list responses while maintaining functionality for authorized users.
+   *
+   * @param classifiedId - ID of the Teams Wanted classified
+   * @param accountId - Account ID for multi-tenant boundary enforcement
+   * @returns Contact information (email and phone) for the classified
+   *
+   * @throws {NotFoundError} When classified is not found or not accessible
+   * @throws {ValidationError} When parameters are invalid
+   *
+   * @security This method only exposes contact information to authenticated users
+   * within the same account boundary as the classified.
+   *
+   * @example
+   * ```typescript
+   * const contactInfo = await service.getTeamsWantedContactInfo(123n, 456n);
+   * console.log(contactInfo.email); // 'player@example.com'
+   * console.log(contactInfo.phone); // '+1234567890'
+   * ```
+   */
+  async getTeamsWantedContactInfo(
+    classifiedId: bigint,
+    accountId: bigint,
+  ): Promise<{ email: string; phone: string }> {
+    // Delegate to specialized data service
+    return await this.dataService.getTeamsWantedContactInfo(classifiedId, accountId);
   }
 
   // ============================================================================
@@ -586,5 +619,228 @@ export class PlayerClassifiedService {
   ): Promise<ITeamsWantedOwnerResponse> {
     // Delegate to specialized access service for secure verification
     return await this.accessService.findTeamsWantedByAccessCode(accountId, accessCode);
+  }
+
+  /**
+   * Send contact email to Players Wanted creator
+   *
+   * Allows anonymous users to contact the creator of a Players Wanted classified
+   * through a secure email relay system. This protects the creator's email privacy
+   * while enabling legitimate contact requests.
+   *
+   * @param accountId - Account ID for boundary enforcement
+   * @param classifiedId - ID of the Players Wanted classified
+   * @param contactRequest - Contact request with sender info and message
+   * @throws {NotFoundError} When classified doesn't exist or doesn't belong to account
+   * @throws {ValidationError} When contact request validation fails
+   * @throws {InternalServerError} When email sending fails
+   *
+   * @example
+   * ```typescript
+   * await service.contactPlayersWantedCreator(123n, 456n, {
+   *   senderName: 'John Doe',
+   *   senderEmail: 'john@example.com',
+   *   message: 'I am interested in joining your team...',
+   *   subject: 'Interested in your team'
+   * });
+   * ```
+   */
+  async contactPlayersWantedCreator(
+    accountId: bigint,
+    classifiedId: bigint,
+    contactRequest: IContactCreatorRequest,
+  ): Promise<void> {
+    // Validate the contact request using validation service
+    const validation = this.validationService.validateContactCreatorRequest(contactRequest);
+    if (!validation.isValid) {
+      throw new ValidationError(
+        `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
+      );
+    }
+
+    // Get the classified with creator details using data service
+    const classified = await this.dataService.findPlayersWantedById(classifiedId, accountId);
+    if (!classified) {
+      throw new NotFoundError('Players Wanted classified not found');
+    }
+
+    // Get creator contact details (including email for internal use)
+    const creator = await this.dataService.getContactById(classified.createdbycontactid);
+    if (!creator) {
+      throw new InternalServerError('Creator contact information not found');
+    }
+
+    // Get creator email separately (for internal use only - maintains privacy protection)
+    const creatorEmail = await this.prisma.contacts.findUnique({
+      where: { id: classified.createdbycontactid },
+      select: { email: true },
+    });
+
+    if (!creatorEmail?.email) {
+      throw new InternalServerError('Creator email address not found');
+    }
+
+    // Get account details for email branding
+    const account = await this.dataService.getAccountById(accountId);
+    if (!account) {
+      throw new InternalServerError('Account information not found');
+    }
+
+    // Send contact email using a simple direct approach
+    const success = await this.sendContactEmail(
+      creatorEmail.email,
+      creator.firstname,
+      classified.teameventname,
+      contactRequest,
+      account.name,
+    );
+
+    if (!success) {
+      throw new InternalServerError('Failed to send contact email');
+    }
+  }
+
+  /**
+   * Send contact email using direct email provider
+   *
+   * Private helper method that handles the actual email sending
+   * using the same email infrastructure as password reset emails.
+   */
+  private async sendContactEmail(
+    creatorEmail: string,
+    creatorName: string,
+    teamEventName: string,
+    contactRequest: IContactCreatorRequest,
+    accountName: string,
+  ): Promise<boolean> {
+    try {
+      // Import EmailProviderFactory for direct email sending
+      const { EmailProviderFactory } = await import('./email/EmailProviderFactory.js');
+      const { EmailConfigFactory } = await import('../config/email.js');
+
+      const settings = EmailConfigFactory.getEmailSettings();
+
+      // Generate subject from team event name
+      const subject = `${teamEventName} Players Wanted Ad Inquiry`;
+      const { html: htmlBody, text: textBody } = this.generateContactEmailContent(
+        creatorName,
+        teamEventName,
+        contactRequest,
+        accountName,
+      );
+
+      // Send email using EmailProviderFactory directly
+      const provider = await EmailProviderFactory.getProvider();
+      const result = await provider.sendEmail({
+        to: creatorEmail,
+        subject,
+        html: htmlBody,
+        text: textBody,
+        from: settings.fromEmail,
+        fromName: settings.fromName,
+        replyTo: contactRequest.senderEmail, // Allow direct reply to sender
+      });
+
+      return result.success;
+    } catch (error) {
+      console.error('Error sending contact email:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Generate both HTML and text email content for contact requests
+   * Returns an object with both versions to reduce code duplication
+   */
+  private generateContactEmailContent(
+    creatorName: string,
+    teamEventName: string,
+    contactRequest: IContactCreatorRequest,
+    accountName: string,
+  ): { html: string; text: string } {
+    // Sanitize common content once for reuse
+    const sanitizedData = {
+      creatorName: this.emailService.sanitizeTextContent(creatorName),
+      teamEventName: this.emailService.sanitizeTextContent(teamEventName),
+      accountName: this.emailService.sanitizeTextContent(accountName),
+      senderName: this.emailService.sanitizeTextContent(contactRequest.senderName),
+      senderEmail: this.emailService.sanitizeTextContent(contactRequest.senderEmail),
+      messageText: this.emailService.sanitizeTextContent(contactRequest.message),
+      messageHtml: this.emailService.sanitizeHtmlContent(contactRequest.message),
+    };
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Contact Request</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2196F3; color: white; padding: 20px; text-align: center; }
+        .content { background-color: #f9f9f9; padding: 30px; border-left: 4px solid #2196F3; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+        .message-box { background-color: white; padding: 20px; border-radius: 4px; margin: 20px 0; }
+        .sender-info { background-color: #e3f2fd; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>New Contact Request</h1>
+            <p>Someone is interested in your team!</p>
+        </div>
+        
+        <div class="content">
+            <p>Hi ${sanitizedData.creatorName},</p>
+            
+            <p>You have received a new contact request regarding your <strong>${sanitizedData.teamEventName}</strong> posting on ${sanitizedData.accountName}.</p>
+            
+            <div class="sender-info">
+                <h3>Contact Information:</h3>
+                <p><strong>Name:</strong> ${sanitizedData.senderName}</p>
+                <p><strong>Email:</strong> ${sanitizedData.senderEmail}</p>
+            </div>
+            
+            <div class="message-box">
+                <h3>Message:</h3>
+                <p>${sanitizedData.messageHtml}</p>
+            </div>
+            
+            <p><strong>Reply directly to this email to respond to ${sanitizedData.senderName}.</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent through ${sanitizedData.accountName} via Draco Sports Manager.</p>
+            <p>Your email address is kept private and is never shared with requesters.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    const text = `
+NEW CONTACT REQUEST
+
+Hi ${sanitizedData.creatorName},
+
+You have received a new contact request regarding your "${sanitizedData.teamEventName}" posting on ${sanitizedData.accountName}.
+
+CONTACT INFORMATION:
+Name: ${sanitizedData.senderName}
+Email: ${sanitizedData.senderEmail}
+
+MESSAGE:
+${sanitizedData.messageText}
+
+Reply directly to this email to respond to ${sanitizedData.senderName}.
+
+---
+This email was sent through ${sanitizedData.accountName} via Draco Sports Manager.
+Your email address is kept private and is never shared with requesters.
+`;
+
+    return { html, text };
   }
 }

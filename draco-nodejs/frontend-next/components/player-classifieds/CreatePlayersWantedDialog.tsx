@@ -21,6 +21,11 @@ import {
 } from '@mui/material';
 import { IPlayersWantedFormState } from '../../types/playerClassifieds';
 import { useAuth } from '../../context/AuthContext';
+import { PLAYER_CLASSIFIED_VALIDATION } from '../../utils/characterValidation';
+import CharacterCounter from '../common/CharacterCounter';
+
+// Use shared validation constants
+const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
 
 interface CreatePlayersWantedDialogProps {
   open: boolean;
@@ -129,18 +134,22 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
     if (!formData.teamEventName.trim()) {
       newErrors.teamEventName = 'Team/Event name is required';
-    } else if (formData.teamEventName.trim().length < 3) {
-      newErrors.teamEventName = 'Team/Event name must be at least 3 characters';
-    } else if (formData.teamEventName.trim().length > 100) {
-      newErrors.teamEventName = 'Team/Event name must be less than 100 characters';
+    } else if (
+      formData.teamEventName.trim().length < VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MIN_LENGTH
+    ) {
+      newErrors.teamEventName = `Team/Event name must be at least ${VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MIN_LENGTH} characters`;
+    } else if (
+      formData.teamEventName.trim().length > VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MAX_LENGTH
+    ) {
+      newErrors.teamEventName = `Team/Event name must not exceed ${VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MAX_LENGTH} characters`;
     }
 
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    } else if (formData.description.trim().length > 1000) {
-      newErrors.description = 'Description must be less than 1000 characters';
+    } else if (formData.description.trim().length < VALIDATION_CONSTANTS.DESCRIPTION.MIN_LENGTH) {
+      newErrors.description = `Description must be at least ${VALIDATION_CONSTANTS.DESCRIPTION.MIN_LENGTH} characters`;
+    } else if (formData.description.trim().length > VALIDATION_CONSTANTS.DESCRIPTION.MAX_LENGTH) {
+      newErrors.description = `Description must not exceed ${VALIDATION_CONSTANTS.DESCRIPTION.MAX_LENGTH} characters`;
     }
 
     if (formData.positionsNeeded.length === 0) {
@@ -215,33 +224,55 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
             )}
 
             {/* Team/Event Name */}
-            <TextField
-              label="Team/Event Name"
-              value={formData.teamEventName}
-              onChange={(e) => handleFieldChange('teamEventName', e.target.value)}
-              error={!!errors.teamEventName}
-              helperText={errors.teamEventName || 'Name of your team or event'}
-              required
-              disabled={loading || !isAuthenticated}
-              inputProps={{ maxLength: 100 }}
-            />
+            <Box>
+              <TextField
+                label="Team/Event Name"
+                value={formData.teamEventName}
+                onChange={(e) => handleFieldChange('teamEventName', e.target.value)}
+                error={!!errors.teamEventName}
+                helperText={errors.teamEventName || 'Name of your team or event'}
+                required
+                fullWidth
+                disabled={loading || !isAuthenticated}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MAX_LENGTH,
+                  },
+                }}
+              />
+              <CharacterCounter
+                currentLength={formData.teamEventName.length}
+                maxLength={VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MAX_LENGTH}
+              />
+            </Box>
 
             {/* Description */}
-            <TextField
-              label="Description"
-              value={formData.description}
-              onChange={(e) => handleFieldChange('description', e.target.value)}
-              error={!!errors.description}
-              helperText={
-                errors.description ||
-                "Describe what kind of players you're looking for, league details, schedule, etc."
-              }
-              required
-              multiline
-              rows={4}
-              disabled={loading || !isAuthenticated}
-              inputProps={{ maxLength: 1000 }}
-            />
+            <Box>
+              <TextField
+                label="Description"
+                value={formData.description}
+                onChange={(e) => handleFieldChange('description', e.target.value)}
+                error={!!errors.description}
+                helperText={
+                  errors.description ||
+                  "Describe what kind of players you're looking for, league details, schedule, etc."
+                }
+                required
+                fullWidth
+                multiline
+                rows={4}
+                disabled={loading || !isAuthenticated}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: VALIDATION_CONSTANTS.DESCRIPTION.MAX_LENGTH,
+                  },
+                }}
+              />
+              <CharacterCounter
+                currentLength={formData.description.length}
+                maxLength={VALIDATION_CONSTANTS.DESCRIPTION.MAX_LENGTH}
+              />
+            </Box>
 
             {/* Positions Needed */}
             <FormControl error={!!errors.positionsNeeded} disabled={loading || !isAuthenticated}>
@@ -280,8 +311,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
             {/* Information Notice */}
             <Alert severity="info">
-              Your Players Wanted ad will be visible to all account members. Include clear details
-              about your team, league, schedule, and any requirements to attract the right players.
+              Your Players Wanted ad will be visible to all visitors of the site for 45 days.
             </Alert>
           </Box>
         </DialogContent>

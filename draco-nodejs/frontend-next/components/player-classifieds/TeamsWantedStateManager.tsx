@@ -76,7 +76,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   onVerificationProcessed,
 }) => {
   // Get authentication and account membership status
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { isMember } = useAccountMembership(accountId);
 
   // Local state for access code verification
@@ -101,6 +101,10 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   const [editingClassified, setEditingClassified] = useState<ITeamsWantedOwnerResponse | null>(
     null,
   );
+
+  // Local state for contact fetching during edit
+  const [editContactLoading, setEditContactLoading] = useState(false);
+  const [editContactError, setEditContactError] = useState<string | null>(null);
 
   // Handle auto-verification from email links
   useEffect(() => {
@@ -133,6 +137,42 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         .filter((p) => p.length > 0),
       birthDate: new Date(classified.birthDate),
     };
+  };
+
+  // Fetch contact information for edit purposes
+  const fetchContactForEdit = async (
+    classifiedId: string,
+  ): Promise<{ email: string; phone: string } | null> => {
+    if (!verifiedAccessCode) {
+      setEditContactError('Access code not available');
+      return null;
+    }
+
+    setEditContactLoading(true);
+    setEditContactError(null);
+
+    try {
+      const result = await playerClassifiedService.getTeamsWantedContactForEdit(
+        accountId,
+        classifiedId,
+        verifiedAccessCode,
+        undefined, // No JWT token for access code users
+      );
+
+      if (result.success && result.data) {
+        return result.data;
+      } else {
+        setEditContactError(result.error || 'Failed to fetch contact information');
+        return null;
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to fetch contact information';
+      setEditContactError(errorMessage);
+      return null;
+    } finally {
+      setEditContactLoading(false);
+    }
   };
 
   // Determine current user state
@@ -213,7 +253,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     setEditError(null);
 
     try {
-      // Transform form data for API
+      // Transform form data for API (exclude accessCode from data, pass as separate parameter)
       const updateData = {
         name: formData.name,
         email: formData.email,
@@ -221,14 +261,15 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         experience: formData.experience,
         positionsPlayed: formData.positionsPlayed.join(', '),
         birthDate: formData.birthDate?.toISOString(),
-        accessCode: verifiedAccessCode,
       };
 
-      // Use the service directly with the verified access code
+      // Use the service with both token and access code
       const updatedClassified = await playerClassifiedService.updateTeamsWanted(
         accountId,
         accessCodeResult.classified.id,
         updateData,
+        token || undefined,
+        verifiedAccessCode || undefined,
       );
 
       setEditSuccess('Teams Wanted updated successfully!');
@@ -257,19 +298,31 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   };
 
   // Handle local edit and delete button clicks for access code users
-  const handleLocalEdit = (_id: string, _accessCodeRequired: string) => {
-    if (accessCodeResult?.classified) {
-      // Transform ITeamsWantedClassified to ITeamsWantedOwnerResponse by adding account info
-      const classifiedWithAccount = {
-        ...accessCodeResult.classified,
-        account: {
-          id: accessCodeResult.classified.accountId,
-          name: 'Your Ad', // We don't have the account name in this context
-        },
-      } as ITeamsWantedOwnerResponse;
-      setEditingClassified(classifiedWithAccount);
-      setEditDialogOpen(true);
+  const handleLocalEdit = async (_id: string, _accessCodeRequired: string) => {
+    if (!accessCodeResult?.classified) return;
+
+    // First, fetch contact information just-in-time
+    const contactInfo = await fetchContactForEdit(accessCodeResult.classified.id.toString());
+
+    if (!contactInfo && !editContactError) {
+      // If no contact info and no error, something went wrong
+      setEditContactError('Unable to fetch contact information');
+      return;
     }
+
+    // Transform ITeamsWantedClassified to ITeamsWantedOwnerResponse with contact info
+    const classifiedWithAccount = {
+      ...accessCodeResult.classified,
+      email: contactInfo?.email || '', // Use fetched email or empty string
+      phone: contactInfo?.phone || '', // Use fetched phone or empty string
+      account: {
+        id: accessCodeResult.classified.accountId,
+        name: 'Your Ad', // We don't have the account name in this context
+      },
+    } as ITeamsWantedOwnerResponse;
+
+    setEditingClassified(classifiedWithAccount);
+    setEditDialogOpen(true);
   };
 
   const handleLocalDelete = (_id: string, _accessCodeRequired: string) => {
@@ -333,11 +386,20 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
           {teamsWanted.map((classified) => (
             <Box key={classified.id}>
               <TeamsWantedCardPublic
-                classified={classified}
+                classified={{
+                  id: classified.id,
+                  accountId: classified.accountId,
+                  dateCreated: classified.dateCreated,
+                  name: classified.name,
+                  experience: classified.experience,
+                  positionsPlayed: classified.positionsPlayed,
+                  birthDate: classified.birthDate,
+                  account: classified.account,
+                }}
                 onEdit={onEdit}
                 onDelete={onDelete}
-                canEdit={canEdit}
-                canDelete={canDelete}
+                canEdit={(_publicClassified) => canEdit(classified)}
+                canDelete={(_publicClassified) => canDelete(classified)}
                 isAuthenticated={true}
               />
             </Box>
@@ -464,14 +526,11 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
           <Box sx={{ maxWidth: 400, width: '100%' }}>
             <TeamsWantedCardPublic
               classified={{
-                ...classified,
-                // Ensure the classified has all required fields for the card component
+                // Only include public fields (no email/phone for security)
                 id: classified.id,
                 accountId: classified.accountId,
                 dateCreated: classified.dateCreated,
                 name: classified.name,
-                email: classified.email,
-                phone: classified.phone,
                 experience: classified.experience,
                 positionsPlayed: classified.positionsPlayed,
                 birthDate: classified.birthDate,
@@ -485,6 +544,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
               canEdit={() => true} // Owner can always edit their own ad
               canDelete={() => true} // Owner can always delete their own ad
               isAuthenticated={true}
+              accessCode={verifiedAccessCode || undefined} // Pass verified access code for contact info
             />
           </Box>
         </Box>
@@ -532,6 +592,12 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         </Alert>
       )}
 
+      {editContactError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Contact Info Error: {editContactError}
+        </Alert>
+      )}
+
       {/* Main Content */}
       {renderContent()}
 
@@ -565,9 +631,10 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
           setEditDialogOpen(false);
           setEditingClassified(null);
           setEditError(null);
+          setEditContactError(null);
         }}
         onSubmit={handleAccessCodeEdit}
-        loading={editLoading}
+        loading={editLoading || editContactLoading}
         editMode={true}
         initialData={editingClassified ? convertToFormState(editingClassified) : undefined}
         _classifiedId={editingClassified?.id}

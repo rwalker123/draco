@@ -94,8 +94,18 @@ export interface IPlayersWantedResponse extends IPlayersWantedClassified {
     id: string;
     firstName: string;
     lastName: string;
-    email: string | null;
+    photoUrl: string;
   };
+  account: {
+    id: string;
+    name: string;
+  };
+}
+
+// Teams Wanted response (public view without contact info)
+export interface ITeamsWantedPublicResponse
+  extends Omit<ITeamsWantedClassified, 'accessCode' | 'email' | 'phone'> {
+  // Public view excludes PII (email, phone) and access code for security
   account: {
     id: string;
     name: string;
@@ -109,6 +119,12 @@ export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'acce
     id: string;
     name: string;
   };
+}
+
+// Teams Wanted contact information (on-demand)
+export interface ITeamsWantedContactInfo {
+  email: string;
+  phone: string;
 }
 
 // Teams Wanted response (owner view with access code)
@@ -256,6 +272,13 @@ export interface ITeamsWantedFormState {
   birthDate: Date | null;
 }
 
+// Contact Creator form state for sending messages to classified creators
+export interface IContactCreatorFormState {
+  senderName: string;
+  senderEmail: string;
+  message: string;
+}
+
 // ============================================================================
 // UI STATE INTERFACES
 // ============================================================================
@@ -333,12 +356,13 @@ export interface ITeamsWantedCardProps {
 
 // Props for Teams Wanted card component (public view)
 export interface ITeamsWantedCardPublicProps {
-  classified: ITeamsWantedResponse;
+  classified: ITeamsWantedPublicResponse;
   onEdit: (id: string, accessCodeRequired: string) => void;
   onDelete: (id: string, accessCodeRequired: string) => void;
-  canEdit: (classified: ITeamsWantedResponse) => boolean;
-  canDelete: (classified: ITeamsWantedResponse) => boolean;
+  canEdit: (classified: ITeamsWantedPublicResponse) => boolean;
+  canDelete: (classified: ITeamsWantedPublicResponse) => boolean;
   isAuthenticated: boolean;
+  accessCode?: string; // Optional access code for contact info authentication
 }
 
 // Props for the Classifieds Header component

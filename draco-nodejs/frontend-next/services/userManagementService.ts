@@ -9,6 +9,7 @@ import {
 } from '../types/users';
 import { validateContactUpdateResponse, ContactUpdateResponse } from '../types/typeGuards';
 import { ContactTransformationService } from './contactTransformationService';
+import { handleApiErrorResponse } from '../utils/errorHandling';
 
 // Pagination interface for API responses
 interface PaginationInfo {
@@ -84,8 +85,7 @@ export class UserManagementService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to load users');
+      await handleApiErrorResponse(response, 'Failed to load users');
     }
 
     const data = await response.json();
@@ -318,8 +318,7 @@ export class UserManagementService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to assign role (${response.status})`);
+      await handleApiErrorResponse(response, 'Failed to assign role');
     }
   }
 
@@ -347,8 +346,7 @@ export class UserManagementService {
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to remove role');
+      await handleApiErrorResponse(response, 'Failed to remove role');
     }
   }
 
@@ -700,8 +698,7 @@ export class UserManagementService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to delete contact (${response.status})`);
+      await handleApiErrorResponse(response, 'Failed to delete contact');
     }
 
     const data = await response.json();
