@@ -15,22 +15,23 @@ import {
   ITeamsWantedCreateRequest,
 } from '../../interfaces/playerClassifiedInterfaces.js';
 
-// Test database instance
-const testPrisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL,
-    },
-  },
-});
-
 describe.skip('Player Classifieds Integration Tests', () => {
   let testAccountId: string;
   let _testContactId: string;
   let authToken: string;
   let testClassifiedId: string;
+  let testPrisma: PrismaClient; // Declare but don't instantiate at module level
 
   beforeAll(async () => {
+    // Create PrismaClient only when tests actually run
+    testPrisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL,
+        },
+      },
+    });
+
     // Set up test data that persists across tests
     // This would typically involve creating test accounts, contacts, etc.
     testAccountId = '1'; // Would be actual test account ID
