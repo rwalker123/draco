@@ -28,21 +28,8 @@ import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
 import { listWorkouts } from '../../../services/workoutService';
 import { WorkoutSummary } from '../../../types/workouts';
-import { WorkoutDisplay } from '../../../components/workouts/WorkoutDisplay';
-
-interface Account {
-  id: string;
-  name: string;
-  accountType: string;
-  accountTypeId: string;
-  firstYear: number;
-  affiliation?: { name: string; url: string } | null;
-  timezoneId: string;
-  twitterAccountName?: string;
-  facebookFanPage?: string;
-  urls: Array<{ id: string; url: string }>;
-  accountLogoUrl?: string; // Added for AccountLogoHeader
-}
+import { Account } from '../../../types/account';
+import { JoinLeagueDashboard } from '../../../components/join-league';
 
 interface Season {
   id: string;
@@ -158,9 +145,19 @@ const BaseballAccountHome: React.FC = () => {
     router.push(`/account/${accountIdStr}/seasons/${currentSeason.id}/teams/${teamSeasonId}`);
   };
 
-  const handleViewAllWorkouts = () => {
-    router.push(`/account/${accountIdStr}/workouts`);
-  };
+  // Early return if accountId is missing - must be after all hooks
+  if (!accountIdStr) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Account ID not found
+        </Alert>
+        <Button variant="outlined" onClick={() => router.push('/accounts')}>
+          Back to Accounts
+        </Button>
+      </Container>
+    );
+  }
 
   if (loading) {
     return (
@@ -281,44 +278,13 @@ const BaseballAccountHome: React.FC = () => {
 
       {/* Main Content - Single Column Layout */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {/* Upcoming Workouts Section */}
-        {workouts.length > 0 && (
-          <Paper sx={{ p: 3, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Box
-              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
-            >
-              <Typography
-                variant="h5"
-                gutterBottom
-                sx={{ fontWeight: 'bold', color: 'primary.main' }}
-              >
-                Upcoming Workouts
-              </Typography>
-              <Button variant="outlined" onClick={handleViewAllWorkouts}>
-                View All
-              </Button>
-            </Box>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-                gap: 3,
-              }}
-            >
-              {workouts.map((workout) => (
-                <Box key={workout.id}>
-                  <WorkoutDisplay
-                    accountId={accountIdStr!}
-                    workoutId={workout.id}
-                    token={token || undefined}
-                    showRegistrationButton={true}
-                    compact={true}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Paper>
-        )}
+        {/* Ways to Join the League Dashboard */}
+        <JoinLeagueDashboard
+          accountId={accountIdStr}
+          account={account}
+          workouts={workouts}
+          token={token || undefined}
+        />
 
         {/* Scoreboard Layout Toggle */}
         {hasAnyGames && (
@@ -363,7 +329,7 @@ const BaseballAccountHome: React.FC = () => {
             }}
           >
             <TodayScoreboard
-              accountId={accountIdStr!}
+              accountId={accountIdStr}
               layout={scoreboardLayout}
               currentSeasonId={currentSeason.id}
               onGamesLoaded={(games) => {
@@ -371,7 +337,7 @@ const BaseballAccountHome: React.FC = () => {
               }}
             />
             <YesterdayScoreboard
-              accountId={accountIdStr!}
+              accountId={accountIdStr}
               layout={scoreboardLayout}
               currentSeasonId={currentSeason.id}
               onGamesLoaded={(games) => {
@@ -382,9 +348,7 @@ const BaseballAccountHome: React.FC = () => {
         )}
 
         {/* Game Recaps Widget */}
-        {currentSeason && (
-          <GameRecapsWidget accountId={accountIdStr!} seasonId={currentSeason.id} />
-        )}
+        {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}
 
         {/* User Teams Section */}
         {user && userTeams.length > 0 && (
