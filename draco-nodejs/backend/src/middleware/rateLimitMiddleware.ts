@@ -99,8 +99,8 @@ export const generalRateLimit = createRateLimit({
  */
 export const teamsWantedRateLimit = createRateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 posts per hour
-  message: 'Rate limit exceeded: Maximum 3 teams wanted posts per hour per IP',
+  max: 20, // 20 posts per hour
+  message: 'Rate limit exceeded: Maximum 20 teams wanted posts per hour per IP',
   skipSuccessfulRequests: false,
 });
 

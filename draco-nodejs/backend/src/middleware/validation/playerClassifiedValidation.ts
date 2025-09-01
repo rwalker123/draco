@@ -129,7 +129,7 @@ export const validatePlayersWantedCreate = [
     'Team event name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, parentheses, plus signs, and periods',
   ),
 
-  validateRequiredString('description', 1000, undefined, undefined, 10),
+  validateRequiredString('description', 2000, undefined, undefined, 10),
 
   validatePositionIds('positionsNeeded'),
 
@@ -151,8 +151,8 @@ export const validatePlayersWantedUpdate = [
 
   sanitizeText('description')
     .optional()
-    .isLength({ min: 10, max: 1000 })
-    .withMessage('Description must be between 10 and 1000 characters'),
+    .isLength({ min: 10, max: 2000 })
+    .withMessage('Description must be between 10 and 2000 characters'),
 
   body('positionsNeeded')
     .optional()
@@ -232,93 +232,12 @@ export const validateTeamsWantedCreate = [
  */
 export const validateTeamsWantedUpdate = [
   body('accessCode')
+    .optional()
     .trim()
-    .notEmpty()
-    .withMessage('Access code is required')
     .isLength({ min: 10, max: 1000 })
     .withMessage('Access code must be between 10 and 1000 characters'),
 
-  sanitizeText('name')
-    .optional()
-    .isLength({ max: 50 })
-    .withMessage('Name must not exceed 50 characters')
-    .matches(/^[a-zA-Z\s'-]+$/)
-    .withMessage('Name can only contain letters, spaces, hyphens, and apostrophes'),
-
-  body('email')
-    .optional()
-    .trim()
-    .isEmail()
-    .withMessage('Invalid email format')
-    .normalizeEmail()
-    .isLength({ max: 255 })
-    .withMessage('Email must not exceed 255 characters'),
-
-  body('phone')
-    .optional()
-    .trim()
-    .isLength({ max: 20 })
-    .withMessage('Phone must not exceed 20 characters')
-    .custom((value: string) => {
-      if (!value) return true;
-
-      const cleaned = value.replace(/[\s\-()]/g, '');
-      if (!/^[+]?[1-9][\d]{0,15}$/.test(cleaned)) {
-        throw new Error('Phone must be a valid phone number');
-      }
-      return true;
-    }),
-
-  body('experience')
-    .optional()
-    .trim()
-    .isLength({ max: 255 })
-    .withMessage('Experience must not exceed 255 characters'),
-
-  body('positionsPlayed')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Positions played must not exceed 100 characters')
-    .custom((value: string) => {
-      if (!value) return true;
-
-      const positions = value.split(',').map((p) => p.trim());
-      for (const pos of positions) {
-        if (!pos || !isValidPositionId(pos)) {
-          throw new Error(
-            'Positions played must contain valid position IDs separated by commas (e.g., "pitcher,catcher,first-base")',
-          );
-        }
-      }
-      return true;
-    }),
-
-  body('birthDate')
-    .optional()
-    .isISO8601()
-    .withMessage('Birth date must be a valid date')
-    .custom((value: string) => {
-      if (!value) return true;
-
-      const birthDate = new Date(value);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-
-      let actualAge = age;
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        actualAge = age - 1;
-      }
-
-      if (actualAge < 13 || actualAge > 80) {
-        throw new Error('Birth date must be between 13 and 80 years old');
-      }
-
-      return true;
-    }),
-
-  handleValidationErrors,
+  ...validateTeamsWantedCreate,
 ];
 
 // ============================================================================
@@ -464,3 +383,25 @@ export const validateRateLimit = (req: Request, res: Response, next: NextFunctio
   // The service layer already handles rate limiting, but this could add extra checks
   next();
 };
+
+// ============================================================================
+// CONTACT REQUEST VALIDATION
+// ============================================================================
+
+/**
+ * Validate contact request for contacting classified creators
+ */
+export const validateContactRequest = [
+  validateRequiredString(
+    'senderName',
+    50,
+    /^[a-zA-Z\s'-]+$/,
+    'Sender name can only contain letters, spaces, hyphens, and apostrophes',
+  ),
+
+  validateEmail('senderEmail', true),
+
+  validateRequiredString('message', 2000, undefined, undefined, 10),
+
+  handleValidationErrors,
+];

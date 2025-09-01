@@ -3,17 +3,21 @@
 // TeamsWantedCardPublic Component
 // Displays an individual Teams Wanted classified ad for public viewing (no sensitive data)
 
-import React from 'react';
-import { Card, CardContent, Typography, Chip, Box, IconButton } from '@mui/material';
+import React, { useState } from 'react';
+import { Card, CardContent, Typography, Chip, Box, IconButton, Button } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
+  ContactPhone as ContactPhoneIcon,
 } from '@mui/icons-material';
-import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
+import {
+  ITeamsWantedCardPublicProps,
+  ITeamsWantedContactInfo,
+} from '../../types/playerClassifieds';
 import { calculateAge } from '../../utils/dateUtils';
+import ContactInfoDialog from './ContactInfoDialog';
+import { useAuth } from '../../context/AuthContext';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -22,7 +26,69 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   canEdit,
   canDelete,
   isAuthenticated,
+  accessCode,
 }) => {
+  const { token } = useAuth();
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactInfo, setContactInfo] = useState<ITeamsWantedContactInfo | null>(null);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
+
+  const handleContactInfoClick = async () => {
+    setContactDialogOpen(true);
+    setContactLoading(true);
+    setContactError(null);
+
+    try {
+      // Build URL with access code if available
+      const url = new URL(
+        `/api/accounts/${classified.accountId}/player-classifieds/teams-wanted/${classified.id}/contact`,
+        window.location.origin,
+      );
+      if (accessCode) {
+        url.searchParams.set('accessCode', accessCode);
+      }
+
+      // Build headers with authorization if token available
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url.toString(), {
+        headers,
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required to view contact information');
+        } else if (response.status === 403) {
+          throw new Error('You do not have permission to view this contact information');
+        } else if (response.status === 404) {
+          throw new Error('Contact information not found');
+        } else {
+          throw new Error('Failed to fetch contact information');
+        }
+      }
+
+      const data = await response.json();
+      setContactInfo(data);
+    } catch (error) {
+      setContactError(
+        error instanceof Error ? error.message : 'Failed to load contact information',
+      );
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
+  const handleContactDialogClose = () => {
+    setContactDialogOpen(false);
+    setContactInfo(null);
+    setContactError(null);
+  };
   // Parse positions from comma-separated string
   const positionsPlayed = (classified.positionsPlayed || '')
     .split(',')
@@ -34,9 +100,18 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
       <CardContent sx={{ flexGrow: 1 }}>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Typography variant="h6" component="h3" gutterBottom>
-            {classified.name}
-          </Typography>
+          <Box>
+            <Typography variant="h6" component="h3" gutterBottom>
+              {classified.name}
+            </Typography>
+            {/* Age */}
+            <Box display="flex" alignItems="center" gap={1}>
+              <PersonIcon fontSize="small" color="action" />
+              <Typography variant="caption" color="text.secondary">
+                Age: {calculateAge(classified.birthDate)}
+              </Typography>
+            </Box>
+          </Box>
           <Box display="flex" gap={1}>
             {canEdit(classified) && (
               <IconButton
@@ -101,59 +176,34 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
           </Box>
         </Box>
 
-        {/* Contact Info - Show email and phone for authenticated users */}
+        {/* Contact Info - Secure button for authenticated users */}
         {isAuthenticated && (
           <Box mb={2}>
-            {/* Email */}
-            <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <EmailIcon fontSize="small" color="action" />
-              <Typography
-                variant="caption"
-                color="primary"
-                component="a"
-                href={`mailto:${classified.email}`}
-                sx={{
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {classified.email}
-              </Typography>
-            </Box>
-
-            {/* Phone */}
-            <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <PhoneIcon fontSize="small" color="action" />
-              <Typography
-                variant="caption"
-                color="primary"
-                component="a"
-                href={`tel:${classified.phone}`}
-                sx={{
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {classified.phone}
-              </Typography>
-            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ContactPhoneIcon />}
+              onClick={handleContactInfoClick}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 2,
+              }}
+            >
+              Contact Info
+            </Button>
           </Box>
         )}
-
-        {/* Age */}
-        <Box display="flex" alignItems="center" gap={1}>
-          <PersonIcon fontSize="small" color="action" />
-          <Typography variant="caption" color="text.secondary">
-            Age: {calculateAge(classified.birthDate)}
-          </Typography>
-        </Box>
       </CardContent>
+
+      {/* Contact Info Dialog */}
+      <ContactInfoDialog
+        open={contactDialogOpen}
+        onClose={handleContactDialogClose}
+        contactInfo={contactInfo}
+        loading={contactLoading}
+        error={contactError}
+        playerName={classified.name}
+      />
     </Card>
   );
 };

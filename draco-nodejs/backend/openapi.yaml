@@ -374,6 +374,22 @@ components:
               type: string
               description: Account name
               example: "Local Baseball League"
+    ITeamsWantedContactInfo:
+      type: object
+      description: Contact information for a Teams Wanted classified (on-demand access only)
+      properties:
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+      required:
+        - email
+        - phone
     IPlayersWantedCreateRequest:
       type: object
       required:
@@ -498,6 +514,31 @@ components:
           maxLength: 1000
           description: Access code for verification
           example: "abc123def456" # pragma: allowlist secret
+    IContactCreatorRequest:
+      type: object
+      required:
+        - senderName
+        - senderEmail
+        - message
+      properties:
+        senderName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Name of the person contacting the team creator
+          example: "John Smith"
+        senderEmail:
+          type: string
+          format: email
+          maxLength: 254
+          description: Email address of the person contacting the team creator
+          example: "john.smith@example.com"
+        message:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          description: Message to send to the team creator
+          example: "Hi, I'm interested in joining your team. I have 5 years of experience playing shortstop and second base."
     RateLimitError:
       type: object
       properties:
@@ -1204,6 +1245,52 @@ paths:
           description: Invalid access code
         "404":
           description: Classified not found
+  "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/contact":
+    get:
+      operationId: getTeamsWantedContactInfo
+      summary: Get Teams Wanted contact information
+      description: Get contact information (email and phone) for a specific Teams Wanted classified. Requires authentication and account membership for security.
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      responses:
+        "200":
+          description: Contact information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/ITeamsWantedContactInfo"
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions - must be account member
+        "404":
+          description: Classified not found or not accessible
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
   "/api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}":
     put:
       operationId: updatePlayersWanted
@@ -1291,6 +1378,99 @@ paths:
           description: Forbidden - insufficient permissions
         "404":
           description: Classified not found
+  "/api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}/contact":
+    post:
+      operationId: contactPlayersWantedCreator
+      summary: Contact the creator of a Players Wanted classified
+      description: Allows anonymous users to send contact requests to team creators via email without exposing personal information. This endpoint is rate-limited and includes validation for spam prevention.
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Players Wanted classified ID
+          example: "456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IContactCreatorRequest"
+      responses:
+        "200":
+          description: Contact request sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Contact request sent successfully. The team creator will receive your message via email."
+        "400":
+          description: Validation error - missing or invalid request data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    examples:
+                      missing_fields:
+                        value: "Missing required fields: senderName, senderEmail, and message are required"
+                      invalid_email:
+                        value: "Invalid email format"
+                      message_length:
+                        value: "Message must be between 10 and 2000 characters"
+        "404":
+          description: Players Wanted classified not found or no longer available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Classified not found or no longer available"
+        "429":
+          description: Rate limit exceeded - too many contact requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+        "500":
+          description: Internal server error - failed to send email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Failed to send contact request. Please try again later."
   "/api/accounts/{accountId}/player-classifieds/positions":
     get:
       operationId: getBaseballPositions

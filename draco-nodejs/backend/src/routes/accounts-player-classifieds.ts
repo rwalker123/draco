@@ -13,6 +13,7 @@ import {
   ITeamsWantedCreateRequest,
   IClassifiedSearchParams,
   IPlayersWantedUpdateRequest,
+  IContactCreatorRequest,
 } from '../interfaces/playerClassifiedInterfaces.js';
 import {
   validatePlayersWantedCreate,
@@ -22,6 +23,8 @@ import {
   validateSearchParams,
   validateAccountId,
   validateClassifiedId,
+  validateTeamsWantedUpdate,
+  validateContactRequest,
 } from '../middleware/validation/playerClassifiedValidation.js';
 
 const router = Router({ mergeParams: true });
@@ -62,8 +65,7 @@ const createTeamsWantedAuthMiddleware = () => {
 
     // Helper function to validate access code
     const validateAccessCode = () => {
-      const { body } = req;
-      const { accessCode } = body;
+      const accessCode = (req.query.accessCode || req.body.accessCode) as string;
 
       if (
         !accessCode ||
@@ -322,6 +324,9 @@ router.put(
   ...validateAccountId,
   ...validateClassifiedId,
 
+  // Validate request body (accessCode is optional for authenticated users)
+  ...validateTeamsWantedUpdate,
+
   // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -474,6 +479,113 @@ router.get(
       success: true,
       data: BASEBALL_POSITIONS,
     });
+  }),
+);
+
+/**
+ * Get Teams Wanted contact information (authenticated endpoint with access code fallback)
+ * Returns email and phone for a specific Teams Wanted classified
+ * Supports both JWT authentication and access code authentication
+ */
+router.get(
+  '/teams-wanted/:classifiedId/contact',
+  // Validate path parameters for all requests
+  ...validateAccountId,
+  ...validateClassifiedId,
+  // Custom middleware to conditionally apply authentication or access code validation
+  createTeamsWantedAuthMiddleware(),
+  teamsWantedRateLimit,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, classifiedId } = extractClassifiedParams(req.params);
+    const accessCode = req.query.accessCode as string;
+
+    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+
+    try {
+      // Determine access method based on authentication status
+      const isAuthenticated = !!req.user;
+
+      let contactInfo;
+      if (isAuthenticated) {
+        // Use existing authenticated method for AccountAdmins
+        contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
+          BigInt(classifiedId),
+          BigInt(accountId),
+        );
+      } else {
+        // Use access code method for anonymous users
+        if (!accessCode) {
+          res.status(400).json({
+            success: false,
+            message: 'Access code is required for unauthenticated requests',
+          });
+          return;
+        }
+
+        // First verify access using existing verification method
+        await playerClassifiedService.verifyTeamsWantedAccess(
+          BigInt(classifiedId),
+          accessCode,
+          BigInt(accountId),
+        );
+
+        // Then get contact info using existing method
+        contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
+          BigInt(classifiedId),
+          BigInt(accountId),
+        );
+      }
+
+      res.json(contactInfo);
+    } catch (_error) {
+      res.status(404).json({
+        success: false,
+        message: 'Teams Wanted classified not found or access denied',
+      });
+    }
+  }),
+);
+
+/**
+ * Contact Players Wanted classified creator (public endpoint)
+ * Allows anonymous users to contact team creators without exposing personal information
+ */
+router.post(
+  '/players-wanted/:classifiedId/contact',
+  teamsWantedRateLimit, // Reuse existing rate limiting for anonymous requests
+  validateContactRequest, // Use secure express-validator middleware
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const classifiedId = req.params.classifiedId;
+
+    const { senderName, senderEmail, message } = req.body as IContactCreatorRequest;
+    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+
+    try {
+      await playerClassifiedService.contactPlayersWantedCreator(
+        BigInt(accountId),
+        BigInt(classifiedId),
+        { senderName, senderEmail, message },
+      );
+
+      res.json({
+        success: true,
+        message:
+          'Contact request sent successfully. The team creator will receive your message via email.',
+      });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(404).json({
+          success: false,
+          message: 'Classified not found or no longer available',
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to send contact request. Please try again later.',
+        });
+      }
+    }
   }),
 );
 

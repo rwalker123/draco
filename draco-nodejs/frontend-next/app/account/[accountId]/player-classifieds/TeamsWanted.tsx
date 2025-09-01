@@ -27,6 +27,7 @@ import {
   ITeamsWantedOwnerResponse,
 } from '../../../../types/playerClassifieds';
 import { ITeamsWantedFormState } from '../../../../types/playerClassifieds';
+import { playerClassifiedService } from '../../../../services/playerClassifiedService';
 
 interface TeamsWantedProps {
   accountId: string;
@@ -75,6 +76,10 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const [editingClassified, setEditingClassified] = React.useState<ITeamsWantedResponse | null>(
     null,
   );
+
+  // State for contact fetching during edit
+  const [editContactLoading, setEditContactLoading] = React.useState(false);
+  const [editContactError, setEditContactError] = React.useState<string | null>(null);
 
   // Pagination state
   const { pagination, setPage, setLimit } = useClassifiedsPagination({
@@ -133,7 +138,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
 
   // Utility function to convert ITeamsWantedResponse to ITeamsWantedFormState
   const convertToFormState = (classified: ITeamsWantedResponse): ITeamsWantedFormState => {
-    return {
+    const formState = {
       name: classified.name,
       email: classified.email,
       phone: classified.phone,
@@ -144,6 +149,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         .filter((p) => p.length > 0),
       birthDate: new Date(classified.birthDate),
     };
+
+    return formState;
   };
 
   // Check if user can perform operation without access code
@@ -155,15 +162,44 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     );
   };
 
-  // Handle edit
-  const handleEdit = (id: string, _accessCodeRequired: string) => {
+  // Handle edit - unified contact fetching for both AccountAdmin and Access Code users
+  const handleEdit = async (id: string, _accessCodeRequired: string) => {
     const classified = teamsWanted.find((c) => c.id.toString() === id);
     if (!classified) return;
 
     if (canOperateWithoutAccessCode(classified)) {
-      // AccountAdmins can edit directly - open edit dialog
-      setEditingClassified(classified);
-      setEditDialogOpen(true);
+      // AccountAdmins - fetch contact info with JWT token
+      setEditContactLoading(true);
+      setEditContactError(null);
+
+      try {
+        const contactResult = await playerClassifiedService.getTeamsWantedContactForEdit(
+          accountId,
+          classified.id.toString(),
+          '', // Empty access code for AccountAdmins
+          token || undefined, // JWT token for authentication
+        );
+
+        if (contactResult.success && contactResult.data) {
+          // Merge contact info with classified data
+          const classifiedWithContact = {
+            ...classified,
+            email: contactResult.data.email,
+            phone: contactResult.data.phone,
+          };
+
+          setEditingClassified(classifiedWithContact);
+          setEditDialogOpen(true);
+        } else {
+          setEditContactError(contactResult.error || 'Failed to fetch contact information');
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to fetch contact information';
+        setEditContactError(errorMessage);
+      } finally {
+        setEditContactLoading(false);
+      }
     }
     // Access code verification is handled by TeamsWantedStateManager for non-AccountAdmins
   };
@@ -172,6 +208,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const closeEditDialog = () => {
     setEditDialogOpen(false);
     setEditingClassified(null);
+    setEditContactError(null);
   };
 
   // Handle edit form submission
@@ -321,6 +358,12 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         </Alert>
       )}
 
+      {editContactError && (
+        <Alert severity="error" onClose={() => setEditContactError(null)} sx={{ mb: 3 }}>
+          Contact Info Error: {editContactError}
+        </Alert>
+      )}
+
       {/* Content - Delegated to TeamsWantedStateManager */}
       <TeamsWantedStateManager
         accountId={accountId}
@@ -386,7 +429,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
           open={editDialogOpen}
           onClose={closeEditDialog}
           onSubmit={handleEditSubmit}
-          loading={formLoading}
+          loading={formLoading || editContactLoading}
           initialData={convertToFormState(editingClassified)}
           editMode={true}
         />

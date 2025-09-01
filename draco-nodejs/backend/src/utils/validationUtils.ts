@@ -83,10 +83,10 @@ export const validateEmail = (
     };
   }
 
-  if (email.trim().length > 255) {
+  if (email.trim().length > 254) {
     return {
       field: fieldName,
-      message: `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must not exceed 255 characters`,
+      message: `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must not exceed 254 characters`,
       code: 'FIELD_TOO_LONG',
     };
   }

@@ -50,7 +50,7 @@ export const createMockPlayersWanted = (
     id: 'creator-1',
     firstName: 'John',
     lastName: 'Doe',
-    email: 'john.doe@example.com',
+    photoUrl: '/1/contact-photos/creator-1-photo.png',
   },
   account: {
     id: '1',

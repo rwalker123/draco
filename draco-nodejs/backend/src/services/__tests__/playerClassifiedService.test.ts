@@ -195,7 +195,7 @@ describe('PlayerClassifiedService', () => {
             id: expect.any(String),
             firstName: expect.any(String),
             lastName: expect.any(String),
-            email: expect.any(String),
+            photoUrl: expect.any(String),
           }),
           account: expect.objectContaining({
             id: expect.any(String),
@@ -362,7 +362,6 @@ describe('PlayerClassifiedService', () => {
             id: BigInt(456),
             firstname: 'John',
             lastname: 'Doe',
-            email: 'john@example.com',
           },
           accounts: {
             id: mockAccountId,
@@ -387,7 +386,7 @@ describe('PlayerClassifiedService', () => {
         take: 20,
         include: {
           contacts: {
-            select: { id: true, firstname: true, lastname: true, email: true },
+            select: { id: true, firstname: true, lastname: true },
           },
           accounts: {
             select: { id: true, name: true },
@@ -437,7 +436,6 @@ describe('PlayerClassifiedService', () => {
             id: BigInt(456),
             firstname: 'John',
             lastname: 'Doe',
-            email: 'john@example.com',
           },
           accounts: {
             id: mockAccountId,
@@ -513,10 +511,8 @@ describe('PlayerClassifiedService', () => {
             expect.objectContaining({
               id: '1',
               name: 'Jane Smith',
-              email: 'jane@example.com',
               accountId: expect.any(String),
               dateCreated: expect.any(String),
-              phone: expect.any(String),
               experience: expect.any(String),
               positionsPlayed: expect.any(String),
               birthDate: expect.any(String),
@@ -1260,7 +1256,7 @@ describe('PlayerClassifiedService', () => {
       expect(result.creator).toHaveProperty('id');
       expect(result.creator).toHaveProperty('firstName');
       expect(result.creator).toHaveProperty('lastName');
-      expect(result.creator).toHaveProperty('email');
+      expect(result.creator).toHaveProperty('photoUrl');
 
       expect(result.account).toHaveProperty('id');
       expect(result.account).toHaveProperty('name');

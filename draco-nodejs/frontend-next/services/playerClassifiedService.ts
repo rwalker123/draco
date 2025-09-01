@@ -1,6 +1,7 @@
 // Player Classifieds Service
 // Handles all API interactions for Player Classifieds feature
 
+import { apiRequest } from '../utils/apiClient';
 import {
   IPlayersWantedCreateRequest,
   IPlayersWantedResponse,
@@ -22,6 +23,7 @@ import {
 } from '../types/playerClassifieds';
 
 import { IAccessCodeVerificationResponse } from '../types/accessCode';
+import { handleApiErrorResponse } from '../utils/errorHandling';
 
 // ============================================================================
 // SERVICE CONFIGURATION
@@ -43,6 +45,33 @@ const API_ENDPOINTS = {
 
 // Players Wanted CRUD operations
 export const playerClassifiedService = {
+  /**
+   * Private method to build URLSearchParams from IClassifiedSearchParams
+   */
+  buildSearchParams(params?: Partial<IClassifiedSearchParams>): URLSearchParams {
+    const searchParams = new URLSearchParams();
+
+    if (!params) {
+      return searchParams;
+    }
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          // Handle arrays by appending each value separately
+          value.forEach((v) => searchParams.append(key, v.toString()));
+        } else if (value instanceof Date) {
+          // Handle Date objects by converting to ISO string
+          searchParams.append(key, value.toISOString());
+        } else {
+          // Handle all other types by converting to string
+          searchParams.append(key, value.toString());
+        }
+      }
+    });
+
+    return searchParams;
+  },
   // Create a new Players Wanted classified
   async createPlayersWanted(
     accountId: string,
@@ -62,7 +91,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to create Players Wanted: ${response.statusText}`);
+      await handleApiErrorResponse(response, 'Failed to create Players Wanted');
     }
 
     const result = await response.json();
@@ -74,20 +103,7 @@ export const playerClassifiedService = {
     accountId: string,
     params?: Partial<IClassifiedSearchParams>,
   ): Promise<IServiceResponse<IClassifiedListResponse<IPlayersWantedResponse>>> {
-    const searchParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            value.forEach((v) => searchParams.append(key, v.toString()));
-          } else if (value instanceof Date) {
-            searchParams.append(key, value.toISOString());
-          } else {
-            searchParams.append(key, value.toString());
-          }
-        }
-      });
-    }
+    const searchParams = this.buildSearchParams(params);
 
     const url = `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted?${searchParams.toString()}`;
 
@@ -138,7 +154,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Players Wanted: ${response.statusText}`);
+      await handleApiErrorResponse(response, 'Failed to fetch Players Wanted');
     }
 
     return response.json();
@@ -164,7 +180,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to update Players Wanted: ${response.statusText}`);
+      await handleApiErrorResponse(response, 'Failed to update Players Wanted');
     }
 
     const result = await response.json();
@@ -184,7 +200,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to delete Players Wanted: ${response.statusText}`);
+      await handleApiErrorResponse(response, 'Failed to delete Players Wanted');
     }
   },
 
@@ -209,33 +225,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      let errorMessage = `Failed to create Teams Wanted: ${response.statusText}`;
-
-      try {
-        const errorData = await response.json();
-        if (errorData.details && Array.isArray(errorData.details)) {
-          // Extract field-specific error messages
-          const fieldErrors = errorData.details
-            .filter(
-              (detail: { type?: string; msg?: string }) => detail.type === 'field' && detail.msg,
-            )
-            .map(
-              (detail: { path?: string; msg?: string }) =>
-                `${detail.path || 'field'}: ${detail.msg || 'validation error'}`,
-            )
-            .join('; ');
-
-          errorMessage = fieldErrors || errorData.error || errorData.message || errorMessage;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
-        } else if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch {
-        // If parsing fails, keep the original error message
-      }
-
-      throw new Error(errorMessage);
+      await handleApiErrorResponse(response, 'Failed to create Teams Wanted');
     }
 
     const result = await response.json();
@@ -248,20 +238,7 @@ export const playerClassifiedService = {
     params: Partial<IClassifiedSearchParams> | undefined,
     token: string,
   ): Promise<ITeamsWantedServiceResponse> {
-    const searchParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            value.forEach((v) => searchParams.append(key, v.toString()));
-          } else if (value instanceof Date) {
-            searchParams.append(key, value.toISOString());
-          } else {
-            searchParams.append(key, value.toString());
-          }
-        }
-      });
-    }
+    const searchParams = this.buildSearchParams(params);
 
     const url = `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted?${searchParams.toString()}`;
 
@@ -314,7 +291,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Teams Wanted: ${response.statusText}`);
+      await handleApiErrorResponse(response, 'Failed to fetch Teams Wanted');
     }
 
     return response.json();
@@ -326,10 +303,17 @@ export const playerClassifiedService = {
     classifiedId: string,
     data: ITeamsWantedUpdateRequest,
     token?: string,
+    accessCode?: string,
   ): Promise<ITeamsWantedResponse> {
     const headers = {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
+    };
+
+    // Include access code in request body if provided
+    const requestBody = {
+      ...data,
+      ...(accessCode && { accessCode }),
     };
 
     const response = await fetch(
@@ -337,36 +321,12 @@ export const playerClassifiedService = {
       {
         method: 'PUT',
         headers,
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestBody),
       },
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-
-      // Parse server error response
-      let errorMessage = `Failed to update Teams Wanted: ${response.statusText}`;
-
-      if (errorData.error) {
-        errorMessage = errorData.error;
-
-        // If there are validation details, format them nicely
-        if (errorData.details && Array.isArray(errorData.details)) {
-          const fieldErrors = errorData.details
-            .map((detail: { msg?: string }) => detail.msg)
-            .filter(Boolean)
-            .join(', ');
-
-          if (fieldErrors) {
-            errorMessage = `${errorData.error}: ${fieldErrors}`;
-          }
-        }
-      } else if (errorData.message) {
-        // Fallback to message field if error field doesn't exist
-        errorMessage = errorData.message;
-      }
-
-      throw new Error(errorMessage);
+      await handleApiErrorResponse(response, 'Failed to update Teams Wanted');
     }
 
     const result = await response.json();
@@ -412,6 +372,31 @@ export const playerClassifiedService = {
     }
   },
 
+  // Get contact information for edit purposes (supports both JWT and access code auth)
+  async getTeamsWantedContactForEdit(
+    accountId: string,
+    classifiedId: string,
+    accessCode: string,
+    token?: string,
+  ): Promise<IServiceResponse<{ email: string; phone: string }>> {
+    const headers: Record<string, string> = {};
+
+    // Add JWT token if provided
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Build URL with optional access code query parameter
+    const url = `/api/accounts/${accountId}/player-classifieds/teams-wanted/${classifiedId}/contact${
+      !token && accessCode ? `?accessCode=${encodeURIComponent(accessCode)}` : ''
+    }`;
+
+    return apiRequest<{ email: string; phone: string }>(url, {
+      method: 'GET',
+      headers,
+    });
+  },
+
   // ============================================================================
   // SEARCH AND MATCHING OPERATIONS
   // ============================================================================
@@ -422,18 +407,7 @@ export const playerClassifiedService = {
     params: IClassifiedSearchParams,
     token: string,
   ): Promise<IClassifiedSearchResult> {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          value.forEach((v) => searchParams.append(key, v.toString()));
-        } else if (value instanceof Date) {
-          searchParams.append(key, value.toISOString());
-        } else {
-          searchParams.append(key, value.toString());
-        }
-      }
-    });
+    const searchParams = this.buildSearchParams(params);
 
     const response = await fetch(
       `${API_ENDPOINTS.search}/${accountId}/player-classifieds/search?${searchParams.toString()}`,
@@ -445,7 +419,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to search classifieds: ${response.statusText}`);
+      await handleApiErrorResponse(response, 'Failed to search classifieds');
     }
 
     return response.json();
@@ -468,7 +442,7 @@ export const playerClassifiedService = {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch matches: ${response.statusText}`);
+      await handleApiErrorResponse(response, 'Failed to fetch matches');
     }
 
     return response.json();
@@ -606,21 +580,9 @@ export const playerClassifiedService = {
     params: Partial<IClassifiedAnalytics> | undefined,
     token: string,
   ): Promise<IClassifiedAnalytics> {
-    const searchParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            value.forEach((v) => searchParams.append(key, v.toString()));
-          } else {
-            searchParams.append(key, value.toString());
-          }
-        }
-      });
-    }
-
+    // Analytics endpoint doesn't use search parameters
     const response = await fetch(
-      `${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics?${searchParams.toString()}`,
+      `${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -633,5 +595,38 @@ export const playerClassifiedService = {
     }
 
     return response.json();
+  },
+
+  // ============================================================================
+  // CONTACT OPERATIONS
+  // ============================================================================
+
+  // Send contact message to Players Wanted creator
+  async contactPlayersWantedCreator(
+    accountId: string,
+    classifiedId: string,
+    data: {
+      senderName: string;
+      senderEmail: string;
+      message: string;
+    },
+  ): Promise<void> {
+    const response = await fetch(
+      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}/contact`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Failed to send contact message: ${response.statusText}`,
+      );
+    }
   },
 };

@@ -7,5 +7,8 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     exclude: ['node_modules/**', 'dist/**'],
+    env: {
+      NODE_ENV: 'test'
+    }
   },
 })

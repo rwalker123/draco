@@ -6,8 +6,11 @@ import {
   ITeamsWantedCreateRequest,
   IPlayersWantedUpdateRequest,
   IClassifiedValidationResult,
+  IClassifiedValidationError,
+  IContactCreatorRequest,
 } from '../../interfaces/playerClassifiedInterfaces.js';
 import { isValidPositionId } from '../../interfaces/playerClassifiedConstants.js';
+import validator from 'validator';
 import { DateUtils } from '../../utils/dateUtils.js';
 import {
   validateRequiredString,
@@ -306,5 +309,106 @@ export class PlayerClassifiedValidationService {
       positionList.length <= 3 &&
       positionList.every((pos) => isValidPositionId(pos))
     );
+  }
+
+  /**
+   * Validate contact creator request
+   *
+   * Validates anonymous user contact requests for Players Wanted classifieds.
+   * Ensures sender information is valid and message content meets requirements.
+   *
+   * @param request - Contact request to validate
+   * @returns Validation result with any errors found
+   *
+   * @example
+   * ```typescript
+   * const result = service.validateContactCreatorRequest({
+   *   senderName: 'John Doe',
+   *   senderEmail: 'john@example.com',
+   *   message: 'I am interested in joining your team...'
+   * });
+   * ```
+   */
+  validateContactCreatorRequest(request: IContactCreatorRequest): IClassifiedValidationResult {
+    const errors: IClassifiedValidationError[] = [];
+    const warnings: IClassifiedValidationError[] = [];
+
+    // Validate sender name
+    if (!request.senderName || typeof request.senderName !== 'string') {
+      errors.push({
+        field: 'senderName',
+        message: 'Sender name is required',
+        code: 'REQUIRED_FIELD',
+        value: request.senderName,
+      });
+    } else if (request.senderName.trim().length < 2) {
+      errors.push({
+        field: 'senderName',
+        message: 'Sender name must be at least 2 characters long',
+        code: 'MIN_LENGTH',
+        value: request.senderName,
+      });
+    } else if (request.senderName.length > 100) {
+      errors.push({
+        field: 'senderName',
+        message: 'Sender name must not exceed 100 characters',
+        code: 'MAX_LENGTH',
+        value: request.senderName,
+      });
+    }
+
+    // Validate sender email
+    if (!request.senderEmail || typeof request.senderEmail !== 'string') {
+      errors.push({
+        field: 'senderEmail',
+        message: 'Sender email is required',
+        code: 'REQUIRED_FIELD',
+        value: request.senderEmail,
+      });
+    } else if (!validator.isEmail(request.senderEmail)) {
+      errors.push({
+        field: 'senderEmail',
+        message: 'Invalid email format',
+        code: 'INVALID_FORMAT',
+        value: request.senderEmail,
+      });
+    } else if (request.senderEmail.length > 254) {
+      errors.push({
+        field: 'senderEmail',
+        message: 'Email must not exceed 254 characters',
+        code: 'MAX_LENGTH',
+        value: request.senderEmail,
+      });
+    }
+
+    // Validate message
+    if (!request.message || typeof request.message !== 'string') {
+      errors.push({
+        field: 'message',
+        message: 'Message is required',
+        code: 'REQUIRED_FIELD',
+        value: request.message,
+      });
+    } else if (request.message.trim().length < 10) {
+      errors.push({
+        field: 'message',
+        message: 'Message must be at least 10 characters long',
+        code: 'MIN_LENGTH',
+        value: request.message,
+      });
+    } else if (request.message.length > 2000) {
+      errors.push({
+        field: 'message',
+        message: 'Message must not exceed 2000 characters',
+        code: 'MAX_LENGTH',
+        value: request.message,
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+    };
   }
 }

@@ -7,6 +7,7 @@ import {
   ITeamsWantedCreateRequest,
   IPlayersWantedResponse,
   ITeamsWantedResponse,
+  ITeamsWantedPublicResponse,
   ITeamsWantedOwnerResponse,
   IClassifiedListResponse,
   IClassifiedSearchParams,
@@ -15,6 +16,8 @@ import {
 import { DateUtils } from '../../utils/dateUtils.js';
 import { PaginationHelper } from '../../utils/pagination.js';
 import { DEFAULT_VALUES } from '../../config/playerClassifiedConstants.js';
+import { getContactPhotoUrl } from '../../config/logo.js';
+import { NotFoundError } from '../../utils/customErrors.js';
 
 // Database record types for type safety
 interface PlayersWantedDbRecord {
@@ -44,7 +47,6 @@ interface ContactDbRecord {
   id: bigint;
   firstname: string;
   lastname: string;
-  email: string | null;
 }
 
 interface AccountDbRecord {
@@ -130,7 +132,7 @@ export class PlayerClassifiedDataService {
         id: creator.id.toString(),
         firstName: creator.firstname,
         lastName: creator.lastname,
-        email: creator.email,
+        photoUrl: getContactPhotoUrl(account.id.toString(), creator.id.toString()),
       },
       account: {
         id: account.id.toString(),
@@ -170,6 +172,46 @@ export class PlayerClassifiedDataService {
       name: dbRecord.name,
       email: dbRecord.email,
       phone: dbRecord.phone,
+      experience: dbRecord.experience,
+      positionsPlayed: dbRecord.positionsplayed,
+      birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
+      account: {
+        id: account.id.toString(),
+        name: account.name,
+      },
+    };
+  }
+
+  /**
+   * Transform database Teams Wanted record to public response (excludes contact info)
+   *
+   * Converts database record to public API response format that excludes sensitive
+   * PII data (email, phone). This method is used for list responses where contact
+   * information should not be exposed until explicitly requested.
+   *
+   * @param dbRecord - Raw database record from teamswantedclassified table
+   * @param account - Account record that owns the classified
+   * @returns Public Teams Wanted response object without PII data
+   *
+   * @security This method excludes email and phone for privacy protection.
+   * Contact information must be requested separately through the contact endpoint.
+   *
+   * @example
+   * ```typescript
+   * const publicResponse = dataService.transformTeamsWantedToPublicResponse(dbRecord, account);
+   * console.log(publicResponse.email); // undefined - PII not exposed
+   * console.log(publicResponse.name); // 'John Doe' - non-PII data included
+   * ```
+   */
+  transformTeamsWantedToPublicResponse(
+    dbRecord: TeamsWantedDbRecord,
+    account: AccountDbRecord,
+  ): ITeamsWantedPublicResponse {
+    return {
+      id: dbRecord.id.toString(),
+      accountId: dbRecord.accountid.toString(),
+      dateCreated: DateUtils.formatDateForResponse(dbRecord.datecreated),
+      name: dbRecord.name,
       experience: dbRecord.experience,
       positionsPlayed: dbRecord.positionsplayed,
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
@@ -421,7 +463,7 @@ export class PlayerClassifiedDataService {
           take: limit,
           include: {
             contacts: {
-              select: { id: true, firstname: true, lastname: true, email: true },
+              select: { id: true, firstname: true, lastname: true },
             },
             accounts: {
               select: { id: true, name: true },
@@ -485,7 +527,7 @@ export class PlayerClassifiedDataService {
   async getTeamsWanted(
     accountId: bigint,
     params: IClassifiedSearchParams,
-  ): Promise<IClassifiedListResponse<ITeamsWantedResponse>> {
+  ): Promise<IClassifiedListResponse<ITeamsWantedPublicResponse>> {
     const {
       page = DEFAULT_VALUES.DEFAULT_PAGE,
       limit = DEFAULT_VALUES.DEFAULT_LIMIT,
@@ -514,25 +556,26 @@ export class PlayerClassifiedDataService {
     }
 
     // Execute query with pagination using generic helper
-    const { data, total } = await PaginationHelper.executePaginatedQuery<ITeamsWantedResponse>(
-      () =>
-        this.prisma.teamswantedclassified.findMany({
-          where,
-          orderBy,
-          skip: (page - 1) * limit,
-          take: limit,
-          include: {
-            accounts: {
-              select: { id: true, name: true },
+    const { data, total } =
+      await PaginationHelper.executePaginatedQuery<ITeamsWantedPublicResponse>(
+        () =>
+          this.prisma.teamswantedclassified.findMany({
+            where,
+            orderBy,
+            skip: (page - 1) * limit,
+            take: limit,
+            include: {
+              accounts: {
+                select: { id: true, name: true },
+              },
             },
-          },
-        }),
-      () => this.prisma.teamswantedclassified.count({ where }),
-      (classifications) =>
-        (classifications as (TeamsWantedDbRecord & { accounts: AccountDbRecord })[]).map((c) =>
-          this.transformTeamsWantedToResponse(c, c.accounts),
-        ),
-    );
+          }),
+        () => this.prisma.teamswantedclassified.count({ where }),
+        (classifications) =>
+          (classifications as (TeamsWantedDbRecord & { accounts: AccountDbRecord })[]).map((c) =>
+            this.transformTeamsWantedToPublicResponse(c, c.accounts),
+          ),
+      );
 
     // Build pagination info
     const pagination = PaginationHelper.createMeta(page, limit, total);
@@ -551,6 +594,54 @@ export class PlayerClassifiedDataService {
       total,
       pagination,
       filters,
+    };
+  }
+
+  /**
+   * Get Teams Wanted contact information for a specific classified
+   *
+   * Retrieves only contact information (email and phone) for a specific Teams Wanted
+   * classified within the account boundary. This method provides secure, on-demand access
+   * to sensitive PII data while maintaining account isolation and access control.
+   *
+   * @param classifiedId - ID of the Teams Wanted classified
+   * @param accountId - Account ID for multi-tenant boundary enforcement
+   * @returns Contact information object with email and phone
+   *
+   * @throws {NotFoundError} When classified is not found or not accessible within account boundary
+   * @throws {ValidationError} When parameters are invalid
+   *
+   * @security Only returns contact info for classifieds within the specified account boundary.
+   * This prevents cross-account data exposure and maintains tenant isolation.
+   *
+   * @example
+   * ```typescript
+   * const contactInfo = await dataService.getTeamsWantedContactInfo(123n, 456n);
+   * console.log(contactInfo); // { email: 'player@example.com', phone: '+1234567890' }
+   * ```
+   */
+  async getTeamsWantedContactInfo(
+    classifiedId: bigint,
+    accountId: bigint,
+  ): Promise<{ email: string; phone: string }> {
+    const classified = await this.prisma.teamswantedclassified.findFirst({
+      where: {
+        id: classifiedId,
+        accountid: accountId, // Enforce account boundary
+      },
+      select: {
+        email: true,
+        phone: true,
+      },
+    });
+
+    if (!classified) {
+      throw new NotFoundError('Teams Wanted classified not found or not accessible');
+    }
+
+    return {
+      email: classified.email,
+      phone: classified.phone,
     };
   }
 
@@ -574,7 +665,7 @@ export class PlayerClassifiedDataService {
   async getContactById(contactId: bigint): Promise<ContactDbRecord | null> {
     return await this.prisma.contacts.findUnique({
       where: { id: contactId },
-      select: { id: true, firstname: true, lastname: true, email: true },
+      select: { id: true, firstname: true, lastname: true },
     });
   }
 
@@ -728,7 +819,7 @@ export class PlayerClassifiedDataService {
       data: updateData,
       include: {
         contacts: {
-          select: { id: true, firstname: true, lastname: true, email: true },
+          select: { id: true, firstname: true, lastname: true },
         },
         accounts: {
           select: { id: true, name: true },

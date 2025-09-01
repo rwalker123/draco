@@ -95,16 +95,18 @@ app.use(
   }),
 );
 
-// CORS configuration
-if (!process.env.FRONTEND_URL) {
-  throw new Error('FRONTEND_URL environment variable is required but not set');
+// CORS configuration - skip in test environment
+if (process.env.NODE_ENV !== 'test') {
+  if (!process.env.FRONTEND_URL) {
+    throw new Error('FRONTEND_URL environment variable is required but not set');
+  }
+  app.use(
+    cors({
+      origin: process.env.FRONTEND_URL,
+      credentials: true,
+    }),
+  );
 }
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  }),
-);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
