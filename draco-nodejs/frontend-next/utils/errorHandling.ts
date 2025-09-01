@@ -592,7 +592,10 @@ export function parseApiError(responseData: unknown): {
           (detail: { type?: string; msg?: string; path?: string }) =>
             detail.type === 'field' && detail.msg && detail.path,
         )
-        .map((detail: { path: string; msg: string }) => `${detail.path}: ${detail.msg}`)
+        .map(
+          (detail: { type?: string; msg?: string; path?: string }) =>
+            `${detail.path}: ${detail.msg}`,
+        )
         .join('; ');
 
       if (fieldErrors) {

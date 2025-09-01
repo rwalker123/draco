@@ -133,6 +133,8 @@ vi.mock('../../middleware/validation/playerClassifiedValidation.js', () => ({
       next();
     },
   ],
+  validatePlayersWantedUpdate: [(req: Request, res: Response, next: NextFunction) => next()],
+  validateTeamsWantedUpdate: [(req: Request, res: Response, next: NextFunction) => next()],
   validateTeamsWantedUpdateEndpoint: [(req: Request, res: Response, next: NextFunction) => next()],
   validateTeamsWantedVerification: [(req: Request, res: Response, next: NextFunction) => next()],
   validateTeamsWantedDeletion: [(req: Request, res: Response, next: NextFunction) => next()],
@@ -193,6 +195,7 @@ vi.mock('../../middleware/validation/playerClassifiedValidation.js', () => ({
       next();
     },
   ],
+  validateContactRequest: [(req: Request, res: Response, next: NextFunction) => next()],
 }));
 
 // Mock the constants

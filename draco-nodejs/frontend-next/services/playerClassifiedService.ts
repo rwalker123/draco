@@ -1,7 +1,6 @@
 // Player Classifieds Service
 // Handles all API interactions for Player Classifieds feature
 
-import { buildSearchParams } from '../utils/urlUtils';
 import { apiRequest } from '../utils/apiClient';
 import {
   IPlayersWantedCreateRequest,
@@ -46,6 +45,33 @@ const API_ENDPOINTS = {
 
 // Players Wanted CRUD operations
 export const playerClassifiedService = {
+  /**
+   * Private method to build URLSearchParams from IClassifiedSearchParams
+   */
+  buildSearchParams(params?: Partial<IClassifiedSearchParams>): URLSearchParams {
+    const searchParams = new URLSearchParams();
+
+    if (!params) {
+      return searchParams;
+    }
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          // Handle arrays by appending each value separately
+          value.forEach((v) => searchParams.append(key, v.toString()));
+        } else if (value instanceof Date) {
+          // Handle Date objects by converting to ISO string
+          searchParams.append(key, value.toISOString());
+        } else {
+          // Handle all other types by converting to string
+          searchParams.append(key, value.toString());
+        }
+      }
+    });
+
+    return searchParams;
+  },
   // Create a new Players Wanted classified
   async createPlayersWanted(
     accountId: string,
@@ -77,7 +103,7 @@ export const playerClassifiedService = {
     accountId: string,
     params?: Partial<IClassifiedSearchParams>,
   ): Promise<IServiceResponse<IClassifiedListResponse<IPlayersWantedResponse>>> {
-    const searchParams = buildSearchParams(params);
+    const searchParams = this.buildSearchParams(params);
 
     const url = `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted?${searchParams.toString()}`;
 
@@ -212,7 +238,7 @@ export const playerClassifiedService = {
     params: Partial<IClassifiedSearchParams> | undefined,
     token: string,
   ): Promise<ITeamsWantedServiceResponse> {
-    const searchParams = buildSearchParams(params);
+    const searchParams = this.buildSearchParams(params);
 
     const url = `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted?${searchParams.toString()}`;
 
@@ -381,7 +407,7 @@ export const playerClassifiedService = {
     params: IClassifiedSearchParams,
     token: string,
   ): Promise<IClassifiedSearchResult> {
-    const searchParams = buildSearchParams(params);
+    const searchParams = this.buildSearchParams(params);
 
     const response = await fetch(
       `${API_ENDPOINTS.search}/${accountId}/player-classifieds/search?${searchParams.toString()}`,
@@ -554,10 +580,9 @@ export const playerClassifiedService = {
     params: Partial<IClassifiedAnalytics> | undefined,
     token: string,
   ): Promise<IClassifiedAnalytics> {
-    const searchParams = buildSearchParams(params);
-
+    // Analytics endpoint doesn't use search parameters
     const response = await fetch(
-      `${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics?${searchParams.toString()}`,
+      `${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

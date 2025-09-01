@@ -383,3 +383,25 @@ export const validateRateLimit = (req: Request, res: Response, next: NextFunctio
   // The service layer already handles rate limiting, but this could add extra checks
   next();
 };
+
+// ============================================================================
+// CONTACT REQUEST VALIDATION
+// ============================================================================
+
+/**
+ * Validate contact request for contacting classified creators
+ */
+export const validateContactRequest = [
+  validateRequiredString(
+    'senderName',
+    50,
+    /^[a-zA-Z\s'-]+$/,
+    'Sender name can only contain letters, spaces, hyphens, and apostrophes',
+  ),
+
+  validateEmail('senderEmail', true),
+
+  validateRequiredString('message', 2000, undefined, undefined, 10),
+
+  handleValidationErrors,
+];

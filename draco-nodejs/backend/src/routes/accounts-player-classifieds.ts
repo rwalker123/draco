@@ -24,6 +24,7 @@ import {
   validateAccountId,
   validateClassifiedId,
   validateTeamsWantedUpdate,
+  validateContactRequest,
 } from '../middleware/validation/playerClassifiedValidation.js';
 
 const router = Router({ mergeParams: true });
@@ -552,40 +553,12 @@ router.get(
 router.post(
   '/players-wanted/:classifiedId/contact',
   teamsWantedRateLimit, // Reuse existing rate limiting for anonymous requests
+  validateContactRequest, // Use secure express-validator middleware
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const classifiedId = req.params.classifiedId;
 
-    // Basic validation
     const { senderName, senderEmail, message } = req.body as IContactCreatorRequest;
-
-    if (!senderName || !senderEmail || !message) {
-      res.status(400).json({
-        success: false,
-        message: 'Missing required fields: senderName, senderEmail, and message are required',
-      });
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(senderEmail)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid email format',
-      });
-      return;
-    }
-
-    // Message length validation
-    if (message.length < 10 || message.length > 2000) {
-      res.status(400).json({
-        success: false,
-        message: 'Message must be between 10 and 2000 characters',
-      });
-      return;
-    }
-
     const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
 
     try {
