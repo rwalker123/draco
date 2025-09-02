@@ -244,16 +244,8 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
     const currentAccountId = accountIdRef.current;
     const currentSeasonId = seasonIdRef.current;
 
-    console.log('🔍 useManagerState: fetchManagers called with:', {
-      managerService: !!managerService,
-      accountId: currentAccountId,
-      seasonId: currentSeasonId,
-      token: !!token,
-    });
-
     // Check if we have all required parameters
     if (!currentAccountId || !currentSeasonId || !managerService) {
-      console.log('🔍 useManagerState: Missing required parameters, skipping request');
       return;
     }
 
@@ -265,16 +257,11 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
       currentRequestRef.current?.id === requestId &&
       !currentRequestRef.current.controller.signal.aborted
     ) {
-      console.log('🔍 useManagerState: Request already in progress with same parameters, ignoring');
       return;
     }
 
     // Cancel previous request only if parameters changed
     if (currentRequestRef.current && currentRequestRef.current.id !== requestId) {
-      console.log(
-        '🔍 useManagerState: Parameters changed, cancelling previous request:',
-        currentRequestRef.current.id,
-      );
       currentRequestRef.current.controller.abort();
     }
 
@@ -299,20 +286,17 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
 
       // Check if this specific request was cancelled
       if (currentRequest.controller.signal.aborted) {
-        console.log('🔍 useManagerState: Request was cancelled, ignoring result');
         return;
       }
 
       // Verify this is still the current request (prevent race conditions)
       if (currentRequestRef.current?.id !== requestId) {
-        console.log('🔍 useManagerState: Request superseded by newer request, ignoring result');
         return;
       }
 
       setManagers(result.managers);
       setLeagueNames(result.leagueNames);
       setTeamNames(result.teamNames);
-      console.log('🔍 useManagerState: Successfully loaded managers:', result.managers.length);
     } catch (err) {
       console.log('🔍 useManagerState: Error in fetchManagers:', err);
 
