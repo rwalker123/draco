@@ -29,9 +29,9 @@ import {
 } from '@mui/icons-material';
 
 import { useNotifications } from '../../../hooks/useNotifications';
-import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import ContactSelectionPanel from './ContactSelectionPanel';
 import NewGroupSelectionPanel from './NewGroupSelectionPanel';
+import { ManagerStateProvider } from './context/ManagerStateContext';
 import { useEmailCompose } from '../compose/EmailComposeProvider';
 import { useNewRecipientSelection } from '../../../hooks/useNewRecipientSelection';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
@@ -56,6 +56,7 @@ export interface AdvancedRecipientDialogProps {
   onClose: () => void;
   onApply?: (recipientState: RecipientSelectionState, selectedContacts: RecipientContact[]) => void;
   accountId: string;
+  seasonId?: string;
   teamGroups: TeamGroup[];
   roleGroups: RoleGroup[];
   loading?: boolean;
@@ -89,6 +90,19 @@ const SELECTED_CONTACTS_CACHE_LIMIT = 100; // Much smaller since we only store s
 type TabValue = 'contacts' | 'groups';
 
 /**
+ * Wrapper component that provides the ManagerStateProvider context
+ */
+const AdvancedRecipientDialogWithProvider: React.FC<AdvancedRecipientDialogProps> = (props) => {
+  const { accountId, seasonId } = props;
+
+  return (
+    <ManagerStateProvider accountId={accountId} seasonId={seasonId || ''}>
+      <AdvancedRecipientDialog {...props} />
+    </ManagerStateProvider>
+  );
+};
+
+/**
  * AdvancedRecipientDialog - Comprehensive recipient selection interface
  * Provides tabbed interface for individual contacts, groups, and quick selections
  */
@@ -97,6 +111,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   onClose,
   onApply,
   accountId,
+  seasonId,
   teamGroups,
   roleGroups,
   loading = false,
@@ -108,11 +123,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { showNotification } = useNotifications();
   const { token } = useAuth();
-  const {
-    currentSeasonId,
-    fetchCurrentSeason,
-    loading: seasonLoading,
-  } = useCurrentSeason(accountId);
 
   // Use EmailCompose provider which now contains all recipient functionality
   const { state: composeState } = useEmailCompose();
@@ -405,31 +415,23 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [open, token, accountId, rowsPerPage, fetchContactsPage]);
 
-  // Fetch current season when dialog opens
+  // Check if seasonId is available when dialog opens
   useEffect(() => {
-    if (open && !currentSeasonId && !seasonLoading) {
-      fetchCurrentSeason().catch((error) => {
-        console.error('🔍 AdvancedRecipientDialog: Failed to fetch current season:', error);
-      });
+    if (open && !seasonId) {
+      // No seasonId provided, skipping season loading
     }
-  }, [open, currentSeasonId, seasonLoading, fetchCurrentSeason]);
+  }, [open, seasonId]);
 
   const [currentTab, setCurrentTab] = useState<TabValue>('contacts');
 
-  // Use the new recipient selection hook for groups - only when dialog is open and groups tab is active
-  const {
-    state: recipientState,
-    actions: recipientActions,
-    loading: groupsLoading,
-    error: groupsError,
-  } = useNewRecipientSelection({
-    _accountId: accountId,
-    _seasonId: currentSeasonId || undefined,
-    onSelectionChange: (_state) => {
-      // Handle recipient selection changes
-    },
-    enabled: open && currentTab === 'groups', // Only enable when dialog is open and groups tab is active
-  });
+  // Initialize local state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setLocalRecipientState(composeState.recipientState);
+    }
+  }, [open, composeState.recipientState]);
+
+  // State for loading and error handling
   const [loadingState, setLoadingState] = useState<LoadingState>({
     contacts: false,
     teamGroups: false,
@@ -445,7 +447,22 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
 
-  // Initialize local state when dialog opens
+  // Use the new recipient selection hook for groups - only when dialog is open and groups tab is active
+  const {
+    state: recipientState,
+    actions: recipientActions,
+    loading: groupsLoading,
+    error: groupsError,
+  } = useNewRecipientSelection({
+    accountId: accountId,
+    seasonId: seasonId || '',
+    onSelectionChange: (_state) => {
+      // Handle recipient selection changes
+    },
+    enabled: open && currentTab === 'groups', // Only enable when dialog is open and groups tab is active
+  });
+
+  // Local actions that modify local state only
   useEffect(() => {
     if (open) {
       setLocalRecipientState(composeState.recipientState);
@@ -965,7 +982,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         )}
 
         {/* Season Loading Indicator */}
-        {seasonLoading && (
+        {!seasonId && (
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <CircularProgress size={24} sx={{ mr: 1 }} />
             <Typography variant="body2" color="text.secondary">
@@ -1032,8 +1049,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
               {/* Groups Tab */}
               {currentTab === 'groups' && (
                 <NewGroupsTabContent
-                  _accountId={accountId}
-                  _seasonId={undefined} // TODO: Get seasonId from account context or props
+                  accountId={accountId}
+                  seasonId={seasonId || ''}
                   _errorState={errorState}
                   loadingState={loadingState}
                   isMobile={isMobile}
@@ -1042,7 +1059,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                   recipientActions={recipientActions}
                   groupsLoading={groupsLoading}
                   groupsError={groupsError}
-                  currentSeasonId={currentSeasonId || undefined}
                 />
               )}
             </Box>
@@ -1259,8 +1275,8 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
 
 // New Groups Tab Component
 interface NewGroupsTabContentProps {
-  _accountId: string;
-  _seasonId?: string;
+  accountId: string;
+  seasonId?: string;
   _errorState: ErrorState;
   loadingState: LoadingState;
   isMobile: boolean;
@@ -1269,12 +1285,11 @@ interface NewGroupsTabContentProps {
   recipientActions: RecipientSelectionActions;
   groupsLoading: boolean;
   groupsError: string | null;
-  currentSeasonId?: string;
 }
 
 const NewGroupsTabContent: React.FC<NewGroupsTabContentProps> = ({
-  _accountId,
-  _seasonId,
+  accountId,
+  seasonId,
   _errorState,
   loadingState,
   isMobile,
@@ -1283,7 +1298,6 @@ const NewGroupsTabContent: React.FC<NewGroupsTabContentProps> = ({
   recipientActions,
   groupsLoading,
   groupsError,
-  currentSeasonId,
 }) => {
   // Handle group type selection
   const handleGroupTypeChange = (groupType: GroupSelectionType | null) => {
@@ -1334,8 +1348,12 @@ const NewGroupsTabContent: React.FC<NewGroupsTabContentProps> = ({
     recipientActions.toggleManagerTeamSelection(teamId);
   };
 
-  const handleAllManagersToggle = () => {
+  const handleSelectAllManagers = () => {
     recipientActions.selectAllManagers();
+  };
+
+  const handleDeselectAllManagers = () => {
+    recipientActions.deselectAllManagers();
   };
 
   // Handle search query change
@@ -1400,13 +1418,14 @@ const NewGroupsTabContent: React.FC<NewGroupsTabContentProps> = ({
             _onManagerSelectionToggle={handleManagerSelectionToggle}
             _onManagerLeagueSelectionToggle={handleManagerLeagueSelectionToggle}
             _onManagerTeamSelectionToggle={handleManagerTeamSelectionToggle}
-            _onAllManagersToggle={handleAllManagersToggle}
+            _onSelectAllManagers={handleSelectAllManagers}
+            _onDeselectAllManagers={handleDeselectAllManagers}
             _onSearchQueryChange={handleSearchQueryChange}
             onSearchQueryChange={handleSearchQueryChange}
             loading={groupsLoading}
             _compact={isMobile}
-            accountId={_accountId}
-            seasonId={currentSeasonId || ''}
+            accountId={accountId}
+            seasonId={seasonId || ''}
           />
         </ErrorBoundary>
       )}
@@ -1414,4 +1433,4 @@ const NewGroupsTabContent: React.FC<NewGroupsTabContentProps> = ({
   );
 };
 
-export default AdvancedRecipientDialog;
+export default AdvancedRecipientDialogWithProvider;

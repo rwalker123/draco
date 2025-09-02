@@ -12,9 +12,10 @@ import {
   GroupSelectionType,
   TeamGroup,
   RoleGroup,
+  ManagerInfo,
   // ManagerInfo is used in the manager state hook
 } from '../types/emails/recipients';
-import { useManagerState } from './useManagerState';
+import { useManagerStateContext } from '../components/emails/recipients/context/ManagerStateContext';
 
 export interface RecipientGroupsData {
   seasonWideGroup?: SeasonWideGroup;
@@ -25,8 +26,8 @@ export interface RecipientGroupsData {
 }
 
 export interface UseNewRecipientSelectionProps {
-  _accountId: string;
-  _seasonId?: string;
+  accountId: string;
+  seasonId?: string;
   initialContacts?: RecipientContact[];
   onSelectionChange?: (state: RecipientSelectionState) => void;
   enabled?: boolean; // Only initialize when enabled
@@ -38,19 +39,16 @@ export interface UseNewRecipientSelectionReturn {
   groups: RecipientGroupsData;
   loading: boolean;
   error: string | null;
-  managerState: ReturnType<typeof useManagerState>['state'];
-  managerActions: ReturnType<typeof useManagerState>['actions'];
+  managerState: ReturnType<typeof useManagerStateContext>['state'];
+  managerActions: ReturnType<typeof useManagerStateContext>['actions'];
 }
 
 /**
  * Hook for managing new recipient selection state with categorized groups
  */
 export const useNewRecipientSelection = ({
-  _accountId,
-  _seasonId,
   initialContacts = [],
   onSelectionChange,
-  enabled = true, // Default to enabled for backward compatibility
 }: UseNewRecipientSelectionProps): UseNewRecipientSelectionReturn => {
   // Core selection state
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
@@ -68,20 +66,12 @@ export const useNewRecipientSelection = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'contacts' | 'groups'>('contacts');
 
-  // Manager state management - only initialize when needed
-  const managerEnabled = enabled && activeGroupType === 'manager-communications';
-
-  const managerStateHook = useManagerState({
-    accountId: _accountId,
-    seasonId: _seasonId || '',
-    pageSize: 100, // Larger page size for manager data
-    debounceMs: 300,
-    enabled: managerEnabled, // Enable when dialog is open AND manager communications is selected
-  });
+  // Manager state management - use shared context
+  const { state: managerStateHook, actions: managerActionsHook } = useManagerStateContext();
 
   // Use refs to maintain stable references to manager actions
-  const managerActionsRef = useRef(managerStateHook.actions);
-  managerActionsRef.current = managerStateHook.actions;
+  const managerActionsRef = useRef(managerActionsHook);
+  managerActionsRef.current = managerActionsHook;
 
   // Groups data (this would come from API in real implementation)
   const [groups] = useState<RecipientGroupsData>({
@@ -129,9 +119,11 @@ export const useNewRecipientSelection = ({
         selectedTeams: new Set<string>(),
         selectedManagers: selectedContactIds, // Use the same contact selection for managers
         allManagersSelected:
-          managerStateHook.state.managers.length > 0 &&
-          managerStateHook.state.managers.every((manager) => selectedContactIds.has(manager.id)),
-        totalManagers: managerStateHook.state.managers.length,
+          managerStateHook.managers.length > 0 &&
+          managerStateHook.managers.every((manager: ManagerInfo) =>
+            selectedContactIds.has(manager.id),
+          ),
+        totalManagers: managerStateHook.managers.length,
       },
 
       // Legacy group selections (deprecated - for backward compatibility)
@@ -172,7 +164,7 @@ export const useNewRecipientSelection = ({
       activeTab,
       groupSearchQueries,
       activeGroupType,
-      managerStateHook.state.managers, // Add manager state dependencies
+      managerStateHook.managers, // Add manager state dependencies
     ],
   );
 
@@ -313,15 +305,18 @@ export const useNewRecipientSelection = ({
       },
       selectAllManagers: () => {
         // Select all managers from the manager state
-        const allManagerIds = managerStateHook.state.managers.map((manager) => manager.id);
-        setSelectedContactIds((prev) => new Set([...prev, ...allManagerIds]));
+        const allManagerIds = managerStateHook.managers.map((manager: ManagerInfo) => manager.id);
+        setSelectedContactIds((prev) => {
+          const newSet = new Set([...prev, ...allManagerIds]);
+          return newSet;
+        });
       },
       deselectAllManagers: () => {
         // Deselect all managers
-        const allManagerIds = managerStateHook.state.managers.map((manager) => manager.id);
+        const allManagerIds = managerStateHook.managers.map((manager: ManagerInfo) => manager.id);
         setSelectedContactIds((prev) => {
           const newSet = new Set(prev);
-          allManagerIds.forEach((id) => newSet.delete(id));
+          allManagerIds.forEach((id: string) => newSet.delete(id));
           return newSet;
         });
       },
@@ -409,7 +404,7 @@ export const useNewRecipientSelection = ({
     groups,
     loading,
     error,
-    managerState: managerStateHook.state,
-    managerActions: managerStateHook.actions,
+    managerState: managerStateHook,
+    managerActions: managerActionsHook,
   };
 };

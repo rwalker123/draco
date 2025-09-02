@@ -59,6 +59,7 @@ import { processTemplate } from '../../../types/emails/compose';
 
 interface EmailComposePageProps {
   accountId: string;
+  seasonId?: string;
   initialData?: Partial<EmailComposeRequest>;
   contacts: RecipientContact[];
   teamGroups?: TeamGroup[];
@@ -103,6 +104,7 @@ const EmailComposePageInternal: React.FC<
 > = React.memo(
   function EmailComposePageInternal({
     accountId,
+    seasonId,
     contacts,
     teamGroups = [],
     roleGroups = [],
@@ -841,6 +843,7 @@ const EmailComposePageInternal: React.FC<
             onClose={handleAdvancedRecipientClose}
             onApply={handleRecipientSelectionChange}
             accountId={accountId}
+            seasonId={seasonId}
             teamGroups={hasTeamGroups ? teamGroups : []}
             roleGroups={hasRoleGroups ? roleGroups : []}
             loading={loading}
@@ -912,6 +915,7 @@ const EmailComposePageInternal: React.FC<
  */
 export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   accountId,
+  seasonId,
   initialData,
   contacts,
   teamGroups = [],
@@ -951,6 +955,7 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
     >
       <EmailComposePageInternal
         accountId={accountId}
+        seasonId={seasonId}
         contacts={contacts}
         teamGroups={teamGroups}
         roleGroups={roleGroups}

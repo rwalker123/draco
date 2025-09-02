@@ -56,7 +56,8 @@ export interface NewGroupSelectionPanelProps {
   _onManagerSelectionToggle: (managerId: string) => void;
   _onManagerLeagueSelectionToggle: (leagueId: string) => void;
   _onManagerTeamSelectionToggle: (teamId: string) => void;
-  _onAllManagersToggle: () => void;
+  _onSelectAllManagers: () => void;
+  _onDeselectAllManagers: () => void;
   _onSearchQueryChange: (groupType: string, query: string) => void;
   onSearchQueryChange: (groupType: string, query: string) => void;
   loading?: boolean;
@@ -88,7 +89,8 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
   _onManagerSelectionToggle,
   _onManagerLeagueSelectionToggle,
   _onManagerTeamSelectionToggle,
-  _onAllManagersToggle,
+  _onSelectAllManagers,
+  _onDeselectAllManagers,
   _onSearchQueryChange,
   loading = false,
   _compact = false,
@@ -219,8 +221,8 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
               onManagerToggle={_onManagerSelectionToggle}
               onLeagueToggle={_onManagerLeagueSelectionToggle}
               onTeamToggle={_onManagerTeamSelectionToggle}
-              onSelectAll={_onAllManagersToggle}
-              onDeselectAll={_onAllManagersToggle}
+              onSelectAll={_onSelectAllManagers}
+              onDeselectAll={_onDeselectAllManagers}
               onSearchQueryChange={(query) => _onSearchQueryChange('manager-communications', query)}
               searchQuery={_groupSearchQueries['manager-communications'] || ''}
             />

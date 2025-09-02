@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Box, Typography, Alert, AlertTitle, CircularProgress, Divider } from '@mui/material';
-import { useManagerState } from '../../../hooks/useManagerState';
+import { useManagerStateContext } from './context/ManagerStateContext';
 import ManagerFilters from './ManagerFilters';
 import ManagerList from './ManagerList';
 import ManagerSelectionSummary from './ManagerSelectionSummary';
@@ -38,13 +38,7 @@ const useManagerSelectionLogic = (accountId: string, seasonId: string, searchQue
   // Track if initial load has been attempted to prevent React strict mode double-invocation
   const initialLoadAttemptedRef = useRef(false);
 
-  const { state: managerState, actions: managerActions } = useManagerState({
-    accountId,
-    seasonId,
-    initialSearchQuery: searchQuery,
-    pageSize: 100,
-    debounceMs: 300,
-  });
+  const { state: managerState, actions: managerActions } = useManagerStateContext();
 
   // Reset initial load tracking when account or season changes
   useEffect(() => {
@@ -62,7 +56,6 @@ const useManagerSelectionLogic = (accountId: string, seasonId: string, searchQue
       !initialLoadAttemptedRef.current;
 
     if (shouldLoad) {
-      console.log('🔍 ManagerSelectionContent: Initiating initial manager load');
       initialLoadAttemptedRef.current = true;
       managerActions.fetchManagers();
     }
@@ -120,12 +113,7 @@ const ManagerSelectionContent: React.FC<ManagerSelectionContentProps> = ({
       selectedTeamsCount,
       hasSelection: selectedCount > 0 || selectedLeaguesCount > 0 || selectedTeamsCount > 0,
     };
-  }, [
-    managerState.managers.length,
-    selectedManagers.size,
-    selectedLeagues.size,
-    selectedTeams.size,
-  ]);
+  }, [managerState.managers, selectedManagers, selectedLeagues.size, selectedTeams.size]);
 
   // Handle manager selection toggle
   const handleManagerToggle = (managerId: string) => {

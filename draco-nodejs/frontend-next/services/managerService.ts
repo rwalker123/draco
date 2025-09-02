@@ -88,9 +88,6 @@ class ManagerServiceImpl implements ManagerService {
   }> {
     try {
       const url = `/api/accounts/${accountId}/seasons/${seasonId}/managers`;
-      console.log('🔍 ManagerService: Making request to:', url);
-      console.log('🔍 ManagerService: Token available:', this.token ? 'Yes' : 'No');
-      console.log('🔍 ManagerService: Token length:', this.token?.length || 0);
       const response: AxiosResponse<BackendManagersResponse> = await axios.get(url, {
         headers: {
           'Content-Type': 'application/json',
@@ -98,14 +95,6 @@ class ManagerServiceImpl implements ManagerService {
         },
         signal,
       });
-      console.log('🔍 ManagerService: Request headers:', {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token ? this.token.substring(0, 20) + '...' : 'No token'}`,
-      });
-      console.log(
-        '🔍 ManagerService: Full token (first 50 chars):',
-        this.token ? this.token.substring(0, 50) + '...' : 'No token',
-      );
 
       const data = response.data;
 
