@@ -34,8 +34,14 @@ const defaultConfig: RecipientSelectionConfig = {
   allowAllContacts: true,
   allowTeamGroups: true,
   allowRoleGroups: true,
+  allowSeasonParticipants: true,
+  allowLeagueSpecific: true,
+  allowTeamSelection: true,
+  allowManagerCommunications: true,
   requireValidEmails: true,
   showRecipientCount: true,
+  defaultGroupType: 'season-participants',
+  enableGroupSearch: true,
 };
 
 /**
@@ -161,14 +167,66 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     const effectiveRecipients = getEffectiveRecipients(
       {
         selectedContactIds,
+
+        // Mutually exclusive group selection
+        activeGroupType: null,
+
+        // Group-specific selection states
+        seasonParticipants: {
+          selected: false,
+          totalPlayers: 0,
+        },
+
+        leagueSpecific: {
+          selectedLeagues: new Set<string>(),
+          selectedDivisions: new Set<string>(),
+          selectedTeams: new Set<string>(),
+          totalPlayers: 0,
+        },
+
+        teamSelection: {
+          selectedLeagues: new Set<string>(),
+          selectedDivisions: new Set<string>(),
+          selectedTeams: new Set<string>(),
+          totalPlayers: 0,
+        },
+
+        managerCommunications: {
+          selectedLeagues: new Set<string>(),
+          selectedTeams: new Set<string>(),
+          selectedManagers: new Set<string>(),
+          allManagersSelected: true,
+          totalManagers: 0,
+        },
+
+        // Legacy group selections (deprecated - for backward compatibility)
         allContacts,
         selectedTeamGroups,
         selectedRoleGroups,
+
+        // Computed properties
         totalRecipients: 0,
         validEmailCount: 0,
         invalidEmailCount: 0,
+
+        // UI state
         searchQuery,
         activeTab,
+
+        // Search state
+        searchLoading: false,
+        searchError: null,
+
+        // Pagination state
+        currentPage: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+        contactsLoading: false,
+        contactsError: null,
+
+        // Group-specific UI state
+        groupSearchQueries: {},
+        expandedSections: new Set<string>(),
       },
       displayContacts, // Use display contacts instead of original contacts
     );
@@ -178,23 +236,67 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
 
     return {
       selectedContactIds,
+
+      // Mutually exclusive group selection
+      activeGroupType: null,
+
+      // Group-specific selection states
+      seasonParticipants: {
+        selected: false,
+        totalPlayers: 0,
+      },
+
+      leagueSpecific: {
+        selectedLeagues: new Set<string>(),
+        selectedDivisions: new Set<string>(),
+        selectedTeams: new Set<string>(),
+        totalPlayers: 0,
+      },
+
+      teamSelection: {
+        selectedLeagues: new Set<string>(),
+        selectedDivisions: new Set<string>(),
+        selectedTeams: new Set<string>(),
+        totalPlayers: 0,
+      },
+
+      managerCommunications: {
+        selectedLeagues: new Set<string>(),
+        selectedTeams: new Set<string>(),
+        selectedManagers: new Set<string>(),
+        allManagersSelected: true, // Default state
+        totalManagers: 0,
+      },
+
+      // Legacy group selections (deprecated - for backward compatibility)
       allContacts,
       selectedTeamGroups,
       selectedRoleGroups,
+
+      // Computed properties
       totalRecipients: effectiveRecipients.length,
       validEmailCount,
       invalidEmailCount,
+
+      // UI state
       lastSelectedContactId,
       searchQuery,
       activeTab,
-      searchLoading: searchState.loading, // Add search loading state
-      searchError: searchState.error, // Add search error state
+
+      // Search state
+      searchLoading: searchState.loading,
+      searchError: searchState.error,
+
       // Pagination state
       currentPage,
       hasNextPage,
       hasPrevPage,
       contactsLoading,
       contactsError,
+
+      // Group-specific UI state
+      groupSearchQueries: {},
+      expandedSections: new Set<string>(),
     };
   }, [
     selectedContactIds,
@@ -454,6 +556,33 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       deselectContact,
       toggleContact,
       selectContactRange,
+      // Group type selection (mutually exclusive)
+      updateActiveGroupType: () => {}, // Legacy provider doesn't support new groups yet
+
+      // Season participants actions
+      toggleSeasonParticipants: () => {}, // Legacy provider doesn't support new groups yet
+
+      // League-specific actions
+      toggleLeagueSelection: () => {}, // Legacy provider doesn't support new groups yet
+      toggleDivisionSelection: () => {}, // Legacy provider doesn't support new groups yet
+      toggleTeamSelection: () => {}, // Legacy provider doesn't support new groups yet
+      selectAllLeagues: () => {}, // Legacy provider doesn't support new groups yet
+      deselectAllLeagues: () => {}, // Legacy provider doesn't support new groups yet
+
+      // Team selection actions
+      toggleTeamSelectionLeague: () => {}, // Legacy provider doesn't support new groups yet
+      toggleTeamSelectionDivision: () => {}, // Legacy provider doesn't support new groups yet
+      toggleTeamSelectionTeam: () => {}, // Legacy provider doesn't support new groups yet
+      selectAllTeams: () => {}, // Legacy provider doesn't support new groups yet
+      deselectAllTeams: () => {}, // Legacy provider doesn't support new groups yet
+
+      // Manager communications actions
+      toggleManagerSelection: () => {}, // Legacy provider doesn't support new groups yet
+      toggleManagerLeagueSelection: () => {}, // Legacy provider doesn't support new groups yet
+      toggleManagerTeamSelection: () => {}, // Legacy provider doesn't support new groups yet
+      selectAllManagers: () => {}, // Legacy provider doesn't support new groups yet
+      deselectAllManagers: () => {}, // Legacy provider doesn't support new groups yet
+      setManagerSearchQuery: () => {}, // Legacy provider doesn't support new groups yet
       selectAllContacts,
       deselectAllContacts,
       selectTeamGroup,
@@ -462,10 +591,14 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       deselectRoleGroup,
       clearAll,
       isContactSelected,
+      isGroupSelected: () => false, // Legacy provider doesn't support new groups yet
       getSelectedContacts,
       getEffectiveRecipients: getEffectiveRecipientsCallback,
       setSearchQuery: handleSearchQueryChange, // Use the new search handler
+      setGroupSearchQuery: () => {}, // Legacy provider doesn't support group search yet
       setActiveTab,
+      toggleSectionExpansion: () => {}, // Legacy provider doesn't support section expansion yet
+      isSectionExpanded: () => false, // Legacy provider doesn't support section expansion yet
       goToNextPage,
       goToPrevPage,
     }),
@@ -544,6 +677,12 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       actions,
       config,
       contacts: displayContacts, // Use display contacts
+      // New group data (empty for legacy provider)
+      seasonWideGroup: undefined,
+      leagueSpecificGroups: [],
+      teamManagementGroups: [],
+      systemRoleGroups: [],
+      individualTeamGroups: [],
       teamGroups,
       roleGroups,
       validation,

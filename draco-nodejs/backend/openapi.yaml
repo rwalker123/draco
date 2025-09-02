@@ -2782,6 +2782,135 @@ paths:
           $ref: "#/components/responses/Error"
         "500":
           $ref: "#/components/responses/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/managers":
+    get:
+      summary: List all managers for a season (aggregated from team managers)
+      tags:
+        - SeasonManagers
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+        - in: query
+          name: leagueSeasonId
+          required: false
+          schema:
+            type: string
+          description: Filter by league season ID
+        - in: query
+          name: teamSeasonId
+          required: false
+          schema:
+            type: string
+          description: Filter by team season ID
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+          description: Search by manager name or email
+      responses:
+        "200":
+          description: List of managers for the season
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      managers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique manager identifier
+                              example: "123-456"
+                            contactId:
+                              type: string
+                              description: Contact ID
+                              example: "123"
+                            firstName:
+                              type: string
+                              description: Manager first name
+                              example: "John"
+                            lastName:
+                              type: string
+                              description: Manager last name
+                              example: "Doe"
+                            email:
+                              type: string
+                              nullable: true
+                              description: Manager email address
+                              example: "john.doe@example.com"
+                            phone1:
+                              type: string
+                              nullable: true
+                              description: Primary phone number
+                              example: "555-123-4567"
+                            phone2:
+                              type: string
+                              nullable: true
+                              description: Secondary phone number
+                              example: "555-987-6543"
+                            phone3:
+                              type: string
+                              nullable: true
+                              description: Tertiary phone number
+                              example: "555-456-7890"
+                            hasValidEmail:
+                              type: boolean
+                              description: Whether the manager has a valid email address
+                              example: true
+                            allTeams:
+                              type: array
+                              description: All teams this manager manages
+                              items:
+                                type: object
+                                properties:
+                                  leagueSeasonId:
+                                    type: string
+                                    description: League season ID
+                                    example: "789"
+                                  teamSeasonId:
+                                    type: string
+                                    description: Team season ID
+                                    example: "456"
+                                  teamName:
+                                    type: string
+                                    description: Team name
+                                    example: "Eagles"
+                                  leagueName:
+                                    type: string
+                                    description: League name
+                                    example: "Spring League"
+                      total:
+                        type: integer
+                        description: Total number of managers
+                        example: 25
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
   "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers/{managerId}":
     delete:
       summary: Remove a manager from a team season
@@ -3013,3 +3142,5 @@ tags:
     description: Account workouts and registrations
   - name: TeamManagers
     description: Team manager assignment endpoints
+  - name: SeasonManagers
+    description: Season-level manager aggregation endpoints

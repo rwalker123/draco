@@ -654,6 +654,10 @@ export class EmailRecipientService {
     accountId: string,
     token: string | null,
     seasonId: string,
+    options?: {
+      includeTeamManagers?: boolean; // Only fetch team managers when needed
+      includeTeamRosters?: boolean; // Only fetch team rosters when needed
+    },
   ): AsyncResult<TeamGroup[]> {
     const teamsResult = await this.fetchTeams(accountId, token, seasonId);
     if (!teamsResult.success) {
@@ -662,31 +666,41 @@ export class EmailRecipientService {
 
     const teams = teamsResult.data;
 
-    // Fetch roster and manager data for all teams in parallel with error handling
-    const rosterPromises = teams.map(async (team) => {
-      const result = await this.fetchTeamRoster(accountId, token, seasonId, team.id);
-      if (result.success) {
-        return [team.id, result.data] as [string, BackendContact[]];
-      } else {
-        logError(result.error, `Failed to fetch roster for team ${team.name}`);
-        return [team.id, []] as [string, BackendContact[]];
-      }
-    });
+    // Only fetch team rosters if explicitly requested
+    let rosterResults: Array<[string, BackendContact[]]> = [];
+    if (options?.includeTeamRosters) {
+      const rosterPromises = teams.map(async (team) => {
+        const result = await this.fetchTeamRoster(accountId, token, seasonId, team.id);
+        if (result.success) {
+          return [team.id, result.data] as [string, BackendContact[]];
+        } else {
+          logError(result.error, `Failed to fetch roster for team ${team.name}`);
+          return [team.id, []] as [string, BackendContact[]];
+        }
+      });
+      rosterResults = await Promise.all(rosterPromises);
+    } else {
+      // Initialize with empty rosters for all teams
+      rosterResults = teams.map((team) => [team.id, []] as [string, BackendContact[]]);
+    }
 
-    const managerPromises = teams.map(async (team) => {
-      const result = await this.fetchTeamManagers(accountId, token, seasonId, team.id);
-      if (result.success) {
-        return [team.id, result.data] as [string, BackendContact[]];
-      } else {
-        logError(result.error, `Failed to fetch managers for team ${team.name}`);
-        return [team.id, []] as [string, BackendContact[]];
-      }
-    });
-
-    const [rosterResults, managerResults] = await Promise.all([
-      Promise.all(rosterPromises),
-      Promise.all(managerPromises),
-    ]);
+    // Only fetch team managers if explicitly requested
+    let managerResults: Array<[string, BackendContact[]]> = [];
+    if (options?.includeTeamManagers) {
+      const managerPromises = teams.map(async (team) => {
+        const result = await this.fetchTeamManagers(accountId, token, seasonId, team.id);
+        if (result.success) {
+          return [team.id, result.data] as [string, BackendContact[]];
+        } else {
+          logError(result.error, `Failed to fetch managers for team ${team.name}`);
+          return [team.id, []] as [string, BackendContact[]];
+        }
+      });
+      managerResults = await Promise.all(managerPromises);
+    } else {
+      // Initialize with empty managers for all teams
+      managerResults = teams.map((team) => [team.id, []] as [string, BackendContact[]]);
+    }
 
     // Convert results to Maps
     const rosters = new Map(rosterResults);
@@ -705,6 +719,62 @@ export class EmailRecipientService {
     }
 
     return { success: true, data: transformResult.data };
+  }
+
+  /**
+   * Fetch team data on-demand when user actually needs it
+   * This method should be called when the recipient selection dialog is opened
+   * and the user selects team-related options
+   */
+  async getTeamDataOnDemand(
+    accountId: string,
+    token: string | null,
+    seasonId: string,
+    options: {
+      includeTeamRosters?: boolean;
+      includeTeamManagers?: boolean;
+    },
+  ): AsyncResult<{
+    teamGroups: TeamGroup[];
+  }> {
+    if (!accountId || accountId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Account ID is required',
+          { context: { operation: 'get_team_data_on_demand' } },
+        ),
+      };
+    }
+
+    if (!token || token.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.AUTHENTICATION_REQUIRED,
+          'Authentication token is required',
+          { context: { operation: 'get_team_data_on_demand', accountId } },
+        ),
+      };
+    }
+
+    return this.executeRequest(
+      async () => {
+        const teamGroupsResult = await this.buildTeamGroups(accountId, token, seasonId, options);
+        if (!teamGroupsResult.success) {
+          throw teamGroupsResult.error;
+        }
+
+        return {
+          teamGroups: teamGroupsResult.data,
+        };
+      },
+      {
+        operation: 'get_team_data_on_demand',
+        additionalData: { accountId, seasonId, options },
+      },
+    );
   }
 
   /**
@@ -775,11 +845,18 @@ export class EmailRecipientService {
    * Get comprehensive recipient data for an account
    * This is the main method that fetches all data needed for recipient selection
    * Enhanced with proper error handling and data validation
+   *
+   * NOTE: This method now only fetches essential data by default.
+   * Use getTeamDataOnDemand() to fetch team rosters/managers when needed.
    */
   async getRecipientData(
     accountId: string,
     token: string | null,
     seasonId?: string,
+    options?: {
+      includeTeamManagers?: boolean; // Only fetch team managers when needed
+      includeTeamRosters?: boolean; // Only fetch team rosters when needed
+    },
   ): AsyncResult<{
     contacts: RecipientContact[];
     teamGroups: TeamGroup[];
@@ -867,10 +944,13 @@ export class EmailRecipientService {
           logError(roleGroupsResult.value.error, 'Failed to fetch role groups');
         }
 
-        // Build team groups with error handling
+        // Build team groups with error handling - only include team data when requested
         let teamGroups: TeamGroup[] = [];
         if (effectiveSeasonId) {
-          const teamGroupsResult = await this.buildTeamGroups(accountId, token, effectiveSeasonId);
+          const teamGroupsResult = await this.buildTeamGroups(accountId, token, effectiveSeasonId, {
+            includeTeamManagers: options?.includeTeamManagers ?? false,
+            includeTeamRosters: options?.includeTeamRosters ?? false,
+          });
           if (teamGroupsResult.success) {
             teamGroups = teamGroupsResult.data;
           } else {
@@ -910,15 +990,7 @@ export class EmailRecipientService {
         }
 
         // Log performance metrics
-        console.debug('Recipient data performance:', {
-          totalContacts: deduplicatedContacts.length,
-          teamGroups: teamGroups.length,
-          roleGroups: roleGroups.length,
-          duplicatesRemoved: validation.duplicateCount,
-          validEmailPercentage: Math.round(
-            (validation.validEmailCount / validation.totalContacts) * 100,
-          ),
-        });
+        // Removed console.debug for production
 
         return {
           contacts: deduplicatedContacts,

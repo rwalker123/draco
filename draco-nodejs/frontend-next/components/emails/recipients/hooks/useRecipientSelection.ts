@@ -44,16 +44,68 @@ const createInitialState = (
   initialSelection?: Partial<BaseRecipientSelectionState>,
 ): ExtendedRecipientSelectionState => ({
   selectedContactIds: new Set(initialSelection?.selectedContactIds || []),
+
+  // Mutually exclusive group selection
+  activeGroupType: initialSelection?.activeGroupType || null,
+
+  // Group-specific selection states
+  seasonParticipants: initialSelection?.seasonParticipants || {
+    selected: false,
+    totalPlayers: 0,
+  },
+
+  leagueSpecific: initialSelection?.leagueSpecific || {
+    selectedLeagues: new Set<string>(),
+    selectedDivisions: new Set<string>(),
+    selectedTeams: new Set<string>(),
+    totalPlayers: 0,
+  },
+
+  teamSelection: initialSelection?.teamSelection || {
+    selectedLeagues: new Set<string>(),
+    selectedDivisions: new Set<string>(),
+    selectedTeams: new Set<string>(),
+    totalPlayers: 0,
+  },
+
+  managerCommunications: initialSelection?.managerCommunications || {
+    selectedLeagues: new Set<string>(),
+    selectedTeams: new Set<string>(),
+    selectedManagers: new Set<string>(),
+    allManagersSelected: true, // Default state
+    totalManagers: 0,
+  },
+
+  // Legacy group selections (deprecated - for backward compatibility)
   selectedTeamGroups: initialSelection?.selectedTeamGroups || [],
   selectedRoleGroups: initialSelection?.selectedRoleGroups || [],
   allContacts: initialSelection?.allContacts || false,
+
+  // Computed properties
   totalRecipients: 0,
   validEmailCount: 0,
   invalidEmailCount: 0,
   effectiveRecipients: [],
+
+  // UI state
   lastSelectedContactId: initialSelection?.lastSelectedContactId,
   searchQuery: initialSelection?.searchQuery || '',
   activeTab: initialSelection?.activeTab || ('contacts' as RecipientSelectionTab),
+
+  // Search state
+  searchLoading: false,
+  searchError: null,
+
+  // Pagination state
+  currentPage: 1,
+  hasNextPage: false,
+  hasPrevPage: false,
+  contactsLoading: false,
+  contactsError: null,
+
+  // Group-specific UI state
+  groupSearchQueries: initialSelection?.groupSearchQueries || {},
+  expandedSections: new Set<string>(),
 });
 
 export const useRecipientSelection = (
