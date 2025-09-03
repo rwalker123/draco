@@ -5,6 +5,7 @@ import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
 import { useRouter } from 'next/navigation';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
+import { PlayersWantedDetailDialog } from '../player-classifieds';
 import { IPlayersWantedResponse } from '../../types/playerClassifieds';
 
 interface PlayersWantedPreviewProps {
@@ -19,6 +20,8 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   const [playersWanted, setPlayersWanted] = useState<IPlayersWantedResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedClassified, setSelectedClassified] = useState<IPlayersWantedResponse | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,8 +51,17 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
     router.push(`/account/${accountId}/player-classifieds`);
   };
 
-  const handleContact = (playersWantedId: string) => {
-    router.push(`/account/${accountId}/player-classifieds/players-wanted/${playersWantedId}`);
+  const handleViewDetails = (playersWantedId: string) => {
+    const classified = playersWanted.find((pw) => pw.id.toString() === playersWantedId);
+    if (classified) {
+      setSelectedClassified(classified);
+      setDialogOpen(true);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedClassified(null);
   };
 
   if (loading) {
@@ -147,7 +159,7 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
                 size="small"
                 variant="contained"
                 fullWidth
-                onClick={() => handleContact(team.id)}
+                onClick={() => handleViewDetails(team.id)}
                 sx={{
                   textTransform: 'none',
                   borderRadius: 1,
@@ -159,6 +171,15 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
           </Card>
         ))}
       </Box>
+
+      {/* Detail Dialog */}
+      <PlayersWantedDetailDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        classified={selectedClassified}
+        canEdit={() => false}
+        canDelete={() => false}
+      />
     </SectionCard>
   );
 };
