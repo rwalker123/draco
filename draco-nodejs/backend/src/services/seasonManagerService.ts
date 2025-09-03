@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import validator from 'validator';
 
 export interface SeasonManagerFilters {
   leagueSeasonId?: string;
@@ -151,11 +152,10 @@ export class SeasonManagerService {
   }
 
   /**
-   * Check if email is valid
+   * Check if email is valid using validator.js for robust validation
    */
   private isValidEmail(email: string | null): boolean {
     if (!email) return false;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return validator.isEmail(email);
   }
 }
