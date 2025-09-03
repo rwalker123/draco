@@ -155,14 +155,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                   showRoleGroups={false} // Role groups are in their own tab
                 />
               )}
-
-              {state.activeTab === 'roles' && (
-                <GroupSelector
-                  showAllContacts={false}
-                  showTeamGroups={false}
-                  showRoleGroups={config.allowRoleGroups}
-                />
-              )}
             </Box>
           </Paper>
 

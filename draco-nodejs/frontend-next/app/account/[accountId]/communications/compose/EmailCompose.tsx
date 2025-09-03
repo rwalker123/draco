@@ -149,6 +149,7 @@ export default function EmailCompose() {
           <Box sx={{ flex: 1 }}>
             <EmailComposePage
               accountId={accountId as string}
+              seasonId={currentSeason?.id}
               initialData={initialData}
               contacts={contacts}
               teamGroups={teamGroups}

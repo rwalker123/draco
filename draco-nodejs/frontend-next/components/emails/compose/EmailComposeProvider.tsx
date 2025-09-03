@@ -29,6 +29,7 @@ import {
   TeamGroup,
   RoleGroup,
   RecipientSelectionTab,
+  createDefaultRecipientSelectionState,
 } from '../../../types/emails/recipients';
 import { createEmailService } from '../../../services/emailService';
 import { useAuth } from '../../../context/AuthContext';
@@ -109,17 +110,8 @@ const createInitialState = (
 });
 
 // Helper functions for recipient state management
-const createDefaultRecipientState = (): RecipientSelectionState => ({
-  selectedContactIds: new Set<string>(),
-  allContacts: false,
-  selectedTeamGroups: [],
-  selectedRoleGroups: [],
-  totalRecipients: 0,
-  validEmailCount: 0,
-  invalidEmailCount: 0,
-  searchQuery: '',
-  activeTab: 'contacts' as RecipientSelectionTab,
-});
+const createDefaultRecipientState = (): RecipientSelectionState =>
+  createDefaultRecipientSelectionState();
 
 const getRecipientState = (state: EmailComposeState): RecipientSelectionState =>
   state.recipientState || createDefaultRecipientState();

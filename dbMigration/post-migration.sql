@@ -187,3 +187,8 @@ CREATE INDEX IF NOT EXISTS idx_teamsseason_leagueseasonid ON teamsseason(leagues
 -- This allows storing hashed access codes with special characters like $
 ALTER TABLE teamswantedclassified 
 ALTER COLUMN accesscode TYPE VARCHAR(255);
+
+-- Indexes for teamseasonmanager table to optimize manager queries
+CREATE INDEX IF NOT EXISTS idx_teamseasonmanager_teamseasonid ON teamseasonmanager(teamseasonid);
+CREATE INDEX IF NOT EXISTS idx_teamseasonmanager_contactid ON teamseasonmanager(contactid);
+CREATE INDEX IF NOT EXISTS idx_teamseasonmanager_composite ON teamseasonmanager(teamseasonid, contactid);

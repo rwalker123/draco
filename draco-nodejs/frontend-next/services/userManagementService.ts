@@ -7,7 +7,10 @@ import {
   ContactUpdateData,
   DependencyCheckResult,
 } from '../types/users';
-import { validateContactUpdateResponse, ContactUpdateResponse } from '../types/typeGuards';
+import {
+  validateContactUpdateResponse,
+  ContactUpdateResponse,
+} from '../types/userManagementTypeGuards';
 import { ContactTransformationService } from './contactTransformationService';
 import { handleApiErrorResponse } from '../utils/errorHandling';
 

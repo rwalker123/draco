@@ -18,7 +18,7 @@ import {
   Contact,
   ContactUpdateData,
 } from '../types/users';
-import { extractErrorMessage } from '../types/typeGuards';
+import { extractErrorMessage } from '../types/userManagementTypeGuards';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
 

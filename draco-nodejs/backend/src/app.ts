@@ -24,6 +24,7 @@ import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/openapi.js';
 import { globalErrorHandler } from './utils/globalErrorHandler.js';
 import teamManagersRouter from './routes/teamManagers.js';
+import seasonManagersRouter from './routes/seasonManagers.js';
 import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';
 import monitoringRouter from './routes/monitoring.js';
@@ -169,6 +170,7 @@ app.use(
   '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
   teamManagersRouter,
 );
+app.use('/api/accounts/:accountId/seasons/:seasonId/managers', seasonManagersRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/standings', standingsRouter);
 app.use('/api', emailsRouter);
 app.use('/api/webhooks', webhookRouter);

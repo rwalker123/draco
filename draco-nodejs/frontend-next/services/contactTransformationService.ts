@@ -1,5 +1,5 @@
 import { Contact, ContactRole, ContactDetails } from '../types/users';
-import { ContactUpdateResponse } from '../types/typeGuards';
+import { ContactUpdateResponse } from '../types/userManagementTypeGuards';
 import { getRoleDisplayName } from '../utils/roleUtils';
 
 /**

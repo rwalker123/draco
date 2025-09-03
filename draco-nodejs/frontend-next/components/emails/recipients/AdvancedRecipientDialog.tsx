@@ -23,7 +23,6 @@ import {
   Close as CloseIcon,
   Person as PersonIcon,
   Groups as GroupsIcon,
-  Star as StarIcon,
   Refresh as RefreshIcon,
   Warning as WarningIcon,
   Info as InfoIcon,
@@ -31,8 +30,10 @@ import {
 
 import { useNotifications } from '../../../hooks/useNotifications';
 import ContactSelectionPanel from './ContactSelectionPanel';
-import GroupSelectionPanel from './GroupSelectionPanel';
+import NewGroupSelectionPanel from './NewGroupSelectionPanel';
+import { ManagerStateProvider } from './context/ManagerStateContext';
 import { useEmailCompose } from '../compose/EmailComposeProvider';
+import { useNewRecipientSelection } from '../../../hooks/useNewRecipientSelection';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { GroupListSkeleton, RecipientDialogSkeleton } from '../../common/SkeletonLoaders';
 import {
@@ -40,6 +41,9 @@ import {
   TeamGroup,
   RoleGroup,
   RecipientSelectionState,
+  RecipientSelectionActions,
+  GroupSelectionType,
+  createDefaultRecipientSelectionState,
 } from '../../../types/emails/recipients';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
 import { normalizeError, createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
@@ -52,6 +56,7 @@ export interface AdvancedRecipientDialogProps {
   onClose: () => void;
   onApply?: (recipientState: RecipientSelectionState, selectedContacts: RecipientContact[]) => void;
   accountId: string;
+  seasonId?: string;
   teamGroups: TeamGroup[];
   roleGroups: RoleGroup[];
   loading?: boolean;
@@ -82,7 +87,20 @@ interface SelectedContactCacheEntry {
 
 const SELECTED_CONTACTS_CACHE_LIMIT = 100; // Much smaller since we only store selected contacts
 
-type TabValue = 'contacts' | 'groups' | 'quick';
+type TabValue = 'contacts' | 'groups';
+
+/**
+ * Wrapper component that provides the ManagerStateProvider context
+ */
+const AdvancedRecipientDialogWithProvider: React.FC<AdvancedRecipientDialogProps> = (props) => {
+  const { accountId, seasonId } = props;
+
+  return (
+    <ManagerStateProvider accountId={accountId} seasonId={seasonId || ''}>
+      <AdvancedRecipientDialog {...props} />
+    </ManagerStateProvider>
+  );
+};
 
 /**
  * AdvancedRecipientDialog - Comprehensive recipient selection interface
@@ -93,6 +111,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   onClose,
   onApply,
   accountId,
+  seasonId,
   teamGroups,
   roleGroups,
   loading = false,
@@ -396,7 +415,23 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [open, token, accountId, rowsPerPage, fetchContactsPage]);
 
+  // Check if seasonId is available when dialog opens
+  useEffect(() => {
+    if (open && !seasonId) {
+      // No seasonId provided, skipping season loading
+    }
+  }, [open, seasonId]);
+
   const [currentTab, setCurrentTab] = useState<TabValue>('contacts');
+
+  // Initialize local state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setLocalRecipientState(composeState.recipientState);
+    }
+  }, [open, composeState.recipientState]);
+
+  // State for loading and error handling
   const [loadingState, setLoadingState] = useState<LoadingState>({
     contacts: false,
     teamGroups: false,
@@ -412,7 +447,22 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
 
-  // Initialize local state when dialog opens
+  // Use the new recipient selection hook for groups - only when dialog is open and groups tab is active
+  const {
+    state: recipientState,
+    actions: recipientActions,
+    loading: groupsLoading,
+    error: groupsError,
+  } = useNewRecipientSelection({
+    accountId: accountId,
+    seasonId: seasonId || '',
+    onSelectionChange: (_state) => {
+      // Handle recipient selection changes
+    },
+    enabled: open && currentTab === 'groups', // Only enable when dialog is open and groups tab is active
+  });
+
+  // Local actions that modify local state only
   useEffect(() => {
     if (open) {
       setLocalRecipientState(composeState.recipientState);
@@ -421,17 +471,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   // Local actions that modify local state only
   const localActions = useMemo(() => {
-    const createDefaultState = (): RecipientSelectionState => ({
-      selectedContactIds: new Set<string>(),
-      allContacts: false,
-      selectedTeamGroups: [],
-      selectedRoleGroups: [],
-      totalRecipients: 0,
-      validEmailCount: 0,
-      invalidEmailCount: 0,
-      searchQuery: '',
-      activeTab: 'contacts' as const,
-    });
+    const createDefaultState = (): RecipientSelectionState =>
+      createDefaultRecipientSelectionState();
 
     const calculateRecipientCounts = (state: RecipientSelectionState) => {
       let totalRecipients = 0;
@@ -910,7 +951,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         >
           <Tab icon={<PersonIcon />} label="Contacts" value="contacts" iconPosition="start" />
           <Tab icon={<GroupsIcon />} label="Groups" value="groups" iconPosition="start" />
-          <Tab icon={<StarIcon />} label="Quick Select" value="quick" iconPosition="start" />
         </Tabs>
       </Box>
 
@@ -938,6 +978,16 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
               <AlertTitle>Error</AlertTitle>
               {errorState.general.userMessage || errorState.general.message}
             </Alert>
+          </Box>
+        )}
+
+        {/* Season Loading Indicator */}
+        {!seasonId && (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <CircularProgress size={24} sx={{ mr: 1 }} />
+            <Typography variant="body2" color="text.secondary">
+              Loading season data...
+            </Typography>
           </Box>
         )}
 
@@ -998,28 +1048,17 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
               {/* Groups Tab */}
               {currentTab === 'groups' && (
-                <GroupsTabContent
-                  teamGroups={teamGroups}
-                  roleGroups={roleGroups}
-                  errorState={errorState}
+                <NewGroupsTabContent
+                  accountId={accountId}
+                  seasonId={seasonId || ''}
+                  _errorState={errorState}
                   loadingState={loadingState}
                   isMobile={isMobile}
-                  hasTeamGroups={hasTeamGroups}
-                  hasRoleGroups={hasRoleGroups}
                   clearError={clearError}
-                />
-              )}
-
-              {/* Quick Select Tab */}
-              {currentTab === 'quick' && (
-                <QuickSelectTabContent
-                  contacts={composeState.contacts}
-                  teamGroups={teamGroups}
-                  roleGroups={roleGroups}
-                  loadingState={loadingState}
-                  hasContacts={hasContacts}
-                  hasTeamGroups={hasTeamGroups}
-                  hasRoleGroups={hasRoleGroups}
+                  recipientState={recipientState}
+                  recipientActions={recipientActions}
+                  groupsLoading={groupsLoading}
+                  groupsError={groupsError}
                 />
               )}
             </Box>
@@ -1234,66 +1273,115 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
   );
 };
 
-// Groups Tab Component
-interface GroupsTabContentProps {
-  teamGroups: TeamGroup[];
-  roleGroups: RoleGroup[];
-  errorState: ErrorState;
+// New Groups Tab Component
+interface NewGroupsTabContentProps {
+  accountId: string;
+  seasonId?: string;
+  _errorState: ErrorState;
   loadingState: LoadingState;
   isMobile: boolean;
-  hasTeamGroups: boolean;
-  hasRoleGroups: boolean;
   clearError: (errorType: keyof ErrorState) => void;
+  recipientState: RecipientSelectionState;
+  recipientActions: RecipientSelectionActions;
+  groupsLoading: boolean;
+  groupsError: string | null;
 }
 
-const GroupsTabContent: React.FC<GroupsTabContentProps> = ({
-  teamGroups,
-  roleGroups,
-  errorState,
+const NewGroupsTabContent: React.FC<NewGroupsTabContentProps> = ({
+  accountId,
+  seasonId,
+  _errorState,
   loadingState,
   isMobile,
-  hasTeamGroups,
-  hasRoleGroups,
   clearError,
+  recipientState,
+  recipientActions,
+  groupsLoading,
+  groupsError,
 }) => {
-  // TODO: Implement group selection logic using a similar pattern to contactSelection
-  const selectedTeamGroups: TeamGroup[] = [];
-  const selectedRoleGroups: RoleGroup[] = [];
-
-  const handleTeamGroupToggle = (_group: TeamGroup) => {
-    // TODO: Implement team group selection
+  // Handle group type selection
+  const handleGroupTypeChange = (groupType: GroupSelectionType | null) => {
+    recipientActions.updateActiveGroupType(groupType);
   };
 
-  const handleRoleGroupToggle = (_group: RoleGroup) => {
-    // TODO: Implement role group selection
+  // Handle season participants toggle
+  const handleSeasonParticipantsToggle = () => {
+    recipientActions.toggleSeasonParticipants();
+  };
+
+  // Handle league-specific selections
+  const handleLeagueToggle = (leagueId: string) => {
+    recipientActions.toggleLeagueSelection(leagueId);
+  };
+
+  const handleDivisionToggle = (divisionId: string) => {
+    recipientActions.toggleDivisionSelection(divisionId);
+  };
+
+  const handleTeamToggle = (teamId: string) => {
+    recipientActions.toggleTeamSelection(teamId);
+  };
+
+  // Handle team selection
+  const handleTeamSelectionLeagueToggle = (leagueId: string) => {
+    recipientActions.toggleTeamSelectionLeague(leagueId);
+  };
+
+  const handleTeamSelectionDivisionToggle = (divisionId: string) => {
+    recipientActions.toggleTeamSelectionDivision(divisionId);
+  };
+
+  const handleTeamSelectionTeamToggle = (teamId: string) => {
+    recipientActions.toggleTeamSelectionTeam(teamId);
+  };
+
+  // Handle manager communications
+  const handleManagerSelectionToggle = (managerId: string) => {
+    recipientActions.toggleManagerSelection(managerId);
+  };
+
+  const handleManagerLeagueSelectionToggle = (leagueId: string) => {
+    recipientActions.toggleManagerLeagueSelection(leagueId);
+  };
+
+  const handleManagerTeamSelectionToggle = (teamId: string) => {
+    recipientActions.toggleManagerTeamSelection(teamId);
+  };
+
+  const handleSelectAllManagers = () => {
+    recipientActions.selectAllManagers();
+  };
+
+  const handleDeselectAllManagers = () => {
+    recipientActions.deselectAllManagers();
+  };
+
+  // Handle search query change
+  const handleSearchQueryChange = (section: string, query: string) => {
+    recipientActions.setGroupSearchQuery(section, query);
+    // TODO: Implement API search
   };
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {(errorState.teamGroups || errorState.roleGroups) && (
+      {/* Error Display */}
+      {groupsError && (
         <Box sx={{ p: 2 }}>
-          <Alert
-            severity="warning"
-            onClose={() => {
-              clearError('teamGroups');
-              clearError('roleGroups');
-            }}
-          >
-            {errorState.teamGroups?.userMessage ||
-              errorState.teamGroups?.message ||
-              errorState.roleGroups?.userMessage ||
-              errorState.roleGroups?.message}
+          <Alert severity="error" onClose={() => clearError('general')}>
+            <AlertTitle>Error Loading Groups</AlertTitle>
+            {groupsError}
           </Alert>
         </Box>
       )}
 
-      {loadingState.teamGroups || loadingState.roleGroups ? (
+      {/* Loading State */}
+      {groupsLoading || loadingState.teamGroups || loadingState.roleGroups ? (
         <Box sx={{ p: 3 }}>
           <GroupListSkeleton count={4} compact={isMobile} />
         </Box>
-      ) : hasTeamGroups || hasRoleGroups ? (
+      ) : (
         <ErrorBoundary
-          componentName="GroupSelectionPanel"
+          componentName="NewGroupSelectionPanel"
           fallback={
             <Alert severity="error" sx={{ m: 2 }}>
               <AlertTitle>Group Selection Unavailable</AlertTitle>
@@ -1309,107 +1397,40 @@ const GroupsTabContent: React.FC<GroupsTabContentProps> = ({
             </Alert>
           }
           onError={(error) => {
-            console.error('GroupSelectionPanel error:', error);
+            console.error('NewGroupSelectionPanel error:', error);
           }}
         >
-          <GroupSelectionPanel
-            teamGroups={teamGroups}
-            roleGroups={roleGroups}
-            selectedTeamGroups={selectedTeamGroups}
-            selectedRoleGroups={selectedRoleGroups}
-            onTeamGroupToggle={handleTeamGroupToggle}
-            onRoleGroupToggle={handleRoleGroupToggle}
-            compact={isMobile}
+          <NewGroupSelectionPanel
+            activeGroupType={recipientState.activeGroupType}
+            seasonParticipants={recipientState.seasonParticipants}
+            _leagueSpecific={recipientState.leagueSpecific}
+            _teamSelection={recipientState.teamSelection}
+            _managerCommunications={recipientState.managerCommunications}
+            _groupSearchQueries={recipientState.groupSearchQueries}
+            onGroupTypeChange={handleGroupTypeChange}
+            onSeasonParticipantsToggle={handleSeasonParticipantsToggle}
+            _onLeagueToggle={handleLeagueToggle}
+            _onDivisionToggle={handleDivisionToggle}
+            _onTeamToggle={handleTeamToggle}
+            _onTeamSelectionLeagueToggle={handleTeamSelectionLeagueToggle}
+            _onTeamSelectionDivisionToggle={handleTeamSelectionDivisionToggle}
+            _onTeamSelectionTeamToggle={handleTeamSelectionTeamToggle}
+            _onManagerSelectionToggle={handleManagerSelectionToggle}
+            _onManagerLeagueSelectionToggle={handleManagerLeagueSelectionToggle}
+            _onManagerTeamSelectionToggle={handleManagerTeamSelectionToggle}
+            _onSelectAllManagers={handleSelectAllManagers}
+            _onDeselectAllManagers={handleDeselectAllManagers}
+            _onSearchQueryChange={handleSearchQueryChange}
+            onSearchQueryChange={handleSearchQueryChange}
+            loading={groupsLoading}
+            _compact={isMobile}
+            accountId={accountId}
+            seasonId={seasonId || ''}
           />
         </ErrorBoundary>
-      ) : (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-          <GroupsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            No Groups Available
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            No team or role groups are available for selection.
-          </Typography>
-        </Box>
       )}
     </Box>
   );
 };
 
-// Quick Select Tab Component
-interface QuickSelectTabContentProps {
-  contacts: RecipientContact[];
-  teamGroups: TeamGroup[];
-  roleGroups: RoleGroup[];
-  loadingState: LoadingState;
-  hasContacts: boolean;
-  hasTeamGroups: boolean;
-  hasRoleGroups: boolean;
-}
-
-const QuickSelectTabContent: React.FC<QuickSelectTabContentProps> = ({
-  contacts,
-  loadingState,
-  hasContacts,
-  hasTeamGroups,
-  hasRoleGroups,
-}) => {
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Quick Selection Options
-      </Typography>
-      <Stack spacing={2}>
-        <Button
-          variant="outlined"
-          size="large"
-          onClick={() => {
-            /* TODO: Implement quick select all */
-          }}
-          fullWidth
-          disabled={!hasContacts || loadingState.contacts}
-          startIcon={loadingState.contacts ? <CircularProgress size={20} /> : undefined}
-        >
-          Select All Contacts ({hasContacts ? contacts.length : 0})
-        </Button>
-
-        <Button
-          variant="outlined"
-          size="large"
-          onClick={() => {
-            /* TODO: Implement quick select managers */
-          }}
-          fullWidth
-          disabled={!hasTeamGroups || loadingState.teamGroups}
-          startIcon={loadingState.teamGroups ? <CircularProgress size={20} /> : undefined}
-        >
-          Select All Team Managers
-        </Button>
-
-        <Button
-          variant="outlined"
-          size="large"
-          onClick={() => {
-            /* TODO: Implement quick select admins */
-          }}
-          fullWidth
-          disabled={!hasRoleGroups || loadingState.roleGroups}
-          startIcon={loadingState.roleGroups ? <CircularProgress size={20} /> : undefined}
-        >
-          Select All Administrators
-        </Button>
-
-        {/* Help text for empty states */}
-        {!hasContacts && !hasTeamGroups && !hasRoleGroups && (
-          <Alert severity="info">
-            <AlertTitle>No Data Available</AlertTitle>
-            Quick selections are not available because no recipient data has been loaded.
-          </Alert>
-        )}
-      </Stack>
-    </Box>
-  );
-};
-
-export default AdvancedRecipientDialog;
+export default AdvancedRecipientDialogWithProvider;
