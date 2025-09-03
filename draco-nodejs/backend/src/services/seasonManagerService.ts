@@ -74,19 +74,38 @@ export class SeasonManagerService {
     // Query team managers with related data
     const teamManagers = await this.prisma.teamseasonmanager.findMany({
       where: whereClause,
-      include: {
-        contacts: true,
+      select: {
+        id: true,
+        contactid: true,
+        contacts: {
+          select: {
+            firstname: true,
+            lastname: true,
+            email: true,
+            phone1: true,
+            phone2: true,
+            phone3: true,
+          },
+        },
         teamsseason: {
-          include: {
-            teams: true,
+          select: {
+            id: true,
+            name: true,
+            leagueseasonid: true,
             leagueseason: {
-              include: {
-                league: true,
+              select: {
+                id: true,
+                league: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
         },
       },
+      orderBy: [{ contacts: { lastname: 'asc' } }, { contacts: { firstname: 'asc' } }],
     });
 
     // Group by contact ID to handle deduplication
@@ -97,7 +116,6 @@ export class SeasonManagerService {
       const contact = teamManager.contacts;
       const teamSeason = teamManager.teamsseason;
       const leagueSeason = teamSeason.leagueseason;
-      const _team = teamSeason.teams;
       const league = leagueSeason.league;
 
       const teamInfo = {

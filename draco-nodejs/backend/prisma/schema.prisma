@@ -1079,6 +1079,10 @@ model teamseasonmanager {
   contactid    BigInt
   contacts     contacts    @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_teamseasonmanager_contacts")
   teamsseason  teamsseason @relation(fields: [teamseasonid], references: [id], onDelete: Cascade, map: "fk_teamseasonmanager_teamsseason")
+
+  @@index([teamseasonid], map: "idx_teamseasonmanager_teamseasonid")
+  @@index([contactid], map: "idx_teamseasonmanager_contactid")
+  @@index([teamseasonid, contactid], map: "idx_teamseasonmanager_composite")
 }
 
 model teamsseason {

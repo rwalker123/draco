@@ -36,16 +36,16 @@ router.get(
 
     const managers = await seasonManagerService.getSeasonManagers(accountId, seasonId, filters);
 
-    // Build leagueNames and teamNames maps for frontend compatibility
+    // Build lookup maps efficiently - O(n) instead of O(n*m)
     const leagueNames: Record<string, string> = {};
     const teamNames: Record<string, string> = {};
 
-    managers.forEach((manager) => {
-      manager.allTeams.forEach((team) => {
+    for (const manager of managers) {
+      for (const team of manager.allTeams) {
         leagueNames[team.leagueSeasonId] = team.leagueName;
         teamNames[team.teamSeasonId] = team.teamName;
-      });
-    });
+      }
+    }
 
     res.json({
       managers,
