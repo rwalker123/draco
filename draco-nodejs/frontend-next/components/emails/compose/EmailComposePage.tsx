@@ -302,15 +302,14 @@ const EmailComposePageInternal: React.FC<
 
     // Handle recipient selection change
     const handleRecipientSelectionChange = useCallback(
-      (recipientState: RecipientSelectionState, selectedContacts?: RecipientContact[]) => {
+      (recipientState: RecipientSelectionState, _selectedContacts?: RecipientContact[]) => {
         try {
           // Update the compose state with recipient information
           actions.updateRecipientState(recipientState);
 
-          // If we have selected contact details, store them in the compose state
-          // This ensures SelectedRecipientsPreview can display contacts from other pages
-          if (selectedContacts && selectedContacts.length > 0) {
-            actions.updateSelectedContactDetails(selectedContacts);
+          // Update selected groups if they exist (unified group architecture)
+          if (recipientState.selectedGroups) {
+            actions.updateSelectedGroups(recipientState.selectedGroups);
           }
 
           showNotification(`${recipientState.totalRecipients} recipients selected`, 'info');
@@ -853,7 +852,7 @@ const EmailComposePageInternal: React.FC<
               componentState.errors.roles
             }
             onRetry={handleRetry}
-            initialRecipientState={state.recipientState}
+            initialSelectedGroups={state.recipientState?.selectedGroups}
           />
         </ErrorBoundary>
 
@@ -945,9 +944,6 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   return (
     <EmailComposeProvider
       accountId={accountId}
-      contacts={contacts}
-      teamGroups={teamGroups}
-      roleGroups={roleGroups}
       initialData={initialData}
       onSendComplete={handleProviderSendComplete}
       onDraftSaved={handleProviderDraftSaved}

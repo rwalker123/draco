@@ -67,27 +67,31 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
   // Handle team group selection
   const handleTeamGroupToggle = useCallback(
     (team: TeamGroup) => {
-      const isSelected = state.selectedTeamGroups.some((t) => t.id === team.id);
+      // TODO: Replace with selectedGroups logic when backend integration is ready
+      const teamGroups = state.selectedGroups?.get('teams') || [];
+      const isSelected = teamGroups.some((g) => g.metadata?.teamIds?.has(team.id));
       if (isSelected) {
         actions.deselectTeamGroup(team.id);
       } else {
         actions.selectTeamGroup(team);
       }
     },
-    [actions, state.selectedTeamGroups],
+    [actions, state.selectedGroups],
   );
 
   // Handle role group selection
   const handleRoleGroupToggle = useCallback(
     (role: RoleGroup) => {
-      const isSelected = state.selectedRoleGroups.some((r) => r.roleId === role.roleId);
+      // TODO: Replace with selectedGroups logic when backend integration is ready
+      const managerGroups = state.selectedGroups?.get('managers') || [];
+      const isSelected = managerGroups.some((g) => g.metadata?.managerIds?.has(role.roleId));
       if (isSelected) {
         actions.deselectRoleGroup(role.roleId);
       } else {
         actions.selectRoleGroup(role);
       }
     },
-    [actions, state.selectedRoleGroups],
+    [actions, state.selectedGroups],
   );
 
   return (
@@ -134,16 +138,14 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
               <FormControlLabel
                 control={
                   <Switch
-                    checked={state.allContacts}
+                    checked={false /* TODO: Replace with allContacts logic */}
                     onChange={(e) => handleAllContactsToggle(e.target.checked)}
                     color="primary"
                   />
                 }
-                label={state.allContacts ? 'Selected' : 'Select All Contacts'}
+                label={'Select All Contacts' /* TODO: Replace with allContacts logic */}
               />
-              {state.allContacts && (
-                <Chip label="Active" color="primary" size="small" variant="filled" />
-              )}
+              {/* TODO: Show active chip when all contacts are selected */}
             </CardActions>
           </Card>
         )}
@@ -166,7 +168,11 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
 
               <List dense>
                 {teamGroups.map((team) => {
-                  const isSelected = state.selectedTeamGroups.some((t) => t.id === team.id);
+                  // TODO: Replace with selectedGroups logic when backend integration is ready
+                  const teamGroupsSelected = state.selectedGroups?.get('teams') || [];
+                  const isSelected = teamGroupsSelected.some((g) =>
+                    g.metadata?.teamIds?.has(team.id),
+                  );
 
                   return (
                     <ListItem key={team.id} divider>
@@ -220,7 +226,11 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
 
               <List dense>
                 {roleGroups.map((role) => {
-                  const isSelected = state.selectedRoleGroups.some((r) => r.roleId === role.roleId);
+                  // TODO: Replace with selectedGroups logic when backend integration is ready
+                  const managerGroupsSelected = state.selectedGroups?.get('managers') || [];
+                  const isSelected = managerGroupsSelected.some((g) =>
+                    g.metadata?.managerIds?.has(role.roleId),
+                  );
 
                   return (
                     <ListItem key={role.roleId} divider>
@@ -279,9 +289,10 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
         )}
 
         {/* Selection Summary */}
-        {(state.selectedTeamGroups.length > 0 ||
-          state.selectedRoleGroups.length > 0 ||
-          state.allContacts) && (
+        {/* TODO: Replace with selectedGroups logic when backend integration is ready */}
+        {((state.selectedGroups?.get('teams')?.length || 0) > 0 ||
+          (state.selectedGroups?.get('managers')?.length || 0) > 0 ||
+          false) /* TODO: allContacts logic */ && (
           <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
             <CardContent>
               <Typography variant="subtitle2" gutterBottom>
@@ -289,7 +300,8 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
               </Typography>
 
               <Stack spacing={1}>
-                {state.allContacts && (
+                {/* TODO: Show all contacts chip when selected */}
+                {false /* TODO: allContacts logic */ && (
                   <Chip
                     icon={<GroupsIcon />}
                     label={`All Contacts (${totalValidContacts})`}
@@ -299,25 +311,31 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                   />
                 )}
 
-                {state.selectedTeamGroups.map((team) => (
+                {/* TODO: Show selected team groups from selectedGroups */}
+                {(state.selectedGroups?.get('teams') || []).map((group, index) => (
                   <Chip
-                    key={team.id}
+                    key={`team-${index}`}
                     icon={<SportsIcon />}
-                    label={`${team.name} (${team.members.length})`}
+                    label={`${group.groupName} (${group.totalCount})`}
                     color="primary"
                     variant="outlined"
-                    onDelete={() => actions.deselectTeamGroup(team.id)}
+                    onDelete={() => {
+                      // TODO: Remove specific team group
+                    }}
                   />
                 ))}
 
-                {state.selectedRoleGroups.map((role) => (
+                {/* TODO: Show selected manager groups from selectedGroups */}
+                {(state.selectedGroups?.get('managers') || []).map((group, index) => (
                   <Chip
-                    key={role.roleId}
+                    key={`manager-${index}`}
                     icon={<SecurityIcon />}
-                    label={`${role.name} (${role.members.length})`}
+                    label={`${group.groupName} (${group.totalCount})`}
                     color="primary"
                     variant="outlined"
-                    onDelete={() => actions.deselectRoleGroup(role.roleId)}
+                    onDelete={() => {
+                      // TODO: Remove specific manager group
+                    }}
                   />
                 ))}
               </Stack>
@@ -329,17 +347,15 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                   Estimated total recipients: {validation.totalRecipients}
                 </Typography>
 
-                {(state.selectedTeamGroups.length > 0 || state.selectedRoleGroups.length > 0) && (
+                {/* TODO: Replace with selectedGroups logic when backend integration is ready */}
+                {((state.selectedGroups?.get('teams')?.length || 0) > 0 ||
+                  (state.selectedGroups?.get('managers')?.length || 0) > 0) && (
                   <Button
                     size="small"
                     color="error"
                     onClick={() => {
-                      state.selectedTeamGroups.forEach((team) =>
-                        actions.deselectTeamGroup(team.id),
-                      );
-                      state.selectedRoleGroups.forEach((role) =>
-                        actions.deselectRoleGroup(role.roleId),
-                      );
+                      // TODO: Clear team and manager groups from selectedGroups
+                      actions.clearAll();
                     }}
                   >
                     Clear Groups

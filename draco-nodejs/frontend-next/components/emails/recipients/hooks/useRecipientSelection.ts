@@ -43,69 +43,31 @@ export interface UseRecipientSelectionReturn {
 const createInitialState = (
   initialSelection?: Partial<BaseRecipientSelectionState>,
 ): ExtendedRecipientSelectionState => ({
-  selectedContactIds: new Set(initialSelection?.selectedContactIds || []),
-
-  // Mutually exclusive group selection
-  activeGroupType: initialSelection?.activeGroupType || null,
-
-  // Group-specific selection states
-  seasonParticipants: initialSelection?.seasonParticipants || {
-    selected: false,
-    totalPlayers: 0,
-  },
-
-  leagueSpecific: initialSelection?.leagueSpecific || {
-    selectedLeagues: new Set<string>(),
-    selectedDivisions: new Set<string>(),
-    selectedTeams: new Set<string>(),
-    totalPlayers: 0,
-  },
-
-  teamSelection: initialSelection?.teamSelection || {
-    selectedLeagues: new Set<string>(),
-    selectedDivisions: new Set<string>(),
-    selectedTeams: new Set<string>(),
-    totalPlayers: 0,
-  },
-
-  managerCommunications: initialSelection?.managerCommunications || {
-    selectedLeagues: new Set<string>(),
-    selectedTeams: new Set<string>(),
-    selectedManagers: new Set<string>(),
-    allManagersSelected: true, // Default state
-    totalManagers: 0,
-  },
-
-  // Legacy group selections (deprecated - for backward compatibility)
-  selectedTeamGroups: initialSelection?.selectedTeamGroups || [],
-  selectedRoleGroups: initialSelection?.selectedRoleGroups || [],
-  allContacts: initialSelection?.allContacts || false,
+  // Unified group-based selection system
+  selectedGroups: initialSelection?.selectedGroups || new Map(),
 
   // Computed properties
-  totalRecipients: 0,
-  validEmailCount: 0,
-  invalidEmailCount: 0,
+  totalRecipients: initialSelection?.totalRecipients || 0,
+  validEmailCount: initialSelection?.validEmailCount || 0,
+  invalidEmailCount: initialSelection?.invalidEmailCount || 0,
   effectiveRecipients: [],
 
   // UI state
-  lastSelectedContactId: initialSelection?.lastSelectedContactId,
   searchQuery: initialSelection?.searchQuery || '',
   activeTab: initialSelection?.activeTab || ('contacts' as RecipientSelectionTab),
+  expandedSections: initialSelection?.expandedSections || new Set<string>(),
 
   // Search state
-  searchLoading: false,
-  searchError: null,
+  searchLoading: initialSelection?.searchLoading || false,
+  searchError: initialSelection?.searchError || null,
+  groupSearchQueries: initialSelection?.groupSearchQueries || {},
 
   // Pagination state
-  currentPage: 1,
-  hasNextPage: false,
-  hasPrevPage: false,
-  contactsLoading: false,
-  contactsError: null,
-
-  // Group-specific UI state
-  groupSearchQueries: initialSelection?.groupSearchQueries || {},
-  expandedSections: new Set<string>(),
+  currentPage: initialSelection?.currentPage || 1,
+  hasNextPage: initialSelection?.hasNextPage || false,
+  hasPrevPage: initialSelection?.hasPrevPage || false,
+  contactsLoading: initialSelection?.contactsLoading || false,
+  contactsError: initialSelection?.contactsError || null,
 });
 
 export const useRecipientSelection = (
@@ -126,44 +88,23 @@ export const useRecipientSelection = (
       const recipientIds = new Set<string>();
       const recipients: RecipientContact[] = [];
 
-      // Add individually selected contacts
-      if (!state.allContacts) {
-        state.selectedContactIds.forEach((contactId) => {
-          const contact = availableContacts.find((c) => c.id === contactId);
-          if (contact && !recipientIds.has(contact.id)) {
-            recipientIds.add(contact.id);
-            recipients.push(contact);
-          }
-        });
-      } else {
-        // Add all contacts if "all contacts" is selected
-        availableContacts.forEach((contact) => {
-          if (!recipientIds.has(contact.id)) {
-            recipientIds.add(contact.id);
-            recipients.push(contact);
-          }
+      // TODO: Update to use selectedGroups when backend integration is ready
+      // For now, return empty array as placeholder
+      if (state.selectedGroups) {
+        state.selectedGroups.forEach((groups) => {
+          groups.forEach((group) => {
+            group.contactIds.forEach((contactId) => {
+              if (!recipientIds.has(contactId)) {
+                const contact = availableContacts.find((c) => c.id === contactId);
+                if (contact) {
+                  recipientIds.add(contactId);
+                  recipients.push(contact);
+                }
+              }
+            });
+          });
         });
       }
-
-      // Add team group members
-      state.selectedTeamGroups.forEach((teamGroup) => {
-        teamGroup.members.forEach((contact) => {
-          if (!recipientIds.has(contact.id)) {
-            recipientIds.add(contact.id);
-            recipients.push(contact);
-          }
-        });
-      });
-
-      // Add role group members
-      state.selectedRoleGroups.forEach((roleGroup) => {
-        roleGroup.members.forEach((contact) => {
-          if (!recipientIds.has(contact.id)) {
-            recipientIds.add(contact.id);
-            recipients.push(contact);
-          }
-        });
-      });
 
       return recipients;
     },
@@ -207,107 +148,53 @@ export const useRecipientSelection = (
   );
 
   // Toggle individual contact selection
-  const toggleContact = useCallback(
-    (contactId: string) => {
-      const newSelectedIds = new Set(selectionState.selectedContactIds);
-
-      if (newSelectedIds.has(contactId)) {
-        newSelectedIds.delete(contactId);
-      } else {
-        newSelectedIds.add(contactId);
-      }
-
-      updateSelectionState({
-        selectedContactIds: newSelectedIds,
-        allContacts: false, // Disable "all contacts" when making individual selections
-      });
-    },
-    [selectionState.selectedContactIds, updateSelectionState],
-  );
+  const toggleContact = useCallback((contactId: string) => {
+    // TODO: Update to use selectedGroups when backend integration is ready
+    console.log('toggleContact not yet implemented for new structure:', contactId);
+  }, []);
 
   // Select multiple contacts
-  const selectContacts = useCallback(
-    (contactIds: string[]) => {
-      const newSelectedIds = new Set(selectionState.selectedContactIds);
-      contactIds.forEach((id) => newSelectedIds.add(id));
-
-      updateSelectionState({
-        selectedContactIds: newSelectedIds,
-        allContacts: false,
-      });
-    },
-    [selectionState.selectedContactIds, updateSelectionState],
-  );
+  const selectContacts = useCallback((contactIds: string[]) => {
+    // TODO: Update to use selectedGroups when backend integration is ready
+    console.log('selectContacts not yet implemented for new structure:', contactIds);
+  }, []);
 
   // Deselect multiple contacts
-  const deselectContacts = useCallback(
-    (contactIds: string[]) => {
-      const newSelectedIds = new Set(selectionState.selectedContactIds);
-      contactIds.forEach((id) => newSelectedIds.delete(id));
-
-      updateSelectionState({ selectedContactIds: newSelectedIds });
-    },
-    [selectionState.selectedContactIds, updateSelectionState],
-  );
+  const deselectContacts = useCallback((contactIds: string[]) => {
+    // TODO: Update to use selectedGroups when backend integration is ready
+    console.log('deselectContacts not yet implemented for new structure:', contactIds);
+  }, []);
 
   // Toggle team group selection
-  const toggleTeamGroup = useCallback(
-    (group: TeamGroup) => {
-      const isSelected = selectionState.selectedTeamGroups.some((g) => g.id === group.id);
-      const newTeamGroups = isSelected
-        ? selectionState.selectedTeamGroups.filter((g) => g.id !== group.id)
-        : [...selectionState.selectedTeamGroups, group];
-
-      updateSelectionState({ selectedTeamGroups: newTeamGroups });
-    },
-    [selectionState.selectedTeamGroups, updateSelectionState],
-  );
+  const toggleTeamGroup = useCallback((group: TeamGroup) => {
+    // TODO: Update to use selectedGroups when backend integration is ready
+    console.log('toggleTeamGroup not yet implemented for new structure:', group);
+  }, []);
 
   // Toggle role group selection
-  const toggleRoleGroup = useCallback(
-    (group: RoleGroup) => {
-      const isSelected = selectionState.selectedRoleGroups.some((g) => g.id === group.id);
-      const newRoleGroups = isSelected
-        ? selectionState.selectedRoleGroups.filter((g) => g.id !== group.id)
-        : [...selectionState.selectedRoleGroups, group];
-
-      updateSelectionState({ selectedRoleGroups: newRoleGroups });
-    },
-    [selectionState.selectedRoleGroups, updateSelectionState],
-  );
+  const toggleRoleGroup = useCallback((group: RoleGroup) => {
+    // TODO: Update to use selectedGroups when backend integration is ready
+    console.log('toggleRoleGroup not yet implemented for new structure:', group);
+  }, []);
 
   // Select all available contacts
-  const selectAll = useCallback(
-    (contacts: RecipientContact[]) => {
-      const allContactIds = new Set(contacts.map((c) => c.id));
-      updateSelectionState({
-        selectedContactIds: allContactIds,
-        allContacts: false, // Keep individual selection mode
-      });
-    },
-    [updateSelectionState],
-  );
+  const selectAll = useCallback((contacts: RecipientContact[]) => {
+    // TODO: Update to use selectedGroups when backend integration is ready
+    console.log('selectAll not yet implemented for new structure:', contacts.length);
+  }, []);
 
   // Clear all selections
   const clearAll = useCallback(() => {
     updateSelectionState({
-      selectedContactIds: new Set(),
-      selectedTeamGroups: [],
-      selectedRoleGroups: [],
-      allContacts: false,
+      selectedGroups: new Map(),
     });
   }, [updateSelectionState]);
 
   // Set "all contacts" mode
-  const setAllContacts = useCallback(
-    (enabled: boolean) => {
-      updateSelectionState({
-        allContacts: enabled,
-        selectedContactIds: enabled ? new Set() : selectionState.selectedContactIds,
-      });
-    },
-    [selectionState.selectedContactIds, updateSelectionState],
-  );
+  const setAllContacts = useCallback((enabled: boolean) => {
+    // TODO: Update to use selectedGroups when backend integration is ready
+    console.log('setAllContacts not yet implemented for new structure:', enabled);
+  }, []);
 
   // Validation
   const validation = useMemo(() => {

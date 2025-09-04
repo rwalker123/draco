@@ -23,7 +23,6 @@ import {
 
 import { useEmailCompose } from './EmailComposeProvider';
 import { useAuth } from '../../../context/AuthContext';
-import { useAccount } from '../../../context/AccountContext';
 import { SelectedRecipientsPreview } from '../recipients/SelectedRecipientsPreview';
 
 interface ComposeHeaderProps {
@@ -50,7 +49,6 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
 }) => {
   const { state, actions } = useEmailCompose();
   const { user } = useAuth();
-  const { currentAccount } = useAccount();
 
   // Handle subject change
   const handleSubjectChange = useCallback(
@@ -73,9 +71,6 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   const senderDisplay = user
     ? `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username
     : 'Unknown Sender';
-
-  // Format account display
-  const accountDisplay = currentAccount?.name || 'Unknown Account';
 
   // Format scheduled date
   const formatScheduledDate = (date: Date) => {
@@ -102,8 +97,7 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
                 {senderDisplay}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {user?.email && `${user.email} • `}
-                {accountDisplay}
+                {user?.email}
               </Typography>
             </Box>
           </Box>

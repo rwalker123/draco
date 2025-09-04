@@ -67,7 +67,7 @@ export const ContactPicker: React.FC<ContactPickerProps> = ({
     if (selectionStats.allSelected) {
       // Deselect all individual contacts
       contacts.forEach((contact) => {
-        if (actions.isContactSelected(contact.id) && state.selectedContactIds.has(contact.id)) {
+        if (actions.isContactSelected(contact.id)) {
           actions.deselectContact(contact.id);
         }
       });
@@ -79,22 +79,23 @@ export const ContactPicker: React.FC<ContactPickerProps> = ({
         }
       });
     }
-  }, [contacts, actions, selectionStats.allSelected, state.selectedContactIds]);
+  }, [contacts, actions, selectionStats.allSelected]);
 
   // Handle individual contact selection
   const handleContactToggle = useCallback(
     (contact: RecipientContact, event: React.MouseEvent) => {
       event.stopPropagation();
 
-      if (event.shiftKey && state.lastSelectedContactId) {
-        // Range selection
-        actions.selectContactRange(state.lastSelectedContactId, contact.id);
+      if (event.shiftKey) {
+        // TODO: Range selection needs backend integration to track last selected contact
+        // For now, just toggle the contact
+        actions.toggleContact(contact.id);
       } else {
         // Single selection
         actions.toggleContact(contact.id);
       }
     },
-    [actions, state.lastSelectedContactId],
+    [actions],
   );
 
   // Handle search input
@@ -302,9 +303,7 @@ export const ContactPicker: React.FC<ContactPickerProps> = ({
                           </Box>
 
                           {/* Selection Indicator */}
-                          {isSelected && !state.selectedContactIds.has(contact.id) && (
-                            <Chip label="Group" size="small" color="primary" variant="outlined" />
-                          )}
+                          {/* TODO: Show selection indicator when contact is selected via group vs individual */}
                         </Stack>
                       </CardContent>
                     </Card>

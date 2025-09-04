@@ -49,9 +49,12 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
   };
 
   // Calculate tab badges
-  const individualCount = state.selectedContactIds.size;
-  const groupCount =
-    state.selectedTeamGroups.length + state.selectedRoleGroups.length + (state.allContacts ? 1 : 0);
+  // TODO: Replace with selectedGroups logic when backend integration is ready
+  const individualCount = state.selectedGroups?.get('individuals')?.length || 0;
+  const teamGroupCount = state.selectedGroups?.get('teams')?.length || 0;
+  const managerGroupCount = state.selectedGroups?.get('managers')?.length || 0;
+  const seasonGroupCount = state.selectedGroups?.get('season')?.length || 0;
+  const groupCount = teamGroupCount + managerGroupCount + seasonGroupCount;
   const totalRecipients = validation.totalRecipients;
 
   return (
@@ -124,7 +127,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                   icon={<SecurityIcon />}
                   label={
                     <Badge
-                      badgeContent={state.selectedRoleGroups.length}
+                      badgeContent={managerGroupCount}
                       color="primary"
                       max={99}
                       invisible={!config.allowRoleGroups}
@@ -171,17 +174,18 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                 Clear All
               </Button>
 
+              {/* TODO: Replace with selectedGroups logic when backend integration is ready */}
               {config.allowAllContacts && (
                 <Button
                   size="small"
                   onClick={
-                    state.allContacts ? actions.deselectAllContacts : actions.selectAllContacts
+                    seasonGroupCount > 0 ? actions.deselectAllContacts : actions.selectAllContacts
                   }
                   color="primary"
                   variant="outlined"
                   startIcon={<GroupsIcon />}
                 >
-                  {state.allContacts ? 'Deselect All' : 'Select All Contacts'}
+                  {seasonGroupCount > 0 ? 'Deselect All' : 'Select All Contacts'}
                 </Button>
               )}
             </Stack>
