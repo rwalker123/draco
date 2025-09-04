@@ -31,20 +31,38 @@ import {
 import { useNotifications } from '../../../hooks/useNotifications';
 import ContactSelectionPanel from './ContactSelectionPanel';
 import NewGroupSelectionPanel from './NewGroupSelectionPanel';
-import { ManagerStateProvider } from './context/ManagerStateContext';
-import { useEmailCompose } from '../compose/EmailComposeProvider';
-import { useNewRecipientSelection } from '../../../hooks/useNewRecipientSelection';
-import { ErrorBoundary } from '../../common/ErrorBoundary';
-import { GroupListSkeleton, RecipientDialogSkeleton } from '../../common/SkeletonLoaders';
+import { ManagerStateProvider, useManagerStateContext } from './context/ManagerStateContext';
+// import { useNewRecipientSelection } from '../../../hooks/useNewRecipientSelection'; // TODO: Remove when fully migrated
+// import { ErrorBoundary } from '../../common/ErrorBoundary'; // TODO: Re-enable when needed
+import { RecipientDialogSkeleton } from '../../common/SkeletonLoaders';
 import {
   RecipientContact,
   TeamGroup,
   RoleGroup,
-  RecipientSelectionState,
-  RecipientSelectionActions,
+  GroupType,
+  ContactGroup,
+  RecipientSelectionTab,
   GroupSelectionType,
-  createDefaultRecipientSelectionState,
 } from '../../../types/emails/recipients';
+
+// Simplified RecipientSelectionState for backward compatibility
+interface SimplifiedRecipientSelectionState {
+  selectedGroups?: Map<GroupType, ContactGroup[]>;
+  totalRecipients: number;
+  validEmailCount: number;
+  invalidEmailCount: number;
+  searchQuery: string;
+  activeTab: RecipientSelectionTab;
+  expandedSections: Set<string>;
+  searchLoading?: boolean;
+  searchError?: string | null;
+  groupSearchQueries: Record<string, string>;
+  currentPage?: number;
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
+  contactsLoading?: boolean;
+  contactsError?: string | null;
+}
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
 import { normalizeError, createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
 import { createEmailRecipientService } from '../../../services/emailRecipientService';
@@ -54,7 +72,12 @@ import { transformBackendContact } from '../../../utils/emailRecipientTransforme
 export interface AdvancedRecipientDialogProps {
   open: boolean;
   onClose: () => void;
-  onApply?: (recipientState: RecipientSelectionState, selectedContacts: RecipientContact[]) => void;
+  onSelectionAccepted?: (selectedGroups: Map<GroupType, ContactGroup[]>) => void;
+  // Legacy support for onApply callback
+  onApply?: (
+    recipientState: SimplifiedRecipientSelectionState,
+    selectedContacts: RecipientContact[],
+  ) => void;
   accountId: string;
   seasonId?: string;
   teamGroups: TeamGroup[];
@@ -62,7 +85,7 @@ export interface AdvancedRecipientDialogProps {
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
-  initialRecipientState?: RecipientSelectionState;
+  initialSelectedGroups?: Map<GroupType, ContactGroup[]>;
 }
 
 interface LoadingState {
@@ -84,8 +107,6 @@ interface SelectedContactCacheEntry {
   contact: RecipientContact;
   selectedTime: number;
 }
-
-const SELECTED_CONTACTS_CACHE_LIMIT = 100; // Much smaller since we only store selected contacts
 
 type TabValue = 'contacts' | 'groups';
 
@@ -109,6 +130,7 @@ const AdvancedRecipientDialogWithProvider: React.FC<AdvancedRecipientDialogProps
 const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   open,
   onClose,
+  onSelectionAccepted,
   onApply,
   accountId,
   seasonId,
@@ -117,7 +139,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   loading = false,
   error = null,
   onRetry,
-  initialRecipientState: _initialRecipientState,
+  initialSelectedGroups,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -125,12 +147,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const { token } = useAuth();
 
   // Use EmailCompose provider which now contains all recipient functionality
-  const { state: composeState } = useEmailCompose();
 
-  // Local state for dialog - changes here are only applied when user clicks "Apply"
-  const [localRecipientState, setLocalRecipientState] = useState<
-    RecipientSelectionState | undefined
-  >(undefined);
+  // Access manager state for converting manager IDs to contact details
+  const { state: managerState } = useManagerStateContext();
+
+  // UNIFIED GROUP SYSTEM - Single source of truth for all selections
+  const [selectedGroups, setSelectedGroups] = useState<Map<GroupType, ContactGroup[]>>(new Map());
 
   // Server-side pagination state for contacts
   const [currentPage, setCurrentPage] = useState(1);
@@ -165,40 +187,93 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   // AbortController for race condition protection
   const fetchAbortControllerRef = useRef<AbortController | null>(null);
 
-  // Ref for stable access to localRecipientState in pagination handlers
-  const localRecipientStateRef = useRef(localRecipientState);
-
   // Email recipient service
   const emailRecipientService = useMemo(() => createEmailRecipientService(), []);
 
-  // Selected contacts cache management functions
-  const addContactToSelectedCache = useCallback((contact: RecipientContact) => {
-    setSelectedContactsCache((prevCache) => {
-      const newCache = new Map(prevCache);
-      newCache.set(contact.id, {
-        contact,
-        selectedTime: Date.now(),
-      });
+  // Unified group system utilities
+  const addToGroup = useCallback(
+    (groupType: GroupType, contactId: string, _contact?: RecipientContact) => {
+      setSelectedGroups((prevGroups) => {
+        const newGroups = new Map(prevGroups);
+        const existingGroups = newGroups.get(groupType) || [];
 
-      // Safety net: remove oldest if cache gets too large (shouldn't happen in normal use)
-      if (newCache.size > SELECTED_CONTACTS_CACHE_LIMIT) {
-        const oldestEntry = Array.from(newCache.entries()).sort(
-          (a, b) => a[1].selectedTime - b[1].selectedTime,
-        )[0];
-        newCache.delete(oldestEntry[0]);
+        // Find existing group or create new one
+        let targetGroup = existingGroups.find((g) => g.groupType === groupType);
+        if (!targetGroup) {
+          const groupName = {
+            individuals: 'Individual Selections',
+            managers: 'Managers',
+            teams: 'Teams',
+            league: 'Leagues',
+            season: 'Season Participants',
+          }[groupType];
+
+          targetGroup = {
+            groupType,
+            groupName,
+            contactIds: new Set(),
+            totalCount: 0,
+          };
+          existingGroups.push(targetGroup);
+        }
+
+        // Add contact to group
+        targetGroup.contactIds.add(contactId);
+        targetGroup.totalCount = targetGroup.contactIds.size;
+
+        newGroups.set(groupType, existingGroups);
+        return newGroups;
+      });
+    },
+    [],
+  );
+
+  const removeFromGroup = useCallback((groupType: GroupType, contactId: string) => {
+    setSelectedGroups((prevGroups) => {
+      const newGroups = new Map(prevGroups);
+      const existingGroups = newGroups.get(groupType) || [];
+
+      const updatedGroups = existingGroups
+        .map((group) => {
+          const newContactIds = new Set(group.contactIds);
+          newContactIds.delete(contactId);
+
+          return {
+            ...group,
+            contactIds: newContactIds,
+            totalCount: newContactIds.size,
+          };
+        })
+        .filter((group) => group.totalCount > 0); // Remove empty groups
+
+      if (updatedGroups.length > 0) {
+        newGroups.set(groupType, updatedGroups);
+      } else {
+        newGroups.delete(groupType);
       }
 
-      return newCache;
+      return newGroups;
     });
   }, []);
 
-  const removeContactFromSelectedCache = useCallback((contactId: string) => {
-    setSelectedContactsCache((prevCache) => {
-      const newCache = new Map(prevCache);
-      newCache.delete(contactId);
-      return newCache;
+  const isContactInGroup = useCallback(
+    (groupType: GroupType, contactId: string): boolean => {
+      const groups = selectedGroups.get(groupType);
+      if (!groups) return false;
+      return groups.some((group) => group.contactIds.has(contactId));
+    },
+    [selectedGroups],
+  );
+
+  const getTotalSelected = useCallback((): number => {
+    let total = 0;
+    selectedGroups.forEach((groups) => {
+      groups.forEach((group) => {
+        total += group.totalCount;
+      });
     });
-  }, []);
+    return total;
+  }, [selectedGroups]);
 
   // Hybrid lookup: check current page first, then search contacts, then selected contacts cache
   const getContactDetails = useCallback(
@@ -403,11 +478,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     [handleSearchWithPagination, lastSearchQuery, searchCurrentPage, rowsPerPage],
   );
 
-  // Keep ref updated with latest localRecipientState
-  useEffect(() => {
-    localRecipientStateRef.current = localRecipientState;
-  }, [localRecipientState]);
-
   // Load initial page when dialog opens
   useEffect(() => {
     if (open && token && accountId) {
@@ -424,12 +494,17 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   const [currentTab, setCurrentTab] = useState<TabValue>('contacts');
 
-  // Initialize local state when dialog opens
+  // Group selection state
+  const [activeGroupType, setActiveGroupType] = useState<GroupSelectionType | null>(null);
+  const [groupSearchQueries, setGroupSearchQueries] = useState<Record<string, string>>({});
+
+  // Initialize unified groups when dialog opens
   useEffect(() => {
     if (open) {
-      setLocalRecipientState(composeState.recipientState);
+      // Initialize with provided groups or empty if none provided
+      setSelectedGroups(initialSelectedGroups || new Map());
     }
-  }, [open, composeState.recipientState]);
+  }, [open, initialSelectedGroups]);
 
   // State for loading and error handling
   const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -447,155 +522,70 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
 
-  // Use the new recipient selection hook for groups - only when dialog is open and groups tab is active
-  const {
-    state: recipientState,
-    actions: recipientActions,
-    loading: groupsLoading,
-    error: groupsError,
-  } = useNewRecipientSelection({
-    accountId: accountId,
-    seasonId: seasonId || '',
-    onSelectionChange: (_state) => {
-      // Handle recipient selection changes
-    },
-    enabled: open && currentTab === 'groups', // Only enable when dialog is open and groups tab is active
-  });
+  // TODO: Remove this callback when legacy state is fully removed
+  // const handleRecipientSelectionChange = useCallback((newState: RecipientSelectionState) => {
+  //   console.log('handleRecipientSelectionChange:', newState);
+  // }, []);
 
-  // Local actions that modify local state only
-  useEffect(() => {
-    if (open) {
-      setLocalRecipientState(composeState.recipientState);
-    }
-  }, [open, composeState.recipientState]);
-
-  // Local actions that modify local state only
-  const localActions = useMemo(() => {
-    const createDefaultState = (): RecipientSelectionState =>
-      createDefaultRecipientSelectionState();
-
-    const calculateRecipientCounts = (state: RecipientSelectionState) => {
-      let totalRecipients = 0;
-      let validEmailCount = 0;
-      let invalidEmailCount = 0;
-
-      if (state.allContacts) {
-        // For "all contacts", we need the total count from server
-        // This is a complex case that would require additional API support
-        totalRecipients = state.selectedContactIds.size; // Temporary fallback
-        validEmailCount = totalRecipients; // Assume valid for now
-        invalidEmailCount = 0;
-      } else {
-        // Count selected contact IDs and check their validity using hybrid lookup
-        totalRecipients = state.selectedContactIds.size;
-
-        // Check email validity for selected contacts
-        let valid = 0;
-        let invalid = 0;
-
-        state.selectedContactIds.forEach((contactId) => {
-          const contact = getContactDetails(contactId);
-          if (contact) {
-            if (contact.hasValidEmail) {
-              valid++;
-            } else {
-              invalid++;
-            }
-          } else {
-            // If contact not found anywhere, assume valid (could be from a previous session)
-            valid++;
-          }
-        });
-
-        validEmailCount = valid;
-        invalidEmailCount = invalid;
-      }
-
-      // TODO: Add team and role group members to counts
-
-      return { totalRecipients, validEmailCount, invalidEmailCount };
-    };
-
-    return {
+  // Unified group actions
+  const unifiedActions = useMemo(
+    () => ({
       toggleContact: (contactId: string) => {
-        // Get contact details using hybrid lookup
         const contact = getContactDetails(contactId);
         if (!contact || !contact.hasValidEmail) {
           return; // Don't allow selection of contacts without valid email
         }
 
-        setLocalRecipientState((prev) => {
-          const current = prev || createDefaultState();
-          const newSelectedContactIds = new Set(current.selectedContactIds);
-
-          if (newSelectedContactIds.has(contactId)) {
-            // Deselecting: remove from selection and cache
-            newSelectedContactIds.delete(contactId);
-            removeContactFromSelectedCache(contactId);
-          } else {
-            // Selecting: add to selection and cache
-            newSelectedContactIds.add(contactId);
-            addContactToSelectedCache(contact);
-          }
-
-          const newState = {
-            ...current,
-            selectedContactIds: newSelectedContactIds,
-            allContacts: false, // Deselect "all contacts" when manually selecting individuals
-          };
-
-          const counts = calculateRecipientCounts(newState);
-          return { ...newState, ...counts };
-        });
+        if (isContactInGroup('individuals', contactId)) {
+          removeFromGroup('individuals', contactId);
+        } else {
+          addToGroup('individuals', contactId, contact);
+        }
       },
 
-      selectAllContacts: () => {
-        setLocalRecipientState((prev) => {
-          const current = prev || createDefaultState();
-          const newState = {
-            ...current,
-            allContacts: true,
-            selectedContactIds: new Set<string>(),
-            selectedTeamGroups: [],
-            selectedRoleGroups: [],
-          };
+      toggleManager: (managerId: string) => {
+        // Get manager info from manager state to validate email
+        const managerInfo = managerState.managers.find((m) => m.id === managerId);
+        if (!managerInfo || !managerInfo.hasValidEmail) {
+          return; // Don't allow selection of managers without valid email
+        }
 
-          const counts = calculateRecipientCounts(newState);
-          return { ...newState, ...counts };
-        });
+        if (isContactInGroup('managers', managerId)) {
+          removeFromGroup('managers', managerId);
+        } else {
+          addToGroup('managers', managerId);
+        }
       },
 
       clearAllRecipients: () => {
-        setLocalRecipientState((prev) => {
-          const current = prev || createDefaultState();
-          const newState = {
-            ...current,
-            selectedContactIds: new Set<string>(),
-            allContacts: false,
-            selectedTeamGroups: [],
-            selectedRoleGroups: [],
-          };
-
-          const counts = calculateRecipientCounts(newState);
-          return { ...newState, ...counts };
-        });
+        setSelectedGroups(new Map());
       },
 
-      setRecipientSearchQuery: (query: string) => {
-        setLocalRecipientState((prev) => {
-          const current = prev || createDefaultState();
-          return { ...current, searchQuery: query };
-        });
+      isContactSelected: (contactId: string): boolean => {
+        return (
+          isContactInGroup('individuals', contactId) || isContactInGroup('managers', contactId)
+        );
       },
-    };
-  }, [getContactDetails, addContactToSelectedCache, removeContactFromSelectedCache]);
+
+      getTotalSelected,
+    }),
+    [
+      getContactDetails,
+      isContactInGroup,
+      removeFromGroup,
+      addToGroup,
+      managerState.managers,
+      getTotalSelected,
+    ],
+  );
+
+  // Local actions that modify local state only
+  // Removed old localActions - now using unifiedActions above
 
   // Function to check if we're in search mode - more reliable check
   const isInSearchMode = useCallback(() => {
-    return Boolean(
-      localRecipientState?.searchQuery?.trim() && searchContacts.length > 0 && hasSearched,
-    );
-  }, [localRecipientState?.searchQuery, searchContacts.length, hasSearched]);
+    return Boolean(lastSearchQuery?.trim() && searchContacts.length > 0 && hasSearched);
+  }, [lastSearchQuery, searchContacts.length, hasSearched]);
 
   // Server-side pagination handlers
   const paginationHandlers = useMemo(
@@ -603,14 +593,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       handleNextPage: () => {
         // Check if we're showing search results using reliable method
         if (isInSearchMode()) {
-          // Handle search pagination - use ref for stable access
+          // Handle search pagination
           if (searchPaginationState.hasNext && !paginationLoading) {
-            const currentState = localRecipientStateRef.current;
-            handleSearchWithPagination(
-              currentState!.searchQuery,
-              searchCurrentPage + 1,
-              rowsPerPage,
-            );
+            handleSearchWithPagination(lastSearchQuery, searchCurrentPage + 1, rowsPerPage);
           }
         } else {
           // Handle regular pagination
@@ -622,14 +607,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       handlePrevPage: () => {
         // Check if we're showing search results using reliable method
         if (isInSearchMode()) {
-          // Handle search pagination - use ref for stable access
+          // Handle search pagination
           if (searchPaginationState.hasPrev && !paginationLoading && searchCurrentPage > 1) {
-            const currentState = localRecipientStateRef.current;
-            handleSearchWithPagination(
-              currentState!.searchQuery,
-              searchCurrentPage - 1,
-              rowsPerPage,
-            );
+            handleSearchWithPagination(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
           }
         } else {
           // Handle regular pagination
@@ -642,9 +622,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         setRowsPerPage(newRowsPerPage);
         // Check if we're showing search results using reliable method
         if (isInSearchMode()) {
-          // Handle search rows per page change - restart from page 1 - use ref for stable access
-          const currentState = localRecipientStateRef.current;
-          handleSearchWithPagination(currentState!.searchQuery, 1, newRowsPerPage);
+          // Handle search rows per page change - restart from page 1
+          handleSearchWithPagination(lastSearchQuery, 1, newRowsPerPage);
         } else {
           // Handle regular rows per page change
           fetchContactsPage(1, newRowsPerPage);
@@ -663,7 +642,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       searchPaginationState.hasNext,
       searchPaginationState.hasPrev,
       isInSearchMode,
-      // Removed localRecipientState - now using ref for stable access
+      lastSearchQuery,
     ],
   );
 
@@ -762,32 +741,87 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     setErrorState((prev) => ({ ...prev, [errorType]: null }));
   }, []);
 
-  // Handle apply selection
+  // Handle apply selection - UNIFIED SYSTEM ONLY
   const handleApply = useCallback(() => {
-    if (!onApply) {
-      // Fallback behavior if no onApply callback provided
-      const totalRecipients = localRecipientState?.totalRecipients || 0;
-      showNotification(`Applied selection: ${totalRecipients} recipients`, 'success');
+    const totalSelected = getTotalSelected();
+
+    if (onSelectionAccepted) {
+      // New callback pattern - pass groups directly
+      onSelectionAccepted(selectedGroups);
       onClose();
       return;
     }
 
-    // Apply the local state to the global EmailCompose state
-    if (localRecipientState) {
-      // Get selected contact details using hybrid lookup
-      const selectedContactDetails: RecipientContact[] = [];
+    if (onApply) {
+      // Legacy callback pattern - build contact details and simplified state
+      const allSelectedContactDetails: RecipientContact[] = [];
+      const allContactIds = new Set<string>();
 
-      localRecipientState.selectedContactIds.forEach((contactId) => {
-        const contact = getContactDetails(contactId);
-        if (contact) {
-          selectedContactDetails.push(contact);
-        }
+      // Process all groups in selectedGroups
+      selectedGroups.forEach((groups, groupType) => {
+        groups.forEach((group) => {
+          group.contactIds.forEach((contactId) => {
+            if (!allContactIds.has(contactId)) {
+              allContactIds.add(contactId);
+
+              // Get contact details based on group type
+              let contact = getContactDetails(contactId);
+
+              // If not found in current page and it's a manager, convert from manager data
+              if (!contact && groupType === 'managers') {
+                const managerInfo = managerState.managers.find((m) => m.id === contactId);
+                if (managerInfo) {
+                  contact = {
+                    id: managerInfo.id,
+                    displayName: managerInfo.name,
+                    email: managerInfo.email || '',
+                    hasValidEmail: managerInfo.hasValidEmail,
+                    firstname: managerInfo.name.split(' ')[0] || '',
+                    lastname: managerInfo.name.split(' ').slice(1).join(' ') || '',
+                    roles: [],
+                    teams: managerInfo.allTeams.map((team) => team.teamSeasonId),
+                  };
+                }
+              }
+
+              if (contact) {
+                allSelectedContactDetails.push(contact);
+              }
+            }
+          });
+        });
       });
 
-      onApply(localRecipientState, selectedContactDetails);
+      // Create simplified state for the compose page
+      const simplifiedState: SimplifiedRecipientSelectionState = {
+        selectedGroups,
+        totalRecipients: allSelectedContactDetails.length,
+        validEmailCount: allSelectedContactDetails.filter((c) => c.hasValidEmail).length,
+        invalidEmailCount: allSelectedContactDetails.filter((c) => !c.hasValidEmail).length,
+        searchQuery: '',
+        activeTab: 'contacts',
+        expandedSections: new Set(),
+        groupSearchQueries: {},
+      };
+
+      onApply(simplifiedState, allSelectedContactDetails);
+      onClose();
+      return;
     }
+
+    // No callbacks provided - just show notification
+    showNotification(`Applied selection: ${totalSelected} recipients`, 'success');
     onClose();
-  }, [onApply, localRecipientState, getContactDetails, showNotification, onClose]);
+  }, [
+    onSelectionAccepted,
+    onApply,
+    selectedGroups,
+    getTotalSelected,
+    getContactDetails,
+    managerState.managers,
+    showNotification,
+    onClose,
+  ]);
 
   // Effect to handle external error prop
   useEffect(() => {
@@ -1031,8 +1065,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
                   isMobile={isMobile}
                   clearError={clearError}
                   contacts={currentPageContacts}
-                  localRecipientState={localRecipientState}
-                  localActions={localActions}
+                  selectedGroups={selectedGroups}
+                  unifiedActions={unifiedActions}
                   isLoading={paginationLoading}
                   paginationError={paginationError}
                   currentPage={isInSearchMode() ? searchCurrentPage : currentPage}
@@ -1048,17 +1082,18 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
               {/* Groups Tab */}
               {currentTab === 'groups' && (
-                <NewGroupsTabContent
+                <NewGroupSelectionPanel
+                  activeGroupType={activeGroupType}
+                  selectedGroups={selectedGroups}
+                  onGroupTypeChange={setActiveGroupType}
+                  onGroupsChange={setSelectedGroups}
+                  searchQueries={groupSearchQueries}
+                  onSearchQueryChange={(groupType, query) => {
+                    setGroupSearchQueries((prev) => ({ ...prev, [groupType]: query }));
+                  }}
+                  loading={loadingState.teamGroups}
                   accountId={accountId}
                   seasonId={seasonId || ''}
-                  _errorState={errorState}
-                  loadingState={loadingState}
-                  isMobile={isMobile}
-                  clearError={clearError}
-                  recipientState={recipientState}
-                  recipientActions={recipientActions}
-                  groupsLoading={groupsLoading}
-                  groupsError={groupsError}
                 />
               )}
             </Box>
@@ -1075,14 +1110,14 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           <Stack direction="row" alignItems="center" spacing={2}>
             <Button
               size="small"
-              variant={(localRecipientState?.totalRecipients || 0) > 0 ? 'contained' : 'outlined'}
-              onClick={localActions.clearAllRecipients}
-              disabled={loadingState.applying || (localRecipientState?.totalRecipients || 0) === 0}
+              variant={getTotalSelected() > 0 ? 'contained' : 'outlined'}
+              onClick={unifiedActions.clearAllRecipients}
+              disabled={loadingState.applying || getTotalSelected() === 0}
             >
               Clear All
             </Button>
             <Typography variant="body2" color="text.secondary">
-              {localRecipientState?.totalRecipients || 0} selected
+              {getTotalSelected()} selected
             </Typography>
           </Stack>
 
@@ -1094,7 +1129,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
             <Button
               onClick={handleApply}
               variant="contained"
-              disabled={(localRecipientState?.totalRecipients || 0) === 0 || loadingState.applying}
+              disabled={getTotalSelected() === 0 || loadingState.applying}
               startIcon={loadingState.applying ? <CircularProgress size={20} /> : undefined}
             >
               {loadingState.applying ? 'Applying...' : 'Apply Selection'}
@@ -1112,12 +1147,12 @@ interface ContactsTabContentProps {
   isMobile: boolean;
   clearError: (errorType: keyof ErrorState) => void;
   contacts: RecipientContact[];
-  localRecipientState: RecipientSelectionState | undefined;
-  localActions: {
+  selectedGroups: Map<GroupType, ContactGroup[]>;
+  unifiedActions: {
     toggleContact: (contactId: string) => void;
-    selectAllContacts: () => void;
     clearAllRecipients: () => void;
-    setRecipientSearchQuery: (query: string) => void;
+    isContactSelected: (contactId: string) => boolean;
+    getTotalSelected: () => number;
   };
   isLoading: boolean;
   paginationError: EmailRecipientError | null;
@@ -1147,8 +1182,8 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
   isMobile,
   clearError,
   contacts,
-  localRecipientState,
-  localActions,
+  selectedGroups,
+  unifiedActions,
   isLoading,
   paginationError,
   currentPage,
@@ -1161,27 +1196,25 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
   onSearch,
 }) => {
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Handle clear search
   const handleClearSearch = useCallback(() => {
     setSearchContacts([]);
     setSearchError(null);
-    localActions.setRecipientSearchQuery('');
-  }, [localActions, setSearchContacts]);
+    setSearchQuery('');
+  }, [setSearchContacts]);
 
   // Handle search query change
-  const handleSearchChange = useCallback(
-    (query: string) => {
-      localActions.setRecipientSearchQuery(query);
-    },
-    [localActions],
-  );
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   // Effect to trigger search when search query changes (with debouncing)
   useEffect(() => {
-    const searchQuery = localRecipientState?.searchQuery?.trim();
+    const trimmedQuery = searchQuery?.trim();
 
-    if (!searchQuery) {
+    if (!trimmedQuery) {
       setSearchContacts([]);
       setSearchError(null);
       return;
@@ -1189,7 +1222,7 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
 
     if (onSearch) {
       const timeoutId = setTimeout(() => {
-        onSearch(searchQuery).catch((error) => {
+        onSearch(trimmedQuery).catch((error) => {
           console.error('Search failed:', error);
           setSearchError(error instanceof Error ? error.message : 'Search failed');
         });
@@ -1197,20 +1230,18 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [localRecipientState?.searchQuery, onSearch, setSearchContacts]);
+  }, [searchQuery, onSearch, setSearchContacts]);
 
   // Determine which contacts to display - use searchContacts when there's an active search
   const displayContacts = useMemo(() => {
-    if (localRecipientState?.searchQuery?.trim() && searchContacts.length > 0) {
+    if (searchQuery?.trim() && searchContacts.length > 0) {
       return searchContacts;
     }
     return contacts;
-  }, [localRecipientState?.searchQuery, searchContacts, contacts]);
+  }, [searchQuery, searchContacts, contacts]);
 
   // Check if we have search results
-  const hasSearchResults = Boolean(
-    localRecipientState?.searchQuery?.trim() && searchContacts.length > 0,
-  );
+  const hasSearchResults = Boolean(searchQuery?.trim() && searchContacts.length > 0);
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -1240,12 +1271,14 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
 
       <ContactSelectionPanel
         contacts={displayContacts}
-        selectedContactIds={localRecipientState?.selectedContactIds || new Set()}
-        searchQuery={localRecipientState?.searchQuery || ''}
+        selectedContactIds={selectedGroups.get('individuals')?.[0]?.contactIds || new Set()}
+        searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        onContactToggle={localActions.toggleContact}
-        onSelectAll={localActions.selectAllContacts}
-        onClearAll={localActions.clearAllRecipients}
+        onContactToggle={unifiedActions.toggleContact}
+        onSelectAll={() => {
+          /* TODO: Handle select all */
+        }}
+        onClearAll={unifiedActions.clearAllRecipients}
         currentPage={currentPage}
         hasNext={paginationState.hasNext}
         hasPrev={paginationState.hasPrev}
@@ -1260,7 +1293,7 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
           hasSearchResults ? (
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Typography variant="body2" color="text.secondary">
-                Showing search results for &ldquo;{localRecipientState?.searchQuery}&rdquo;
+                Showing search results for &ldquo;{searchQuery}&rdquo;
               </Typography>
               <Button size="small" onClick={handleClearSearch} variant="outlined">
                 Clear Search
@@ -1269,166 +1302,6 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
           ) : undefined
         }
       />
-    </Box>
-  );
-};
-
-// New Groups Tab Component
-interface NewGroupsTabContentProps {
-  accountId: string;
-  seasonId?: string;
-  _errorState: ErrorState;
-  loadingState: LoadingState;
-  isMobile: boolean;
-  clearError: (errorType: keyof ErrorState) => void;
-  recipientState: RecipientSelectionState;
-  recipientActions: RecipientSelectionActions;
-  groupsLoading: boolean;
-  groupsError: string | null;
-}
-
-const NewGroupsTabContent: React.FC<NewGroupsTabContentProps> = ({
-  accountId,
-  seasonId,
-  _errorState,
-  loadingState,
-  isMobile,
-  clearError,
-  recipientState,
-  recipientActions,
-  groupsLoading,
-  groupsError,
-}) => {
-  // Handle group type selection
-  const handleGroupTypeChange = (groupType: GroupSelectionType | null) => {
-    recipientActions.updateActiveGroupType(groupType);
-  };
-
-  // Handle season participants toggle
-  const handleSeasonParticipantsToggle = () => {
-    recipientActions.toggleSeasonParticipants();
-  };
-
-  // Handle league-specific selections
-  const handleLeagueToggle = (leagueId: string) => {
-    recipientActions.toggleLeagueSelection(leagueId);
-  };
-
-  const handleDivisionToggle = (divisionId: string) => {
-    recipientActions.toggleDivisionSelection(divisionId);
-  };
-
-  const handleTeamToggle = (teamId: string) => {
-    recipientActions.toggleTeamSelection(teamId);
-  };
-
-  // Handle team selection
-  const handleTeamSelectionLeagueToggle = (leagueId: string) => {
-    recipientActions.toggleTeamSelectionLeague(leagueId);
-  };
-
-  const handleTeamSelectionDivisionToggle = (divisionId: string) => {
-    recipientActions.toggleTeamSelectionDivision(divisionId);
-  };
-
-  const handleTeamSelectionTeamToggle = (teamId: string) => {
-    recipientActions.toggleTeamSelectionTeam(teamId);
-  };
-
-  // Handle manager communications
-  const handleManagerSelectionToggle = (managerId: string) => {
-    recipientActions.toggleManagerSelection(managerId);
-  };
-
-  const handleManagerLeagueSelectionToggle = (leagueId: string) => {
-    recipientActions.toggleManagerLeagueSelection(leagueId);
-  };
-
-  const handleManagerTeamSelectionToggle = (teamId: string) => {
-    recipientActions.toggleManagerTeamSelection(teamId);
-  };
-
-  const handleSelectAllManagers = () => {
-    recipientActions.selectAllManagers();
-  };
-
-  const handleDeselectAllManagers = () => {
-    recipientActions.deselectAllManagers();
-  };
-
-  // Handle search query change
-  const handleSearchQueryChange = (section: string, query: string) => {
-    recipientActions.setGroupSearchQuery(section, query);
-    // TODO: Implement API search
-  };
-
-  return (
-    <Box sx={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {/* Error Display */}
-      {groupsError && (
-        <Box sx={{ p: 2 }}>
-          <Alert severity="error" onClose={() => clearError('general')}>
-            <AlertTitle>Error Loading Groups</AlertTitle>
-            {groupsError}
-          </Alert>
-        </Box>
-      )}
-
-      {/* Loading State */}
-      {groupsLoading || loadingState.teamGroups || loadingState.roleGroups ? (
-        <Box sx={{ p: 3 }}>
-          <GroupListSkeleton count={4} compact={isMobile} />
-        </Box>
-      ) : (
-        <ErrorBoundary
-          componentName="NewGroupSelectionPanel"
-          fallback={
-            <Alert severity="error" sx={{ m: 2 }}>
-              <AlertTitle>Group Selection Unavailable</AlertTitle>
-              The group selection panel encountered an error. Please try refreshing the dialog.
-              <Button
-                size="small"
-                sx={{ mt: 1 }}
-                onClick={() => window.location.reload()}
-                variant="outlined"
-              >
-                Refresh Page
-              </Button>
-            </Alert>
-          }
-          onError={(error) => {
-            console.error('NewGroupSelectionPanel error:', error);
-          }}
-        >
-          <NewGroupSelectionPanel
-            activeGroupType={recipientState.activeGroupType}
-            seasonParticipants={recipientState.seasonParticipants}
-            _leagueSpecific={recipientState.leagueSpecific}
-            _teamSelection={recipientState.teamSelection}
-            _managerCommunications={recipientState.managerCommunications}
-            _groupSearchQueries={recipientState.groupSearchQueries}
-            onGroupTypeChange={handleGroupTypeChange}
-            onSeasonParticipantsToggle={handleSeasonParticipantsToggle}
-            _onLeagueToggle={handleLeagueToggle}
-            _onDivisionToggle={handleDivisionToggle}
-            _onTeamToggle={handleTeamToggle}
-            _onTeamSelectionLeagueToggle={handleTeamSelectionLeagueToggle}
-            _onTeamSelectionDivisionToggle={handleTeamSelectionDivisionToggle}
-            _onTeamSelectionTeamToggle={handleTeamSelectionTeamToggle}
-            _onManagerSelectionToggle={handleManagerSelectionToggle}
-            _onManagerLeagueSelectionToggle={handleManagerLeagueSelectionToggle}
-            _onManagerTeamSelectionToggle={handleManagerTeamSelectionToggle}
-            _onSelectAllManagers={handleSelectAllManagers}
-            _onDeselectAllManagers={handleDeselectAllManagers}
-            _onSearchQueryChange={handleSearchQueryChange}
-            onSearchQueryChange={handleSearchQueryChange}
-            loading={groupsLoading}
-            _compact={isMobile}
-            accountId={accountId}
-            seasonId={seasonId || ''}
-          />
-        </ErrorBoundary>
-      )}
     </Box>
   );
 };

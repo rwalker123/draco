@@ -234,17 +234,19 @@ router.get(
       throw new AuthenticationError('User not authenticated');
     }
 
-    // Fetch first and last name from contacts table
+    // Fetch first and last name and email from contacts table
     let firstname = undefined;
     let lastname = undefined;
+    let email = undefined;
     try {
       const contact = await prisma.contacts.findFirst({
         where: { userid: req.user.id },
-        select: { firstname: true, lastname: true },
+        select: { firstname: true, lastname: true, email: true },
       });
       if (contact) {
         firstname = contact.firstname;
         lastname = contact.lastname;
+        email = contact.email;
       }
     } catch (_e) {
       // If contacts table is missing or error, just skip
@@ -258,6 +260,7 @@ router.get(
         username: req.user.username,
         firstname,
         lastname,
+        email,
       },
     });
   }),

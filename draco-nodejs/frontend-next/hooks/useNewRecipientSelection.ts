@@ -13,6 +13,8 @@ import {
   TeamGroup,
   RoleGroup,
   ManagerInfo,
+  GroupType,
+  ContactGroup,
   // ManagerInfo is used in the manager state hook
 } from '../types/emails/recipients';
 import { useManagerStateContext } from '../components/emails/recipients/context/ManagerStateContext';
@@ -59,8 +61,7 @@ export const useNewRecipientSelection = ({
   );
   const [groupSearchQueries, setGroupSearchQueries] = useState<Record<string, string>>({});
 
-  // Group type selection state
-  const [activeGroupType, setActiveGroupType] = useState<GroupSelectionType | null>(null);
+  // Group type selection state (removed unused variable)
 
   // UI state
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,61 +90,23 @@ export const useNewRecipientSelection = ({
   // Computed state
   const state: RecipientSelectionState = useMemo(
     () => ({
-      selectedContactIds,
-
-      // Mutually exclusive group selection
-      activeGroupType: activeGroupType,
-
-      // Group-specific selection states
-      seasonParticipants: {
-        selected: seasonWideSelected,
-        totalPlayers: groups.seasonWideGroup?.memberCount || 0,
-      },
-
-      leagueSpecific: {
-        selectedLeagues: new Set<string>(),
-        selectedDivisions: new Set<string>(),
-        selectedTeams: new Set<string>(),
-        totalPlayers: 0,
-      },
-
-      teamSelection: {
-        selectedLeagues: new Set<string>(),
-        selectedDivisions: new Set<string>(),
-        selectedTeams: new Set<string>(),
-        totalPlayers: 0,
-      },
-
-      managerCommunications: {
-        selectedLeagues: new Set<string>(),
-        selectedTeams: new Set<string>(),
-        selectedManagers: selectedContactIds, // Use the same contact selection for managers
-        allManagersSelected:
-          managerStateHook.managers.length > 0 &&
-          managerStateHook.managers.every((manager: ManagerInfo) =>
-            selectedContactIds.has(manager.id),
-          ),
-        totalManagers: managerStateHook.managers.length,
-      },
-
-      // Legacy group selections (deprecated - for backward compatibility)
-      allContacts: false, // Legacy - not used in new design
-      selectedTeamGroups: [], // Legacy - not used in new design
-      selectedRoleGroups: [], // Legacy - not used in new design
+      // Unified group-based selection system (TODO: implement when backend is ready)
+      selectedGroups: new Map<GroupType, ContactGroup[]>(),
 
       // Computed properties
-      totalRecipients: 0,
-      validEmailCount: 0,
-      invalidEmailCount: 0,
+      totalRecipients: selectedContactIds.size,
+      validEmailCount: selectedContactIds.size, // TODO: Calculate from actual email validation
+      invalidEmailCount: 0, // TODO: Calculate from actual email validation
 
       // UI state
-      lastSelectedContactId: undefined,
       searchQuery,
       activeTab,
+      expandedSections: new Set<string>(),
 
       // Search state
       searchLoading: false,
       searchError: null,
+      groupSearchQueries,
 
       // Pagination state
       currentPage: 1,
@@ -151,29 +114,16 @@ export const useNewRecipientSelection = ({
       hasPrevPage: false,
       contactsLoading: false,
       contactsError: null,
-
-      // Group-specific UI state
-      groupSearchQueries,
-      expandedSections: new Set<string>(),
     }),
-    [
-      selectedContactIds,
-      seasonWideSelected,
-      groups.seasonWideGroup?.memberCount,
-      searchQuery,
-      activeTab,
-      groupSearchQueries,
-      activeGroupType,
-      managerStateHook.managers, // Add manager state dependencies
-    ],
+    [selectedContactIds, searchQuery, activeTab, groupSearchQueries],
   );
 
   // Calculate effective recipients
   const getEffectiveRecipients = useCallback((): RecipientContact[] => {
     const recipients = new Map<string, RecipientContact>();
 
-    // If season participants is selected, include all season participants
-    if (state.seasonParticipants.selected && groups.seasonWideGroup) {
+    // TODO: If season participants is selected, include all season participants
+    if (seasonWideSelected && groups.seasonWideGroup) {
       groups.seasonWideGroup.members.forEach((contact) => {
         recipients.set(contact.id, contact);
       });
@@ -192,12 +142,7 @@ export const useNewRecipientSelection = ({
     // This will be implemented when we add the actual group selection logic
 
     return Array.from(recipients.values());
-  }, [
-    state.selectedContactIds,
-    state.seasonParticipants.selected,
-    initialContacts,
-    groups.seasonWideGroup,
-  ]);
+  }, [selectedContactIds, seasonWideSelected, initialContacts, groups.seasonWideGroup]);
 
   // Notify parent of changes
   useEffect(() => {
@@ -386,6 +331,11 @@ export const useNewRecipientSelection = ({
       // Pagination (stubs for compatibility)
       goToNextPage: async () => {},
       goToPrevPage: async () => {},
+
+      // Unified group actions (stub for compatibility)
+      updateSelectedGroups: (_groups: Map<GroupType, ContactGroup[]>) => {
+        // TODO: Implement unified group update when this hook is fully integrated
+      },
     }),
     [
       selectedContactIds,
@@ -393,8 +343,8 @@ export const useNewRecipientSelection = ({
       seasonWideSelected,
       initialContacts,
       expandedSections,
-      groupSearchQueries,
       getEffectiveRecipients,
+      managerStateHook.managers,
     ],
   );
 

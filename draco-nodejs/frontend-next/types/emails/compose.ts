@@ -4,10 +4,9 @@
 
 import type {
   RecipientSelectionState,
-  RecipientContact,
-  TeamGroup,
-  RoleGroup,
   RecipientSelectionTab,
+  ContactGroup,
+  GroupType,
 } from './recipients';
 import type { EmailAttachment } from './attachments';
 import type { EmailTemplate, EmailComposeRequest } from './email';
@@ -21,14 +20,8 @@ export interface EmailComposeState {
   content: string;
   isContentHtml: boolean;
 
-  // Recipients (now managed directly)
+  // Recipients (unified group-based system)
   recipientState?: RecipientSelectionState;
-  // Contact data for recipient selection
-  contacts: RecipientContact[];
-  teamGroups: TeamGroup[];
-  roleGroups: RoleGroup[];
-  // Selected contact details (for cross-page selections)
-  selectedContactDetails: RecipientContact[];
 
   // Attachments
   attachments: EmailAttachment[];
@@ -89,23 +82,10 @@ export interface EmailComposeActions {
   validateCompose: () => ComposeValidationResult;
   sendEmail: () => Promise<boolean>;
 
-  // Recipient actions
+  // Recipient actions (unified group-based system)
   updateRecipientState: (state: RecipientSelectionState) => void;
-  updateSelectedContactDetails: (contacts: RecipientContact[]) => void;
-  selectContact: (contactId: string) => void;
-  deselectContact: (contactId: string) => void;
-  toggleContact: (contactId: string) => void;
-  selectContactRange: (fromId: string, toId: string) => void;
-  selectAllContacts: () => void;
-  deselectAllContacts: () => void;
-  selectTeamGroup: (group: TeamGroup) => void;
-  deselectTeamGroup: (teamId: string) => void;
-  selectRoleGroup: (group: RoleGroup) => void;
-  deselectRoleGroup: (roleId: string) => void;
+  updateSelectedGroups: (groups: Map<GroupType, ContactGroup[]>) => void;
   clearAllRecipients: () => void;
-  isContactSelected: (contactId: string) => boolean;
-  getSelectedContacts: () => RecipientContact[];
-  getEffectiveRecipients: () => RecipientContact[];
   setRecipientSearchQuery: (query: string) => void;
   setRecipientActiveTab: (tab: RecipientSelectionTab) => void;
 
@@ -172,9 +152,6 @@ export interface EmailComposeContextValue {
 export interface EmailComposeProviderProps {
   children: React.ReactNode;
   accountId: string;
-  contacts: RecipientContact[];
-  teamGroups?: TeamGroup[];
-  roleGroups?: RoleGroup[];
   initialData?: Partial<EmailComposeRequest>;
   config?: Partial<EmailComposeConfig>;
   onSendComplete?: (emailId: string) => void;

@@ -20,6 +20,8 @@ import {
   TeamGroup,
   RoleGroup,
   RecipientSelectionTab,
+  ContactGroup,
+  GroupType,
 } from '../../../types/emails/recipients';
 import { getEffectiveRecipients, validateRecipientSelection } from './recipientUtils';
 import { useContactSearch } from '../../../hooks/useContactSearch';
@@ -73,9 +75,14 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
   const [allContacts, setAllContacts] = useState(false);
   const [selectedTeamGroups, setSelectedTeamGroups] = useState<TeamGroup[]>([]);
   const [selectedRoleGroups, setSelectedRoleGroups] = useState<RoleGroup[]>([]);
-  const [lastSelectedContactId, setLastSelectedContactId] = useState<string | undefined>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_lastSelectedContactId, setLastSelectedContactId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<RecipientSelectionTab>('contacts');
+  const [expandedSections] = useState<Set<string>>(new Set()); // TODO: Implement section expansion/collapse
+
+  // Add unified selectedGroups state
+  const [selectedGroups, setSelectedGroups] = useState<Map<GroupType, ContactGroup[]>>(new Map());
 
   // Simple pagination state
   const [currentPageContacts, setCurrentPageContacts] = useState<RecipientContact[]>(contacts);
@@ -164,70 +171,25 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
 
   // Compute selection state
   const state = useMemo<RecipientSelectionState>(() => {
+    // TODO: Create proper selectedGroups from selectedContactIds when backend integration is ready
+    const tempState: RecipientSelectionState = {
+      selectedGroups: new Map(), // TODO: Convert selectedContactIds to proper groups
+      totalRecipients: 0,
+      validEmailCount: 0,
+      invalidEmailCount: 0,
+      searchQuery,
+      activeTab,
+      expandedSections,
+      groupSearchQueries: {},
+      currentPage: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+      contactsLoading: false,
+      contactsError: null,
+    };
+
     const effectiveRecipients = getEffectiveRecipients(
-      {
-        selectedContactIds,
-
-        // Mutually exclusive group selection
-        activeGroupType: null,
-
-        // Group-specific selection states
-        seasonParticipants: {
-          selected: false,
-          totalPlayers: 0,
-        },
-
-        leagueSpecific: {
-          selectedLeagues: new Set<string>(),
-          selectedDivisions: new Set<string>(),
-          selectedTeams: new Set<string>(),
-          totalPlayers: 0,
-        },
-
-        teamSelection: {
-          selectedLeagues: new Set<string>(),
-          selectedDivisions: new Set<string>(),
-          selectedTeams: new Set<string>(),
-          totalPlayers: 0,
-        },
-
-        managerCommunications: {
-          selectedLeagues: new Set<string>(),
-          selectedTeams: new Set<string>(),
-          selectedManagers: new Set<string>(),
-          allManagersSelected: true,
-          totalManagers: 0,
-        },
-
-        // Legacy group selections (deprecated - for backward compatibility)
-        allContacts,
-        selectedTeamGroups,
-        selectedRoleGroups,
-
-        // Computed properties
-        totalRecipients: 0,
-        validEmailCount: 0,
-        invalidEmailCount: 0,
-
-        // UI state
-        searchQuery,
-        activeTab,
-
-        // Search state
-        searchLoading: false,
-        searchError: null,
-
-        // Pagination state
-        currentPage: 1,
-        hasNextPage: false,
-        hasPrevPage: false,
-        contactsLoading: false,
-        contactsError: null,
-
-        // Group-specific UI state
-        groupSearchQueries: {},
-        expandedSections: new Set<string>(),
-      },
+      tempState,
       displayContacts, // Use display contacts instead of original contacts
     );
 
@@ -235,43 +197,8 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     const invalidEmailCount = effectiveRecipients.filter((r) => !r.hasValidEmail).length;
 
     return {
-      selectedContactIds,
-
-      // Mutually exclusive group selection
-      activeGroupType: null,
-
-      // Group-specific selection states
-      seasonParticipants: {
-        selected: false,
-        totalPlayers: 0,
-      },
-
-      leagueSpecific: {
-        selectedLeagues: new Set<string>(),
-        selectedDivisions: new Set<string>(),
-        selectedTeams: new Set<string>(),
-        totalPlayers: 0,
-      },
-
-      teamSelection: {
-        selectedLeagues: new Set<string>(),
-        selectedDivisions: new Set<string>(),
-        selectedTeams: new Set<string>(),
-        totalPlayers: 0,
-      },
-
-      managerCommunications: {
-        selectedLeagues: new Set<string>(),
-        selectedTeams: new Set<string>(),
-        selectedManagers: new Set<string>(),
-        allManagersSelected: true, // Default state
-        totalManagers: 0,
-      },
-
-      // Legacy group selections (deprecated - for backward compatibility)
-      allContacts,
-      selectedTeamGroups,
-      selectedRoleGroups,
+      // Unified group-based selection system
+      selectedGroups: tempState.selectedGroups,
 
       // Computed properties
       totalRecipients: effectiveRecipients.length,
@@ -279,13 +206,14 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       invalidEmailCount,
 
       // UI state
-      lastSelectedContactId,
       searchQuery,
       activeTab,
+      expandedSections,
 
       // Search state
       searchLoading: searchState.loading,
       searchError: searchState.error,
+      groupSearchQueries: {},
 
       // Pagination state
       currentPage,
@@ -293,19 +221,11 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       hasPrevPage,
       contactsLoading,
       contactsError,
-
-      // Group-specific UI state
-      groupSearchQueries: {},
-      expandedSections: new Set<string>(),
     };
   }, [
-    selectedContactIds,
-    allContacts,
-    selectedTeamGroups,
-    selectedRoleGroups,
-    lastSelectedContactId,
     searchQuery,
     activeTab,
+    expandedSections,
     displayContacts,
     searchState.loading,
     searchState.error,
@@ -366,6 +286,7 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     setSelectedContactIds(new Set());
     setSelectedTeamGroups([]);
     setSelectedRoleGroups([]);
+    setSelectedGroups(new Map());
   }, []);
 
   const deselectAllContacts = useCallback(() => {
@@ -394,6 +315,11 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
 
   const deselectRoleGroup = useCallback((roleId: string) => {
     setSelectedRoleGroups((prev) => prev.filter((r) => r.roleId !== roleId));
+  }, []);
+
+  // Add unified group actions
+  const updateSelectedGroups = useCallback((groups: Map<GroupType, ContactGroup[]>) => {
+    setSelectedGroups(new Map(groups));
   }, []);
 
   // Navigate to next page
@@ -518,6 +444,7 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     setAllContacts(false);
     setSelectedTeamGroups([]);
     setSelectedRoleGroups([]);
+    setSelectedGroups(new Map());
     setLastSelectedContactId(undefined);
   }, []);
 
@@ -601,6 +528,8 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       isSectionExpanded: () => false, // Legacy provider doesn't support section expansion yet
       goToNextPage,
       goToPrevPage,
+      // Add unified group action
+      updateSelectedGroups,
     }),
     [
       selectContact,
@@ -621,6 +550,7 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       setActiveTab,
       goToNextPage,
       goToPrevPage,
+      updateSelectedGroups,
     ],
   );
 
@@ -635,6 +565,7 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     allContacts: allContacts,
     selectedTeamGroupsLength: selectedTeamGroups.length,
     selectedRoleGroupsLength: selectedRoleGroups.length,
+    selectedGroupsSize: selectedGroups.size,
   });
 
   // Notify parent of selection changes only when actual selection values change
@@ -644,6 +575,7 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       allContacts: allContacts,
       selectedTeamGroupsLength: selectedTeamGroups.length,
       selectedRoleGroupsLength: selectedRoleGroups.length,
+      selectedGroupsSize: selectedGroups.size,
     };
 
     // Check if any actual selection values have changed
@@ -651,7 +583,8 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
       prevValuesRef.current.selectedContactIdsSize !== currentValues.selectedContactIdsSize ||
       prevValuesRef.current.allContacts !== currentValues.allContacts ||
       prevValuesRef.current.selectedTeamGroupsLength !== currentValues.selectedTeamGroupsLength ||
-      prevValuesRef.current.selectedRoleGroupsLength !== currentValues.selectedRoleGroupsLength;
+      prevValuesRef.current.selectedRoleGroupsLength !== currentValues.selectedRoleGroupsLength ||
+      prevValuesRef.current.selectedGroupsSize !== currentValues.selectedGroupsSize;
 
     if (hasChanged && onSelectionChange) {
       onSelectionChange(state);
@@ -663,17 +596,15 @@ export const RecipientSelectionProvider: React.FC<RecipientSelectionProviderProp
     allContacts,
     selectedTeamGroups.length,
     selectedRoleGroups.length,
+    selectedGroups.size,
     onSelectionChange,
     state,
   ]);
 
-  // Context value with timestamp to force re-renders when pagination changes
+  // Context value
   const contextValue = useMemo<RecipientSelectionContextValue>(
     () => ({
-      state: {
-        ...state,
-        _timestamp: Date.now(), // Force context updates when data changes
-      } as RecipientSelectionState,
+      state,
       actions,
       config,
       contacts: displayContacts, // Use display contacts

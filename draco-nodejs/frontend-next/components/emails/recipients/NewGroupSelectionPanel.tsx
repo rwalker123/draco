@@ -17,52 +17,16 @@ import TeamSelectionContent from './TeamSelectionContent';
 import ManagerSelectionContent from './ManagerSelectionContent';
 import ManagerErrorBoundary from './ManagerErrorBoundary';
 
-import { GroupSelectionType } from '../../../types/emails/recipients';
+import { GroupSelectionType, GroupType, ContactGroup } from '../../../types/emails/recipients';
 
 export interface NewGroupSelectionPanelProps {
   activeGroupType: GroupSelectionType | null;
-  seasonParticipants: {
-    selected: boolean;
-    totalPlayers: number;
-  };
-  _leagueSpecific: {
-    selectedLeagues: Set<string>;
-    selectedDivisions: Set<string>;
-    selectedTeams: Set<string>;
-    totalPlayers: number;
-  };
-  _teamSelection: {
-    selectedLeagues: Set<string>;
-    selectedDivisions: Set<string>;
-    selectedTeams: Set<string>;
-    totalPlayers: number;
-  };
-  _managerCommunications: {
-    selectedLeagues: Set<string>;
-    selectedTeams: Set<string>;
-    selectedManagers: Set<string>;
-    allManagersSelected: boolean;
-    totalManagers: number;
-  };
-  _groupSearchQueries: Record<string, string>;
+  selectedGroups: Map<GroupType, ContactGroup[]>;
   onGroupTypeChange: (groupType: GroupSelectionType | null) => void;
-  onSeasonParticipantsToggle: () => void;
-  _onLeagueToggle: (leagueId: string) => void;
-  _onDivisionToggle: (divisionId: string) => void;
-  _onTeamToggle: (teamId: string) => void;
-  _onTeamSelectionLeagueToggle: (leagueId: string) => void;
-  _onTeamSelectionDivisionToggle: (divisionId: string) => void;
-  _onTeamSelectionTeamToggle: (teamId: string) => void;
-  _onManagerSelectionToggle: (managerId: string) => void;
-  _onManagerLeagueSelectionToggle: (leagueId: string) => void;
-  _onManagerTeamSelectionToggle: (teamId: string) => void;
-  _onSelectAllManagers: () => void;
-  _onDeselectAllManagers: () => void;
-  _onSearchQueryChange: (groupType: string, query: string) => void;
+  onGroupsChange: (groups: Map<GroupType, ContactGroup[]>) => void;
+  searchQueries: Record<string, string>;
   onSearchQueryChange: (groupType: string, query: string) => void;
   loading?: boolean;
-  _compact?: boolean;
-  // Manager selection props
   accountId?: string;
   seasonId?: string;
 }
@@ -73,27 +37,12 @@ export interface NewGroupSelectionPanelProps {
  */
 const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
   activeGroupType,
-  seasonParticipants,
-  _leagueSpecific,
-  _teamSelection,
-  _managerCommunications,
-  _groupSearchQueries,
+  selectedGroups,
   onGroupTypeChange,
-  onSeasonParticipantsToggle,
-  _onLeagueToggle,
-  _onDivisionToggle,
-  _onTeamToggle,
-  _onTeamSelectionLeagueToggle,
-  _onTeamSelectionDivisionToggle,
-  _onTeamSelectionTeamToggle,
-  _onManagerSelectionToggle,
-  _onManagerLeagueSelectionToggle,
-  _onManagerTeamSelectionToggle,
-  _onSelectAllManagers,
-  _onDeselectAllManagers,
-  _onSearchQueryChange,
+  onGroupsChange,
+  searchQueries,
+  onSearchQueryChange,
   loading = false,
-  _compact = false,
   accountId,
   seasonId,
 }) => {
@@ -104,6 +53,120 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
     { value: 'team-selection', label: 'Team Selection' },
     { value: 'manager-communications', label: 'Manager Communications' },
   ];
+
+  // Helper functions for unified group manipulation
+  const isSeasonParticipantsSelected = () => {
+    const seasonGroups = selectedGroups.get('season');
+    return seasonGroups && seasonGroups.length > 0;
+  };
+
+  const getSeasonParticipantsCount = () => {
+    const seasonGroups = selectedGroups.get('season');
+    return seasonGroups ? seasonGroups.reduce((total, group) => total + group.totalCount, 0) : 0;
+  };
+
+  const handleSeasonParticipantsToggle = () => {
+    const newGroups = new Map(selectedGroups);
+
+    if (isSeasonParticipantsSelected()) {
+      // Remove season participants
+      newGroups.delete('season');
+    } else {
+      // Add season participants (placeholder - actual count would come from API)
+      const seasonGroup: ContactGroup = {
+        groupType: 'season',
+        groupName: 'Season Participants',
+        contactIds: new Set(), // Would be populated with actual participant IDs
+        totalCount: 0, // Would be populated with actual count
+      };
+      newGroups.set('season', [seasonGroup]);
+    }
+
+    onGroupsChange(newGroups);
+  };
+
+  // Team selection helpers
+  const getTeamGroups = () => {
+    return selectedGroups.get('teams') || [];
+  };
+
+  const handleTeamSelectionChange = (teamId: string, selected: boolean) => {
+    const newGroups = new Map(selectedGroups);
+    let teamGroups = newGroups.get('teams') || [];
+
+    if (selected) {
+      // Add team group if not exists
+      const existingGroup = teamGroups.find((g) => g.contactIds.has(teamId));
+      if (!existingGroup) {
+        const newTeamGroup: ContactGroup = {
+          groupType: 'teams',
+          groupName: `Team ${teamId}`, // Would be populated with actual team name
+          contactIds: new Set([teamId]),
+          totalCount: 1, // Would be populated with actual team member count
+        };
+        teamGroups = [...teamGroups, newTeamGroup];
+      }
+    } else {
+      // Remove team group
+      teamGroups = teamGroups.filter((g) => !g.contactIds.has(teamId));
+    }
+
+    if (teamGroups.length > 0) {
+      newGroups.set('teams', teamGroups);
+    } else {
+      newGroups.delete('teams');
+    }
+
+    onGroupsChange(newGroups);
+  };
+
+  // Manager selection helpers
+  const getManagerGroups = () => {
+    return selectedGroups.get('managers') || [];
+  };
+
+  const handleManagerSelectionChange = (managerId: string, selected: boolean) => {
+    const newGroups = new Map(selectedGroups);
+    let managerGroups = newGroups.get('managers') || [];
+
+    if (selected) {
+      // Add manager to group
+      const existingGroup = managerGroups.find((g) => g.groupName === 'Managers');
+      if (existingGroup) {
+        existingGroup.contactIds.add(managerId);
+        existingGroup.totalCount = existingGroup.contactIds.size;
+      } else {
+        const newManagerGroup: ContactGroup = {
+          groupType: 'managers',
+          groupName: 'Managers',
+          contactIds: new Set([managerId]),
+          totalCount: 1,
+        };
+        managerGroups = [...managerGroups, newManagerGroup];
+      }
+    } else {
+      // Remove manager from group
+      managerGroups = managerGroups
+        .map((group) => {
+          const newContactIds = new Set(group.contactIds);
+          newContactIds.delete(managerId);
+          return {
+            ...group,
+            contactIds: newContactIds,
+            totalCount: newContactIds.size,
+          };
+        })
+        .filter((group) => group.totalCount > 0);
+    }
+
+    if (managerGroups.length > 0) {
+      newGroups.set('managers', managerGroups);
+    } else {
+      newGroups.delete('managers');
+    }
+
+    onGroupsChange(newGroups);
+  };
 
   // Handle group type change
   const handleGroupTypeChange = (event: SelectChangeEvent<string>) => {
@@ -164,11 +227,11 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
           <FormControlLabel
             control={
               <Checkbox
-                checked={seasonParticipants.selected}
-                onChange={onSeasonParticipantsToggle}
+                checked={isSeasonParticipantsSelected()}
+                onChange={handleSeasonParticipantsToggle}
               />
             }
-            label={`Include all ${seasonParticipants.totalPlayers} season participants`}
+            label={`Include all ${getSeasonParticipantsCount()} season participants`}
           />
         </Box>
       )}
@@ -190,22 +253,33 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
 
       {activeGroupType === 'team-selection' && (
         <TeamSelectionContent
-          selectedLeagues={_teamSelection.selectedLeagues}
-          selectedDivisions={_teamSelection.selectedDivisions}
-          selectedTeams={_teamSelection.selectedTeams}
-          onLeagueToggle={_onTeamSelectionLeagueToggle}
-          onDivisionToggle={_onTeamSelectionDivisionToggle}
-          onTeamToggle={_onTeamSelectionTeamToggle}
+          selectedLeagues={new Set()} // TODO: Extract from team groups when needed
+          selectedDivisions={new Set()} // TODO: Extract from team groups when needed
+          selectedTeams={new Set(getTeamGroups().flatMap((g) => Array.from(g.contactIds)))}
+          onLeagueToggle={(leagueId) => {
+            // TODO: Implement league-based team selection
+            console.log('League toggle:', leagueId);
+          }}
+          onDivisionToggle={(divisionId) => {
+            // TODO: Implement division-based team selection
+            console.log('Division toggle:', divisionId);
+          }}
+          onTeamToggle={(teamId) => {
+            const isSelected = getTeamGroups().some((g) => g.contactIds.has(teamId));
+            handleTeamSelectionChange(teamId, !isSelected);
+          }}
           onSelectAllTeams={() => {
             // TODO: Implement select all teams logic
             console.log('Select all teams clicked');
           }}
           onDeselectAllTeams={() => {
-            // TODO: Implement deselect all teams logic
-            console.log('Deselect all teams clicked');
+            // Clear all team selections
+            const newGroups = new Map(selectedGroups);
+            newGroups.delete('teams');
+            onGroupsChange(newGroups);
           }}
-          searchQuery={_groupSearchQueries['team-selection'] || ''}
-          onSearchQueryChange={(query) => _onSearchQueryChange('team-selection', query)}
+          searchQuery={searchQueries['team-selection'] || ''}
+          onSearchQueryChange={(query) => onSearchQueryChange('team-selection', query)}
         />
       )}
 
@@ -215,16 +289,35 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
             <ManagerSelectionContent
               accountId={accountId || ''}
               seasonId={seasonId || ''}
-              selectedManagers={_managerCommunications.selectedManagers}
-              selectedLeagues={_managerCommunications.selectedLeagues}
-              selectedTeams={_managerCommunications.selectedTeams}
-              onManagerToggle={_onManagerSelectionToggle}
-              onLeagueToggle={_onManagerLeagueSelectionToggle}
-              onTeamToggle={_onManagerTeamSelectionToggle}
-              onSelectAll={_onSelectAllManagers}
-              onDeselectAll={_onDeselectAllManagers}
-              onSearchQueryChange={(query) => _onSearchQueryChange('manager-communications', query)}
-              searchQuery={_groupSearchQueries['manager-communications'] || ''}
+              selectedManagers={
+                new Set(getManagerGroups().flatMap((g) => Array.from(g.contactIds)))
+              }
+              selectedLeagues={new Set()} // TODO: Extract from manager groups when needed
+              selectedTeams={new Set()} // TODO: Extract from manager groups when needed
+              onManagerToggle={(managerId) => {
+                const isSelected = getManagerGroups().some((g) => g.contactIds.has(managerId));
+                handleManagerSelectionChange(managerId, !isSelected);
+              }}
+              onLeagueToggle={(leagueId) => {
+                // TODO: Implement league-based manager selection
+                console.log('Manager league toggle:', leagueId);
+              }}
+              onTeamToggle={(teamId) => {
+                // TODO: Implement team-based manager selection
+                console.log('Manager team toggle:', teamId);
+              }}
+              onSelectAll={() => {
+                // TODO: Implement select all managers logic
+                console.log('Select all managers clicked');
+              }}
+              onDeselectAll={() => {
+                // Clear all manager selections
+                const newGroups = new Map(selectedGroups);
+                newGroups.delete('managers');
+                onGroupsChange(newGroups);
+              }}
+              onSearchQueryChange={(query) => onSearchQueryChange('manager-communications', query)}
+              searchQuery={searchQueries['manager-communications'] || ''}
             />
           </ManagerErrorBoundary>
         </Box>

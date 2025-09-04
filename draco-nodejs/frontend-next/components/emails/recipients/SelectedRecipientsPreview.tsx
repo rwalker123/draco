@@ -16,15 +16,17 @@ import {
 } from '@mui/material';
 import {
   Person as PersonIcon,
+  SupervisorAccount as ManagerIcon,
   Group as GroupIcon,
-  AdminPanelSettings as RoleIcon,
+  CalendarMonth as SeasonIcon,
+  EmojiEvents as LeagueIcon,
   Close as CloseIcon,
   Email as EmailIcon,
   Warning as WarningIcon,
-  Groups as AllContactsIcon,
 } from '@mui/icons-material';
 
 import { useEmailCompose } from '../compose/EmailComposeProvider';
+import { GroupType } from '../../../types/emails/recipients';
 
 interface SelectedRecipientsPreviewProps {
   maxVisibleChips?: number;
@@ -34,8 +36,8 @@ interface SelectedRecipientsPreviewProps {
 }
 
 /**
- * SelectedRecipientsPreview - Clean preview component showing selected recipients
- * Replaces the duplicate inline RecipientSelector for better UX
+ * SelectedRecipientsPreview - Shows selected recipients as group summaries
+ * Uses the unified selectedGroups Map for clean group-based display
  */
 const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProps> = ({
   maxVisibleChips = 8,
@@ -46,160 +48,108 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
   const theme = useTheme();
   const { state, actions } = useEmailCompose();
 
-  // Get selected individual contacts
-  const selectedContacts = useMemo(() => {
-    if (!state.recipientState) return [];
-
-    if (state.recipientState.allContacts) {
-      return state.contacts;
+  // Get group icon and color for each group type
+  const getGroupConfig = (groupType: GroupType) => {
+    switch (groupType) {
+      case 'individuals':
+        return { icon: PersonIcon, color: 'primary' as const, label: 'Contacts' };
+      case 'managers':
+        return { icon: ManagerIcon, color: 'secondary' as const, label: 'Managers' };
+      case 'teams':
+        return { icon: GroupIcon, color: 'info' as const, label: 'Teams' };
+      case 'season':
+        return { icon: SeasonIcon, color: 'success' as const, label: 'Season' };
+      case 'league':
+        return { icon: LeagueIcon, color: 'warning' as const, label: 'League' };
+      default:
+        return { icon: GroupIcon, color: 'default' as const, label: 'Group' };
     }
+  };
 
-    // Use selectedContactDetails if available (for cross-page selections)
-    // Otherwise fall back to filtering the limited contacts array
-    if (state.selectedContactDetails && state.selectedContactDetails.length > 0) {
-      return state.selectedContactDetails.filter((contact) =>
-        state.recipientState!.selectedContactIds.has(contact.id),
-      );
-    }
-
-    return state.contacts.filter((contact) =>
-      state.recipientState!.selectedContactIds.has(contact.id),
-    );
-  }, [state.contacts, state.recipientState, state.selectedContactDetails]);
-
-  // Calculate summary counts
+  // Calculate summary data from selectedGroups Map
   const summaryData = useMemo(() => {
-    if (!state.recipientState) {
+    if (!state.recipientState?.selectedGroups) {
       return {
-        individualCount: 0,
-        teamGroupCount: 0,
-        roleGroupCount: 0,
-        allContactsSelected: false,
-        totalSelections: 0,
+        groupSummaries: [],
         totalRecipients: 0,
         validEmails: 0,
         invalidEmails: 0,
+        hasSelections: false,
       };
     }
 
-    const individualCount = selectedContacts.length;
-    const teamGroupCount = state.recipientState.selectedTeamGroups.length;
-    const roleGroupCount = state.recipientState.selectedRoleGroups.length;
-    const allContactsSelected = state.recipientState.allContacts;
+    const groupSummaries: Array<{
+      groupType: GroupType;
+      label: string;
+      count: number;
+      icon: typeof PersonIcon;
+      color: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default';
+    }> = [];
+
+    // Process each group type in the selectedGroups Map
+    state.recipientState.selectedGroups.forEach((contactGroups, groupType) => {
+      contactGroups.forEach((contactGroup) => {
+        if (contactGroup.totalCount > 0) {
+          const config = getGroupConfig(groupType);
+          groupSummaries.push({
+            groupType,
+            label: contactGroup.groupName || config.label,
+            count: contactGroup.totalCount,
+            icon: config.icon,
+            color: config.color,
+          });
+        }
+      });
+    });
 
     return {
-      individualCount,
-      teamGroupCount,
-      roleGroupCount,
-      allContactsSelected,
-      totalSelections:
-        individualCount + teamGroupCount + roleGroupCount + (allContactsSelected ? 1 : 0),
-      totalRecipients: state.recipientState.totalRecipients,
-      validEmails: state.recipientState.validEmailCount,
-      invalidEmails: state.recipientState.invalidEmailCount,
+      groupSummaries,
+      totalRecipients: state.recipientState.totalRecipients || 0,
+      validEmails: state.recipientState.validEmailCount || 0,
+      invalidEmails: state.recipientState.invalidEmailCount || 0,
+      hasSelections: groupSummaries.length > 0,
     };
-  }, [selectedContacts.length, state.recipientState]);
+  }, [state.recipientState]);
 
-  // Combine all chips - moved chip creation inline to avoid dependency issues
-  const allChips = useMemo(() => {
-    const chips = [];
+  // Create group summary chips
+  const groupChips = useMemo(() => {
+    return summaryData.groupSummaries.map((group, index) => {
+      const IconComponent = group.icon;
 
-    // Add "All Contacts" chip if selected
-    if (summaryData.allContactsSelected) {
-      chips.push(
+      return (
         <Chip
-          key="all-contacts"
-          icon={<AllContactsIcon />}
-          label={`All Contacts (${state.contacts.length})`}
-          size={compact ? 'small' : 'medium'}
-          variant="filled"
-          color="primary"
-          onDelete={() => actions.deselectAllContacts()}
-          deleteIcon={
-            <Tooltip title="Deselect all contacts">
-              <CloseIcon />
-            </Tooltip>
-          }
-        />,
-      );
-    }
-
-    // Add individual contact chips
-    selectedContacts.forEach((contact) => {
-      chips.push(
-        <Chip
-          key={`contact-${contact.id}`}
-          icon={<PersonIcon />}
-          label={contact.displayName}
+          key={`${group.groupType}-${index}`}
+          icon={<IconComponent />}
+          label={`${group.label} (${group.count})`}
           size={compact ? 'small' : 'medium'}
           variant="outlined"
-          color={contact.hasValidEmail ? 'primary' : 'warning'}
-          onDelete={() => actions.deselectContact(contact.id)}
+          color={group.color}
+          onDelete={() => {
+            // For now, clear all recipients when any group is deleted
+            // TODO: Implement specific group removal if needed
+            actions.clearAllRecipients();
+          }}
           deleteIcon={
-            <Tooltip title="Remove contact">
+            <Tooltip title={`Remove ${group.label}`}>
               <CloseIcon />
             </Tooltip>
           }
           sx={{
             '& .MuiChip-icon': {
-              color: contact.hasValidEmail ? 'primary.main' : 'warning.main',
+              color: `${group.color}.main`,
             },
           }}
-        />,
+        />
       );
     });
-
-    // Add team group chips
-    if (state.recipientState) {
-      state.recipientState.selectedTeamGroups.forEach((team) => {
-        chips.push(
-          <Chip
-            key={`team-${team.id}`}
-            icon={<GroupIcon />}
-            label={`${team.name} (${team.members.length})`}
-            size={compact ? 'small' : 'medium'}
-            variant="outlined"
-            color="secondary"
-            onDelete={() => actions.deselectTeamGroup(team.id)}
-            deleteIcon={
-              <Tooltip title="Remove team">
-                <CloseIcon />
-              </Tooltip>
-            }
-          />,
-        );
-      });
-
-      // Add role group chips
-      state.recipientState.selectedRoleGroups.forEach((role) => {
-        chips.push(
-          <Chip
-            key={`role-${role.roleId}`}
-            icon={<RoleIcon />}
-            label={`${role.name} (${role.members.length})`}
-            size={compact ? 'small' : 'medium'}
-            variant="outlined"
-            color="info"
-            onDelete={() => actions.deselectRoleGroup(role.roleId)}
-            deleteIcon={
-              <Tooltip title="Remove role group">
-                <CloseIcon />
-              </Tooltip>
-            }
-          />,
-        );
-      });
-    }
-
-    return chips;
-  }, [state, selectedContacts, compact, actions, summaryData]);
+  }, [summaryData.groupSummaries, compact, actions]);
 
   // Determine visible and hidden chips
-  const visibleChips = allChips.slice(0, maxVisibleChips);
-  const hiddenChipsCount = Math.max(0, allChips.length - maxVisibleChips);
+  const visibleChips = groupChips.slice(0, maxVisibleChips);
+  const hiddenChipsCount = Math.max(0, groupChips.length - maxVisibleChips);
 
   // If no selections, show empty state
-  if (summaryData.totalSelections === 0) {
+  if (!summaryData.hasSelections) {
     return (
       <Paper
         variant="outlined"
@@ -252,33 +202,17 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
         )}
 
         {/* Selection Breakdown */}
-        {!compact && summaryData.totalSelections > 1 && (
+        {!compact && summaryData.groupSummaries.length > 1 && (
           <Box>
             <Typography variant="caption" color="text.secondary">
               Selection breakdown:
             </Typography>
             <Stack direction="row" spacing={1} mt={0.5} flexWrap="wrap">
-              {summaryData.allContactsSelected && (
-                <Typography variant="caption" color="primary">
-                  All contacts
+              {summaryData.groupSummaries.map((group, index) => (
+                <Typography key={`breakdown-${group.groupType}-${index}`} variant="caption">
+                  {group.count} {group.label.toLowerCase()}
                 </Typography>
-              )}
-              {summaryData.individualCount > 0 && (
-                <Typography variant="caption">
-                  {summaryData.individualCount} individual
-                  {summaryData.individualCount !== 1 ? 's' : ''}
-                </Typography>
-              )}
-              {summaryData.teamGroupCount > 0 && (
-                <Typography variant="caption">
-                  {summaryData.teamGroupCount} team{summaryData.teamGroupCount !== 1 ? 's' : ''}
-                </Typography>
-              )}
-              {summaryData.roleGroupCount > 0 && (
-                <Typography variant="caption">
-                  {summaryData.roleGroupCount} role{summaryData.roleGroupCount !== 1 ? 's' : ''}
-                </Typography>
-              )}
+              ))}
             </Stack>
           </Box>
         )}
@@ -286,7 +220,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
         {/* Divider */}
         {showCounts && !compact && <Divider />}
 
-        {/* Selected Items as Chips */}
+        {/* Group Summary Chips */}
         <Box>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
             {visibleChips}
@@ -338,7 +272,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
         )}
 
         {/* Clear All Action */}
-        {summaryData.totalSelections > 0 && !compact && (
+        {summaryData.hasSelections && !compact && (
           <Box>
             <Divider sx={{ mb: 1 }} />
             <Stack direction="row" justifyContent="space-between" alignItems="center">

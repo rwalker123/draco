@@ -38,37 +38,16 @@ export function getEffectiveRecipients(
 ): RecipientContact[] {
   const recipientIds = new Set<string>();
 
-  // Add all contacts if selected
-  if (state.allContacts) {
-    allContacts.forEach((contact) => {
-      if (contact.hasValidEmail) {
-        recipientIds.add(contact.id);
-      }
-    });
-  } else {
-    // Add individually selected contacts
-    state.selectedContactIds.forEach((id) => {
-      const contact = allContacts.find((c) => c.id === id);
-      if (contact && contact.hasValidEmail) {
-        recipientIds.add(id);
-      }
-    });
-
-    // Add contacts from team groups
-    state.selectedTeamGroups.forEach((team) => {
-      team.members.forEach((member) => {
-        if (hasValidEmail(member)) {
-          recipientIds.add(member.id);
-        }
-      });
-    });
-
-    // Add contacts from role groups
-    state.selectedRoleGroups.forEach((role) => {
-      role.members.forEach((member) => {
-        if (hasValidEmail(member)) {
-          recipientIds.add(member.id);
-        }
+  // TODO: Update to use selectedGroups when backend integration is ready
+  if (state.selectedGroups) {
+    state.selectedGroups.forEach((groups) => {
+      groups.forEach((group) => {
+        group.contactIds.forEach((contactId) => {
+          const contact = allContacts.find((c) => c.id === contactId);
+          if (contact && contact.hasValidEmail) {
+            recipientIds.add(contactId);
+          }
+        });
       });
     });
   }
@@ -188,15 +167,18 @@ export function getSelectionSummary(
   total: number;
   description: string;
 } {
-  const individualCount = state.selectedContactIds.size;
-  const groupCount =
-    state.selectedTeamGroups.length + state.selectedRoleGroups.length + (state.allContacts ? 1 : 0);
+  // TODO: Update to use selectedGroups when backend integration is ready
+  const individualCount = state.selectedGroups?.get('individuals')?.length || 0;
+  const teamGroupCount = state.selectedGroups?.get('teams')?.length || 0;
+  const managerGroupCount = state.selectedGroups?.get('managers')?.length || 0;
+  const seasonGroupCount = state.selectedGroups?.get('season')?.length || 0;
+  const groupCount = teamGroupCount + managerGroupCount + seasonGroupCount;
   const totalRecipients = getEffectiveRecipients(state, allContacts).length;
 
   let description = '';
 
-  if (state.allContacts) {
-    description = 'All Contacts';
+  if (seasonGroupCount > 0) {
+    description = 'All Season Participants';
   } else if (individualCount > 0 && groupCount > 0) {
     description = `${individualCount} individuals + ${groupCount} groups`;
   } else if (individualCount > 0) {

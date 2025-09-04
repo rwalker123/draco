@@ -254,6 +254,7 @@ export interface LegacyGroupActions {
 export interface UtilityActions {
   clearAll: () => void;
   getEffectiveRecipients: () => RecipientContact[];
+  updateSelectedGroups: (groups: Map<GroupType, ContactGroup[]>) => void;
 }
 
 // Combined actions interface (for backward compatibility)
@@ -269,6 +270,28 @@ export interface RecipientSelectionActions
     PaginationActions,
     LegacyGroupActions,
     UtilityActions {}
+
+// ===== UNIFIED GROUP ARCHITECTURE =====
+
+// Group types for unified architecture
+export type GroupType = 'individuals' | 'season' | 'league' | 'teams' | 'managers';
+
+// Unified contact group interface
+export interface ContactGroup {
+  groupType: GroupType;
+  groupName: string; // "Individual Selections", "All Managers", "Team: Eagles", etc.
+  contactIds: Set<string>; // Actual contact IDs in this group
+  totalCount: number; // Display count
+  metadata?: {
+    // Optional metadata for different group types
+    teamIds?: Set<string>;
+    leagueIds?: Set<string>;
+    divisionIds?: Set<string>;
+    managerIds?: Set<string>;
+    seasonId?: string;
+    [key: string]: unknown;
+  };
+}
 
 // ===== STATE STRUCTURES =====
 
@@ -353,23 +376,8 @@ export interface ComputedState {
 
 // Combined state interface (maintaining backward compatibility)
 export interface RecipientSelectionState {
-  // Individual contacts
-  selectedContactIds: Set<string>;
-  lastSelectedContactId?: string;
-
-  // Mutually exclusive group selection
-  activeGroupType: GroupSelectionType | null;
-
-  // Group-specific selection states (nested for backward compatibility)
-  seasonParticipants: SeasonParticipantsState;
-  leagueSpecific: LeagueSelectionState;
-  teamSelection: TeamSelectionState;
-  managerCommunications: ManagerCommunicationsState;
-
-  // Legacy group selections (deprecated - for backward compatibility)
-  allContacts: boolean;
-  selectedTeamGroups: TeamGroup[];
-  selectedRoleGroups: RoleGroup[];
+  // Unified group-based selection system
+  selectedGroups?: Map<GroupType, ContactGroup[]>;
 
   // Computed properties
   totalRecipients: number;
@@ -483,28 +491,84 @@ export const createDefaultComputedState = (): ComputedState => ({
   invalidEmailCount: 0,
 });
 
+// ===== UNIFIED GROUP UTILITY FUNCTIONS =====
+
+/**
+ * Creates a new contact group
+ */
+export const createContactGroup = (
+  groupType: GroupType,
+  groupName: string,
+  contactIds: Set<string>,
+  totalCount: number,
+  metadata?: ContactGroup['metadata'],
+): ContactGroup => ({
+  groupType,
+  groupName,
+  contactIds,
+  totalCount,
+  metadata,
+});
+
+/**
+ * Converts legacy state to unified group structure
+ * This function migrates from old mixed selection approach to unified groups
+ * NOTE: This function is currently a stub since the legacy fields have been removed.
+ * It should be updated when backend integration provides the necessary data.
+ */
+export const convertLegacyStateToGroups = (
+  state: RecipientSelectionState,
+): Map<GroupType, ContactGroup[]> => {
+  const selectedGroups = new Map<GroupType, ContactGroup[]>();
+
+  // TODO: This function needs to be updated when backend integration is ready
+  // The legacy fields (selectedContactIds, seasonParticipants, leagueSpecific, etc.)
+  // have been removed from RecipientSelectionState and replaced with selectedGroups
+
+  // For now, return the existing selectedGroups if available
+  if (state.selectedGroups) {
+    return state.selectedGroups;
+  }
+
+  // Return empty map as fallback
+  return selectedGroups;
+};
+
+/**
+ * Gets all contact IDs from selected groups (flattened and deduplicated)
+ */
+export const getContactIdsFromGroups = (
+  selectedGroups: Map<GroupType, ContactGroup[]>,
+): Set<string> => {
+  const allContactIds = new Set<string>();
+
+  selectedGroups.forEach((groups) => {
+    groups.forEach((group) => {
+      group.contactIds.forEach((contactId) => {
+        allContactIds.add(contactId);
+      });
+    });
+  });
+
+  return allContactIds;
+};
+
+/**
+ * Calculates total recipient count from selected groups
+ */
+export const getTotalRecipientsFromGroups = (
+  selectedGroups: Map<GroupType, ContactGroup[]>,
+): number => {
+  return getContactIdsFromGroups(selectedGroups).size;
+};
+
 /**
  * Creates complete default recipient selection state
  * Follows DRY principle by using factory functions
  */
 export const createDefaultRecipientSelectionState = (): RecipientSelectionState => ({
-  // Contact selection
-  selectedContactIds: new Set<string>(),
-  lastSelectedContactId: undefined,
-
-  // Group type selection
-  activeGroupType: null,
-
-  // Group-specific states (nested for backward compatibility)
-  seasonParticipants: createDefaultSeasonParticipantsState(),
-  leagueSpecific: createDefaultLeagueSelectionState(),
-  teamSelection: createDefaultTeamSelectionState(),
-  managerCommunications: createDefaultManagerCommunicationsState(),
-
-  // Legacy group selections
-  allContacts: false,
-  selectedTeamGroups: [],
-  selectedRoleGroups: [],
+  // Unified group-based selection system
+  selectedGroups: new Map<GroupType, ContactGroup[]>(),
 
   // Computed properties
   totalRecipients: 0,

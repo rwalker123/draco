@@ -181,183 +181,206 @@ const RecipientPreviewPanel: React.FC<RecipientPreviewPanelProps> = ({
           ) : (
             <Stack spacing={0}>
               {/* All Contacts Mode */}
-              {selectionState.allContacts && (
-                <Paper variant="outlined" sx={{ m: 2, p: 2 }}>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>
-                      <PersonIcon />
-                    </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" fontWeight="medium">
-                        All Contacts
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        All available contacts in the account
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label={`${selectionState.totalRecipients} contacts`}
-                      size="small"
-                      color="primary"
-                    />
-                  </Stack>
-                </Paper>
-              )}
+              {
+                /* TODO: Replace with season group check */ false /* selectionState.allContacts */ && (
+                  <Paper variant="outlined" sx={{ m: 2, p: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                        <PersonIcon />
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" fontWeight="medium">
+                          All Contacts
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          All available contacts in the account
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={`${selectionState.totalRecipients} contacts`}
+                        size="small"
+                        color="primary"
+                      />
+                    </Stack>
+                  </Paper>
+                )
+              }
 
               {/* Individual Contacts */}
-              {!selectionState.allContacts && selectionState.selectedContactIds.size > 0 && (
-                <Box>
-                  <ListItem>
-                    <ListItemButton onClick={() => toggleSection('contacts')}>
-                      <ListItemIcon>
-                        <PersonIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Individual Contacts"
-                        secondary={`${selectionState.selectedContactIds.size} selected`}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton size="small">
-                          {expandedSection === 'contacts' ? <CollapseIcon /> : <ExpandIcon />}
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItemButton>
-                  </ListItem>
-
-                  <Collapse in={expandedSection === 'contacts'}>
-                    <List dense sx={{ pl: 2 }}>
-                      {Array.from(selectionState.selectedContactIds)
-                        .map((contactId) =>
-                          selectionState.effectiveRecipients.find((r) => r.id === contactId),
-                        )
-                        .filter((contact): contact is RecipientContact => contact !== undefined)
-                        .slice(0, compact ? 5 : 20)
-                        .map((contact) => (
-                          <ListItem key={contact.id}>
-                            <ListItemIcon>
-                              <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
-                                {getContactInitials(contact)}
-                              </Avatar>
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={contact.displayName}
-                              secondary={contact.email || ''}
-                              primaryTypographyProps={{ variant: 'body2' }}
-                              secondaryTypographyProps={{ variant: 'caption' }}
-                            />
-                            <ListItemSecondaryAction>
-                              <IconButton size="small" onClick={() => onRemoveContact(contact.id)}>
-                                <CloseIcon />
-                              </IconButton>
-                            </ListItemSecondaryAction>
-                          </ListItem>
-                        ))}
-                      {selectionState.selectedContactIds.size > (compact ? 5 : 20) && (
-                        <ListItem>
+              {
+                /* TODO: Replace with individuals group check */ !false /* !selectionState.allContacts */ &&
+                  false /* selectionState.selectedContactIds.size > 0 */ && (
+                    <Box>
+                      <ListItem>
+                        <ListItemButton onClick={() => toggleSection('contacts')}>
+                          <ListItemIcon>
+                            <PersonIcon />
+                          </ListItemIcon>
                           <ListItemText
-                            primary={`... and ${selectionState.selectedContactIds.size - (compact ? 5 : 20)} more`}
-                            primaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                            primary="Individual Contacts"
+                            secondary={`0 /* selectionState.selectedContactIds.size */ selected`}
                           />
-                        </ListItem>
-                      )}
-                    </List>
-                  </Collapse>
-                </Box>
-              )}
+                          <ListItemSecondaryAction>
+                            <IconButton size="small">
+                              {expandedSection === 'contacts' ? <CollapseIcon /> : <ExpandIcon />}
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItemButton>
+                      </ListItem>
+
+                      <Collapse in={expandedSection === 'contacts'}>
+                        <List dense sx={{ pl: 2 }}>
+                          {
+                            /* TODO: Get contact IDs from individuals groups */ ([] as string[])
+                              .map((contactId) =>
+                                selectionState.effectiveRecipients.find((r) => r.id === contactId),
+                              )
+                              .filter(
+                                (contact): contact is RecipientContact => contact !== undefined,
+                              )
+                              .slice(0, compact ? 5 : 20)
+                              .map((contact) => (
+                                <ListItem key={contact.id}>
+                                  <ListItemIcon>
+                                    <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+                                      {getContactInitials(contact)}
+                                    </Avatar>
+                                  </ListItemIcon>
+                                  <ListItemText
+                                    primary={contact.displayName}
+                                    secondary={contact.email || ''}
+                                    primaryTypographyProps={{ variant: 'body2' }}
+                                    secondaryTypographyProps={{ variant: 'caption' }}
+                                  />
+                                  <ListItemSecondaryAction>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => onRemoveContact(contact.id)}
+                                    >
+                                      <CloseIcon />
+                                    </IconButton>
+                                  </ListItemSecondaryAction>
+                                </ListItem>
+                              ))
+                          }
+                          {0 /* selectionState.selectedContactIds.size */ > (compact ? 5 : 20) && (
+                            <ListItem>
+                              <ListItemText
+                                primary={`... and ${0 /* selectionState.selectedContactIds.size */ - (compact ? 5 : 20)} more`}
+                                primaryTypographyProps={{
+                                  variant: 'caption',
+                                  color: 'text.secondary',
+                                }}
+                              />
+                            </ListItem>
+                          )}
+                        </List>
+                      </Collapse>
+                    </Box>
+                  )
+              }
 
               {/* Team Groups */}
-              {selectionState.selectedTeamGroups.length > 0 && (
-                <Box>
-                  <ListItem>
-                    <ListItemButton onClick={() => toggleSection('teams')}>
-                      <ListItemIcon>
-                        <GroupIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Team Groups"
-                        secondary={`${selectionState.selectedTeamGroups.length} groups selected`}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton size="small">
-                          {expandedSection === 'teams' ? <CollapseIcon /> : <ExpandIcon />}
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItemButton>
-                  </ListItem>
+              {
+                /* TODO: Replace with teams group check */ false /* selectionState.selectedTeamGroups.length > 0 */ && (
+                  <Box>
+                    <ListItem>
+                      <ListItemButton onClick={() => toggleSection('teams')}>
+                        <ListItemIcon>
+                          <GroupIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Team Groups"
+                          secondary={`0 /* selectionState.selectedTeamGroups.length */ groups selected`}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton size="small">
+                            {expandedSection === 'teams' ? <CollapseIcon /> : <ExpandIcon />}
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItemButton>
+                    </ListItem>
 
-                  <Collapse in={expandedSection === 'teams'}>
-                    <List dense sx={{ pl: 2 }}>
-                      {selectionState.selectedTeamGroups.map((group) => (
-                        <ListItem key={group.id}>
-                          <ListItemIcon>
-                            <Avatar sx={{ width: 24, height: 24, bgcolor: 'success.main' }}>
-                              <GroupIcon sx={{ fontSize: '1rem' }} />
-                            </Avatar>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={group.name}
-                            secondary={`${group.members.length} members`}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                            secondaryTypographyProps={{ variant: 'caption' }}
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton size="small" onClick={() => onRemoveTeamGroup(group)}>
-                              <CloseIcon />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Collapse>
-                </Box>
-              )}
+                    <Collapse in={expandedSection === 'teams'}>
+                      <List dense sx={{ pl: 2 }}>
+                        {
+                          /* TODO: Map teams groups */ ([] as TeamGroup[]).map((group) => (
+                            <ListItem key={group.id}>
+                              <ListItemIcon>
+                                <Avatar sx={{ width: 24, height: 24, bgcolor: 'success.main' }}>
+                                  <GroupIcon sx={{ fontSize: '1rem' }} />
+                                </Avatar>
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={group.name}
+                                secondary={`${group.members.length} members`}
+                                primaryTypographyProps={{ variant: 'body2' }}
+                                secondaryTypographyProps={{ variant: 'caption' }}
+                              />
+                              <ListItemSecondaryAction>
+                                <IconButton size="small" onClick={() => onRemoveTeamGroup(group)}>
+                                  <CloseIcon />
+                                </IconButton>
+                              </ListItemSecondaryAction>
+                            </ListItem>
+                          ))
+                        }
+                      </List>
+                    </Collapse>
+                  </Box>
+                )
+              }
 
               {/* Role Groups */}
-              {selectionState.selectedRoleGroups.length > 0 && (
-                <Box>
-                  <ListItem>
-                    <ListItemButton onClick={() => toggleSection('roles')}>
-                      <ListItemIcon>
-                        <AdminIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Role Groups"
-                        secondary={`${selectionState.selectedRoleGroups.length} roles selected`}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton size="small">
-                          {expandedSection === 'roles' ? <CollapseIcon /> : <ExpandIcon />}
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItemButton>
-                  </ListItem>
+              {
+                /* TODO: Replace with managers group check */ false /* selectionState.selectedRoleGroups.length > 0 */ && (
+                  <Box>
+                    <ListItem>
+                      <ListItemButton onClick={() => toggleSection('roles')}>
+                        <ListItemIcon>
+                          <AdminIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Role Groups"
+                          secondary={`0 /* selectionState.selectedRoleGroups.length */ roles selected`}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton size="small">
+                            {expandedSection === 'roles' ? <CollapseIcon /> : <ExpandIcon />}
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItemButton>
+                    </ListItem>
 
-                  <Collapse in={expandedSection === 'roles'}>
-                    <List dense sx={{ pl: 2 }}>
-                      {selectionState.selectedRoleGroups.map((group) => (
-                        <ListItem key={group.id}>
-                          <ListItemIcon>
-                            <Avatar sx={{ width: 24, height: 24, bgcolor: 'warning.main' }}>
-                              <AdminIcon sx={{ fontSize: '1rem' }} />
-                            </Avatar>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={group.name}
-                            secondary={`${group.members.length} members • ${group.roleType}`}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                            secondaryTypographyProps={{ variant: 'caption' }}
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton size="small" onClick={() => onRemoveRoleGroup(group)}>
-                              <CloseIcon />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Collapse>
-                </Box>
-              )}
+                    <Collapse in={expandedSection === 'roles'}>
+                      <List dense sx={{ pl: 2 }}>
+                        {
+                          /* TODO: Map manager groups */ ([] as RoleGroup[]).map((group) => (
+                            <ListItem key={group.id}>
+                              <ListItemIcon>
+                                <Avatar sx={{ width: 24, height: 24, bgcolor: 'warning.main' }}>
+                                  <AdminIcon sx={{ fontSize: '1rem' }} />
+                                </Avatar>
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={group.name}
+                                secondary={`${group.members.length} members • ${group.roleType}`}
+                                primaryTypographyProps={{ variant: 'body2' }}
+                                secondaryTypographyProps={{ variant: 'caption' }}
+                              />
+                              <ListItemSecondaryAction>
+                                <IconButton size="small" onClick={() => onRemoveRoleGroup(group)}>
+                                  <CloseIcon />
+                                </IconButton>
+                              </ListItemSecondaryAction>
+                            </ListItem>
+                          ))
+                        }
+                      </List>
+                    </Collapse>
+                  </Box>
+                )
+              }
 
               {/* Recipients without email warning */}
               {recipientsWithoutEmail.length > 0 && (
