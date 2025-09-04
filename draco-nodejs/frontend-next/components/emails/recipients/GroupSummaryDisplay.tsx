@@ -12,6 +12,9 @@ import {
 
 import { ContactGroup, GroupType } from '../../../types/emails/recipients';
 
+// Material-UI Chip color type for type safety
+type ChipColor = 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default';
+
 interface GroupSummaryDisplayProps {
   selectedGroups: Map<GroupType, ContactGroup[]>;
   onRemoveGroup: (groupType: GroupType, groupIndex: number) => void;
@@ -43,7 +46,7 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
     }
   };
 
-  const getGroupColor = (groupType: GroupType) => {
+  const getGroupColor = (groupType: GroupType): ChipColor => {
     switch (groupType) {
       case 'individuals':
         return 'primary';
@@ -89,15 +92,7 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
                 icon={getGroupIcon(groupType)}
                 label={`${group.groupName} (${group.totalCount})`}
                 variant="outlined"
-                color={
-                  getGroupColor(groupType) as
-                    | 'primary'
-                    | 'secondary'
-                    | 'info'
-                    | 'success'
-                    | 'warning'
-                    | 'default'
-                }
+                color={getGroupColor(groupType)}
                 onDelete={() => onRemoveGroup(groupType, index)}
                 deleteIcon={<ClearIcon />}
                 size={compact ? 'small' : 'medium'}
