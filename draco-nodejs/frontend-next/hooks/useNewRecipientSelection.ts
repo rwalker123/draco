@@ -183,9 +183,9 @@ export const useNewRecipientSelection = ({
         // Implementation for range selection
       },
 
-      // Group type selection (mutually exclusive)
-      updateActiveGroupType: (groupType: GroupSelectionType | null) => {
-        setActiveGroupType(groupType);
+      // Group type selection (mutually exclusive) - disabled for now
+      updateActiveGroupType: (_groupType: GroupSelectionType | null) => {
+        // TODO: Implement when group type selection is needed
       },
 
       // Season participants actions
