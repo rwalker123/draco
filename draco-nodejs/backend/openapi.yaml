@@ -2910,6 +2910,199 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/participants/count":
+    get:
+      summary: Get season participants count
+      description: Get the count of participants (contacts with roster entries) for a specific season
+      operationId: getSeasonParticipantsCount
+      tags:
+        - Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+          example: "456"
+      responses:
+        "200":
+          description: Season participants count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      seasonId:
+                        type: string
+                        example: "456"
+                      participantCount:
+                        type: integer
+                        example: 125
+                        description: Number of unique contacts participating in the season
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - no access to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/leagues":
+    get:
+      summary: Get leagues for a specific season
+      description: Retrieve all leagues for a specific season (requires account access)
+      operationId: getSeasonLeagues
+      tags:
+        - Leagues
+        - Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+          example: "456"
+        - in: query
+          name: includeTeams
+          required: false
+          schema:
+            type: string
+          description: Include team data (optional)
+        - in: query
+          name: includePlayerCounts
+          required: false
+          schema:
+            type: string
+            enum: ['true']
+          description: Include player counts for each league (optional)
+      responses:
+        "200":
+          description: Season leagues retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Season leagues retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      leagueSeasons:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "789"
+                              description: League season ID
+                            leagueId:
+                              type: string
+                              example: "456"
+                              description: League ID
+                            leagueName:
+                              type: string
+                              example: "Major League"
+                              description: League name
+                            accountId:
+                              type: string
+                              example: "123"
+                            teamCount:
+                              type: number
+                              example: 8
+                              description: Number of teams in this league
+                            playerCount:
+                              type: number
+                              example: 45
+                              description: Number of players in this league (only included if includePlayerCounts=true)
+                            divisions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                  name:
+                                    type: string
+                                  teamCount:
+                                    type: number
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers":
     get:
       summary: List all managers for a team season

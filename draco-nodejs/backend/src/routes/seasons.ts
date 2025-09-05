@@ -926,4 +926,57 @@ router.delete(
   },
 );
 
+/**
+ * @see {@link https://localhost:3001/apidocs#/Seasons/getSeasonParticipantsCount API Documentation}
+ * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml OpenAPI Source}
+ */
+router.get(
+  '/:seasonId/participants/count',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
+
+    // Verify season exists and belongs to account
+    const season = await prisma.season.findFirst({
+      where: {
+        id: seasonId,
+        accountid: accountId,
+      },
+    });
+
+    if (!season) {
+      throw new NotFoundError('Season not found');
+    }
+
+    // Count distinct participants (contacts) in the season
+    // Participants are contacts who have roster entries for teams in this season
+    const participantCount = await prisma.contacts.count({
+      where: {
+        roster: {
+          rosterseason: {
+            some: {
+              teamsseason: {
+                leagueseason: {
+                  seasonid: seasonId,
+                },
+              },
+            },
+          },
+        },
+        creatoraccountid: accountId, // Ensure account boundary
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        seasonId: seasonId.toString(),
+        participantCount,
+      },
+    });
+  }),
+);
+
 export default router;

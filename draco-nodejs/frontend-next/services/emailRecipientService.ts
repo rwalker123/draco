@@ -5,7 +5,7 @@
  */
 
 import { Contact, ContactRole } from '../types/users';
-import { RecipientContact, TeamGroup, RoleGroup } from '../types/emails/recipients';
+import { RecipientContact, TeamGroup, RoleGroup, League } from '../types/emails/recipients';
 import {
   transformBackendContact,
   transformBackendAutomaticRoleHolders,
@@ -836,6 +836,185 @@ export class EmailRecipientService {
       },
       {
         operation: 'fetch_team_managers',
+        additionalData: { endpoint: url },
+      },
+    );
+  }
+
+  /**
+   * Fetch leagues for a specific season
+   */
+  async fetchLeagues(
+    accountId: string,
+    token: string | null,
+    seasonId: string,
+    includePlayerCounts: boolean = false,
+  ): AsyncResult<League[]> {
+    if (!accountId || accountId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Account ID is required',
+          { context: { operation: 'fetch_leagues' } },
+        ),
+      };
+    }
+
+    if (!seasonId || seasonId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Season ID is required',
+          { context: { operation: 'fetch_leagues', accountId } },
+        ),
+      };
+    }
+
+    const headersResult = this.getHeaders(token);
+    if (!headersResult.success) {
+      return { success: false, error: headersResult.error };
+    }
+
+    const params = new URLSearchParams();
+    if (includePlayerCounts) {
+      params.append('includePlayerCounts', 'true');
+    }
+
+    const url = `/api/accounts/${accountId}/seasons/${seasonId}/leagues${params.toString() ? `?${params.toString()}` : ''}`;
+
+    return this.executeRequest(
+      async () => {
+        const response = await this.fetchWithTimeout(url, {
+          headers: headersResult.data,
+        });
+
+        const data = await this.handleResponse<{
+          success: boolean;
+          data: {
+            leagueSeasons: Array<{
+              id: string;
+              leagueId: string;
+              leagueName: string;
+              accountId: string;
+              teamCount?: number;
+              playerCount?: number;
+              divisions?: Array<{
+                id: string;
+                name: string;
+                teamCount: number;
+              }>;
+            }>;
+          };
+        }>(response);
+
+        if (!data.data?.leagueSeasons || !Array.isArray(data.data.leagueSeasons)) {
+          throw createEmailRecipientError(
+            EmailRecipientErrorCode.INVALID_DATA,
+            'Invalid leagues response format',
+            {
+              details: { responseData: data },
+              context: { operation: 'fetch_leagues', accountId, seasonId },
+            },
+          );
+        }
+
+        // Transform backend league seasons to frontend League format
+        const leagues: League[] = data.data.leagueSeasons.map((ls) => ({
+          id: ls.leagueId,
+          name: ls.leagueName,
+          divisions: (ls.divisions || []).map((div) => ({
+            id: div.id,
+            name: div.name,
+            teams: [], // Teams would need to be fetched separately if needed
+            teamCount: div.teamCount,
+            totalPlayers: 0, // Would need to be calculated from team rosters
+          })),
+          teamCount: ls.teamCount || 0,
+          totalPlayers: ls.playerCount || 0, // Use player count from API if available
+          seasonId: seasonId,
+          seasonName: '', // This would need to be fetched separately if needed
+        }));
+
+        return leagues;
+      },
+      {
+        operation: 'fetch_leagues',
+        additionalData: { endpoint: url },
+      },
+    );
+  }
+
+  /**
+   * Fetch season participants count for a specific season
+   */
+  async fetchSeasonParticipantsCount(
+    accountId: string,
+    token: string | null,
+    seasonId: string,
+  ): AsyncResult<number> {
+    if (!accountId || accountId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Account ID is required',
+          { context: { operation: 'fetch_season_participants_count' } },
+        ),
+      };
+    }
+
+    if (!seasonId || seasonId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Season ID is required',
+          { context: { operation: 'fetch_season_participants_count', accountId } },
+        ),
+      };
+    }
+
+    const headersResult = this.getHeaders(token);
+    if (!headersResult.success) {
+      return { success: false, error: headersResult.error };
+    }
+
+    const url = `/api/accounts/${accountId}/seasons/${seasonId}/participants/count`;
+
+    return this.executeRequest(
+      async () => {
+        const response = await this.fetchWithTimeout(url, {
+          headers: headersResult.data,
+        });
+
+        const data = await this.handleResponse<{
+          success: boolean;
+          data: {
+            seasonId: string;
+            participantCount: number;
+          };
+        }>(response);
+
+        if (
+          data.data?.participantCount === undefined ||
+          typeof data.data.participantCount !== 'number'
+        ) {
+          throw createEmailRecipientError(
+            EmailRecipientErrorCode.INVALID_DATA,
+            'Invalid season participants count response format',
+            {
+              details: { responseData: data },
+              context: { operation: 'fetch_season_participants_count', accountId, seasonId },
+            },
+          );
+        }
+
+        return data.data.participantCount;
+      },
+      {
+        operation: 'fetch_season_participants_count',
         additionalData: { endpoint: url },
       },
     );
