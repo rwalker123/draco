@@ -32,7 +32,6 @@ export interface SeasonWideGroup extends BaseGroup {
 export interface LeagueDivision {
   id: string;
   name: string;
-  description?: string;
   teams: TeamInfo[];
   teamCount: number;
   totalPlayers: number;
@@ -42,7 +41,6 @@ export interface LeagueDivision {
 export interface League {
   id: string;
   name: string;
-  description?: string;
   divisions: LeagueDivision[];
   teamCount: number;
   totalPlayers: number;
@@ -54,7 +52,6 @@ export interface League {
 export interface TeamInfo {
   id: string;
   name: string;
-  description?: string;
   playerCount: number;
   leagueId: string;
   leagueName: string;
@@ -103,7 +100,6 @@ export interface ManagerInfo {
 export interface ManagerRole {
   id: string;
   name: string;
-  description: string;
   managerCount: number;
 }
 

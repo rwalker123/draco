@@ -924,11 +924,9 @@ export class EmailRecipientService {
         const leagues: League[] = data.data.leagueSeasons.map((ls) => ({
           id: ls.leagueId,
           name: ls.leagueName,
-          description: undefined,
           divisions: (ls.divisions || []).map((div) => ({
             id: div.id,
             name: div.name,
-            description: undefined,
             teams: [], // Teams would need to be fetched separately if needed
             teamCount: div.teamCount,
             totalPlayers: 0, // Would need to be calculated from team rosters
