@@ -31,6 +31,7 @@ router.get(
     const { accountId, seasonId } = extractSeasonParams(req.params);
     const includeTeams = req.query.includeTeams !== undefined;
     const includeUnassignedTeams = req.query.includeTeams === 'includeUnassigned';
+    const includePlayerCounts = req.query.includePlayerCounts === 'true';
 
     // Base query always includes leagueseason + league data
     // we add division/team information based on qs values
@@ -96,6 +97,32 @@ router.get(
       },
     });
 
+    // Calculate player counts if requested
+    let playerCounts: Map<string, number> = new Map();
+    if (includePlayerCounts) {
+      // Get player counts for each league season
+      const playerCountPromises = leagueSeasons.map(async (ls) => {
+        const count = await prisma.contacts.count({
+          where: {
+            roster: {
+              rosterseason: {
+                some: {
+                  teamsseason: {
+                    leagueseasonid: ls.id,
+                  },
+                },
+              },
+            },
+            creatoraccountid: accountId, // Ensure account boundary
+          },
+        });
+        return [ls.id.toString(), count] as [string, number];
+      });
+
+      const counts = await Promise.all(playerCountPromises);
+      playerCounts = new Map(counts);
+    }
+
     // Format the response
     const formattedLeagueSeasons = leagueSeasons.map((ls) => {
       const result: {
@@ -103,6 +130,7 @@ router.get(
         leagueId: string;
         leagueName: string;
         accountId: string;
+        playerCount?: number;
         divisions?: Array<{
           id: string;
           divisionId: string;
@@ -134,6 +162,7 @@ router.get(
         leagueId: ls.league.id.toString(),
         leagueName: ls.league.name,
         accountId: ls.league.accountid.toString(),
+        ...(includePlayerCounts && { playerCount: playerCounts.get(ls.id.toString()) || 0 }),
       };
 
       // Add divisions with teams if includeTeams was requested

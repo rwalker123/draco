@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -16,8 +16,16 @@ import {
 import TeamSelectionContent from './TeamSelectionContent';
 import ManagerSelectionContent from './ManagerSelectionContent';
 import ManagerErrorBoundary from './ManagerErrorBoundary';
+import LeagueSelectionContent from './LeagueSelectionContent';
 
-import { GroupSelectionType, GroupType, ContactGroup } from '../../../types/emails/recipients';
+import {
+  GroupSelectionType,
+  GroupType,
+  ContactGroup,
+  League,
+} from '../../../types/emails/recipients';
+import { createEmailRecipientService } from '../../../services/emailRecipientService';
+import { useAuth } from '../../../context/AuthContext';
 
 export interface NewGroupSelectionPanelProps {
   activeGroupType: GroupSelectionType | null;
@@ -46,6 +54,44 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
   accountId,
   seasonId,
 }) => {
+  // Auth context for API calls
+  const { token } = useAuth();
+
+  // State for season participants count
+  const [participantCount, setParticipantCount] = useState<number | null>(null);
+
+  // Create email recipient service
+  const emailRecipientService = useMemo(() => createEmailRecipientService(), []);
+
+  // Fetch season participants count when accountId or seasonId changes
+  useEffect(() => {
+    const fetchParticipantCount = async () => {
+      if (!accountId || !seasonId || !token) {
+        return;
+      }
+
+      try {
+        const result = await emailRecipientService.fetchSeasonParticipantsCount(
+          accountId,
+          token,
+          seasonId,
+        );
+
+        if (result.success) {
+          setParticipantCount(result.data);
+        } else {
+          // On error, keep count as null (will show basic label)
+          setParticipantCount(null);
+        }
+      } catch {
+        // On error, keep count as null (will show basic label)
+        setParticipantCount(null);
+      }
+    };
+
+    fetchParticipantCount();
+  }, [accountId, seasonId, token, emailRecipientService]);
+
   // Group type options for dropdown
   const groupTypeOptions = [
     { value: 'season-participants', label: 'Season Participants (All Current Players)' },
@@ -55,14 +101,18 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
   ];
 
   // Helper functions for unified group manipulation
-  const isSeasonParticipantsSelected = () => {
+  const isSeasonParticipantsSelected = (): boolean => {
     const seasonGroups = selectedGroups.get('season');
-    return seasonGroups && seasonGroups.length > 0;
+    return Boolean(seasonGroups && seasonGroups.length > 0);
   };
 
-  const getSeasonParticipantsCount = () => {
-    const seasonGroups = selectedGroups.get('season');
-    return seasonGroups ? seasonGroups.reduce((total, group) => total + group.totalCount, 0) : 0;
+  // Generate label for season participants checkbox
+  const getSeasonParticipantsLabel = () => {
+    const baseLabel = 'All players in current season';
+    if (participantCount !== null) {
+      return `${baseLabel} (${participantCount})`;
+    }
+    return baseLabel;
   };
 
   const handleSeasonParticipantsToggle = () => {
@@ -72,12 +122,12 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
       // Remove season participants
       newGroups.delete('season');
     } else {
-      // Add season participants (placeholder - actual count would come from API)
+      // Add season participants with actual count
       const seasonGroup: ContactGroup = {
         groupType: 'season',
         groupName: 'Season Participants',
         contactIds: new Set(), // Would be populated with actual participant IDs
-        totalCount: 0, // Would be populated with actual count
+        totalCount: participantCount || 0, // Use actual participant count
       };
       newGroups.set('season', [seasonGroup]);
     }
@@ -117,6 +167,54 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
       newGroups.delete('teams');
     }
 
+    onGroupsChange(newGroups);
+  };
+
+  // League selection helpers
+  const getLeagueGroups = () => {
+    return selectedGroups.get('league') || [];
+  };
+
+  const handleLeagueSelectionChange = (leagueId: string, selected: boolean, league?: League) => {
+    const newGroups = new Map(selectedGroups);
+    let leagueGroups = newGroups.get('league') || [];
+
+    if (selected) {
+      // Add league group if not exists
+      const existingGroup = leagueGroups.find((g) => g.contactIds.has(leagueId));
+      if (!existingGroup) {
+        const newLeagueGroup: ContactGroup = {
+          groupType: 'league',
+          groupName: league?.name || `League ${leagueId}`,
+          contactIds: new Set([leagueId]),
+          totalCount: league?.totalPlayers || 0,
+        };
+        leagueGroups = [...leagueGroups, newLeagueGroup];
+      }
+    } else {
+      // Remove league group
+      leagueGroups = leagueGroups.filter((g) => !g.contactIds.has(leagueId));
+    }
+
+    if (leagueGroups.length > 0) {
+      newGroups.set('league', leagueGroups);
+    } else {
+      newGroups.delete('league');
+    }
+
+    onGroupsChange(newGroups);
+  };
+
+  const handleSelectAllLeagues = (leagues: League[]) => {
+    const newGroups = new Map(selectedGroups);
+    const leagueGroups: ContactGroup[] = leagues.map((league) => ({
+      groupType: 'league',
+      groupName: league.name,
+      contactIds: new Set([league.id]),
+      totalCount: league.totalPlayers || 0,
+    }));
+
+    newGroups.set('league', leagueGroups);
     onGroupsChange(newGroups);
   };
 
@@ -231,7 +329,7 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
                 onChange={handleSeasonParticipantsToggle}
               />
             }
-            label={`Include all ${getSeasonParticipantsCount()} season participants`}
+            label={getSeasonParticipantsLabel()}
           />
         </Box>
       )}
@@ -244,10 +342,22 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Select leagues to include all teams and players within those leagues.
           </Typography>
-          {/* TODO: Implement league selection UI */}
-          <Typography variant="body2" color="text.secondary">
-            League selection UI will be implemented here.
-          </Typography>
+          <LeagueSelectionContent
+            selectedLeagues={new Set(getLeagueGroups().flatMap((g) => Array.from(g.contactIds)))}
+            onLeagueToggle={(leagueId, league) => {
+              const isSelected = getLeagueGroups().some((g) => g.contactIds.has(leagueId));
+              handleLeagueSelectionChange(leagueId, !isSelected, league);
+            }}
+            onSelectAllLeagues={handleSelectAllLeagues}
+            onDeselectAllLeagues={() => {
+              // Clear all league selections
+              const newGroups = new Map(selectedGroups);
+              newGroups.delete('league');
+              onGroupsChange(newGroups);
+            }}
+            accountId={accountId}
+            seasonId={seasonId}
+          />
         </Box>
       )}
 
