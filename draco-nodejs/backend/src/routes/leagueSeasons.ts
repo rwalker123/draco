@@ -100,27 +100,58 @@ router.get(
     // Calculate player counts if requested
     let playerCounts: Map<string, number> = new Map();
     if (includePlayerCounts) {
-      // Get player counts for each league season
-      const playerCountPromises = leagueSeasons.map(async (ls) => {
-        const count = await prisma.contacts.count({
-          where: {
-            roster: {
-              rosterseason: {
-                some: {
-                  teamsseason: {
-                    leagueseasonid: ls.id,
-                  },
-                },
-              },
+      // Get player counts for all league seasons in a single optimized query
+      // Group by the teamsseason.leagueseasonid to get counts per league season
+      const playerCountsByLeague = await prisma.rosterseason.groupBy({
+        by: ['teamseasonid'],
+        where: {
+          teamsseason: {
+            leagueseasonid: {
+              in: leagueSeasons.map((ls) => ls.id),
             },
-            creatoraccountid: accountId, // Ensure account boundary
           },
-        });
-        return [ls.id.toString(), count] as [string, number];
+          roster: {
+            contacts: {
+              creatoraccountid: accountId, // Ensure account boundary
+            },
+          },
+        },
+        _count: {
+          playerid: true,
+        },
       });
 
-      const counts = await Promise.all(playerCountPromises);
-      playerCounts = new Map(counts);
+      // Get the mapping from teamseasonid to leagueseasonid with a separate query
+      const teamSeasonMapping = await prisma.teamsseason.findMany({
+        where: {
+          leagueseasonid: {
+            in: leagueSeasons.map((ls) => ls.id),
+          },
+        },
+        select: {
+          id: true,
+          leagueseasonid: true,
+        },
+      });
+
+      // Create a mapping from teamseasonid to leagueseasonid
+      const teamSeasonToLeagueSeasonMap = new Map<bigint, bigint>();
+      for (const ts of teamSeasonMapping) {
+        teamSeasonToLeagueSeasonMap.set(ts.id, ts.leagueseasonid);
+      }
+
+      // Aggregate counts by league season
+      const leagueSeasonCounts = new Map<string, number>();
+      for (const result of playerCountsByLeague) {
+        const leagueSeasonId = teamSeasonToLeagueSeasonMap.get(result.teamseasonid);
+        if (leagueSeasonId) {
+          const leagueSeasonIdStr = leagueSeasonId.toString();
+          const currentCount = leagueSeasonCounts.get(leagueSeasonIdStr) || 0;
+          leagueSeasonCounts.set(leagueSeasonIdStr, currentCount + result._count.playerid);
+        }
+      }
+
+      playerCounts = leagueSeasonCounts;
     }
 
     // Format the response
