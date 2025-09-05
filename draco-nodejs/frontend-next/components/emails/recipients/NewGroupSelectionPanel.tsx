@@ -23,6 +23,7 @@ import {
   GroupType,
   ContactGroup,
   League,
+  ManagerInfo,
 } from '../../../types/emails/recipients';
 import { createEmailRecipientService } from '../../../services/emailRecipientService';
 import { useAuth } from '../../../context/AuthContext';
@@ -416,9 +417,18 @@ const NewGroupSelectionPanel: React.FC<NewGroupSelectionPanelProps> = ({
                 // TODO: Implement team-based manager selection
                 console.log('Manager team toggle:', teamId);
               }}
-              onSelectAll={() => {
-                // TODO: Implement select all managers logic
-                console.log('Select all managers clicked');
+              onSelectAll={(managers: ManagerInfo[]) => {
+                // Select all managers - create ContactGroup with all manager IDs
+                const newGroups = new Map(selectedGroups);
+                const allManagerIds = new Set(managers.map((manager) => manager.id));
+                const managersGroup: ContactGroup = {
+                  groupType: 'managers',
+                  groupName: 'Managers',
+                  contactIds: allManagerIds,
+                  totalCount: managers.length,
+                };
+                newGroups.set('managers', [managersGroup]);
+                onGroupsChange(newGroups);
               }}
               onDeselectAll={() => {
                 // Clear all manager selections

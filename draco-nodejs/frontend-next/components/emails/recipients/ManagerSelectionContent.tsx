@@ -4,6 +4,7 @@ import { useManagerStateContext } from './context/ManagerStateContext';
 import ManagerFilters from './ManagerFilters';
 import ManagerList from './ManagerList';
 import ManagerSelectionSummary from './ManagerSelectionSummary';
+import { ManagerInfo } from '../../../types/emails/recipients';
 
 /**
  * Manager Selection Content Component
@@ -24,7 +25,7 @@ export interface ManagerSelectionContentProps {
   onManagerToggle: (managerId: string) => void;
   onLeagueToggle: (leagueId: string) => void;
   onTeamToggle: (teamId: string) => void;
-  onSelectAll: () => void;
+  onSelectAll: (managers: ManagerInfo[]) => void;
   onDeselectAll: () => void;
   onSearchQueryChange: (query: string) => void;
   searchQuery: string;
@@ -151,6 +152,11 @@ const ManagerSelectionContent: React.FC<ManagerSelectionContentProps> = ({
     managerActions.goToPage(page);
   };
 
+  // Handle select all - pass managers data to parent
+  const handleSelectAll = () => {
+    onSelectAll(managerState.managers);
+  };
+
   // Loading state
   if (managerState.isLoading) {
     return (
@@ -195,7 +201,7 @@ const ManagerSelectionContent: React.FC<ManagerSelectionContentProps> = ({
         selectedLeaguesCount={selectionSummary.selectedLeaguesCount}
         selectedTeamsCount={selectionSummary.selectedTeamsCount}
         hasSelection={selectionSummary.hasSelection}
-        onSelectAll={onSelectAll}
+        onSelectAll={handleSelectAll}
         onDeselectAll={onDeselectAll}
       />
 
