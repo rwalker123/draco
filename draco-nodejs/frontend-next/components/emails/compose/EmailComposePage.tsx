@@ -311,8 +311,6 @@ const EmailComposePageInternal: React.FC<
           if (recipientState.selectedGroups) {
             actions.updateSelectedGroups(recipientState.selectedGroups);
           }
-
-          showNotification(`${recipientState.totalRecipients} recipients selected`, 'info');
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to update recipients';
           setComponentState((prev) => ({

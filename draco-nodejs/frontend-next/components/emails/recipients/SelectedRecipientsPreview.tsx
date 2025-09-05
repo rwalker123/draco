@@ -201,25 +201,6 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
           </Box>
         )}
 
-        {/* Selection Breakdown */}
-        {!compact && summaryData.groupSummaries.length > 1 && (
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              Selection breakdown:
-            </Typography>
-            <Stack direction="row" spacing={1} mt={0.5} flexWrap="wrap">
-              {summaryData.groupSummaries.map((group, index) => (
-                <Typography key={`breakdown-${group.groupType}-${index}`} variant="caption">
-                  {group.count} {group.label.toLowerCase()}
-                </Typography>
-              ))}
-            </Stack>
-          </Box>
-        )}
-
-        {/* Divider */}
-        {showCounts && !compact && <Divider />}
-
         {/* Group Summary Chips */}
         <Box>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
