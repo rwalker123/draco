@@ -50,6 +50,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
         childrenMap: new Map<string, Set<string>>(), // parent -> children
         itemTypeMap: new Map<string, 'season' | 'league' | 'division' | 'team'>(), // item -> type
         siblingsMap: new Map<string, Set<string>>(), // item -> siblings
+        playerCountMap: new Map<string, number>(), // item -> player count
       };
     }
 
@@ -57,10 +58,12 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
     const childrenMap = new Map<string, Set<string>>();
     const itemTypeMap = new Map<string, 'season' | 'league' | 'division' | 'team'>();
     const siblingsMap = new Map<string, Set<string>>();
+    const playerCountMap = new Map<string, number>();
 
     // Season level
     itemTypeMap.set(seasonId, 'season');
     childrenMap.set(seasonId, new Set());
+    playerCountMap.set(seasonId, hierarchicalData.totalPlayers || 0);
 
     // Process leagues
     const leagueIds = new Set<string>();
@@ -70,6 +73,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
       childrenMap.get(seasonId)!.add(league.id);
       childrenMap.set(league.id, new Set());
       leagueIds.add(league.id);
+      playerCountMap.set(league.id, league.totalPlayers || 0);
 
       // Process divisions
       const divisionIds = new Set<string>();
@@ -79,6 +83,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
         childrenMap.get(league.id)!.add(division.id);
         childrenMap.set(division.id, new Set());
         divisionIds.add(division.id);
+        playerCountMap.set(division.id, division.totalPlayers || 0);
 
         // Process teams in division
         const teamIds = new Set<string>();
@@ -87,6 +92,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
           parentMap.set(team.id, division.id);
           childrenMap.get(division.id)!.add(team.id);
           teamIds.add(team.id);
+          playerCountMap.set(team.id, team.playerCount || 0);
         });
         siblingsMap.set(division.id, new Set(teamIds));
         teamIds.forEach((teamId) => siblingsMap.set(teamId, new Set(teamIds)));
@@ -99,7 +105,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
     siblingsMap.set(seasonId, new Set(leagueIds));
     leagueIds.forEach((leagueId) => siblingsMap.set(leagueId, new Set(leagueIds)));
 
-    return { parentMap, childrenMap, itemTypeMap, siblingsMap };
+    return { parentMap, childrenMap, itemTypeMap, siblingsMap, playerCountMap };
   }, [hierarchicalData, seasonId]);
 
   // Universal selection algorithm - works for any hierarchy level
@@ -110,9 +116,9 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
       const newStateMap = new Map(itemSelectedState);
 
       if (currentlySelected) {
-        // DESELECTION: Set item and all children to 'unselected'
+        // DESELECTION: Set item and all children to 'unselected' with 0 player count
         const setItemAndChildrenUnselected = (id: string) => {
-          newStateMap.set(id, 'unselected');
+          newStateMap.set(id, { state: 'unselected', playerCount: 0 });
           const children = hierarchyMaps.childrenMap.get(id);
           if (children) {
             children.forEach((childId) => setItemAndChildrenUnselected(childId));
@@ -120,9 +126,10 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
         };
         setItemAndChildrenUnselected(itemId);
       } else {
-        // SELECTION: Set item and all children to 'selected'
+        // SELECTION: Set item and all children to 'selected' with their player counts
         const setItemAndChildrenSelected = (id: string) => {
-          newStateMap.set(id, 'selected');
+          const playerCount = hierarchyMaps.playerCountMap.get(id) || 0;
+          newStateMap.set(id, { state: 'selected', playerCount });
           const children = hierarchyMaps.childrenMap.get(id);
           if (children) {
             children.forEach((childId) => setItemAndChildrenSelected(childId));
@@ -139,29 +146,32 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
         const children = hierarchyMaps.childrenMap.get(parentId);
         if (!children || children.size === 0) return;
 
-        // Count children states
+        // Count children states and sum player counts
         let selectedCount = 0;
         let intermediateCount = 0;
+        let totalPlayerCount = 0;
 
         children.forEach((childId) => {
-          const childState = newStateMap.get(childId) || 'unselected';
-          if (childState === 'selected') {
+          const childStateObj = newStateMap.get(childId) || { state: 'unselected', playerCount: 0 };
+          if (childStateObj.state === 'selected') {
             selectedCount++;
-          } else if (childState === 'intermediate') {
+            totalPlayerCount += childStateObj.playerCount;
+          } else if (childStateObj.state === 'intermediate') {
             intermediateCount++;
+            totalPlayerCount += childStateObj.playerCount;
           }
         });
 
-        // Determine parent state
+        // Determine parent state and player count
         if (selectedCount === children.size) {
           // All children selected -> parent selected
-          newStateMap.set(parentId, 'selected');
+          newStateMap.set(parentId, { state: 'selected', playerCount: totalPlayerCount });
         } else if (selectedCount > 0 || intermediateCount > 0) {
           // Some children selected or intermediate -> parent intermediate
-          newStateMap.set(parentId, 'intermediate');
+          newStateMap.set(parentId, { state: 'intermediate', playerCount: totalPlayerCount });
         } else {
           // No children selected -> parent unselected
-          newStateMap.set(parentId, 'unselected');
+          newStateMap.set(parentId, { state: 'unselected', playerCount: 0 });
         }
 
         // Recursively update parent's parent
@@ -184,7 +194,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
       setDataError(null);
 
       const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true&includePlayerCounts=true`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -340,10 +350,10 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
   // Simple checkbox state calculation using Map lookup
   const getCheckboxState = useCallback(
     (itemId: string) => {
-      const state = itemSelectedState.get(itemId) || 'unselected';
+      const stateObj = itemSelectedState.get(itemId) || { state: 'unselected', playerCount: 0 };
       return {
-        checked: state === 'selected',
-        indeterminate: state === 'intermediate',
+        checked: stateObj.state === 'selected',
+        indeterminate: stateObj.state === 'intermediate',
       };
     },
     [itemSelectedState],

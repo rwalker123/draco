@@ -21,10 +21,52 @@ import { validateTeamSeasonWithDivision } from '../utils/teamValidation.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';
 import { DivisionSeason } from '../interfaces/divisionInterfaces.js';
-import { LeagueSeasonWithRelations, PrismaWhereClause } from '../interfaces/leagueInterfaces.js';
+import { PrismaWhereClause } from '../interfaces/leagueInterfaces.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
+
+// Types for Prisma result objects
+interface DivisionSeasonResult {
+  id: bigint;
+  priority: number;
+  divisiondefs: {
+    id: bigint;
+    name: string;
+  };
+}
+
+interface TeamSeasonResult {
+  id: bigint;
+  name: string;
+  divisionseasonid: bigint | null;
+  teams: {
+    id: bigint;
+    webaddress: string | null;
+    youtubeuserid: string | null;
+    defaultvideo: string | null;
+    autoplayvideo: boolean;
+  };
+}
+
+// Type guards for safe property access
+function hasDivisionSeasons(ls: unknown): ls is { divisionseason: DivisionSeasonResult[] } {
+  return (
+    typeof ls === 'object' &&
+    ls !== null &&
+    'divisionseason' in ls &&
+    Array.isArray((ls as { divisionseason: unknown }).divisionseason)
+  );
+}
+
+function hasTeamSeasons(ls: unknown): ls is { teamsseason: TeamSeasonResult[] } {
+  return (
+    typeof ls === 'object' &&
+    ls !== null &&
+    'teamsseason' in ls &&
+    Array.isArray((ls as { teamsseason: unknown }).teamsseason)
+  );
+}
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues
@@ -103,11 +145,10 @@ router.get(
     });
 
     // Calculate player counts if requested
-    let playerCounts: Map<string, number> = new Map();
+    let teamPlayerCounts: Map<string, number> = new Map();
     if (includePlayerCounts) {
-      // Get player counts for all league seasons in a single optimized query
-      // Group by the teamsseason.leagueseasonid to get counts per league season
-      const playerCountsByLeague = await prisma.rosterseason.groupBy({
+      // Get player counts for all teams in the league seasons
+      const playerCountsByTeam = await prisma.rosterseason.groupBy({
         by: ['teamseasonid'],
         where: {
           teamsseason: {
@@ -126,37 +167,10 @@ router.get(
         },
       });
 
-      // Get the mapping from teamseasonid to leagueseasonid with a separate query
-      const teamSeasonMapping = await prisma.teamsseason.findMany({
-        where: {
-          leagueseasonid: {
-            in: leagueSeasons.map((ls) => ls.id),
-          },
-        },
-        select: {
-          id: true,
-          leagueseasonid: true,
-        },
-      });
-
-      // Create a mapping from teamseasonid to leagueseasonid
-      const teamSeasonToLeagueSeasonMap = new Map<bigint, bigint>();
-      for (const ts of teamSeasonMapping) {
-        teamSeasonToLeagueSeasonMap.set(ts.id, ts.leagueseasonid);
+      // Create a mapping from teamseasonid to player count
+      for (const result of playerCountsByTeam) {
+        teamPlayerCounts.set(result.teamseasonid.toString(), result._count.playerid);
       }
-
-      // Aggregate counts by league season
-      const leagueSeasonCounts = new Map<string, number>();
-      for (const result of playerCountsByLeague) {
-        const leagueSeasonId = teamSeasonToLeagueSeasonMap.get(result.teamseasonid);
-        if (leagueSeasonId) {
-          const leagueSeasonIdStr = leagueSeasonId.toString();
-          const currentCount = leagueSeasonCounts.get(leagueSeasonIdStr) || 0;
-          leagueSeasonCounts.set(leagueSeasonIdStr, currentCount + result._count.playerid);
-        }
-      }
-
-      playerCounts = leagueSeasonCounts;
     }
 
     // Format the response
@@ -166,7 +180,6 @@ router.get(
         leagueId: string;
         leagueName: string;
         accountId: string;
-        playerCount?: number;
         divisions?: Array<{
           id: string;
           divisionId: string;
@@ -181,6 +194,7 @@ router.get(
             defaultVideo: string | null;
             autoPlayVideo: boolean;
             logoUrl: string;
+            playerCount?: number;
           }>;
         }>;
         unassignedTeams?: Array<{
@@ -192,43 +206,25 @@ router.get(
           defaultVideo: string | null;
           autoPlayVideo: boolean;
           logoUrl: string;
+          playerCount?: number;
         }>;
       } = {
         id: ls.id.toString(),
         leagueId: ls.league.id.toString(),
         leagueName: ls.league.name,
         accountId: ls.league.accountid.toString(),
-        ...(includePlayerCounts && { playerCount: playerCounts.get(ls.id.toString()) || 0 }),
       };
 
       // Add divisions with teams if includeTeams was requested
-      if (includeTeams) {
-        result.divisions = ((ls as unknown as LeagueSeasonWithRelations).divisionseason || []).map(
-          (ds) => ({
-            id: ds.id.toString(),
-            divisionId: ds.divisiondefs.id.toString(),
-            divisionName: ds.divisiondefs.name,
-            priority: ds.priority,
-            teams: ((ls as unknown as LeagueSeasonWithRelations).teamsseason || [])
-              .filter((ts) => ts.divisionseasonid === ds.id)
-              .map((ts) => ({
-                id: ts.id.toString(),
-                teamId: ts.teams.id.toString(),
-                name: ts.name,
-                webAddress: ts.teams.webaddress,
-                youtubeUserId: ts.teams.youtubeuserid,
-                defaultVideo: ts.teams.defaultvideo,
-                autoPlayVideo: ts.teams.autoplayvideo,
-                logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
-              })),
-          }),
-        );
-
-        // Add unassigned teams if both includeTeams AND includeUnassignedTeams are true
-        if (includeUnassignedTeams) {
-          result.unassignedTeams = ((ls as unknown as LeagueSeasonWithRelations).teamsseason || [])
-            .filter((ts) => !ts.divisionseasonid)
-            .map((ts) => ({
+      if (includeTeams && hasDivisionSeasons(ls) && hasTeamSeasons(ls)) {
+        result.divisions = ls.divisionseason.map((ds: DivisionSeasonResult) => ({
+          id: ds.id.toString(),
+          divisionId: ds.divisiondefs.id.toString(),
+          divisionName: ds.divisiondefs.name,
+          priority: ds.priority,
+          teams: ls.teamsseason
+            .filter((ts: TeamSeasonResult) => ts.divisionseasonid === ds.id)
+            .map((ts: TeamSeasonResult) => ({
               id: ts.id.toString(),
               teamId: ts.teams.id.toString(),
               name: ts.name,
@@ -237,6 +233,28 @@ router.get(
               defaultVideo: ts.teams.defaultvideo,
               autoPlayVideo: ts.teams.autoplayvideo,
               logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
+              ...(includePlayerCounts && {
+                playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
+              }),
+            })),
+        }));
+
+        // Add unassigned teams if both includeTeams AND includeUnassignedTeams are true
+        if (includeUnassignedTeams && hasTeamSeasons(ls)) {
+          result.unassignedTeams = ls.teamsseason
+            .filter((ts: TeamSeasonResult) => !ts.divisionseasonid)
+            .map((ts: TeamSeasonResult) => ({
+              id: ts.id.toString(),
+              teamId: ts.teams.id.toString(),
+              name: ts.name,
+              webAddress: ts.teams.webaddress,
+              youtubeUserId: ts.teams.youtubeuserid,
+              defaultVideo: ts.teams.defaultvideo,
+              autoPlayVideo: ts.teams.autoplayvideo,
+              logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
+              ...(includePlayerCounts && {
+                playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
+              }),
             }));
         }
       }

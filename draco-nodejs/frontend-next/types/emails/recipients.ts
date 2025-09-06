@@ -332,14 +332,20 @@ export interface HierarchicalGroupSelectionActions {
   getEffectiveRecipients: () => RecipientContact[];
 }
 
+// Enhanced selection state item for hierarchical selection
+export interface HierarchicalSelectionItem {
+  state: 'selected' | 'intermediate' | 'unselected';
+  playerCount: number;
+}
+
 // Props for hierarchical group selection component
 export interface HierarchicalGroupSelectionProps {
   accountId: string;
   seasonId: string;
-  itemSelectedState: Map<string, 'selected' | 'intermediate' | 'unselected'>;
+  itemSelectedState: Map<string, HierarchicalSelectionItem>;
   managersOnly: boolean;
   onSelectionChange: (
-    itemSelectedState: Map<string, 'selected' | 'intermediate' | 'unselected'>,
+    itemSelectedState: Map<string, HierarchicalSelectionItem>,
     managersOnly: boolean,
   ) => void;
   loading?: boolean;

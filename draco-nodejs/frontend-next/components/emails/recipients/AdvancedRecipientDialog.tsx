@@ -41,6 +41,7 @@ import {
   GroupType,
   ContactGroup,
   RecipientSelectionTab,
+  HierarchicalSelectionItem,
 } from '../../../types/emails/recipients';
 
 // Simplified RecipientSelectionState for backward compatibility
@@ -154,7 +155,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   // Hierarchical selection state for shared data model
   const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
-    Map<string, 'selected' | 'intermediate' | 'unselected'>
+    Map<string, HierarchicalSelectionItem>
   >(new Map());
   const [hierarchicalManagersOnly, setHierarchicalManagersOnly] = useState<boolean>(false);
 
@@ -275,20 +276,32 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   const getTotalSelected = useCallback((): number => {
     let total = 0;
+
+    // Add counts from selectedGroups (individual/manual selections)
     selectedGroups.forEach((groups) => {
       groups.forEach((group) => {
         total += group.totalCount;
       });
     });
+
+    // Add counts from hierarchical selections - ONLY use season-level count
+    // The season level already contains the accurate rolled-up total of all selected players
+    if (seasonId) {
+      const seasonSelection = hierarchicalSelectedIds.get(seasonId);
+      if (
+        seasonSelection &&
+        (seasonSelection.state === 'selected' || seasonSelection.state === 'intermediate')
+      ) {
+        total += seasonSelection.playerCount;
+      }
+    }
+
     return total;
-  }, [selectedGroups]);
+  }, [selectedGroups, hierarchicalSelectedIds, seasonId]);
 
   // Hierarchical selection change handler
   const handleHierarchicalSelectionChange = useCallback(
-    (
-      itemSelectedState: Map<string, 'selected' | 'intermediate' | 'unselected'>,
-      managersOnly: boolean,
-    ) => {
+    (itemSelectedState: Map<string, HierarchicalSelectionItem>, managersOnly: boolean) => {
       setHierarchicalSelectedIds(itemSelectedState);
       setHierarchicalManagersOnly(managersOnly);
 
