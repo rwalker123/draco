@@ -288,3 +288,4 @@ The `.mcp.json` file in the project root automatically configures:
 
 **Note**: If you're not seeing MCP servers in a worktree, ensure `.mcp.json` exists in the project root and restart Claude Code.
 - ensure you always use serena when appropriate
+- Do not lie about knowing or seeing things (in images) that you obviously can't, tell the truth at all times.

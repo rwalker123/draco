@@ -30,9 +30,8 @@ import {
 
 import { useNotifications } from '../../../hooks/useNotifications';
 import ContactSelectionPanel from './ContactSelectionPanel';
-import NewGroupSelectionPanel from './NewGroupSelectionPanel';
+import HierarchicalGroupSelection from './HierarchicalGroupSelection';
 import { ManagerStateProvider, useManagerStateContext } from './context/ManagerStateContext';
-// import { useNewRecipientSelection } from '../../../hooks/useNewRecipientSelection'; // TODO: Remove when fully migrated
 // import { ErrorBoundary } from '../../common/ErrorBoundary'; // TODO: Re-enable when needed
 import { RecipientDialogSkeleton } from '../../common/SkeletonLoaders';
 import {
@@ -42,7 +41,6 @@ import {
   GroupType,
   ContactGroup,
   RecipientSelectionTab,
-  GroupSelectionType,
 } from '../../../types/emails/recipients';
 
 // Simplified RecipientSelectionState for backward compatibility
@@ -154,6 +152,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   // UNIFIED GROUP SYSTEM - Single source of truth for all selections
   const [selectedGroups, setSelectedGroups] = useState<Map<GroupType, ContactGroup[]>>(new Map());
 
+  // Hierarchical selection state for shared data model
+  const [hierarchicalSelectedIds, setHierarchicalSelectedIds] = useState<
+    Map<string, 'selected' | 'intermediate' | 'unselected'>
+  >(new Map());
+  const [hierarchicalManagersOnly, setHierarchicalManagersOnly] = useState<boolean>(false);
+
   // Server-side pagination state for contacts
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(25);
@@ -200,13 +204,15 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         // Find existing group or create new one
         let targetGroup = existingGroups.find((g) => g.groupType === groupType);
         if (!targetGroup) {
-          const groupName = {
-            individuals: 'Individual Selections',
-            managers: 'Managers',
-            teams: 'Teams',
-            league: 'Leagues',
-            season: 'Season Participants',
-          }[groupType];
+          const groupName =
+            {
+              individuals: 'Individual Selections',
+              managers: 'Managers',
+              teams: 'Teams',
+              division: 'Divisions',
+              league: 'Leagues',
+              season: 'Season Participants',
+            }[groupType] || 'Unknown Group';
 
           targetGroup = {
             groupType,
@@ -217,9 +223,11 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           existingGroups.push(targetGroup);
         }
 
-        // Add contact to group
-        targetGroup.contactIds.add(contactId);
-        targetGroup.totalCount = targetGroup.contactIds.size;
+        // Add contact to group (targetGroup is guaranteed to exist here)
+        if (targetGroup) {
+          targetGroup.contactIds.add(contactId);
+          targetGroup.totalCount = targetGroup.contactIds.size;
+        }
 
         newGroups.set(groupType, existingGroups);
         return newGroups;
@@ -274,6 +282,21 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     });
     return total;
   }, [selectedGroups]);
+
+  // Hierarchical selection change handler
+  const handleHierarchicalSelectionChange = useCallback(
+    (
+      itemSelectedState: Map<string, 'selected' | 'intermediate' | 'unselected'>,
+      managersOnly: boolean,
+    ) => {
+      setHierarchicalSelectedIds(itemSelectedState);
+      setHierarchicalManagersOnly(managersOnly);
+
+      // TODO: Convert to ContactGroups when needed for unified system
+      // For now, we'll keep hierarchical selections separate from the main selectedGroups
+    },
+    [],
+  );
 
   // Hybrid lookup: check current page first, then search contacts, then selected contacts cache
   const getContactDetails = useCallback(
@@ -493,10 +516,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   }, [open, seasonId]);
 
   const [currentTab, setCurrentTab] = useState<TabValue>('contacts');
-
-  // Group selection state
-  const [activeGroupType, setActiveGroupType] = useState<GroupSelectionType | null>(null);
-  const [groupSearchQueries, setGroupSearchQueries] = useState<Record<string, string>>({});
 
   // Initialize unified groups when dialog opens
   useEffect(() => {
@@ -1082,18 +1101,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
               {/* Groups Tab */}
               {currentTab === 'groups' && (
-                <NewGroupSelectionPanel
-                  activeGroupType={activeGroupType}
-                  selectedGroups={selectedGroups}
-                  onGroupTypeChange={setActiveGroupType}
-                  onGroupsChange={setSelectedGroups}
-                  searchQueries={groupSearchQueries}
-                  onSearchQueryChange={(groupType, query) => {
-                    setGroupSearchQueries((prev) => ({ ...prev, [groupType]: query }));
-                  }}
-                  loading={loadingState.teamGroups}
+                <HierarchicalGroupSelection
                   accountId={accountId}
                   seasonId={seasonId || ''}
+                  itemSelectedState={hierarchicalSelectedIds}
+                  managersOnly={hierarchicalManagersOnly}
+                  onSelectionChange={handleHierarchicalSelectionChange}
+                  loading={loadingState.teamGroups}
                 />
               )}
             </Box>
