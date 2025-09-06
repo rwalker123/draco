@@ -133,7 +133,7 @@ export interface IndividualTeamGroup extends BaseGroup {
   seasonName: string;
 }
 
-// Group type for dropdown selection
+// Group type for dropdown selection (DEPRECATED - now using hierarchical selection)
 export type GroupSelectionType =
   | 'season-participants'
   | 'league-specific'
@@ -178,7 +178,7 @@ export interface ContactSelectionActions {
   getSelectedContacts: () => RecipientContact[];
 }
 
-// Group type selection actions
+// Group type selection actions (DEPRECATED - now using hierarchical selection)
 export interface GroupTypeSelectionActions {
   updateActiveGroupType: (type: GroupSelectionType | null) => void;
 }
@@ -270,7 +270,95 @@ export interface RecipientSelectionActions
 // ===== UNIFIED GROUP ARCHITECTURE =====
 
 // Group types for unified architecture
-export type GroupType = 'individuals' | 'season' | 'league' | 'teams' | 'managers';
+export type GroupType = 'individuals' | 'season' | 'league' | 'division' | 'teams' | 'managers';
+
+// ===== HIERARCHICAL SELECTION INTERFACES =====
+
+// Hierarchical selection state for the new tree-based UI
+export interface HierarchicalSelectionState {
+  selectedSeasonIds: Set<string>;
+  selectedLeagueIds: Set<string>;
+  selectedDivisionIds: Set<string>;
+  selectedTeamIds: Set<string>;
+  managersOnly: boolean;
+}
+
+// Hierarchical team structure for UI display
+export interface HierarchicalTeam {
+  id: string;
+  name: string;
+  playerCount?: number;
+  managerCount?: number;
+}
+
+export interface HierarchicalDivision {
+  id: string;
+  name: string;
+  teams: HierarchicalTeam[];
+  totalPlayers?: number;
+  totalManagers?: number;
+}
+
+export interface HierarchicalLeague {
+  id: string;
+  name: string;
+  divisions: HierarchicalDivision[];
+  unassignedTeams?: HierarchicalTeam[];
+  totalPlayers?: number;
+  totalManagers?: number;
+}
+
+export interface HierarchicalSeason {
+  id: string;
+  name: string;
+  leagues: HierarchicalLeague[];
+  totalPlayers?: number;
+  totalManagers?: number;
+}
+
+// Hierarchical group selection actions
+export interface HierarchicalGroupSelectionActions {
+  toggleSeason: (seasonId: string) => void;
+  toggleLeague: (leagueId: string) => void;
+  toggleDivision: (divisionId: string) => void;
+  toggleTeam: (teamId: string) => void;
+  toggleManagersOnly: () => void;
+  clearAllSelections: () => void;
+  isSeasonSelected: (seasonId: string) => boolean;
+  isLeagueSelected: (leagueId: string) => boolean;
+  isDivisionSelected: (divisionId: string) => boolean;
+  isTeamSelected: (teamId: string) => boolean;
+  getSelectedContactIds: () => Set<string>;
+  getEffectiveRecipients: () => RecipientContact[];
+}
+
+// Props for hierarchical group selection component
+export interface HierarchicalGroupSelectionProps {
+  accountId: string;
+  seasonId: string;
+  itemSelectedState: Map<string, 'selected' | 'intermediate' | 'unselected'>;
+  managersOnly: boolean;
+  onSelectionChange: (
+    itemSelectedState: Map<string, 'selected' | 'intermediate' | 'unselected'>,
+    managersOnly: boolean,
+  ) => void;
+  loading?: boolean;
+}
+
+// Utility function types for hierarchical selection
+export interface HierarchicalSelectionUtils {
+  convertToContactGroups: (
+    state: HierarchicalSelectionState,
+    seasonData: HierarchicalSeason,
+  ) => Map<GroupType, ContactGroup[]>;
+  extractHierarchicalState: (
+    selectedGroups: Map<GroupType, ContactGroup[]>,
+  ) => HierarchicalSelectionState;
+  validateHierarchicalSelection: (state: HierarchicalSelectionState) => {
+    isValid: boolean;
+    errors: string[];
+  };
+}
 
 // Unified contact group interface
 export interface ContactGroup {
@@ -297,7 +385,7 @@ export interface ContactSelectionState {
   lastSelectedContactId?: string;
 }
 
-// Group type selection state
+// Group type selection state (DEPRECATED - now using hierarchical selection)
 export interface GroupTypeSelectionState {
   activeGroupType: GroupSelectionType | null;
 }
@@ -617,7 +705,7 @@ export interface RecipientSelectionConfig {
   requireValidEmails: boolean;
   showRecipientCount: boolean;
 
-  // UI settings
+  // UI settings (DEPRECATED - now using hierarchical selection)
   defaultGroupType: GroupSelectionType;
   enableGroupSearch: boolean;
 }
@@ -735,4 +823,250 @@ export const DEFAULT_GROUP_SECTIONS: Record<GroupSectionType, GroupSectionConfig
     allowMultiple: true,
     isExclusive: false,
   },
+};
+
+// ===== HIERARCHICAL SELECTION UTILITY FUNCTIONS =====
+
+/**
+ * Creates default hierarchical selection state
+ */
+export const createDefaultHierarchicalSelectionState = (): HierarchicalSelectionState => ({
+  selectedSeasonIds: new Set<string>(),
+  selectedLeagueIds: new Set<string>(),
+  selectedDivisionIds: new Set<string>(),
+  selectedTeamIds: new Set<string>(),
+  managersOnly: false,
+});
+
+/**
+ * Converts hierarchical selection state to unified ContactGroup structure
+ */
+export const convertHierarchicalToContactGroups = (
+  state: HierarchicalSelectionState,
+  seasonData: HierarchicalSeason,
+): Map<GroupType, ContactGroup[]> => {
+  const groupsMap = new Map<GroupType, ContactGroup[]>();
+
+  // Season-level selection takes precedence
+  if (state.selectedSeasonIds.size > 0) {
+    const seasonGroup: ContactGroup = {
+      groupType: 'season',
+      groupName: `${seasonData.name} Season`,
+      contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+      totalCount: state.managersOnly ? seasonData.totalManagers || 0 : seasonData.totalPlayers || 0,
+      metadata: {
+        seasonId: seasonData.id,
+        managersOnly: state.managersOnly,
+      },
+    };
+    groupsMap.set('season', [seasonGroup]);
+    return groupsMap;
+  }
+
+  // League-level selections
+  if (state.selectedLeagueIds.size > 0) {
+    const leagueGroups: ContactGroup[] = [];
+    state.selectedLeagueIds.forEach((leagueId) => {
+      const league = seasonData.leagues.find((l) => l.id === leagueId);
+      if (league) {
+        const leagueGroup: ContactGroup = {
+          groupType: 'league',
+          groupName: `League: ${league.name}`,
+          contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+          totalCount: state.managersOnly ? league.totalManagers || 0 : league.totalPlayers || 0,
+          metadata: {
+            leagueIds: new Set([leagueId]),
+            managersOnly: state.managersOnly,
+          },
+        };
+        leagueGroups.push(leagueGroup);
+      }
+    });
+    if (leagueGroups.length > 0) {
+      groupsMap.set('league', leagueGroups);
+    }
+  }
+
+  // Division-level selections (only include divisions not already covered by league selections)
+  if (state.selectedDivisionIds.size > 0) {
+    const divisionGroups: ContactGroup[] = [];
+    state.selectedDivisionIds.forEach((divisionId) => {
+      // Find division in hierarchy to get details
+      let divisionDetails: HierarchicalDivision | null = null;
+      let parentLeagueId: string | null = null;
+
+      for (const league of seasonData.leagues) {
+        const division = league.divisions.find((d) => d.id === divisionId);
+        if (division) {
+          divisionDetails = division;
+          parentLeagueId = league.id;
+          break;
+        }
+      }
+
+      // Only include this division if its parent league is not already selected
+      if (divisionDetails && parentLeagueId && !state.selectedLeagueIds.has(parentLeagueId)) {
+        const divisionGroup: ContactGroup = {
+          groupType: 'division',
+          groupName: `Division: ${divisionDetails.name}`,
+          contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+          totalCount: state.managersOnly
+            ? divisionDetails.totalManagers || 0
+            : divisionDetails.totalPlayers || 0,
+          metadata: {
+            divisionIds: new Set([divisionId]),
+            managersOnly: state.managersOnly,
+          },
+        };
+        divisionGroups.push(divisionGroup);
+      }
+    });
+    if (divisionGroups.length > 0) {
+      groupsMap.set('division', divisionGroups);
+    }
+  }
+
+  // Team-level selections (only include teams not already covered by league/division selections)
+  if (state.selectedTeamIds.size > 0) {
+    const teamGroups: ContactGroup[] = [];
+    state.selectedTeamIds.forEach((teamId) => {
+      // Find team in hierarchy to get details
+      let teamDetails: HierarchicalTeam | null = null;
+      let parentLeagueId: string | null = null;
+      let parentDivisionId: string | null = null;
+
+      // Search in divisions
+      for (const league of seasonData.leagues) {
+        for (const division of league.divisions) {
+          const team = division.teams.find((t) => t.id === teamId);
+          if (team) {
+            teamDetails = team;
+            parentLeagueId = league.id;
+            parentDivisionId = division.id;
+            break;
+          }
+        }
+        if (teamDetails) break;
+
+        // Search in unassigned teams
+        const unassignedTeam = league.unassignedTeams?.find((t) => t.id === teamId);
+        if (unassignedTeam) {
+          teamDetails = unassignedTeam;
+          parentLeagueId = league.id;
+          // No parent division for unassigned teams
+          break;
+        }
+      }
+
+      // Only include this team if its parent league/division is not already selected
+      const isParentLeagueSelected = parentLeagueId && state.selectedLeagueIds.has(parentLeagueId);
+      const isParentDivisionSelected =
+        parentDivisionId && state.selectedDivisionIds.has(parentDivisionId);
+
+      if (teamDetails && !isParentLeagueSelected && !isParentDivisionSelected) {
+        const teamGroup: ContactGroup = {
+          groupType: 'teams',
+          groupName: `Team: ${teamDetails.name}`,
+          contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+          totalCount: state.managersOnly
+            ? teamDetails.managerCount || 0
+            : teamDetails.playerCount || 0,
+          metadata: {
+            teamIds: new Set([teamId]),
+            managersOnly: state.managersOnly,
+          },
+        };
+        teamGroups.push(teamGroup);
+      }
+    });
+    if (teamGroups.length > 0) {
+      groupsMap.set('teams', teamGroups);
+    }
+  }
+
+  // Managers-only selection with no specific hierarchy
+  if (state.managersOnly && groupsMap.size === 0) {
+    const managerGroup: ContactGroup = {
+      groupType: 'managers',
+      groupName: 'All Managers',
+      contactIds: new Set<string>(), // TODO: Populate with actual manager contact IDs from API
+      totalCount: seasonData.totalManagers || 0,
+      metadata: {
+        managersOnly: true,
+      },
+    };
+    groupsMap.set('managers', [managerGroup]);
+  }
+
+  return groupsMap;
+};
+
+/**
+ * Extracts hierarchical selection state from unified ContactGroup structure
+ */
+export const extractHierarchicalSelectionState = (
+  selectedGroups: Map<GroupType, ContactGroup[]>,
+): HierarchicalSelectionState => {
+  const state = createDefaultHierarchicalSelectionState();
+
+  selectedGroups.forEach((groups, groupType) => {
+    groups.forEach((group) => {
+      if (groupType === 'season' && group.metadata?.seasonId) {
+        state.selectedSeasonIds.add(group.metadata.seasonId);
+        state.managersOnly = Boolean(group.metadata.managersOnly);
+      } else if (groupType === 'league' && group.metadata?.leagueIds) {
+        if (group.metadata.leagueIds instanceof Set) {
+          group.metadata.leagueIds.forEach((id: string) => state.selectedLeagueIds.add(id));
+        }
+        state.managersOnly = Boolean(group.metadata.managersOnly);
+      } else if (groupType === 'division' && group.metadata?.divisionIds) {
+        if (group.metadata.divisionIds instanceof Set) {
+          group.metadata.divisionIds.forEach((id: string) => state.selectedDivisionIds.add(id));
+        }
+        state.managersOnly = Boolean(group.metadata.managersOnly);
+      } else if (groupType === 'teams' && group.metadata?.teamIds) {
+        if (group.metadata.teamIds instanceof Set) {
+          group.metadata.teamIds.forEach((id: string) => state.selectedTeamIds.add(id));
+        }
+        state.managersOnly = Boolean(group.metadata.managersOnly);
+      } else if (groupType === 'managers') {
+        state.managersOnly = true;
+      }
+    });
+  });
+
+  return state;
+};
+
+/**
+ * Validates hierarchical selection state for consistency
+ */
+export const validateHierarchicalSelection = (
+  state: HierarchicalSelectionState,
+): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  // Check for conflicting selections (season + league, season + team, etc.)
+  if (state.selectedSeasonIds.size > 0) {
+    if (state.selectedLeagueIds.size > 0) {
+      errors.push('Cannot select both season and specific leagues');
+    }
+    if (state.selectedTeamIds.size > 0) {
+      errors.push('Cannot select both season and specific teams');
+    }
+  }
+
+  if (state.selectedLeagueIds.size > 0 && state.selectedTeamIds.size > 0) {
+    errors.push('Cannot select both specific leagues and specific teams');
+  }
+
+  // Check for multiple season selections (should not happen in UI)
+  if (state.selectedSeasonIds.size > 1) {
+    errors.push('Cannot select multiple seasons');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
 };
