@@ -103,11 +103,10 @@ router.get(
     });
 
     // Calculate player counts if requested
-    let playerCounts: Map<string, number> = new Map();
+    let teamPlayerCounts: Map<string, number> = new Map();
     if (includePlayerCounts) {
-      // Get player counts for all league seasons in a single optimized query
-      // Group by the teamsseason.leagueseasonid to get counts per league season
-      const playerCountsByLeague = await prisma.rosterseason.groupBy({
+      // Get player counts for all teams in the league seasons
+      const playerCountsByTeam = await prisma.rosterseason.groupBy({
         by: ['teamseasonid'],
         where: {
           teamsseason: {
@@ -126,37 +125,10 @@ router.get(
         },
       });
 
-      // Get the mapping from teamseasonid to leagueseasonid with a separate query
-      const teamSeasonMapping = await prisma.teamsseason.findMany({
-        where: {
-          leagueseasonid: {
-            in: leagueSeasons.map((ls) => ls.id),
-          },
-        },
-        select: {
-          id: true,
-          leagueseasonid: true,
-        },
-      });
-
-      // Create a mapping from teamseasonid to leagueseasonid
-      const teamSeasonToLeagueSeasonMap = new Map<bigint, bigint>();
-      for (const ts of teamSeasonMapping) {
-        teamSeasonToLeagueSeasonMap.set(ts.id, ts.leagueseasonid);
+      // Create a mapping from teamseasonid to player count
+      for (const result of playerCountsByTeam) {
+        teamPlayerCounts.set(result.teamseasonid.toString(), result._count.playerid);
       }
-
-      // Aggregate counts by league season
-      const leagueSeasonCounts = new Map<string, number>();
-      for (const result of playerCountsByLeague) {
-        const leagueSeasonId = teamSeasonToLeagueSeasonMap.get(result.teamseasonid);
-        if (leagueSeasonId) {
-          const leagueSeasonIdStr = leagueSeasonId.toString();
-          const currentCount = leagueSeasonCounts.get(leagueSeasonIdStr) || 0;
-          leagueSeasonCounts.set(leagueSeasonIdStr, currentCount + result._count.playerid);
-        }
-      }
-
-      playerCounts = leagueSeasonCounts;
     }
 
     // Format the response
@@ -166,7 +138,6 @@ router.get(
         leagueId: string;
         leagueName: string;
         accountId: string;
-        playerCount?: number;
         divisions?: Array<{
           id: string;
           divisionId: string;
@@ -181,6 +152,7 @@ router.get(
             defaultVideo: string | null;
             autoPlayVideo: boolean;
             logoUrl: string;
+            playerCount?: number;
           }>;
         }>;
         unassignedTeams?: Array<{
@@ -192,13 +164,13 @@ router.get(
           defaultVideo: string | null;
           autoPlayVideo: boolean;
           logoUrl: string;
+          playerCount?: number;
         }>;
       } = {
         id: ls.id.toString(),
         leagueId: ls.league.id.toString(),
         leagueName: ls.league.name,
         accountId: ls.league.accountid.toString(),
-        ...(includePlayerCounts && { playerCount: playerCounts.get(ls.id.toString()) || 0 }),
       };
 
       // Add divisions with teams if includeTeams was requested
@@ -220,6 +192,9 @@ router.get(
                 defaultVideo: ts.teams.defaultvideo,
                 autoPlayVideo: ts.teams.autoplayvideo,
                 logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
+                ...(includePlayerCounts && {
+                  playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
+                }),
               })),
           }),
         );
@@ -237,6 +212,9 @@ router.get(
               defaultVideo: ts.teams.defaultvideo,
               autoPlayVideo: ts.teams.autoplayvideo,
               logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
+              ...(includePlayerCounts && {
+                playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
+              }),
             }));
         }
       }
