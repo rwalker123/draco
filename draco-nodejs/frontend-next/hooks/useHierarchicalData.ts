@@ -56,7 +56,6 @@ export function useHierarchicalData() {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         },
       );
