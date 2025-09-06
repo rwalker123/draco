@@ -1,0 +1,147 @@
+'use client';
+
+import React from 'react';
+import {
+  Box,
+  Typography,
+  FormControlLabel,
+  Checkbox,
+  Stack,
+  Collapse,
+  IconButton,
+} from '@mui/material';
+import {
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Person as PersonIcon,
+  Groups as GroupsIcon,
+} from '@mui/icons-material';
+
+interface TreeItemProps {
+  id: string;
+  title: string;
+  subtitle?: string;
+  playerCount?: number;
+  level: number;
+  isExpandable: boolean;
+  isExpanded: boolean;
+  isChecked: boolean;
+  isIndeterminate: boolean;
+  onToggleExpanded: (id: string) => void;
+  onToggleSelected: (id: string) => void;
+  children?: React.ReactNode;
+}
+
+const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
+  id,
+  title,
+  subtitle,
+  playerCount,
+  level,
+  isExpandable,
+  isExpanded,
+  isChecked,
+  isIndeterminate,
+  onToggleExpanded,
+  onToggleSelected,
+  children,
+}) => {
+  const getIcon = () => {
+    if (level === 0) return <GroupsIcon fontSize="small" color="primary" />;
+    if (level === 1) return <GroupsIcon fontSize="small" color="secondary" />;
+    if (level === 2) return <GroupsIcon fontSize="small" color="action" />;
+    return <PersonIcon fontSize="small" color="action" />;
+  };
+
+  const getIndentation = () => level * 24;
+
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          minHeight: 40,
+          paddingLeft: `${getIndentation()}px`,
+          paddingRight: 2,
+          paddingY: 0.5,
+          '&:hover': {
+            backgroundColor: 'action.hover',
+          },
+        }}
+      >
+        {/* Expansion button */}
+        <Box sx={{ width: 24, display: 'flex', justifyContent: 'center' }}>
+          {isExpandable ? (
+            <IconButton size="small" onClick={() => onToggleExpanded(id)} sx={{ padding: 0.25 }}>
+              {isExpanded ? (
+                <ExpandLessIcon fontSize="small" />
+              ) : (
+                <ExpandMoreIcon fontSize="small" />
+              )}
+            </IconButton>
+          ) : null}
+        </Box>
+
+        {/* Checkbox */}
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={isChecked}
+              indeterminate={isIndeterminate}
+              onChange={() => onToggleSelected(id)}
+              size="small"
+            />
+          }
+          label={
+            <Stack direction="row" alignItems="center" spacing={1}>
+              {getIcon()}
+              <Box>
+                <Typography variant="body2" fontWeight={level <= 1 ? 'medium' : 'normal'}>
+                  {title}
+                </Typography>
+                {subtitle && (
+                  <Typography variant="caption" color="text.secondary">
+                    {subtitle}
+                  </Typography>
+                )}
+              </Box>
+              {playerCount !== undefined && (
+                <Typography
+                  variant="caption"
+                  color="primary"
+                  sx={{
+                    backgroundColor: 'primary.light',
+                    color: 'primary.contrastText',
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 1,
+                    fontWeight: 'medium',
+                  }}
+                >
+                  {playerCount} {playerCount === 1 ? 'player' : 'players'}
+                </Typography>
+              )}
+            </Stack>
+          }
+          sx={{
+            margin: 0,
+            flex: 1,
+            '& .MuiFormControlLabel-label': {
+              flex: 1,
+            },
+          }}
+        />
+      </Box>
+
+      {/* Children */}
+      {isExpandable && (
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          {children}
+        </Collapse>
+      )}
+    </Box>
+  );
+};
+
+export default HierarchicalTreeItem;
