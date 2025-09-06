@@ -21,10 +21,52 @@ import { validateTeamSeasonWithDivision } from '../utils/teamValidation.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';
 import { DivisionSeason } from '../interfaces/divisionInterfaces.js';
-import { LeagueSeasonWithRelations, PrismaWhereClause } from '../interfaces/leagueInterfaces.js';
+import { PrismaWhereClause } from '../interfaces/leagueInterfaces.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
+
+// Types for Prisma result objects
+interface DivisionSeasonResult {
+  id: bigint;
+  priority: number;
+  divisiondefs: {
+    id: bigint;
+    name: string;
+  };
+}
+
+interface TeamSeasonResult {
+  id: bigint;
+  name: string;
+  divisionseasonid: bigint | null;
+  teams: {
+    id: bigint;
+    webaddress: string | null;
+    youtubeuserid: string | null;
+    defaultvideo: string | null;
+    autoplayvideo: boolean;
+  };
+}
+
+// Type guards for safe property access
+function hasDivisionSeasons(ls: unknown): ls is { divisionseason: DivisionSeasonResult[] } {
+  return (
+    typeof ls === 'object' &&
+    ls !== null &&
+    'divisionseason' in ls &&
+    Array.isArray((ls as { divisionseason: unknown }).divisionseason)
+  );
+}
+
+function hasTeamSeasons(ls: unknown): ls is { teamsseason: TeamSeasonResult[] } {
+  return (
+    typeof ls === 'object' &&
+    ls !== null &&
+    'teamsseason' in ls &&
+    Array.isArray((ls as { teamsseason: unknown }).teamsseason)
+  );
+}
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues
@@ -174,36 +216,34 @@ router.get(
       };
 
       // Add divisions with teams if includeTeams was requested
-      if (includeTeams) {
-        result.divisions = ((ls as unknown as LeagueSeasonWithRelations).divisionseason || []).map(
-          (ds) => ({
-            id: ds.id.toString(),
-            divisionId: ds.divisiondefs.id.toString(),
-            divisionName: ds.divisiondefs.name,
-            priority: ds.priority,
-            teams: ((ls as unknown as LeagueSeasonWithRelations).teamsseason || [])
-              .filter((ts) => ts.divisionseasonid === ds.id)
-              .map((ts) => ({
-                id: ts.id.toString(),
-                teamId: ts.teams.id.toString(),
-                name: ts.name,
-                webAddress: ts.teams.webaddress,
-                youtubeUserId: ts.teams.youtubeuserid,
-                defaultVideo: ts.teams.defaultvideo,
-                autoPlayVideo: ts.teams.autoplayvideo,
-                logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
-                ...(includePlayerCounts && {
-                  playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
-                }),
-              })),
-          }),
-        );
+      if (includeTeams && hasDivisionSeasons(ls) && hasTeamSeasons(ls)) {
+        result.divisions = ls.divisionseason.map((ds: DivisionSeasonResult) => ({
+          id: ds.id.toString(),
+          divisionId: ds.divisiondefs.id.toString(),
+          divisionName: ds.divisiondefs.name,
+          priority: ds.priority,
+          teams: ls.teamsseason
+            .filter((ts: TeamSeasonResult) => ts.divisionseasonid === ds.id)
+            .map((ts: TeamSeasonResult) => ({
+              id: ts.id.toString(),
+              teamId: ts.teams.id.toString(),
+              name: ts.name,
+              webAddress: ts.teams.webaddress,
+              youtubeUserId: ts.teams.youtubeuserid,
+              defaultVideo: ts.teams.defaultvideo,
+              autoPlayVideo: ts.teams.autoplayvideo,
+              logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
+              ...(includePlayerCounts && {
+                playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
+              }),
+            })),
+        }));
 
         // Add unassigned teams if both includeTeams AND includeUnassignedTeams are true
-        if (includeUnassignedTeams) {
-          result.unassignedTeams = ((ls as unknown as LeagueSeasonWithRelations).teamsseason || [])
-            .filter((ts) => !ts.divisionseasonid)
-            .map((ts) => ({
+        if (includeUnassignedTeams && hasTeamSeasons(ls)) {
+          result.unassignedTeams = ls.teamsseason
+            .filter((ts: TeamSeasonResult) => !ts.divisionseasonid)
+            .map((ts: TeamSeasonResult) => ({
               id: ts.id.toString(),
               teamId: ts.teams.id.toString(),
               name: ts.name,
