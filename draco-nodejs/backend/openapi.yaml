@@ -3058,10 +3058,6 @@ paths:
                               type: number
                               example: 8
                               description: Number of teams in this league
-                            playerCount:
-                              type: number
-                              example: 45
-                              description: Number of players in this league (only included if includePlayerCounts=true)
                             divisions:
                               type: array
                               items:
@@ -3069,10 +3065,108 @@ paths:
                                 properties:
                                   id:
                                     type: string
+                                    example: "div123"
+                                    description: Division season ID
+                                  divisionId:
+                                    type: string
+                                    example: "division456"
+                                    description: Division definition ID
+                                  divisionName:
+                                    type: string
+                                    example: "Major Division"
+                                    description: Division name
+                                  priority:
+                                    type: number
+                                    example: 1
+                                    description: Division priority order
+                                  teams:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        id:
+                                          type: string
+                                          example: "team123"
+                                          description: Team season ID
+                                        teamId:
+                                          type: string
+                                          example: "team456"
+                                          description: Team definition ID
+                                        name:
+                                          type: string
+                                          example: "Eagles"
+                                          description: Team name
+                                        webAddress:
+                                          type: string
+                                          nullable: true
+                                          example: "www.eagles.com"
+                                          description: Team website
+                                        youtubeUserId:
+                                          type: string
+                                          nullable: true
+                                          example: "eagles_baseball"
+                                          description: YouTube channel username
+                                        defaultVideo:
+                                          type: string
+                                          nullable: true
+                                          example: "season_highlights.mp4"
+                                          description: Default video file
+                                        autoPlayVideo:
+                                          type: boolean
+                                          example: false
+                                          description: Whether to auto-play videos
+                                        logoUrl:
+                                          type: string
+                                          example: "https://example.com/logos/eagles.png"
+                                          description: Team logo URL
+                                        playerCount:
+                                          type: number
+                                          example: 15
+                                          description: Number of players on this team (only included if includePlayerCounts=true)
+                            unassignedTeams:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    example: "team789"
+                                    description: Team season ID
+                                  teamId:
+                                    type: string
+                                    example: "team101"
+                                    description: Team definition ID
                                   name:
                                     type: string
-                                  teamCount:
+                                    example: "Hawks"
+                                    description: Team name
+                                  webAddress:
+                                    type: string
+                                    nullable: true
+                                    example: "www.hawks.com"
+                                    description: Team website
+                                  youtubeUserId:
+                                    type: string
+                                    nullable: true
+                                    example: "hawks_baseball"
+                                    description: YouTube channel username
+                                  defaultVideo:
+                                    type: string
+                                    nullable: true
+                                    example: "team_intro.mp4"
+                                    description: Default video file
+                                  autoPlayVideo:
+                                    type: boolean
+                                    example: false
+                                    description: Whether to auto-play videos
+                                  logoUrl:
+                                    type: string
+                                    example: "https://example.com/logos/hawks.png"
+                                    description: Team logo URL
+                                  playerCount:
                                     type: number
+                                    example: 12
+                                    description: Number of players on this team (only included if includePlayerCounts=true)
         "400":
           description: Bad request
           content:
