@@ -723,7 +723,6 @@ const EmailComposePageInternal: React.FC<
                         <FileUploadComponent
                           accountId={accountId}
                           onAttachmentsChange={handleAttachmentsChange}
-                          showQuota={true}
                           showProgress={true}
                           showPreview={true}
                           compact={isMobile}
