@@ -86,6 +86,7 @@ const createInitialState = (
   isSending: false,
   sendProgress: undefined,
   errors: [],
+  resetCounter: 0,
   config,
 });
 
@@ -354,7 +355,10 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
     }
 
     case 'RESET':
-      return createInitialState(state.config);
+      return {
+        ...createInitialState(state.config),
+        resetCounter: state.resetCounter + 1,
+      };
 
     default:
       return state;

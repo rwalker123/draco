@@ -552,6 +552,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     if (open) {
       // Initialize with provided groups or empty if none provided
       setSelectedGroups(initialSelectedGroups || new Map());
+
+      // Reset hierarchical selections when parent state is cleared
+      if (!initialSelectedGroups || initialSelectedGroups.size === 0) {
+        setHierarchicalSelectedIds(new Map());
+        setHierarchicalManagersOnly(false);
+      }
     }
   }, [open, initialSelectedGroups]);
 

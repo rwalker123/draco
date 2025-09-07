@@ -46,6 +46,7 @@ import AdvancedRecipientDialog from '../recipients/AdvancedRecipientDialog';
 import { AttachmentUploader } from '../attachments/AttachmentUploader';
 import { FileUploadComponent } from '../attachments/FileUploadComponent';
 import RichTextEditor from '../../email/RichTextEditor';
+import ConfirmationDialog from '../../common/ConfirmationDialog';
 
 import {
   RecipientContact,
@@ -84,6 +85,7 @@ interface DialogState {
   scheduleDialogOpen: boolean;
   previewDialogOpen: boolean;
   advancedRecipientDialogOpen: boolean;
+  cancelConfirmDialogOpen: boolean;
 }
 
 interface ComponentState {
@@ -125,6 +127,7 @@ const EmailComposePageInternal: React.FC<
       scheduleDialogOpen: false,
       previewDialogOpen: false,
       advancedRecipientDialogOpen: false,
+      cancelConfirmDialogOpen: false,
     });
 
     const [componentState, setComponentState] = useState<ComponentState>({
@@ -243,6 +246,21 @@ const EmailComposePageInternal: React.FC<
 
     const handleAdvancedRecipientClose = useCallback(() => {
       setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: false }));
+    }, []);
+
+    // Handle cancel/clear functionality
+    const handleCancelClick = useCallback(() => {
+      setDialogState((prev) => ({ ...prev, cancelConfirmDialogOpen: true }));
+    }, []);
+
+    const handleCancelConfirm = useCallback(() => {
+      actions.reset();
+      setDialogState((prev) => ({ ...prev, cancelConfirmDialogOpen: false }));
+      showNotification('Email cleared successfully', 'success');
+    }, [actions, showNotification]);
+
+    const handleCancelDialogClose = useCallback(() => {
+      setDialogState((prev) => ({ ...prev, cancelConfirmDialogOpen: false }));
     }, []);
 
     // Error handling and retry functionality
@@ -629,6 +647,7 @@ const EmailComposePageInternal: React.FC<
                     showValidationErrors={true}
                     compact={isMobile}
                     onRecipientSelectionClick={handleAdvancedRecipientOpen}
+                    onCancelClick={handleCancelClick}
                     hasAnyRecipientData={hasAnyRecipientData}
                     loading={loading}
                   />
@@ -653,7 +672,7 @@ const EmailComposePageInternal: React.FC<
                       so without this key, template content wouldn't populate when users select templates.
                     */}
                     <RichTextEditor
-                      key={state.selectedTemplate?.id || 'no-template'}
+                      key={`editor-${state.resetCounter}-${state.selectedTemplate?.id || 'no-template'}`}
                       initialValue={state.content}
                       onChange={handleContentChange}
                       placeholder="Write your email content..."
@@ -853,6 +872,18 @@ const EmailComposePageInternal: React.FC<
             initialSelectedGroups={state.recipientState?.selectedGroups}
           />
         </ErrorBoundary>
+
+        {/* Cancel Confirmation Dialog */}
+        <ConfirmationDialog
+          open={dialogState.cancelConfirmDialogOpen}
+          onClose={handleCancelDialogClose}
+          onConfirm={handleCancelConfirm}
+          title="Clear Email"
+          message="Are you sure you want to clear this email? All content, recipients, and attachments will be lost. This action cannot be undone."
+          confirmText="Clear Email"
+          cancelText="Keep Editing"
+          confirmButtonColor="error"
+        />
 
         {/* Preview Dialog */}
         <Dialog
