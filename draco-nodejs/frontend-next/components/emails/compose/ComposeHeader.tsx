@@ -19,6 +19,7 @@ import {
   Schedule as ScheduleIcon,
   Close as CloseIcon,
   Settings as SettingsIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 
 import { useEmailCompose } from './EmailComposeProvider';
@@ -31,6 +32,7 @@ interface ComposeHeaderProps {
   showValidationErrors?: boolean;
   compact?: boolean;
   onRecipientSelectionClick?: () => void;
+  onCancelClick?: () => void;
   hasAnyRecipientData?: boolean;
   loading?: boolean;
 }
@@ -44,6 +46,7 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   showValidationErrors = true,
   compact = false,
   onRecipientSelectionClick,
+  onCancelClick,
   hasAnyRecipientData = true,
   loading = false,
 }) => {
@@ -80,8 +83,40 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
     }).format(date);
   };
 
+  // Determine if there's content to clear
+  const hasContent = !!(
+    state.subject ||
+    state.content ||
+    state.attachments.length > 0 ||
+    (state.recipientState?.totalRecipients && state.recipientState.totalRecipients > 0) ||
+    (state.recipientState?.selectedGroups && state.recipientState.selectedGroups.size > 0) ||
+    state.selectedTemplate ||
+    state.isScheduled
+  );
+
   return (
-    <Paper variant="outlined" sx={{ p: compact ? 2 : 3, mb: 2 }}>
+    <Paper variant="outlined" sx={{ p: compact ? 2 : 3, mb: 2, position: 'relative' }}>
+      {/* Cancel Button */}
+      {hasContent && onCancelClick && (
+        <Button
+          variant="outlined"
+          size="small"
+          color="secondary"
+          startIcon={<ClearIcon />}
+          onClick={onCancelClick}
+          disabled={state.isSending}
+          sx={{
+            position: 'absolute',
+            top: compact ? 8 : 12,
+            right: compact ? 8 : 12,
+            minWidth: 'auto',
+            px: compact ? 1.5 : 2,
+          }}
+        >
+          {compact ? '' : 'Clear'}
+        </Button>
+      )}
+
       <Stack spacing={compact ? 2 : 3}>
         {/* Sender Information */}
         {showFromField && (

@@ -45,6 +45,7 @@ export interface EmailComposeState {
   isSending: boolean;
   sendProgress?: number;
   errors: ComposeValidationError[];
+  resetCounter: number; // Used to force component remounts on reset
 
   // Configuration
   config: EmailComposeConfig;
