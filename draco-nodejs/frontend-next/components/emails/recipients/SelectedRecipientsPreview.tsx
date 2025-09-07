@@ -1,26 +1,13 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import {
-  Box,
-  Stack,
-  Typography,
-  Chip,
-  Paper,
-  Divider,
-  IconButton,
-  Tooltip,
-  Alert,
-  useTheme,
-  alpha,
-} from '@mui/material';
+import { Box, Stack, Typography, Chip, Paper, Alert, useTheme, alpha } from '@mui/material';
 import {
   Person as PersonIcon,
   SupervisorAccount as ManagerIcon,
   Group as GroupIcon,
   CalendarMonth as SeasonIcon,
   EmojiEvents as LeagueIcon,
-  Close as CloseIcon,
   Email as EmailIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
@@ -30,23 +17,22 @@ import { GroupType } from '../../../types/emails/recipients';
 
 interface SelectedRecipientsPreviewProps {
   maxVisibleChips?: number;
-  showCounts?: boolean;
   showValidationWarnings?: boolean;
   compact?: boolean;
 }
 
 /**
- * SelectedRecipientsPreview - Shows selected recipients as group summaries
- * Uses the unified selectedGroups Map for clean group-based display
+ * SelectedRecipientsPreview - Read-only display of selected recipients as group summaries
+ * Uses the unified selectedGroups Map for clean group-based display.
+ * This component is for viewing current selections only - use the Advanced Recipient dialog to modify selections.
  */
 const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProps> = ({
   maxVisibleChips = 8,
-  showCounts = true,
   showValidationWarnings = true,
   compact = false,
 }) => {
   const theme = useTheme();
-  const { state, actions } = useEmailCompose();
+  const { state } = useEmailCompose();
 
   // Get group icon and color for each group type
   const getGroupConfig = (groupType: GroupType) => {
@@ -71,8 +57,6 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
     if (!state.recipientState?.selectedGroups) {
       return {
         groupSummaries: [],
-        totalRecipients: 0,
-        validEmails: 0,
         invalidEmails: 0,
         hasSelections: false,
       };
@@ -104,8 +88,6 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
 
     return {
       groupSummaries,
-      totalRecipients: state.recipientState.totalRecipients || 0,
-      validEmails: state.recipientState.validEmailCount || 0,
       invalidEmails: state.recipientState.invalidEmailCount || 0,
       hasSelections: groupSummaries.length > 0,
     };
@@ -124,16 +106,6 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
           size={compact ? 'small' : 'medium'}
           variant="outlined"
           color={group.color}
-          onDelete={() => {
-            // For now, clear all recipients when any group is deleted
-            // TODO: Implement specific group removal if needed
-            actions.clearAllRecipients();
-          }}
-          deleteIcon={
-            <Tooltip title={`Remove ${group.label}`}>
-              <CloseIcon />
-            </Tooltip>
-          }
           sx={{
             '& .MuiChip-icon': {
               color: `${group.color}.main`,
@@ -142,7 +114,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
         />
       );
     });
-  }, [summaryData.groupSummaries, compact, actions]);
+  }, [summaryData.groupSummaries, compact]);
 
   // Determine visible and hidden chips
   const visibleChips = groupChips.slice(0, maxVisibleChips);
@@ -179,28 +151,6 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       }}
     >
       <Stack spacing={compact ? 1 : 1.5}>
-        {/* Summary Header */}
-        {showCounts && (
-          <Box>
-            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <EmailIcon color="primary" fontSize="small" />
-                <Typography variant="body2" fontWeight="medium" color="primary">
-                  {summaryData.totalRecipients} recipient
-                  {summaryData.totalRecipients !== 1 ? 's' : ''}
-                </Typography>
-              </Stack>
-
-              {summaryData.invalidEmails > 0 && (
-                <Typography variant="caption" color="warning.main">
-                  {summaryData.invalidEmails} invalid email
-                  {summaryData.invalidEmails !== 1 ? 's' : ''}
-                </Typography>
-              )}
-            </Stack>
-          </Box>
-        )}
-
         {/* Group Summary Chips */}
         <Box>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
@@ -250,28 +200,6 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
               </ul>
             </Box>
           </Alert>
-        )}
-
-        {/* Clear All Action */}
-        {summaryData.hasSelections && !compact && (
-          <Box>
-            <Divider sx={{ mb: 1 }} />
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                Click × on any item to remove it
-              </Typography>
-              <Tooltip title="Clear all selections">
-                <IconButton
-                  size="small"
-                  onClick={actions.clearAllRecipients}
-                  color="error"
-                  sx={{ fontSize: '0.75rem' }}
-                >
-                  Clear All
-                </IconButton>
-              </Tooltip>
-            </Stack>
-          </Box>
         )}
       </Stack>
     </Paper>

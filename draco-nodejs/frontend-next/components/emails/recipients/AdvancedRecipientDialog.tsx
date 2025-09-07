@@ -608,6 +608,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
       clearAllRecipients: () => {
         setSelectedGroups(new Map());
+        setHierarchicalSelectedIds(new Map()); // Clear hierarchical selections
+        setHierarchicalManagersOnly(false); // Reset managers-only toggle
       },
 
       isContactSelected: (contactId: string): boolean => {
@@ -1292,7 +1294,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
             <Button
               onClick={handleApply}
               variant="contained"
-              disabled={getTotalSelected() === 0 || loadingState.applying}
+              disabled={loadingState.applying}
               startIcon={loadingState.applying ? <CircularProgress size={20} /> : undefined}
             >
               {loadingState.applying ? 'Applying...' : 'Apply Selection'}

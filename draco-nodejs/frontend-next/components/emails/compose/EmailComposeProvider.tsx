@@ -60,6 +60,7 @@ type ComposeAction =
   | { type: 'UPDATE_RECIPIENT_STATE'; payload: RecipientSelectionState }
   | { type: 'UPDATE_SELECTED_GROUPS'; payload: Map<GroupType, ContactGroup[]> }
   | { type: 'CLEAR_ALL_RECIPIENTS' }
+  | { type: 'REMOVE_SPECIFIC_GROUP'; payload: { groupType: GroupType; groupIndex: number } }
   | { type: 'SET_RECIPIENT_SEARCH_QUERY'; payload: string }
   | { type: 'SET_RECIPIENT_ACTIVE_TAB'; payload: RecipientSelectionTab };
 
@@ -280,6 +281,50 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
       return {
         ...state,
         recipientState: createDefaultRecipientState(),
+        hasUnsavedChanges: true,
+      };
+    }
+
+    case 'REMOVE_SPECIFIC_GROUP': {
+      const recipientState = getRecipientState(state);
+      const { groupType, groupIndex } = action.payload;
+
+      if (!recipientState.selectedGroups) {
+        return state;
+      }
+
+      // Create a new copy of the selectedGroups Map
+      const newSelectedGroups = new Map(recipientState.selectedGroups);
+      const groupsForType = newSelectedGroups.get(groupType);
+
+      if (!groupsForType || groupIndex >= groupsForType.length) {
+        return state; // Invalid group type or index
+      }
+
+      // Remove the specific group at the given index
+      const updatedGroupsForType = [...groupsForType];
+      updatedGroupsForType.splice(groupIndex, 1);
+
+      // Update or remove the group type entry
+      if (updatedGroupsForType.length === 0) {
+        newSelectedGroups.delete(groupType);
+      } else {
+        newSelectedGroups.set(groupType, updatedGroupsForType);
+      }
+
+      // Recalculate totals
+      const totalRecipients = getTotalRecipientsFromGroups(newSelectedGroups);
+      const validEmailCount = totalRecipients; // Assume all valid for now
+
+      return {
+        ...state,
+        recipientState: {
+          ...recipientState,
+          selectedGroups: newSelectedGroups,
+          totalRecipients,
+          validEmailCount,
+          invalidEmailCount: totalRecipients - validEmailCount,
+        },
         hasUnsavedChanges: true,
       };
     }
@@ -732,6 +777,10 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     dispatch({ type: 'CLEAR_ALL_RECIPIENTS' });
   }, []);
 
+  const removeSpecificGroup = useCallback((groupType: GroupType, groupIndex: number) => {
+    dispatch({ type: 'REMOVE_SPECIFIC_GROUP', payload: { groupType, groupIndex } });
+  }, []);
+
   const setRecipientSearchQuery = useCallback((query: string) => {
     dispatch({ type: 'SET_RECIPIENT_SEARCH_QUERY', payload: query });
   }, []);
@@ -764,6 +813,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     updateRecipientState,
     updateSelectedGroups,
     clearAllRecipients,
+    removeSpecificGroup,
     setRecipientSearchQuery,
     setRecipientActiveTab,
   };
