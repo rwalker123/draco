@@ -1,30 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  Box,
-  Typography,
-  FormControlLabel,
-  Checkbox,
-  Switch,
-  Stack,
-  Collapse,
-  IconButton,
-  CircularProgress,
-  Alert,
-  Paper,
-  Divider,
-} from '@mui/material';
-import {
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  Person as PersonIcon,
-  Groups as GroupsIcon,
-} from '@mui/icons-material';
-import {
-  HierarchicalSeason,
-  HierarchicalGroupSelectionProps,
-} from '../../../types/emails/recipients';
+import React, { useEffect } from 'react';
+import { Box, Typography, Switch, Stack, CircularProgress, Alert, Paper } from '@mui/material';
+import { HierarchicalGroupSelectionProps } from '../../../types/emails/recipients';
+import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
+import { useHierarchicalMaps } from '../../../hooks/useHierarchicalMaps';
+import { useHierarchicalSelection } from '../../../hooks/useHierarchicalSelection';
+import HierarchicalTree from './HierarchicalTree';
 
 const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
   accountId,
@@ -34,330 +16,36 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
   onSelectionChange,
   loading = false,
 }) => {
-  // Component state
-  const [hierarchicalData, setHierarchicalData] = useState<HierarchicalSeason | null>(null);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [dataError, setDataError] = useState<string | null>(null);
-  // Initialize with all leagues and divisions expanded by default
-  const [expandedLeagues, setExpandedLeagues] = useState<Set<string>>(new Set());
-  const [expandedDivisions, setExpandedDivisions] = useState<Set<string>>(new Set());
+  // Data fetching
+  const {
+    hierarchicalData,
+    loading: dataLoading,
+    error: dataError,
+    loadHierarchicalData,
+  } = useHierarchicalData();
 
-  // Hierarchical relationship data structures for universal selection algorithm
-  const hierarchyMaps = useMemo(() => {
-    if (!hierarchicalData) {
-      return {
-        parentMap: new Map<string, string>(), // child -> parent
-        childrenMap: new Map<string, Set<string>>(), // parent -> children
-        itemTypeMap: new Map<string, 'season' | 'league' | 'division' | 'team'>(), // item -> type
-        siblingsMap: new Map<string, Set<string>>(), // item -> siblings
-        playerCountMap: new Map<string, number>(), // item -> player count
-      };
-    }
+  // Hierarchy mapping
+  const hierarchyMaps = useHierarchicalMaps(hierarchicalData, seasonId);
 
-    const parentMap = new Map<string, string>();
-    const childrenMap = new Map<string, Set<string>>();
-    const itemTypeMap = new Map<string, 'season' | 'league' | 'division' | 'team'>();
-    const siblingsMap = new Map<string, Set<string>>();
-    const playerCountMap = new Map<string, number>();
-
-    // Season level
-    itemTypeMap.set(seasonId, 'season');
-    childrenMap.set(seasonId, new Set());
-    playerCountMap.set(seasonId, hierarchicalData.totalPlayers || 0);
-
-    // Process leagues
-    const leagueIds = new Set<string>();
-    hierarchicalData.leagues.forEach((league) => {
-      itemTypeMap.set(league.id, 'league');
-      parentMap.set(league.id, seasonId);
-      childrenMap.get(seasonId)!.add(league.id);
-      childrenMap.set(league.id, new Set());
-      leagueIds.add(league.id);
-      playerCountMap.set(league.id, league.totalPlayers || 0);
-
-      // Process divisions
-      const divisionIds = new Set<string>();
-      league.divisions.forEach((division) => {
-        itemTypeMap.set(division.id, 'division');
-        parentMap.set(division.id, league.id);
-        childrenMap.get(league.id)!.add(division.id);
-        childrenMap.set(division.id, new Set());
-        divisionIds.add(division.id);
-        playerCountMap.set(division.id, division.totalPlayers || 0);
-
-        // Process teams in division
-        const teamIds = new Set<string>();
-        division.teams.forEach((team) => {
-          itemTypeMap.set(team.id, 'team');
-          parentMap.set(team.id, division.id);
-          childrenMap.get(division.id)!.add(team.id);
-          teamIds.add(team.id);
-          playerCountMap.set(team.id, team.playerCount || 0);
-        });
-        siblingsMap.set(division.id, new Set(teamIds));
-        teamIds.forEach((teamId) => siblingsMap.set(teamId, new Set(teamIds)));
-      });
-
-      siblingsMap.set(league.id, new Set(divisionIds));
-      divisionIds.forEach((divId) => siblingsMap.set(divId, new Set(divisionIds)));
-    });
-
-    siblingsMap.set(seasonId, new Set(leagueIds));
-    leagueIds.forEach((leagueId) => siblingsMap.set(leagueId, new Set(leagueIds)));
-
-    return { parentMap, childrenMap, itemTypeMap, siblingsMap, playerCountMap };
-  }, [hierarchicalData, seasonId]);
-
-  // Universal selection algorithm - works for any hierarchy level
-  const handleUniversalToggle = useCallback(
-    (itemId: string, currentlySelected: boolean) => {
-      if (!hierarchicalData) return;
-
-      const newStateMap = new Map(itemSelectedState);
-
-      if (currentlySelected) {
-        // DESELECTION: Set item and all children to 'unselected' with 0 player count
-        const setItemAndChildrenUnselected = (id: string) => {
-          newStateMap.set(id, { state: 'unselected', playerCount: 0 });
-          const children = hierarchyMaps.childrenMap.get(id);
-          if (children) {
-            children.forEach((childId) => setItemAndChildrenUnselected(childId));
-          }
-        };
-        setItemAndChildrenUnselected(itemId);
-      } else {
-        // SELECTION: Set item and all children to 'selected' with their player counts
-        const setItemAndChildrenSelected = (id: string) => {
-          const playerCount = hierarchyMaps.playerCountMap.get(id) || 0;
-          newStateMap.set(id, { state: 'selected', playerCount });
-          const children = hierarchyMaps.childrenMap.get(id);
-          if (children) {
-            children.forEach((childId) => setItemAndChildrenSelected(childId));
-          }
-        };
-        setItemAndChildrenSelected(itemId);
-      }
-
-      // Update parent chain: walk up from the changed item
-      const updateParentChain = (id: string) => {
-        const parentId = hierarchyMaps.parentMap.get(id);
-        if (!parentId) return; // Reached root
-
-        const children = hierarchyMaps.childrenMap.get(parentId);
-        if (!children || children.size === 0) return;
-
-        // Count children states and sum player counts
-        let selectedCount = 0;
-        let intermediateCount = 0;
-        let totalPlayerCount = 0;
-
-        children.forEach((childId) => {
-          const childStateObj = newStateMap.get(childId) || { state: 'unselected', playerCount: 0 };
-          if (childStateObj.state === 'selected') {
-            selectedCount++;
-            totalPlayerCount += childStateObj.playerCount;
-          } else if (childStateObj.state === 'intermediate') {
-            intermediateCount++;
-            totalPlayerCount += childStateObj.playerCount;
-          }
-        });
-
-        // Determine parent state and player count
-        if (selectedCount === children.size) {
-          // All children selected -> parent selected
-          newStateMap.set(parentId, { state: 'selected', playerCount: totalPlayerCount });
-        } else if (selectedCount > 0 || intermediateCount > 0) {
-          // Some children selected or intermediate -> parent intermediate
-          newStateMap.set(parentId, { state: 'intermediate', playerCount: totalPlayerCount });
-        } else {
-          // No children selected -> parent unselected
-          newStateMap.set(parentId, { state: 'unselected', playerCount: 0 });
-        }
-
-        // Recursively update parent's parent
-        updateParentChain(parentId);
-      };
-
-      updateParentChain(itemId);
-
-      onSelectionChange(newStateMap, managersOnly);
-    },
-    [itemSelectedState, hierarchyMaps, hierarchicalData, managersOnly, onSelectionChange],
+  // Selection logic
+  const { handleSelectionChange } = useHierarchicalSelection(
+    itemSelectedState,
+    hierarchyMaps,
+    managersOnly,
+    onSelectionChange,
   );
 
-  // Load hierarchical data
-  const loadHierarchicalData = useCallback(async () => {
-    if (!accountId || !seasonId) return;
-
-    try {
-      setDataLoading(true);
-      setDataError(null);
-
-      const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true&includePlayerCounts=true`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to load team hierarchy data');
-      }
-
-      const data = await response.json();
-
-      // Define interfaces for API response
-      interface ApiTeam {
-        id: string;
-        name: string;
-        playerCount?: number;
-        managerCount?: number;
-      }
-
-      interface ApiDivision {
-        id: string;
-        divisionName: string;
-        teams?: ApiTeam[];
-      }
-
-      interface ApiLeague {
-        id: string;
-        leagueName: string;
-        divisions?: ApiDivision[];
-      }
-
-      interface ApiResponse {
-        data: {
-          season: {
-            id: string;
-            name: string;
-          };
-          leagueSeasons: ApiLeague[];
-        };
-      }
-
-      const apiData = data as ApiResponse;
-
-      // Transform the API response into our hierarchical structure
-      const season: HierarchicalSeason = {
-        id: apiData.data.season.id,
-        name: apiData.data.season.name,
-        leagues: apiData.data.leagueSeasons.map((league: ApiLeague) => ({
-          id: league.id,
-          name: league.leagueName,
-          divisions:
-            league.divisions?.map((division: ApiDivision) => ({
-              id: division.id,
-              name: division.divisionName,
-              teams:
-                division.teams?.map((team: ApiTeam) => ({
-                  id: team.id,
-                  name: team.name,
-                  playerCount: team.playerCount || 0,
-                  managerCount: team.managerCount || 0,
-                })) || [],
-              totalPlayers:
-                division.teams?.reduce(
-                  (sum: number, team: ApiTeam) => sum + (team.playerCount || 0),
-                  0,
-                ) || 0,
-              totalManagers:
-                division.teams?.reduce(
-                  (sum: number, team: ApiTeam) => sum + (team.managerCount || 0),
-                  0,
-                ) || 0,
-            })) || [],
-          totalPlayers: [
-            ...(league.divisions || []).flatMap((d: ApiDivision) => d.teams || []),
-          ].reduce((sum: number, team: ApiTeam) => sum + (team.playerCount || 0), 0),
-          totalManagers: [
-            ...(league.divisions || []).flatMap((d: ApiDivision) => d.teams || []),
-          ].reduce((sum: number, team: ApiTeam) => sum + (team.managerCount || 0), 0),
-        })),
-        totalPlayers: apiData.data.leagueSeasons.reduce((sum: number, league: ApiLeague) => {
-          const leaguePlayers = [
-            ...(league.divisions || []).flatMap((d: ApiDivision) => d.teams || []),
-          ].reduce((leagueSum: number, team: ApiTeam) => leagueSum + (team.playerCount || 0), 0);
-          return sum + leaguePlayers;
-        }, 0),
-        totalManagers: apiData.data.leagueSeasons.reduce((sum: number, league: ApiLeague) => {
-          const leagueManagers = [
-            ...(league.divisions || []).flatMap((d: ApiDivision) => d.teams || []),
-          ].reduce((leagueSum: number, team: ApiTeam) => leagueSum + (team.managerCount || 0), 0);
-          return sum + leagueManagers;
-        }, 0),
-      };
-
-      setHierarchicalData(season);
-
-      // Expand all leagues and divisions by default
-      const allLeagueIds = new Set(season.leagues.map((league) => league.id));
-      const allDivisionIds = new Set<string>();
-      season.leagues.forEach((league) => {
-        league.divisions.forEach((division) => {
-          allDivisionIds.add(division.id);
-        });
-      });
-
-      setExpandedLeagues(allLeagueIds);
-      setExpandedDivisions(allDivisionIds);
-    } catch (error) {
-      console.error('Failed to load hierarchical data:', error);
-      setDataError(error instanceof Error ? error.message : 'Failed to load team hierarchy');
-    } finally {
-      setDataLoading(false);
-    }
-  }, [accountId, seasonId]);
-
-  // Load data on mount
+  // Load data when accountId or seasonId changes
   useEffect(() => {
-    loadHierarchicalData();
-  }, [loadHierarchicalData]);
+    if (accountId && seasonId) {
+      loadHierarchicalData(accountId, seasonId);
+    }
+  }, [accountId, seasonId, loadHierarchicalData]);
 
-  // Manager-only toggle handler
-  const handleManagerToggle = useCallback(() => {
-    // Toggle managersOnly flag, keep same selections
-    onSelectionChange(itemSelectedState, !managersOnly);
-  }, [itemSelectedState, managersOnly, onSelectionChange]);
-
-  // Expand/collapse handlers
-  const toggleLeagueExpansion = useCallback((leagueId: string) => {
-    setExpandedLeagues((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(leagueId)) {
-        newSet.delete(leagueId);
-      } else {
-        newSet.add(leagueId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const toggleDivisionExpansion = useCallback((divisionId: string) => {
-    setExpandedDivisions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(divisionId)) {
-        newSet.delete(divisionId);
-      } else {
-        newSet.add(divisionId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  // Simple checkbox state calculation using Map lookup
-  const getCheckboxState = useCallback(
-    (itemId: string) => {
-      const stateObj = itemSelectedState.get(itemId) || { state: 'unselected', playerCount: 0 };
-      return {
-        checked: stateObj.state === 'selected',
-        indeterminate: stateObj.state === 'intermediate',
-      };
-    },
-    [itemSelectedState],
-  );
+  // Handle managers-only toggle
+  const handleManagersOnlyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onSelectionChange(itemSelectedState, event.target.checked);
+  };
 
   // Render loading state
   if (loading || dataLoading) {
@@ -374,218 +62,53 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
   // Render error state
   if (dataError) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="error">Error loading team hierarchy: {dataError}</Alert>
-      </Box>
+      <Alert severity="error" sx={{ m: 2 }}>
+        Failed to load team hierarchy: {dataError}
+      </Alert>
     );
   }
 
   // Render empty state
-  if (!hierarchicalData || hierarchicalData.leagues.length === 0) {
+  if (!hierarchicalData) {
     return (
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          No teams found for this season.
-        </Typography>
-      </Box>
+      <Alert severity="info" sx={{ m: 2 }}>
+        No team data available for this season.
+      </Alert>
     );
   }
 
-  const seasonCheckboxState = getCheckboxState(seasonId);
-
   return (
-    <Box sx={{ width: '100%' }}>
-      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        {/* Manager-only toggle */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Selection Options
-          </Typography>
-          <FormControlLabel
-            control={<Switch checked={managersOnly} onChange={handleManagerToggle} size="small" />}
-            label={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <GroupsIcon fontSize="small" />
-                <Typography variant="body2">Include only Managers</Typography>
-              </Stack>
-            }
-          />
-        </Stack>
-        <Divider />
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <Paper variant="outlined" sx={{ mb: 2 }}>
+        <Box sx={{ p: 3 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+            <Typography variant="h6" component="h3">
+              Select Teams & Players
+            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="body2" color="text.secondary">
+                Managers Only
+              </Typography>
+              <Switch checked={managersOnly} onChange={handleManagersOnlyChange} size="small" />
+            </Stack>
+          </Stack>
+        </Box>
       </Paper>
 
-      <Paper variant="outlined" sx={{ maxHeight: '400px', overflow: 'auto' }}>
-        <Box sx={{ p: 1 }}>
-          {/* Season level */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={seasonCheckboxState.checked}
-                indeterminate={seasonCheckboxState.indeterminate}
-                onChange={() => handleUniversalToggle(seasonId, seasonCheckboxState.checked)}
-              />
-            }
-            label={
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <PersonIcon fontSize="small" />
-                <Typography variant="subtitle1" fontWeight="medium">
-                  {hierarchicalData.name} Season
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  (
-                  {managersOnly
-                    ? `${hierarchicalData.totalManagers || 0} managers`
-                    : `${hierarchicalData.totalPlayers || 0} players`}
-                  )
-                </Typography>
-              </Stack>
-            }
-            sx={{ width: '100%', m: 0, '& .MuiFormControlLabel-label': { flex: 1 } }}
+      {/* Scrollable Hierarchical Tree */}
+      <Paper
+        variant="outlined"
+        sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+      >
+        <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+          <HierarchicalTree
+            hierarchicalData={hierarchicalData}
+            seasonId={seasonId}
+            hierarchyMaps={hierarchyMaps}
+            itemSelectedState={itemSelectedState}
+            onSelectionChange={handleSelectionChange}
           />
-
-          {/* Leagues */}
-          {hierarchicalData.leagues.map((league) => {
-            const leagueCheckboxState = getCheckboxState(league.id);
-            const isExpanded = expandedLeagues.has(league.id);
-
-            return (
-              <Box
-                key={league.id}
-                sx={{ ml: 3, borderLeft: '1px solid', borderColor: 'divider', pl: 1 }}
-              >
-                <Stack direction="row" alignItems="center" sx={{ py: 0.5 }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={leagueCheckboxState.checked}
-                        indeterminate={leagueCheckboxState.indeterminate}
-                        onChange={() =>
-                          handleUniversalToggle(league.id, leagueCheckboxState.checked)
-                        }
-                      />
-                    }
-                    label={
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Typography variant="body1">{league.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          (
-                          {managersOnly
-                            ? `${league.totalManagers || 0} managers`
-                            : `${league.totalPlayers || 0} players`}
-                          )
-                        </Typography>
-                      </Stack>
-                    }
-                    sx={{ flex: 1, m: 0 }}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={() => toggleLeagueExpansion(league.id)}
-                    disabled={league.divisions.length === 0}
-                  >
-                    {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  </IconButton>
-                </Stack>
-
-                <Collapse in={isExpanded}>
-                  <Box sx={{ ml: 2, borderLeft: '1px solid', borderColor: 'divider', pl: 1 }}>
-                    {/* Divisions */}
-                    {league.divisions.map((division) => {
-                      const isDivisionExpanded = expandedDivisions.has(division.id);
-                      const divisionCheckboxState = getCheckboxState(division.id);
-
-                      return (
-                        <Box key={division.id}>
-                          <Stack direction="row" alignItems="center" sx={{ py: 0.5 }}>
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  size="small"
-                                  checked={divisionCheckboxState.checked}
-                                  indeterminate={divisionCheckboxState.indeterminate}
-                                  onChange={() =>
-                                    handleUniversalToggle(
-                                      division.id,
-                                      divisionCheckboxState.checked,
-                                    )
-                                  }
-                                />
-                              }
-                              label={
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                  <Typography variant="body2">{division.name}</Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    (
-                                    {managersOnly
-                                      ? `${division.totalManagers || 0} managers`
-                                      : `${division.totalPlayers || 0} players`}
-                                    )
-                                  </Typography>
-                                </Stack>
-                              }
-                              sx={{ flex: 1, m: 0 }}
-                            />
-                            <IconButton
-                              size="small"
-                              onClick={() => toggleDivisionExpansion(division.id)}
-                              disabled={division.teams.length === 0}
-                            >
-                              {isDivisionExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                            </IconButton>
-                          </Stack>
-
-                          <Collapse in={isDivisionExpanded}>
-                            <Box
-                              sx={{ ml: 2, borderLeft: '1px solid', borderColor: 'divider', pl: 1 }}
-                            >
-                              {/* Teams */}
-                              {division.teams.map((team) => {
-                                const teamCheckboxState = getCheckboxState(team.id);
-
-                                return (
-                                  <FormControlLabel
-                                    key={team.id}
-                                    control={
-                                      <Checkbox
-                                        size="small"
-                                        checked={teamCheckboxState.checked}
-                                        indeterminate={teamCheckboxState.indeterminate}
-                                        onChange={() =>
-                                          handleUniversalToggle(team.id, teamCheckboxState.checked)
-                                        }
-                                      />
-                                    }
-                                    label={
-                                      <Stack direction="row" alignItems="center" spacing={1}>
-                                        <Typography variant="body2">{team.name}</Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                          (
-                                          {managersOnly
-                                            ? `${team.managerCount || 0} managers`
-                                            : `${team.playerCount || 0} players`}
-                                          )
-                                        </Typography>
-                                      </Stack>
-                                    }
-                                    sx={{
-                                      width: '100%',
-                                      py: 0.5,
-                                      m: 0,
-                                      '& .MuiFormControlLabel-label': { flex: 1 },
-                                    }}
-                                  />
-                                );
-                              })}
-                            </Box>
-                          </Collapse>
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                </Collapse>
-              </Box>
-            );
-          })}
         </Box>
       </Paper>
     </Box>
