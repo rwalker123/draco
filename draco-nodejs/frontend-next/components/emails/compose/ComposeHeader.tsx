@@ -135,7 +135,6 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <SelectedRecipientsPreview
                       maxVisibleChips={compact ? 4 : 8}
-                      showCounts={true}
                       showValidationWarnings={true}
                       compact={compact}
                     />

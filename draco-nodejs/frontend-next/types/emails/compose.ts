@@ -86,6 +86,7 @@ export interface EmailComposeActions {
   updateRecipientState: (state: RecipientSelectionState) => void;
   updateSelectedGroups: (groups: Map<GroupType, ContactGroup[]>) => void;
   clearAllRecipients: () => void;
+  removeSpecificGroup: (groupType: GroupType, groupIndex: number) => void;
   setRecipientSearchQuery: (query: string) => void;
   setRecipientActiveTab: (tab: RecipientSelectionTab) => void;
 
