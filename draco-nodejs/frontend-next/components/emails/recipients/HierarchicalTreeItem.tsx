@@ -53,6 +53,19 @@ const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
     return <PersonIcon fontSize="small" color="action" />;
   };
 
+  const getFontWeight = () => {
+    if (level === 0) return 'bold'; // Season
+    if (level === 1) return 'bold'; // Leagues
+    if (level === 2) return 'bold'; // Divisions
+    return 'normal'; // Teams
+  };
+
+  const getTypographyVariant = () => {
+    if (level === 0) return 'subtitle1'; // Season - larger
+    if (level === 1) return 'body1'; // Leagues
+    return 'body2'; // Divisions & Teams
+  };
+
   const getIndentation = () => level * 24;
 
   return (
@@ -97,7 +110,7 @@ const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
             <Stack direction="row" alignItems="center" spacing={1}>
               {getIcon()}
               <Box>
-                <Typography variant="body2" fontWeight={level <= 1 ? 'medium' : 'normal'}>
+                <Typography variant={getTypographyVariant()} fontWeight={getFontWeight()}>
                   {title}
                 </Typography>
                 {subtitle && (
