@@ -29,6 +29,8 @@ import {
 } from '@mui/icons-material';
 
 import { useNotifications } from '../../../hooks/useNotifications';
+import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
+import { useHierarchicalMaps } from '../../../hooks/useHierarchicalMaps';
 import ContactSelectionPanel from './ContactSelectionPanel';
 import HierarchicalGroupSelection from './HierarchicalGroupSelection';
 import { ManagerStateProvider, useManagerStateContext } from './context/ManagerStateContext';
@@ -42,6 +44,8 @@ import {
   ContactGroup,
   RecipientSelectionTab,
   HierarchicalSelectionItem,
+  HierarchicalSelectionState,
+  convertHierarchicalToContactGroups,
 } from '../../../types/emails/recipients';
 
 // Simplified RecipientSelectionState for backward compatibility
@@ -149,6 +153,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
   // Access manager state for converting manager IDs to contact details
   const { state: managerState } = useManagerStateContext();
+
+  // Hierarchical data for converting hierarchical selections to ContactGroups
+  const { hierarchicalData, loadHierarchicalData } = useHierarchicalData();
+
+  // Hierarchy mapping
+  const hierarchyMaps = useHierarchicalMaps(hierarchicalData, seasonId || '');
 
   // UNIFIED GROUP SYSTEM - Single source of truth for all selections
   const [selectedGroups, setSelectedGroups] = useState<Map<GroupType, ContactGroup[]>>(new Map());
@@ -521,6 +531,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
   }, [open, token, accountId, rowsPerPage, fetchContactsPage]);
 
+  // Load hierarchical data when dialog opens
+  useEffect(() => {
+    if (open && accountId && seasonId) {
+      loadHierarchicalData(accountId, seasonId);
+    }
+  }, [open, accountId, seasonId, loadHierarchicalData]);
+
   // Check if seasonId is available when dialog opens
   useEffect(() => {
     if (open && !seasonId) {
@@ -773,13 +790,131 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     setErrorState((prev) => ({ ...prev, [errorType]: null }));
   }, []);
 
+  // Convert hierarchical selections to ContactGroups with priority logic
+  const convertHierarchicalSelectionsToContactGroups = useCallback((): Map<
+    GroupType,
+    ContactGroup[]
+  > => {
+    if (!hierarchicalData || hierarchicalSelectedIds.size === 0) {
+      return new Map();
+    }
+
+    // Create hierarchical selection state from the Map format
+    const hierarchicalState: HierarchicalSelectionState = {
+      selectedSeasonIds: new Set<string>(),
+      selectedLeagueIds: new Set<string>(),
+      selectedDivisionIds: new Set<string>(),
+      selectedTeamIds: new Set<string>(),
+      managersOnly: hierarchicalManagersOnly,
+    };
+
+    // Convert hierarchical selection map to sets based on item types and selection state
+    hierarchicalSelectedIds.forEach((selectionItem, itemId) => {
+      // Only include fully selected items (not intermediate/partial selections)
+      if (selectionItem.state === 'selected') {
+        const itemType = hierarchyMaps.itemTypeMap.get(itemId);
+
+        switch (itemType) {
+          case 'season':
+            hierarchicalState.selectedSeasonIds.add(itemId);
+            break;
+          case 'league':
+            hierarchicalState.selectedLeagueIds.add(itemId);
+            break;
+          case 'division':
+            hierarchicalState.selectedDivisionIds.add(itemId);
+            break;
+          case 'team':
+            hierarchicalState.selectedTeamIds.add(itemId);
+            break;
+        }
+      }
+    });
+
+    // Apply hierarchical priority logic: if a parent is selected, don't include children
+    const filteredState: HierarchicalSelectionState = {
+      selectedSeasonIds: hierarchicalState.selectedSeasonIds,
+      selectedLeagueIds: new Set<string>(),
+      selectedDivisionIds: new Set<string>(),
+      selectedTeamIds: new Set<string>(),
+      managersOnly: hierarchicalState.managersOnly,
+    };
+
+    // If season is selected, only include season (highest priority)
+    if (hierarchicalState.selectedSeasonIds.size > 0) {
+      // Season takes precedence - don't include any child selections
+    } else {
+      // No season selected, check leagues
+      filteredState.selectedLeagueIds = hierarchicalState.selectedLeagueIds;
+
+      // Only include divisions that aren't part of selected leagues
+      hierarchicalState.selectedDivisionIds.forEach((divisionId) => {
+        const parentLeagueId = hierarchyMaps.parentMap.get(divisionId);
+        if (!parentLeagueId || !filteredState.selectedLeagueIds.has(parentLeagueId)) {
+          filteredState.selectedDivisionIds.add(divisionId);
+        }
+      });
+
+      // Only include teams that aren't part of selected leagues or divisions
+      hierarchicalState.selectedTeamIds.forEach((teamId) => {
+        const parentDivisionId = hierarchyMaps.parentMap.get(teamId);
+        const parentLeagueId = parentDivisionId
+          ? hierarchyMaps.parentMap.get(parentDivisionId)
+          : hierarchyMaps.parentMap.get(teamId);
+
+        const isInSelectedLeague =
+          parentLeagueId && filteredState.selectedLeagueIds.has(parentLeagueId);
+        const isInSelectedDivision =
+          parentDivisionId && filteredState.selectedDivisionIds.has(parentDivisionId);
+
+        if (!isInSelectedLeague && !isInSelectedDivision) {
+          filteredState.selectedTeamIds.add(teamId);
+        }
+      });
+    }
+
+    // Use the existing utility function to convert to ContactGroups
+    return convertHierarchicalToContactGroups(filteredState, hierarchicalData);
+  }, [hierarchicalData, hierarchicalSelectedIds, hierarchicalManagersOnly, hierarchyMaps]);
+
   // Handle apply selection - UNIFIED SYSTEM ONLY
   const handleApply = useCallback(() => {
     const totalSelected = getTotalSelected();
 
+    // Convert hierarchical selections to ContactGroups and merge with manual selections
+    const hierarchicalContactGroups = convertHierarchicalSelectionsToContactGroups();
+
+    // Define which group types are manual (preserved) vs hierarchical (replaced)
+    const manualGroupTypes: Set<GroupType> = new Set(['individuals', 'managers']);
+    const hierarchicalGroupTypes: Set<GroupType> = new Set([
+      'season',
+      'league',
+      'division',
+      'teams',
+    ]);
+
+    // Start with a copy of selectedGroups, but filter out old hierarchical groups
+    const mergedContactGroups = new Map<GroupType, ContactGroup[]>();
+
+    // Preserve manual groups from selectedGroups
+    selectedGroups.forEach((contactGroups, groupType) => {
+      if (manualGroupTypes.has(groupType)) {
+        mergedContactGroups.set(groupType, contactGroups);
+      }
+      // Skip hierarchical groups - they will be replaced with new ones
+    });
+
+    // Add/replace hierarchical ContactGroups (replace old hierarchical groups)
+    hierarchicalContactGroups.forEach((contactGroups, groupType) => {
+      if (contactGroups.length > 0 && hierarchicalGroupTypes.has(groupType)) {
+        // Replace any existing hierarchical groups of this type
+        mergedContactGroups.set(groupType, contactGroups);
+      }
+    });
+
     if (onSelectionAccepted) {
-      // New callback pattern - pass groups directly
-      onSelectionAccepted(selectedGroups);
+      // New callback pattern - pass merged groups directly
+      onSelectionAccepted(mergedContactGroups);
       onClose();
       return;
     }
@@ -789,8 +924,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       const allSelectedContactDetails: RecipientContact[] = [];
       const allContactIds = new Set<string>();
 
-      // Process all groups in selectedGroups
-      selectedGroups.forEach((groups, groupType) => {
+      // Process all groups in mergedContactGroups (includes both manual and hierarchical)
+      mergedContactGroups.forEach((groups, groupType) => {
         groups.forEach((group) => {
           group.contactIds.forEach((contactId) => {
             if (!allContactIds.has(contactId)) {
@@ -826,7 +961,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
       // Create simplified state for the compose page
       const simplifiedState: SimplifiedRecipientSelectionState = {
-        selectedGroups,
+        selectedGroups: mergedContactGroups,
         totalRecipients: allSelectedContactDetails.length,
         validEmailCount: allSelectedContactDetails.filter((c) => c.hasValidEmail).length,
         invalidEmailCount: allSelectedContactDetails.filter((c) => !c.hasValidEmail).length,
@@ -848,6 +983,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     onSelectionAccepted,
     onApply,
     selectedGroups,
+    convertHierarchicalSelectionsToContactGroups,
     getTotalSelected,
     getContactDetails,
     managerState.managers,
