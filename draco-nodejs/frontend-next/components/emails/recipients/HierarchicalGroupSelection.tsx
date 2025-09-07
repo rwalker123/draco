@@ -40,7 +40,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
     if (accountId && seasonId) {
       loadHierarchicalData(accountId, seasonId);
     }
-  }, [accountId, seasonId]);
+  }, [accountId, seasonId, loadHierarchicalData]);
 
   // Handle managers-only toggle
   const handleManagersOnlyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
