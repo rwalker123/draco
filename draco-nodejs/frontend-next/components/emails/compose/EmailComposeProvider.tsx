@@ -747,14 +747,13 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
         },
       });
 
-      if (onError) {
-        onError(new Error(result.error.message));
-      }
+      // Error is already handled through state dispatch above
+      // onError callback removed to prevent double error throwing
 
       dispatch({ type: 'SET_SENDING', payload: { isSending: false, progress: undefined } });
       return false;
     }
-  }, [state, accountId, token, validateCompose, clearDraft, onSendComplete, onError]);
+  }, [state, accountId, token, validateCompose, clearDraft, onSendComplete]);
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });

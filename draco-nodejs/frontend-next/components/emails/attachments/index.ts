@@ -1,5 +1,4 @@
 // Email attachment components
-export { AttachmentUploader } from './AttachmentUploader';
 export { AttachmentPreview } from './AttachmentPreview';
 
 // Re-export types for convenience

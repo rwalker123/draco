@@ -304,15 +304,6 @@ export function validateComposeData(
     });
   }
 
-  // Content validation
-  if (config.requireContent && !state.content.trim()) {
-    errors.push({
-      field: 'content',
-      message: 'Email content is required',
-      severity: 'error',
-    });
-  }
-
   // Recipients validation
   if (
     config.requireRecipients &&

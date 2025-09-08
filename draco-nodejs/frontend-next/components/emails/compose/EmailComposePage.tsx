@@ -43,7 +43,6 @@ import { ComposeActions } from './ComposeActions';
 import ComposeSidebar from './ComposeSidebar';
 import { ScheduleDialog } from './ScheduleDialog';
 import AdvancedRecipientDialog from '../recipients/AdvancedRecipientDialog';
-import { AttachmentUploader } from '../attachments/AttachmentUploader';
 import { FileUploadComponent } from '../attachments/FileUploadComponent';
 import RichTextEditor from '../../email/RichTextEditor';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
@@ -92,7 +91,6 @@ interface ComponentState {
   errors: ComponentErrorState;
   isOnline: boolean;
   retryCount: number;
-  useEnhancedUpload: boolean;
   actionsCollapsed: boolean;
 }
 
@@ -140,7 +138,6 @@ const EmailComposePageInternal: React.FC<
       },
       isOnline: navigator.onLine,
       retryCount: 0,
-      useEnhancedUpload: true,
       actionsCollapsed: false,
     });
 
@@ -291,15 +288,6 @@ const EmailComposePageInternal: React.FC<
 
       showNotification(`Retrying... (${componentState.retryCount + 1}/${maxRetries})`, 'info');
     }, [componentState.retryCount, maxRetries, onRetry, showNotification]);
-
-    // Toggle enhanced upload mode (for testing/fallback)
-    const toggleUploadMode = useCallback(() => {
-      setComponentState((prev) => {
-        const newMode = !prev.useEnhancedUpload;
-        showNotification(`Switched to ${newMode ? 'enhanced' : 'basic'} upload mode`, 'info');
-        return { ...prev, useEnhancedUpload: newMode };
-      });
-    }, [showNotification]);
 
     // Handle content change
     const handleContentChange = useCallback(
@@ -683,60 +671,30 @@ const EmailComposePageInternal: React.FC<
 
                   {/* Enhanced File Upload */}
                   <Box>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 1 }}
-                    >
-                      <Typography variant="h6">File Attachments</Typography>
-                      {!isMobile && (
-                        <Button
-                          size="small"
-                          onClick={toggleUploadMode}
-                          variant="text"
-                          sx={{ fontSize: '0.75rem' }}
-                        >
-                          {componentState.useEnhancedUpload ? 'Use Basic' : 'Use Enhanced'}
-                        </Button>
-                      )}
-                    </Stack>
+                    <Typography variant="h6" sx={{ mb: 1 }}>
+                      File Attachments
+                    </Typography>
 
-                    {componentState.useEnhancedUpload ? (
-                      <ErrorBoundary
-                        fallback={
-                          <AttachmentUploader
-                            attachments={state.attachments}
-                            onAttachmentsChange={handleAttachmentsChange}
-                            disabled={state.isSending}
-                            compact={isMobile}
-                          />
-                        }
-                        onError={(error) => {
-                          console.error('FileUploadComponent error:', error);
-                          showNotification(
-                            'File upload component failed, using basic uploader',
-                            'warning',
-                          );
-                        }}
-                      >
-                        <FileUploadComponent
-                          accountId={accountId}
-                          onAttachmentsChange={handleAttachmentsChange}
-                          showProgress={true}
-                          showPreview={true}
-                          compact={isMobile}
-                          disabled={state.isSending}
-                        />
-                      </ErrorBoundary>
-                    ) : (
-                      <AttachmentUploader
-                        attachments={state.attachments}
+                    <ErrorBoundary
+                      fallback={
+                        <Alert severity="error" sx={{ mt: 2 }}>
+                          File upload component failed to load. Please refresh the page to try
+                          again.
+                        </Alert>
+                      }
+                      onError={(error) => {
+                        console.error('FileUploadComponent error:', error);
+                        showNotification('File upload component failed to load', 'error');
+                      }}
+                    >
+                      <FileUploadComponent
+                        accountId={accountId}
                         onAttachmentsChange={handleAttachmentsChange}
-                        disabled={state.isSending}
+                        showPreview={true}
                         compact={isMobile}
+                        disabled={state.isSending}
                       />
-                    )}
+                    </ErrorBoundary>
                   </Box>
                 </Stack>
               </Box>
