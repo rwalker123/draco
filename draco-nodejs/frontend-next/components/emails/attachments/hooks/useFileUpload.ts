@@ -80,6 +80,7 @@ const simulateFileUpload = async (
   file: File,
   onProgress: (progress: number) => void,
   signal?: AbortSignal,
+  objectUrlsRef?: React.MutableRefObject<Set<string>>,
 ): Promise<{ url: string; previewUrl?: string }> => {
   return new Promise((resolve, reject) => {
     let progress = 0;
@@ -97,10 +98,20 @@ const simulateFileUpload = async (
 
       if (progress >= 100) {
         clearInterval(interval);
-        resolve({
-          url: URL.createObjectURL(file),
-          previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
-        });
+
+        // Create URLs and track them for cleanup
+        const url = URL.createObjectURL(file);
+        const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+
+        // Track URLs for cleanup
+        if (objectUrlsRef) {
+          objectUrlsRef.current.add(url);
+          if (previewUrl) {
+            objectUrlsRef.current.add(previewUrl);
+          }
+        }
+
+        resolve({ url, previewUrl });
       }
     }, 200);
   });
@@ -124,6 +135,9 @@ export function useFileUpload({
   const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
   const fileInputRef = useRef<Map<string, File>>(new Map());
 
+  // Track created object URLs for cleanup
+  const objectUrlsRef = useRef<Set<string>>(new Set());
+
   // Store callback ref to avoid infinite loops
   const onAttachmentsChangeRef = useRef(onAttachmentsChange);
 
@@ -141,6 +155,18 @@ export function useFileUpload({
     setAttachmentsState((prev) =>
       prev.map((att) => (att.id === id ? { ...att, ...updates } : att)),
     );
+  }, []);
+
+  // Helper function to cleanup URLs for a specific attachment
+  const cleanupAttachmentUrls = useCallback((attachment: EmailAttachment) => {
+    if (attachment.url && objectUrlsRef.current.has(attachment.url)) {
+      URL.revokeObjectURL(attachment.url);
+      objectUrlsRef.current.delete(attachment.url);
+    }
+    if (attachment.previewUrl && objectUrlsRef.current.has(attachment.previewUrl)) {
+      URL.revokeObjectURL(attachment.previewUrl);
+      objectUrlsRef.current.delete(attachment.previewUrl);
+    }
   }, []);
 
   // Effect to notify parent of attachment changes
@@ -185,6 +211,7 @@ export function useFileUpload({
             }
           },
           controller.signal,
+          objectUrlsRef,
         );
 
         if (!controller.signal.aborted) {
@@ -312,10 +339,16 @@ export function useFileUpload({
         controller.abort();
       }
 
+      // Find and cleanup URLs for the attachment being removed
+      const attachmentToRemove = attachments.find((att) => att.id === id);
+      if (attachmentToRemove) {
+        cleanupAttachmentUrls(attachmentToRemove);
+      }
+
       const updated = attachments.filter((att) => att.id !== id);
       setAttachments(updated);
     },
-    [attachments, setAttachments],
+    [attachments, setAttachments, cleanupAttachmentUrls],
   );
 
   // Retry failed upload
@@ -358,11 +391,28 @@ export function useFileUpload({
     uploadPromisesRef.current.clear();
     fileInputRef.current.clear();
 
+    // Cleanup all attachment URLs
+    attachments.forEach((attachment) => {
+      cleanupAttachmentUrls(attachment);
+    });
+
     setAttachments([]);
     setErrors([]);
     setIsUploading(false);
     setUploadProgress(0);
-  }, [setAttachments]);
+  }, [setAttachments, attachments, cleanupAttachmentUrls]);
+
+  // Cleanup all object URLs on unmount
+  useEffect(() => {
+    const objectUrls = objectUrlsRef.current;
+    return () => {
+      // Cleanup all tracked URLs on unmount
+      objectUrls.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      objectUrls.clear();
+    };
+  }, []);
 
   return {
     attachments,
