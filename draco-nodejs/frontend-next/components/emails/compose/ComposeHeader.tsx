@@ -88,21 +88,10 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
     }).format(date);
   };
 
-  // Determine if there's content to clear
-  const hasContent = !!(
-    state.subject ||
-    state.content ||
-    state.attachments.length > 0 ||
-    (state.recipientState?.totalRecipients && state.recipientState.totalRecipients > 0) ||
-    (state.recipientState?.selectedGroups && state.recipientState.selectedGroups.size > 0) ||
-    state.selectedTemplate ||
-    state.isScheduled
-  );
-
   return (
     <Paper variant="outlined" sx={{ p: compact ? 2 : 3, mb: 2, position: 'relative' }}>
       {/* Cancel Button */}
-      {hasContent && onCancelClick && (
+      {onCancelClick && (
         <Button
           variant="outlined"
           size="small"

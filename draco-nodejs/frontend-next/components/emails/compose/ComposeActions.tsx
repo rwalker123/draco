@@ -10,7 +10,6 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Divider,
   LinearProgress,
   Stack,
   Typography,
@@ -35,14 +34,14 @@ import {
 
 import { useEmailCompose } from './EmailComposeProvider';
 import { validateComposeData } from '../../../types/emails/compose';
-import EmailPreviewControl from './EmailPreviewControl';
 
 interface ComposeActionsProps {
   onScheduleClick?: () => void;
-  onPreviewClick?: () => void;
   onDeleteDraft?: () => void;
   showAdvancedActions?: boolean;
   compact?: boolean;
+  onBeforeSend?: () => void;
+  onBeforeSave?: () => void;
 }
 
 /**
@@ -50,10 +49,11 @@ interface ComposeActionsProps {
  */
 const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   onScheduleClick,
-  onPreviewClick,
   onDeleteDraft,
   showAdvancedActions = true,
   compact = false,
+  onBeforeSend,
+  onBeforeSave,
 }) => {
   const { state, actions } = useEmailCompose();
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
@@ -62,13 +62,17 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
 
   // Handle send email
   const handleSend = useCallback(async () => {
-    // Check for empty content and show warning dialog
-    if (!state.content || !state.content.trim()) {
-      setShowEmptyContentWarning(true);
-      return;
-    }
-
     try {
+      // Sync editor content before validation to avoid race condition
+      if (onBeforeSend) {
+        onBeforeSend();
+      }
+
+      // Check for empty content and show warning dialog (after syncing current content)
+      if (!state.content || !state.content.trim()) {
+        setShowEmptyContentWarning(true);
+        return;
+      }
       const success = await actions.sendEmail();
       if (success) {
         // Email sent successfully - any additional UI feedback would be handled by parent
@@ -79,21 +83,29 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
       // The EmailComposeProvider should handle all email sending errors through state
       console.warn('Unexpected error in handleSend:', error);
     }
-  }, [actions, state.content]);
+  }, [actions, state.content, onBeforeSend]);
 
   // Handle confirmed send with empty content
   const handleConfirmEmptySend = useCallback(async () => {
     setShowEmptyContentWarning(false);
+    // Sync editor content before sending
+    if (onBeforeSend) {
+      onBeforeSend();
+    }
     const success = await actions.sendEmail();
     if (success) {
       // Email sent successfully - any additional UI feedback would be handled by parent
     }
-  }, [actions]);
+  }, [actions, onBeforeSend]);
 
   // Handle save draft
   const handleSaveDraft = useCallback(async () => {
+    // Sync editor content before saving
+    if (onBeforeSave) {
+      onBeforeSave();
+    }
     await actions.saveDraft();
-  }, [actions]);
+  }, [actions, onBeforeSave]);
 
   // Handle schedule
   const handleSchedule = useCallback(() => {
@@ -101,13 +113,6 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
       onScheduleClick();
     }
   }, [onScheduleClick]);
-
-  // Handle preview
-  const handlePreview = useCallback(() => {
-    if (onPreviewClick) {
-      onPreviewClick();
-    }
-  }, [onPreviewClick]);
 
   // Handle delete draft
   const handleDeleteDraft = useCallback(() => {
@@ -246,10 +251,6 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
           {/* Advanced Actions */}
           {showAdvancedActions && (
             <>
-              {!compact && (
-                <EmailPreviewControl variant="button" onPreviewClick={handlePreview} size="small" />
-              )}
-
               <Tooltip title="More actions">
                 <IconButton onClick={handleMoreMenuOpen} size="small">
                   <MoreVertIcon />
@@ -299,16 +300,6 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
 
       {/* More Actions Menu */}
       <Menu anchorEl={moreMenuAnchor} open={Boolean(moreMenuAnchor)} onClose={handleMoreMenuClose}>
-        {compact && (
-          <EmailPreviewControl
-            variant="menuItem"
-            onPreviewClick={handlePreview}
-            onMenuClose={handleMoreMenuClose}
-          />
-        )}
-
-        {compact && <Divider />}
-
         <MenuItem
           onClick={() => {
             handleReset();

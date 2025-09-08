@@ -11,7 +11,6 @@ import {
   AccordionDetails,
   IconButton,
   Button,
-  TextField,
   Chip,
   Alert,
   CircularProgress,
@@ -22,7 +21,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   Description as TemplateIcon,
   Clear as ClearIcon,
-  Info as InfoIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 
@@ -30,7 +28,6 @@ import { useAuth } from '../../../context/AuthContext';
 import { createEmailService } from '../../../services/emailService';
 import { EmailTemplate } from '../../../types/emails/email';
 import {
-  extractTemplateVariables,
   EmailComposeState,
   EmailComposeActions,
   validateComposeData,
@@ -38,7 +35,6 @@ import {
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
 import { createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
-import EmailPreviewControl from './EmailPreviewControl';
 
 // Shared styling constants to eliminate DRY violations
 const SECTION_STYLES = {
@@ -67,39 +63,8 @@ const COMMON_BORDER_STYLES = {
 // Accessibility constants
 const ARIA_LABELS = {
   CLEAR_TEMPLATE: 'Clear selected template',
-  TEMPLATE_VARIABLES_INFO:
-    'These values are for preview only. Actual values will come from the database when emails are sent to recipients.',
   SELECT_TEMPLATE: 'Select template:',
 } as const;
-
-// Template TextField styling function for consistency
-const createTemplateTextFieldStyles = (theme: { palette: { mode: string } }) => ({
-  '& .MuiOutlinedInput-root': {
-    bgcolor: 'background.default',
-    '& fieldset': {
-      borderColor: 'divider',
-    },
-    '&:hover fieldset': {
-      borderColor: 'text.secondary',
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: 'primary.main',
-    },
-    '& input': {
-      color: 'text.primary',
-    },
-  },
-  '& .MuiInputLabel-root': {
-    color: 'text.secondary',
-    '&.Mui-focused': {
-      color: 'primary.main',
-    },
-  },
-  '& .MuiOutlinedInput-input::placeholder': {
-    color: 'text.disabled',
-    opacity: theme.palette.mode === 'dark' ? 0.7 : 1, // Better dark mode visibility
-  },
-});
 
 interface ComposeSidebarProps {
   state: EmailComposeState;
@@ -107,7 +72,6 @@ interface ComposeSidebarProps {
   accountId: string;
   showTemplates?: boolean;
   compact?: boolean;
-  onPreviewClick?: () => void;
 }
 
 export default function ComposeSidebar({
@@ -116,7 +80,6 @@ export default function ComposeSidebar({
   accountId,
   showTemplates = true,
   compact = false,
-  onPreviewClick,
 }: ComposeSidebarProps) {
   const { token } = useAuth();
   const theme = useTheme();
@@ -228,21 +191,7 @@ export default function ComposeSidebar({
     [actions],
   );
 
-  // Handle template variable update
-  const handleTemplateVariableChange = useCallback(
-    (key: string, value: string) => {
-      actions.updateTemplateVariable(key, value);
-    },
-    [actions],
-  );
-
   // Get template variables
-  const templateVariables = state.selectedTemplate
-    ? extractTemplateVariables(
-        (state.selectedTemplate.subjectTemplate || '') +
-          (state.selectedTemplate.bodyTemplate || ''),
-      )
-    : [];
 
   return (
     <Box sx={{ width: compact ? '100%' : 320, minWidth: compact ? 'auto' : 320 }}>
@@ -368,88 +317,6 @@ export default function ComposeSidebar({
                             {state.selectedTemplate.description}
                           </Typography>
                         )}
-                      </Box>
-                    )}
-
-                    {/* Template Variables */}
-                    {templateVariables.length > 0 && (
-                      <Box
-                        sx={{
-                          ...COMMON_BORDER_STYLES.section,
-                          bgcolor: 'primary.light',
-                          color: 'text.primary',
-                          borderColor: 'primary.light',
-                          mt: SPACING_CONSTANTS.COMPACT_SPACING, // Small gap from the Current Template section above
-                        }}
-                        role="region"
-                        aria-label="Template variables for preview"
-                      >
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ color: 'primary.contrastText' }}>
-                            Preview Values
-                          </Typography>
-                          <Tooltip title={ARIA_LABELS.TEMPLATE_VARIABLES_INFO}>
-                            <InfoIcon
-                              fontSize="small"
-                              sx={{ color: 'primary.contrastText' }}
-                              aria-label={ARIA_LABELS.TEMPLATE_VARIABLES_INFO}
-                              role="button"
-                              tabIndex={0}
-                            />
-                          </Tooltip>
-                        </Stack>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: 'primary.contrastText',
-                            mb: 2,
-                            display: 'block',
-                          }}
-                        >
-                          Enter sample values to preview how your template will look. Actual
-                          recipient data will be used when sending.
-                        </Typography>
-                        <Box
-                          sx={{
-                            p: SECTION_STYLES.padding,
-                            bgcolor: 'background.paper',
-                            ...COMMON_BORDER_STYLES.outlined,
-                          }}
-                        >
-                          <Stack spacing={2}>
-                            <Stack
-                              spacing={1}
-                              role="group"
-                              aria-labelledby="template-variables-heading"
-                            >
-                              {templateVariables.map((variable) => (
-                                <TextField
-                                  key={variable}
-                                  label={`${variable} (preview)`}
-                                  size="small"
-                                  value={state.templateVariables[variable] || ''}
-                                  onChange={(e) =>
-                                    handleTemplateVariableChange(variable, e.target.value)
-                                  }
-                                  placeholder={`Sample ${variable.toLowerCase()}`}
-                                  variant="outlined"
-                                  inputProps={{
-                                    'aria-describedby': `template-var-${variable}-description`,
-                                    tabIndex: 0,
-                                  }}
-                                  sx={createTemplateTextFieldStyles(theme)}
-                                />
-                              ))}
-                            </Stack>
-                            {onPreviewClick && (
-                              <EmailPreviewControl
-                                variant="button"
-                                onPreviewClick={onPreviewClick}
-                                size="small"
-                              />
-                            )}
-                          </Stack>
-                        </Box>
                       </Box>
                     )}
 

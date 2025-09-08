@@ -32,6 +32,7 @@ import { sanitizeRichContent } from '../../../../../../utils/sanitization';
 // Define the ref interface for TemplateRichTextEditor
 interface TemplateRichTextEditorRef {
   getCurrentContent: () => string;
+  getTextContent: () => string;
   insertText: (text: string) => void;
   insertVariable: (variable: string) => void;
 }
@@ -159,21 +160,6 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
     }
   };
 
-  const handleEditorChange = (content: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      bodyTemplate: content,
-    }));
-
-    // Clear error when user starts typing
-    if (errors.bodyTemplate) {
-      setErrors((prev) => ({
-        ...prev,
-        bodyTemplate: '',
-      }));
-    }
-  };
-
   const handleVariableInsert = (variable: string, targetField?: 'subject' | 'body') => {
     const variableTag = `{{${variable}}}`;
     const field = targetField || 'body';
@@ -262,11 +248,14 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
     setError(null);
 
     try {
+      // Get current content directly from editor to avoid race condition with async state updates
+      const currentBodyContent = editorRef.current?.getCurrentContent() || formData.bodyTemplate;
+
       const templateData = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         subjectTemplate: formData.subjectTemplate.trim() || undefined,
-        bodyTemplate: sanitizeRichContent(formData.bodyTemplate),
+        bodyTemplate: sanitizeRichContent(currentBodyContent),
       };
 
       if (mode === 'create') {
@@ -381,7 +370,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
                 <Button
                   onClick={handleSave}
                   variant="contained"
-                  disabled={loading || !formData.name.trim() || !formData.bodyTemplate.trim()}
+                  disabled={loading || !formData.name.trim()}
                   startIcon={<SaveIcon />}
                 >
                   {mode === 'create' ? 'Create Template' : 'Save Changes'}
@@ -456,7 +445,6 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
                     <TemplateRichTextEditor
                       ref={editorRef}
                       content={formData.bodyTemplate}
-                      onChange={handleEditorChange}
                       placeholder="Enter your email template content here..."
                       error={!!errors.bodyTemplate}
                       helperText={errors.bodyTemplate}
