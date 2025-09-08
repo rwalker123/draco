@@ -6,13 +6,11 @@ import {
   Typography,
   Chip,
   IconButton,
-  Menu,
-  MenuItem,
+  Button,
   TextField,
   InputAdornment,
 } from '@mui/material';
 import {
-  MoreVert as MoreVertIcon,
   Search as SearchIcon,
   Edit as EditIcon,
   Preview as PreviewIcon,
@@ -37,38 +35,17 @@ export default function TemplateListView({
   onDelete,
 }: TemplateListViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, template: EmailTemplate) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedTemplate(template);
+  const handleEdit = (template: EmailTemplate) => {
+    onEdit(template);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedTemplate(null);
+  const handlePreview = (template: EmailTemplate) => {
+    onPreview(template);
   };
 
-  const handleEdit = () => {
-    if (selectedTemplate) {
-      onEdit(selectedTemplate);
-    }
-    handleMenuClose();
-  };
-
-  const handlePreview = () => {
-    if (selectedTemplate) {
-      onPreview(selectedTemplate);
-    }
-    handleMenuClose();
-  };
-
-  const handleDelete = () => {
-    if (selectedTemplate) {
-      onDelete(selectedTemplate);
-    }
-    handleMenuClose();
+  const handleDelete = (template: EmailTemplate) => {
+    onDelete(template);
   };
 
   // Filter templates based on search term
@@ -157,13 +134,23 @@ export default function TemplateListView({
                       </Typography>
                     )}
                   </Box>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleMenuOpen(e, template)}
-                    sx={{ ml: 1 }}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
+                  <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEdit(template)}
+                      title="Edit Template"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(template)}
+                      sx={{ color: 'error.main' }}
+                      title="Delete Template"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
                 </Box>
 
                 {/* Subject Preview */}
@@ -187,23 +174,17 @@ export default function TemplateListView({
                   </Box>
                 )}
 
-                {/* Body Preview */}
+                {/* Preview Button */}
                 <Box sx={{ mb: 2, flex: 1 }}>
-                  <Typography variant="caption" color="text.secondary" gutterBottom>
-                    Content:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
+                  <Button
+                    variant="outlined"
+                    startIcon={<PreviewIcon />}
+                    onClick={() => handlePreview(template)}
+                    fullWidth
+                    sx={{ justifyContent: 'flex-start' }}
                   >
-                    {template.bodyTemplate.replace(/<[^>]*>/g, '')}{' '}
-                    {/* Strip HTML tags for preview */}
-                  </Typography>
+                    Preview Template
+                  </Button>
                 </Box>
 
                 {/* Variables */}
@@ -258,29 +239,6 @@ export default function TemplateListView({
           </Typography>
         </Box>
       )}
-
-      {/* Context Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: { minWidth: 160 },
-        }}
-      >
-        <MenuItem onClick={handlePreview}>
-          <PreviewIcon sx={{ mr: 1 }} />
-          Preview
-        </MenuItem>
-        <MenuItem onClick={handleEdit}>
-          <EditIcon sx={{ mr: 1 }} />
-          Edit
-        </MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete
-        </MenuItem>
-      </Menu>
     </Box>
   );
 }

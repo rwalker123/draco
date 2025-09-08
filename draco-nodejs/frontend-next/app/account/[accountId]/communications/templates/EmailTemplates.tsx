@@ -6,8 +6,6 @@ import {
   Card,
   CardContent,
   Alert,
-  Fab,
-  Tooltip,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -150,11 +148,18 @@ export default function EmailTemplates() {
             Back to Communications
           </Button>
 
-          <Typography variant="h4" component="h1" gutterBottom>
-            Email Templates
-          </Typography>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
+            <Typography variant="h4" component="h1">
+              Email Templates
+            </Typography>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateTemplate}>
+              Create Template
+            </Button>
+          </Box>
 
-          <Typography variant="body1" color="text.secondary" paragraph>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
             Create and manage reusable email templates with variable substitution for consistent
             communication.
           </Typography>
@@ -172,7 +177,7 @@ export default function EmailTemplates() {
                 <Typography variant="h6" gutterBottom>
                   No Templates Created Yet
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Create your first email template to streamline your communications. Templates
                   support variable substitution like {'{'}firstName{'}'} and {'{'}teamName{'}'}.
                 </Typography>
@@ -194,22 +199,6 @@ export default function EmailTemplates() {
               onDelete={openDeleteDialog}
             />
           )}
-
-          {/* Floating Action Button */}
-          <Tooltip title="Create New Template">
-            <Fab
-              color="primary"
-              aria-label="create template"
-              onClick={handleCreateTemplate}
-              sx={{
-                position: 'fixed',
-                bottom: 24,
-                right: 24,
-              }}
-            >
-              <AddIcon />
-            </Fab>
-          </Tooltip>
 
           {/* Dialogs */}
           {selectedTemplate && (
