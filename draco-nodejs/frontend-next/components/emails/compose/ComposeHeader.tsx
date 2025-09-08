@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
   Box,
   TextField,
@@ -37,6 +37,11 @@ interface ComposeHeaderProps {
   onCancelClick?: () => void;
   hasAnyRecipientData?: boolean;
   loading?: boolean;
+  editorRef?: React.RefObject<{
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  } | null>;
 }
 
 /**
@@ -51,6 +56,7 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   onCancelClick,
   hasAnyRecipientData = true,
   loading = false,
+  editorRef,
 }) => {
   const { state, actions } = useEmailCompose();
   const { user } = useAuth();
@@ -88,16 +94,63 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
     }).format(date);
   };
 
-  // Determine if there's content to clear
-  const hasContent = !!(
-    state.subject ||
-    state.content ||
-    state.attachments.length > 0 ||
-    (state.recipientState?.totalRecipients && state.recipientState.totalRecipients > 0) ||
-    (state.recipientState?.selectedGroups && state.recipientState.selectedGroups.size > 0) ||
-    state.selectedTemplate ||
-    state.isScheduled
-  );
+  // Reactive content detection to handle both state changes and editor typing
+  const [hasContent, setHasContent] = useState(false);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Calculate content state from all sources
+  const calculateHasContent = useCallback(() => {
+    const editorTextContent = editorRef?.current?.getTextContent() || '';
+    return !!(
+      state.subject ||
+      state.content ||
+      editorTextContent.trim() ||
+      state.attachments.length > 0 ||
+      (state.recipientState?.totalRecipients && state.recipientState.totalRecipients > 0) ||
+      (state.recipientState?.selectedGroups && state.recipientState.selectedGroups.size > 0) ||
+      state.selectedTemplate ||
+      state.isScheduled
+    );
+  }, [
+    state.subject,
+    state.content,
+    state.attachments.length,
+    state.recipientState?.totalRecipients,
+    state.recipientState?.selectedGroups,
+    state.selectedTemplate,
+    state.isScheduled,
+    editorRef,
+  ]);
+
+  // React to state changes immediately
+  useEffect(() => {
+    const newHasContent = calculateHasContent();
+    setHasContent(newHasContent);
+  }, [calculateHasContent]);
+
+  // Handle reset detection - immediately clear content state when resetCounter changes
+  useEffect(() => {
+    setHasContent(false);
+  }, [state.resetCounter]);
+
+  // Polling mechanism for editor content changes (fallback for when editor content changes without state updates)
+  useEffect(() => {
+    // Start polling to detect editor content changes
+    pollingIntervalRef.current = setInterval(() => {
+      const newHasContent = calculateHasContent();
+      setHasContent((prev) => {
+        // Only update if different to avoid unnecessary re-renders
+        return prev !== newHasContent ? newHasContent : prev;
+      });
+    }, 500);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [calculateHasContent]);
 
   return (
     <Paper variant="outlined" sx={{ p: compact ? 2 : 3, mb: 2, position: 'relative' }}>

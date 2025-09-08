@@ -28,7 +28,6 @@ export interface EmailComposeState {
 
   // Template
   selectedTemplate?: EmailTemplate;
-  templateVariables: Record<string, string>;
 
   // Scheduling
   isScheduled: boolean;
@@ -61,7 +60,6 @@ export interface EmailComposeActions {
 
   // Template actions
   selectTemplate: (template: EmailTemplate | undefined) => void;
-  updateTemplateVariable: (key: string, value: string) => void;
   clearTemplate: () => void;
 
   // Attachment actions
@@ -361,12 +359,12 @@ export function validateComposeData(
       state.selectedTemplate.subjectTemplate + state.selectedTemplate.bodyTemplate,
     );
 
-    const missingVars = requiredVars.filter((variable) => !state.templateVariables[variable]);
+    // Template variables will be replaced with actual data when sent
 
-    if (missingVars.length > 0) {
+    if (requiredVars.length > 0) {
       warnings.push({
         field: 'template',
-        message: `Missing template variables: ${missingVars.join(', ')}`,
+        message: `Template contains variables: ${requiredVars.join(', ')}. These will be replaced with actual data when emails are sent.`,
         severity: 'warning',
       });
     }

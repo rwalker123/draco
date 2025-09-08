@@ -5,7 +5,7 @@ import { TEMPLATE_HELPER_TEXT } from '../../../utils/templateUtils';
 
 interface TemplateRichTextEditorProps {
   content: string;
-  onChange: (content: string) => void;
+  onChange?: (content: string) => void;
   placeholder?: string;
   error?: boolean;
   helperText?: string;
@@ -26,7 +26,6 @@ const TemplateRichTextEditor = React.forwardRef<
   (
     {
       content,
-      onChange,
       placeholder = 'Enter your email template content here...',
       error = false,
       helperText,
@@ -37,6 +36,7 @@ const TemplateRichTextEditor = React.forwardRef<
   ) => {
     const editorRef = React.useRef<{
       getCurrentContent: () => string;
+      getTextContent: () => string;
       insertText: (text: string) => void;
     }>(null);
 
@@ -60,6 +60,7 @@ const TemplateRichTextEditor = React.forwardRef<
       ref,
       () => ({
         getCurrentContent: () => editorRef.current?.getCurrentContent() || '',
+        getTextContent: () => editorRef.current?.getTextContent() || '',
         insertText: (text: string) => editorRef.current?.insertText(text),
         insertVariable,
       }),
@@ -79,7 +80,6 @@ const TemplateRichTextEditor = React.forwardRef<
           <RichTextEditor
             ref={editorRef}
             initialValue={content}
-            onChange={onChange}
             placeholder={placeholder}
             disabled={disabled}
             error={error}

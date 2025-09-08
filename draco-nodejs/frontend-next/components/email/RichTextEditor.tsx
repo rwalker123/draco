@@ -339,14 +339,13 @@ function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }
   useEffect(() => {
     if (!onChange) return;
 
-    // Use registerUpdateListener to capture HTML content changes
-    // This listener fires when editor state changes and preserves formatting
-    const unregister = editor.registerUpdateListener(({ editorState }) => {
-      // Get actual HTML content when editor state changes
-      const htmlContent = editorState.read(() => {
+    // Use registerTextContentListener to avoid cursor jumping
+    // This listener only fires when text content actually changes
+    const unregister = editor.registerTextContentListener(() => {
+      // Get the HTML content when text changes
+      const htmlContent = editor.getEditorState().read(() => {
         return $generateHtmlFromNodes(editor);
       });
-
       onChange(htmlContent);
     });
 
@@ -397,7 +396,11 @@ const editorConfig = {
 };
 
 const RichTextEditor = React.forwardRef<
-  { getCurrentContent: () => string; insertText: (text: string) => void },
+  {
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  },
   RichTextEditorProps
 >(
   (
@@ -419,6 +422,16 @@ const RichTextEditor = React.forwardRef<
       if (editorRef.current) {
         return editorRef.current.getEditorState().read(() => {
           return $generateHtmlFromNodes(editorRef.current!);
+        });
+      }
+      return '';
+    }, []);
+
+    // Function to get plain text content (for content detection without HTML markup)
+    const getTextContent = useCallback(() => {
+      if (editorRef.current) {
+        return editorRef.current.getEditorState().read(() => {
+          return $getRoot().getTextContent();
         });
       }
       return '';
@@ -449,14 +462,15 @@ const RichTextEditor = React.forwardRef<
       [disabled],
     );
 
-    // Expose getCurrentContent and insertText methods to parent via ref
+    // Expose getCurrentContent, getTextContent, and insertText methods to parent via ref
     React.useImperativeHandle(
       ref,
       () => ({
         getCurrentContent,
+        getTextContent,
         insertText,
       }),
-      [getCurrentContent, insertText],
+      [getCurrentContent, getTextContent, insertText],
     );
 
     // Content changes are now handled by ContentChangePlugin using registerTextContentListener

@@ -47,6 +47,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
   const workoutDescRef = useRef<HTMLInputElement>(null);
   const richTextEditorRef = useRef<{
     getCurrentContent: () => string;
+    getTextContent: () => string;
     insertText: (text: string) => void;
   }>(null);
 

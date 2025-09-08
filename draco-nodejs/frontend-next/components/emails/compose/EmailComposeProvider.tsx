@@ -19,7 +19,6 @@ import {
   ComposeValidationResult,
   DEFAULT_COMPOSE_CONFIG,
   validateComposeData,
-  processTemplate,
 } from '../../../types/emails/compose';
 import { EmailTemplate, EmailComposeRequest } from '../../../types/emails/email';
 import { EmailAttachment } from '../../../types/emails/attachments';
@@ -40,7 +39,6 @@ type ComposeAction =
   | { type: 'SET_SUBJECT'; payload: string }
   | { type: 'SET_CONTENT'; payload: string }
   | { type: 'SELECT_TEMPLATE'; payload: EmailTemplate | undefined }
-  | { type: 'UPDATE_TEMPLATE_VARIABLE'; payload: { key: string; value: string } }
   | { type: 'CLEAR_TEMPLATE' }
   | { type: 'ADD_ATTACHMENTS'; payload: EmailAttachment[] }
   | { type: 'UPDATE_ATTACHMENTS'; payload: EmailAttachment[] }
@@ -75,7 +73,6 @@ const createInitialState = (
   recipientState: undefined,
   attachments: [],
   selectedTemplate: undefined,
-  templateVariables: {},
   isScheduled: !!initialData?.scheduledSend,
   scheduledDate: initialData?.scheduledSend,
   isDraft: false,
@@ -119,7 +116,6 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         return {
           ...state,
           selectedTemplate: undefined,
-          templateVariables: {},
           hasUnsavedChanges: true,
         };
       }
@@ -132,21 +128,10 @@ function composeReducer(state: EmailComposeState, action: ComposeAction): EmailC
         hasUnsavedChanges: true,
       };
 
-    case 'UPDATE_TEMPLATE_VARIABLE':
-      return {
-        ...state,
-        templateVariables: {
-          ...state.templateVariables,
-          [action.payload.key]: action.payload.value,
-        },
-        hasUnsavedChanges: true,
-      };
-
     case 'CLEAR_TEMPLATE':
       return {
         ...state,
         selectedTemplate: undefined,
-        templateVariables: {},
         hasUnsavedChanges: true,
       };
 
@@ -476,12 +461,8 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
             contactIds: [],
             groups: {},
           },
-          subject: state.selectedTemplate
-            ? processTemplate(state.subject, state.templateVariables)
-            : state.subject,
-          body: state.selectedTemplate
-            ? processTemplate(state.content, state.templateVariables)
-            : state.content,
+          subject: state.subject,
+          body: state.content,
           templateId: state.selectedTemplate?.id,
           attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
@@ -572,10 +553,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
 
   const selectTemplate = useCallback((template: EmailTemplate | undefined) => {
     dispatch({ type: 'SELECT_TEMPLATE', payload: template });
-  }, []);
-
-  const updateTemplateVariable = useCallback((key: string, value: string) => {
-    dispatch({ type: 'UPDATE_TEMPLATE_VARIABLE', payload: { key, value } });
   }, []);
 
   const clearTemplate = useCallback(() => {
@@ -692,12 +669,8 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
             contactIds: [],
             groups: {},
           },
-          subject: state.selectedTemplate
-            ? processTemplate(state.subject, state.templateVariables)
-            : state.subject,
-          body: state.selectedTemplate
-            ? processTemplate(state.content, state.templateVariables)
-            : state.content,
+          subject: state.subject,
+          body: state.content,
           templateId: state.selectedTemplate?.id,
           attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
@@ -797,7 +770,6 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     setSubject,
     setContent,
     selectTemplate,
-    updateTemplateVariable,
     clearTemplate,
     addAttachments,
     updateAttachments,

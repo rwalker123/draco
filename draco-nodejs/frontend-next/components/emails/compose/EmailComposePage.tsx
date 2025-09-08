@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Stack,
@@ -12,10 +12,6 @@ import {
   Fab,
   Drawer,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   CircularProgress,
   Backdrop,
@@ -26,7 +22,6 @@ import {
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
-  Preview as PreviewIcon,
   KeyboardArrowDown as ExpandIcon,
   Refresh as RefreshIcon,
   Warning as WarningIcon,
@@ -55,7 +50,6 @@ import {
 } from '../../../types/emails/recipients';
 import { EmailAttachment } from '../../../types/emails/attachments';
 import { EmailComposeRequest } from '../../../types/emails/email';
-import { processTemplate } from '../../../types/emails/compose';
 
 interface EmailComposePageProps {
   accountId: string;
@@ -82,7 +76,6 @@ interface ComponentErrorState {
 interface DialogState {
   sidebarOpen: boolean;
   scheduleDialogOpen: boolean;
-  previewDialogOpen: boolean;
   advancedRecipientDialogOpen: boolean;
   cancelConfirmDialogOpen: boolean;
 }
@@ -117,13 +110,19 @@ const EmailComposePageInternal: React.FC<
 
     const { state, actions } = useEmailCompose();
 
+    // Editor ref to access content
+    const editorRef = useRef<{
+      getCurrentContent: () => string;
+      getTextContent: () => string;
+      insertText: (text: string) => void;
+    } | null>(null);
+
     // Consolidated state management
     const maxRetries = 3;
 
     const [dialogState, setDialogState] = useState<DialogState>({
       sidebarOpen: !isMobile,
       scheduleDialogOpen: false,
-      previewDialogOpen: false,
       advancedRecipientDialogOpen: false,
       cancelConfirmDialogOpen: false,
     });
@@ -223,14 +222,8 @@ const EmailComposePageInternal: React.FC<
       [showNotification],
     );
 
-    // Handle preview
-    const handlePreviewOpen = useCallback(() => {
-      setDialogState((prev) => ({ ...prev, previewDialogOpen: true }));
-    }, []);
-
-    const handlePreviewClose = useCallback(() => {
-      setDialogState((prev) => ({ ...prev, previewDialogOpen: false }));
-    }, []);
+    // Preview functionality removed to eliminate cursor jumping issues
+    // handlePreviewOpen and handlePreviewClose have been removed since preview is no longer needed
 
     // Handle advanced recipient dialog
     const handleAdvancedRecipientOpen = useCallback(() => {
@@ -289,13 +282,15 @@ const EmailComposePageInternal: React.FC<
       showNotification(`Retrying... (${componentState.retryCount + 1}/${maxRetries})`, 'info');
     }, [componentState.retryCount, maxRetries, onRetry, showNotification]);
 
-    // Handle content change
-    const handleContentChange = useCallback(
-      (content: string) => {
-        actions.setContent(content);
-      },
-      [actions],
-    );
+    // Sync editor content to state before operations that need current content
+    const syncEditorContent = useCallback(() => {
+      if (editorRef.current) {
+        const currentContent = editorRef.current.getCurrentContent();
+        if (currentContent !== state.content) {
+          actions.setContent(currentContent);
+        }
+      }
+    }, [actions, state.content]);
 
     // Handle attachments change
     const handleAttachmentsChange = useCallback(
@@ -347,11 +342,13 @@ const EmailComposePageInternal: React.FC<
           switch (event.key) {
             case 's':
               event.preventDefault();
+              syncEditorContent();
               actions.saveDraft();
               break;
             case 'Enter':
               if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
+                syncEditorContent();
                 actions.sendEmail();
               }
               break;
@@ -364,7 +361,7 @@ const EmailComposePageInternal: React.FC<
       return () => {
         abortController.abort();
       };
-    }, [actions, state.config.enableKeyboardShortcuts]);
+    }, [actions, state.config.enableKeyboardShortcuts, syncEditorContent]);
 
     // Auto-collapse actions on mobile when scrolling with proper cleanup
     useEffect(() => {
@@ -393,86 +390,6 @@ const EmailComposePageInternal: React.FC<
         abortController.abort();
       };
     }, [isMobile]);
-
-    // Render preview content - memoized for performance
-    const renderPreviewContent = useMemo(() => {
-      const processedSubject =
-        state.selectedTemplate && Object.keys(state.templateVariables).length > 0
-          ? processTemplate(state.subject, state.templateVariables)
-          : state.subject;
-
-      const processedContent =
-        state.selectedTemplate && Object.keys(state.templateVariables).length > 0
-          ? processTemplate(state.content, state.templateVariables)
-          : state.content;
-
-      return (
-        <Stack spacing={2}>
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Subject:
-            </Typography>
-            <Typography variant="body1" fontWeight="medium">
-              {processedSubject || '(No subject)'}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Recipients:
-            </Typography>
-            <Typography variant="body2">
-              {state.recipientState?.totalRecipients || 0} recipient
-              {state.recipientState?.totalRecipients !== 1 ? 's' : ''}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Content:
-            </Typography>
-            <Box
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 1,
-                maxHeight: 300,
-                overflow: 'auto',
-              }}
-            >
-              <RichTextEditor
-                initialValue={processedContent || '<p><em>No content</em></p>'}
-                disabled={true}
-                minHeight={200}
-                placeholder=""
-              />
-            </Box>
-          </Box>
-
-          {state.attachments.length > 0 && (
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Attachments:
-              </Typography>
-              <Stack spacing={0.5}>
-                {state.attachments.map((att) => (
-                  <Typography key={att.id} variant="body2">
-                    📎 {att.name} ({(att.size / 1024 / 1024).toFixed(2)} MB)
-                  </Typography>
-                ))}
-              </Stack>
-            </Box>
-          )}
-        </Stack>
-      );
-    }, [
-      state.subject,
-      state.content,
-      state.selectedTemplate,
-      state.templateVariables,
-      state.recipientState?.totalRecipients,
-      state.attachments,
-    ]);
 
     // Show full-page loading if no data and loading
     if (loading && !hasAnyRecipientData) {
@@ -638,6 +555,7 @@ const EmailComposePageInternal: React.FC<
                     onCancelClick={handleCancelClick}
                     hasAnyRecipientData={hasAnyRecipientData}
                     loading={loading}
+                    editorRef={editorRef}
                   />
 
                   {/* Data availability warnings - moved from recipient section */}
@@ -661,8 +579,8 @@ const EmailComposePageInternal: React.FC<
                     */}
                     <RichTextEditor
                       key={`editor-${state.resetCounter}-${state.selectedTemplate?.id || 'no-template'}`}
+                      ref={editorRef}
                       initialValue={state.content}
-                      onChange={handleContentChange}
                       placeholder="Write your email content..."
                       disabled={state.isSending}
                       minHeight={isMobile ? 200 : 300}
@@ -709,7 +627,6 @@ const EmailComposePageInternal: React.FC<
                     actions={actions}
                     accountId={accountId}
                     showTemplates={true}
-                    onPreviewClick={handlePreviewOpen}
                   />
                 </Box>
               </Box>
@@ -731,9 +648,10 @@ const EmailComposePageInternal: React.FC<
         >
           <ComposeActions
             onScheduleClick={handleScheduleOpen}
-            onPreviewClick={handlePreviewOpen}
             showAdvancedActions={!isMobile}
             compact={isMobile}
+            onBeforeSend={syncEditorContent}
+            onBeforeSave={syncEditorContent}
           />
         </Box>
 
@@ -763,7 +681,6 @@ const EmailComposePageInternal: React.FC<
                 accountId={accountId}
                 showTemplates={true}
                 compact={true}
-                onPreviewClick={handlePreviewOpen}
               />
             </Box>
           </Drawer>
@@ -841,25 +758,6 @@ const EmailComposePageInternal: React.FC<
           cancelText="Keep Editing"
           confirmButtonColor="error"
         />
-
-        {/* Preview Dialog */}
-        <Dialog
-          open={dialogState.previewDialogOpen}
-          onClose={handlePreviewClose}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <PreviewIcon />
-              <Typography variant="h6">Email Preview</Typography>
-            </Stack>
-          </DialogTitle>
-          <DialogContent>{renderPreviewContent}</DialogContent>
-          <DialogActions>
-            <Button onClick={handlePreviewClose}>Close</Button>
-          </DialogActions>
-        </Dialog>
 
         {/* Notifications */}
         <Snackbar
