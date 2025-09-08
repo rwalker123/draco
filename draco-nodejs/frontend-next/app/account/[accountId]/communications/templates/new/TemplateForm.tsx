@@ -286,47 +286,6 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
     router.push(`/account/${accountId}/communications/templates`);
   };
 
-  // Reactive content detection for template body content
-  const [hasBodyContent, setHasBodyContent] = useState(false);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Calculate body content state from both form and editor
-  const calculateHasBodyContent = useCallback(() => {
-    // Check form state first
-    if (formData.bodyTemplate.trim()) {
-      return true;
-    }
-
-    // Check editor plain text content
-    const editorTextContent = editorRef.current?.getTextContent() || '';
-    return editorTextContent.trim().length > 0;
-  }, [formData.bodyTemplate]);
-
-  // React to form state changes immediately
-  useEffect(() => {
-    const newHasBodyContent = calculateHasBodyContent();
-    setHasBodyContent(newHasBodyContent);
-  }, [calculateHasBodyContent]);
-
-  // Polling mechanism for editor content changes
-  useEffect(() => {
-    // Start polling to detect editor content changes
-    pollingIntervalRef.current = setInterval(() => {
-      const newHasBodyContent = calculateHasBodyContent();
-      setHasBodyContent((prev) => {
-        // Only update if different to avoid unnecessary re-renders
-        return prev !== newHasBodyContent ? newHasBodyContent : prev;
-      });
-    }, 500);
-
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    };
-  }, [calculateHasBodyContent]);
-
   // Show loading state while template is being loaded for edit mode
   if (templateLoading) {
     return (
@@ -411,7 +370,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
                 <Button
                   onClick={handleSave}
                   variant="contained"
-                  disabled={loading || !formData.name.trim() || !hasBodyContent}
+                  disabled={loading || !formData.name.trim()}
                   startIcon={<SaveIcon />}
                 >
                   {mode === 'create' ? 'Create Template' : 'Save Changes'}

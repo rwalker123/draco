@@ -555,7 +555,6 @@ const EmailComposePageInternal: React.FC<
                     onCancelClick={handleCancelClick}
                     hasAnyRecipientData={hasAnyRecipientData}
                     loading={loading}
-                    editorRef={editorRef}
                   />
 
                   {/* Data availability warnings - moved from recipient section */}
