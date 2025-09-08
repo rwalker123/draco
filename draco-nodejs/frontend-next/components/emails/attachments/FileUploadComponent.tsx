@@ -6,7 +6,6 @@ import { CloudUpload as UploadIcon } from '@mui/icons-material';
 
 import { FileUploadZone } from './FileUploadZone';
 import { FileUploadProgress } from './FileUploadProgress';
-import { StorageQuotaIndicator } from './StorageQuotaIndicator';
 import { useFileUpload } from './hooks/useFileUpload';
 import { useEmailCompose } from '../compose/EmailComposeProvider';
 import {
@@ -18,7 +17,6 @@ import {
 export interface FileUploadComponentProps {
   accountId: string;
   config?: AttachmentConfig;
-  showQuota?: boolean;
   showProgress?: boolean;
   showPreview?: boolean;
   compact?: boolean;
@@ -28,12 +26,11 @@ export interface FileUploadComponentProps {
 }
 
 /**
- * FileUploadComponent - Complete file upload system with drag-drop, progress, and quota management
+ * FileUploadComponent - Complete file upload system with drag-drop and progress tracking
  */
 export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
-  accountId,
+  accountId: _accountId,
   config = DEFAULT_ATTACHMENT_CONFIG,
-  showQuota = true,
   showProgress = true,
   showPreview = true,
   compact = false,
@@ -95,11 +92,6 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
     [cancelUpload],
   );
 
-  // Stable callback references to prevent unnecessary re-renders
-  const handleQuotaExceeded = useCallback(() => {
-    onError?.(new Error('Storage quota exceeded. Please free up space.'));
-  }, [onError]);
-
   const hasActiveUploads = attachments.some(
     (att) => att.status === 'uploading' || att.status === 'pending',
   );
@@ -108,16 +100,6 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
 
   return (
     <Box>
-      {/* Storage quota indicator */}
-      {showQuota && (
-        <StorageQuotaIndicator
-          accountId={accountId}
-          compact={compact}
-          showDetails={!compact}
-          onQuotaExceeded={handleQuotaExceeded}
-        />
-      )}
-
       {/* Upload errors */}
       {errors.length > 0 && (
         <Stack spacing={1} sx={{ mt: 2 }}>
