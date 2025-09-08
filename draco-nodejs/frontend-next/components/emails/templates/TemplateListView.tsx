@@ -36,18 +36,6 @@ export default function TemplateListView({
 }: TemplateListViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleEdit = (template: EmailTemplate) => {
-    onEdit(template);
-  };
-
-  const handlePreview = (template: EmailTemplate) => {
-    onPreview(template);
-  };
-
-  const handleDelete = (template: EmailTemplate) => {
-    onDelete(template);
-  };
-
   // Filter templates based on search term
   const filteredTemplates = templates.filter(
     (template) =>
@@ -135,16 +123,12 @@ export default function TemplateListView({
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEdit(template)}
-                      title="Edit Template"
-                    >
+                    <IconButton size="small" onClick={() => onEdit(template)} title="Edit Template">
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(template)}
+                      onClick={() => onDelete(template)}
                       sx={{ color: 'error.main' }}
                       title="Delete Template"
                     >
@@ -179,7 +163,7 @@ export default function TemplateListView({
                   <Button
                     variant="outlined"
                     startIcon={<PreviewIcon />}
-                    onClick={() => handlePreview(template)}
+                    onClick={() => onPreview(template)}
                     fullWidth
                     sx={{ justifyContent: 'flex-start' }}
                   >
