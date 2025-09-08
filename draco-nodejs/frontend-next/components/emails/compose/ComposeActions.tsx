@@ -62,16 +62,16 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
 
   // Handle send email
   const handleSend = useCallback(async () => {
-    // Check for empty content and show warning dialog
-    if (!state.content || !state.content.trim()) {
-      setShowEmptyContentWarning(true);
-      return;
-    }
-
     try {
-      // Sync editor content before sending
+      // Sync editor content before validation to avoid race condition
       if (onBeforeSend) {
         onBeforeSend();
+      }
+
+      // Check for empty content and show warning dialog (after syncing current content)
+      if (!state.content || !state.content.trim()) {
+        setShowEmptyContentWarning(true);
+        return;
       }
       const success = await actions.sendEmail();
       if (success) {
