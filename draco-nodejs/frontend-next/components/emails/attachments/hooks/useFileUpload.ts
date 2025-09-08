@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   EmailAttachment,
   AttachmentConfig,
@@ -124,25 +124,29 @@ export function useFileUpload({
   const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
   const fileInputRef = useRef<Map<string, File>>(new Map());
 
-  const setAttachments = useCallback(
-    (newAttachments: EmailAttachment[]) => {
-      setAttachmentsState(newAttachments);
-      onAttachmentsChange?.(newAttachments);
-    },
-    [onAttachmentsChange],
-  );
+  // Store callback ref to avoid infinite loops
+  const onAttachmentsChangeRef = useRef(onAttachmentsChange);
+
+  // Update ref when callback changes
+  useEffect(() => {
+    onAttachmentsChangeRef.current = onAttachmentsChange;
+  }, [onAttachmentsChange]);
+
+  const setAttachments = useCallback((newAttachments: EmailAttachment[]) => {
+    setAttachmentsState(newAttachments);
+  }, []);
 
   // Update individual attachment
-  const updateAttachment = useCallback(
-    (id: string, updates: Partial<EmailAttachment>) => {
-      setAttachmentsState((prev) => {
-        const updated = prev.map((att) => (att.id === id ? { ...att, ...updates } : att));
-        onAttachmentsChange?.(updated);
-        return updated;
-      });
-    },
-    [onAttachmentsChange],
-  );
+  const updateAttachment = useCallback((id: string, updates: Partial<EmailAttachment>) => {
+    setAttachmentsState((prev) =>
+      prev.map((att) => (att.id === id ? { ...att, ...updates } : att)),
+    );
+  }, []);
+
+  // Effect to notify parent of attachment changes
+  useEffect(() => {
+    onAttachmentsChangeRef.current?.(attachments);
+  }, [attachments]);
 
   // Calculate overall upload progress
   const calculateProgress = useCallback((currentAttachments: EmailAttachment[]) => {

@@ -133,7 +133,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
           borderStyle: 'dashed',
           borderColor: isDragOver ? 'primary.main' : disabled ? 'action.disabled' : 'divider',
           borderRadius: 2,
-          p: compact ? 2 : 4,
+          p: compact ? 2 : 3,
           bgcolor: isDragOver
             ? alpha(theme.palette.primary.main, 0.05)
             : disabled
@@ -155,7 +155,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
           {/* Upload icon */}
           <UploadIcon
             sx={{
-              fontSize: compact ? 32 : 48,
+              fontSize: compact ? 28 : 42,
               color: isDragOver ? 'primary.main' : disabled ? 'action.disabled' : 'action.active',
             }}
           />

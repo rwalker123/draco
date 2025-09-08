@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 
 import { useEmailCompose } from './EmailComposeProvider';
+import { validateComposeData } from '../../../types/emails/compose';
 
 interface ScheduleDialogProps {
   open: boolean;
@@ -41,63 +42,68 @@ type ScheduleOption = 'later_today' | 'tomorrow' | 'next_week' | 'custom';
 /**
  * ScheduleDialog - Modal for setting email scheduling options
  */
-export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
-  open,
-  onClose,
-  onSchedule,
-}) => {
+export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({ open, onClose, onSchedule }) => {
   const { state, actions } = useEmailCompose();
-  
+
+  // Real-time validation for contextual error display
+  const validation = useMemo(() => validateComposeData(state, state.config), [state]);
+
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption>('custom');
   const [customDate, setCustomDate] = useState<Date | null>(
-    state.scheduledDate || new Date(Date.now() + 24 * 60 * 60 * 1000) // Default to tomorrow
+    state.scheduledDate || new Date(Date.now() + 24 * 60 * 60 * 1000), // Default to tomorrow
   );
   const [error, setError] = useState<string | null>(null);
 
   // Quick schedule options
-  const getQuickScheduleDate = useCallback((option: ScheduleOption): Date => {
-    const now = new Date();
-    
-    switch (option) {
-      case 'later_today':
-        // 6 PM today, or 2 hours from now if after 6 PM
-        const laterToday = new Date(now);
-        laterToday.setHours(18, 0, 0, 0);
-        if (laterToday <= now) {
-          return new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
-        }
-        return laterToday;
-        
-      case 'tomorrow':
-        // 9 AM tomorrow
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(9, 0, 0, 0);
-        return tomorrow;
-        
-      case 'next_week':
-        // 9 AM next Monday
-        const nextWeek = new Date(now);
-        const daysUntilMonday = (8 - nextWeek.getDay()) % 7 || 7;
-        nextWeek.setDate(nextWeek.getDate() + daysUntilMonday);
-        nextWeek.setHours(9, 0, 0, 0);
-        return nextWeek;
-        
-      default:
-        return customDate || new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    }
-  }, [customDate]);
+  const getQuickScheduleDate = useCallback(
+    (option: ScheduleOption): Date => {
+      const now = new Date();
+
+      switch (option) {
+        case 'later_today':
+          // 6 PM today, or 2 hours from now if after 6 PM
+          const laterToday = new Date(now);
+          laterToday.setHours(18, 0, 0, 0);
+          if (laterToday <= now) {
+            return new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+          }
+          return laterToday;
+
+        case 'tomorrow':
+          // 9 AM tomorrow
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(9, 0, 0, 0);
+          return tomorrow;
+
+        case 'next_week':
+          // 9 AM next Monday
+          const nextWeek = new Date(now);
+          const daysUntilMonday = (8 - nextWeek.getDay()) % 7 || 7;
+          nextWeek.setDate(nextWeek.getDate() + daysUntilMonday);
+          nextWeek.setHours(9, 0, 0, 0);
+          return nextWeek;
+
+        default:
+          return customDate || new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      }
+    },
+    [customDate],
+  );
 
   // Handle schedule option change
-  const handleScheduleOptionChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newOption = event.target.value as ScheduleOption;
-    setScheduleOption(newOption);
-    setError(null);
-    
-    if (newOption !== 'custom') {
-      setCustomDate(getQuickScheduleDate(newOption));
-    }
-  }, [getQuickScheduleDate]);
+  const handleScheduleOptionChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newOption = event.target.value as ScheduleOption;
+      setScheduleOption(newOption);
+      setError(null);
+
+      if (newOption !== 'custom') {
+        setCustomDate(getQuickScheduleDate(newOption));
+      }
+    },
+    [getQuickScheduleDate],
+  );
 
   // Handle custom date change
   const handleCustomDateChange = useCallback((newDate: Date | null) => {
@@ -110,43 +116,52 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
     if (!date) {
       return 'Please select a valid date and time';
     }
-    
+
     const now = new Date();
     const minScheduleTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
-    
+
     if (date <= minScheduleTime) {
       return 'Scheduled time must be at least 5 minutes from now';
     }
-    
+
     // Don't allow scheduling more than 1 year in advance
     const maxScheduleTime = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
     if (date > maxScheduleTime) {
       return 'Cannot schedule more than 1 year in advance';
     }
-    
+
     return null;
   }, []);
 
   // Handle confirm scheduling
   const handleConfirm = useCallback(() => {
-    const selectedDate = scheduleOption === 'custom' ? customDate : getQuickScheduleDate(scheduleOption);
+    const selectedDate =
+      scheduleOption === 'custom' ? customDate : getQuickScheduleDate(scheduleOption);
     const validationError = validateScheduleDate(selectedDate);
-    
+
     if (validationError) {
       setError(validationError);
       return;
     }
-    
+
     if (selectedDate) {
       actions.setScheduled(true, selectedDate);
-      
+
       if (onSchedule) {
         onSchedule(selectedDate);
       }
-      
+
       onClose();
     }
-  }, [scheduleOption, customDate, getQuickScheduleDate, validateScheduleDate, actions, onSchedule, onClose]);
+  }, [
+    scheduleOption,
+    customDate,
+    getQuickScheduleDate,
+    validateScheduleDate,
+    actions,
+    onSchedule,
+    onClose,
+  ]);
 
   // Handle cancel scheduling
   const handleCancel = useCallback(() => {
@@ -172,17 +187,18 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
   };
 
   // Get current scheduled date for display
-  const currentSelectedDate = scheduleOption === 'custom' ? customDate : getQuickScheduleDate(scheduleOption);
+  const currentSelectedDate =
+    scheduleOption === 'custom' ? customDate : getQuickScheduleDate(scheduleOption);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog 
-        open={open} 
-        onClose={handleCancel} 
-        maxWidth="sm" 
+      <Dialog
+        open={open}
+        onClose={handleCancel}
+        maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { minHeight: 400 }
+          sx: { minHeight: 400 },
         }}
       >
         <DialogTitle>
@@ -198,9 +214,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
             {state.isScheduled && state.scheduledDate && (
               <Alert severity="info">
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                  <Typography variant="body2">
-                    Currently scheduled for:
-                  </Typography>
+                  <Typography variant="body2">Currently scheduled for:</Typography>
                   <Chip
                     icon={<EventIcon />}
                     label={formatDate(state.scheduledDate)}
@@ -218,10 +232,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
                   When would you like to send this email?
                 </Typography>
               </FormLabel>
-              <RadioGroup
-                value={scheduleOption}
-                onChange={handleScheduleOptionChange}
-              >
+              <RadioGroup value={scheduleOption} onChange={handleScheduleOptionChange}>
                 <FormControlLabel
                   value="later_today"
                   control={<Radio />}
@@ -237,7 +248,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
                     </Stack>
                   }
                 />
-                
+
                 <FormControlLabel
                   value="tomorrow"
                   control={<Radio />}
@@ -253,7 +264,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
                     </Stack>
                   }
                 />
-                
+
                 <FormControlLabel
                   value="next_week"
                   control={<Radio />}
@@ -269,7 +280,7 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
                     </Stack>
                   }
                 />
-                
+
                 <FormControlLabel
                   value="custom"
                   control={<Radio />}
@@ -305,11 +316,16 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
             )}
 
             {/* Error Display */}
-            {error && (
-              <Alert severity="error">
-                {error}
-              </Alert>
-            )}
+            {error && <Alert severity="error">{error}</Alert>}
+
+            {/* Schedule validation errors from compose state */}
+            {validation.errors
+              .filter((error) => error.field === 'schedule')
+              .map((error, index) => (
+                <Alert key={`schedule-error-${index}`} severity="error" variant="outlined">
+                  {error.message}
+                </Alert>
+              ))}
           </Stack>
         </DialogContent>
 
@@ -317,19 +333,15 @@ export const ScheduleDialog: React.FC<ScheduleDialogProps> = ({
           <Button onClick={handleCancel} color="inherit">
             Cancel
           </Button>
-          
+
           {state.isScheduled && (
-            <Button 
-              onClick={handleRemoveSchedule} 
-              color="error"
-              variant="outlined"
-            >
+            <Button onClick={handleRemoveSchedule} color="error" variant="outlined">
               Remove Schedule
             </Button>
           )}
-          
-          <Button 
-            onClick={handleConfirm} 
+
+          <Button
+            onClick={handleConfirm}
             variant="contained"
             disabled={!!error || !currentSelectedDate}
           >

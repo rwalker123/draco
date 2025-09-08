@@ -16,6 +16,11 @@ import {
   Typography,
   Tooltip,
   Chip,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -53,9 +58,32 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   const { state, actions } = useEmailCompose();
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
   const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);
+  const [showEmptyContentWarning, setShowEmptyContentWarning] = useState(false);
 
   // Handle send email
   const handleSend = useCallback(async () => {
+    // Check for empty content and show warning dialog
+    if (!state.content || !state.content.trim()) {
+      setShowEmptyContentWarning(true);
+      return;
+    }
+
+    try {
+      const success = await actions.sendEmail();
+      if (success) {
+        // Email sent successfully - any additional UI feedback would be handled by parent
+      }
+      // Error cases are handled by EmailComposeProvider through state management
+    } catch (error) {
+      // Catch any unexpected errors that might bubble up
+      // The EmailComposeProvider should handle all email sending errors through state
+      console.warn('Unexpected error in handleSend:', error);
+    }
+  }, [actions, state.content]);
+
+  // Handle confirmed send with empty content
+  const handleConfirmEmptySend = useCallback(async () => {
+    setShowEmptyContentWarning(false);
     const success = await actions.sendEmail();
     if (success) {
       // Email sent successfully - any additional UI feedback would be handled by parent
@@ -303,15 +331,52 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
         )}
       </Menu>
 
-      {/* Validation Summary */}
-      {!validation.isValid && validation.errors.length > 0 && (
-        <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="error">
-            Please fix {validation.errors.length} error{validation.errors.length !== 1 ? 's' : ''}{' '}
-            before sending
-          </Typography>
-        </Box>
+      {/* General Validation Errors - Field-specific errors are shown next to their controls */}
+      {!validation.isValid && validation.errors.some((error) => error.field === 'general') && (
+        <Stack spacing={1} sx={{ mt: 1 }}>
+          {validation.errors
+            .filter((error) => error.field === 'general')
+            .map((error, index) => (
+              <Alert
+                key={`${error.field}-${index}`}
+                severity="error"
+                variant="outlined"
+                sx={{
+                  fontSize: '0.75rem',
+                  py: 0.5,
+                  '& .MuiAlert-message': {
+                    fontSize: '0.75rem',
+                  },
+                }}
+              >
+                {error.message}
+              </Alert>
+            ))}
+        </Stack>
       )}
+
+      {/* Empty Content Warning Dialog */}
+      <Dialog
+        open={showEmptyContentWarning}
+        onClose={() => setShowEmptyContentWarning(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Send Email Without Content?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            This email doesn&apos;t have any content in the body. Are you sure you want to send it?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowEmptyContentWarning(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmEmptySend} variant="contained" color="primary">
+            Send Anyway
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

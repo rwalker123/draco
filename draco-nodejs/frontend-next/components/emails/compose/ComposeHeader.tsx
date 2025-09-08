@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Box,
   TextField,
@@ -20,11 +20,13 @@ import {
   Close as CloseIcon,
   Settings as SettingsIcon,
   Clear as ClearIcon,
+  Error as ErrorIcon,
 } from '@mui/icons-material';
 
 import { useEmailCompose } from './EmailComposeProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { SelectedRecipientsPreview } from '../recipients/SelectedRecipientsPreview';
+import { validateComposeData } from '../../../types/emails/compose';
 
 interface ComposeHeaderProps {
   showFromField?: boolean;
@@ -53,6 +55,9 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   const { state, actions } = useEmailCompose();
   const { user } = useAuth();
 
+  // Real-time validation for contextual error display
+  const validation = useMemo(() => validateComposeData(state, state.config), [state]);
+
   // Handle subject change
   const handleSubjectChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,8 +72,8 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
   }, [actions]);
 
   // Get validation errors for header fields
-  const subjectError = state.errors.find((e) => e.field === 'subject');
-  const recipientError = state.errors.find((e) => e.field === 'recipients');
+  const subjectError = validation.errors.find((e) => e.field === 'subject');
+  const recipientError = validation.errors.find((e) => e.field === 'recipients');
 
   // Format sender display
   const senderDisplay = user
@@ -167,35 +172,44 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
                   </Box>
 
                   {/* Selected Recipients Preview */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <SelectedRecipientsPreview
-                      maxVisibleChips={compact ? 4 : 8}
-                      showValidationWarnings={true}
-                      compact={compact}
-                    />
+                  <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <SelectedRecipientsPreview
+                        maxVisibleChips={compact ? 4 : 8}
+                        showValidationWarnings={true}
+                        compact={compact}
+                      />
+                    </Box>
+                    {recipientError && (
+                      <Tooltip title={recipientError.message} arrow>
+                        <ErrorIcon color="error" fontSize="small" />
+                      </Tooltip>
+                    )}
                   </Box>
                 </Stack>
               </Box>
-
-              {recipientError && (
-                <Alert severity="error" sx={{ mt: 1 }}>
-                  {recipientError.message}
-                </Alert>
-              )}
             </Stack>
           </Box>
         )}
 
         {/* Subject Line */}
         <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="medium">
+              Subject
+            </Typography>
+            {subjectError && (
+              <Tooltip title={subjectError.message} arrow>
+                <ErrorIcon color="error" fontSize="small" />
+              </Tooltip>
+            )}
+          </Box>
           <TextField
             fullWidth
-            label="Subject"
             placeholder="Enter email subject..."
             value={state.subject}
             onChange={handleSubjectChange}
             error={!!subjectError}
-            helperText={subjectError?.message}
             disabled={state.isSending}
             size={compact ? 'small' : 'medium'}
             InputProps={{

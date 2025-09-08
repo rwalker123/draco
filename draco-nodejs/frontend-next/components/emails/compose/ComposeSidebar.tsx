@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -33,6 +33,7 @@ import {
   extractTemplateVariables,
   EmailComposeState,
   EmailComposeActions,
+  validateComposeData,
 } from '../../../types/emails/compose';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/errors';
@@ -119,6 +120,9 @@ export default function ComposeSidebar({
 }: ComposeSidebarProps) {
   const { token } = useAuth();
   const theme = useTheme();
+
+  // Real-time validation for contextual error display
+  const validation = useMemo(() => validateComposeData(state, state.config), [state]);
 
   // Template state
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -448,6 +452,15 @@ export default function ComposeSidebar({
                         </Box>
                       </Box>
                     )}
+
+                    {/* Template validation errors */}
+                    {validation.errors
+                      .filter((error) => error.field === 'template')
+                      .map((error, index) => (
+                        <Alert key={`template-error-${index}`} severity="error" variant="outlined">
+                          {error.message}
+                        </Alert>
+                      ))}
 
                     {/* Template List */}
                     {!loadingTemplates && !templatesError && (
