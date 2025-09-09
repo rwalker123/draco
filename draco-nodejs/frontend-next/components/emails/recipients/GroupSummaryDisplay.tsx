@@ -7,7 +7,6 @@ import {
   Groups as GroupsIcon,
   Sports as SportsIcon,
   Clear as ClearIcon,
-  SupervisorAccount as ManagerIcon,
 } from '@mui/icons-material';
 
 import { ContactGroup, GroupType } from '../../../types/emails/recipients';
@@ -39,8 +38,7 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
         return <SportsIcon />;
       case 'teams':
         return <SportsIcon />;
-      case 'managers':
-        return <ManagerIcon />;
+      // 'managers' is no longer a group type - handled via managersOnly flag
       default:
         return <GroupsIcon />;
     }
@@ -56,8 +54,7 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
         return 'info';
       case 'teams':
         return 'success';
-      case 'managers':
-        return 'warning';
+      // 'managers' is no longer a group type - handled via managersOnly flag
       default:
         return 'default';
     }
@@ -78,7 +75,7 @@ export const GroupSummaryDisplay: React.FC<GroupSummaryDisplayProps> = ({
               {groupType === 'season' && 'Season Participants'}
               {groupType === 'league' && 'League Communications'}
               {groupType === 'teams' && 'Team Selections'}
-              {groupType === 'managers' && 'Manager Communications'}
+              {/* 'managers' is no longer a group type - handled via managersOnly flag */}
             </Box>
             <Box component="span" sx={{ ml: 1, color: 'text.secondary' }}>
               ({groups.length} {groups.length === 1 ? 'group' : 'groups'})

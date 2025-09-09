@@ -219,7 +219,7 @@ export interface RecipientSelectionActions
 // ===== UNIFIED GROUP ARCHITECTURE =====
 
 // Group types for unified architecture
-export type GroupType = 'individuals' | 'season' | 'league' | 'division' | 'teams' | 'managers';
+export type GroupType = 'individuals' | 'season' | 'league' | 'division' | 'teams';
 
 // ===== HIERARCHICAL SELECTION INTERFACES =====
 
@@ -890,9 +890,8 @@ export const extractHierarchicalSelectionState = (
       } else if (groupType === 'teams') {
         group.ids.forEach((id) => state.selectedTeamIds.add(id));
         state.managersOnly = group.managersOnly;
-      } else if (groupType === 'managers') {
-        state.managersOnly = true;
       }
+      // 'managers' is no longer a group type - handled via managersOnly flag
     });
   });
 
