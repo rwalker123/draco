@@ -674,7 +674,16 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
         // Validate and process recipient groups
         const selectedGroups = state.recipientState?.selectedGroups;
         if (!selectedGroups || selectedGroups.size === 0) {
-          throw new Error('No recipient groups selected');
+          // Instead of throwing, dispatch error and return early
+          dispatch({
+            type: 'ADD_ERROR',
+            payload: {
+              field: 'recipients',
+              message: 'No recipient groups selected. Please select at least one recipient.',
+              severity: 'error',
+            },
+          });
+          return Promise.reject(new Error('No recipient groups selected'));
         }
 
         // Extract individual contact IDs if present
@@ -697,7 +706,16 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
         for (const [groupType, groupList] of selectedGroups) {
           if (groupType !== 'individuals') {
             if (!['season', 'league', 'division', 'teams'].includes(groupType)) {
-              throw new Error(`Invalid group type: ${groupType}`);
+              // Instead of throwing, dispatch error and return early
+              dispatch({
+                type: 'ADD_ERROR',
+                payload: {
+                  field: 'recipients',
+                  message: `Invalid recipient group type: ${groupType}. Please refresh and try again.`,
+                  severity: 'error',
+                },
+              });
+              return Promise.reject(new Error(`Invalid group type: ${groupType}`));
             }
 
             // Process all groups of this type

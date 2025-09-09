@@ -614,9 +614,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       },
 
       isContactSelected: (contactId: string): boolean => {
-        return (
-          isContactInGroup('individuals', contactId) || isContactInGroup('managers', contactId)
-        );
+        // Check all group types, not just individuals and managers
+        for (const [, groups] of selectedGroups) {
+          if (groups && groups.some((group) => group.ids.has(contactId))) {
+            return true;
+          }
+        }
+        return false;
       },
 
       getTotalSelected,
@@ -628,6 +632,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       addToGroup,
       managerState.managers,
       getTotalSelected,
+      selectedGroups,
     ],
   );
 
