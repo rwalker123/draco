@@ -93,6 +93,11 @@ interface ComponentState {
 const EmailComposePageInternal: React.FC<
   Omit<EmailComposePageProps, 'initialData' | 'onSendComplete' | 'onCancel'> & {
     onSendComplete?: (emailId: string) => void;
+    editorRef?: React.RefObject<{
+      getCurrentContent: () => string;
+      getTextContent: () => string;
+      insertText: (text: string) => void;
+    } | null>;
   }
 > = React.memo(
   function EmailComposePageInternal({
@@ -104,18 +109,12 @@ const EmailComposePageInternal: React.FC<
     loading = false,
     error = null,
     onRetry,
+    editorRef,
   }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const { state, actions } = useEmailCompose();
-
-    // Editor ref to access content
-    const editorRef = useRef<{
-      getCurrentContent: () => string;
-      getTextContent: () => string;
-      insertText: (text: string) => void;
-    } | null>(null);
 
     // Consolidated state management
     const maxRetries = 3;
@@ -284,13 +283,13 @@ const EmailComposePageInternal: React.FC<
 
     // Sync editor content to state before operations that need current content
     const syncEditorContent = useCallback(() => {
-      if (editorRef.current) {
+      if (editorRef?.current) {
         const currentContent = editorRef.current.getCurrentContent();
         if (currentContent !== state.content) {
           actions.setContent(currentContent);
         }
       }
-    }, [actions, state.content]);
+    }, [actions, state.content, editorRef]);
 
     // Handle attachments change
     const handleAttachmentsChange = useCallback(
@@ -651,6 +650,7 @@ const EmailComposePageInternal: React.FC<
             compact={isMobile}
             onBeforeSend={syncEditorContent}
             onBeforeSave={syncEditorContent}
+            editorRef={editorRef}
           />
         </Box>
 
@@ -807,6 +807,13 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   error = null,
   onRetry,
 }) => {
+  // Editor ref to access content - shared between provider and internal component
+  const editorRef = useRef<{
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  } | null>(null);
+
   // Provider callback handlers for notifications
   const handleProviderSendComplete = useCallback(
     (emailId: string) => {
@@ -831,6 +838,7 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
       onSendComplete={handleProviderSendComplete}
       onDraftSaved={handleProviderDraftSaved}
       onError={handleProviderError}
+      editorRef={editorRef}
     >
       <EmailComposePageInternal
         accountId={accountId}
@@ -841,6 +849,7 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
         loading={loading}
         error={error}
         onRetry={onRetry}
+        editorRef={editorRef}
       />
     </EmailComposeProvider>
   );
