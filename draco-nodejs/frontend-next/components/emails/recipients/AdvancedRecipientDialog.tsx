@@ -38,8 +38,6 @@ import { ManagerStateProvider, useManagerStateContext } from './context/ManagerS
 import { RecipientDialogSkeleton } from '../../common/SkeletonLoaders';
 import {
   RecipientContact,
-  TeamGroup,
-  RoleGroup,
   GroupType,
   ContactGroup,
   RecipientSelectionTab,
@@ -83,8 +81,6 @@ export interface AdvancedRecipientDialogProps {
   ) => void;
   accountId: string;
   seasonId?: string;
-  teamGroups: TeamGroup[];
-  roleGroups: RoleGroup[];
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -137,8 +133,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   onApply,
   accountId,
   seasonId,
-  teamGroups,
-  roleGroups,
   loading = false,
   error = null,
   onRetry,
@@ -228,7 +222,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           targetGroup = {
             groupType,
             groupName,
-            contactIds: new Set(),
+            ids: new Set(),
+            managersOnly: false,
             totalCount: 0,
           };
           existingGroups.push(targetGroup);
@@ -236,8 +231,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
         // Add contact to group (targetGroup is guaranteed to exist here)
         if (targetGroup) {
-          targetGroup.contactIds.add(contactId);
-          targetGroup.totalCount = targetGroup.contactIds.size;
+          targetGroup.ids.add(contactId);
+          targetGroup.totalCount = targetGroup.ids.size;
         }
 
         newGroups.set(groupType, existingGroups);
@@ -254,13 +249,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
       const updatedGroups = existingGroups
         .map((group) => {
-          const newContactIds = new Set(group.contactIds);
-          newContactIds.delete(contactId);
+          const newIds = new Set(group.ids);
+          newIds.delete(contactId);
 
           return {
             ...group,
-            contactIds: newContactIds,
-            totalCount: newContactIds.size,
+            ids: newIds,
+            totalCount: newIds.size,
           };
         })
         .filter((group) => group.totalCount > 0); // Remove empty groups
@@ -279,7 +274,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     (groupType: GroupType, contactId: string): boolean => {
       const groups = selectedGroups.get(groupType);
       if (!groups) return false;
-      return groups.some((group) => group.contactIds.has(contactId));
+      return groups.some((group) => group.ids.has(contactId));
     },
     [selectedGroups],
   );
@@ -737,15 +732,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     () => Array.isArray(currentPageContacts) && currentPageContacts.length > 0,
     [currentPageContacts],
   );
-  const hasTeamGroups = useMemo(
-    () => Array.isArray(teamGroups) && teamGroups.length > 0,
-    [teamGroups],
-  );
-  const hasRoleGroups = useMemo(
-    () => Array.isArray(roleGroups) && roleGroups.length > 0,
-    [roleGroups],
-  );
-  const hasAnyData = hasContacts || hasTeamGroups || hasRoleGroups;
+  const hasAnyData = hasContacts;
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
@@ -935,7 +922,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       // Process all groups in mergedContactGroups (includes both manual and hierarchical)
       mergedContactGroups.forEach((groups, groupType) => {
         groups.forEach((group) => {
-          group.contactIds.forEach((contactId) => {
+          group.ids.forEach((contactId) => {
             if (!allContactIds.has(contactId)) {
               allContactIds.add(contactId);
 
@@ -1442,7 +1429,7 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
 
       <ContactSelectionPanel
         contacts={displayContacts}
-        selectedContactIds={selectedGroups.get('individuals')?.[0]?.contactIds || new Set()}
+        selectedContactIds={selectedGroups.get('individuals')?.[0]?.ids || new Set()}
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         onContactToggle={unifiedActions.toggleContact}

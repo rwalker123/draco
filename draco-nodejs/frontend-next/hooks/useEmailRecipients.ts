@@ -19,7 +19,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { EmailRecipientService, Season } from '../services/emailRecipientService';
-import { RecipientContact, TeamGroup, RoleGroup } from '../types/emails/recipients';
+import { RecipientContact } from '../types/emails/recipients';
 import { transformBackendContact, deduplicateContacts } from '../utils/emailRecipientTransformers';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../types/errors';
 import { normalizeError, logError, createEmailRecipientError, safe } from '../utils/errorHandling';
@@ -31,9 +31,6 @@ import { normalizeError, logError, createEmailRecipientError, safe } from '../ut
 export interface UseEmailRecipientsReturn {
   // Data
   contacts: RecipientContact[];
-  teamGroups: TeamGroup[];
-  roleGroups: RoleGroup[];
-
   // Pagination
   hasMoreContacts: boolean;
 
@@ -67,8 +64,6 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
 
   // State management
   const [contacts, setContacts] = useState<RecipientContact[]>([]);
-  const [teamGroups, setTeamGroups] = useState<TeamGroup[]>([]);
-  const [roleGroups, setRoleGroups] = useState<RoleGroup[]>([]);
   const [hasMoreContacts, setHasMoreContacts] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<EmailRecipientError | null>(null);
@@ -117,8 +112,6 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
       if (result.success) {
         // Update state with successful data
         setContacts(result.data.contacts);
-        setTeamGroups(result.data.teamGroups);
-        setRoleGroups(result.data.roleGroups);
         setHasMoreContacts(result.data.pagination?.hasNext ?? false);
 
         // Reset retry count on success
@@ -130,7 +123,7 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
         logError(normalizedError, 'useEmailRecipients.fetchRecipients');
 
         // Keep existing data on non-critical errors
-        if (normalizedError.recoverable && (contacts.length > 0 || teamGroups.length > 0)) {
+        if (normalizedError.recoverable && contacts.length > 0) {
           console.warn('Using cached data due to recoverable error:', normalizedError.userMessage);
         }
       }
@@ -148,7 +141,7 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
       setIsLoading(false);
       setIsRetrying(false);
     }
-  }, [service, isValidAccountId, accountId, token, seasonId, contacts.length, teamGroups.length]);
+  }, [service, isValidAccountId, accountId, token, seasonId, contacts.length]);
 
   /**
    * Enhanced search function with error handling
@@ -251,8 +244,6 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
 
   return {
     contacts,
-    teamGroups,
-    roleGroups,
     hasMoreContacts,
     isLoading,
     error,

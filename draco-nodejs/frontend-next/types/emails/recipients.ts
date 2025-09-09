@@ -133,39 +133,6 @@ export interface IndividualTeamGroup extends BaseGroup {
   seasonName: string;
 }
 
-// Group type for dropdown selection (DEPRECATED - now using hierarchical selection)
-export type GroupSelectionType =
-  | 'season-participants'
-  | 'league-specific'
-  | 'team-selection'
-  | 'manager-communications';
-
-// Union type for all group types
-export type RecipientGroup =
-  | SeasonWideGroup
-  | LeagueSpecificGroup
-  | TeamManagementGroup
-  | SystemRoleGroup
-  | IndividualTeamGroup;
-
-// Legacy types for backward compatibility (deprecated)
-export interface TeamGroup {
-  id: string;
-  name: string;
-  type: 'managers' | 'players' | 'all' | 'sports';
-  description?: string;
-  members: RecipientContact[];
-}
-
-export interface RoleGroup {
-  id: string;
-  name: string;
-  roleType: string;
-  roleId: string;
-  permissions: string[];
-  members: RecipientContact[];
-}
-
 // ===== SEPARATED INTERFACES FOR SOLID PRINCIPLES =====
 
 // Individual contact selection actions
@@ -176,11 +143,6 @@ export interface ContactSelectionActions {
   selectContactRange: (fromId: string, toId: string) => void;
   isContactSelected: (contactId: string) => boolean;
   getSelectedContacts: () => RecipientContact[];
-}
-
-// Group type selection actions (DEPRECATED - now using hierarchical selection)
-export interface GroupTypeSelectionActions {
-  updateActiveGroupType: (type: GroupSelectionType | null) => void;
 }
 
 // Season participants actions
@@ -235,17 +197,6 @@ export interface PaginationActions {
   goToPrevPage?: () => Promise<void>;
 }
 
-// Legacy group actions (deprecated - for backward compatibility)
-export interface LegacyGroupActions {
-  selectAllContacts: () => void;
-  deselectAllContacts: () => void;
-  selectTeamGroup: (team: TeamGroup) => void;
-  deselectTeamGroup: (teamId: string) => void;
-  selectRoleGroup: (role: RoleGroup) => void;
-  deselectRoleGroup: (roleId: string) => void;
-  isGroupSelected: (groupId: string) => boolean;
-}
-
 // Utility actions
 export interface UtilityActions {
   clearAll: () => void;
@@ -256,7 +207,6 @@ export interface UtilityActions {
 // Combined actions interface (for backward compatibility)
 export interface RecipientSelectionActions
   extends ContactSelectionActions,
-    GroupTypeSelectionActions,
     SeasonParticipantsActions,
     LeagueSelectionActions,
     TeamSelectionActions,
@@ -264,7 +214,6 @@ export interface RecipientSelectionActions
     SearchActions,
     UIStateActions,
     PaginationActions,
-    LegacyGroupActions,
     UtilityActions {}
 
 // ===== UNIFIED GROUP ARCHITECTURE =====
@@ -370,17 +319,9 @@ export interface HierarchicalSelectionUtils {
 export interface ContactGroup {
   groupType: GroupType;
   groupName: string; // "Individual Selections", "All Managers", "Team: Eagles", etc.
-  contactIds: Set<string>; // Actual contact IDs in this group
+  ids: Set<string>; // Unified IDs - contactIds for individuals, teamIds/leagueIds/etc for groups
   totalCount: number; // Display count
-  metadata?: {
-    // Optional metadata for different group types
-    teamIds?: Set<string>;
-    leagueIds?: Set<string>;
-    divisionIds?: Set<string>;
-    managerIds?: Set<string>;
-    seasonId?: string;
-    [key: string]: unknown;
-  };
+  managersOnly: boolean; // Always false for 'individuals' group type
 }
 
 // ===== STATE STRUCTURES =====
@@ -389,11 +330,6 @@ export interface ContactGroup {
 export interface ContactSelectionState {
   selectedContactIds: Set<string>;
   lastSelectedContactId?: string;
-}
-
-// Group type selection state (DEPRECATED - now using hierarchical selection)
-export interface GroupTypeSelectionState {
-  activeGroupType: GroupSelectionType | null;
 }
 
 // Season participants state
@@ -448,13 +384,6 @@ export interface PaginationState {
 export interface UIState {
   activeTab: RecipientSelectionTab;
   expandedSections: Set<string>;
-}
-
-// Legacy state (deprecated - for backward compatibility)
-export interface LegacyState {
-  allContacts: boolean;
-  selectedTeamGroups: TeamGroup[];
-  selectedRoleGroups: RoleGroup[];
 }
 
 // Computed properties
@@ -564,15 +493,6 @@ export const createDefaultUIState = (): UIState => ({
 });
 
 /**
- * Creates default legacy state
- */
-export const createDefaultLegacyState = (): LegacyState => ({
-  allContacts: false,
-  selectedTeamGroups: [],
-  selectedRoleGroups: [],
-});
-
-/**
  * Creates default computed state
  */
 export const createDefaultComputedState = (): ComputedState => ({
@@ -589,15 +509,15 @@ export const createDefaultComputedState = (): ComputedState => ({
 export const createContactGroup = (
   groupType: GroupType,
   groupName: string,
-  contactIds: Set<string>,
+  ids: Set<string>,
   totalCount: number,
-  metadata?: ContactGroup['metadata'],
+  managersOnly: boolean = false,
 ): ContactGroup => ({
   groupType,
   groupName,
-  contactIds,
+  ids,
   totalCount,
-  metadata,
+  managersOnly,
 });
 
 /**
@@ -634,8 +554,8 @@ export const getContactIdsFromGroups = (
 
   selectedGroups.forEach((groups) => {
     groups.forEach((group) => {
-      group.contactIds.forEach((contactId) => {
-        allContactIds.add(contactId);
+      group.ids.forEach((id) => {
+        allContactIds.add(id);
       });
     });
   });
@@ -695,11 +615,6 @@ export type GroupSectionType =
 
 // Selection configuration
 export interface RecipientSelectionConfig {
-  // Legacy configuration (deprecated)
-  allowAllContacts: boolean;
-  allowTeamGroups: boolean;
-  allowRoleGroups: boolean;
-
   // New configuration
   allowSeasonParticipants: boolean;
   allowLeagueSpecific: boolean;
@@ -710,10 +625,6 @@ export interface RecipientSelectionConfig {
   maxRecipients?: number;
   requireValidEmails: boolean;
   showRecipientCount: boolean;
-
-  // UI settings (DEPRECATED - now using hierarchical selection)
-  defaultGroupType: GroupSelectionType;
-  enableGroupSearch: boolean;
 }
 
 // Selection validation result
@@ -738,10 +649,6 @@ export interface RecipientSelectionProviderProps {
   systemRoleGroups?: SystemRoleGroup[];
   individualTeamGroups?: IndividualTeamGroup[];
 
-  // Legacy group data (deprecated)
-  teamGroups?: TeamGroup[];
-  roleGroups?: RoleGroup[];
-
   config?: Partial<RecipientSelectionConfig>;
   onSelectionChange?: (selection: RecipientSelectionState) => void;
   accountId?: string; // For server-side search functionality
@@ -763,27 +670,7 @@ export interface RecipientSelectionContextValue {
   teamManagementGroups: TeamManagementGroup[];
   systemRoleGroups: SystemRoleGroup[];
   individualTeamGroups: IndividualTeamGroup[];
-
-  // Legacy group data (deprecated)
-  teamGroups: TeamGroup[];
-  roleGroups: RoleGroup[];
 }
-
-// Utility types for type guards
-export const isSeasonWideGroup = (group: RecipientGroup): group is SeasonWideGroup =>
-  group.type === 'season-wide';
-
-export const isLeagueSpecificGroup = (group: RecipientGroup): group is LeagueSpecificGroup =>
-  group.type === 'league-specific';
-
-export const isTeamManagementGroup = (group: RecipientGroup): group is TeamManagementGroup =>
-  group.type === 'team-management';
-
-export const isSystemRoleGroup = (group: RecipientGroup): group is SystemRoleGroup =>
-  group.type === 'system-role';
-
-export const isIndividualTeamGroup = (group: RecipientGroup): group is IndividualTeamGroup =>
-  group.type === 'individual-team';
 
 // Group section configuration
 export interface GroupSectionConfig {
@@ -858,12 +745,9 @@ export const convertHierarchicalToContactGroups = (
     const seasonGroup: ContactGroup = {
       groupType: 'season',
       groupName: `${seasonData.name} Season`,
-      contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+      ids: new Set([seasonData.id]), // Season ID
       totalCount: state.managersOnly ? seasonData.totalManagers || 0 : seasonData.totalPlayers || 0,
-      metadata: {
-        seasonId: seasonData.id,
-        managersOnly: state.managersOnly,
-      },
+      managersOnly: state.managersOnly,
     };
     groupsMap.set('season', [seasonGroup]);
     return groupsMap;
@@ -878,12 +762,9 @@ export const convertHierarchicalToContactGroups = (
         const leagueGroup: ContactGroup = {
           groupType: 'league',
           groupName: `League: ${league.name}`,
-          contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+          ids: new Set([leagueId]), // League ID
           totalCount: state.managersOnly ? league.totalManagers || 0 : league.totalPlayers || 0,
-          metadata: {
-            leagueIds: new Set([leagueId]),
-            managersOnly: state.managersOnly,
-          },
+          managersOnly: state.managersOnly,
         };
         leagueGroups.push(leagueGroup);
       }
@@ -915,14 +796,11 @@ export const convertHierarchicalToContactGroups = (
         const divisionGroup: ContactGroup = {
           groupType: 'division',
           groupName: `Division: ${divisionDetails.name}`,
-          contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+          ids: new Set([divisionId]), // Division ID
           totalCount: state.managersOnly
             ? divisionDetails.totalManagers || 0
             : divisionDetails.totalPlayers || 0,
-          metadata: {
-            divisionIds: new Set([divisionId]),
-            managersOnly: state.managersOnly,
-          },
+          managersOnly: state.managersOnly,
         };
         divisionGroups.push(divisionGroup);
       }
@@ -973,14 +851,11 @@ export const convertHierarchicalToContactGroups = (
         const teamGroup: ContactGroup = {
           groupType: 'teams',
           groupName: `Team: ${teamDetails.name}`,
-          contactIds: new Set<string>(), // TODO: Populate with actual contact IDs from API
+          ids: new Set([teamId]), // Team ID
           totalCount: state.managersOnly
             ? teamDetails.managerCount || 0
             : teamDetails.playerCount || 0,
-          metadata: {
-            teamIds: new Set([teamId]),
-            managersOnly: state.managersOnly,
-          },
+          managersOnly: state.managersOnly,
         };
         teamGroups.push(teamGroup);
       }
@@ -988,20 +863,6 @@ export const convertHierarchicalToContactGroups = (
     if (teamGroups.length > 0) {
       groupsMap.set('teams', teamGroups);
     }
-  }
-
-  // Managers-only selection with no specific hierarchy
-  if (state.managersOnly && groupsMap.size === 0) {
-    const managerGroup: ContactGroup = {
-      groupType: 'managers',
-      groupName: 'All Managers',
-      contactIds: new Set<string>(), // TODO: Populate with actual manager contact IDs from API
-      totalCount: seasonData.totalManagers || 0,
-      metadata: {
-        managersOnly: true,
-      },
-    };
-    groupsMap.set('managers', [managerGroup]);
   }
 
   return groupsMap;
@@ -1017,24 +878,18 @@ export const extractHierarchicalSelectionState = (
 
   selectedGroups.forEach((groups, groupType) => {
     groups.forEach((group) => {
-      if (groupType === 'season' && group.metadata?.seasonId) {
-        state.selectedSeasonIds.add(group.metadata.seasonId);
-        state.managersOnly = Boolean(group.metadata.managersOnly);
-      } else if (groupType === 'league' && group.metadata?.leagueIds) {
-        if (group.metadata.leagueIds instanceof Set) {
-          group.metadata.leagueIds.forEach((id: string) => state.selectedLeagueIds.add(id));
-        }
-        state.managersOnly = Boolean(group.metadata.managersOnly);
-      } else if (groupType === 'division' && group.metadata?.divisionIds) {
-        if (group.metadata.divisionIds instanceof Set) {
-          group.metadata.divisionIds.forEach((id: string) => state.selectedDivisionIds.add(id));
-        }
-        state.managersOnly = Boolean(group.metadata.managersOnly);
-      } else if (groupType === 'teams' && group.metadata?.teamIds) {
-        if (group.metadata.teamIds instanceof Set) {
-          group.metadata.teamIds.forEach((id: string) => state.selectedTeamIds.add(id));
-        }
-        state.managersOnly = Boolean(group.metadata.managersOnly);
+      if (groupType === 'season') {
+        group.ids.forEach((id) => state.selectedSeasonIds.add(id));
+        state.managersOnly = group.managersOnly;
+      } else if (groupType === 'league') {
+        group.ids.forEach((id) => state.selectedLeagueIds.add(id));
+        state.managersOnly = group.managersOnly;
+      } else if (groupType === 'division') {
+        group.ids.forEach((id) => state.selectedDivisionIds.add(id));
+        state.managersOnly = group.managersOnly;
+      } else if (groupType === 'teams') {
+        group.ids.forEach((id) => state.selectedTeamIds.add(id));
+        state.managersOnly = group.managersOnly;
       } else if (groupType === 'managers') {
         state.managersOnly = true;
       }
