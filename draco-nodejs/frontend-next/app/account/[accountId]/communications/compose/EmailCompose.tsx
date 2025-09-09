@@ -22,9 +22,6 @@ export default function EmailCompose() {
 
   // Load email recipient data
   const {
-    contacts,
-    teamGroups,
-    roleGroups,
     isLoading: recipientsLoading,
     error: recipientsError,
     refresh: refreshRecipients,
@@ -151,9 +148,6 @@ export default function EmailCompose() {
               accountId={accountId as string}
               seasonId={currentSeason?.id}
               initialData={initialData}
-              contacts={contacts}
-              teamGroups={teamGroups}
-              roleGroups={roleGroups}
               onSendComplete={handleSendComplete}
               onCancel={handleCancel}
             />

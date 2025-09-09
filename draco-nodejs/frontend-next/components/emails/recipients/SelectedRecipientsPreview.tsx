@@ -4,7 +4,6 @@ import React, { useMemo } from 'react';
 import { Box, Stack, Typography, Chip, Paper, Alert, useTheme, alpha } from '@mui/material';
 import {
   Person as PersonIcon,
-  SupervisorAccount as ManagerIcon,
   Group as GroupIcon,
   CalendarMonth as SeasonIcon,
   EmojiEvents as LeagueIcon,
@@ -39,8 +38,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
     switch (groupType) {
       case 'individuals':
         return { icon: PersonIcon, color: 'primary' as const, label: 'Contacts' };
-      case 'managers':
-        return { icon: ManagerIcon, color: 'secondary' as const, label: 'Managers' };
+      // 'managers' is no longer a group type - handled via managersOnly flag
       case 'teams':
         return { icon: GroupIcon, color: 'info' as const, label: 'Teams' };
       case 'season':

@@ -5,11 +5,9 @@
  */
 
 import { Contact, ContactRole } from '../types/users';
-import { RecipientContact, TeamGroup, RoleGroup, League } from '../types/emails/recipients';
+import { RecipientContact, League } from '../types/emails/recipients';
 import {
   transformBackendContact,
-  transformBackendAutomaticRoleHolders,
-  transformTeamsToGroups,
   deduplicateContacts,
   validateContactCollection,
 } from '../utils/emailRecipientTransformers';
@@ -576,208 +574,6 @@ export class EmailRecipientService {
   }
 
   /**
-   * Fetch automatic role holders (users with specific system roles)
-   */
-  async fetchAutomaticRoleHolders(
-    accountId: string,
-    token: string | null,
-  ): AsyncResult<RoleGroup[]> {
-    if (!accountId || accountId.trim() === '') {
-      return {
-        success: false,
-        error: createEmailRecipientError(
-          EmailRecipientErrorCode.INVALID_DATA,
-          'Account ID is required',
-          { context: { operation: 'fetch_automatic_role_holders' } },
-        ),
-      };
-    }
-
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
-    }
-
-    const url = `/api/accounts/${accountId}/automatic-role-holders`;
-
-    return this.executeRequest(
-      async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<AutomaticRoleHoldersResponse>(response);
-
-        if (
-          !data.data?.accountOwner ||
-          !data.data?.teamManagers ||
-          !Array.isArray(data.data.teamManagers)
-        ) {
-          throw createEmailRecipientError(
-            EmailRecipientErrorCode.INVALID_DATA,
-            'Invalid role holders response format',
-            {
-              details: { responseData: data },
-              context: { operation: 'fetch_automatic_role_holders', accountId },
-            },
-          );
-        }
-
-        // Use transformation utility with error handling
-        const transformResult = safe(
-          () => {
-            return transformBackendAutomaticRoleHolders(
-              data.data.accountOwner,
-              data.data.teamManagers,
-            );
-          },
-          { operation: 'transform_role_holders', accountId },
-        );
-
-        if (!transformResult.success) {
-          throw transformResult.error;
-        }
-
-        return transformResult.data;
-      },
-      {
-        operation: 'fetch_automatic_role_holders',
-        additionalData: { endpoint: url },
-      },
-    );
-  }
-
-  /**
-   * Build team groups with members for a specific season
-   */
-  async buildTeamGroups(
-    accountId: string,
-    token: string | null,
-    seasonId: string,
-    options?: {
-      includeTeamManagers?: boolean; // Only fetch team managers when needed
-      includeTeamRosters?: boolean; // Only fetch team rosters when needed
-    },
-  ): AsyncResult<TeamGroup[]> {
-    const teamsResult = await this.fetchTeams(accountId, token, seasonId);
-    if (!teamsResult.success) {
-      return teamsResult;
-    }
-
-    const teams = teamsResult.data;
-
-    // Only fetch team rosters if explicitly requested
-    let rosterResults: Array<[string, BackendContact[]]> = [];
-    if (options?.includeTeamRosters) {
-      const rosterPromises = teams.map(async (team) => {
-        const result = await this.fetchTeamRoster(accountId, token, seasonId, team.id);
-        if (result.success) {
-          return [team.id, result.data] as [string, BackendContact[]];
-        } else {
-          logError(result.error, `Failed to fetch roster for team ${team.name}`);
-          return [team.id, []] as [string, BackendContact[]];
-        }
-      });
-      rosterResults = await Promise.all(rosterPromises);
-    } else {
-      // Initialize with empty rosters for all teams
-      rosterResults = teams.map((team) => [team.id, []] as [string, BackendContact[]]);
-    }
-
-    // Only fetch team managers if explicitly requested
-    let managerResults: Array<[string, BackendContact[]]> = [];
-    if (options?.includeTeamManagers) {
-      const managerPromises = teams.map(async (team) => {
-        const result = await this.fetchTeamManagers(accountId, token, seasonId, team.id);
-        if (result.success) {
-          return [team.id, result.data] as [string, BackendContact[]];
-        } else {
-          logError(result.error, `Failed to fetch managers for team ${team.name}`);
-          return [team.id, []] as [string, BackendContact[]];
-        }
-      });
-      managerResults = await Promise.all(managerPromises);
-    } else {
-      // Initialize with empty managers for all teams
-      managerResults = teams.map((team) => [team.id, []] as [string, BackendContact[]]);
-    }
-
-    // Convert results to Maps
-    const rosters = new Map(rosterResults);
-    const managers = new Map(managerResults);
-
-    // Use transformation utility with error handling
-    const transformResult = safe(
-      () => {
-        return transformTeamsToGroups(teams, rosters, managers);
-      },
-      { operation: 'transform_teams_to_groups', accountId, seasonId },
-    );
-
-    if (!transformResult.success) {
-      return { success: false, error: transformResult.error };
-    }
-
-    return { success: true, data: transformResult.data };
-  }
-
-  /**
-   * Fetch team data on-demand when user actually needs it
-   * This method should be called when the recipient selection dialog is opened
-   * and the user selects team-related options
-   */
-  async getTeamDataOnDemand(
-    accountId: string,
-    token: string | null,
-    seasonId: string,
-    options: {
-      includeTeamRosters?: boolean;
-      includeTeamManagers?: boolean;
-    },
-  ): AsyncResult<{
-    teamGroups: TeamGroup[];
-  }> {
-    if (!accountId || accountId.trim() === '') {
-      return {
-        success: false,
-        error: createEmailRecipientError(
-          EmailRecipientErrorCode.INVALID_DATA,
-          'Account ID is required',
-          { context: { operation: 'get_team_data_on_demand' } },
-        ),
-      };
-    }
-
-    if (!token || token.trim() === '') {
-      return {
-        success: false,
-        error: createEmailRecipientError(
-          EmailRecipientErrorCode.AUTHENTICATION_REQUIRED,
-          'Authentication token is required',
-          { context: { operation: 'get_team_data_on_demand', accountId } },
-        ),
-      };
-    }
-
-    return this.executeRequest(
-      async () => {
-        const teamGroupsResult = await this.buildTeamGroups(accountId, token, seasonId, options);
-        if (!teamGroupsResult.success) {
-          throw teamGroupsResult.error;
-        }
-
-        return {
-          teamGroups: teamGroupsResult.data,
-        };
-      },
-      {
-        operation: 'get_team_data_on_demand',
-        additionalData: { accountId, seasonId, options },
-      },
-    );
-  }
-
-  /**
    * Fetch roster (players) for a specific team in a season
    */
   async fetchTeamRoster(
@@ -1032,14 +828,12 @@ export class EmailRecipientService {
     accountId: string,
     token: string | null,
     seasonId?: string,
-    options?: {
+    _options?: {
       includeTeamManagers?: boolean; // Only fetch team managers when needed
       includeTeamRosters?: boolean; // Only fetch team rosters when needed
     },
   ): AsyncResult<{
     contacts: RecipientContact[];
-    teamGroups: TeamGroup[];
-    roleGroups: RoleGroup[];
     currentSeason: Season | null;
     pagination?: ContactsResponse['pagination'];
   }> {
@@ -1087,7 +881,7 @@ export class EmailRecipientService {
         const effectiveSeasonId = seasonId || currentSeason?.id;
 
         // Fetch data with proper error handling - only fetch first 50 contacts for initial load
-        const [contactsResult, roleGroupsResult] = await Promise.allSettled([
+        const [contactsResult] = await Promise.allSettled([
           this.fetchContacts(accountId, token, {
             seasonId: effectiveSeasonId,
             roles: true,
@@ -1095,7 +889,7 @@ export class EmailRecipientService {
             limit: 50, // Only fetch first page for initial load
             page: 1,
           }),
-          this.fetchAutomaticRoleHolders(accountId, token),
+          //this.fetchAutomaticRoleHolders(accountId, token),
         ]);
 
         // Handle contacts result
@@ -1110,31 +904,6 @@ export class EmailRecipientService {
           // Continue with empty contacts rather than failing completely
         } else if (contactsResult.status === 'fulfilled' && !contactsResult.value.success) {
           logError(contactsResult.value.error, 'Failed to fetch contacts');
-        }
-
-        // Handle role groups result
-        let roleGroups: RoleGroup[] = [];
-        if (roleGroupsResult.status === 'fulfilled' && roleGroupsResult.value.success) {
-          roleGroups = roleGroupsResult.value.data;
-        } else if (roleGroupsResult.status === 'rejected') {
-          const error = normalizeError(roleGroupsResult.reason);
-          logError(error, 'Failed to fetch role groups');
-        } else if (roleGroupsResult.status === 'fulfilled' && !roleGroupsResult.value.success) {
-          logError(roleGroupsResult.value.error, 'Failed to fetch role groups');
-        }
-
-        // Build team groups with error handling - only include team data when requested
-        let teamGroups: TeamGroup[] = [];
-        if (effectiveSeasonId) {
-          const teamGroupsResult = await this.buildTeamGroups(accountId, token, effectiveSeasonId, {
-            includeTeamManagers: options?.includeTeamManagers ?? false,
-            includeTeamRosters: options?.includeTeamRosters ?? false,
-          });
-          if (teamGroupsResult.success) {
-            teamGroups = teamGroupsResult.data;
-          } else {
-            logError(teamGroupsResult.error, 'Failed to fetch team groups');
-          }
         }
 
         // Transform contacts with error handling
@@ -1173,8 +942,6 @@ export class EmailRecipientService {
 
         return {
           contacts: deduplicatedContacts,
-          teamGroups,
-          roleGroups,
           currentSeason,
           pagination: contactsPagination,
         };

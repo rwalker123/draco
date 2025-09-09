@@ -13,8 +13,6 @@ import {
   Drawer,
   IconButton,
   Button,
-  CircularProgress,
-  Backdrop,
   AlertTitle,
   LinearProgress,
 } from '@mui/material';
@@ -23,8 +21,6 @@ import {
   Menu as MenuIcon,
   Close as CloseIcon,
   KeyboardArrowDown as ExpandIcon,
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
   CloudOff as OfflineIcon,
   Wifi as OnlineIcon,
 } from '@mui/icons-material';
@@ -32,7 +28,6 @@ import {
 import { EmailComposeProvider, useEmailCompose } from './EmailComposeProvider';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
-import { ComposePageSkeleton } from '../../common/SkeletonLoaders';
 import { ComposeHeader } from './ComposeHeader';
 import { ComposeActions } from './ComposeActions';
 import ComposeSidebar from './ComposeSidebar';
@@ -42,12 +37,7 @@ import { FileUploadComponent } from '../attachments/FileUploadComponent';
 import RichTextEditor from '../../email/RichTextEditor';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
 
-import {
-  RecipientContact,
-  TeamGroup,
-  RoleGroup,
-  RecipientSelectionState,
-} from '../../../types/emails/recipients';
+import { RecipientContact, RecipientSelectionState } from '../../../types/emails/recipients';
 import { EmailAttachment } from '../../../types/emails/attachments';
 import { EmailComposeRequest } from '../../../types/emails/email';
 
@@ -55,9 +45,6 @@ interface EmailComposePageProps {
   accountId: string;
   seasonId?: string;
   initialData?: Partial<EmailComposeRequest>;
-  contacts: RecipientContact[];
-  teamGroups?: TeamGroup[];
-  roleGroups?: RoleGroup[];
   onSendComplete?: (emailId: string) => void;
   onCancel?: () => void;
   loading?: boolean;
@@ -66,7 +53,6 @@ interface EmailComposePageProps {
 }
 
 interface ComponentErrorState {
-  contacts: string | null;
   teams: string | null;
   roles: string | null;
   templates: string | null;
@@ -103,9 +89,6 @@ const EmailComposePageInternal: React.FC<
   function EmailComposePageInternal({
     accountId,
     seasonId,
-    contacts,
-    teamGroups = [],
-    roleGroups = [],
     loading = false,
     error = null,
     onRetry,
@@ -128,7 +111,6 @@ const EmailComposePageInternal: React.FC<
 
     const [componentState, setComponentState] = useState<ComponentState>({
       errors: {
-        contacts: null,
         teams: null,
         roles: null,
         templates: null,
@@ -141,18 +123,6 @@ const EmailComposePageInternal: React.FC<
 
     // Use centralized notification management
     const { notification, showNotification, hideNotification } = useNotifications();
-
-    // Data availability checks
-    const hasContacts = useMemo(() => Array.isArray(contacts) && contacts.length > 0, [contacts]);
-    const hasTeamGroups = useMemo(
-      () => Array.isArray(teamGroups) && teamGroups.length > 0,
-      [teamGroups],
-    );
-    const hasRoleGroups = useMemo(
-      () => Array.isArray(roleGroups) && roleGroups.length > 0,
-      [roleGroups],
-    );
-    const hasAnyRecipientData = hasContacts || hasTeamGroups || hasRoleGroups;
 
     // Overall loading state - memoized for performance
     const isGeneralLoading = useMemo(() => loading, [loading]);
@@ -226,12 +196,8 @@ const EmailComposePageInternal: React.FC<
 
     // Handle advanced recipient dialog
     const handleAdvancedRecipientOpen = useCallback(() => {
-      if (!hasAnyRecipientData && !loading) {
-        showNotification('No recipient data available. Please try refreshing the page.', 'warning');
-        return;
-      }
       setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: true }));
-    }, [hasAnyRecipientData, loading, showNotification]);
+    }, []);
 
     const handleAdvancedRecipientClose = useCallback(() => {
       setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: false }));
@@ -390,76 +356,6 @@ const EmailComposePageInternal: React.FC<
       };
     }, [isMobile]);
 
-    // Show full-page loading if no data and loading
-    if (loading && !hasAnyRecipientData) {
-      return (
-        <Box sx={{ height: '100vh' }}>
-          <ComposePageSkeleton showSidebar={!isMobile} />
-          <Backdrop open sx={{ zIndex: theme.zIndex.drawer + 1, color: '#fff' }}>
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress color="inherit" size={60} />
-              <Typography variant="h6">Loading email composer...</Typography>
-              <Typography variant="body2" color="inherit" sx={{ opacity: 0.8 }}>
-                Fetching contacts, teams, and settings
-              </Typography>
-            </Stack>
-          </Backdrop>
-        </Box>
-      );
-    }
-
-    // Show error state if major error and no data
-    if (error && !hasAnyRecipientData) {
-      return (
-        <Box
-          sx={{
-            height: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            p: 3,
-          }}
-        >
-          <Stack spacing={3} alignItems="center" maxWidth={500}>
-            <WarningIcon sx={{ fontSize: 80, color: 'error.main' }} />
-            <Typography variant="h4" textAlign="center" gutterBottom>
-              Failed to Load Email Composer
-            </Typography>
-            <Alert severity="error" sx={{ width: '100%' }}>
-              <AlertTitle>Error Loading Data</AlertTitle>
-              {error}
-            </Alert>
-
-            <Typography variant="body1" color="text.secondary" textAlign="center">
-              We could not load the necessary data for the email composer. This could be due to:
-            </Typography>
-
-            <Box component="ul" sx={{ textAlign: 'left' }}>
-              <li>Network connectivity issues</li>
-              <li>Server temporarily unavailable</li>
-              <li>Insufficient permissions</li>
-              <li>Account configuration problems</li>
-            </Box>
-
-            <Stack direction="row" spacing={2}>
-              <Button
-                onClick={() => window.location.reload()}
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-              >
-                Refresh Page
-              </Button>
-              {onRetry && componentState.retryCount < maxRetries && (
-                <Button onClick={handleRetry} variant="contained" startIcon={<RefreshIcon />}>
-                  Retry ({componentState.retryCount}/{maxRetries})
-                </Button>
-              )}
-            </Stack>
-          </Stack>
-        </Box>
-      );
-    }
-
     return (
       <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Global Error Banner */}
@@ -499,7 +395,6 @@ const EmailComposePageInternal: React.FC<
             }
           >
             <AlertTitle>Some features may not work properly</AlertTitle>
-            {componentState.errors.contacts && `Contacts: ${componentState.errors.contacts}. `}
             {componentState.errors.teams && `Teams: ${componentState.errors.teams}. `}
             {componentState.errors.roles && `Roles: ${componentState.errors.roles}. `}
             {componentState.errors.templates && `Templates: ${componentState.errors.templates}. `}
@@ -552,21 +447,8 @@ const EmailComposePageInternal: React.FC<
                     compact={isMobile}
                     onRecipientSelectionClick={handleAdvancedRecipientOpen}
                     onCancelClick={handleCancelClick}
-                    hasAnyRecipientData={hasAnyRecipientData}
                     loading={loading}
                   />
-
-                  {/* Data availability warnings - moved from recipient section */}
-                  {!hasAnyRecipientData && !loading && (
-                    <Alert severity="warning" sx={{ mb: 2 }}>
-                      <AlertTitle>No Recipients Available</AlertTitle>
-                      No contacts or groups are available for selection. Please check your account
-                      setup or try refreshing.
-                      <Button onClick={handleRetry} size="small" sx={{ mt: 1 }} variant="outlined">
-                        Refresh Data
-                      </Button>
-                    </Alert>
-                  )}
 
                   {/* Content Editor */}
                   <Box sx={{ flex: 1, minHeight: 300 }}>
@@ -733,14 +615,8 @@ const EmailComposePageInternal: React.FC<
             onApply={handleRecipientSelectionChange}
             accountId={accountId}
             seasonId={seasonId}
-            teamGroups={hasTeamGroups ? teamGroups : []}
-            roleGroups={hasRoleGroups ? roleGroups : []}
             loading={loading}
-            error={
-              componentState.errors.contacts ||
-              componentState.errors.teams ||
-              componentState.errors.roles
-            }
+            error={componentState.errors.teams || componentState.errors.roles}
             onRetry={handleRetry}
             initialSelectedGroups={state.recipientState?.selectedGroups}
           />
@@ -781,13 +657,7 @@ const EmailComposePageInternal: React.FC<
     return (
       prevProps.accountId === nextProps.accountId &&
       prevProps.loading === nextProps.loading &&
-      prevProps.error === nextProps.error &&
-      prevProps.contacts.length === nextProps.contacts.length &&
-      prevProps.teamGroups?.length === nextProps.teamGroups?.length &&
-      prevProps.roleGroups?.length === nextProps.roleGroups?.length &&
-      // Deep comparison for contacts array if lengths are equal
-      (prevProps.contacts.length === 0 ||
-        prevProps.contacts.every((contact, index) => contact.id === nextProps.contacts[index]?.id))
+      prevProps.error === nextProps.error
     );
   },
 );
@@ -799,9 +669,6 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   accountId,
   seasonId,
   initialData,
-  contacts,
-  teamGroups = [],
-  roleGroups = [],
   onSendComplete,
   loading = false,
   error = null,
@@ -843,9 +710,6 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
       <EmailComposePageInternal
         accountId={accountId}
         seasonId={seasonId}
-        contacts={contacts}
-        teamGroups={teamGroups}
-        roleGroups={roleGroups}
         loading={loading}
         error={error}
         onRetry={onRetry}

@@ -94,6 +94,11 @@ const createDefaultRecipientState = (): RecipientSelectionState =>
 const getRecipientState = (state: EmailComposeState): RecipientSelectionState =>
   state.recipientState || createDefaultRecipientState();
 
+// Helper function to extract group IDs from ContactGroup
+const extractGroupIds = (group: ContactGroup): string[] => {
+  return Array.from(group.ids);
+};
+
 // Reducer function
 function composeReducer(state: EmailComposeState, action: ComposeAction): EmailComposeState {
   switch (action.type) {
@@ -460,7 +465,8 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
           recipients: {
             // TODO: Update this when unified groups system is fully implemented in the API
             contactIds: [],
-            groups: {},
+            groups: [],
+            onlyManagers: false,
           },
           subject: state.subject,
           body: state.content,
@@ -665,20 +671,71 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       async () => {
         // Prepare email request
 
-        // Extract contact IDs from individual groups only
-        const individualGroups = state.recipientState?.selectedGroups?.get('individuals') || [];
-        const contactIds: string[] = [];
-
-        individualGroups.forEach((group) => {
-          group.contactIds.forEach((contactId) => {
-            contactIds.push(contactId);
+        // Validate and process recipient groups
+        const selectedGroups = state.recipientState?.selectedGroups;
+        if (!selectedGroups || selectedGroups.size === 0) {
+          // Instead of throwing, dispatch error and return early
+          dispatch({
+            type: 'ADD_ERROR',
+            payload: {
+              field: 'recipients',
+              message: 'No recipient groups selected. Please select at least one recipient.',
+              severity: 'error',
+            },
           });
-        });
+          return Promise.reject(new Error('No recipient groups selected'));
+        }
+
+        // Extract individual contact IDs if present
+        const individualsGroup = selectedGroups.get('individuals');
+        const contactIds: string[] = [];
+        if (individualsGroup) {
+          individualsGroup.forEach((grp) => {
+            grp.ids.forEach((contactId) => {
+              contactIds.push(contactId);
+            });
+          });
+        }
+
+        // Process all non-individual groups into an array
+        const groups: Array<{ type: 'season' | 'league' | 'division' | 'teams'; ids: string[] }> =
+          [];
+        let onlyManagers = false;
+
+        // Process all group types except individuals
+        for (const [groupType, groupList] of selectedGroups) {
+          if (groupType !== 'individuals') {
+            if (!['season', 'league', 'division', 'teams'].includes(groupType)) {
+              // Instead of throwing, dispatch error and return early
+              dispatch({
+                type: 'ADD_ERROR',
+                payload: {
+                  field: 'recipients',
+                  message: `Invalid recipient group type: ${groupType}. Please refresh and try again.`,
+                  severity: 'error',
+                },
+              });
+              return Promise.reject(new Error(`Invalid group type: ${groupType}`));
+            }
+
+            // Process all groups of this type
+            for (const group of groupList) {
+              groups.push({
+                type: groupType as 'season' | 'league' | 'division' | 'teams',
+                ids: extractGroupIds(group),
+              });
+
+              // Extract onlyManagers flag (consistent across all groups)
+              onlyManagers = group.managersOnly;
+            }
+          }
+        }
 
         const emailRequest: EmailComposeRequest = {
           recipients: {
-            contactIds, // Individual contact IDs extracted from selected groups
-            groups: {}, // TODO: Process team/role groups in future iteration
+            contactIds,
+            groups,
+            onlyManagers,
           },
           subject: state.subject,
           body: editorRef?.current?.getCurrentContent?.() || state.content,

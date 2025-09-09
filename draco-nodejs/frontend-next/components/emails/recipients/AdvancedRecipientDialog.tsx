@@ -33,13 +33,11 @@ import { useHierarchicalData } from '../../../hooks/useHierarchicalData';
 import { useHierarchicalMaps } from '../../../hooks/useHierarchicalMaps';
 import ContactSelectionPanel from './ContactSelectionPanel';
 import HierarchicalGroupSelection from './HierarchicalGroupSelection';
-import { ManagerStateProvider, useManagerStateContext } from './context/ManagerStateContext';
+import { ManagerStateProvider } from './context/ManagerStateContext';
 // import { ErrorBoundary } from '../../common/ErrorBoundary'; // TODO: Re-enable when needed
 import { RecipientDialogSkeleton } from '../../common/SkeletonLoaders';
 import {
   RecipientContact,
-  TeamGroup,
-  RoleGroup,
   GroupType,
   ContactGroup,
   RecipientSelectionTab,
@@ -83,8 +81,6 @@ export interface AdvancedRecipientDialogProps {
   ) => void;
   accountId: string;
   seasonId?: string;
-  teamGroups: TeamGroup[];
-  roleGroups: RoleGroup[];
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -137,8 +133,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   onApply,
   accountId,
   seasonId,
-  teamGroups,
-  roleGroups,
   loading = false,
   error = null,
   onRetry,
@@ -152,7 +146,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
   // Use EmailCompose provider which now contains all recipient functionality
 
   // Access manager state for converting manager IDs to contact details
-  const { state: managerState } = useManagerStateContext();
+  // Manager state no longer needed since 'managers' is not a group type
+  // const { state: managerState } = useManagerStateContext();
 
   // Hierarchical data for converting hierarchical selections to ContactGroups
   const { hierarchicalData, loadHierarchicalData } = useHierarchicalData();
@@ -228,7 +223,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           targetGroup = {
             groupType,
             groupName,
-            contactIds: new Set(),
+            ids: new Set(),
+            managersOnly: false,
             totalCount: 0,
           };
           existingGroups.push(targetGroup);
@@ -236,8 +232,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
         // Add contact to group (targetGroup is guaranteed to exist here)
         if (targetGroup) {
-          targetGroup.contactIds.add(contactId);
-          targetGroup.totalCount = targetGroup.contactIds.size;
+          targetGroup.ids.add(contactId);
+          targetGroup.totalCount = targetGroup.ids.size;
         }
 
         newGroups.set(groupType, existingGroups);
@@ -254,13 +250,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
       const updatedGroups = existingGroups
         .map((group) => {
-          const newContactIds = new Set(group.contactIds);
-          newContactIds.delete(contactId);
+          const newIds = new Set(group.ids);
+          newIds.delete(contactId);
 
           return {
             ...group,
-            contactIds: newContactIds,
-            totalCount: newContactIds.size,
+            ids: newIds,
+            totalCount: newIds.size,
           };
         })
         .filter((group) => group.totalCount > 0); // Remove empty groups
@@ -279,7 +275,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     (groupType: GroupType, contactId: string): boolean => {
       const groups = selectedGroups.get(groupType);
       if (!groups) return false;
-      return groups.some((group) => group.contactIds.has(contactId));
+      return groups.some((group) => group.ids.has(contactId));
     },
     [selectedGroups],
   );
@@ -598,20 +594,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         }
       },
 
-      toggleManager: (managerId: string) => {
-        // Get manager info from manager state to validate email
-        const managerInfo = managerState.managers.find((m) => m.id === managerId);
-        if (!managerInfo || !managerInfo.hasValidEmail) {
-          return; // Don't allow selection of managers without valid email
-        }
-
-        if (isContactInGroup('managers', managerId)) {
-          removeFromGroup('managers', managerId);
-        } else {
-          addToGroup('managers', managerId);
-        }
-      },
-
       clearAllRecipients: () => {
         setSelectedGroups(new Map());
         setHierarchicalSelectedIds(new Map()); // Clear hierarchical selections
@@ -619,9 +601,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       },
 
       isContactSelected: (contactId: string): boolean => {
-        return (
-          isContactInGroup('individuals', contactId) || isContactInGroup('managers', contactId)
-        );
+        // Check all group types, not just individuals
+        for (const [, groups] of selectedGroups) {
+          if (groups && groups.some((group) => group.ids.has(contactId))) {
+            return true;
+          }
+        }
+        return false;
       },
 
       getTotalSelected,
@@ -631,8 +617,8 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       isContactInGroup,
       removeFromGroup,
       addToGroup,
-      managerState.managers,
       getTotalSelected,
+      selectedGroups,
     ],
   );
 
@@ -737,15 +723,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     () => Array.isArray(currentPageContacts) && currentPageContacts.length > 0,
     [currentPageContacts],
   );
-  const hasTeamGroups = useMemo(
-    () => Array.isArray(teamGroups) && teamGroups.length > 0,
-    [teamGroups],
-  );
-  const hasRoleGroups = useMemo(
-    () => Array.isArray(roleGroups) && roleGroups.length > 0,
-    [roleGroups],
-  );
-  const hasAnyData = hasContacts || hasTeamGroups || hasRoleGroups;
+  const hasAnyData = hasContacts;
 
   // Determine overall loading state - include pagination loading
   const isGeneralLoading =
@@ -893,7 +871,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     const hierarchicalContactGroups = convertHierarchicalSelectionsToContactGroups();
 
     // Define which group types are manual (preserved) vs hierarchical (replaced)
-    const manualGroupTypes: Set<GroupType> = new Set(['individuals', 'managers']);
+    const manualGroupTypes: Set<GroupType> = new Set(['individuals']);
     const hierarchicalGroupTypes: Set<GroupType> = new Set([
       'season',
       'league',
@@ -933,31 +911,17 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       const allContactIds = new Set<string>();
 
       // Process all groups in mergedContactGroups (includes both manual and hierarchical)
-      mergedContactGroups.forEach((groups, groupType) => {
+      mergedContactGroups.forEach((groups) => {
         groups.forEach((group) => {
-          group.contactIds.forEach((contactId) => {
+          group.ids.forEach((contactId) => {
             if (!allContactIds.has(contactId)) {
               allContactIds.add(contactId);
 
-              // Get contact details based on group type
-              let contact = getContactDetails(contactId);
+              // Get contact details
+              const contact = getContactDetails(contactId);
 
-              // If not found in current page and it's a manager, convert from manager data
-              if (!contact && groupType === 'managers') {
-                const managerInfo = managerState.managers.find((m) => m.id === contactId);
-                if (managerInfo) {
-                  contact = {
-                    id: managerInfo.id,
-                    displayName: managerInfo.name,
-                    email: managerInfo.email || '',
-                    hasValidEmail: managerInfo.hasValidEmail,
-                    firstname: managerInfo.name.split(' ')[0] || '',
-                    lastname: managerInfo.name.split(' ').slice(1).join(' ') || '',
-                    roles: [],
-                    teams: managerInfo.allTeams.map((team) => team.teamSeasonId),
-                  };
-                }
-              }
+              // Note: Manager data conversion removed since 'managers' is no longer a group type
+              // Managers are handled via the managersOnly flag on hierarchical groups
 
               if (contact) {
                 allSelectedContactDetails.push(contact);
@@ -994,7 +958,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     convertHierarchicalSelectionsToContactGroups,
     getTotalSelected,
     getContactDetails,
-    managerState.managers,
     showNotification,
     onClose,
   ]);
@@ -1442,7 +1405,7 @@ const ContactsTabContent: React.FC<ContactsTabContentProps> = ({
 
       <ContactSelectionPanel
         contacts={displayContacts}
-        selectedContactIds={selectedGroups.get('individuals')?.[0]?.contactIds || new Set()}
+        selectedContactIds={selectedGroups.get('individuals')?.[0]?.ids || new Set()}
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         onContactToggle={unifiedActions.toggleContact}
