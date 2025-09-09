@@ -157,6 +157,11 @@ export interface EmailComposeProviderProps {
   onSendComplete?: (emailId: string) => void;
   onDraftSaved?: (draftId: string) => void;
   onError?: (error: Error) => void;
+  editorRef?: React.RefObject<{
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  } | null>;
 }
 
 /**

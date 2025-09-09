@@ -364,6 +364,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   onSendComplete,
   onDraftSaved,
   onError,
+  editorRef,
 }) => {
   const { token } = useAuth();
   const config = useMemo(() => ({ ...DEFAULT_COMPOSE_CONFIG, ...userConfig }), [userConfig]);
@@ -663,14 +664,24 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
     const result = await safeAsync(
       async () => {
         // Prepare email request
+
+        // Extract contact IDs from individual groups only
+        const individualGroups = state.recipientState?.selectedGroups?.get('individuals') || [];
+        const contactIds: string[] = [];
+
+        individualGroups.forEach((group) => {
+          group.contactIds.forEach((contactId) => {
+            contactIds.push(contactId);
+          });
+        });
+
         const emailRequest: EmailComposeRequest = {
           recipients: {
-            // TODO: Update this when unified groups system is fully implemented in the API
-            contactIds: [],
-            groups: {},
+            contactIds, // Individual contact IDs extracted from selected groups
+            groups: {}, // TODO: Process team/role groups in future iteration
           },
           subject: state.subject,
-          body: state.content,
+          body: editorRef?.current?.getCurrentContent?.() || state.content,
           templateId: state.selectedTemplate?.id,
           attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
@@ -726,7 +737,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       dispatch({ type: 'SET_SENDING', payload: { isSending: false, progress: undefined } });
       return false;
     }
-  }, [state, accountId, token, validateCompose, clearDraft, onSendComplete]);
+  }, [state, accountId, token, validateCompose, clearDraft, onSendComplete, editorRef]);
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });

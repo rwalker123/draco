@@ -42,6 +42,11 @@ interface ComposeActionsProps {
   compact?: boolean;
   onBeforeSend?: () => void;
   onBeforeSave?: () => void;
+  editorRef?: React.RefObject<{
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  } | null>;
 }
 
 /**
@@ -54,6 +59,7 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   compact = false,
   onBeforeSend,
   onBeforeSave,
+  editorRef,
 }) => {
   const { state, actions } = useEmailCompose();
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
@@ -68,8 +74,9 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
         onBeforeSend();
       }
 
-      // Check for empty content and show warning dialog (after syncing current content)
-      if (!state.content || !state.content.trim()) {
+      // Check for empty content directly from editor to avoid React state batching race condition
+      const currentContent = editorRef?.current?.getCurrentContent?.() || '';
+      if (!currentContent || !currentContent.trim()) {
         setShowEmptyContentWarning(true);
         return;
       }
@@ -83,7 +90,7 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
       // The EmailComposeProvider should handle all email sending errors through state
       console.warn('Unexpected error in handleSend:', error);
     }
-  }, [actions, state.content, onBeforeSend]);
+  }, [actions, onBeforeSend, editorRef]);
 
   // Handle confirmed send with empty content
   const handleConfirmEmptySend = useCallback(async () => {
