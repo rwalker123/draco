@@ -69,6 +69,70 @@ function hasTeamSeasons(ls: unknown): ls is { teamsseason: TeamSeasonResult[] } 
 }
 
 /**
+ * Extracts team counts (players or managers) for the given league seasons
+ * Consolidates duplicate logic for player and manager count calculations
+ */
+async function getTeamCounts(
+  leagueSeasonIds: bigint[],
+  accountId: bigint,
+  countType: 'players' | 'managers',
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+
+  if (countType === 'players') {
+    // Get player counts for all teams in the league seasons
+    const playerCountsByTeam = await prisma.rosterseason.groupBy({
+      by: ['teamseasonid'],
+      where: {
+        teamsseason: {
+          leagueseasonid: {
+            in: leagueSeasonIds,
+          },
+        },
+        roster: {
+          contacts: {
+            creatoraccountid: accountId, // Ensure account boundary
+          },
+        },
+      },
+      _count: {
+        playerid: true,
+      },
+    });
+
+    // Create a mapping from teamseasonid to player count
+    for (const result of playerCountsByTeam) {
+      counts.set(result.teamseasonid.toString(), result._count.playerid);
+    }
+  } else {
+    // Get manager counts for all teams in the league seasons
+    const managerCountsByTeam = await prisma.teamseasonmanager.groupBy({
+      by: ['teamseasonid'],
+      where: {
+        teamsseason: {
+          leagueseasonid: {
+            in: leagueSeasonIds,
+          },
+        },
+        contacts: {
+          creatoraccountid: accountId, // Ensure account boundary
+        },
+      },
+      _count: {
+        contactid: true,
+      },
+    });
+
+    // Create a mapping from teamseasonid to manager count
+    for (const result of managerCountsByTeam) {
+      counts.set(result.teamseasonid.toString(), result._count.contactid);
+    }
+  }
+
+  return counts;
+}
+
+/**
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues
  * Get leagues for a specific season with optional teams and divisions data
  */
@@ -148,57 +212,21 @@ router.get(
     // Calculate player counts if requested
     let teamPlayerCounts: Map<string, number> = new Map();
     if (includePlayerCounts) {
-      // Get player counts for all teams in the league seasons
-      const playerCountsByTeam = await prisma.rosterseason.groupBy({
-        by: ['teamseasonid'],
-        where: {
-          teamsseason: {
-            leagueseasonid: {
-              in: leagueSeasons.map((ls) => ls.id),
-            },
-          },
-          roster: {
-            contacts: {
-              creatoraccountid: accountId, // Ensure account boundary
-            },
-          },
-        },
-        _count: {
-          playerid: true,
-        },
-      });
-
-      // Create a mapping from teamseasonid to player count
-      for (const result of playerCountsByTeam) {
-        teamPlayerCounts.set(result.teamseasonid.toString(), result._count.playerid);
-      }
+      teamPlayerCounts = await getTeamCounts(
+        leagueSeasons.map((ls) => ls.id),
+        accountId,
+        'players',
+      );
     }
 
     // Calculate manager counts if requested
     let teamManagerCounts: Map<string, number> = new Map();
     if (includeManagerCounts) {
-      // Get manager counts for all teams in the league seasons
-      const managerCountsByTeam = await prisma.teamseasonmanager.groupBy({
-        by: ['teamseasonid'],
-        where: {
-          teamsseason: {
-            leagueseasonid: {
-              in: leagueSeasons.map((ls) => ls.id),
-            },
-          },
-          contacts: {
-            creatoraccountid: accountId, // Ensure account boundary
-          },
-        },
-        _count: {
-          contactid: true,
-        },
-      });
-
-      // Create a mapping from teamseasonid to manager count
-      for (const result of managerCountsByTeam) {
-        teamManagerCounts.set(result.teamseasonid.toString(), result._count.contactid);
-      }
+      teamManagerCounts = await getTeamCounts(
+        leagueSeasons.map((ls) => ls.id),
+        accountId,
+        'managers',
+      );
     }
 
     // Format the response
