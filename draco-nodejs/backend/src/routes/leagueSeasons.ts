@@ -79,6 +79,7 @@ router.get(
     const includeTeams = req.query.includeTeams !== undefined;
     const includeUnassignedTeams = req.query.includeTeams === 'includeUnassigned';
     const includePlayerCounts = req.query.includePlayerCounts === 'true';
+    const includeManagerCounts = req.query.includeManagerCounts === 'true';
 
     // Base query always includes leagueseason + league data
     // we add division/team information based on qs values
@@ -173,6 +174,33 @@ router.get(
       }
     }
 
+    // Calculate manager counts if requested
+    let teamManagerCounts: Map<string, number> = new Map();
+    if (includeManagerCounts) {
+      // Get manager counts for all teams in the league seasons
+      const managerCountsByTeam = await prisma.teamseasonmanager.groupBy({
+        by: ['teamseasonid'],
+        where: {
+          teamsseason: {
+            leagueseasonid: {
+              in: leagueSeasons.map((ls) => ls.id),
+            },
+          },
+          contacts: {
+            creatoraccountid: accountId, // Ensure account boundary
+          },
+        },
+        _count: {
+          contactid: true,
+        },
+      });
+
+      // Create a mapping from teamseasonid to manager count
+      for (const result of managerCountsByTeam) {
+        teamManagerCounts.set(result.teamseasonid.toString(), result._count.contactid);
+      }
+    }
+
     // Format the response
     const formattedLeagueSeasons = leagueSeasons.map((ls) => {
       const result: {
@@ -195,6 +223,7 @@ router.get(
             autoPlayVideo: boolean;
             logoUrl: string;
             playerCount?: number;
+            managerCount?: number;
           }>;
         }>;
         unassignedTeams?: Array<{
@@ -207,6 +236,7 @@ router.get(
           autoPlayVideo: boolean;
           logoUrl: string;
           playerCount?: number;
+          managerCount?: number;
         }>;
       } = {
         id: ls.id.toString(),
@@ -236,6 +266,9 @@ router.get(
               ...(includePlayerCounts && {
                 playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
               }),
+              ...(includeManagerCounts && {
+                managerCount: teamManagerCounts.get(ts.id.toString()) || 0,
+              }),
             })),
         }));
 
@@ -254,6 +287,9 @@ router.get(
               logoUrl: getLogoUrl(accountId.toString(), ts.teams.id.toString()),
               ...(includePlayerCounts && {
                 playerCount: teamPlayerCounts.get(ts.id.toString()) || 0,
+              }),
+              ...(includeManagerCounts && {
+                managerCount: teamManagerCounts.get(ts.id.toString()) || 0,
               }),
             }));
         }

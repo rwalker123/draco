@@ -57,6 +57,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
         groupSummaries: [],
         invalidEmails: 0,
         hasSelections: false,
+        isManagersOnly: false,
       };
     }
 
@@ -67,6 +68,8 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       icon: typeof PersonIcon;
       color: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default';
     }> = [];
+
+    let isManagersOnly = false;
 
     // Process each group type in the selectedGroups Map
     state.recipientState.selectedGroups.forEach((contactGroups, groupType) => {
@@ -80,6 +83,9 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
             icon: config.icon,
             color: config.color,
           });
+
+          // Set managersOnly flag from any group (should be consistent across all groups)
+          isManagersOnly = contactGroup.managersOnly;
         }
       });
     });
@@ -88,6 +94,7 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
       groupSummaries,
       invalidEmails: state.recipientState.invalidEmailCount || 0,
       hasSelections: groupSummaries.length > 0,
+      isManagersOnly,
     };
   }, [state.recipientState]);
 
@@ -171,6 +178,22 @@ const SelectedRecipientsPreviewComponent: React.FC<SelectedRecipientsPreviewProp
             )}
           </Stack>
         </Box>
+
+        {/* Count Type Indicator */}
+        {summaryData.hasSelections && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              fontSize: '0.75rem',
+              fontStyle: 'italic',
+              textAlign: 'center',
+              py: 0.5,
+            }}
+          >
+            Counts represent: {summaryData.isManagersOnly ? 'Managers' : 'Players'}
+          </Typography>
+        )}
 
         {/* Validation Warnings */}
         {showValidationWarnings && summaryData.invalidEmails > 0 && (

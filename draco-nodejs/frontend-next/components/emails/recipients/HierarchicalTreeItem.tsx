@@ -22,6 +22,8 @@ interface TreeItemProps {
   title: string;
   subtitle?: string;
   playerCount?: number;
+  managerCount?: number;
+  managersOnly: boolean;
   level: number;
   isExpandable: boolean;
   isExpanded: boolean;
@@ -37,6 +39,8 @@ const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
   title,
   subtitle,
   playerCount,
+  managerCount,
+  managersOnly,
   level,
   isExpandable,
   isExpanded,
@@ -119,7 +123,7 @@ const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
                   </Typography>
                 )}
               </Box>
-              {playerCount !== undefined && (
+              {(playerCount !== undefined || managerCount !== undefined) && (
                 <Typography
                   variant="caption"
                   color="primary"
@@ -132,7 +136,9 @@ const HierarchicalTreeItem: React.FC<TreeItemProps> = ({
                     fontWeight: 'medium',
                   }}
                 >
-                  {playerCount} {playerCount === 1 ? 'player' : 'players'}
+                  {managersOnly
+                    ? `${managerCount || 0} ${(managerCount || 0) === 1 ? 'manager' : 'managers'}`
+                    : `${playerCount || 0} ${(playerCount || 0) === 1 ? 'player' : 'players'}`}
                 </Typography>
               )}
             </Stack>

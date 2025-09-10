@@ -12,6 +12,7 @@ interface HierarchicalTreeProps {
   hierarchyMaps: HierarchyMaps;
   itemSelectedState: Map<string, HierarchicalSelectionItem>;
   onSelectionChange: (itemId: string) => void;
+  managersOnly: boolean;
 }
 
 const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
@@ -19,6 +20,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
   seasonId,
   itemSelectedState,
   onSelectionChange,
+  managersOnly,
 }) => {
   // Initialize expansion state with all leagues and divisions expanded by default
   const [expandedLeagues, setExpandedLeagues] = useState<Set<string>>(() => {
@@ -78,7 +80,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
 
   // Render teams
   const renderTeams = useCallback(
-    (teams: Array<{ id: string; name: string; playerCount?: number }>) => {
+    (teams: Array<{ id: string; name: string; playerCount?: number; managerCount?: number }>) => {
       return teams.map((team) => {
         const { checked, indeterminate } = getCheckboxState(team.id);
         return (
@@ -87,6 +89,8 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
             id={team.id}
             title={team.name}
             playerCount={team.playerCount}
+            managerCount={team.managerCount}
+            managersOnly={managersOnly}
             level={3}
             isExpandable={false}
             isExpanded={false}
@@ -98,7 +102,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
         );
       });
     },
-    [getCheckboxState, onSelectionChange],
+    [getCheckboxState, onSelectionChange, managersOnly],
   );
 
   // Render divisions
@@ -115,6 +119,8 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
             id={division.id}
             title={division.name}
             playerCount={division.totalPlayers}
+            managerCount={division.totalManagers}
+            managersOnly={managersOnly}
             level={2}
             isExpandable={hasTeams}
             isExpanded={isExpanded}
@@ -128,7 +134,14 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
         );
       });
     },
-    [getCheckboxState, expandedDivisions, toggleDivisionExpansion, onSelectionChange, renderTeams],
+    [
+      getCheckboxState,
+      expandedDivisions,
+      toggleDivisionExpansion,
+      onSelectionChange,
+      renderTeams,
+      managersOnly,
+    ],
   );
 
   // Render leagues
@@ -144,6 +157,8 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
           id={league.id}
           title={league.name}
           playerCount={league.totalPlayers}
+          managerCount={league.totalManagers}
+          managersOnly={managersOnly}
           level={1}
           isExpandable={hasChildren}
           isExpanded={isExpanded}
@@ -171,6 +186,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
     onSelectionChange,
     renderDivisions,
     renderTeams,
+    managersOnly,
   ]);
 
   // Season checkbox state
@@ -186,6 +202,8 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
         id={seasonId}
         title={hierarchicalData.name}
         playerCount={hierarchicalData.totalPlayers}
+        managerCount={hierarchicalData.totalManagers}
+        managersOnly={managersOnly}
         level={0}
         isExpandable={hierarchicalData.leagues.length > 0}
         isExpanded={true} // Season is always expanded
