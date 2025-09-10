@@ -17,7 +17,7 @@ import {
 } from '../../types/playerClassifieds';
 import { calculateAge } from '../../utils/dateUtils';
 import ContactInfoDialog from './ContactInfoDialog';
-import { useAuth } from '../../context/AuthContext';
+import { axiosInstance } from '../../utils/axiosConfig';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -28,7 +28,6 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   isAuthenticated,
   accessCode,
 }) => {
-  const { token } = useAuth();
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [contactInfo, setContactInfo] = useState<ITeamsWantedContactInfo | null>(null);
   const [contactLoading, setContactLoading] = useState(false);
@@ -41,39 +40,13 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
 
     try {
       // Build URL with access code if available
-      const url = new URL(
-        `/api/accounts/${classified.accountId}/player-classifieds/teams-wanted/${classified.id}/contact`,
-        window.location.origin,
-      );
+      let url = `/api/accounts/${classified.accountId}/player-classifieds/teams-wanted/${classified.id}/contact`;
       if (accessCode) {
-        url.searchParams.set('accessCode', accessCode);
+        url += `?accessCode=${encodeURIComponent(accessCode)}`;
       }
 
-      // Build headers with authorization if token available
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(url.toString(), {
-        headers,
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication required to view contact information');
-        } else if (response.status === 403) {
-          throw new Error('You do not have permission to view this contact information');
-        } else if (response.status === 404) {
-          throw new Error('Contact information not found');
-        } else {
-          throw new Error('Failed to fetch contact information');
-        }
-      }
-
-      const data = await response.json();
+      const response = await axiosInstance.get(url);
+      const data = response.data;
       setContactInfo(data);
     } catch (error) {
       setContactError(

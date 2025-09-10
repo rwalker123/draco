@@ -14,6 +14,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
+import { axiosInstance } from '../../../../../../../utils/axiosConfig';
 
 interface TeamPageProps {
   accountId: string;
@@ -50,11 +51,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   React.useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(
-      `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/games?upcoming=true&recent=true&limit=5`,
-    )
-      .then((res) => res.json())
-      .then((data) => {
+    axiosInstance
+      .get(
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/games?upcoming=true&recent=true&limit=5`,
+      )
+      .then((response) => {
+        const data = response.data;
         if (!data.success) throw new Error(data.message || 'Failed to load games');
 
         // Transform raw API data to match Game interface
@@ -85,7 +87,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         setUpcomingGames(transformedUpcoming);
         setCompletedGames(transformedRecent);
       })
-      .catch((err) => setError(err.message || 'Error loading games'))
+      .catch((err) => setError(err.response?.data?.message || err.message || 'Error loading games'))
       .finally(() => setLoading(false));
   }, [accountId, seasonId, teamSeasonId]);
 

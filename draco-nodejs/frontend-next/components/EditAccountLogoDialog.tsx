@@ -16,7 +16,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import Image from 'next/image';
-import { useAuth } from '../context/AuthContext';
+import { axiosInstance } from '../utils/axiosConfig';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
@@ -47,7 +47,6 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   onClose,
   onLogoUpdated,
 }) => {
-  const { token } = useAuth();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,16 +103,11 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     try {
       const formData = new FormData();
       formData.append('logo', logoFile);
-      const response = await fetch(`/api/accounts/${accountId}/logo`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      await axiosInstance.post(`/api/accounts/${accountId}/logo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to upload logo');
-      }
       const newBuster = Date.now();
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, newBuster) : null);
       onLogoUpdated();
@@ -129,15 +123,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     setDeleting(true);
     setError(null);
     try {
-      const response = await fetch(`/api/accounts/${accountId}/logo`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to delete logo');
-      }
+      await axiosInstance.delete(`/api/accounts/${accountId}/logo`);
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, Date.now()) : null);
       onLogoUpdated();
       onClose();

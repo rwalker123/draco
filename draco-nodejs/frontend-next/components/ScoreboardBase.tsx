@@ -2,9 +2,9 @@ import React from 'react';
 import { Box, CircularProgress, Paper } from '@mui/material';
 import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
 import EnterGameResultsDialog, { GameResultData } from './EnterGameResultsDialog';
-import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface ScoreboardBaseProps {
   accountId: string;
@@ -33,7 +33,6 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     game: Game | null;
   }>({ open: false, game: null });
 
-  const { token } = useAuth();
   const { hasRole } = useRole();
   const canEditGames = isAccountAdministrator(hasRole, accountId);
 
@@ -47,18 +46,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     setError(null);
     try {
       const url = `/api/accounts/${accountId}/seasons/${currentSeasonId}/games/${gameData.gameId}/results`;
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify(gameData),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to save game results');
-      }
+      await axiosInstance.put(url, gameData);
       setEditGameDialog({ open: false, game: null });
       // Reload scoreboard data
       await loadGames().then(setGames);

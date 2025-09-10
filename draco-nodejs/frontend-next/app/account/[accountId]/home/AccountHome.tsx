@@ -22,6 +22,7 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import BaseballAccountHome from '../BaseballAccountHome';
+import { axiosInstance } from '../../../../utils/axiosConfig';
 
 interface Account {
   id: string;
@@ -59,26 +60,17 @@ const AccountHome: React.FC = () => {
       setError(null);
 
       try {
-        const response = await fetch(`/api/accounts/${accountId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setAccount(data.data.account);
-            setSeasons(data.data.seasons || []);
-          } else {
-            setError(data.message || 'Account not found or not publicly accessible');
-          }
+        const response = await axiosInstance.get(`/api/accounts/${accountId}`);
+        const data = response.data;
+        if (data.success) {
+          setAccount(data.data.account);
+          setSeasons(data.data.seasons || []);
         } else {
-          setError('Account not found or not publicly accessible');
+          setError(data.message || 'Account not found or not publicly accessible');
         }
-      } catch {
-        setError('Failed to load account information');
+      } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string } } };
+        setError(err.response?.data?.message || 'Failed to load account information');
       } finally {
         setLoading(false);
       }

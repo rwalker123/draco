@@ -743,6 +743,28 @@ export async function handleApiErrorResponse(
 }
 
 /**
+ * Handle axios error response - compatible with axios errors
+ */
+export async function handleAxiosError(
+  error: unknown,
+  fallbackMessage: string = 'Request failed',
+): Promise<never> {
+  const err = error as { response?: { data?: unknown }; request?: unknown; message?: string };
+  if (err.response) {
+    // Server responded with error status
+    const responseData = err.response.data;
+    const { message } = parseApiError(responseData);
+    throw new Error(`${fallbackMessage}: ${message}`);
+  } else if (err.request) {
+    // Network error
+    throw new Error(`${fallbackMessage}: Network error`);
+  } else {
+    // Something else happened
+    throw new Error(`${fallbackMessage}: ${err.message || 'Unknown error'}`);
+  }
+}
+
+/**
  * Safe JSON parsing for API responses - returns null if parsing fails
  */
 export async function safeParseJson(response: Response): Promise<unknown> {

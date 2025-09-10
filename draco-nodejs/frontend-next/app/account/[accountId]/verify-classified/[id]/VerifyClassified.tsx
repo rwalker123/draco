@@ -18,6 +18,7 @@ import {
 import { Check as CheckIcon, Error as ErrorIcon } from '@mui/icons-material';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import { validateAccessCode } from '../../../../../utils/accessCodeValidation';
+import { axiosInstance } from '../../../../../utils/axiosConfig';
 
 interface VerifyClassifiedProps {
   accountId: string;
@@ -75,25 +76,14 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
 
       try {
         // Make API request to verify access
-        const response = await fetch(
+        const response = await axiosInstance.post(
           `/api/accounts/${accountId}/player-classifieds/teams-wanted/${classifiedId}/verify`,
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              accessCode: validation.sanitizedValue,
-            }),
+            accessCode: validation.sanitizedValue,
           },
         );
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Verification failed');
-        }
-
-        const result = await response.json();
+        const result = response.data;
 
         setState({
           loading: false,

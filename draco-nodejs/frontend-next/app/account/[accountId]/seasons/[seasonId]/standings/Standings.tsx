@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import Standings from '../../../../../../components/Standings';
+import { axiosInstance } from '../../../../../../utils/axiosConfig';
 
 interface StandingsPageProps {
   accountId: string;
@@ -19,13 +20,11 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
       if (!accountId || !seasonId) return;
       try {
         // Use the leagues endpoint to get season data (same as Teams page)
-        const res = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/leagues`);
-        if (res.ok) {
-          const data = await res.json();
-          setSeasonName(data.data?.season?.name || '');
-        } else {
-          setSeasonName('');
-        }
+        const res = await axiosInstance.get(
+          `/api/accounts/${accountId}/seasons/${seasonId}/leagues`,
+        );
+        const data = res.data;
+        setSeasonName(data.data?.season?.name || '');
       } catch {
         setSeasonName('');
       }

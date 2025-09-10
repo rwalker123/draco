@@ -3,6 +3,8 @@
  * Centralized API service functions for fetching context data (leagues, teams) for role assignment
  */
 
+import { axiosInstance } from '../utils/axiosConfig';
+
 export interface League {
   id: string;
   leagueId: string;
@@ -62,56 +64,50 @@ export class ContextDataService {
    * This single call provides all the data needed for both league and team selection
    */
   async fetchLeaguesAndTeams(accountId: string, seasonId: string): Promise<ContextDataResponse> {
-    const response = await fetch(
-      `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+    try {
+      const response = await axiosInstance.get(
+        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true`,
+      );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to load leagues and teams');
+      const data = response.data;
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to load leagues and teams');
+      }
+
+      return data.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to load leagues and teams';
+      throw new Error(errorMessage);
     }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load leagues and teams');
-    }
-
-    return data.data;
   }
 
   /**
    * Get all leagues for a season (without teams data)
    */
   async fetchLeagues(accountId: string, seasonId: string): Promise<League[]> {
-    const response = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/leagues`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await axiosInstance.get(
+        `/api/accounts/${accountId}/seasons/${seasonId}/leagues`,
+      );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to load leagues');
+      const data = response.data;
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to load leagues');
+      }
+
+      return data.data.leagueSeasons.map((ls: LeagueSeason) => ({
+        id: ls.id,
+        leagueId: ls.leagueId,
+        leagueName: ls.leagueName,
+        accountId: ls.accountId,
+      }));
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load leagues';
+      throw new Error(errorMessage);
     }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load leagues');
-    }
-
-    return data.data.leagueSeasons.map((ls: LeagueSeason) => ({
-      id: ls.id,
-      leagueId: ls.leagueId,
-      leagueName: ls.leagueName,
-      accountId: ls.accountId,
-    }));
   }
 
   /**

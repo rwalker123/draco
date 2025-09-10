@@ -20,6 +20,7 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { axiosInstance } from '../utils/axiosConfig';
 
 export interface Account {
   id: string;
@@ -69,7 +70,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   // Use provided values if available, otherwise use internal state
@@ -88,35 +89,24 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/accounts/my-accounts', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.get('/api/accounts/my-accounts');
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const accountsData = data.data.accounts || [];
-          setAccounts(accountsData);
-          // Notify parent component about loaded organizations
-          if (onOrganizationsLoaded) {
-            onOrganizationsLoaded(accountsData);
-          }
-        } else {
-          setError(data.message || 'Failed to load your organizations');
+      if (response.data.success) {
+        const accountsData = response.data.data.accounts || [];
+        setAccounts(accountsData);
+        // Notify parent component about loaded organizations
+        if (onOrganizationsLoaded) {
+          onOrganizationsLoaded(accountsData);
         }
       } else {
-        setError('Failed to load your organizations. Please try again.');
+        setError(response.data.message || 'Failed to load your organizations');
       }
     } catch {
       setError('Failed to load your organizations. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, token, providedOrganizations, onOrganizationsLoaded]);
+  }, [user, providedOrganizations, onOrganizationsLoaded]);
 
   useEffect(() => {
     if (user && !providedOrganizations) {
@@ -134,25 +124,14 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       setError(null);
 
       try {
-        const response = await fetch(
+        const response = await axiosInstance.get(
           `/api/accounts/search?q=${encodeURIComponent(displaySearchTerm)}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setAccounts(data.data.accounts || []);
-          } else {
-            setError(data.message || 'Search failed');
-          }
+        if (response.data.success) {
+          setAccounts(response.data.data.accounts || []);
         } else {
-          setError('Failed to search accounts. Please try again.');
+          setError(response.data.message || 'Search failed');
         }
       } catch {
         setError('Failed to search accounts. Please try again.');

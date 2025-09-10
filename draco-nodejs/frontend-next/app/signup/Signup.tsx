@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import AccountPageHeader from '../../components/AccountPageHeader';
+import { axiosInstance } from '../../utils/axiosConfig';
+import { AxiosError } from 'axios';
 
 const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [formData, setFormData] = useState({
@@ -67,29 +69,25 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.email.trim(), // Use email as username
-          email: formData.email.trim(),
-          password: formData.password,
-        }),
+      const response = await axiosInstance.post('/api/auth/register', {
+        username: formData.email.trim(), // Use email as username
+        email: formData.email.trim(),
+        password: formData.password,
       });
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         setSuccess(true);
         setTimeout(() => {
           router.push(next || '/login');
         }, 2000);
       } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to sign up');
+        setError(response.data?.message || 'Failed to sign up');
       }
-    } catch {
-      setError('Failed to sign up. Please try again.');
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || 'Failed to sign up. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

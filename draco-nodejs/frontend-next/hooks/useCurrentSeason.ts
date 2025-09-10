@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import axiosInstance from '../utils/axiosConfig';
 
 interface UseCurrentSeasonReturn {
   currentSeasonId: string | null;
@@ -23,17 +24,8 @@ export const useCurrentSeason = (accountId: string): UseCurrentSeasonReturn => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountId}/seasons/current`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to load current season');
-      }
-
-      const data = await response.json();
+      const response = await axiosInstance.get(`/api/accounts/${accountId}/seasons/current`);
+      const data = response.data;
       const seasonId = data.data.season.id;
       const seasonName = data.data.season.name;
 

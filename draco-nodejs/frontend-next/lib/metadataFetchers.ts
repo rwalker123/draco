@@ -7,6 +7,9 @@ export async function getAccountName(accountId: string): Promise<string> {
   }
 
   try {
+    // NOTE: Using fetch() instead of axiosInstance to preserve Next.js caching functionality
+    // The { next: { revalidate: 60 } } option is Next.js-specific and only works with fetch()
+    // DO NOT convert to axios - it will break SSR caching and performance
     const res = await fetch(`${apiUrl}/api/accounts/${accountId}/name`, {
       next: { revalidate: 60 },
     });
@@ -39,6 +42,7 @@ export async function getTeamInfo(
       throw new Error('NEXT_PUBLIC_API_URL environment variable is required for SSR');
     }
 
+    // NOTE: Using fetch() for Next.js SSR compatibility - DO NOT convert to axios
     const res = await fetch(
       `${apiUrl}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`,
     );
@@ -66,6 +70,7 @@ export async function getLeagueName(
   }
 
   try {
+    // NOTE: Using fetch() for Next.js SSR compatibility - DO NOT convert to axios
     const res = await fetch(
       `${apiUrl}/api/accounts/${accountId}/seasons/${seasonId}/league-seasons/${leagueSeasonId}`,
     );

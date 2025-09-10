@@ -12,7 +12,8 @@ import {
   ContactUpdateResponse,
 } from '../types/userManagementTypeGuards';
 import { ContactTransformationService } from './contactTransformationService';
-import { handleApiErrorResponse } from '../utils/errorHandling';
+import { axiosInstance } from '../utils/axiosConfig';
+import axios from 'axios';
 
 // Pagination interface for API responses
 interface PaginationInfo {
@@ -80,37 +81,37 @@ export class UserManagementService {
       searchParams.append('onlyWithRoles', 'true');
     }
 
-    const response = await fetch(`/api/accounts/${accountId}/contacts?${searchParams.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await axiosInstance.get(
+        `/api/accounts/${accountId}/contacts?${searchParams.toString()}`,
+      );
+      const data = response.data;
 
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to load users');
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to load users');
+      }
+
+      // Transform contacts to users format for frontend compatibility
+      // Backend returns contacts array with contactroles, but frontend expects users with roles
+      const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) =>
+        this.transformContactToUser(contact),
+      );
+
+      return {
+        users: usersWithRoles,
+        pagination: data.pagination || {
+          page: 1,
+          limit: 10,
+          hasNext: false,
+          hasPrev: false,
+        },
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || error.message || 'Failed to load users');
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load users');
-    }
-
-    // Transform contacts to users format for frontend compatibility
-    // Backend returns contacts array with contactroles, but frontend expects users with roles
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) =>
-      this.transformContactToUser(contact),
-    );
-
-    return {
-      users: usersWithRoles,
-      pagination: data.pagination || {
-        page: 1,
-        limit: 10,
-        hasNext: false,
-        hasPrev: false,
-      },
-    };
   }
 
   /**
@@ -155,22 +156,11 @@ export class UserManagementService {
       }
     }
 
-    const response = await fetch(
+    const response = await axiosInstance.get(
       `/api/accounts/${accountId}/contacts/search?${searchParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      },
     );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to search users');
-    }
-
-    const data = await response.json();
+    const data = response.data;
     if (!data.success) {
       throw new Error(data.message || 'Failed to search users');
     }
@@ -194,18 +184,9 @@ export class UserManagementService {
    * Fetch available roles
    */
   async fetchRoles(): Promise<Role[]> {
-    const response = await fetch('/api/roleTest/role-ids', {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await axiosInstance.get('/api/roleTest/role-ids');
 
-    if (!response.ok) {
-      throw new Error('Failed to load roles');
-    }
-
-    const data = await response.json();
+    const data = response.data;
     if (!data.success) {
       throw new Error('Failed to load roles');
     }
@@ -236,24 +217,21 @@ export class UserManagementService {
       }>;
     }>;
   }> {
-    const response = await fetch(`/api/accounts/${accountId}/automatic-role-holders`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await axiosInstance.get(`/api/accounts/${accountId}/automatic-role-holders`);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to load automatic role holders');
+      const data = response.data;
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to load automatic role holders');
+      }
+
+      return data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to load automatic role holders');
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load automatic role holders');
-    }
-
-    return data.data;
   }
 
   /**
@@ -272,18 +250,9 @@ export class UserManagementService {
       accountId: string;
     }>;
   }> {
-    const response = await fetch(`/api/roleTest/user-roles?accountId=${accountId}`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await axiosInstance.get(`/api/roleTest/user-roles?accountId=${accountId}`);
 
-    if (!response.ok) {
-      throw new Error('Failed to load user roles');
-    }
-
-    const data = await response.json();
+    const data = response.data;
     if (!data.success) {
       throw new Error('Failed to load user roles');
     }
@@ -311,17 +280,14 @@ export class UserManagementService {
       body.seasonId = seasonId;
     }
 
-    const response = await fetch(`/api/accounts/${accountId}/users/${contactId}/roles`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to assign role');
+    try {
+      await axiosInstance.post(`/api/accounts/${accountId}/users/${contactId}/roles`, body);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data?.message || 'Failed to assign role');
+      } else {
+        throw new Error('Failed to assign role');
+      }
     }
   }
 
@@ -334,22 +300,21 @@ export class UserManagementService {
     roleId: string,
     roleData: string,
   ): Promise<void> {
-    const response = await fetch(
-      `/api/accounts/${accountId}/contacts/${contactId}/roles/${roleId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
+    try {
+      await axiosInstance.delete(
+        `/api/accounts/${accountId}/contacts/${contactId}/roles/${roleId}`,
+        {
+          data: {
+            roleData: roleData,
+          },
         },
-        body: JSON.stringify({
-          roleData: roleData,
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to remove role');
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data?.message || 'Failed to remove role');
+      } else {
+        throw new Error('Failed to remove role');
+      }
     }
   }
 
@@ -430,7 +395,6 @@ export class UserManagementService {
 
     // Use FormData if photo is provided, otherwise use JSON
     let body: FormData | string;
-    let headers: Record<string, string>;
 
     if (photoFile) {
       console.log('UserManagementService: Creating FormData with photo', {
@@ -452,43 +416,54 @@ export class UserManagementService {
       console.log('UserManagementService: FormData entries:', Array.from(formData.entries()));
 
       body = formData;
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        // Don't set Content-Type for FormData - let browser set it with boundary
-      };
     } else {
       body = JSON.stringify(backendData);
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      };
     }
 
     console.log('UserManagementService: Making PUT request to update contact', {
       url: `/api/accounts/${accountId}/contacts/${contactId}`,
       hasPhoto: !!photoFile,
-      headers: Object.keys(headers),
     });
 
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}`, {
-      method: 'PUT',
-      headers,
-      body,
-    });
+    let response;
+    try {
+      if (photoFile) {
+        // For FormData uploads with photos, use axios with special config
+        response = await axiosInstance.put(
+          `/api/accounts/${accountId}/contacts/${contactId}`,
+          body,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          },
+        );
+      } else {
+        // For JSON updates without photos
+        response = await axiosInstance.put(
+          `/api/accounts/${accountId}/contacts/${contactId}`,
+          JSON.parse(body as string),
+        );
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('UserManagementService: Update failed', {
+          status: error.response?.status,
+          errorData: error.response?.data,
+        });
+        throw new Error(
+          error.response?.data?.message || `Failed to update contact (${error.response?.status})`,
+        );
+      }
+      throw error;
+    }
 
     console.log('UserManagementService: Response received', {
       status: response.status,
-      ok: response.ok,
-      headers: Object.fromEntries(response.headers.entries()),
+      headers: response.headers,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('UserManagementService: Update failed', { status: response.status, errorData });
-      throw new Error(errorData.message || `Failed to update contact (${response.status})`);
-    }
-
-    const data = await response.json();
+    const data = response.data;
     if (!data.success) {
       throw new Error(data.message || 'Failed to update contact');
     }
@@ -566,7 +541,6 @@ export class UserManagementService {
 
     // Use FormData if photo is provided, otherwise use JSON
     let body: FormData | string;
-    let headers: Record<string, string>;
 
     if (photoFile) {
       console.log('UserManagementService: Creating FormData with photo', {
@@ -588,43 +562,50 @@ export class UserManagementService {
       console.log('UserManagementService: FormData entries:', Array.from(formData.entries()));
 
       body = formData;
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        // Don't set Content-Type for FormData - let browser set it with boundary
-      };
     } else {
       body = JSON.stringify(backendData);
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      };
     }
 
     console.log('UserManagementService: Making POST request to create contact', {
       url: `/api/accounts/${accountId}/contacts`,
       hasPhoto: !!photoFile,
-      headers: Object.keys(headers),
     });
 
-    const response = await fetch(`/api/accounts/${accountId}/contacts`, {
-      method: 'POST',
-      headers,
-      body,
-    });
+    let response;
+    try {
+      if (photoFile) {
+        // For FormData uploads with photos, use axios with special config
+        response = await axiosInstance.post(`/api/accounts/${accountId}/contacts`, body, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        // For JSON creation without photos
+        response = await axiosInstance.post(
+          `/api/accounts/${accountId}/contacts`,
+          JSON.parse(body as string),
+        );
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('UserManagementService: Create failed', {
+          status: error.response?.status,
+          errorData: error.response?.data,
+        });
+        throw new Error(
+          error.response?.data?.message || `Failed to create contact (${error.response?.status})`,
+        );
+      }
+      throw error;
+    }
 
     console.log('UserManagementService: Response received', {
       status: response.status,
-      ok: response.ok,
-      headers: Object.fromEntries(response.headers.entries()),
+      headers: response.headers,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('UserManagementService: Create failed', { status: response.status, errorData });
-      throw new Error(errorData.message || `Failed to create contact (${response.status})`);
-    }
-
-    const data = await response.json();
+    const data = response.data;
     if (!data.success) {
       throw new Error(data.message || 'Failed to create contact');
     }
@@ -637,16 +618,16 @@ export class UserManagementService {
    * Delete contact photo
    */
   async deleteContactPhoto(accountId: string, contactId: string): Promise<void> {
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}/photo`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to delete contact photo (${response.status})`);
+    try {
+      await axiosInstance.delete(`/api/accounts/${accountId}/contacts/${contactId}/photo`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message ||
+            `Failed to delete contact photo (${error.response?.status})`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -657,25 +638,26 @@ export class UserManagementService {
     accountId: string,
     contactId: string,
   ): Promise<{ contact: unknown; dependencyCheck: DependencyCheckResult }> {
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}?check=true`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await axiosInstance.delete(
+        `/api/accounts/${accountId}/contacts/${contactId}?check=true`,
+      );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to check dependencies (${response.status})`);
+      const data = response.data;
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to check dependencies');
+      }
+
+      return data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message ||
+            `Failed to check dependencies (${error.response?.status})`,
+        );
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to check dependencies');
-    }
-
-    return data.data;
   }
 
   /**
@@ -692,41 +674,40 @@ export class UserManagementService {
     wasForced: boolean;
   }> {
     const queryParams = force ? '?force=true' : '';
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}${queryParams}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await axiosInstance.delete(
+        `/api/accounts/${accountId}/contacts/${contactId}${queryParams}`,
+      );
 
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to delete contact');
+      const data = response.data;
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to delete contact');
+      }
+
+      return data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data?.message || 'Failed to delete contact');
+      } else {
+        throw new Error('Failed to delete contact');
+      }
     }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to delete contact');
-    }
-
-    return data.data;
   }
 
   /**
    * Revoke registration (unlink userId from contact)
    */
   async revokeRegistration(accountId: string, contactId: string): Promise<void> {
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}/registration`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to revoke registration (${response.status})`);
+    try {
+      await axiosInstance.delete(`/api/accounts/${accountId}/contacts/${contactId}/registration`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message ||
+            `Failed to revoke registration (${error.response?.status})`,
+        );
+      }
+      throw error;
     }
   }
 }

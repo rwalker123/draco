@@ -9,6 +9,7 @@ import StatisticsTable, {
 } from './StatisticsTable';
 import type { ColumnConfig } from './StatisticsTable';
 import LeaderCard from './LeaderCard';
+import { axiosInstance } from '../../../../utils/axiosConfig';
 
 interface LeaderRow {
   playerId: string;
@@ -69,17 +70,12 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
 
   const loadCategories = useCallback(async () => {
     try {
-      const response = await fetch(`/api/accounts/${accountId}/statistics/leader-categories`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axiosInstance.get(
+        `/api/accounts/${accountId}/statistics/leader-categories`,
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        setBattingCategories(data.data?.batting || []);
-        setPitchingCategories(data.data?.pitching || []);
-      }
+      setBattingCategories(response.data.data?.batting || []);
+      setPitchingCategories(response.data.data?.pitching || []);
     } catch (error) {
       console.error('Error loading categories:', error);
       setError('Failed to load leader categories');
@@ -100,20 +96,15 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
           ...(filters.isHistorical && { historical: 'true' }),
         });
 
-        const response = await fetch(
-          `/api/accounts/${accountId}/statistics/leaders/${filters.leagueId}?${params}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          return { category: category.key, leaders: data.data || [] };
+        try {
+          const response = await axiosInstance.get(
+            `/api/accounts/${accountId}/statistics/leaders/${filters.leagueId}?${params}`,
+          );
+          return { category: category.key, leaders: response.data.data || [] };
+        } catch (error) {
+          console.warn(`Failed to load batting leaders for ${category.key}:`, error);
+          return { category: category.key, leaders: [] };
         }
-        return { category: category.key, leaders: [] };
       });
 
       // Load pitching leaders
@@ -125,20 +116,15 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
           ...(filters.isHistorical && { historical: 'true' }),
         });
 
-        const response = await fetch(
-          `/api/accounts/${accountId}/statistics/leaders/${filters.leagueId}?${params}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          return { category: category.key, leaders: data.data || [] };
+        try {
+          const response = await axiosInstance.get(
+            `/api/accounts/${accountId}/statistics/leaders/${filters.leagueId}?${params}`,
+          );
+          return { category: category.key, leaders: response.data.data || [] };
+        } catch (error) {
+          console.warn(`Failed to load pitching leaders for ${category.key}:`, error);
+          return { category: category.key, leaders: [] };
         }
-        return { category: category.key, leaders: [] };
       });
 
       const [battingResults, pitchingResults] = await Promise.all([

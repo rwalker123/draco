@@ -15,6 +15,8 @@ import {
   resetRateLimit,
   getAllRateLimitTracking,
 } from '../utils/accessCodeValidation';
+import { axiosInstance } from '../utils/axiosConfig';
+import axios from 'axios';
 
 // ============================================================================
 // SERVICE CONFIGURATION
@@ -75,20 +77,35 @@ export const accessCodeService = {
     }
 
     try {
-      // Make API call
-      const response = await fetch(
+      // Make API call using axios (public endpoint)
+      const response = await axiosInstance.post(
         `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ accessCode: validation.sanitizedValue }),
-        },
+        { accessCode: validation.sanitizedValue },
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      const data = response.data;
+
+      // Record successful attempt
+      recordAttempt(accountId, true);
+
+      // Log security event
+      logSecurityEvent({
+        accountId,
+        accessCodeHash: '***', // Never log actual access codes
+        operation: 'verification_success',
+        success: true,
+      });
+
+      return {
+        success: true,
+        classified: data.data,
+        message: 'Access code verified successfully',
+      };
+    } catch (error) {
+      // Handle axios errors
+      let errorData: { message?: string; errorCode?: string } = {};
+      if (axios.isAxiosError(error) && error.response) {
+        errorData = error.response.data || {};
 
         // Record failed attempt
         recordAttempt(accountId, false);
@@ -107,44 +124,25 @@ export const accessCodeService = {
           message: errorData.message || 'Failed to verify access code',
           errorCode: errorData.errorCode || 'API_ERROR',
         };
+      } else {
+        // Record failed attempt
+        recordAttempt(accountId, false);
+
+        // Log security event
+        logSecurityEvent({
+          accountId,
+          accessCodeHash: '***', // Never log actual access codes
+          operation: 'verification_failure',
+          success: false,
+          errorCode: 'NETWORK_ERROR',
+        });
+
+        return {
+          success: false,
+          message: 'Network error occurred while verifying access code',
+          errorCode: 'NETWORK_ERROR',
+        };
       }
-
-      const data = await response.json();
-
-      // Record successful attempt
-      recordAttempt(accountId, true);
-
-      // Log security event
-      logSecurityEvent({
-        accountId,
-        accessCodeHash: '***', // Never log actual access codes
-        operation: 'verification_success',
-        success: true,
-      });
-
-      return {
-        success: true,
-        classified: data.data,
-        message: 'Access code verified successfully',
-      };
-    } catch {
-      // Record failed attempt
-      recordAttempt(accountId, false);
-
-      // Log security event
-      logSecurityEvent({
-        accountId,
-        accessCodeHash: '***', // Never log actual access codes
-        operation: 'verification_failure',
-        success: false,
-        errorCode: 'NETWORK_ERROR',
-      });
-
-      return {
-        success: false,
-        message: 'Network error occurred while verifying access code',
-        errorCode: 'NETWORK_ERROR',
-      };
     }
   },
 

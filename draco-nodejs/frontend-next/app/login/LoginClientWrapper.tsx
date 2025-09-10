@@ -3,6 +3,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAccount } from '../../context/AccountContext';
 import Login from './Login';
+import { axiosInstance } from '../../utils/axiosConfig';
 
 export default function LoginClientWrapper() {
   const searchParams = useSearchParams();
@@ -18,19 +19,13 @@ export default function LoginClientWrapper() {
     const fetchAndSetAccount = async () => {
       if (accountId) {
         try {
-          const response = await fetch(`/api/accounts/${accountId}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              setCurrentAccount({
-                id: data.data.account.id,
-                name: data.data.account.name,
-                accountType: data.data.account.accountType,
-              });
-            }
+          const response = await axiosInstance.get(`/api/accounts/${accountId}`);
+          if (response.data.success) {
+            setCurrentAccount({
+              id: response.data.data.account.id,
+              name: response.data.data.account.name,
+              accountType: response.data.data.account.accountType,
+            });
           }
         } catch (error) {
           console.error('Failed to fetch account:', error);

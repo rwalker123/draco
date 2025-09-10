@@ -36,6 +36,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
 import { isValidDomain, getDomainValidationError } from '../utils/validation';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface AccountUrl {
   id: string;
@@ -88,30 +89,20 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountId}/urls`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axiosInstance.get(`/api/accounts/${accountId}/urls`);
+      const data = response.data;
 
-      if (response.ok) {
-        const data = await response.json();
-
-        if (data.success) {
-          const urlList = data.data.urls || [];
-          setUrls(urlList);
-          onUrlsChangeRef.current?.(urlList);
-          setError(null); // Ensure error is cleared on success
-        } else {
-          setError(data.message || 'Failed to load URLs');
-        }
+      if (data.success) {
+        const urlList = data.data.urls || [];
+        setUrls(urlList);
+        onUrlsChangeRef.current?.(urlList);
+        setError(null); // Ensure error is cleared on success
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        setError(errorData.message || 'Failed to load URLs');
+        setError(data.message || 'Failed to load URLs');
       }
-    } catch {
-      setError('Failed to load URLs');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setError(err.response?.data?.message || 'Failed to load URLs');
     } finally {
       setLoading(false);
     }
@@ -140,29 +131,17 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     try {
       setAddDialogError(null); // Clear any previous errors
 
-      const response = await fetch(`/api/accounts/${accountId}/urls`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: fullUrl }),
-      });
+      await axiosInstance.post(`/api/accounts/${accountId}/urls`, { url: fullUrl });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('URL added successfully');
-        setAddDialogOpen(false);
-        setFormData({ protocol: 'https://', domain: '' });
-        setAddDialogError(null);
-        loadUrls();
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setAddDialogError(data.message || 'Failed to add URL');
-      }
-    } catch {
-      setAddDialogError('Failed to add URL');
+      setSuccess('URL added successfully');
+      setAddDialogOpen(false);
+      setFormData({ protocol: 'https://', domain: '' });
+      setAddDialogError(null);
+      loadUrls();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setAddDialogError(err.response?.data?.message || 'Failed to add URL');
     }
   };
 
@@ -180,30 +159,20 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     try {
       setEditDialogError(null); // Clear any previous errors
 
-      const response = await fetch(`/api/accounts/${accountId}/urls/${selectedUrl.id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: fullUrl }),
+      await axiosInstance.put(`/api/accounts/${accountId}/urls/${selectedUrl.id}`, {
+        url: fullUrl,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('URL updated successfully');
-        setEditDialogOpen(false);
-        setSelectedUrl(null);
-        setFormData({ protocol: 'https://', domain: '' });
-        setEditDialogError(null);
-        loadUrls();
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setEditDialogError(data.message || 'Failed to update URL');
-      }
-    } catch {
-      setEditDialogError('Failed to update URL');
+      setSuccess('URL updated successfully');
+      setEditDialogOpen(false);
+      setSelectedUrl(null);
+      setFormData({ protocol: 'https://', domain: '' });
+      setEditDialogError(null);
+      loadUrls();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setEditDialogError(err.response?.data?.message || 'Failed to update URL');
     }
   };
 
@@ -211,27 +180,16 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     if (!selectedUrl) return;
 
     try {
-      const response = await fetch(`/api/accounts/${accountId}/urls/${selectedUrl.id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      await axiosInstance.delete(`/api/accounts/${accountId}/urls/${selectedUrl.id}`);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('URL deleted successfully');
-        setDeleteDialogOpen(false);
-        setSelectedUrl(null);
-        loadUrls();
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(data.message || 'Failed to delete URL');
-      }
-    } catch {
-      setError('Failed to delete URL');
+      setSuccess('URL deleted successfully');
+      setDeleteDialogOpen(false);
+      setSelectedUrl(null);
+      loadUrls();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setError(err.response?.data?.message || 'Failed to delete URL');
     }
   };
 

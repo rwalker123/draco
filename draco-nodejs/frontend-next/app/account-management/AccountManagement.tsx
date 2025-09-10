@@ -36,12 +36,12 @@ import {
   Settings as SettingsIcon,
   PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useAccount } from '../../context/AccountContext';
 import ContactAutocomplete from '../../components/ContactAutocomplete';
 import { US_TIMEZONES, getTimezoneLabel } from '../../utils/timezones';
 import EditAccountLogoDialog from '../../components/EditAccountLogoDialog';
+import { axiosInstance } from '../../utils/axiosConfig';
 
 interface Account {
   id: string;
@@ -76,7 +76,6 @@ interface Affiliation {
 }
 
 const AccountManagement: React.FC = () => {
-  const { token } = useAuth();
   const { hasRole } = useRole();
   const { setCurrentAccount } = useAccount();
 
@@ -115,74 +114,42 @@ const AccountManagement: React.FC = () => {
       setError(null);
 
       // Load accounts (my-accounts endpoint handles role-based access)
-      const accountsResponse = await fetch('/api/accounts/my-accounts', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!accountsResponse.ok) {
-        throw new Error('Failed to load accounts');
-      }
-
-      const accountsData = await accountsResponse.json();
-      setAccounts(accountsData.data.accounts);
+      const accountsResponse = await axiosInstance.get('/api/accounts/my-accounts');
+      setAccounts(accountsResponse.data.data.accounts);
 
       // Load account types
-      const typesResponse = await fetch('/api/accounts/types', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (typesResponse.ok) {
-        const typesData = await typesResponse.json();
-        setAccountTypes(typesData.data.accountTypes);
+      try {
+        const typesResponse = await axiosInstance.get('/api/accounts/types');
+        setAccountTypes(typesResponse.data.data.accountTypes);
+      } catch (err) {
+        // Non-critical error, continue loading other data
+        console.warn('Failed to load account types:', err);
       }
 
       // Load affiliations
-      const affiliationsResponse = await fetch('/api/accounts/affiliations', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (affiliationsResponse.ok) {
-        const affiliationsData = await affiliationsResponse.json();
-        setAffiliations(affiliationsData.data.affiliations);
+      try {
+        const affiliationsResponse = await axiosInstance.get('/api/accounts/affiliations');
+        setAffiliations(affiliationsResponse.data.data.affiliations);
+      } catch (err) {
+        // Non-critical error, continue loading other data
+        console.warn('Failed to load affiliations:', err);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (token) {
-      loadData();
-    }
-  }, [token, loadData]);
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {}, [accounts]);
 
   const handleCreateAccount = async () => {
     try {
-      const response = await fetch('/api/accounts', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create account');
-      }
+      await axiosInstance.post('/api/accounts', formData);
 
       setCreateDialogOpen(false);
       setFormData({
@@ -203,18 +170,7 @@ const AccountManagement: React.FC = () => {
     if (!selectedAccount) return;
 
     try {
-      const response = await fetch(`/api/accounts/${selectedAccount.id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update account');
-      }
+      await axiosInstance.put(`/api/accounts/${selectedAccount.id}`, formData);
 
       setEditDialogOpen(false);
       setSelectedAccount(null);
@@ -236,17 +192,7 @@ const AccountManagement: React.FC = () => {
     if (!selectedAccount) return;
 
     try {
-      const response = await fetch(`/api/accounts/${selectedAccount.id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete account');
-      }
+      await axiosInstance.delete(`/api/accounts/${selectedAccount.id}`);
 
       setDeleteDialogOpen(false);
       setSelectedAccount(null);

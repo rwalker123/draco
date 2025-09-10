@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { HierarchicalSeason } from '../types/emails/recipients';
-import { apiRequest } from '../utils/apiClient';
+import { api } from '../utils/axiosConfig';
 import { withRetry } from '../utils/errorHandling';
 
 // API Response Types
@@ -55,14 +55,8 @@ export function useHierarchicalData() {
       setError(null);
 
       const result = await withRetry(() =>
-        apiRequest<ApiResponse>(
+        api.get<ApiResponse>(
           `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true&includePlayerCounts=true&includeManagerCounts=true`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
         ),
       );
 

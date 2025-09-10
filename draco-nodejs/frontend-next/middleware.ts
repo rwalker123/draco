@@ -36,6 +36,9 @@ export async function middleware(request: NextRequest) {
 
   // Use relative URL so Next.js rewrites can handle the routing
   try {
+    // NOTE: Using fetch() instead of axiosInstance due to Edge Runtime limitations
+    // axios may have compatibility issues in Next.js Edge Runtime environment
+    // DO NOT convert to axios without thorough testing in Edge Runtime
     const res = await fetch('/api/accounts/by-domain', {
       method: 'GET',
       headers: {

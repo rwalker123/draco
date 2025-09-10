@@ -14,6 +14,7 @@ import {
   Paper,
   Chip,
 } from '@mui/material';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface StandingsRow {
   teamId: string;
@@ -90,21 +91,11 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await axiosInstance.get(
         `/api/accounts/${accountId}/seasons/${seasonId}/standings?grouped=true`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        setGroupedStandings(data.data || null);
-      } else {
-        throw new Error('Failed to fetch standings');
-      }
+      const data = response.data;
+      setGroupedStandings(data.data || null);
     } catch (error) {
       console.error('Error loading standings:', error);
       setError('Failed to load standings');

@@ -3,6 +3,7 @@ import { Game } from '../components/GameListDisplay';
 import { GameCardData } from '../components/GameCard';
 import { getGameStatusText, getGameStatusShortText } from './gameUtils';
 import { GameStatus } from '../types/schedule';
+import { axiosInstance } from './axiosConfig';
 
 // Type for raw API game data
 interface APIGameData {
@@ -155,10 +156,10 @@ export function convertGameToGameCardData(
 
 export const createGamesLoader = (accountId: string, currentSeasonId: string, teamId?: string) => {
   return async (startDate: Date, endDate: Date): Promise<Game[]> => {
-    const response = await fetch(
+    const response = await axiosInstance.get(
       `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`,
     );
-    const data = await response.json();
+    const data = response.data;
 
     if (!data.success) {
       throw new Error('Failed to load games data');

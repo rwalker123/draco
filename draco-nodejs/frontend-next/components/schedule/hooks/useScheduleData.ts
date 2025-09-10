@@ -3,6 +3,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { Game, Team, Field, Umpire, League, FilterType } from '@/types/schedule';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { axiosInstance } from '../../../utils/axiosConfig';
 
 interface UseScheduleDataProps {
   accountId: string;
@@ -113,21 +114,17 @@ export const useScheduleData = ({
 
       // Load static data in parallel
       const requests = [
-        fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues?includeTeams`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-
-        fetch(`/api/accounts/${accountId}/fields`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
+        axiosInstance.get(
+          `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues?includeTeams`,
+        ),
+        axiosInstance.get(`/api/accounts/${accountId}/fields`),
       ];
 
       // Only add umpires request if we have a token
       if (token) {
         requests.push(
-          fetch(`/api/accounts/${accountId}/umpires`, {
+          axiosInstance.get(`/api/accounts/${accountId}/umpires`, {
             headers: {
-              'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
           }),
@@ -138,8 +135,8 @@ export const useScheduleData = ({
       const [leaguesResponse, fieldsResponse, umpiresResponse] = responses;
 
       // Process leagues for current season (may fail for unauthenticated users)
-      if (leaguesResponse.ok) {
-        const leaguesData = await leaguesResponse.json();
+      if (leaguesResponse.status >= 200 && leaguesResponse.status < 300) {
+        const leaguesData = leaguesResponse.data;
         const leaguesList = leaguesData.data?.leagueSeasons || [];
 
         // Build the leagues array and cache teams for each league
@@ -211,15 +208,15 @@ export const useScheduleData = ({
       }
 
       // Process fields (should work for all users)
-      if (fieldsResponse.ok) {
-        const fieldsData = await fieldsResponse.json();
+      if (fieldsResponse.status >= 200 && fieldsResponse.status < 300) {
+        const fieldsData = fieldsResponse.data;
         setFields(fieldsData.data.fields);
       }
 
       // Process umpires (requires authentication)
       if (umpiresResponse) {
-        if (umpiresResponse.ok) {
-          const umpiresData = await umpiresResponse.json();
+        if (umpiresResponse.status >= 200 && umpiresResponse.status < 300) {
+          const umpiresData = umpiresResponse.data;
           setUmpires(umpiresData.data.umpires);
         } else if (umpiresResponse.status === 401) {
           // For unauthenticated users, set empty umpires array
@@ -255,20 +252,11 @@ export const useScheduleData = ({
       const { startDate: currentStartDate, endDate: currentEndDate } = getDateRange();
 
       // Load games for the current season (across all leagues)
-      const gamesResponse = await fetch(
+      const gamesResponse = await axiosInstance.get(
         `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${currentStartDate.toISOString()}&endDate=${currentEndDate.toISOString()}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
       );
 
-      if (!gamesResponse.ok) {
-        throw new Error('Failed to load games');
-      }
-
-      const gamesData = await gamesResponse.json();
+      const gamesData = gamesResponse.data;
 
       // Transform raw API data to match Game interface
       const transformedGames = gamesData.data.games.map((rawGame: Record<string, unknown>) => ({

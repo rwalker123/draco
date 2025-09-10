@@ -20,6 +20,7 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
 import { Team } from '@/types/schedule';
+import { axiosInstance } from '../../../../../../utils/axiosConfig';
 
 interface Division {
   id: string;
@@ -89,15 +90,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export roster for ${leagueSeason.leagueName} - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/roster/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
+      // const response = await axiosInstance.get(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/roster/export`);
       //
-      // if (response.ok) {
-      //   const blob = await response.blob();
+      // if (response.status === 200) {
+      //   const blob = new Blob([response.data]);
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
       //   a.href = url;
@@ -121,15 +117,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export managers for ${leagueSeason.leagueName} - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/managers/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
+      // const response = await axiosInstance.get(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/managers/export`);
       //
-      // if (response.ok) {
-      //   const blob = await response.blob();
+      // if (response.status === 200) {
+      //   const blob = new Blob([response.data]);
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
       //   a.href = url;
@@ -178,15 +169,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export season roster - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/roster/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
+      // const response = await axiosInstance.get(`/api/accounts/${accountId}/seasons/${currentSeasonId}/roster/export`);
       //
-      // if (response.ok) {
-      //   const blob = await response.blob();
+      // if (response.status === 200) {
+      //   const blob = new Blob([response.data]);
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
       //   a.href = url;
@@ -209,15 +195,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export season managers - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/managers/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
+      // const response = await axiosInstance.get(`/api/accounts/${accountId}/seasons/${currentSeasonId}/managers/export`);
       //
-      // if (response.ok) {
-      //   const blob = await response.blob();
+      // if (response.status === 200) {
+      //   const blob = new Blob([response.data]);
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
       //   a.href = url;
@@ -257,20 +238,11 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       setError('');
 
       // Load league seasons with divisions and teams for the given season
-      const leagueSeasonsResponse = await fetch(
+      const leagueSeasonsResponse = await axiosInstance.get(
         `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
       );
 
-      if (!leagueSeasonsResponse.ok) {
-        throw new Error('Failed to load teams data');
-      }
-
-      const leagueSeasonsData = await leagueSeasonsResponse.json();
+      const leagueSeasonsData = leagueSeasonsResponse.data;
       setTeamsData(leagueSeasonsData.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teams data');
@@ -306,24 +278,16 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       formData.append('logo', logoFile);
     }
     // Update team information
-    const updateResponse = await fetch(
+    const updateResponse = await axiosInstance.put(
       `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeam.id}`,
+      formData,
       {
-        method: 'PUT',
-        body: formData,
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
       },
     );
-    if (!updateResponse.ok) {
-      if (updateResponse.status === 401) {
-        throw new Error('Authentication failed. Please log in again.');
-      }
-      const errorData = await updateResponse.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to update team');
-    }
-    const updateData = await updateResponse.json();
+    const updateData = updateResponse.data;
     const newLogoUrl = addCacheBuster(updateData.data.team.logoUrl, Date.now());
     setTeamsData((prevData) => {
       if (!prevData) return prevData;

@@ -1,7 +1,7 @@
 // Player Classifieds Service
 // Handles all API interactions for Player Classifieds feature
 
-import { apiRequest } from '../utils/apiClient';
+import { axiosInstance, api } from '../utils/axiosConfig';
 import {
   IPlayersWantedCreateRequest,
   IPlayersWantedResponse,
@@ -23,7 +23,7 @@ import {
 } from '../types/playerClassifieds';
 
 import { IAccessCodeVerificationResponse } from '../types/accessCode';
-import { handleApiErrorResponse } from '../utils/errorHandling';
+import { handleAxiosError } from '../utils/errorHandling';
 
 // ============================================================================
 // SERVICE CONFIGURATION
@@ -76,26 +76,17 @@ export const playerClassifiedService = {
   async createPlayersWanted(
     accountId: string,
     data: IPlayersWantedCreateRequest,
-    token: string,
   ): Promise<IPlayersWantedResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to create Players Wanted');
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted`,
+        data,
+      );
+      return response.data.data;
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to create Players Wanted');
+      throw error;
     }
-
-    const result = await response.json();
-    return result.data;
   },
 
   // Get all Players Wanted for an account
@@ -108,32 +99,22 @@ export const playerClassifiedService = {
     const url = `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted?${searchParams.toString()}`;
 
     try {
-      const response = await fetch(url, {
-        // No Authorization header - this is a public endpoint
-      });
-
-      if (!response.ok) {
-        // Return error response instead of throwing
-        return {
-          success: false,
-          error: `Failed to fetch Players Wanted: ${response.statusText}`,
-          errorCode: response.statusText,
-          statusCode: response.status,
-        };
-      }
-
-      const data = await response.json();
+      const response = await axiosInstance.get(url);
       return {
         success: true,
-        data,
+        data: response.data,
       };
-    } catch (error) {
-      // Handle network errors
+    } catch (error: unknown) {
+      // Handle axios errors
+      const err = error as {
+        response?: { data?: { message?: string }; statusText?: string; status?: number };
+        message?: string;
+      };
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Network error occurred',
-        errorCode: 'NETWORK_ERROR',
-        statusCode: 0,
+        error: err.response?.data?.message || err.message || 'Failed to fetch Players Wanted',
+        errorCode: err.response?.statusText || 'NETWORK_ERROR',
+        statusCode: err.response?.status || 0,
       };
     }
   },
@@ -142,22 +123,16 @@ export const playerClassifiedService = {
   async getPlayersWantedById(
     accountId: string,
     classifiedId: string,
-    token: string,
   ): Promise<IPlayersWantedResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to fetch Players Wanted');
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
+      );
+      return response.data;
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to fetch Players Wanted');
+      throw error;
     }
-
-    return response.json();
   },
 
   // Update a Players Wanted classified
@@ -165,42 +140,28 @@ export const playerClassifiedService = {
     accountId: string,
     classifiedId: string,
     data: IPlayersWantedUpdateRequest,
-    token: string,
   ): Promise<IPlayersWantedResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to update Players Wanted');
+    try {
+      const response = await axiosInstance.put(
+        `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
+        data,
+      );
+      return response.data.data;
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to update Players Wanted');
+      throw error;
     }
-
-    const result = await response.json();
-    return result.data;
   },
 
   // Delete a Players Wanted classified
-  async deletePlayersWanted(accountId: string, classifiedId: string, token: string): Promise<void> {
-    const response = await fetch(
-      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to delete Players Wanted');
+  async deletePlayersWanted(accountId: string, classifiedId: string): Promise<void> {
+    try {
+      await axiosInstance.delete(
+        `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}`,
+      );
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to delete Players Wanted');
+      throw error;
     }
   },
 
@@ -213,88 +174,59 @@ export const playerClassifiedService = {
     accountId: string,
     data: ITeamsWantedCreateRequest,
   ): Promise<ITeamsWantedResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to create Teams Wanted');
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted`,
+        data,
+      );
+      return response.data.data;
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to create Teams Wanted');
+      throw error;
     }
-
-    const result = await response.json();
-    return result.data;
   },
 
   // Get all Teams Wanted for an account
   async getTeamsWanted(
     accountId: string,
     params: Partial<IClassifiedSearchParams> | undefined,
-    token: string,
   ): Promise<ITeamsWantedServiceResponse> {
     const searchParams = this.buildSearchParams(params);
 
     const url = `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted?${searchParams.toString()}`;
 
     try {
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        // Return error response instead of throwing
-        return {
-          success: false,
-          error: `Failed to fetch Teams Wanted: ${response.statusText}`,
-          errorCode: response.statusText,
-          statusCode: response.status,
-        };
-      }
-
-      const data = await response.json();
+      const response = await axiosInstance.get(url);
       return {
         success: true,
-        data,
+        data: response.data,
       };
-    } catch (error) {
-      // Handle network errors
+    } catch (error: unknown) {
+      // Handle axios errors
+      const err = error as {
+        response?: { data?: { message?: string }; statusText?: string; status?: number };
+        message?: string;
+      };
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Network error occurred',
-        errorCode: 'NETWORK_ERROR',
-        statusCode: 0,
+        error: err.response?.data?.message || err.message || 'Failed to fetch Teams Wanted',
+        errorCode: err.response?.statusText || 'NETWORK_ERROR',
+        statusCode: err.response?.status || 0,
       };
     }
   },
 
   // Get a specific Teams Wanted by ID
-  async getTeamsWantedById(
-    accountId: string,
-    classifiedId: string,
-    token: string,
-  ): Promise<ITeamsWantedResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to fetch Teams Wanted');
+  async getTeamsWantedById(accountId: string, classifiedId: string): Promise<ITeamsWantedResponse> {
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
+      );
+      return response.data;
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to fetch Teams Wanted');
+      throw error;
     }
-
-    return response.json();
   },
 
   // Update a Teams Wanted classified (supports both authenticated users and access codes)
@@ -305,31 +237,33 @@ export const playerClassifiedService = {
     token?: string,
     accessCode?: string,
   ): Promise<ITeamsWantedResponse> {
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-
     // Include access code in request body if provided
     const requestBody = {
       ...data,
       ...(accessCode && { accessCode }),
     };
 
-    const response = await fetch(
-      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
-      {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(requestBody),
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to update Teams Wanted');
+    let response;
+    try {
+      if (token) {
+        // Regular authenticated update
+        response = await axiosInstance.put(
+          `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
+          requestBody,
+        );
+      } else {
+        // Access code update (no auth needed)
+        response = await axiosInstance.put(
+          `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
+          requestBody,
+        );
+      }
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to update Teams Wanted');
+      throw error;
     }
 
-    const result = await response.json();
+    const result = response.data;
 
     // Handle both direct classified objects and wrapped responses
     if (result && typeof result === 'object' && 'success' in result && result.data) {
@@ -353,22 +287,27 @@ export const playerClassifiedService = {
       requestBody.accessCode = accessCode;
     }
 
-    const response = await fetch(
-      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        // Only send body if we have an access code
-        ...(accessCode && { body: JSON.stringify(requestBody) }),
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to delete Teams Wanted: ${response.statusText}`);
+    try {
+      if (token) {
+        // Regular authenticated delete
+        await axiosInstance.delete(
+          `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
+          accessCode ? { data: requestBody } : undefined,
+        );
+      } else {
+        // Access code delete (no auth needed)
+        await axiosInstance.delete(
+          `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}`,
+          {
+            data: requestBody,
+          },
+        );
+      }
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to delete Teams Wanted';
+      throw new Error(errorMessage);
     }
   },
 
@@ -379,22 +318,16 @@ export const playerClassifiedService = {
     accessCode: string,
     token?: string,
   ): Promise<IServiceResponse<{ email: string; phone: string }>> {
-    const headers: Record<string, string> = {};
-
-    // Add JWT token if provided
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     // Build URL with optional access code query parameter
     const url = `/api/accounts/${accountId}/player-classifieds/teams-wanted/${classifiedId}/contact${
       !token && accessCode ? `?accessCode=${encodeURIComponent(accessCode)}` : ''
     }`;
 
-    return apiRequest<{ email: string; phone: string }>(url, {
-      method: 'GET',
-      headers,
-    });
+    if (token) {
+      return api.get<{ email: string; phone: string }>(url);
+    } else {
+      return api.get<{ email: string; phone: string }>(url, { skipAuth: true });
+    }
   },
 
   // ============================================================================
@@ -405,24 +338,18 @@ export const playerClassifiedService = {
   async searchClassifieds(
     accountId: string,
     params: IClassifiedSearchParams,
-    token: string,
   ): Promise<IClassifiedSearchResult> {
     const searchParams = this.buildSearchParams(params);
 
-    const response = await fetch(
-      `${API_ENDPOINTS.search}/${accountId}/player-classifieds/search?${searchParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to search classifieds');
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.search}/${accountId}/player-classifieds/search?${searchParams.toString()}`,
+      );
+      return response.data;
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to search classifieds');
+      throw error;
     }
-
-    return response.json();
   },
 
   // Get matches for a specific classified
@@ -430,22 +357,16 @@ export const playerClassifiedService = {
     accountId: string,
     classifiedId: string,
     type: 'players-wanted' | 'teams-wanted',
-    token: string,
   ): Promise<IClassifiedMatch[]> {
-    const response = await fetch(
-      `${API_ENDPOINTS.matches}/${accountId}/player-classifieds/${type}/${classifiedId}/matches`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to fetch matches');
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.matches}/${accountId}/player-classifieds/${type}/${classifiedId}/matches`,
+      );
+      return response.data;
+    } catch (error) {
+      await handleAxiosError(error, 'Failed to fetch matches');
+      throw error;
     }
-
-    return response.json();
   },
 
   // ============================================================================
@@ -457,23 +378,17 @@ export const playerClassifiedService = {
     accountId: string,
     accessCode: string,
   ): Promise<IAccessCodeVerificationResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ accessCode }),
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to verify access code: ${response.statusText}`);
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
+        { accessCode }, // Public endpoint, no auth needed
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || 'Failed to verify access code';
+      throw new Error(errorMessage);
     }
-
-    return response.json();
   },
 
   // Get Teams Wanted classified by access code (for verified users, public, no auth required)
@@ -481,25 +396,17 @@ export const playerClassifiedService = {
     accountId: string,
     accessCode: string,
   ): Promise<ITeamsWantedResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ accessCode }),
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `Failed to retrieve Teams Wanted: ${response.statusText}`,
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
+        { accessCode }, // Public endpoint, no auth needed
       );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || 'Failed to retrieve Teams Wanted';
+      throw new Error(errorMessage);
     }
-
-    return response.json();
   },
 
   // ============================================================================
@@ -512,40 +419,32 @@ export const playerClassifiedService = {
     classifiedId: string,
     accessCode: string,
   ): Promise<IVerifyAccessResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}/verify`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ accessCode }),
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to verify access code: ${response.statusText}`);
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/${classifiedId}/verify`,
+        { accessCode }, // Public endpoint, no auth needed
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || 'Failed to verify access code';
+      throw new Error(errorMessage);
     }
-
-    return response.json();
   },
 
   // Verify email for Teams Wanted access (public, no auth required)
   async verifyEmail(request: IEmailVerificationRequest): Promise<IEmailVerificationResult> {
-    const response = await fetch(`${API_ENDPOINTS.teamsWanted}/verify-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to verify email: ${response.statusText}`);
+    try {
+      const response = await axiosInstance.post(
+        `${API_ENDPOINTS.teamsWanted}/verify-email`,
+        request, // Public endpoint, no auth needed
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || 'Failed to verify email';
+      throw new Error(errorMessage);
     }
-
-    return response.json();
   },
 
   // ============================================================================
@@ -553,21 +452,17 @@ export const playerClassifiedService = {
   // ============================================================================
 
   // Get admin view of all classifieds
-  async getAdminClassifieds(accountId: string, token: string): Promise<IAdminClassifiedsResponse> {
-    const response = await fetch(
-      `${API_ENDPOINTS.admin}/accounts/${accountId}/player-classifieds`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch admin classifieds: ${response.statusText}`);
+  async getAdminClassifieds(accountId: string): Promise<IAdminClassifiedsResponse> {
+    try {
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.admin}/accounts/${accountId}/player-classifieds`,
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || 'Failed to fetch admin classifieds';
+      throw new Error(errorMessage);
     }
-
-    return response.json();
   },
 
   // ============================================================================
@@ -577,24 +472,19 @@ export const playerClassifiedService = {
   // Get analytics for classifieds
   async getAnalytics(
     accountId: string,
-    params: Partial<IClassifiedAnalytics> | undefined,
-    token: string,
+    _params?: Partial<IClassifiedAnalytics>,
   ): Promise<IClassifiedAnalytics> {
-    // Analytics endpoint doesn't use search parameters
-    const response = await fetch(
-      `${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch analytics: ${response.statusText}`);
+    try {
+      // Analytics endpoint doesn't use search parameters
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.analytics}/${accountId}/player-classifieds/analytics`,
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || 'Failed to fetch analytics';
+      throw new Error(errorMessage);
     }
-
-    return response.json();
   },
 
   // ============================================================================
@@ -611,22 +501,15 @@ export const playerClassifiedService = {
       message: string;
     },
   ): Promise<void> {
-    const response = await fetch(
-      `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}/contact`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `Failed to send contact message: ${response.statusText}`,
+    try {
+      await axiosInstance.post(
+        `${API_ENDPOINTS.playersWanted}/${accountId}/player-classifieds/players-wanted/${classifiedId}/contact`,
+        data, // Public endpoint, no auth needed
       );
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err.response?.data?.message || 'Failed to send contact message';
+      throw new Error(errorMessage);
     }
   },
 };

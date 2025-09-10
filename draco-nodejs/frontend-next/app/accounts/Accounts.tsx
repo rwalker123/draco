@@ -3,6 +3,7 @@ import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import OrganizationsWidget from '../../components/OrganizationsWidget';
+import { axiosInstance } from '../../utils/axiosConfig';
 
 interface Account {
   id: string;
@@ -36,20 +37,12 @@ const Accounts: React.FC = () => {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/accounts/search?q=${encodeURIComponent(searchTerm)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setSearchResults(data.data.accounts || []);
-        } else {
-          setSearchResults([]);
-        }
+      const response = await axiosInstance.get(
+        `/api/accounts/search?q=${encodeURIComponent(searchTerm)}`,
+      );
+      const data = response.data;
+      if (data.success) {
+        setSearchResults(data.data.accounts || []);
       } else {
         setSearchResults([]);
       }

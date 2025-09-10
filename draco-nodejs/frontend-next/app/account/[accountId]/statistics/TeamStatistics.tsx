@@ -23,6 +23,7 @@ import StatisticsTable, {
   formatIPDecimal,
 } from './StatisticsTable';
 import { Team } from '@/types/schedule';
+import { axiosInstance } from '../../../../utils/axiosConfig';
 
 interface BattingStatsRow {
   playerId: string;
@@ -222,38 +223,31 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setError(null);
 
     try {
-      const response = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/teams`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axiosInstance.get(
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams`,
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        // Transform the API response structure to match expected format
-        const rawTeams = data.data?.teams || [];
-        const teamsData = rawTeams.map(
-          (team: {
-            id: string;
-            name: string;
-            teamId: string;
-            league?: { name: string };
-            division?: { name: string } | null;
-          }) => ({
-            teamId: team.id, // Use team season ID for API calls
-            teamName: team.name,
-            leagueName: team.league?.name || 'Unknown League',
-            divisionName: team.division?.name || 'No Division',
-          }),
-        );
-        setTeams(teamsData);
+      // Transform the API response structure to match expected format
+      const rawTeams = response.data.data?.teams || [];
+      const teamsData = rawTeams.map(
+        (team: {
+          id: string;
+          name: string;
+          teamId: string;
+          league?: { name: string };
+          division?: { name: string } | null;
+        }) => ({
+          teamId: team.id, // Use team season ID for API calls
+          teamName: team.name,
+          leagueName: team.league?.name || 'Unknown League',
+          divisionName: team.division?.name || 'No Division',
+        }),
+      );
+      setTeams(teamsData);
 
-        // Auto-select first team if available
-        if (teamsData.length > 0 && !selectedTeamId) {
-          setSelectedTeamId(teamsData[0].teamId);
-        }
-      } else {
-        throw new Error('Failed to fetch teams');
+      // Auto-select first team if available
+      if (teamsData.length > 0 && !selectedTeamId) {
+        setSelectedTeamId(teamsData[0].teamId);
       }
     } catch (error) {
       console.error('Error loading teams:', error);
@@ -269,21 +263,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setLoading((prev) => ({ ...prev, batting: true }));
 
     try {
-      const response = await fetch(
+      const response = await axiosInstance.get(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeamId}/batting-stats`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setBattingStats(data.data || []);
-      } else {
-        throw new Error('Failed to fetch batting stats');
-      }
+      setBattingStats(response.data.data || []);
     } catch (error) {
       console.error('Error loading batting stats:', error);
       setError('Failed to load batting stats');
@@ -298,21 +282,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setLoading((prev) => ({ ...prev, pitching: true }));
 
     try {
-      const response = await fetch(
+      const response = await axiosInstance.get(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeamId}/pitching-stats`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setPitchingStats(data.data || []);
-      } else {
-        throw new Error('Failed to fetch pitching stats');
-      }
+      setPitchingStats(response.data.data || []);
     } catch (error) {
       console.error('Error loading pitching stats:', error);
       setError('Failed to load pitching stats');

@@ -7,7 +7,7 @@ import React, {
   ReactNode,
   useCallback,
 } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 import { useAuth } from './AuthContext';
 import { ROLE_NAME_TO_ID } from '../utils/roleUtils';
 
@@ -98,9 +98,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Fetch fresh metadata from API
-      const response = await axios.get('/api/roleTest/roles/metadata', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axiosInstance.get('/roleTest/roles/metadata');
 
       if (response.data.success) {
         const metadata: RoleMetadata = response.data.data;
@@ -139,9 +137,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
           ? `/api/roleTest/user-roles?accountId=${accountId}`
           : `/api/roleTest/user-roles`;
 
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axiosInstance.get(url);
 
         if (response.data.success) {
           setUserRoles({

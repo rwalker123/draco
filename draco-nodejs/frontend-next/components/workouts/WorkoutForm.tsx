@@ -24,6 +24,7 @@ import { createWorkout, updateWorkout, getWorkout } from '../../services/workout
 import { WorkoutCreateDTO, WorkoutUpdateDTO } from '../../types/workouts';
 import RichTextEditor from '../email/RichTextEditor';
 import AccountPageHeader from '../AccountPageHeader';
+import { axiosInstance } from '../../utils/axiosConfig';
 
 interface WorkoutFormProps {
   mode: 'create' | 'edit';
@@ -83,8 +84,8 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
 
   const fetchFields = useCallback(async () => {
     try {
-      const response = await fetch(`/api/accounts/${accountId}/fields`);
-      const data = await response.json();
+      const response = await axiosInstance.get(`/api/accounts/${accountId}/fields`);
+      const data = response.data;
       setFields(data.data.fields);
     } catch (err) {
       console.error('Error fetching fields:', err);

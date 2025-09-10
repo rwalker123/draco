@@ -12,6 +12,7 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
+import { axiosInstance } from '../../../../utils/axiosConfig';
 
 interface Division {
   id: string;
@@ -98,33 +99,27 @@ export default function StatisticsFilters({
   const loadSeasons = useCallback(async () => {
     setLoading((prev) => ({ ...prev, seasons: true }));
     try {
-      const response = await fetch(`/api/accounts/${accountId}/seasons?includeDivisions=true`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axiosInstance.get(
+        `/api/accounts/${accountId}/seasons?includeDivisions=true`,
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        const seasonsApiData = data.data?.seasons || [];
+      const seasonsApiData = response.data.data?.seasons || [];
 
-        // Cache the full data
-        setSeasonsData(seasonsApiData);
+      // Cache the full data
+      setSeasonsData(seasonsApiData);
 
-        // Add "All Time" option as the first item for the dropdown
-        const allSeasons = [
-          { id: '0', name: 'All Time', accountId, isCurrent: false, leagues: [] },
-          ...seasonsApiData,
-        ];
+      // Add "All Time" option as the first item for the dropdown
+      const allSeasons = [
+        { id: '0', name: 'All Time', accountId, isCurrent: false, leagues: [] },
+        ...seasonsApiData,
+      ];
 
-        setSeasons(allSeasons);
+      setSeasons(allSeasons);
 
-        // Auto-select current season if none selected
-        if (!filters.seasonId && seasonsApiData.length > 0) {
-          const currentSeason =
-            seasonsApiData.find((s: Season) => s.isCurrent) || seasonsApiData[0];
-          onChange({ seasonId: currentSeason.id });
-        }
+      // Auto-select current season if none selected
+      if (!filters.seasonId && seasonsApiData.length > 0) {
+        const currentSeason = seasonsApiData.find((s: Season) => s.isCurrent) || seasonsApiData[0];
+        onChange({ seasonId: currentSeason.id });
       }
     } catch (error) {
       console.error('Error loading seasons:', error);
@@ -140,15 +135,11 @@ export default function StatisticsFilters({
 
       if (filters.isHistorical) {
         // For all-time stats, fetch leagues from the all-time endpoint
-        const response = await fetch(`/api/accounts/${accountId}/leagues/all-time`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          formattedLeagues = data.data || [];
+        try {
+          const response = await axiosInstance.get(`/api/accounts/${accountId}/leagues/all-time`);
+          formattedLeagues = response.data.data || [];
+        } catch (error) {
+          console.warn('Failed to load all-time leagues:', error);
         }
       } else {
         // For season stats, use cached season data

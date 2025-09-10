@@ -17,6 +17,7 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { AnimatePresence, motion } from 'framer-motion';
 import './GameRecapsWidget.css';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface GameRecapFlat {
   id: string; // game id
@@ -110,9 +111,10 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     if (teamSeasonId) {
       url += `&teamId=${teamSeasonId}`;
     }
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
+    axiosInstance
+      .get(url)
+      .then((response) => {
+        const data = response.data;
         if (!data.success) throw new Error(data.message || 'Failed to load game recaps');
         // Flatten all recaps for all games into a single array
         let flatRecaps: GameRecapFlat[] = [];
@@ -143,7 +145,9 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
         }
         setRecapList(flatRecaps);
       })
-      .catch((err) => setError(err.message || 'Error loading game recaps'))
+      .catch((err) =>
+        setError(err.response?.data?.message || err.message || 'Error loading game recaps'),
+      )
       .finally(() => setLoading(false));
   }, [accountId, seasonId, teamSeasonId, maxRecaps]);
 

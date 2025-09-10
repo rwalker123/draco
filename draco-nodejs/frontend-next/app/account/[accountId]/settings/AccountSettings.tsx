@@ -7,6 +7,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import UrlManagement from '../../../../components/UrlManagement';
+import { axiosInstance } from '../../../../utils/axiosConfig';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -69,21 +70,12 @@ const AccountSettings: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountIdStr}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axiosInstance.get(`/api/accounts/${accountIdStr}`);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAccount(data.data.account);
-        } else {
-          setError(data.message || 'Failed to load account data');
-        }
+      if (response.data.success) {
+        setAccount(response.data.data.account);
       } else {
-        setError('Failed to load account data');
+        setError(response.data.message || 'Failed to load account data');
       }
     } catch {
       setError('Failed to load account data');

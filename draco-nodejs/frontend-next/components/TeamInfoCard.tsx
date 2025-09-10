@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy } from 'lucide-react';
 import TeamAvatar from './TeamAvatar';
 import { Team } from '@/types/schedule';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface TeamInfoCardProps {
   accountId?: string;
@@ -40,9 +41,8 @@ export default function TeamInfoCard({
       setError(null);
       try {
         const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch team info');
-        const data = await res.json();
+        const res = await axiosInstance.get(url);
+        const data = res.data;
         const teamData = {
           ...data.data.teamSeason,
           seasonName: data.data.season?.name || '',
@@ -66,9 +66,8 @@ export default function TeamInfoCard({
       setRecordError(null);
       try {
         const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/record`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch team record');
-        const data = await res.json();
+        const res = await axiosInstance.get(url);
+        const data = res.data;
         setRecord(data.data.record);
       } catch (err: unknown) {
         setRecordError(err instanceof Error ? err.message : 'Unknown error');
@@ -83,9 +82,8 @@ export default function TeamInfoCard({
     async function fetchAccountName() {
       if (!accountId) return;
       try {
-        const res = await fetch(`/api/accounts/${accountId}/name`);
-        if (!res.ok) throw new Error('Failed to fetch account name');
-        const data = await res.json();
+        const res = await axiosInstance.get(`/api/accounts/${accountId}/name`);
+        const data = res.data;
         setAccountName(data.data.name);
       } catch {
         setAccountName('');

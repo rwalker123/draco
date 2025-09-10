@@ -18,6 +18,7 @@ import { getWorkout } from '../../services/workoutService';
 import { Workout } from '../../types/workouts';
 import { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
 import { Event } from '@mui/icons-material';
+import { axiosInstance } from '../../utils/axiosConfig';
 
 interface WorkoutDisplayProps {
   accountId: string;
@@ -58,8 +59,8 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
 
   const fetchFields = useCallback(async () => {
     try {
-      const response = await fetch(`/api/accounts/${accountId}/fields`);
-      const data = await response.json();
+      const response = await axiosInstance.get(`/api/accounts/${accountId}/fields`);
+      const data = response.data;
       setFields(data.data.fields);
     } catch (err) {
       console.error('Error fetching fields:', err);

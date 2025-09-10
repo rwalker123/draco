@@ -30,6 +30,7 @@ import { listWorkouts } from '../../../services/workoutService';
 import { WorkoutSummary } from '../../../types/workouts';
 import { Account } from '../../../types/account';
 import { JoinLeagueDashboard } from '../../../components/join-league';
+import { axiosInstance } from '../../../utils/axiosConfig';
 
 interface Season {
   id: string;
@@ -62,23 +63,15 @@ const BaseballAccountHome: React.FC = () => {
 
       try {
         // Fetch account data
-        const accountResponse = await fetch(`/api/accounts/${accountIdStr}?includeCurrentSeason`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const accountResponse = await axiosInstance.get(
+          `/api/accounts/${accountIdStr}?includeCurrentSeason`,
+        );
 
-        if (accountResponse.ok) {
-          const accountData = await accountResponse.json();
-          if (accountData.success) {
-            setAccount(accountData.data.account);
-            setCurrentSeason(accountData.data.currentSeason || null);
-          } else {
-            setError(accountData.message || 'Account not found or not publicly accessible');
-          }
+        if (accountResponse.data.success) {
+          setAccount(accountResponse.data.data.account);
+          setCurrentSeason(accountResponse.data.data.currentSeason || null);
         } else {
-          setError('Account not found or not publicly accessible');
+          setError(accountResponse.data.message || 'Account not found or not publicly accessible');
         }
       } catch (err) {
         console.error('Failed to fetch account data:', err);
@@ -97,19 +90,10 @@ const BaseballAccountHome: React.FC = () => {
 
     const fetchUserTeams = async () => {
       try {
-        const teamsResponse = await fetch(`/api/accounts/${accountIdStr}/user-teams`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const teamsResponse = await axiosInstance.get(`/api/accounts/${accountIdStr}/user-teams`);
 
-        if (teamsResponse.ok) {
-          const teamsData = await teamsResponse.json();
-          if (teamsData.success) {
-            setUserTeams(teamsData.data.teams || []);
-          }
+        if (teamsResponse.data.success) {
+          setUserTeams(teamsResponse.data.data.teams || []);
         }
       } catch (err) {
         console.warn('Failed to fetch user teams:', err);

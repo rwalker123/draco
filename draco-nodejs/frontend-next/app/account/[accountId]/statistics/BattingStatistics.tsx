@@ -17,6 +17,7 @@ import StatisticsTable, {
   formatBattingAverage,
   formatPercentage,
 } from './StatisticsTable';
+import { axiosInstance } from '../../../../utils/axiosConfig';
 
 interface BattingStatsRow {
   playerId: string;
@@ -148,30 +149,20 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
         ...(filters.isHistorical && { historical: 'true' }),
       });
 
-      const response = await fetch(
+      const response = await axiosInstance.get(
         `/api/accounts/${accountId}/statistics/batting/${filters.leagueId}?${params}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        const statsData = data.data || [];
+      const statsData = response.data.data || [];
 
-        // Atomic swap - new data replaces everything instantly
-        setStats(statsData);
-        setPreviousStats([]); // Clear previous data after successful load
+      // Atomic swap - new data replaces everything instantly
+      setStats(statsData);
+      setPreviousStats([]); // Clear previous data after successful load
 
-        // Calculate total pages (this would ideally come from the API)
-        // For now, assume there might be more data if we get a full page
-        const hasMore = statsData.length === pageSize;
-        setTotalPages(hasMore ? page + 1 : page);
-      } else {
-        throw new Error('Failed to fetch batting statistics');
-      }
+      // Calculate total pages (this would ideally come from the API)
+      // For now, assume there might be more data if we get a full page
+      const hasMore = statsData.length === pageSize;
+      setTotalPages(hasMore ? page + 1 : page);
     } catch (error) {
       console.error('Error loading batting statistics:', error);
       setError('Failed to load batting statistics');

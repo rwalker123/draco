@@ -33,6 +33,7 @@ import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -93,16 +94,11 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     const fetchAccount = async () => {
       if (accountId) {
         try {
-          const response = await fetch(`/api/accounts/${accountId}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              setAccountType(data.data.account.accountType);
-              setCurrentAccount(data.data.account);
-            }
+          const response = await axiosInstance.get(`/api/accounts/${accountId}`);
+          const data = response.data;
+          if (data.success) {
+            setAccountType(data.data.account.accountType);
+            setCurrentAccount(data.data.account);
           }
         } catch {
           setAccountType(null);

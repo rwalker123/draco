@@ -144,6 +144,88 @@ Key patterns:
    - Maintain accurate documentation for all API endpoints
    - Test the API documentation at `/apidocs` to ensure it renders correctly
 
+## HTTP Client Standards
+
+The frontend-next codebase has been **standardized on axios exclusively** for all HTTP requests. The previous mixed usage of fetch() and axios has been consolidated.
+
+### Centralized Configuration
+
+All API requests use the centralized axios configuration from `utils/axiosConfig.ts`:
+
+```typescript
+// Standard usage - preferred for new code
+import axiosInstance from '../utils/axiosConfig';
+
+const response = await axiosInstance.get('/accounts/123');
+const data = response.data;
+
+// For IServiceResponse compatibility (legacy pattern)
+import { api } from '../utils/axiosConfig';
+
+const result = await api.get<UserData>('/accounts/123');
+if (result.success) {
+  console.log(result.data);
+}
+```
+
+### Key Features
+
+- **Automatic Auth Injection**: JWT tokens added via request interceptors
+- **Global Error Handling**: 401 responses handled automatically
+- **Consistent Base URL**: All requests use `/api` prefix automatically
+- **TypeScript Support**: Fully typed responses and error handling
+- **Timeout Management**: 30-second default timeout with configuration options
+
+### Migration from Fetch
+
+The old `fetch()` calls and `apiRequest()` utilities have been replaced:
+
+```typescript
+// OLD (fetch) - ❌ Don't use
+const response = await fetch('/api/endpoint', {
+  headers: { Authorization: `Bearer ${token}` }
+});
+const data = await response.json();
+
+// OLD (apiRequest) - ❌ Deprecated
+import { apiRequest } from '../utils/apiClient';
+const result = await apiRequest<T>('/api/endpoint');
+
+// NEW (axios) - ✅ Use this
+import axiosInstance from '../utils/axiosConfig';
+const response = await axiosInstance.get('/endpoint');
+const data = response.data;
+```
+
+### Service Class Pattern
+
+For complex services, use the class-based pattern with axios:
+
+```typescript
+export class MyService {
+  async getData(id: string) {
+    try {
+      const response = await axiosInstance.get(`/data/${id}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || error.message);
+      }
+      throw error;
+    }
+  }
+}
+```
+
+### Important Notes
+
+- ✅ **Always use axiosInstance** from `utils/axiosConfig.ts`
+- ✅ **Remove `/api` prefix** from URLs (added automatically by baseURL)
+- ✅ **Let interceptors handle auth** (don't manually add Authorization headers)
+- ✅ **Use axios error handling** with `axios.isAxiosError()`
+- ❌ **Never use fetch()** for API calls
+- ❌ **Avoid deprecated apiRequest()** utilities
+
 ## Git Hooks and CI/CD Workflow
 
 ### Git Commit Hooks
@@ -289,4 +371,5 @@ The `.mcp.json` file in the project root automatically configures:
 **Note**: If you're not seeing MCP servers in a worktree, ensure `.mcp.json` exists in the project root and restart Claude Code.
 - ensure you always use serena when appropriate
 - Do not lie about knowing or seeing things (in images) that you obviously can't, tell the truth at all times.
-- use apiRequest for making rest calls in utils/apiClient.ts and withRetry in errorHandling.ts
+- use axiosInstance from utils/axiosConfig.ts for all API calls (standardized on axios exclusively)
+- use withRetry from errorHandling.ts for robust error handling

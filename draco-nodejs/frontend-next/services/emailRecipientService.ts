@@ -13,7 +13,6 @@ import {
 } from '../utils/emailRecipientTransformers';
 import { EmailRecipientErrorCode, AsyncResult, Result } from '../types/errors';
 import {
-  handleApiError,
   withRetry,
   safeAsync,
   safe,
@@ -21,6 +20,8 @@ import {
   createEmailRecipientError,
   normalizeError,
 } from '../utils/errorHandling';
+import { axiosInstance } from '../utils/axiosConfig';
+import axios from 'axios';
 
 // Season interface matching backend response
 export interface Season {
@@ -173,62 +174,35 @@ export class EmailRecipientService {
   }
 
   /**
-   * Get request headers with authentication and validation
+   * Validate authentication token
    */
-  private getHeaders(token: string | null): Result<HeadersInit> {
+  private validateAuth(token: string | null): Result<void> {
     if (!token || token.trim() === '') {
       return {
         success: false,
         error: createEmailRecipientError(
           EmailRecipientErrorCode.AUTHENTICATION_REQUIRED,
           'Authentication token is required',
-          { context: { operation: 'get_headers' } },
+          { context: { operation: 'validate_auth' } },
         ),
       };
     }
 
     return {
       success: true,
-      data: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      data: undefined,
     };
   }
 
   /**
-   * Enhanced API response handler with comprehensive error handling
+   * Enhanced API response handler with comprehensive error handling for axios
    */
-  private async handleResponse<T>(response: Response): Promise<T> {
-    // Handle non-ok responses with detailed error handling
-    if (!response.ok) {
-      let responseData: unknown;
-      try {
-        responseData = await response.json();
-      } catch {
-        // Response is not JSON, use status text
-        responseData = { message: response.statusText };
-      }
-
-      throw handleApiError(response, responseData);
-    }
-
-    let data: T;
-    try {
-      data = await response.json();
-    } catch (error) {
-      throw createEmailRecipientError(
-        EmailRecipientErrorCode.INVALID_DATA,
-        'Failed to parse API response',
-        {
-          details: { parseError: error, status: response.status },
-          context: {
-            operation: 'parse_response',
-            additionalData: { endpoint: response.url },
-          },
-        },
-      );
-    }
+  private handleAxiosResponse<T>(response: {
+    data: T;
+    status: number;
+    config: { url?: string };
+  }): T {
+    const data = response.data;
 
     // Validate response structure
     if (typeof data === 'object' && data !== null && 'success' in data) {
@@ -241,7 +215,7 @@ export class EmailRecipientService {
             details: responseObj.data || responseObj,
             context: {
               operation: 'api_response_validation',
-              additionalData: { endpoint: response.url },
+              additionalData: { endpoint: response.config.url },
             },
           },
         );
@@ -252,56 +226,63 @@ export class EmailRecipientService {
   }
 
   /**
-   * Create fetch request with timeout and abort signal
+   * Make API request with axios including timeout and error handling
    */
-  private async fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
-    // Create new abort controller for this request
-    this.abortController = new AbortController();
-
-    // Set up timeout
-    const timeoutId = setTimeout(() => {
-      this.abortController?.abort();
-    }, this.config.timeoutMs);
-
+  private async makeRequest<T>(
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    url: string,
+    data?: unknown,
+  ): Promise<T> {
     try {
-      const response = await fetch(url, {
-        ...options,
-        signal: this.abortController.signal,
+      const response = await axiosInstance.request({
+        method,
+        url,
+        data,
+        timeout: this.config.timeoutMs,
       });
 
-      clearTimeout(timeoutId);
-      return response;
+      return this.handleAxiosResponse<T>(response);
     } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
+      if (axios.isAxiosError(error)) {
+        if (error.code === 'ECONNABORTED') {
           throw createEmailRecipientError(EmailRecipientErrorCode.API_TIMEOUT, 'Request timeout', {
             details: { timeoutMs: this.config.timeoutMs, url },
             context: {
-              operation: 'fetch_request',
+              operation: 'axios_request',
               additionalData: { endpoint: url },
             },
           });
         }
 
-        if (error.message.includes('fetch')) {
+        if (error.response) {
           throw createEmailRecipientError(
-            EmailRecipientErrorCode.NETWORK_ERROR,
-            'Network request failed',
+            EmailRecipientErrorCode.API_UNAVAILABLE,
+            error.response.data?.message || 'API request failed',
             {
-              details: { originalError: error.message, url },
+              details: error.response.data,
               context: {
-                operation: 'fetch_request',
-                additionalData: { endpoint: url },
+                operation: 'axios_request',
+                additionalData: { endpoint: url, status: error.response.status },
               },
             },
           );
         }
+
+        throw createEmailRecipientError(
+          EmailRecipientErrorCode.NETWORK_ERROR,
+          'Network request failed',
+          {
+            details: { originalError: error.message, url },
+            context: {
+              operation: 'axios_request',
+              additionalData: { endpoint: url },
+            },
+          },
+        );
       }
 
       throw normalizeError(error, {
-        operation: 'fetch_request',
+        operation: 'axios_request',
         additionalData: { endpoint: url },
       });
     }
@@ -347,9 +328,9 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const params = new URLSearchParams();
@@ -363,11 +344,7 @@ export class EmailRecipientService {
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<ContactsResponse>(response);
+        const data = await this.makeRequest<ContactsResponse>('GET', url);
 
         // Validate response data
         if (!data.data?.contacts || !Array.isArray(data.data.contacts)) {
@@ -424,9 +401,9 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const params = new URLSearchParams();
@@ -441,11 +418,7 @@ export class EmailRecipientService {
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<ContactsResponse>(response);
+        const data = await this.makeRequest<ContactsResponse>('GET', url);
 
         if (!data.data?.contacts || !Array.isArray(data.data.contacts)) {
           throw createEmailRecipientError(
@@ -485,20 +458,16 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const url = `/api/accounts/${accountId}/seasons/current`;
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<CurrentSeasonResponse>(response);
+        const data = await this.makeRequest<CurrentSeasonResponse>('GET', url);
         return data.data.season;
       },
       {
@@ -538,20 +507,16 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams`;
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<TeamsResponse>(response);
+        const data = await this.makeRequest<TeamsResponse>('GET', url);
 
         if (!data.data?.teams || !Array.isArray(data.data.teams)) {
           throw createEmailRecipientError(
@@ -582,20 +547,16 @@ export class EmailRecipientService {
     seasonId: string,
     teamSeasonId: string,
   ): AsyncResult<BackendContact[]> {
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`;
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<ContactsResponse>(response);
+        const data = await this.makeRequest<ContactsResponse>('GET', url);
         return data.data.contacts;
       },
       {
@@ -614,20 +575,16 @@ export class EmailRecipientService {
     seasonId: string,
     teamSeasonId: string,
   ): AsyncResult<BackendContact[]> {
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`;
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<ContactsResponse>(response);
+        const data = await this.makeRequest<ContactsResponse>('GET', url);
         return data.data.contacts;
       },
       {
@@ -669,9 +626,9 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const params = new URLSearchParams();
@@ -686,11 +643,7 @@ export class EmailRecipientService {
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<{
+        const data = await this.makeRequest<{
           success: boolean;
           data: {
             leagueSeasons: Array<{
@@ -707,7 +660,7 @@ export class EmailRecipientService {
               }>;
             }>;
           };
-        }>(response);
+        }>('GET', url);
 
         if (!data.data?.leagueSeasons || !Array.isArray(data.data.leagueSeasons)) {
           throw createEmailRecipientError(
@@ -776,26 +729,22 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
+    const authResult = this.validateAuth(token);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     const url = `/api/accounts/${accountId}/seasons/${seasonId}/participants/count`;
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<{
+        const data = await this.makeRequest<{
           success: boolean;
           data: {
             seasonId: string;
             participantCount: number;
           };
-        }>(response);
+        }>('GET', url);
 
         if (
           data.data?.participantCount === undefined ||

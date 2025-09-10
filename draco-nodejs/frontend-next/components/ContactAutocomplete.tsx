@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { createUserManagementService } from '../services/userManagementService';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface Contact {
   id: string;
@@ -174,24 +175,19 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
     if (value && value.trim() !== '' && value.length > 10 && !initialContact) {
       const fetchInitialContact = async () => {
         try {
-          const response = await fetch(`/api/accounts/${accountId}/contacts/${value}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              const contact = data.data.contact;
-              setInitialContact(contact);
-              setInputValue(contact.displayName || `${contact.firstName} ${contact.lastName}`);
-              setSelectedContact(contact);
-            }
+          const response = await axiosInstance.get(`/api/accounts/${accountId}/contacts/${value}`);
+          const data = response.data;
+          if (data.success) {
+            const contact = data.data.contact;
+            setInitialContact(contact);
+            setInputValue(contact.displayName || `${contact.firstName} ${contact.lastName}`);
+            setSelectedContact(contact);
           }
-        } catch (error) {
-          console.error('Error fetching initial contact:', error);
+        } catch (error: unknown) {
+          console.error(
+            'Error fetching initial contact:',
+            error instanceof Error ? error.message : 'Unknown error',
+          );
         }
       };
 

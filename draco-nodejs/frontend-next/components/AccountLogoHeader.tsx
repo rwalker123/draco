@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
+import { axiosInstance } from '../utils/axiosConfig';
 
 interface AccountLogoHeaderProps {
   accountId: string;
@@ -38,9 +39,10 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
   useEffect(() => {
     // Always fetch account name when accountId is provided
     if (accountId) {
-      fetch(`/api/accounts/${accountId}/header`)
-        .then((res) => res.json())
-        .then((data) => {
+      axiosInstance
+        .get(`/api/accounts/${accountId}/header`)
+        .then((response) => {
+          const data = response.data;
           // Set account name
           if (data?.data?.name) {
             setAccountName(data.data.name);

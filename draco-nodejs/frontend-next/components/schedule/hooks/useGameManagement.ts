@@ -3,6 +3,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { Game, GameFormState, GameType } from '@/types/schedule';
 import { formatGameDateTime } from '../../../utils/dateUtils';
+import { axiosInstance } from '../../../utils/axiosConfig';
 
 interface UseGameManagementProps {
   accountId: string;
@@ -189,19 +190,15 @@ export const useGameManagement = ({
         umpire4: umpire4 || null,
       };
 
-      const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/games`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      await axiosInstance.post(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/games`,
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to create game (${response.status})`);
-      }
+      );
 
       setSuccess('Game created successfully');
       if (!keepDialogOpen) {
@@ -263,33 +260,26 @@ export const useGameManagement = ({
       // Create ISO string without timezone manipulation
       const gameDateString = formatGameDateTime(gameDate, gameTime);
 
-      const response = await fetch(
+      await axiosInstance.put(
         `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
         {
-          method: 'PUT',
+          gameDate: gameDateString,
+          homeTeamId,
+          visitorTeamId,
+          fieldId: fieldId || null,
+          comment,
+          gameType,
+          umpire1: umpire1 || null,
+          umpire2: umpire2 || null,
+          umpire3: umpire3 || null,
+          umpire4: umpire4 || null,
+        },
+        {
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            gameDate: gameDateString,
-            homeTeamId,
-            visitorTeamId,
-            fieldId: fieldId || null,
-            comment,
-            gameType,
-            umpire1: umpire1 || null,
-            umpire2: umpire2 || null,
-            umpire3: umpire3 || null,
-            umpire4: umpire4 || null,
-          }),
         },
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update game');
-      }
 
       setSuccess('Game updated successfully');
       setEditDialogOpen(false);
@@ -305,26 +295,14 @@ export const useGameManagement = ({
     try {
       if (!selectedGame) return;
 
-      const response = await fetch(
+      await axiosInstance.delete(
         `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
         {
-          method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
           },
         },
       );
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Authentication failed. Please log in again.');
-          setDeleteDialogOpen(false);
-          return;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete game');
-      }
 
       setSuccess('Game deleted successfully');
       setDeleteDialogOpen(false);
@@ -353,22 +331,15 @@ export const useGameManagement = ({
         postToFacebook: gameResultData.postToFacebook,
       };
 
-      const response = await fetch(
+      await axiosInstance.put(
         `/api/accounts/${accountId}/seasons/${selectedGameForResults.season.id}/games/${selectedGameForResults.id}/results`,
+        requestBody,
         {
-          method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(requestBody),
         },
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save game results');
-      }
 
       setSuccess('Game results saved successfully');
       setGameResultsDialogOpen(false);

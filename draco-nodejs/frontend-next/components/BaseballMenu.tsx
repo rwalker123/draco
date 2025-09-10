@@ -13,6 +13,7 @@ import {
   useMediaQuery,
   CircularProgress,
 } from '@mui/material';
+import { axiosInstance } from '../utils/axiosConfig';
 import {
   Article as NewsIcon,
   Score as ScoresIcon,
@@ -42,13 +43,8 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     const fetchCurrentSeason = async () => {
       setLoadingSeason(true);
       try {
-        const response = await fetch(`/api/accounts/${accountId}/seasons/current`);
-        if (response.ok) {
-          const data = await response.json();
-          if (isMounted) setCurrentSeasonId(data.data.season.id);
-        } else {
-          if (isMounted) setCurrentSeasonId(null);
-        }
+        const response = await axiosInstance.get(`/api/accounts/${accountId}/seasons/current`);
+        if (isMounted) setCurrentSeasonId(response.data.data.season.id);
       } catch {
         if (isMounted) setCurrentSeasonId(null);
       } finally {

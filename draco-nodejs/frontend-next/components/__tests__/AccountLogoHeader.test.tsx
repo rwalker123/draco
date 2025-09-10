@@ -1,6 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import AccountLogoHeader from '../AccountLogoHeader';
+import { axiosInstance } from '../../utils/axiosConfig';
 
 // Mock Next.js Image component
 vi.mock('next/image', () => ({
@@ -14,21 +16,28 @@ vi.mock('next/image', () => ({
     [key: string]: unknown;
   }) {
     return <img src={src} alt={alt} {...props} />;
-    {
-    }
   },
 }));
 
-// Mock fetch to resolve account header
-const mockFetch = vi.fn();
-global.fetch = mockFetch as unknown as typeof global.fetch;
+// Mock axios
+vi.mock('../../utils/axiosConfig', () => ({
+  default: {
+    get: vi.fn(),
+  },
+  axiosInstance: {
+    get: vi.fn(),
+  },
+}));
 
 describe('AccountLogoHeader', () => {
+  const mockAxios = axiosInstance as typeof axiosInstance & {
+    get: ReturnType<typeof vi.fn>;
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true, data: { name: 'Test Account', accountLogoUrl: null } }),
+    mockAxios.get.mockResolvedValue({
+      data: { success: true, data: { name: 'Test Account', accountLogoUrl: null } },
     });
   });
 

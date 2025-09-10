@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 
 interface User {
   id: string;
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post('/api/auth/login', { username, password });
+      const response = await axiosInstance.post('/api/auth/login', { username, password });
       if (response.data.success && response.data.token) {
         setToken(response.data.token);
         localStorage.setItem('jwtToken', response.data.token);
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('jwtToken');
   };
 
-  const setAuthToken = (newToken: string) => {
+  const setAuthTokenLocal = (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('jwtToken', newToken);
   };
@@ -113,9 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+      const response = await axiosInstance.get('/api/auth/me');
       if (response.data.success && response.data.user) {
         setUser(response.data.user);
       } else {
@@ -144,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         logout,
         fetchUser,
-        setAuthToken,
+        setAuthToken: setAuthTokenLocal,
         clearAllContexts,
       }}
     >
