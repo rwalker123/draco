@@ -48,12 +48,29 @@ export class EmailService {
   // Email Composition Methods
 
   async composeEmail(accountId: string, request: EmailComposeRequest): Promise<string> {
-    const response = await axios.post<ApiResponse<{ emailId: string }>>(
-      `${this.baseUrl}/accounts/${accountId}/emails/compose`,
-      request,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response).emailId;
+    try {
+      const response = await axios.post<ApiResponse<{ emailId: string }>>(
+        `${this.baseUrl}/accounts/${accountId}/emails/compose`,
+        request,
+        { headers: this.getHeaders() },
+      );
+      return this.handleResponse(response).emailId;
+    } catch (error) {
+      // Handle axios errors and extract server error messages
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data) {
+          // Extract error message from server response
+          const serverError = error.response.data.error || error.response.data.message;
+          if (serverError) {
+            throw new Error(serverError);
+          }
+        }
+        // Fall back to axios error message
+        throw new Error(error.message);
+      }
+      // Re-throw non-axios errors
+      throw error;
+    }
   }
 
   async listEmails(

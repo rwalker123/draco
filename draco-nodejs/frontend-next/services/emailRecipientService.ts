@@ -645,6 +645,7 @@ export class EmailRecipientService {
     token: string | null,
     seasonId: string,
     includePlayerCounts: boolean = false,
+    includeManagerCounts: boolean = false,
   ): AsyncResult<League[]> {
     if (!accountId || accountId.trim() === '') {
       return {
@@ -676,6 +677,9 @@ export class EmailRecipientService {
     const params = new URLSearchParams();
     if (includePlayerCounts) {
       params.append('includePlayerCounts', 'true');
+    }
+    if (includeManagerCounts) {
+      params.append('includeManagerCounts', 'true');
     }
 
     const url = `/api/accounts/${accountId}/seasons/${seasonId}/leagues${params.toString() ? `?${params.toString()}` : ''}`;

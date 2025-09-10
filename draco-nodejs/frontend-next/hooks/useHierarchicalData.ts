@@ -10,6 +10,7 @@ interface ApiTeamResponse {
   id: string;
   name: string;
   playerCount?: number;
+  managerCount?: number;
 }
 
 interface ApiDivisionResponse {
@@ -55,7 +56,7 @@ export function useHierarchicalData() {
 
       const result = await withRetry(() =>
         apiRequest<ApiResponse>(
-          `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true&includePlayerCounts=true`,
+          `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true&includePlayerCounts=true&includeManagerCounts=true`,
           {
             method: 'GET',
             headers: {
@@ -82,33 +83,43 @@ export function useHierarchicalData() {
         totalPlayers: 0,
         leagues: data.data.leagueSeasons.map((league: ApiLeagueSeasonResponse) => {
           let leagueTotalPlayers = 0;
+          let leagueTotalManagers = 0;
 
           const divisions = (league.divisions || []).map((division: ApiDivisionResponse) => {
             const divisionTotalPlayers = (division.teams || []).reduce(
               (sum: number, team: ApiTeamResponse) => sum + (team.playerCount || 0),
               0,
             );
+            const divisionTotalManagers = (division.teams || []).reduce(
+              (sum: number, team: ApiTeamResponse) => sum + (team.managerCount || 0),
+              0,
+            );
             leagueTotalPlayers += divisionTotalPlayers;
+            leagueTotalManagers += divisionTotalManagers;
 
             return {
               id: division.id,
               name: division.divisionName,
               priority: division.priority,
               totalPlayers: divisionTotalPlayers,
+              totalManagers: divisionTotalManagers,
               teams: (division.teams || []).map((team: ApiTeamResponse) => ({
                 id: team.id,
                 name: team.name,
                 playerCount: team.playerCount || 0,
+                managerCount: team.managerCount || 0,
               })),
             };
           });
 
           const unassignedTeams = (league.unassignedTeams || []).map((team: ApiTeamResponse) => {
             leagueTotalPlayers += team.playerCount || 0;
+            leagueTotalManagers += team.managerCount || 0;
             return {
               id: team.id,
               name: team.name,
               playerCount: team.playerCount || 0,
+              managerCount: team.managerCount || 0,
             };
           });
 
@@ -116,15 +127,20 @@ export function useHierarchicalData() {
             id: league.id,
             name: league.leagueName,
             totalPlayers: leagueTotalPlayers,
+            totalManagers: leagueTotalManagers,
             divisions: divisions.sort((a, b) => a.priority - b.priority),
             unassignedTeams,
           };
         }),
       };
 
-      // Calculate total players for the season
+      // Calculate total players and managers for the season
       transformedData.totalPlayers = transformedData.leagues.reduce(
         (sum, league) => sum + (league.totalPlayers || 0),
+        0,
+      );
+      transformedData.totalManagers = transformedData.leagues.reduce(
+        (sum, league) => sum + (league.totalManagers || 0),
         0,
       );
 

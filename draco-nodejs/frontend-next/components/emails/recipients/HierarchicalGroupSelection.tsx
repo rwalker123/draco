@@ -108,6 +108,7 @@ const HierarchicalGroupSelection: React.FC<HierarchicalGroupSelectionProps> = ({
             hierarchyMaps={hierarchyMaps}
             itemSelectedState={itemSelectedState}
             onSelectionChange={handleSelectionChange}
+            managersOnly={managersOnly}
           />
         </Box>
       </Paper>

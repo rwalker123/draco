@@ -195,15 +195,23 @@ export function handleApiError(response: Response, responseData?: unknown): Emai
     case 500:
     case 502:
     case 503:
-      return createEmailRecipientError(
-        EmailRecipientErrorCode.SERVICE_UNAVAILABLE,
-        'Service temporarily unavailable',
-        {
-          userMessage: 'The service is temporarily unavailable. Please try again later',
-          retryable: true,
-          details: { statusCode, endpoint },
-        },
-      );
+      // Try to extract error message from server response
+      let serverMessage = 'Service temporarily unavailable';
+      let userMessage = 'The service is temporarily unavailable. Please try again later';
+
+      if (responseData) {
+        const parsed = parseApiError(responseData);
+        if (parsed.message && parsed.message !== 'An unexpected error occurred') {
+          serverMessage = parsed.message;
+          userMessage = parsed.message; // Use server message as user message
+        }
+      }
+
+      return createEmailRecipientError(EmailRecipientErrorCode.SERVICE_UNAVAILABLE, serverMessage, {
+        userMessage,
+        retryable: true,
+        details: { statusCode, endpoint, responseData },
+      });
 
     default:
       // Try to extract error message from response
@@ -420,11 +428,21 @@ export function getRecoveryActions(error: EmailRecipientError): string[] {
 
 /**
  * Generates user-friendly error messages
+ * Uses server error messages when available, falls back to generic messages for technical errors
  */
 function generateUserFriendlyMessage(
   code: EmailRecipientErrorCode,
-  _technicalMessage: string,
+  technicalMessage: string,
 ): string {
+  // Check if the technical message looks like a server-provided error message
+  const isServerErrorMessage = isServerError(technicalMessage);
+
+  // For server error messages, use them directly as they're already user-friendly
+  if (isServerErrorMessage) {
+    return technicalMessage;
+  }
+
+  // For technical errors, use generic user-friendly messages
   const userMessages: Record<EmailRecipientErrorCode, string> = {
     [EmailRecipientErrorCode.NETWORK_ERROR]:
       'Unable to connect to the server. Please check your internet connection.',
@@ -462,6 +480,51 @@ function generateUserFriendlyMessage(
   };
 
   return userMessages[code] || 'An error occurred. Please try again.';
+}
+
+/**
+ * Determines if a message appears to be a server-provided error message
+ * Server messages are typically user-friendly and don't contain technical details
+ */
+function isServerError(message: string): boolean {
+  // Server error messages are typically:
+  // 1. Not empty or just whitespace
+  // 2. Don't contain technical error patterns
+  // 3. Are reasonably user-friendly (not too technical)
+
+  if (!message || message.trim().length === 0) {
+    return false;
+  }
+
+  const technicalPatterns = [
+    /^Error:/i,
+    /^TypeError:/i,
+    /^ReferenceError:/i,
+    /^SyntaxError:/i,
+    /^NetworkError:/i,
+    /^FetchError:/i,
+    /^AbortError:/i,
+    /^TimeoutError:/i,
+    /at\s+.*\s+\(.*\)/i, // Stack trace patterns
+    /\.js:\d+:\d+/i, // File:line:column patterns
+    /node_modules/i,
+    /webpack/i,
+    /bundle/i,
+    /chunk/i,
+  ];
+
+  // If it matches technical patterns, it's not a server message
+  if (technicalPatterns.some((pattern) => pattern.test(message))) {
+    return false;
+  }
+
+  // Server messages are typically shorter and more user-friendly
+  // They don't contain stack traces or technical details
+  const isReasonableLength = message.length <= 200;
+  const hasNoStackTrace = !message.includes('at ') && !message.includes('Error:');
+  const isUserFriendly = !message.includes('undefined') && !message.includes('null');
+
+  return isReasonableLength && hasNoStackTrace && isUserFriendly;
 }
 
 /**
