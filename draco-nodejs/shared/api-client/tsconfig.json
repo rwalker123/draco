@@ -13,7 +13,6 @@
     "emitDeclarationOnly": false,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -27,7 +26,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "baseUrl": ".",
+    "paths": {
+      "@draco/shared-types": ["../shared-types/src"],
+      "@draco/shared-types/*": ["../shared-types/src/*"]
+    }
   },
   "include": [
     "src/**/*"
