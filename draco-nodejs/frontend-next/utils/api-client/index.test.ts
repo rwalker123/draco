@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { BaseApiClient } from './index.js';
 import type { ClientResponse } from './types/responses.js';
-import type { ApiError } from '@draco/shared-types';
+import type { ApiResponse, ApiError } from '@draco/shared-types';
+import { ErrorCategory } from '@draco/shared-types';
 
 describe('Api Client Module', () => {
   it('should export BaseApiClient class', () => {
@@ -16,7 +17,15 @@ describe('Api Client Module', () => {
         return {} as TResponse;
       }
 
-      protected transformResponse<T>(response: T): ClientResponse<T> {
+      protected transformResponse<T>(response: ApiResponse<T> | T): ClientResponse<T> {
+        if (typeof response === 'object' && response !== null && 'success' in response) {
+          const apiResponse = response as ApiResponse<T>;
+          return {
+            success: apiResponse.success,
+            data: apiResponse.data,
+            statusCode: 200,
+          };
+        }
         return { success: true, data: response };
       }
 
@@ -24,9 +33,9 @@ describe('Api Client Module', () => {
         return {
           success: false,
           errorMessage: 'Test error',
-          errorCode: 'TEST_ERROR',
+          errorCode: 'UNKNOWN_ERROR',
           statusCode: 500,
-          category: 'SERVER_ERROR',
+          category: ErrorCategory.SERVER_ERROR,
           retryable: false,
         };
       }
