@@ -48,7 +48,7 @@
     "lint": "npm run lint:all",
     "lint:fix:all": "npm run shared-types:lint:fix && npm run backend:lint:fix && npm run frontend-next:lint:fix",
     "format:all": "npm run shared-types:format && npm run backend:format && npm run frontend-next:format",
-    "type-check:all": "npm run shared-types:type-check && npm run backend:type-check && npm run frontend-next:type-check",
+    "type-check:all": "npm run shared-types:build && npm run shared-types:type-check && npm run backend:type-check && npm run frontend-next:type-check",
     "test:all": "npm run shared-types:test && npm run backend:test && npm run frontend-next:test",
     "test": "npm run test:all",
     "start": "(cd draco-nodejs/backend && npm start) & (cd draco-nodejs/frontend-next && npm start) & wait",
