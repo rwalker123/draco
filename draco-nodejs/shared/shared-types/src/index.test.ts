@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { VERSION, PACKAGE_INFO, ErrorCategory, isRetryableError } from './index.js';
+import { VERSION, PACKAGE_INFO, ErrorCategory, isRetryableError } from './index';
 
 describe('@draco/shared-types', () => {
   it('should export version information', () => {

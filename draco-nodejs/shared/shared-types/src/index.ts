@@ -8,7 +8,7 @@
  */
 
 // Re-export all API types
-export * from './api/index.js';
+export * from './api/index';
 
 /**
  * Version information for the types package
