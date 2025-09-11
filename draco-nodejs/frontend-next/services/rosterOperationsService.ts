@@ -1,4 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
+import { axiosInstance } from '../utils/axiosConfig';
 import { ContactUpdateData, Contact } from '../types/users';
 import { RosterFormData, RosterMember, TeamRosterData, ManagerType } from '../types/roster';
 import { UserManagementService } from './userManagementService';
@@ -52,8 +53,6 @@ export interface OptimisticUpdate<T> {
 }
 
 export class RosterOperationsService {
-  private axiosInstance: AxiosInstance;
-
   // Helper method to handle errors consistently
   private getErrorMessage(error: unknown): string {
     if (axios.isAxiosError(error)) {
@@ -73,9 +72,6 @@ export class RosterOperationsService {
   private userManagementService: UserManagementService;
 
   constructor(token: string) {
-    this.axiosInstance = axios.create({
-      headers: { Authorization: `Bearer ${token}` },
-    });
     this.userManagementService = new UserManagementService(token);
   }
 
@@ -152,7 +148,7 @@ export class RosterOperationsService {
     };
 
     return this.executeOptimisticOperation(currentRosterData, optimisticUpdate, () =>
-      this.axiosInstance.put(
+      axiosInstance.put(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMemberId}`,
         updates,
       ),
@@ -271,7 +267,7 @@ export class RosterOperationsService {
 
     try {
       // Make API call and wait for response (no optimistic updates)
-      const response = await this.axiosInstance.post(
+      const response = await axiosInstance.post(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
         {
           contactId,
@@ -349,7 +345,7 @@ export class RosterOperationsService {
     };
 
     return this.executeOptimisticOperation(currentRosterData, optimisticUpdate, () =>
-      this.axiosInstance.put(
+      axiosInstance.put(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMemberId}/release`,
         {},
       ),
@@ -375,7 +371,7 @@ export class RosterOperationsService {
     };
 
     return this.executeOptimisticOperation(currentRosterData, optimisticUpdate, () =>
-      this.axiosInstance.put(
+      axiosInstance.put(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMemberId}/activate`,
         {},
       ),
@@ -399,7 +395,7 @@ export class RosterOperationsService {
     };
 
     return this.executeOptimisticOperation(currentRosterData, optimisticUpdate, () =>
-      this.axiosInstance.delete(
+      axiosInstance.delete(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMemberId}`,
       ),
     );
@@ -415,7 +411,7 @@ export class RosterOperationsService {
   ): Promise<OperationResult<ManagerType[]>> {
     try {
       // Make API call and wait for response (no optimistic updates)
-      const response = await this.axiosInstance.post(
+      const response = await axiosInstance.post(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`,
         { contactId },
       );
@@ -459,7 +455,7 @@ export class RosterOperationsService {
     };
 
     return this.executeOptimisticOperation(currentManagers, optimisticUpdate, () =>
-      this.axiosInstance.delete(
+      axiosInstance.delete(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers/${managerId}`,
       ),
     );
@@ -494,7 +490,7 @@ export class RosterOperationsService {
             firstYear: 0,
           };
 
-          const rosterResponse = await this.axiosInstance.post(
+          const rosterResponse = await axiosInstance.post(
             `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
             requestBody,
           );
@@ -568,7 +564,7 @@ export class RosterOperationsService {
       };
 
       // Use the enhanced addPlayerToRoster endpoint that can create contact and add to roster in one call
-      const response = await this.axiosInstance.post(
+      const response = await axiosInstance.post(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
         requestBody,
       );
@@ -676,7 +672,7 @@ export class RosterOperationsService {
     };
 
     return this.executeOptimisticOperation(currentRosterData, optimisticUpdate, () =>
-      this.axiosInstance.delete(`/api/accounts/${accountId}/contacts/${contactId}/photo`),
+      axiosInstance.delete(`/api/accounts/${accountId}/contacts/${contactId}/photo`),
     );
   }
 }
