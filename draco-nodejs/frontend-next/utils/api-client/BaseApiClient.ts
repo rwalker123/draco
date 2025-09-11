@@ -1,19 +1,14 @@
 /**
  * Base API Client Implementation
- * 
+ *
  * This module provides an abstract base class that implements common functionality
  * for API clients, including configuration management, error handling, authentication,
  * and request/response transformation.
  */
 
-import type {
-  ApiResponse,
-  ApiError
-} from '@draco/shared-types';
+import type { ApiResponse, ApiError } from '@draco/shared-types';
 
-import {
-  ErrorCategory
-} from '@draco/shared-types';
+import { ErrorCategory } from '@draco/shared-types';
 
 import type {
   ApiClientConfig,
@@ -25,16 +20,18 @@ import type {
   SearchParams,
   RequestInterceptor,
   ResponseInterceptor,
-  ErrorInterceptor
+  ErrorInterceptor,
 } from './types/index.js';
 
 import type { ClientResponse } from './types/responses.js';
 
 import type { ApiClient, ClientStats } from './ApiClient.js';
 
+import { sanitizeFormData } from '../sanitization.js';
+
 /**
  * Abstract base class for API client implementations
- * 
+ *
  * Provides common functionality that can be shared across different
  * transport implementations (fetch, axios, etc.)
  */
@@ -58,7 +55,7 @@ export abstract class BaseApiClient implements ApiClient {
    * Execute the actual HTTP request
    * This method must be implemented by concrete transport adapters
    * Do not use unknown for the response type, as responses are usually well-defined.
-   * 
+   *
    * @param method - HTTP method
    * @param url - Complete URL
    * @param data - Request body data
@@ -69,22 +66,20 @@ export abstract class BaseApiClient implements ApiClient {
     method: HttpMethod,
     url: string,
     data?: RequestData,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<TResponse>;
 
   /**
    * Transform backend ApiResponse to frontend ClientResponse
-   * 
+   *
    * @param response - Backend API response
    * @returns Transformed client response
    */
-  protected abstract transformResponse<T>(
-    response: ApiResponse<T> | T
-  ): ClientResponse<T>;
+  protected abstract transformResponse<T>(response: ApiResponse<T> | T): ClientResponse<T>;
 
   /**
    * Handle transport-specific errors and convert to ApiError
-   * 
+   *
    * @param error - Raw transport error
    * @param url - Request URL
    * @param options - Request options
@@ -93,7 +88,7 @@ export abstract class BaseApiClient implements ApiClient {
   protected abstract handleTransportError(
     error: unknown,
     url: string,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): ApiError;
 
   // ============================================================================
@@ -102,7 +97,7 @@ export abstract class BaseApiClient implements ApiClient {
 
   async get<TResponse>(
     endpoint: string,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>> {
     return this.request<TResponse>('GET', endpoint, undefined, options);
   }
@@ -110,7 +105,7 @@ export abstract class BaseApiClient implements ApiClient {
   async post<TResponse>(
     endpoint: string,
     data?: RequestData,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>> {
     return this.request<TResponse>('POST', endpoint, data, options);
   }
@@ -118,14 +113,14 @@ export abstract class BaseApiClient implements ApiClient {
   async put<TResponse>(
     endpoint: string,
     data?: RequestData,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>> {
     return this.request<TResponse>('PUT', endpoint, data, options);
   }
 
   async delete<TResponse>(
     endpoint: string,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>> {
     return this.request<TResponse>('DELETE', endpoint, undefined, options);
   }
@@ -133,14 +128,14 @@ export abstract class BaseApiClient implements ApiClient {
   async patch<TResponse>(
     endpoint: string,
     data?: RequestData,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>> {
     return this.request<TResponse>('PATCH', endpoint, data, options);
   }
 
   async head(
     endpoint: string,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<Record<string, string>>> {
     return this.request<Record<string, string>>('HEAD', endpoint, undefined, options);
   }
@@ -149,7 +144,7 @@ export abstract class BaseApiClient implements ApiClient {
     method: HttpMethod,
     endpoint: string,
     data?: RequestData,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>> {
     const startTime = Date.now();
     const requestOptions = this.prepareRequestOptions(options);
@@ -168,14 +163,14 @@ export abstract class BaseApiClient implements ApiClient {
         method,
         interceptedRequest.url,
         data,
-        interceptedRequest.options
+        interceptedRequest.options,
       );
 
       // Apply response interceptors
       const interceptedResponse = await this.applyResponseInterceptors(
         response,
         interceptedRequest.url,
-        interceptedRequest.options
+        interceptedRequest.options,
       );
 
       // Update stats
@@ -205,7 +200,7 @@ export abstract class BaseApiClient implements ApiClient {
     endpoint: string,
     file: File | Blob,
     data?: Record<string, unknown>,
-    options?: FileUploadOptions
+    options?: FileUploadOptions,
   ): Promise<ClientResponse<TResponse>> {
     const formData = new FormData();
     const fieldName = options?.fieldName || 'file';
@@ -213,11 +208,14 @@ export abstract class BaseApiClient implements ApiClient {
 
     formData.append(fieldName, file, filename);
 
-    // Append additional data to form
+    // Append additional data to form with XSS protection
     if (data) {
       Object.entries(data).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
-          formData.append(key, String(value));
+          // Sanitize string values to prevent XSS attacks
+          const sanitizedValue =
+            typeof value === 'string' ? sanitizeFormData(value) : String(value);
+          formData.append(key, sanitizedValue);
         }
       });
     }
@@ -226,25 +224,22 @@ export abstract class BaseApiClient implements ApiClient {
     const uploadOptions: RequestOptions = {
       ...options,
       headers: {
-        ...options?.headers
-      }
+        ...options?.headers,
+      },
     };
     delete uploadOptions.headers?.['Content-Type'];
 
     return this.post<TResponse>(endpoint, formData, uploadOptions);
   }
 
-  async downloadFile(
-    endpoint: string,
-    options?: RequestOptions
-  ): Promise<Blob> {
+  async downloadFile(endpoint: string, options?: RequestOptions): Promise<Blob> {
     // This is a simplified implementation - concrete classes may override
     const response = await this.request<Blob>('GET', endpoint, undefined, {
       ...options,
       headers: {
         ...options?.headers,
-        'Accept': 'application/octet-stream'
-      }
+        Accept: 'application/octet-stream',
+      },
     });
 
     if (!response.success || !response.data) {
@@ -256,22 +251,20 @@ export abstract class BaseApiClient implements ApiClient {
 
   async batch<TResponse>(
     batchRequest: BatchRequest,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>[]> {
     const { requests, stopOnError = false, maxConcurrency = 5 } = batchRequest;
     const results: ClientResponse<TResponse>[] = [];
-    
+
     // Execute requests in batches to respect concurrency limit
     for (let i = 0; i < requests.length; i += maxConcurrency) {
       const batch = requests.slice(i, i + maxConcurrency);
       const batchPromises = batch.map(async (req) => {
         try {
-          return await this.request<TResponse>(
-            req.method,
-            req.url,
-            req.data,
-            { ...options, ...req }
-          );
+          return await this.request<TResponse>(req.method, req.url, req.data, {
+            ...options,
+            ...req,
+          });
         } catch (error) {
           const apiError = this.handleTransportError(error, req.url, options);
           return this.errorToClientResponse<TResponse>(apiError);
@@ -282,7 +275,7 @@ export abstract class BaseApiClient implements ApiClient {
       results.push(...batchResults);
 
       // Check for errors if stopOnError is enabled
-      if (stopOnError && batchResults.some(result => !result.success)) {
+      if (stopOnError && batchResults.some((result) => !result.success)) {
         break;
       }
     }
@@ -306,7 +299,7 @@ export abstract class BaseApiClient implements ApiClient {
     if (token) {
       this.config.defaultHeaders = {
         ...this.config.defaultHeaders,
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       };
     } else {
       const headers = { ...this.config.defaultHeaders };
@@ -333,21 +326,21 @@ export abstract class BaseApiClient implements ApiClient {
 
     if (params) {
       const searchParams = new URLSearchParams();
-      
+
       if (typeof params === 'string') {
         return `${url}?${params}`;
       }
-      
+
       if (params instanceof URLSearchParams) {
         return `${url}?${params.toString()}`;
       }
-      
+
       Object.entries(params).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
           searchParams.append(key, String(value));
         }
       });
-      
+
       const paramString = searchParams.toString();
       if (paramString) {
         url += `?${paramString}`;
@@ -395,14 +388,14 @@ export abstract class BaseApiClient implements ApiClient {
       retries: 3,
       defaultHeaders: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
       validateResponses: false,
       enableLogging: false,
       userAgent: 'Draco-API-Client/1.0',
       followRedirects: true,
       maxRedirects: 5,
-      includeCredentials: false
+      includeCredentials: false,
     };
 
     return {
@@ -410,16 +403,18 @@ export abstract class BaseApiClient implements ApiClient {
       ...config,
       defaultHeaders: {
         ...defaultConfig.defaultHeaders,
-        ...config.defaultHeaders
-      }
+        ...config.defaultHeaders,
+      },
     };
   }
 
-  protected prepareRequestOptions(options?: RequestOptions): RequestOptions & { params?: SearchParams } {
+  protected prepareRequestOptions(
+    options?: RequestOptions,
+  ): RequestOptions & { params?: SearchParams } {
     const token = this.getAuthToken();
     const headers: Record<string, string> = {
       ...this.config.defaultHeaders,
-      ...options?.headers
+      ...options?.headers,
     };
 
     if (token && !options?.skipAuth) {
@@ -428,13 +423,13 @@ export abstract class BaseApiClient implements ApiClient {
 
     const result: RequestOptions & { params?: SearchParams } = {
       ...options,
-      headers
+      headers,
     };
 
     if (this.config.timeout !== undefined) {
       result.timeout = this.config.timeout;
     }
-    
+
     if (this.config.retries !== undefined) {
       result.retries = this.config.retries;
     }
@@ -446,7 +441,7 @@ export abstract class BaseApiClient implements ApiClient {
     method: HttpMethod,
     url: string,
     data?: RequestData,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<ClientResponse<TResponse>> {
     const maxRetries = options?.retries ?? this.config.retries ?? 3;
     let lastError: ApiError | null = null;
@@ -457,7 +452,7 @@ export abstract class BaseApiClient implements ApiClient {
         return this.transformResponse<TResponse>(response);
       } catch (error) {
         lastError = this.handleTransportError(error, url, options);
-        
+
         // Don't retry on the last attempt or if error is not retryable
         if (attempt === maxRetries + 1 || !this.isRetryableError(lastError)) {
           break;
@@ -481,21 +476,21 @@ export abstract class BaseApiClient implements ApiClient {
   protected calculateRetryDelay(attemptNumber: number, error: ApiError): number {
     const baseDelay = 1000; // 1 second
     const maxDelay = 30000; // 30 seconds
-    
+
     let delay = Math.min(baseDelay * Math.pow(2, attemptNumber - 1), maxDelay);
-    
+
     // Add jitter
     delay += Math.random() * 1000;
-    
+
     if (error.category === ErrorCategory.RATE_LIMIT) {
       delay *= 2;
     }
-    
+
     return Math.floor(delay);
   }
 
   protected sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   protected errorToClientResponse<T>(error: ApiError): ClientResponse<T> {
@@ -503,7 +498,7 @@ export abstract class BaseApiClient implements ApiClient {
       success: false,
       error: error.errorMessage,
       errorCode: error.errorCode,
-      statusCode: error.statusCode
+      statusCode: error.statusCode,
     };
   }
 
@@ -514,51 +509,51 @@ export abstract class BaseApiClient implements ApiClient {
       failedRequests: 0,
       retriedRequests: 0,
       averageResponseTime: 0,
-      config: this.getConfig(),
-      createdAt: new Date()
+      createdAt: new Date(),
     };
   }
 
   private updateAverageResponseTime(responseTime: number): void {
     const totalRequests = this.stats.totalRequests;
     const currentAverage = this.stats.averageResponseTime;
-    this.stats.averageResponseTime = ((currentAverage * (totalRequests - 1)) + responseTime) / totalRequests;
+    this.stats.averageResponseTime =
+      (currentAverage * (totalRequests - 1) + responseTime) / totalRequests;
   }
 
   private async applyRequestInterceptors(
     url: string,
-    options: RequestOptions
+    options: RequestOptions,
   ): Promise<{ url: string; options: RequestOptions }> {
     let result = { url, options };
-    
+
     for (const interceptor of this.requestInterceptors) {
       result = await interceptor(result.url, result.options);
     }
-    
+
     return result;
   }
 
   private async applyResponseInterceptors<T>(
     response: ClientResponse<T>,
     url: string,
-    options: RequestOptions
+    options: RequestOptions,
   ): Promise<ClientResponse<T>> {
     let result: ClientResponse<T> = response;
-    
+
     for (const interceptor of this.responseInterceptors) {
-      result = await interceptor(result, url, options) as ClientResponse<T>;
+      result = (await interceptor(result, url, options)) as ClientResponse<T>;
     }
-    
+
     return result as ClientResponse<T>;
   }
 
   private async applyErrorInterceptors(
     error: ApiError,
     url: string,
-    options: RequestOptions
+    options: RequestOptions,
   ): Promise<ApiError> {
     let result = error;
-    
+
     for (const interceptor of this.errorInterceptors) {
       try {
         result = await interceptor(result, url, options);
@@ -568,12 +563,12 @@ export abstract class BaseApiClient implements ApiClient {
           // Keep the original error structure but update message
           result = {
             ...result,
-            errorMessage: interceptorError.message
+            errorMessage: interceptorError.message,
           };
         }
       }
     }
-    
+
     return result;
   }
 }

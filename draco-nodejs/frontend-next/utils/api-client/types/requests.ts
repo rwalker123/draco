@@ -1,6 +1,6 @@
 /**
  * Request-related types and utilities
- * 
+ *
  * This module defines types for HTTP requests, including method types,
  * request data structures, and parameter handling.
  */
@@ -13,7 +13,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 
 /**
  * Request body data types
  */
-export type RequestData = 
+export type RequestData =
   | Record<string, unknown>
   | FormData
   | string
@@ -25,7 +25,7 @@ export type RequestData =
 /**
  * URL search parameters
  */
-export type SearchParams = 
+export type SearchParams =
   | Record<string, string | number | boolean | null | undefined>
   | URLSearchParams
   | string
@@ -47,7 +47,7 @@ export enum ContentType {
   TEXT = 'text/plain',
   HTML = 'text/html',
   XML = 'application/xml',
-  BINARY = 'application/octet-stream'
+  BINARY = 'application/octet-stream',
 }
 
 /**
@@ -56,22 +56,22 @@ export enum ContentType {
 export interface ApiRequest {
   /** HTTP method */
   method: HttpMethod;
-  
+
   /** Request URL (relative to base URL) */
   url: string;
-  
+
   /** Request headers */
   headers?: RequestHeaders;
-  
+
   /** Request body data */
   data?: RequestData;
-  
+
   /** URL search parameters */
   params?: SearchParams;
-  
+
   /** Request timestamp */
   timestamp: Date;
-  
+
   /** Unique request ID for tracking */
   requestId: string;
 }
@@ -82,10 +82,10 @@ export interface ApiRequest {
 export interface PaginationParams {
   /** Page number (1-based) */
   page?: number;
-  
+
   /** Number of items per page */
   pageSize?: number;
-  
+
   /** Maximum page size allowed */
   maxPageSize?: number;
 }
@@ -96,10 +96,10 @@ export interface PaginationParams {
 export interface SortParams {
   /** Field to sort by */
   sortBy?: string;
-  
+
   /** Sort direction */
   sortOrder?: 'asc' | 'desc';
-  
+
   /** Multiple sort criteria */
   sorts?: Array<{
     field: string;
@@ -113,14 +113,14 @@ export interface SortParams {
 export interface FilterParams {
   /** Text search query */
   search?: string;
-  
+
   /** Date range filters */
   dateFrom?: string | Date;
   dateTo?: string | Date;
-  
+
   /** Status filters */
   status?: string | string[];
-  
+
   /** Generic filters */
   filters?: Record<string, unknown>;
 }
@@ -139,16 +139,16 @@ export interface ListQueryParams extends PaginationParams, SortParams, FilterPar
 export interface FileUploadRequest {
   /** The file to upload */
   file: File | Blob;
-  
+
   /** Field name for the file */
   fieldName?: string;
-  
+
   /** Additional form data */
   data?: Record<string, unknown>;
-  
+
   /** Custom filename */
   filename?: string;
-  
+
   /** Custom content type */
   contentType?: string;
 }
@@ -161,23 +161,23 @@ export interface BatchRequest {
   requests: Array<{
     /** Unique identifier for this request in the batch */
     id: string;
-    
+
     /** HTTP method */
     method: HttpMethod;
-    
+
     /** Request URL */
     url: string;
-    
+
     /** Request data */
     data?: RequestData;
-    
+
     /** Request headers */
     headers?: RequestHeaders;
   }>;
-  
+
   /** Whether to stop processing on first error */
   stopOnError?: boolean;
-  
+
   /** Maximum number of concurrent requests */
   maxConcurrency?: number;
 }
@@ -188,28 +188,28 @@ export interface BatchRequest {
 export interface RequestContext {
   /** Unique request identifier */
   requestId: string;
-  
+
   /** User identifier (if authenticated) */
   userId?: string;
-  
+
   /** Account identifier */
   accountId?: string;
-  
+
   /** Session identifier */
   sessionId?: string;
-  
+
   /** Request source (web, mobile, api, etc.) */
   source?: string;
-  
+
   /** User agent information */
   userAgent?: string;
-  
+
   /** Client IP address */
   clientIp?: string;
-  
+
   /** Request timestamp */
   timestamp: Date;
-  
+
   /** Additional metadata */
   metadata?: Record<string, unknown>;
 }
@@ -217,10 +217,9 @@ export interface RequestContext {
 /**
  * Helper type for extracting path parameters from URL strings
  */
-export type PathParams<T extends string> = 
-  T extends `${infer _Start}:${infer Param}/${infer Rest}`
-    ? { [K in Param]: string } & PathParams<Rest>
-    : T extends `${infer _Start}:${infer Param}`
+export type PathParams<T extends string> = T extends `:${infer Param}/${infer Rest}`
+  ? { [K in Param]: string } & PathParams<Rest>
+  : T extends `:${infer Param}`
     ? { [K in Param]: string }
     : Record<string, never>;
 
@@ -230,22 +229,22 @@ export type PathParams<T extends string> =
 export interface TypedEndpoint<TResponse = unknown, TRequest = unknown> {
   /** HTTP method */
   method: HttpMethod;
-  
+
   /** URL path with parameter placeholders */
   path: string;
-  
+
   /** Request data type */
   request?: TRequest;
-  
+
   /** Response data type */
   response: TResponse;
-  
+
   /** Possible error codes for this endpoint */
   errors?: string[];
-  
+
   /** Whether authentication is required */
   requiresAuth?: boolean;
-  
+
   /** Required permissions/roles */
   permissions?: string[];
 }

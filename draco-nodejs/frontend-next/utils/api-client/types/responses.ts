@@ -1,6 +1,6 @@
 /**
  * Client-specific response type definitions for Draco Sports Manager API Client
- * 
+ *
  * This module defines the response formats used by the API client to provide
  * a consistent interface to frontend code, including additional error handling
  * information not present in the backend ApiResponse format.
@@ -12,7 +12,7 @@ import type { PaginatedResponse } from '@draco/shared-types';
  * Frontend client response format
  * Used by the API client to provide a consistent interface to frontend code
  * Includes additional error handling information not present in backend responses
- * 
+ *
  * @template T - The type of the data payload
  */
 export interface ClientResponse<T> {
@@ -31,7 +31,7 @@ export interface ClientResponse<T> {
 /**
  * Type alias for paginated client responses
  * Combines the standard ClientResponse with pagination metadata
- * 
+ *
  * @template T - The type of individual items in the list
  */
 export type PaginatedClientResponse<T> = ClientResponse<PaginatedResponse<T>>;

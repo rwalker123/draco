@@ -367,10 +367,52 @@ npm run lint:all       # Lint all packages including shared
 - Removed Jest dependencies to maintain consistency with backend/frontend
 - Full test coverage capabilities with UI and coverage reporting
 
+## Security & Sanitization Considerations
+
+### Current Security Posture
+**Issue Identified**: XSS vulnerability in FormData handling where user input was appended to form data without sanitization.
+
+**Resolution Applied**: 
+- ✅ **Fixed FormData XSS vulnerability**: Applied DOMPurify sanitization to form data values in BaseApiClient
+- ✅ **Moved api-client to frontend-next**: Relocated from `/shared` to `/frontend-next/utils/api-client/` (frontend-only)
+- ✅ **Leveraged existing sanitization**: Uses established DOMPurify utilities from `utils/sanitization.ts`
+- ✅ **Comprehensive test coverage**: Added security-specific tests for XSS prevention
+
+### Sanitization Integration Points
+
+**During Migration Phase**:
+- [ ] **Review input sanitization**: Audit all service methods for user input handling
+- [ ] **Response sanitization**: Consider systematic sanitization of backend responses  
+- [ ] **HTTP interceptor sanitization**: Add sanitization interceptors to axios/fetch layers
+- [ ] **Form data validation**: Ensure all form submissions use proper sanitization
+
+**Recommended Security Enhancements**:
+1. **Systematic Input Sanitization**: Apply sanitization at HTTP request interceptor level
+2. **Response Data Sanitization**: Sanitize all incoming data from backend APIs
+3. **Consistent XSS Protection**: Standardize sanitization patterns across all services
+4. **Security Testing**: Add XSS/injection testing to all API client implementations
+
+### Architecture Decision: API Client Location
+
+**Decision Made**: Moved api-client from `/draco-nodejs/shared/api-client/` to `/draco-nodejs/frontend-next/utils/api-client/`
+
+**Rationale**:
+- ✅ **Frontend-only usage**: Backend doesn't need HTTP client functionality
+- ✅ **Simplified architecture**: Eliminates unnecessary package complexity  
+- ✅ **Direct access to frontend utilities**: Can directly use existing sanitization/validation utils
+- ✅ **Cleaner imports**: Internal module instead of separate npm package
+
+**Impact on Migration**:
+- Update import paths from `@draco/api-client` to `utils/api-client` during service migrations
+- Remove api-client package scripts from root build system
+- Simplify dependency management by eliminating intermediate package
+
 ### Foundation Completed
 
 ✅ **Phase 1: Steps 1 & 2 Complete**
 - Solid type system foundation with proper separation of concerns
 - Transport-agnostic API client interface ready for concrete implementations
 - Full monorepo integration with build system
+- **Security vulnerability patched** with FormData sanitization
+- **Architectural refinement** - moved to correct frontend-only location
 - Ready for next phase: implementing fetch adapter and concrete transport implementations
