@@ -427,11 +427,17 @@ export abstract class BaseApiClient implements ApiClient {
     }
 
     const result: RequestOptions & { params?: SearchParams } = {
-      timeout: this.config.timeout ?? undefined,
-      retries: this.config.retries ?? undefined,
       ...options,
       headers
     };
+
+    if (this.config.timeout !== undefined) {
+      result.timeout = this.config.timeout;
+    }
+    
+    if (this.config.retries !== undefined) {
+      result.retries = this.config.retries;
+    }
 
     return result;
   }
