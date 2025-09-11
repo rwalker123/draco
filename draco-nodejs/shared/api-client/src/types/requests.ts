@@ -222,7 +222,7 @@ export type PathParams<T extends string> =
     ? { [K in Param]: string } & PathParams<Rest>
     : T extends `${infer _Start}:${infer Param}`
     ? { [K in Param]: string }
-    : {};
+    : Record<string, never>;
 
 /**
  * Helper type for type-safe endpoint definitions
