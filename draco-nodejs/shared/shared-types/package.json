@@ -54,11 +54,6 @@
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api/index.js",
       "require": "./dist/api/index.js"
-    },
-    "./client": {
-      "types": "./dist/client/index.d.ts",
-      "import": "./dist/client/index.js",
-      "require": "./dist/client/index.js"
     }
   },
   "publishConfig": {
