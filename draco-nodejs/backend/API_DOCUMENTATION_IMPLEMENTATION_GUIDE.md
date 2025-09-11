@@ -48,5 +48,11 @@ The `accounts-player-classifieds.ts` file now has:
 - ✅ All existing permissions and business logic preserved
 - ✅ Build and linting passing successfully
 
+## **Deprecated File Cleanup:**
+📝 **TODO: Remove deprecated API client**
+- ❌ Delete `draco-nodejs/frontend-next/utils/apiClient.ts` - This file is now deprecated
+- ✅ The new unified API client is located at `draco-nodejs/frontend-next/utils/api-client/`
+- ✅ All imports should now use the new API client module
+
 ## **When Ready to Continue:**
 Use this guide to implement deep linking in other route files, following the established pattern and avoiding the mistakes made during the initial implementation.

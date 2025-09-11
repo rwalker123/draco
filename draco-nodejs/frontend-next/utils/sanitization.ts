@@ -22,6 +22,50 @@ export const sanitizeDisplayText = (text: string): string => {
 };
 
 /**
+ * Sanitizes form data to prevent XSS in form submissions
+ * Uses DOMPurify to handle HTML sanitization, then removes dangerous URL schemes
+ * Preserves legitimate special characters while removing actual security threats
+ */
+export const sanitizeFormData = (text: string): string => {
+  if (!text || typeof text !== 'string') return '';
+
+  // Store original to detect if DOMPurify only did HTML escaping
+  const original = text;
+
+  // First use DOMPurify to handle HTML tags and extract safe text content
+  let sanitized = DOMPurify.sanitize(text, {
+    ALLOWED_TAGS: [], // Strip all HTML tags
+    ALLOWED_ATTR: [], // Strip all attributes
+    KEEP_CONTENT: true, // Keep text content
+    FORBID_CONTENTS: ['script', 'style'], // Remove content of dangerous tags
+  });
+
+  // If DOMPurify only HTML-escaped safe characters, restore the original
+  // This handles cases where input like "!@#$%^&*()_+-=[]{}|;:,.<>?" gets escaped to
+  // "!@#$%^&amp;*()_+-=[]{}|;:,.&lt;&gt;?" - we want to preserve the original
+  const htmlEscapedVersion = original
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  if (sanitized === htmlEscapedVersion) {
+    // DOMPurify only did HTML escaping of safe content, restore original
+    sanitized = original;
+  }
+
+  // Then apply additional pattern removal for non-HTML XSS vectors
+  sanitized = sanitized
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/vbscript:/gi, '') // Remove vbscript: protocol
+    .replace(/data:/gi, '') // Remove data: protocol
+    .replace(/on\w+\s*=/gi, ''); // Remove event handlers
+
+  return sanitized;
+};
+
+/**
  * Sanitizes rich content to allow safe HTML while removing dangerous elements
  * Used for templates and rich content where formatting should be preserved
  * Based on the backend sanitizeHtml implementation
