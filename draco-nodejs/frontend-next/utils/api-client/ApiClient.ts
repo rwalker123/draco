@@ -16,7 +16,7 @@ import type {
   SearchParams,
 } from './types/index.js';
 
-import type { ClientResponse } from './types/responses.js';
+import type { ApiResponse } from '@draco/shared-types';
 
 /**
  * Main API client interface
@@ -58,7 +58,7 @@ export interface ApiClient {
    * @param options - Request options
    * @returns Promise that resolves to the response data
    */
-  get<TResponse>(endpoint: string, options?: RequestOptions): Promise<ClientResponse<TResponse>>;
+  get<TResponse>(endpoint: string, options?: RequestOptions): Promise<ApiResponse<TResponse>>;
 
   /**
    * Perform a POST request
@@ -73,7 +73,7 @@ export interface ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>>;
+  ): Promise<ApiResponse<TResponse>>;
 
   /**
    * Perform a PUT request
@@ -88,7 +88,7 @@ export interface ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>>;
+  ): Promise<ApiResponse<TResponse>>;
 
   /**
    * Perform a DELETE request
@@ -98,7 +98,7 @@ export interface ApiClient {
    * @param options - Request options
    * @returns Promise that resolves to the response data
    */
-  delete<TResponse>(endpoint: string, options?: RequestOptions): Promise<ClientResponse<TResponse>>;
+  delete<TResponse>(endpoint: string, options?: RequestOptions): Promise<ApiResponse<TResponse>>;
 
   /**
    * Perform a PATCH request.
@@ -113,7 +113,7 @@ export interface ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>>;
+  ): Promise<ApiResponse<TResponse>>;
 
   /**
    * Perform a HEAD request
@@ -122,7 +122,7 @@ export interface ApiClient {
    * @param options - Request options
    * @returns Promise that resolves to the response headers
    */
-  head(endpoint: string, options?: RequestOptions): Promise<ClientResponse<Record<string, string>>>;
+  head(endpoint: string, options?: RequestOptions): Promise<ApiResponse<Record<string, string>>>;
 
   /**
    * Generic request method for any HTTP method
@@ -139,7 +139,7 @@ export interface ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>>;
+  ): Promise<ApiResponse<TResponse>>;
 
   // ============================================================================
   // SPECIALIZED METHODS
@@ -160,16 +160,16 @@ export interface ApiClient {
     file: File | Blob,
     data?: Record<string, unknown>,
     options?: FileUploadOptions,
-  ): Promise<ClientResponse<TResponse>>;
+  ): Promise<ApiResponse<TResponse>>;
 
   /**
    * Download a file as a blob
    *
    * @param endpoint - The API endpoint for file download
    * @param options - Request options
-   * @returns Promise that resolves to the file blob
+   * @returns Promise that resolves to the file blob response
    */
-  downloadFile(endpoint: string, options?: RequestOptions): Promise<Blob>;
+  downloadFile(endpoint: string, options?: RequestOptions): Promise<ApiResponse<Blob>>;
 
   /**
    * Execute multiple requests in a batch
@@ -182,7 +182,7 @@ export interface ApiClient {
   batch<TResponse>(
     batchRequest: BatchRequest,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>[]>;
+  ): Promise<ApiResponse<TResponse>[]>;
 
   // ============================================================================
   // CONFIGURATION METHODS

@@ -320,7 +320,7 @@ export class CleanupService implements ICleanupService {
       const totalDeleted = expiredPlayersWanted + expiredTeamsWanted;
 
       // Add a small delay to ensure duration calculation works in tests
-      await new Promise((resolve) => setTimeout(resolve, 1));
+      await new Promise((resolve) => setTimeout(resolve, 5));
 
       const duration = Date.now() - startTime;
       const timestamp = new Date();

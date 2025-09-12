@@ -10,6 +10,9 @@
 export type { ApiClient, ClientStats } from './ApiClient.js';
 export { BaseApiClient } from './BaseApiClient.js';
 
+// Export adapters
+export { FetchAdapter, createFetchClient } from './adapters/FetchAdapter.js';
+
 // Export all client-specific types
 export * from './types/index.js';
 

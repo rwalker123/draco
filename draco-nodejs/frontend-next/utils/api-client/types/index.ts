@@ -42,4 +42,4 @@ export type {
 export { ContentType } from './requests.js';
 
 // Client-specific response types
-export type { ClientResponse, PaginatedClientResponse } from './responses.js';
+export type { ApiResponse, PaginatedApiResponse } from './responses.js';

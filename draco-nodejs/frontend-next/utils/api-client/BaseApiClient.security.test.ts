@@ -6,8 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BaseApiClient } from './BaseApiClient.js';
 import type { HttpMethod, RequestData, RequestOptions } from './types/index.js';
-import type { ClientResponse } from './types/responses.js';
-import type { ApiResponse, ApiError } from '@draco/shared-types';
+import type { ApiError } from '@draco/shared-types';
 
 // Mock implementation for testing
 class TestApiClient extends BaseApiClient {
@@ -26,23 +25,6 @@ class TestApiClient extends BaseApiClient {
 
     // Return mock success response
     return { success: true, data: {} } as TResponse;
-  }
-
-  protected transformResponse<T>(response: ApiResponse<T> | T): ClientResponse<T> {
-    if (typeof response === 'object' && response !== null && 'success' in response) {
-      const apiResponse = response as ApiResponse<T>;
-      return {
-        success: apiResponse.success,
-        data: apiResponse.data,
-        statusCode: 200,
-      };
-    }
-
-    return {
-      success: true,
-      data: response,
-      statusCode: 200,
-    };
   }
 
   protected handleTransportError(

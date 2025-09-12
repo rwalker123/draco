@@ -84,7 +84,10 @@ export const ErrorCodes = {
   SEASON_NOT_FOUND: 'SEASON_NOT_FOUND',
 
   // Unknown
-  UNKNOWN_ERROR: 'UNKNOWN_ERROR'
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+
+  // JSON parsing error of responses
+  RESPONSE_PROCESSING_ERROR: 'RESPONSE_PROCESSING_ERROR'
 } as const;
 
 /**

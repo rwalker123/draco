@@ -225,19 +225,119 @@ const result = await apiClient.get<GetContactsEndpoint['response']>(
 );
 ```
 
-### 6. Migration Strategy
+### 6. Service Layer Data Transformation
 
-#### Phase 1: Foundation (Week 1-2)
+**Problem Identified**: Backend API types (T) often need transformation to client UI types (Y):
+- Same server response might need different client representations depending on UI context
+- Complex client models may require multiple API calls to construct
+- UI-specific computed fields, formatting, and denormalization needs
+- Type-safe transformation with runtime validation
+
+**Solution**: Zod-powered transformation layer at the service level:
+
+```typescript
+// Example: User profile transformer
+class UserProfileTransformer {
+  private static schema = z.object({
+    id: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    createdAt: z.string().datetime()
+  }).transform(apiUser => ({
+    id: apiUser.id,
+    displayName: `${apiUser.firstName} ${apiUser.lastName}`,
+    email: apiUser.email,
+    memberSince: new Date(apiUser.createdAt).getFullYear(),
+    initials: `${apiUser.firstName[0]}${apiUser.lastName[0]}`.toUpperCase(),
+    // ... other computed client fields
+  }));
+
+  static transform(apiUser: ApiUser): ClientUserProfile {
+    return this.schema.parse(apiUser);
+  }
+
+  static transformList(apiUsers: ApiUser[]): ClientUserProfile[] {
+    return apiUsers.map(user => this.transform(user));
+  }
+}
+
+// Example: Complex multi-API transformer
+class TeamStatsTransformer {
+  constructor(private apiClient: ApiClient) {}
+  
+  async transform(teamId: string): Promise<ClientTeamStats> {
+    // Multiple API calls to build rich client model
+    const [teamResponse, gamesResponse, playersResponse] = await Promise.all([
+      this.apiClient.get<ApiTeam>(`/teams/${teamId}`),
+      this.apiClient.get<ApiGame[]>(`/teams/${teamId}/games`),
+      this.apiClient.get<ApiPlayer[]>(`/teams/${teamId}/players`)
+    ]);
+    
+    if (!teamResponse.success) throw new Error(teamResponse.data.errorMessage);
+    if (!gamesResponse.success) throw new Error(gamesResponse.data.errorMessage);
+    if (!playersResponse.success) throw new Error(playersResponse.data.errorMessage);
+    
+    return {
+      teamName: teamResponse.data.name,
+      wins: gamesResponse.data.filter(g => g.winner === teamId).length,
+      losses: gamesResponse.data.filter(g => g.winner !== teamId).length,
+      topScorer: this.findTopScorer(playersResponse.data),
+      averageAge: this.calculateAverageAge(playersResponse.data),
+      // ... computed statistics
+    };
+  }
+}
+```
+
+**Architecture Benefits**:
+- **Separation of Concerns**: Transport (ApiClient) vs Business Logic (Transformers)
+- **Type Safety**: Compile-time validation of transformations
+- **Runtime Validation**: Zod ensures API data matches expected structure
+- **Reusability**: Transformers can be used across multiple components
+- **Testability**: Pure functions easy to unit test
+
+**Usage Pattern**:
+```typescript
+// In service layer
+class UserService {
+  constructor(private apiClient: ApiClient) {}
+  
+  async getUserProfile(userId: string): Promise<ClientUserProfile> {
+    const response = await this.apiClient.get<ApiUser>(`/users/${userId}`);
+    if (!response.success) {
+      throw new Error(response.data.errorMessage);
+    }
+    
+    // Transform from API type to UI type
+    return UserProfileTransformer.transform(response.data);
+  }
+}
+```
+
+### 7. Migration Strategy
+
+#### Phase 1: Foundation (Week 1-2) ✅ **COMPLETE**
 - [x] Create `@draco/shared-types` package
 - [x] Set up basic API client structure
-- [ ] Implement fetch adapter
-- [ ] Create standardized error types
-- [ ] Add comprehensive tests
+- [x] Implement fetch adapter
+- [x] Create standardized error types
+- [x] Add comprehensive tests
+- [x] Security-first authentication (auth: false by default)
+- [x] HTTP method support (GET, POST, PUT, DELETE, PATCH, HEAD)
+- [x] Timeout handling with AbortController
+- [x] FormData support with XSS protection
+- [x] Eliminated ClientResponse<T> - using ApiResponse<T> directly
+- [x] HTTP status code to semantic error mapping
 
-#### Phase 2: Proof of Concept (Week 3)
-- [ ] Migrate `UserManagementService` to use new API client
+#### Phase 2: Enhanced Features & Service Transformations (Week 3-4)
+- [ ] Create Zod transformation patterns for common data types (User, Team, Game, etc.)
+- [ ] Implement service-layer transformers with runtime validation
+- [ ] Add request/response interceptors to FetchAdapter
+- [ ] Enhanced retry policies with exponential backoff
+- [ ] Migrate `UserManagementService` with transformation layer
 - [ ] Update all UserManagementService consumers
-- [ ] Validate error handling works correctly
+- [ ] Validate error handling and transformation work correctly
 - [ ] Performance testing vs current approaches
 
 #### Phase 3: Service Migration (Week 4-6)
@@ -349,6 +449,26 @@ npm run lint:all       # Lint all packages including shared
 ```
 
 ## Implementation Notes
+
+### Major Architecture Decisions Made
+
+**Decision: Direct ApiResponse<T> Usage**
+- **Eliminated ClientResponse<T>**: Found it was redundant with ApiResponse<T>
+- **Simplified Flow**: FetchAdapter → ApiResponse<T> → Service Layer (no intermediate transformation)
+- **Consistent Error Handling**: All methods return ApiResponse<T> format
+- **Type Safety Maintained**: Full TypeScript support with simpler type hierarchy
+
+**Decision: Service-Layer Transformation**
+- **Transport Independence**: BaseApiClient handles HTTP concerns only
+- **Business Logic Separation**: Transformers handle T→Y data conversion at service level
+- **Zod Integration**: Runtime validation + type-safe transformations
+- **Reusable Patterns**: Transformer classes can be shared across components
+
+**Implementation Status (Current)**:
+- ✅ **FetchAdapter Complete**: Full HTTP method support with security-first auth
+- ✅ **Error Handling Complete**: Structured errors with categorization and retry logic
+- ✅ **Type System Simplified**: Direct ApiResponse<T> usage eliminates complexity
+- ✅ **Test Coverage**: Comprehensive unit tests with TypeScript compilation validation
 
 ### Architecture Refinements Made
 

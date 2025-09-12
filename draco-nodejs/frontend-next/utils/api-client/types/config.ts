@@ -67,8 +67,8 @@ export interface RequestOptions {
   /** Custom retry policy for this request */
   retryPolicy?: RetryPolicy;
 
-  /** Whether to include the authentication token */
-  skipAuth?: boolean;
+  /** Explicitly request authentication token to be sent (security-first approach) */
+  auth?: boolean;
 
   /** Signal for request cancellation */
   signal?: AbortSignal;
