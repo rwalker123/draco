@@ -532,38 +532,6 @@ describe('TransformerRegistry', () => {
       expect(retrieved).toBeUndefined();
     });
   });
-
-  describe('getStats', () => {
-    beforeEach(() => {
-      const metadata1: TransformerMetadata = {
-        id: 'active-transformer',
-        name: 'Active Transformer',
-        description: 'Active',
-        version: '1.0.0',
-        tags: ['active'],
-        sourceType: 'MockApiData',
-        targetType: 'MockClientData',
-      };
-
-      const metadata2: TransformerMetadata = {
-        id: 'deprecated-transformer',
-        name: 'Deprecated Transformer',
-        description: 'Deprecated',
-        version: '0.9.0',
-        tags: ['old'],
-        sourceType: 'MockApiData',
-        targetType: 'MockClientData',
-        deprecated: true,
-      };
-
-      registry.register(mockTransformer, metadata1);
-      registry.register(mockTransformer, metadata2);
-
-      // Use one transformer to create usage
-      registry.get('active-transformer');
-      registry.get('active-transformer');
-    });
-  });
 });
 
 describe('Global Registry', () => {
