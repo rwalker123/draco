@@ -16,6 +16,9 @@ export { FetchAdapter, createFetchClient } from './adapters/FetchAdapter.js';
 // Export all client-specific types
 export * from './types/index.js';
 
+// Export transformers
+export * from './transformers/index.js';
+
 // Re-export commonly used backend/shared types for convenience
 export type {
   ApiResponse,

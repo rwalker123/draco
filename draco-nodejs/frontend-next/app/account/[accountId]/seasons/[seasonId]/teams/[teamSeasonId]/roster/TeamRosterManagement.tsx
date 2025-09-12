@@ -129,7 +129,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const [playerToEdit, setPlayerToEdit] = useState<RosterMember | null>(null);
   const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
   const [autoSignToRoster, setAutoSignToRoster] = useState(false);
-  const [editingContact, setEditingContact] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [phoneErrors, setPhoneErrors] = useState({
     phone1: '',
@@ -301,12 +301,13 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setPlayerToEdit(rosterMember);
 
     // Convert roster member contact to enhanced dialog format
-    const contact = {
+    const contact: Contact = {
       id: rosterMember.player.contact.id,
       firstName: rosterMember.player.contact.firstName || '',
       lastName: rosterMember.player.contact.lastName || '',
       middleName: rosterMember.player.contact.middleName || '', // ✅ Use top-level middleName
       email: rosterMember.player.contact.email || '',
+      userId: rosterMember.player.contact.userId || '',
       contactDetails: {
         phone1: rosterMember.player.contact.contactDetails?.phone1 || '',
         phone2: rosterMember.player.contact.contactDetails?.phone2 || '',
