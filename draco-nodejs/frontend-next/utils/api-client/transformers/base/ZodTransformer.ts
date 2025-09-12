@@ -4,7 +4,7 @@ import {
   AsyncBaseTransformer,
   TransformationError,
   TransformerOptions,
-} from './BaseTransformer.js';
+} from './BaseTransformer';
 
 /**
  * Concrete implementation of BaseTransformer using Zod schemas

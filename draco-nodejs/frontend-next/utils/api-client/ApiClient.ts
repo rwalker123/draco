@@ -14,7 +14,7 @@ import type {
   HttpMethod,
   RequestData,
   SearchParams,
-} from './types/index.js';
+} from './types/index';
 
 import type { ApiResponse } from '@draco/shared-types';
 

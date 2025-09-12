@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { DataTransformer } from './BaseTransformer.js';
-import { createZodTransformer } from './ZodTransformer.js';
-import { createSafeTransformer, SafeTransformerOptions } from './SafeTransformer.js';
+import { DataTransformer } from './BaseTransformer';
+import { createZodTransformer } from './ZodTransformer';
+import { createSafeTransformer, SafeTransformerOptions } from './SafeTransformer';
 
 /**
  * Metadata for registered transformers

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { FetchAdapter, createFetchClient } from './FetchAdapter.js';
+import { FetchAdapter, createFetchClient } from './FetchAdapter';
 
 // Mock fetch for testing
 global.fetch = vi.fn();

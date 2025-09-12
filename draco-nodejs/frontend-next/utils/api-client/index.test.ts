@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BaseApiClient } from './index.js';
+import { BaseApiClient } from './index';
 import type { ApiResponse, ApiError } from '@draco/shared-types';
 import { ErrorCategory } from '@draco/shared-types';
 

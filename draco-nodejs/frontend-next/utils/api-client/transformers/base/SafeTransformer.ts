@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { DataTransformer, TransformationError } from './BaseTransformer.js';
-import { SafeTransformResult, SafeTransformListResult } from './ZodTransformer.js';
+import { DataTransformer, TransformationError } from './BaseTransformer';
+import { SafeTransformResult, SafeTransformListResult } from './ZodTransformer';
 
 /**
  * Fallback factory function type for creating fallback data when transformation fails

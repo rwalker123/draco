@@ -4,7 +4,7 @@ import {
   BaseTransformer,
   AsyncBaseTransformer,
   TransformationError,
-} from '../../base/BaseTransformer.js';
+} from '../../base/BaseTransformer';
 
 // Mock API and Client types for testing
 interface MockApiData {

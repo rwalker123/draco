@@ -6,28 +6,25 @@
  */
 
 // Type exports (interfaces, type aliases, and types)
-export type { DataTransformer, TransformerOptions } from './BaseTransformer.js';
+export type { DataTransformer, TransformerOptions } from './BaseTransformer';
 
-export type { SafeTransformResult, SafeTransformListResult } from './ZodTransformer.js';
+export type { SafeTransformResult, SafeTransformListResult } from './ZodTransformer';
 
-export type { FallbackFactory, ErrorHandler, SafeTransformerOptions } from './SafeTransformer.js';
+export type { FallbackFactory, ErrorHandler, SafeTransformerOptions } from './SafeTransformer';
 
 export type {
   TransformerMetadata,
   TransformerRegistryEntry,
   RegisterTransformerOptions,
   TransformerSearchCriteria,
-} from './TransformerRegistry.js';
+} from './TransformerRegistry';
 
-export type {
-  ValidationFallbackContext,
-  ValidationFallbackStrategy,
-} from './ValidationFallbacks.js';
+export type { ValidationFallbackContext, ValidationFallbackStrategy } from './ValidationFallbacks';
 
 // Value exports (classes, functions, constants)
 
 // Base transformer classes and errors
-export { BaseTransformer, AsyncBaseTransformer, TransformationError } from './BaseTransformer.js';
+export { BaseTransformer, AsyncBaseTransformer, TransformationError } from './BaseTransformer';
 
 // Zod-based transformer implementations
 export {
@@ -35,14 +32,14 @@ export {
   AsyncZodTransformer,
   createZodTransformer,
   createAsyncZodTransformer,
-} from './ZodTransformer.js';
+} from './ZodTransformer';
 
 // Safe transformer wrapper for error handling
 export {
   SafeTransformer,
   createSafeTransformer,
   createSafeTransformerWithFallback,
-} from './SafeTransformer.js';
+} from './SafeTransformer';
 
 // Transformer registry for pattern management
 export {
@@ -51,7 +48,7 @@ export {
   registerTransformer,
   getTransformer,
   findTransformer,
-} from './TransformerRegistry.js';
+} from './TransformerRegistry';
 
 // Validation fallback utilities
-export { ValidationFallbacks, ValidationFallbackRegistry } from './ValidationFallbacks.js';
+export { ValidationFallbacks, ValidationFallbackRegistry } from './ValidationFallbacks';

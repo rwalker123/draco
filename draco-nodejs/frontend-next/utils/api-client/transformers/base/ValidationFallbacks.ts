@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TransformationError } from './BaseTransformer.js';
+import { TransformationError } from './BaseTransformer';
 
 /**
  * Context information for validation fallback creation

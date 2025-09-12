@@ -7,9 +7,9 @@ import {
   getTransformer,
   findTransformer,
   TransformerMetadata,
-} from '../../base/TransformerRegistry.js';
-import { ZodTransformer } from '../../base/ZodTransformer.js';
-import { DataTransformer } from '../../base/BaseTransformer.js';
+} from '../../base/TransformerRegistry';
+import { ZodTransformer } from '../../base/ZodTransformer';
+import { DataTransformer } from '../../base/BaseTransformer';
 
 // Mock data types for testing
 interface MockApiData {

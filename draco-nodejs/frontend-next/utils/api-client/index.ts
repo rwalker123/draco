@@ -7,17 +7,17 @@
  */
 
 // Main API client interface and base implementation
-export type { ApiClient, ClientStats } from './ApiClient.js';
-export { BaseApiClient } from './BaseApiClient.js';
+export type { ApiClient, ClientStats } from './ApiClient';
+export { BaseApiClient } from './BaseApiClient';
 
 // Export adapters
-export { FetchAdapter, createFetchClient } from './adapters/FetchAdapter.js';
+export { FetchAdapter, createFetchClient } from './adapters/FetchAdapter';
 
 // Export all client-specific types
-export * from './types/index.js';
+export * from './types/index';
 
 // Export transformers
-export * from './transformers/index.js';
+export * from './transformers/index';
 
 // Re-export commonly used backend/shared types for convenience
 export type {

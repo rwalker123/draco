@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { BaseApiClient } from './BaseApiClient.js';
-import type { HttpMethod, RequestData, RequestOptions } from './types/index.js';
+import { BaseApiClient } from './BaseApiClient';
+import type { HttpMethod, RequestData, RequestOptions } from './types/index';
 import type { ApiError } from '@draco/shared-types';
 
 // Mock implementation for testing

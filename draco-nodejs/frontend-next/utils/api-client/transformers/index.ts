@@ -7,9 +7,9 @@
  */
 
 // Re-export everything from base transformers
-export * from './base/index.js';
+export * from './base/index';
 
 // Domain-specific transformers will be added here as they are implemented
-// export * from './user-management/index.js';
-// export * from './context-data/index.js';
-// export * from './common/index.js';
+// export * from './user-management/index';
+// export * from './context-data/index';
+// export * from './common/index';
