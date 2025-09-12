@@ -21,11 +21,11 @@ import type {
   RequestInterceptor,
   ResponseInterceptor,
   ErrorInterceptor,
-} from './types/index.js';
+} from './types/index';
 
-import type { ApiClient, ClientStats } from './ApiClient.js';
+import type { ApiClient, ClientStats } from './ApiClient';
 
-import { sanitizeFormData } from '../sanitization.js';
+import { sanitizeFormData } from '../sanitization';
 
 /**
  * Abstract base class for API client implementations

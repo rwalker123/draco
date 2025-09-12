@@ -16,9 +16,9 @@ export type {
   ResponseInterceptor,
   ErrorInterceptor,
   InterceptorConfig,
-} from './config.js';
+} from './config';
 
-export { DEFAULT_CONFIG, DEFAULT_RETRY_POLICY } from './config.js';
+export { DEFAULT_CONFIG, DEFAULT_RETRY_POLICY } from './config';
 
 // Request types
 export type {
@@ -37,9 +37,9 @@ export type {
   PathParams,
   TypedEndpoint,
   UrlBuilder,
-} from './requests.js';
+} from './requests';
 
-export { ContentType } from './requests.js';
+export { ContentType } from './requests';
 
 // Client-specific response types
-export type { ApiResponse, PaginatedApiResponse } from './responses.js';
+export type { ApiResponse, PaginatedApiResponse } from './responses';

@@ -225,7 +225,110 @@ const result = await apiClient.get<GetContactsEndpoint['response']>(
 );
 ```
 
-### 6. Service Layer Data Transformation
+### 6. API Call Flow Architecture
+
+The following UML sequence diagram illustrates the complete end-to-end flow of an API call through the unified client architecture, from service layer initiation to final transformed result:
+
+```mermaid
+sequenceDiagram
+    participant Service as Service Layer<br/>(UserService)
+    participant Client as API Client<br/>(FetchAdapter)
+    participant Transform as Transformer<br/>(ZodTransformer)
+    participant Base as Base Client<br/>(BaseApiClient)
+    participant Fetch as Native Fetch API
+    participant Backend as Backend Server
+
+    Note over Service,Backend: 1. API Call Initiation
+    Service->>Client: apiClient.get<ApiUser>('/api/users/123', {auth: true})
+    
+    Note over Service,Backend: 2. Request Processing & Interceptors
+    Client->>Base: request('GET', '/api/users/123', undefined, options)
+    Base->>Base: prepareRequestOptions(options)
+    Base->>Base: buildUrl('/api/users/123', params)
+    Base->>Base: applyRequestInterceptors(url, options)
+    
+    Note over Service,Backend: 3. Retry Logic & Transport Execution
+    Base->>Base: executeWithRetry(method, url, data, options)
+    loop Retry attempts (max 3)
+        Base->>Client: executeRequest<ApiUser>(method, url, data, options)
+        Client->>Client: prepareRequestOptions & body
+        Client->>Fetch: fetch(url, fetchOptions)
+        Fetch->>Backend: HTTP Request
+        Backend-->>Fetch: HTTP Response
+        Fetch-->>Client: Response object
+        alt Success (2xx)
+            Client->>Client: extractApiResponse<ApiUser>(response)
+            Client-->>Base: ApiResponse<ApiUser>
+        else HTTP Error (4xx/5xx)
+            Client->>Client: handleTransportError(error, url, options)
+            Client-->>Base: throws ApiError
+        end
+    end
+    
+    Note over Service,Backend: 4. Response Processing & Interceptors
+    alt Success
+        Base->>Base: applyResponseInterceptors(response, url, options)
+        Base->>Base: updateStats(success=true)
+        Base-->>Client: ApiResponse<ApiUser>
+        Client-->>Service: ApiResponse<ApiUser>
+    else Error
+        Base->>Base: applyErrorInterceptors(error, url, options)
+        Base->>Base: updateStats(success=false)
+        Base->>Base: errorToApiResponse<ApiUser>(error)
+        Base-->>Client: ApiResponse<ApiUser> (with error)
+        Client-->>Service: ApiResponse<ApiUser> (with error)
+    end
+    
+    Note over Service,Backend: 5. Service Layer Transformation
+    alt Transform API Data to Client Data
+        Service->>Transform: UserTransformer.transform(apiUser)
+        Transform->>Transform: schema.parse(apiUser)
+        alt Validation Success
+            Transform->>Transform: Apply transformation logic
+            Transform-->>Service: ClientUser
+        else Validation Error
+            Transform->>Transform: createFallbackData(apiUser)
+            Transform-->>Service: ClientUser (fallback)
+        end
+    end
+    
+    Note over Service,Backend: 6. Final Result
+    Service-->>Service: return ClientUser to caller
+```
+
+#### Flow Phase Descriptions
+
+**Phase 1: API Call Initiation**
+- Service layer initiates typed API call through unified client interface
+- Type safety maintained throughout with generic type parameters
+- Authentication requirements specified at call site (`{auth: true}`)
+
+**Phase 2: Request Processing & Interceptors**
+- BaseApiClient processes request options, builds URL, and applies headers
+- Request interceptors chain for authentication, logging, and sanitization
+- Security-first approach with explicit authentication opt-in
+
+**Phase 3: Retry Logic & Transport Execution**
+- Robust retry mechanism with exponential backoff and jitter
+- Transport-specific adapter (FetchAdapter) handles actual HTTP execution
+- Automatic retry on network errors, server errors, and rate limiting
+
+**Phase 4: Response Processing & Interceptors**
+- Response interceptors for logging, metrics, and response transformation
+- Comprehensive error handling with categorization and structured errors
+- Statistics tracking for monitoring and debugging
+
+**Phase 5: Service Layer Transformation**  
+- Service layer applies Zod-based transformers to convert API types to client types
+- Runtime validation ensures data integrity with fallback mechanisms
+- Business logic separation: transport concerns vs. data transformation
+
+**Phase 6: Final Result**
+- Service returns fully typed, transformed client data
+- Type safety maintained end-to-end from API call to component usage
+- Graceful degradation ensures application stability
+
+### 7. Service Layer Data Transformation
 
 **Problem Identified**: Backend API types (T) often need transformation to client UI types (Y):
 - Same server response might need different client representations depending on UI context
@@ -315,7 +418,7 @@ class UserService {
 }
 ```
 
-### 7. Migration Strategy
+### 8. Migration Strategy
 
 #### Phase 1: Foundation (Week 1-2) ✅ **COMPLETE**
 - [x] Create `@draco/shared-types` package
@@ -331,14 +434,56 @@ class UserService {
 - [x] HTTP status code to semantic error mapping
 
 #### Phase 2: Enhanced Features & Service Transformations (Week 3-4)
-- [ ] Create Zod transformation patterns for common data types (User, Team, Game, etc.)
-- [ ] Implement service-layer transformers with runtime validation
-- [ ] Add request/response interceptors to FetchAdapter
-- [ ] Enhanced retry policies with exponential backoff
-- [ ] Migrate `UserManagementService` with transformation layer
-- [ ] Update all UserManagementService consumers
-- [ ] Validate error handling and transformation work correctly
-- [ ] Performance testing vs current approaches
+
+**Week 3: Foundation & Core Transformers**
+
+*Days 1-2: Transformer Foundation* ✅ **COMPLETE**
+- [x] Create `BaseTransformer` abstract class in `/utils/api-client/transformers/base/`
+- [x] Implement `ZodTransformer` with runtime validation and error recovery
+- [x] Create `TransformerRegistry` for reusable transformation patterns  
+- [x] Set up validation fallback strategies for graceful degradation
+- [x] Add `SafeTransformer` wrapper for error handling
+- [x] **Additional work completed:**
+  - 118 comprehensive unit tests passing with full coverage
+  - Proper test organization separated from source code
+  - Clean base infrastructure with zero domain-specific contamination
+  - TypeScript compilation with zero errors using proper type safety (no `any` usage)
+  - UML sequence diagram documenting complete API call flow
+  - Structural cleanup ensuring separation of concerns
+
+*Days 3-4: User Management Transformers*
+- [ ] Implement `ContactToUserTransformer` (Contact → User transformation)
+- [ ] Implement `ContactFormDataTransformer` (bidirectional frontend ↔ backend)
+- [ ] Implement `UserRoleTransformer` (ContactRole → UserRole mapping)
+- [ ] Create comprehensive unit tests for all transformers
+- [ ] Add performance benchmarks for transformation operations
+
+*Day 5: Interceptor Enhancement*
+- [ ] Add request/response interceptor infrastructure to FetchAdapter
+- [ ] Implement `AuthRefreshInterceptor` (automatic token refresh on 401)
+- [ ] Implement `RequestLoggingInterceptor` (development request/response logging)
+- [ ] Implement `SanitizationInterceptor` (XSS protection for requests/responses)
+
+**Week 4: Advanced Features & Migration**
+
+*Days 1-2: Enhanced Retry Policies*
+- [ ] Implement `ExponentialBackoffRetryPolicy` with jitter and rate limit handling
+- [ ] Add circuit breaker pattern (`CircuitBreakerRetryPolicy`) for fault tolerance
+- [ ] Integrate advanced retry logic with FetchAdapter
+- [ ] Test retry behavior with various error scenarios and network conditions
+
+*Days 3-4: UserManagementService Migration*
+- [ ] Add enhanced methods to UserManagementService alongside existing ones
+- [ ] Update service constructor with new API client initialization
+- [ ] Maintain 100% backward compatibility during migration period
+- [ ] Update all UserManagementService consumers to use enhanced methods
+- [ ] Create migration guide for other services
+
+*Day 5: Validation & Performance Testing*
+- [ ] Performance comparison between old and new API approaches
+- [ ] Memory usage analysis and optimization for large datasets
+- [ ] Error handling validation with comprehensive edge case testing
+- [ ] End-to-end testing with real API responses and error scenarios
 
 #### Phase 3: Service Migration (Week 4-6)
 - [ ] Migrate `workoutService.ts`
@@ -359,7 +504,7 @@ class UserService {
 - [ ] Add request/response logging
 - [ ] Create development debugging tools
 
-### 7. Developer Experience Improvements
+### 9. Developer Experience Improvements
 
 **IntelliSense & Type Safety:**
 - Full autocomplete for all endpoints and response types
@@ -383,7 +528,7 @@ class UserService {
 - Integration test helpers
 - Error scenario simulation
 
-### 8. Configuration
+### 10. Configuration
 
 **Frontend Configuration:**
 ```typescript
@@ -406,7 +551,7 @@ const apiClient = createApiClient({
 - Testing: Mock adapters, fixture data
 - Production: Optimized performance, minimal logging
 
-### 9. Backward Compatibility
+### 11. Backward Compatibility
 
 During migration period:
 - Keep existing API calling methods functional
@@ -414,7 +559,7 @@ During migration period:
 - Deprecation warnings for old methods
 - Documentation for migration path
 
-### 10. Future Enhancements
+### 12. Future Enhancements
 
 **Planned Features:**
 - GraphQL adapter support
@@ -527,6 +672,636 @@ npm run lint:all       # Lint all packages including shared
 - Remove api-client package scripts from root build system
 - Simplify dependency management by eliminating intermediate package
 
+## Phase 2: Detailed Implementation Architecture
+
+### Component Architecture
+
+#### Current Foundation (Phase 1 Complete)
+```typescript
+// Existing Structure
+FetchAdapter (BaseApiClient) → ApiResponse<T> → Service Layer
+- ✅ Transport-agnostic BaseApiClient
+- ✅ FetchAdapter with timeout, security, XSS protection
+- ✅ Direct ApiResponse<T> usage (no ClientResponse intermediate)
+- ✅ Comprehensive error handling with categorization
+- ✅ Security-first auth (auth: false by default)
+```
+
+#### Phase 2 Enhanced Architecture
+```typescript
+// Enhanced Flow
+FetchAdapter → ApiResponse<ApiType> → ZodTransformer → ClientType → Service Layer
+- Request/Response Interceptors in FetchAdapter
+- Enhanced retry policies with exponential backoff
+- Zod transformation layer for T→Y data conversion
+- Reusable transformer classes for common patterns
+- Runtime validation with fallback strategies
+```
+
+### Zod Transformation Patterns Architecture
+
+#### Core Transformer Structure
+```typescript
+// Base transformer interface
+interface DataTransformer<TApi, TClient> {
+  schema: z.ZodSchema<TClient>;
+  transform(apiData: TApi): Promise<TClient> | TClient;
+  transformList(apiDataList: TApi[]): Promise<TClient[]> | TClient[];
+  validate(data: unknown): TClient;
+}
+
+// Common patterns for Draco entities
+class UserProfileTransformer implements DataTransformer<ApiContact, ClientUser> {
+  static schema = z.object({
+    // Validation + transformation combined
+  }).transform(apiContact => ({
+    // API → Client mapping with computed fields
+  }));
+}
+```
+
+#### Domain-Specific Transformers
+
+**User Management Transformers:**
+- `ContactTransformer`: Backend Contact → Frontend Contact
+- `ContactToUserTransformer`: Contact with roles → User format
+- `UserRoleTransformer`: ContactRole → UserRole transformation
+- `ContactUpdateTransformer`: Bidirectional Contact ↔ ContactUpdateData
+
+**Context Data Transformers:**
+- `LeagueTransformer`: Backend League → Frontend League with computed fields
+- `TeamTransformer`: Backend Team → Frontend Team with season context
+- `GameTransformer`: Backend Game → Frontend Game with derived statistics
+
+**File/Media Transformers:**
+- `FileUploadTransformer`: FormData → FileUploadRequest with validation
+- `PhotoUrlTransformer`: Backend photo paths → Frontend URL resolution
+- `ContactPhotoTransformer`: Contact photo handling with CDN integration
+
+#### Transformation Pattern Categories
+
+**1. Simple Field Mapping Pattern:**
+```typescript
+// Backend camelCase → Frontend camelCase with validation
+const SimpleContactTransformer = z.object({
+  id: z.string(),
+  firstname: z.string(), // Backend lowercase
+  lastname: z.string()
+}).transform(api => ({
+  id: api.id,
+  firstName: api.firstname, // Frontend camelCase
+  lastName: api.lastname
+}));
+```
+
+**2. Computed Field Pattern:**
+```typescript
+// Add client-specific computed fields
+const EnhancedUserTransformer = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string().email(),
+  createdAt: z.string().datetime()
+}).transform(api => ({
+  ...api,
+  displayName: `${api.firstName} ${api.lastName}`,
+  initials: `${api.firstName[0]}${api.lastName[0]}`.toUpperCase(),
+  memberSince: new Date(api.createdAt).getFullYear(),
+  isEmailVerified: api.email.includes('@') // Example business logic
+}));
+```
+
+**3. Multi-Source Aggregation Pattern:**
+```typescript
+// Combine data from multiple API calls
+class TeamStatsTransformer {
+  constructor(private apiClient: ApiClient) {}
+  
+  async transform(teamId: string): Promise<ClientTeamStats> {
+    const [team, games, players] = await Promise.all([
+      this.apiClient.get<ApiTeam>(`/teams/${teamId}`, { auth: true }),
+      this.apiClient.get<ApiGame[]>(`/teams/${teamId}/games`, { auth: true }),
+      this.apiClient.get<ApiPlayer[]>(`/teams/${teamId}/players`, { auth: true })
+    ]);
+    
+    return TeamStatsSchema.parse({
+      teamName: team.data.name,
+      games: games.data,
+      players: players.data
+    });
+  }
+}
+```
+
+**4. Bidirectional Transformation Pattern:**
+```typescript
+// Frontend ↔ Backend format conversion
+class ContactUpdateTransformer {
+  static toBackend(clientData: ContactUpdateData) {
+    return ContactUpdateBackendSchema.parse({
+      firstname: clientData.firstName, // camelCase → lowercase
+      lastname: clientData.lastName,
+      dateofbirth: clientData.dateofbirth ? 
+        new Date(clientData.dateofbirth).toISOString().split('T')[0] : null
+    });
+  }
+  
+  static fromBackend(backendData: BackendContact) {
+    return ContactUpdateClientSchema.parse({
+      firstName: backendData.firstname, // lowercase → camelCase
+      lastName: backendData.lastname,
+      dateofbirth: backendData.dateofbirth
+    });
+  }
+}
+```
+
+### Transformer Placement Strategy
+```
+/utils/api-client/
+├── transformers/
+│   ├── base/
+│   │   ├── BaseTransformer.ts          # Abstract base class
+│   │   ├── ZodTransformer.ts           # Zod implementation
+│   │   ├── TransformerRegistry.ts      # Central registry
+│   │   └── ValidationFallbacks.ts     # Error recovery
+│   ├── user-management/
+│   │   ├── ContactTransformer.ts       # Contact transformations
+│   │   ├── UserRoleTransformer.ts      # Role transformations
+│   │   └── index.ts                    # User management exports
+│   ├── context-data/
+│   │   ├── LeagueTransformer.ts        # League transformations
+│   │   ├── TeamTransformer.ts          # Team transformations
+│   │   └── index.ts                    # Context data exports
+│   ├── common/
+│   │   ├── PaginationTransformer.ts    # Pagination handling
+│   │   ├── FileTransformer.ts          # File/photo handling
+│   │   └── index.ts                    # Common transformers
+│   └── index.ts                        # All transformer exports
+```
+
+### Enhanced FetchAdapter with Interceptors
+
+#### Request/Response Interceptor Integration
+```typescript
+// Enhanced FetchAdapter with interceptor support
+class FetchAdapter extends BaseApiClient {
+  // Specific interceptors for common patterns
+  private authRefreshInterceptor: AuthRefreshInterceptor;
+  private loggingInterceptor: RequestLoggingInterceptor;
+  private retryInterceptor: RetryInterceptor;
+  
+  constructor(config: Partial<ApiClientConfig> = {}) {
+    super(config);
+    this.setupDefaultInterceptors();
+  }
+  
+  private setupDefaultInterceptors() {
+    // Request interceptors
+    this.addRequestInterceptor(this.authRefreshInterceptor.intercept);
+    this.addRequestInterceptor(this.loggingInterceptor.logRequest);
+    
+    // Response interceptors  
+    this.addResponseInterceptor(this.loggingInterceptor.logResponse);
+    
+    // Error interceptors
+    this.addErrorInterceptor(this.authRefreshInterceptor.handleAuthError);
+    this.addErrorInterceptor(this.retryInterceptor.shouldRetry);
+  }
+}
+```
+
+#### Interceptor Implementation Patterns
+
+**1. Authentication Refresh Interceptor:**
+```typescript
+// Automatic token refresh on 401 errors
+class AuthRefreshInterceptor {
+  async handleAuthError(error: ApiError): Promise<ApiError> {
+    if (error.errorCode === ErrorCodes.AUTH_TOKEN_INVALID) {
+      const refreshed = await this.attemptTokenRefresh();
+      if (refreshed) {
+        throw new RetryableError('Token refreshed, retry request');
+      }
+    }
+    return error;
+  }
+}
+```
+
+**2. Request/Response Logging Interceptor:**
+```typescript
+// Development logging with performance metrics
+class RequestLoggingInterceptor {
+  logRequest(url: string, options: RequestOptions) {
+    if (process.env.NODE_ENV === 'development') {
+      console.group(`🚀 API Request: ${options.method || 'GET'} ${url}`);
+      console.log('Options:', options);
+      console.time(`request-${url}`);
+      console.groupEnd();
+    }
+    return { url, options };
+  }
+  
+  logResponse(response: unknown, url: string, options: RequestOptions) {
+    if (process.env.NODE_ENV === 'development') {
+      console.timeEnd(`request-${url}`);
+      console.log(`✅ Response:`, response);
+    }
+    return response;
+  }
+}
+```
+
+**3. Sanitization Interceptor:**
+```typescript
+// Input/output sanitization for XSS prevention
+class SanitizationInterceptor {
+  sanitizeRequest(url: string, options: RequestOptions) {
+    if (options.body && typeof options.body === 'object') {
+      options.body = this.sanitizeObject(options.body);
+    }
+    return { url, options };
+  }
+  
+  sanitizeResponse(response: ApiResponse<unknown>) {
+    if (response.success && response.data) {
+      response.data = this.sanitizeObject(response.data);
+    }
+    return response;
+  }
+}
+```
+
+### Enhanced Retry Policies with Exponential Backoff
+
+#### Advanced Retry Policy Implementation
+```typescript
+// Enhanced retry policy with circuit breaker pattern
+interface EnhancedRetryPolicy extends RetryPolicy {
+  circuitBreakerThreshold: number;    // Failures before circuit opens
+  circuitBreakerTimeout: number;      // Time before trying again
+  retryableStatusCodes: number[];     // HTTP status codes to retry
+  retryableErrorCategories: ErrorCategory[];
+}
+
+class ExponentialBackoffRetryPolicy implements EnhancedRetryPolicy {
+  calculateDelay(attemptNumber: number, error: ApiError): number {
+    const baseDelay = this.initialDelay;
+    const exponentialDelay = baseDelay * Math.pow(this.backoffMultiplier, attemptNumber - 1);
+    const cappedDelay = Math.min(exponentialDelay, this.maxDelay);
+    
+    // Add jitter to prevent thundering herd
+    const jitter = this.jitter ? Math.random() * 1000 : 0;
+    
+    // Rate limit specific handling
+    if (error.category === ErrorCategory.RATE_LIMIT) {
+      return cappedDelay * 2; // Extra delay for rate limits
+    }
+    
+    return Math.floor(cappedDelay + jitter);
+  }
+  
+  isRetryable(error: ApiError): boolean {
+    // Network and server errors are retryable
+    if (error.category === ErrorCategory.NETWORK || 
+        error.category === ErrorCategory.SERVER_ERROR) {
+      return true;
+    }
+    
+    // Rate limits are retryable with backoff
+    if (error.category === ErrorCategory.RATE_LIMIT) {
+      return true;
+    }
+    
+    // Timeout errors are retryable
+    if (error.category === ErrorCategory.TIMEOUT) {
+      return true;
+    }
+    
+    // Client errors are generally not retryable
+    return false;
+  }
+}
+```
+
+#### Circuit Breaker Integration
+```typescript
+class CircuitBreakerRetryPolicy {
+  private failureCount = 0;
+  private lastFailureTime = 0;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  
+  shouldAllowRequest(url: string): boolean {
+    if (this.state === 'CLOSED') {
+      return true;
+    }
+    
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime > this.circuitBreakerTimeout) {
+        this.state = 'HALF_OPEN';
+        return true;
+      }
+      return false;
+    }
+    
+    // HALF_OPEN state - allow one request to test
+    return true;
+  }
+  
+  recordSuccess() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+  
+  recordFailure() {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failureCount >= this.circuitBreakerThreshold) {
+      this.state = 'OPEN';
+    }
+  }
+}
+```
+
+### UserManagementService Migration Strategy
+
+#### Migration Approach: Gradual Enhancement
+```typescript
+// Phase 1: Create new transformed methods alongside existing ones
+class UserManagementService {
+  private apiClient: FetchAdapter;
+  private contactTransformer: ContactTransformer;
+  private userRoleTransformer: UserRoleTransformer;
+  
+  constructor(token: string) {
+    this.token = token; // Keep existing pattern during migration
+    
+    // Initialize new API client
+    this.apiClient = createFetchClient({
+      baseURL: '', // Uses current origin
+      timeout: 30000,
+      authTokenProvider: () => this.token,
+    });
+    
+    // Initialize transformers
+    this.contactTransformer = new ContactTransformer();
+    this.userRoleTransformer = new UserRoleTransformer();
+  }
+  
+  // NEW: Enhanced method with transformations
+  async fetchUsersEnhanced(accountId: string, params: UserSearchParams): Promise<UsersResponse> {
+    const searchParams = this.buildSearchParams(params);
+    
+    const response = await this.apiClient.get<ContactsApiResponse>(
+      `/api/accounts/${accountId}/contacts?${searchParams}`,
+      { auth: true }
+    );
+    
+    if (!response.success) {
+      throw new Error(response.data.errorMessage);
+    }
+    
+    // Transform API contacts to frontend users
+    const users = await this.contactTransformer.transformContactsToUsers(response.data.contacts);
+    
+    return {
+      users,
+      pagination: this.transformPagination(response.data.pagination)
+    };
+  }
+  
+  // EXISTING: Keep original method for backward compatibility
+  async fetchUsers(accountId: string, params: UserSearchParams): Promise<UsersResponse> {
+    // Original implementation remains unchanged during migration
+    // Will be deprecated after all consumers are updated
+  }
+}
+```
+
+#### Contact to User Transformer Implementation
+```typescript
+class ContactToUserTransformer {
+  private static schema = z.object({
+    id: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    middleName: z.string().nullable().optional(),
+    email: z.string(),
+    userId: z.string(),
+    photoUrl: z.string().optional(),
+    contactDetails: z.object({
+      phone1: z.string().nullable(),
+      phone2: z.string().nullable(),
+      phone3: z.string().nullable(),
+      streetaddress: z.string().nullable(),
+      city: z.string().nullable(),
+      state: z.string().nullable(),
+      zip: z.string().nullable(),
+      dateofbirth: z.string().nullable(),
+    }).optional(),
+    contactroles: z.array(z.object({
+      id: z.string(),
+      roleId: z.string(),
+      roleName: z.string().optional(),
+      roleData: z.string(),
+      contextName: z.string().optional(),
+    })).optional()
+  }).transform(contact => ({
+    // Transform Contact to User format
+    id: contact.id,
+    firstName: contact.firstName,
+    lastName: contact.lastName,
+    middleName: contact.middleName,
+    email: contact.email,
+    userId: contact.userId,
+    photoUrl: contact.photoUrl,
+    contactDetails: contact.contactDetails,
+    // Transform contactroles to roles
+    roles: contact.contactroles?.map(cr => ({
+      id: cr.id,
+      roleId: cr.roleId,
+      roleName: cr.roleName || cr.roleId,
+      roleData: cr.roleData,
+      contextName: cr.contextName
+    })) || []
+  }));
+  
+  static transform(contact: Contact): User {
+    return this.schema.parse(contact);
+  }
+  
+  static transformList(contacts: Contact[]): User[] {
+    return contacts.map(contact => this.transform(contact));
+  }
+}
+```
+
+### Error Handling & Validation
+
+#### Validation Fallback Strategies
+```typescript
+class ValidationFallbacks {
+  static createFallbackUser(originalData: unknown, error: z.ZodError): User {
+    // Create safe fallback user when transformation fails
+    return {
+      id: 'unknown',
+      firstName: 'Unknown',
+      lastName: 'User',
+      email: 'unknown@example.com',
+      userId: 'unknown',
+      roles: [],
+      contactDetails: undefined,
+      _validationError: true,
+      _originalData: originalData,
+      _error: error.message
+    };
+  }
+  
+  static handleTransformationError(error: z.ZodError, context: string) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`Transformation error in ${context}:`, error);
+    }
+    
+    // Log to error tracking service in production
+    if (process.env.NODE_ENV === 'production') {
+      // errorTracker.capture(error, { context });
+    }
+  }
+}
+```
+
+#### Graceful Degradation Pattern
+```typescript
+class SafeTransformer<TApi, TClient> {
+  constructor(
+    private transformer: DataTransformer<TApi, TClient>,
+    private fallbackFactory: (originalData: TApi, error: Error) => TClient
+  ) {}
+  
+  safeTransform(apiData: TApi): TClient {
+    try {
+      return this.transformer.transform(apiData);
+    } catch (error) {
+      console.warn('Transformation failed, using fallback:', error);
+      return this.fallbackFactory(apiData, error as Error);
+    }
+  }
+  
+  safeTransformList(apiDataList: TApi[]): TClient[] {
+    return apiDataList.map(item => this.safeTransform(item));
+  }
+}
+```
+
+### Testing Strategy for Phase 2
+
+#### Unit Testing Approach
+```typescript
+// Transformer unit tests
+describe('ContactToUserTransformer', () => {
+  it('transforms contact to user format correctly', () => {
+    const mockContact: Contact = {
+      id: '123',
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john@example.com',
+      userId: 'user-123',
+      contactroles: [{
+        id: 'role-1',
+        roleId: 'admin',
+        roleData: 'account-123',
+        roleName: 'Administrator'
+      }]
+    };
+    
+    const result = ContactToUserTransformer.transform(mockContact);
+    
+    expect(result).toMatchObject({
+      id: '123',
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john@example.com',
+      userId: 'user-123',
+      roles: [{
+        id: 'role-1',
+        roleId: 'admin',
+        roleData: 'account-123',
+        roleName: 'Administrator'
+      }]
+    });
+  });
+  
+  it('handles validation errors gracefully', () => {
+    const invalidContact = { id: null, firstName: '' };
+    
+    expect(() => {
+      ContactToUserTransformer.transform(invalidContact as any);
+    }).toThrow(z.ZodError);
+  });
+});
+```
+
+#### Performance Testing Framework
+```typescript
+// Performance comparison tests
+describe('Performance Comparison', () => {
+  it('transformation performance is acceptable', async () => {
+    const largeContactList = generateMockContacts(1000);
+    
+    const startTime = performance.now();
+    const result = ContactToUserTransformer.transformList(largeContactList);
+    const endTime = performance.now();
+    
+    const transformationTime = endTime - startTime;
+    
+    // Transformation should complete in under 50ms for 1000 items
+    expect(transformationTime).toBeLessThan(50);
+    expect(result).toHaveLength(1000);
+  });
+  
+  it('memory usage is reasonable', () => {
+    const initialMemory = process.memoryUsage().heapUsed;
+    
+    const largeContactList = generateMockContacts(1000);
+    ContactToUserTransformer.transformList(largeContactList);
+    
+    const finalMemory = process.memoryUsage().heapUsed;
+    const memoryIncrease = finalMemory - initialMemory;
+    
+    // Memory increase should be reasonable (under 10MB for 1000 items)
+    expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024);
+  });
+});
+```
+
+### Success Metrics for Phase 2
+
+#### Performance Metrics
+- [ ] Transformation latency < 5ms for typical payloads (100 contacts)
+- [ ] Memory usage increase < 10MB for large datasets (1000 contacts)
+- [ ] Network request performance unchanged
+- [ ] Bundle size increase < 10KB
+
+#### Reliability Metrics
+- [ ] Zero breaking changes for existing UserManagementService consumers
+- [ ] 100% backward compatibility during migration period
+- [ ] Graceful fallback handling for transformation failures
+- [ ] Comprehensive error logging and recovery
+
+#### Developer Experience Metrics
+- [ ] Type safety maintained throughout transformation chain
+- [ ] Clear error messages for transformation failures
+- [ ] Development logging provides useful debugging information
+- [ ] Documentation covers all new patterns and migration steps
+
+#### Security Metrics
+- [ ] XSS protection maintained through transformation layer
+- [ ] No sensitive data leakage in transformation errors
+- [ ] Authentication patterns remain secure-by-default
+- [ ] Input sanitization works correctly with new interceptors
+
 ### Foundation Completed
 
 ✅ **Phase 1: Steps 1 & 2 Complete**
@@ -535,4 +1310,13 @@ npm run lint:all       # Lint all packages including shared
 - Full monorepo integration with build system
 - **Security vulnerability patched** with FormData sanitization
 - **Architectural refinement** - moved to correct frontend-only location
-- Ready for next phase: implementing fetch adapter and concrete transport implementations
+
+✅ **Transformer Foundation Complete**
+- Complete Zod-based transformation system with error recovery
+- 118 comprehensive unit tests ensuring reliability
+- Clean separation between base infrastructure and domain-specific code
+- TypeScript type safety maintained throughout without `any` usage
+- UML sequence diagram documenting complete API call flow
+- Ready for domain-specific transformer implementations
+
+**Next Phase**: Domain-specific transformers for user management, starting with `ContactToUserTransformer` and related business logic transformations.

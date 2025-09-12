@@ -7,8 +7,8 @@
 
 import type { ApiResponse, ApiError } from '@draco/shared-types';
 import { ErrorCategory, ErrorCodes } from '@draco/shared-types';
-import { BaseApiClient } from '../BaseApiClient.js';
-import type { HttpMethod, RequestData, RequestOptions, ApiClientConfig } from '../types/index.js';
+import { BaseApiClient } from '../BaseApiClient';
+import type { HttpMethod, RequestData, RequestOptions, ApiClientConfig } from '../types/index';
 
 /**
  * FetchAdapter class that implements the ApiClient interface using fetch()
