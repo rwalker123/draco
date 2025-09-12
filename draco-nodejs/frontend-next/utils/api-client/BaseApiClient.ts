@@ -6,9 +6,9 @@
  * and request/response transformation.
  */
 
-import type { ApiResponse, ApiError } from '@draco/shared-types';
+import type { ApiResponse, ApiError, ErrorCode } from '@draco/shared-types';
 
-import { ErrorCategory } from '@draco/shared-types';
+import { ErrorCategory, ErrorCodes } from '@draco/shared-types';
 
 import type {
   ApiClientConfig,
@@ -22,8 +22,6 @@ import type {
   ResponseInterceptor,
   ErrorInterceptor,
 } from './types/index.js';
-
-import type { ClientResponse } from './types/responses.js';
 
 import type { ApiClient, ClientStats } from './ApiClient.js';
 
@@ -54,28 +52,19 @@ export abstract class BaseApiClient implements ApiClient {
   /**
    * Execute the actual HTTP request
    * This method must be implemented by concrete transport adapters
-   * Do not use unknown for the response type, as responses are usually well-defined.
    *
    * @param method - HTTP method
    * @param url - Complete URL
    * @param data - Request body data
    * @param options - Request options
-   * @returns Promise resolving to the raw response
+   * @returns Promise resolving to ApiResponse<TResponse>
    */
   protected abstract executeRequest<TResponse>(
     method: HttpMethod,
     url: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<TResponse>;
-
-  /**
-   * Transform backend ApiResponse to frontend ClientResponse
-   *
-   * @param response - Backend API response
-   * @returns Transformed client response
-   */
-  protected abstract transformResponse<T>(response: ApiResponse<T> | T): ClientResponse<T>;
+  ): Promise<ApiResponse<TResponse>>;
 
   /**
    * Handle transport-specific errors and convert to ApiError
@@ -98,7 +87,7 @@ export abstract class BaseApiClient implements ApiClient {
   async get<TResponse>(
     endpoint: string,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     return this.request<TResponse>('GET', endpoint, undefined, options);
   }
 
@@ -106,7 +95,7 @@ export abstract class BaseApiClient implements ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     return this.request<TResponse>('POST', endpoint, data, options);
   }
 
@@ -114,14 +103,14 @@ export abstract class BaseApiClient implements ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     return this.request<TResponse>('PUT', endpoint, data, options);
   }
 
   async delete<TResponse>(
     endpoint: string,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     return this.request<TResponse>('DELETE', endpoint, undefined, options);
   }
 
@@ -129,14 +118,14 @@ export abstract class BaseApiClient implements ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     return this.request<TResponse>('PATCH', endpoint, data, options);
   }
 
   async head(
     endpoint: string,
     options?: RequestOptions,
-  ): Promise<ClientResponse<Record<string, string>>> {
+  ): Promise<ApiResponse<Record<string, string>>> {
     return this.request<Record<string, string>>('HEAD', endpoint, undefined, options);
   }
 
@@ -145,7 +134,7 @@ export abstract class BaseApiClient implements ApiClient {
     endpoint: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     const startTime = Date.now();
     const requestOptions = this.prepareRequestOptions(options);
     const url = this.buildUrl(endpoint, requestOptions.params);
@@ -187,8 +176,8 @@ export abstract class BaseApiClient implements ApiClient {
       const apiError = this.handleTransportError(error, url, requestOptions);
       const processedError = await this.applyErrorInterceptors(apiError, url, requestOptions);
 
-      // Transform error to ClientResponse format
-      return this.errorToClientResponse<TResponse>(processedError);
+      // Transform error to ApiResponse format
+      return this.errorToApiResponse<TResponse>(processedError);
     }
   }
 
@@ -201,7 +190,7 @@ export abstract class BaseApiClient implements ApiClient {
     file: File | Blob,
     data?: Record<string, unknown>,
     options?: FileUploadOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     const formData = new FormData();
     const fieldName = options?.fieldName || 'file';
     const filename = options?.filename || (file instanceof File ? file.name : 'blob');
@@ -232,29 +221,23 @@ export abstract class BaseApiClient implements ApiClient {
     return this.post<TResponse>(endpoint, formData, uploadOptions);
   }
 
-  async downloadFile(endpoint: string, options?: RequestOptions): Promise<Blob> {
+  async downloadFile(endpoint: string, options?: RequestOptions): Promise<ApiResponse<Blob>> {
     // This is a simplified implementation - concrete classes may override
-    const response = await this.request<Blob>('GET', endpoint, undefined, {
+    return this.request<Blob>('GET', endpoint, undefined, {
       ...options,
       headers: {
         ...options?.headers,
         Accept: 'application/octet-stream',
       },
     });
-
-    if (!response.success || !response.data) {
-      throw new Error('Failed to download file');
-    }
-
-    return response.data;
   }
 
   async batch<TResponse>(
     batchRequest: BatchRequest,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>[]> {
+  ): Promise<ApiResponse<TResponse>[]> {
     const { requests, stopOnError = false, maxConcurrency = 5 } = batchRequest;
-    const results: ClientResponse<TResponse>[] = [];
+    const results: ApiResponse<TResponse>[] = [];
 
     // Execute requests in batches to respect concurrency limit
     for (let i = 0; i < requests.length; i += maxConcurrency) {
@@ -267,7 +250,7 @@ export abstract class BaseApiClient implements ApiClient {
           });
         } catch (error) {
           const apiError = this.handleTransportError(error, req.url, options);
-          return this.errorToClientResponse<TResponse>(apiError);
+          return this.errorToApiResponse<TResponse>(apiError);
         }
       });
 
@@ -411,14 +394,17 @@ export abstract class BaseApiClient implements ApiClient {
   protected prepareRequestOptions(
     options?: RequestOptions,
   ): RequestOptions & { params?: SearchParams } {
-    const token = this.getAuthToken();
     const headers: Record<string, string> = {
       ...this.config.defaultHeaders,
       ...options?.headers,
     };
 
-    if (token && !options?.skipAuth) {
-      headers['Authorization'] = `Bearer ${token}`;
+    // Security-first approach: Only add auth token when explicitly requested
+    if (options?.auth === true) {
+      const token = this.getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
     }
 
     const result: RequestOptions & { params?: SearchParams } = {
@@ -442,14 +428,14 @@ export abstract class BaseApiClient implements ApiClient {
     url: string,
     data?: RequestData,
     options?: RequestOptions,
-  ): Promise<ClientResponse<TResponse>> {
+  ): Promise<ApiResponse<TResponse>> {
     const maxRetries = options?.retries ?? this.config.retries ?? 3;
     let lastError: ApiError | null = null;
 
     for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
       try {
-        const response = await this.executeRequest<TResponse>(method, url, data, options);
-        return this.transformResponse<TResponse>(response);
+        // executeRequest now returns ApiResponse<TResponse> directly
+        return await this.executeRequest<TResponse>(method, url, data, options);
       } catch (error) {
         lastError = this.handleTransportError(error, url, options);
 
@@ -493,12 +479,68 @@ export abstract class BaseApiClient implements ApiClient {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  protected errorToClientResponse<T>(error: ApiError): ClientResponse<T> {
+  /**
+   * Get error category based on HTTP status code
+   */
+  protected getErrorCategory(statusCode: number): ErrorCategory {
+    if (statusCode >= 500) {
+      return ErrorCategory.SERVER_ERROR;
+    }
+    if (statusCode === 401) {
+      return ErrorCategory.AUTHENTICATION;
+    }
+    if (statusCode === 403) {
+      return ErrorCategory.AUTHORIZATION;
+    }
+    if (statusCode === 429) {
+      return ErrorCategory.RATE_LIMIT;
+    }
+    if (statusCode >= 400) {
+      return ErrorCategory.CLIENT_ERROR;
+    }
+    if (statusCode === 0) {
+      return ErrorCategory.NETWORK;
+    }
+    return ErrorCategory.UNKNOWN;
+  }
+
+  /**
+   * Map HTTP status code to semantic error code
+   */
+  protected getSemanticErrorCode(statusCode: number): ErrorCode {
+    if (statusCode === 404) {
+      return ErrorCodes.RESOURCE_NOT_FOUND;
+    }
+    if (statusCode === 401) {
+      return ErrorCodes.AUTH_TOKEN_INVALID;
+    }
+    if (statusCode === 403) {
+      return ErrorCodes.PERMISSION_DENIED;
+    }
+    if (statusCode === 429) {
+      return ErrorCodes.RATE_LIMIT_EXCEEDED;
+    }
+    if (statusCode >= 500) {
+      return ErrorCodes.SERVER_ERROR;
+    }
+    if (statusCode >= 400) {
+      return ErrorCodes.VALIDATION_FAILED;
+    }
+    return ErrorCodes.UNKNOWN_ERROR;
+  }
+
+  /**
+   * Check if HTTP status code indicates a retryable error
+   */
+  protected isRetryableStatus(statusCode: number): boolean {
+    // Retry on network errors (0), server errors (5xx), and rate limiting (429)
+    return statusCode === 0 || statusCode >= 500 || statusCode === 429;
+  }
+
+  protected errorToApiResponse<T>(error: ApiError): ApiResponse<T> {
     return {
       success: false,
-      error: error.errorMessage,
-      errorCode: error.errorCode,
-      statusCode: error.statusCode,
+      data: error,
     };
   }
 
@@ -534,17 +576,17 @@ export abstract class BaseApiClient implements ApiClient {
   }
 
   private async applyResponseInterceptors<T>(
-    response: ClientResponse<T>,
+    response: ApiResponse<T>,
     url: string,
     options: RequestOptions,
-  ): Promise<ClientResponse<T>> {
-    let result: ClientResponse<T> = response;
+  ): Promise<ApiResponse<T>> {
+    let result: ApiResponse<T> = response;
 
     for (const interceptor of this.responseInterceptors) {
-      result = (await interceptor(result, url, options)) as ClientResponse<T>;
+      result = (await interceptor(result, url, options)) as ApiResponse<T>;
     }
 
-    return result as ClientResponse<T>;
+    return result as ApiResponse<T>;
   }
 
   private async applyErrorInterceptors(

@@ -31,7 +31,7 @@ describe('CleanupService', () => {
     // Create a mock Prisma client
     mockPrisma = {};
 
-    cleanupService = new CleanupService(mockPrisma, undefined, mockRepository);
+    cleanupService = new CleanupService(mockPrisma, { testDelayMs: 5 }, mockRepository);
   });
 
   afterEach(() => {

@@ -5,19 +5,19 @@
  * Client-specific response formats are defined in the @draco/api-client package.
  */
 
+import type { ApiError } from './errors.js';
+
 /**
  * Standard backend API response format
  * Used by all backend endpoints to maintain consistent response structure
  * 
- * @template T - The type of the data payload
+ * @template T - The type of the success data payload
  */
 export interface ApiResponse<T> {
   /** Indicates if the request was successful */
   success: boolean;
-  /** The actual data payload when successful */
-  data: T;
-  /** Optional message providing additional context */
-  message?: string;
+  /** The data payload - T for success, ApiError for failure */
+  data: T | ApiError;
 }
 
 /**

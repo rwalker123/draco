@@ -125,6 +125,9 @@ export interface ICleanupConfig {
 
   /** Number of days after which records expire */
   expirationDays: number;
+
+  /** Optional delay in milliseconds for test timing (tests only) */
+  testDelayMs?: number;
 }
 
 /**

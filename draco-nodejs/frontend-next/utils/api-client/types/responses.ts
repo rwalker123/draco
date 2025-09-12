@@ -1,37 +1,19 @@
 /**
  * Client-specific response type definitions for Draco Sports Manager API Client
  *
- * This module defines the response formats used by the API client to provide
- * a consistent interface to frontend code, including additional error handling
- * information not present in the backend ApiResponse format.
+ * This module re-exports the shared ApiResponse types for use in the API client.
+ * The client uses the same response format as the backend for consistency.
  */
 
-import type { PaginatedResponse } from '@draco/shared-types';
+import type { PaginatedResponse, ApiResponse } from '@draco/shared-types';
 
 /**
- * Frontend client response format
- * Used by the API client to provide a consistent interface to frontend code
- * Includes additional error handling information not present in backend responses
- *
- * @template T - The type of the data payload
- */
-export interface ClientResponse<T> {
-  /** Indicates if the request was successful */
-  success: boolean;
-  /** The actual data payload when successful (optional for error cases) */
-  data?: T;
-  /** Human-readable error message when request fails */
-  error?: string;
-  /** Machine-readable error code for programmatic error handling */
-  errorCode?: string;
-  /** HTTP status code for the response */
-  statusCode?: number;
-}
-
-/**
- * Type alias for paginated client responses
- * Combines the standard ClientResponse with pagination metadata
+ * Type alias for paginated API responses in the client
+ * Combines the standard ApiResponse with pagination metadata
  *
  * @template T - The type of individual items in the list
  */
-export type PaginatedClientResponse<T> = ClientResponse<PaginatedResponse<T>>;
+export type PaginatedApiResponse<T> = ApiResponse<PaginatedResponse<T>>;
+
+// Re-export shared types for convenience
+export type { ApiResponse } from '@draco/shared-types';
