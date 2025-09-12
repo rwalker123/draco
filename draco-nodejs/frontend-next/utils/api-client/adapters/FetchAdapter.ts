@@ -178,7 +178,7 @@ export class FetchAdapter extends BaseApiClient {
       // Timeout error
       return {
         success: false,
-        errorCode: 'NETWORK_TIMEOUT',
+        errorCode: ErrorCodes.NETWORK_TIMEOUT,
         errorMessage: 'Request timed out',
         statusCode: 0,
         category: ErrorCategory.TIMEOUT,
@@ -189,7 +189,7 @@ export class FetchAdapter extends BaseApiClient {
     // Generic error
     return {
       success: false,
-      errorCode: 'UNKNOWN_ERROR',
+      errorCode: ErrorCodes.UNKNOWN_ERROR,
       errorMessage: error instanceof Error ? error.message : 'Unknown error occurred',
       statusCode: 0,
       category: ErrorCategory.UNKNOWN,
