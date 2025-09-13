@@ -41,5 +41,3 @@ export function useAccountMembership(accountId?: string | null) {
 
   return { isMember, loading, error } as const;
 }
-
-

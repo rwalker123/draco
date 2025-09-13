@@ -15,7 +15,7 @@ export const isValidAccountUrl = (url: string): boolean => {
     allow_protocol_relative_urls: false,
     require_host: true,
     require_port: false,
-    require_tld: true
+    require_tld: true,
   });
 };
 
@@ -38,4 +38,4 @@ export const validateAndNormalizeUrl = (url: string): string | null => {
     return null;
   }
   return normalizeUrl(url);
-}; 
+};

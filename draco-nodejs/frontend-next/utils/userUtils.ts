@@ -19,19 +19,16 @@ export const formatUserName = (user: User): string => {
  * Validate user data
  */
 export const validateUserData = (user: User): boolean => {
-  return !!(
-    user.id &&
-    user.firstName &&
-    user.lastName &&
-    user.email &&
-    user.userId
-  );
+  return !!(user.id && user.firstName && user.lastName && user.email && user.userId);
 };
 
 /**
  * Sort users by specified field
  */
-export const sortUsers = (users: User[], sortBy: 'firstName' | 'lastName' | 'email' = 'lastName'): User[] => {
+export const sortUsers = (
+  users: User[],
+  sortBy: 'firstName' | 'lastName' | 'email' = 'lastName',
+): User[] => {
   return [...users].sort((a, b) => {
     const aValue = a[sortBy].toLowerCase();
     const bValue = b[sortBy].toLowerCase();
@@ -44,13 +41,14 @@ export const sortUsers = (users: User[], sortBy: 'firstName' | 'lastName' | 'ema
  */
 export const filterUsersBySearch = (users: User[], searchTerm: string): User[] => {
   if (!searchTerm.trim()) return users;
-  
+
   const term = searchTerm.toLowerCase();
-  return users.filter(user => 
-    user.firstName.toLowerCase().includes(term) ||
-    user.lastName.toLowerCase().includes(term) ||
-    user.email.toLowerCase().includes(term) ||
-    formatUserName(user).toLowerCase().includes(term)
+  return users.filter(
+    (user) =>
+      user.firstName.toLowerCase().includes(term) ||
+      user.lastName.toLowerCase().includes(term) ||
+      user.email.toLowerCase().includes(term) ||
+      formatUserName(user).toLowerCase().includes(term),
   );
 };
 
@@ -65,14 +63,14 @@ export const getUserRoleCount = (user: User): number => {
  * Check if user has specific role
  */
 export const userHasRole = (user: User, roleId: string): boolean => {
-  return user.roles?.some(role => role.roleId === roleId) || false;
+  return user.roles?.some((role) => role.roleId === roleId) || false;
 };
 
 /**
  * Get user's role names as array
  */
 export const getUserRoleNames = (user: User, roles: Role[]): string[] => {
-  return user.roles?.map(role => getRoleDisplayName(role.roleId, roles)) || [];
+  return user.roles?.map((role) => getRoleDisplayName(role.roleId, roles)) || [];
 };
 
 /**
@@ -83,4 +81,4 @@ export const formatUserForAutocomplete = (user: User): { label: string; value: s
     label: `${formatUserName(user)} (${user.email})`,
     value: user.id,
   };
-}; 
+};
