@@ -21,6 +21,7 @@ The transformation utilities bridge the gap between backend data formats and fro
 Transforms a backend contact object to frontend format.
 
 **Features:**
+
 - Generates display names with middle name support
 - Validates email addresses
 - Consolidates phone numbers (phone1 > phone2 > phone3)
@@ -28,6 +29,7 @@ Transforms a backend contact object to frontend format.
 - Handles missing data gracefully
 
 **Example:**
+
 ```typescript
 const backendContact = {
   id: 'contact-1',
@@ -36,12 +38,12 @@ const backendContact = {
   email: 'john@example.com',
   contactDetails: {
     phone1: '123-456-7890',
-    phone2: '987-654-3210'
-  }
+    phone2: '987-654-3210',
+  },
 };
 
 const frontendContact = transformBackendContact(backendContact);
-// Result: { id: 'contact-1', firstname: 'John', lastname: 'Doe', 
+// Result: { id: 'contact-1', firstname: 'John', lastname: 'Doe',
 //          displayName: 'John Doe', hasValidEmail: true, phone: '123-456-7890' }
 ```
 
@@ -52,6 +54,7 @@ const frontendContact = transformBackendContact(backendContact);
 Groups contacts by their roles for role-based selection.
 
 **Features:**
+
 - Groups contacts by roleId/roleType
 - Avoids duplicate contacts in same group
 - Sorts contacts within groups by display name
@@ -62,12 +65,14 @@ Groups contacts by their roles for role-based selection.
 Creates team-based recipient groups.
 
 **Features:**
+
 - Creates separate groups for players, managers, combined, and sports communication
 - Includes league information in descriptions
 - Handles teams with missing roster or manager data
 - Deduplicates contacts across team roles
 
 **Group Types:**
+
 - `players`: Team roster members
 - `managers`: Team managers/coaches
 - `all`: Combined players and managers
@@ -80,6 +85,7 @@ Creates team-based recipient groups.
 Generates human-readable display names.
 
 **Features:**
+
 - Handles null/empty name components
 - Includes middle names when available
 - Provides fallback for missing data
@@ -90,6 +96,7 @@ Generates human-readable display names.
 Validates email address format.
 
 **Features:**
+
 - Uses comprehensive email regex
 - Handles null/undefined values
 - Trims whitespace before validation
@@ -99,6 +106,7 @@ Validates email address format.
 Consolidates multiple phone fields into single value.
 
 **Features:**
+
 - Prioritizes phone1 > phone2 > phone3
 - Returns first non-empty value
 - Trims whitespace
@@ -111,6 +119,7 @@ Consolidates multiple phone fields into single value.
 Removes duplicate contacts based on ID.
 
 **Features:**
+
 - Preserves first occurrence of duplicates
 - Uses contact ID for deduplication
 - Maintains original array order
@@ -120,6 +129,7 @@ Removes duplicate contacts based on ID.
 Provides comprehensive data quality metrics.
 
 **Returns:**
+
 ```typescript
 {
   totalContacts: number;
@@ -139,6 +149,7 @@ Provides comprehensive data quality metrics.
 Filters contacts by search query.
 
 **Features:**
+
 - Searches across name, email, and phone fields
 - Case-insensitive search
 - Returns all contacts for empty query
@@ -149,6 +160,7 @@ Filters contacts by search query.
 Sorts contacts alphabetically by display name.
 
 **Features:**
+
 - Locale-aware sorting
 - Does not mutate original array
 - Handles special characters
@@ -195,6 +207,7 @@ Comprehensive unit tests cover:
 - ✅ Type safety and null handling
 
 Run tests with:
+
 ```bash
 npm test utils/__tests__/emailRecipientTransformers.test.ts
 ```

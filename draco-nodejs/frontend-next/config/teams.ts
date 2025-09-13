@@ -3,7 +3,7 @@ export const TEAM_CONFIG = {
   // Logo configuration
   LOGO_SIZE: 60, // Size in pixels for team logos (width and height)
   LOGO_MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB in bytes
-  LOGO_ACCEPTED_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+  LOGO_ACCEPTED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
 
   // Display configuration
   TEAMS_PER_ROW: {
@@ -30,7 +30,7 @@ export const addCacheBuster = (url: string, timestamp?: number): string => {
 // Helper function to validate logo file
 export const validateLogoFile = (file: File): string | null => {
   if (!TEAM_CONFIG.LOGO_ACCEPTED_TYPES.includes(file.type)) {
-    return "Please select a valid image file (JPEG, PNG, GIF, or WebP)";
+    return 'Please select a valid image file (JPEG, PNG, GIF, or WebP)';
   }
 
   if (file.size > TEAM_CONFIG.LOGO_MAX_FILE_SIZE) {
@@ -38,4 +38,4 @@ export const validateLogoFile = (file: File): string | null => {
   }
 
   return null;
-}; 
+};
