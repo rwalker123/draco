@@ -22,22 +22,22 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm run install:all
+        run: npm install
         
       - name: Security - Audit Dependencies
         run: npm audit --audit-level=moderate
         
       - name: Type Check
-        run: npm run type-check:all
+        run: npm run type-check
         
       - name: Lint
-        run: npm run lint:all
+        run: npm run lint
         
       - name: Build
         run: npm run build
         
       - name: Test
-        run: npm run test:all
+        run: npm run test
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         
