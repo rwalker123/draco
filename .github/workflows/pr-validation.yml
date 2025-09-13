@@ -26,16 +26,13 @@ jobs:
         
       - name: Security - Audit Dependencies
         run: npm audit --audit-level=high
-        
-      - name: Type Check
-        run: npm run type-check
-        
+
       - name: Lint
         run: npm run lint
-        
+
       - name: Build
         run: npm run build
-        
+
       - name: Test
         run: npm run test
         env:
@@ -49,8 +46,7 @@ jobs:
       - name: Validation Summary
         run: |
           echo "## Validation Results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Type checking passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Linting passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Build completed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Security checks passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Linting passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build completed successfully (includes type checking)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
