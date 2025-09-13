@@ -16,7 +16,6 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@draco/shared-types": "file:../shared/shared-types",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@lexical/html": "^0.35.0",
