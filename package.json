@@ -6,7 +6,8 @@
   "workspaces": {
     "packages": [
       "draco-nodejs/backend",
-      "draco-nodejs/frontend-next"
+      "draco-nodejs/frontend-next",
+      "draco-nodejs/shared/*"
     ]
   },
   "scripts": {
@@ -40,14 +41,15 @@
     "frontend:format": "npm run format -w @draco/frontend-next",
     "frontend:type-check": "npm run type-check -w @draco/frontend-next",
     "dev": "concurrently \"npm run dev -w @draco/backend\" \"npm run dev -w @draco/frontend-next\"",
-    "build": "npm run build --workspaces && npm run type-check",
+    "build": "npm run build -w @draco/shared-schemas && npm run build -w @draco/backend && npm run build -w @draco/frontend-next",
     "lint": "npm run lint --workspaces",
     "lint:fix": "npm run lint:fix --workspaces",
     "format": "npm run format --workspaces",
     "type-check": "npm run type-check --workspaces",
     "test": "npm run test --workspaces",
     "start": "concurrently \"npm start -w @draco/backend\" \"npm start -w @draco/frontend-next\"",
-    "secrets:update-baseline": "node scripts/update-baseline.js"
+    "secrets:update-baseline": "node scripts/update-baseline.js",
+    "sync:api": "npm -w @draco/backend run generate:openapi && npm -w @draco/backend run generate:client"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
