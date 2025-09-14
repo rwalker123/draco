@@ -1,0 +1,3672 @@
+openapi: 3.0.0
+info:
+  title: Draco Sports Manager API
+  version: 1.0.0
+  description: API documentation for Draco Sports Manager
+servers:
+  - url: https://localhost:3001
+    description: Development server
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: An error occurred
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation completed successfully
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123"
+        username:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          example: john@example.com
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00Z
+    LoginCredentials:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Username for login
+          example: john_doe
+        password:
+          type: string
+          description: Password for login
+          example: password123
+    RegisterData:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          description: Username for registration
+          example: john_doe
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: john@example.com
+        password:
+          type: string
+          description: Password (minimum 6 characters)
+          example: password123
+        firstName:
+          type: string
+          description: First name
+          example: John
+        lastName:
+          type: string
+          description: Last name
+          example: Doe
+    IPlayersWantedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the classified
+          example: "789"
+        accountId:
+          type: string
+          description: Account ID the classified belongs to
+          example: "123"
+        dateCreated:
+          type: string
+          format: date
+          description: Date when the classified was created
+          example: "2024-01-01"
+        createdByContactId:
+          type: string
+          description: Contact ID of the creator
+          example: "456"
+        teamEventName:
+          type: string
+          maxLength: 50
+          description: Name of the team event or team
+          example: "Spring Training Team"
+        description:
+          type: string
+          description: Detailed description of what's needed
+          example: "Looking for experienced players for spring training season"
+        positionsNeeded:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position IDs needed
+          example: "1,2,3"
+        creator:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Contact ID of the creator
+              example: "456"
+            firstName:
+              type: string
+              description: First name of the creator
+              example: "John"
+            lastName:
+              type: string
+              description: Last name of the creator
+              example: "Doe"
+            email:
+              type: string
+              format: email
+              description: Email of the creator
+              example: "john@example.com"
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Account ID
+              example: "123"
+            name:
+              type: string
+              description: Account name
+              example: "Test Account"
+    IBaseballPosition:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Position ID
+          example: "1"
+        name:
+          type: string
+          description: Position name
+          example: "Pitcher"
+        category:
+          type: string
+          enum: ["pitching", "infield", "outfield", "catching", "utility"]
+          description: Position category
+          example: "pitching"
+        abbreviation:
+          type: string
+          description: Position abbreviation
+          example: "P"
+    IExperienceLevel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experience level ID
+          example: "intermediate"
+        name:
+          type: string
+          description: Experience level name
+          example: "Intermediate"
+        description:
+          type: string
+          description: Experience level description
+          example: "Solid fundamental skills, understands game strategy"
+        yearsRequired:
+          type: number
+          description: Years of experience required
+          example: 2
+        skillLevel:
+          type: string
+          enum: ["beginner", "intermediate", "advanced", "expert"]
+          description: Skill level category
+          example: "intermediate"
+    IPaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Items per page
+          example: 20
+        hasNext:
+          type: boolean
+          description: Whether there are more pages
+          example: true
+        hasPrev:
+          type: boolean
+          description: Whether there are previous pages
+          example: false
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 5
+    IClassifiedSearchFilters:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["players", "teams", "all"]
+          description: Type of classified
+          example: "all"
+        positions:
+          type: array
+          items:
+            type: string
+          description: Position IDs to filter by
+          example: ["pitcher", "catcher"]
+        experience:
+          type: array
+          items:
+            type: string
+          description: Experience level IDs to filter by
+          example: ["intermediate", "advanced"]
+        dateRange:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+              nullable: true
+              description: Start date for filtering
+              example: "2024-01-01"
+            to:
+              type: string
+              format: date
+              nullable: true
+              description: End date for filtering
+              example: "2024-12-31"
+        searchQuery:
+          type: string
+          nullable: true
+          description: Search query text
+          example: "baseball team"
+    ITeamsWantedOwnerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the classified
+          example: "789"
+        accountId:
+          type: string
+          description: Account ID the classified belongs to
+          example: "123"
+        dateCreated:
+          type: string
+          format: date
+          description: Date when the classified was created
+          example: "2024-01-01"
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position IDs played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: Player's birth date
+          example: "1990-05-15"
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Account ID
+              example: "123"
+            name:
+              type: string
+              description: Account name
+              example: "Local Baseball League"
+    ITeamsWantedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the classified
+          example: "789"
+        accountId:
+          type: string
+          description: Account ID the classified belongs to
+          example: "123"
+        dateCreated:
+          type: string
+          format: date
+          description: Date when the classified was created
+          example: "2024-01-01"
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position IDs played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: Player's birth date
+          example: "1990-05-15"
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Account ID
+              example: "123"
+            name:
+              type: string
+              description: Account name
+              example: "Local Baseball League"
+    ITeamsWantedContactInfo:
+      type: object
+      description: Contact information for a Teams Wanted classified (on-demand access only)
+      properties:
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+      required:
+        - email
+        - phone
+    IPlayersWantedCreateRequest:
+      type: object
+      required:
+        - teamEventName
+        - description
+        - positionsNeeded
+      properties:
+        teamEventName:
+          type: string
+          maxLength: 50
+          description: Name of the team event or team
+          example: "Spring Training Team"
+        description:
+          type: string
+          description: Detailed description of what's needed
+          example: "Looking for experienced players for spring training season"
+        positionsNeeded:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names needed
+          example: "pitcher,catcher,first-base"
+    ITeamsWantedCreateRequest:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - experience
+        - positionsPlayed
+        - birthDate
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          description: Player's birth date
+          example: "1990-05-15"
+    IPlayersWantedUpdateRequest:
+      type: object
+      properties:
+        teamEventName:
+          type: string
+          maxLength: 50
+          description: Name of the team event or team
+          example: "Updated Spring Training Team"
+        description:
+          type: string
+          description: Detailed description of what's needed
+          example: "Looking for experienced players for spring training season"
+        positionsNeeded:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names needed
+          example: "pitcher,catcher,first-base"
+    ITeamsWantedUpdateRequest:
+      type: object
+      required:
+        - accessCode
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: Player's name
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Player's email address
+          example: "john@example.com"
+        phone:
+          type: string
+          description: Player's phone number
+          example: "+1-555-123-4567"
+        experience:
+          type: string
+          description: Description of player's experience
+          example: "5 years playing recreational baseball"
+        positionsPlayed:
+          type: string
+          maxLength: 50
+          description: Comma-separated list of position names played
+          example: "pitcher,first-base"
+        birthDate:
+          type: string
+          format: date
+          description: Player's birth date
+          example: "1990-05-15"
+        accessCode:
+          type: string
+          description: Access code for authentication
+          example: "abc123def456" # pragma: allowlist secret
+    AccessCodeRequest:
+      type: object
+      required:
+        - accessCode
+      properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Access code for verification
+          example: "abc123def456" # pragma: allowlist secret
+    IContactCreatorRequest:
+      type: object
+      required:
+        - senderName
+        - senderEmail
+        - message
+      properties:
+        senderName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Name of the person contacting the team creator
+          example: "John Smith"
+        senderEmail:
+          type: string
+          format: email
+          maxLength: 254
+          description: Email address of the person contacting the team creator
+          example: "john.smith@example.com"
+        message:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          description: Message to send to the team creator
+          example: "Hi, I'm interested in joining your team. I have 5 years of experience playing shortstop and second base."
+    RateLimitError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Rate limit exceeded. Please try again later."
+        retryAfter:
+          type: integer
+          description: Seconds to wait before retrying
+          example: 60
+    WorkoutRegistrationUpdateDTO:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ["pending", "confirmed", "cancelled", "no-show"]
+          description: Registration status
+          example: "confirmed"
+        notes:
+          type: string
+          description: Administrative notes about the registration
+          example: "Player confirmed attendance"
+        checkedIn:
+          type: boolean
+          description: Whether the participant has checked in
+          example: true
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+    accessCodeAuth:
+      type: apiKey
+      in: body
+      name: accessCode
+      description: Access code for Teams Wanted operations (alternative to JWT)
+paths:
+  "/api/accounts/{accountId}/contacts/me":
+    get:
+      summary: Get current user's contact for an account
+      description: Returns the authenticated user's contact within the specified
+        account, or 404 if not registered
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      responses:
+        "200":
+          description: Contact found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      contact:
+                        type: object
+        "404":
+          description: Not registered with this account
+    post:
+      summary: Self-register current user to an account
+      description: Creates a contact for the authenticated user within the specified account
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                middleName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+      responses:
+        "201":
+          description: Contact created
+        "409":
+          description: Already registered
+  "/api/accounts/{accountId}/contacts/me/link-by-name":
+    post:
+      summary: Link existing contact in account to current user by matching name
+      description: Finds a unique contact in the specified account by
+        first/middle/last name and links it to the authenticated user's userid.
+        Fails if none or multiple matches found, or if already linked.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+              properties:
+                firstName:
+                  type: string
+                middleName:
+                  type: string
+                lastName:
+                  type: string
+      responses:
+        "200":
+          description: Contact linked successfully
+        "404":
+          description: No unique match found
+        "409":
+          description: Contact already linked to a user
+  /api/accounts/search:
+    get:
+      summary: Search for accounts
+      description: Public search for accounts by name, type, or affiliation (no
+        authentication required)
+      tags:
+        - Accounts
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Search query for account name, type, or affiliation
+          example: baseball
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      accounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "123"
+                            name:
+                              type: string
+                              example: Local Baseball League
+                            accountType:
+                              type: string
+                              example: Baseball League
+                            firstYear:
+                              type: integer
+                              example: 2020
+                            affiliation:
+                              type: string
+                              example: National Baseball Association
+                            urls:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    example: "456"
+                                  url:
+                                    type: string
+                                    example: www.localbaseball.com
+        "400":
+          description: Missing search query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/accounts/by-domain:
+    get:
+      summary: Get account by domain
+      description: Get account information by domain (no authentication required, used
+        by domain routing middleware)
+      tags:
+        - Accounts
+      responses:
+        "200":
+          description: Account found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      account:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "123"
+                          name:
+                            type: string
+                            example: Local Baseball League
+                          accountType:
+                            type: string
+                            example: Baseball League
+                          accountTypeId:
+                            type: string
+                            example: "1"
+                          firstYear:
+                            type: integer
+                            example: 2020
+                          timezoneId:
+                            type: integer
+                            example: 1
+                          urls:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  example: "456"
+                                url:
+                                  type: string
+                                  example: www.localbaseball.com
+        "400":
+          description: Missing host header
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: No account found for this domain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/player-classifieds/players-wanted":
+    post:
+      operationId: createPlayersWanted
+      summary: Create a new Players Wanted classified
+      description: Allows any authenticated account user to post "Players Wanted" ads
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IPlayersWantedCreateRequest"
+      responses:
+        "201":
+          description: Players Wanted classified created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/IPlayersWantedResponse"
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "429":
+          description: Rate limit exceeded
+    get:
+      operationId: getPlayersWanted
+      summary: Get Players Wanted classifieds
+      description: Retrieve Players Wanted classifieds with pagination and filtering
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items per page
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - dateCreated
+              - relevance
+            default: dateCreated
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          description: Sort order
+        - in: query
+          name: searchQuery
+          schema:
+            type: string
+          description: Search query for filtering
+      responses:
+        "200":
+          description: Players Wanted classifieds retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IPlayersWantedResponse"
+                  total:
+                    type: integer
+                  pagination:
+                    $ref: "#/components/schemas/IPaginationMeta"
+                  filters:
+                    $ref: "#/components/schemas/IClassifiedSearchFilters"
+  "/api/accounts/{accountId}/player-classifieds/teams-wanted":
+    post:
+      operationId: createTeamsWanted
+      summary: Create a new Teams Wanted classified
+      description: Allows players to post "Teams Wanted" ads (public endpoint)
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ITeamsWantedCreateRequest"
+      responses:
+        "201":
+          description: Teams Wanted classified created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/ITeamsWantedOwnerResponse"
+                  message:
+                    type: string
+                    description: Instructions for accessing the classified
+        "400":
+          description: Validation error or invalid input
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+    get:
+      operationId: getTeamsWanted
+      summary: Get Teams Wanted classifieds (public)
+      description: Retrieve Teams Wanted classifieds for public viewing
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items per page
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - dateCreated
+              - relevance
+            default: dateCreated
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          description: Sort order
+        - in: query
+          name: searchQuery
+          schema:
+            type: string
+          description: Search query for filtering
+      responses:
+        "200":
+          description: Teams Wanted classifieds retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ITeamsWantedResponse"
+                  total:
+                    type: integer
+                  pagination:
+                    $ref: "#/components/schemas/IPaginationMeta"
+                  filters:
+                    $ref: "#/components/schemas/IClassifiedSearchFilters"
+  "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/verify":
+    post:
+      operationId: verifyTeamsWantedAccess
+      summary: Verify Teams Wanted classified access
+      description: Verify access code to manage a Teams Wanted classified
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessCodeRequest"
+      responses:
+        "200":
+          description: Access verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/ITeamsWantedOwnerResponse"
+        "400":
+          description: Invalid access code
+        "404":
+          description: Classified not found
+  "/api/accounts/{accountId}/player-classifieds/teams-wanted/access-code":
+    post:
+      operationId: getTeamsWantedByAccessCode
+      summary: Get Teams Wanted classified by access code
+      description: Retrieve a Teams Wanted classified using the access code (public endpoint)
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessCodeRequest"
+      responses:
+        "200":
+          description: Teams Wanted classified retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/ITeamsWantedOwnerResponse"
+        "400":
+          description: Missing access code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Invalid access code or Teams Wanted ad not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+  "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}":
+    put:
+      operationId: updateTeamsWanted
+      summary: Update Teams Wanted classified
+      description: Update a Teams Wanted classified using JWT authentication (account members) or access code (owners)
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+        - accessCodeAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ITeamsWantedUpdateRequest"
+      responses:
+        "200":
+          description: Teams Wanted classified updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/ITeamsWantedOwnerResponse"
+        "400":
+          description: Validation error or invalid access code
+        "404":
+          description: Classified not found
+    delete:
+      operationId: deleteTeamsWanted
+      summary: Delete Teams Wanted classified
+      description: Delete a Teams Wanted classified using JWT authentication (account members) or access code (owners)
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+        - accessCodeAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessCodeRequest"
+      responses:
+        "200":
+          description: Teams Wanted classified deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        "400":
+          description: Invalid access code
+        "404":
+          description: Classified not found
+  "/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/contact":
+    get:
+      operationId: getTeamsWantedContactInfo
+      summary: Get Teams Wanted contact information
+      description: Get contact information (email and phone) for a specific Teams Wanted classified. Requires authentication and account membership for security.
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      responses:
+        "200":
+          description: Contact information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/ITeamsWantedContactInfo"
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions - must be account member
+        "404":
+          description: Classified not found or not accessible
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+  "/api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}":
+    put:
+      operationId: updatePlayersWanted
+      summary: Update Players Wanted classified
+      description: Update a Players Wanted classified (creator can edit own, AccountAdmin can edit any)
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IPlayersWantedUpdateRequest"
+      responses:
+        "200":
+          description: Players Wanted classified updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/IPlayersWantedResponse"
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Classified not found
+    delete:
+      operationId: deletePlayersWanted
+      summary: Delete Players Wanted classified
+      description: Delete a Players Wanted classified (creator can delete own, AccountAdmin can delete any)
+      tags:
+        - PlayerClassifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Classified ID
+      responses:
+        "200":
+          description: Players Wanted classified deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Classified not found
+  "/api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}/contact":
+    post:
+      operationId: contactPlayersWantedCreator
+      summary: Contact the creator of a Players Wanted classified
+      description: Allows anonymous users to send contact requests to team creators via email without exposing personal information. This endpoint is rate-limited and includes validation for spam prevention.
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: classifiedId
+          required: true
+          schema:
+            type: string
+          description: Players Wanted classified ID
+          example: "456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IContactCreatorRequest"
+      responses:
+        "200":
+          description: Contact request sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Contact request sent successfully. The team creator will receive your message via email."
+        "400":
+          description: Validation error - missing or invalid request data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    examples:
+                      missing_fields:
+                        value: "Missing required fields: senderName, senderEmail, and message are required"
+                      invalid_email:
+                        value: "Invalid email format"
+                      message_length:
+                        value: "Message must be between 10 and 2000 characters"
+        "404":
+          description: Players Wanted classified not found or no longer available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Classified not found or no longer available"
+        "429":
+          description: Rate limit exceeded - too many contact requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitError"
+        "500":
+          description: Internal server error - failed to send email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Failed to send contact request. Please try again later."
+  "/api/accounts/{accountId}/player-classifieds/positions":
+    get:
+      operationId: getBaseballPositions
+      summary: Get available baseball positions
+      description: Retrieve list of available baseball positions for classifieds
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      responses:
+        "200":
+          description: Baseball positions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IBaseballPosition"
+  "/api/accounts/{accountId}/player-classifieds/experience-levels":
+    get:
+      operationId: getExperienceLevels
+      summary: Get available experience levels
+      description: Retrieve list of available experience levels for classifieds
+      tags:
+        - PlayerClassifieds
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      responses:
+        "200":
+          description: Experience levels retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IExperienceLevel"
+  "/api/accounts/{accountId}/registration":
+    post:
+      summary: Combined login + account registration
+      description: For users not logged in. Supports creating a new user or logging in
+        an existing user and registering them to the account.
+      tags:
+        - Accounts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+                - properties:
+                    mode:
+                      type: string
+                      enum:
+                        - newUser
+                    email:
+                      type: string
+                    password:
+                      type: string
+                    firstName:
+                      type: string
+                    middleName:
+                      type: string
+                    lastName:
+                      type: string
+                  required:
+                    - mode
+                    - email
+                    - password
+                    - firstName
+                    - lastName
+                - properties:
+                    mode:
+                      type: string
+                      enum:
+                        - existingUser
+                    usernameOrEmail:
+                      type: string
+                    password:
+                      type: string
+                    firstName:
+                      type: string
+                    middleName:
+                      type: string
+                    lastName:
+                      type: string
+                  required:
+                    - mode
+                    - usernameOrEmail
+                    - password
+                    - firstName
+      responses:
+        "201":
+          description: Registered to account and token issued
+        "400":
+          description: Validation error
+        "401":
+          description: Invalid credentials
+        "409":
+          description: Already registered
+  "/api/accounts/{accountId}/workouts":
+    get:
+      summary: List workouts
+      description: Public endpoint to list workouts for an account
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - upcoming
+              - past
+              - all
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: List of workouts
+    post:
+      summary: Create a workout
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Workout created
+  "/api/accounts/{accountId}/workouts/sources":
+    get:
+      summary: Get where-heard options
+      description: Public endpoint returning the configured options for registrations
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Options
+    put:
+      summary: Replace where-heard options
+      description: Admin endpoint to upsert the allowed where-heard options array
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                options:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Saved
+    post:
+      summary: Add a single where-heard option
+      description: Admin endpoint to append a new option to the where-heard list
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                option:
+                  type: string
+                  maxLength: 25
+      responses:
+        "200":
+          description: Option added
+        "400":
+          description: Invalid input
+  "/api/accounts/{accountId}/workouts/{workoutId}":
+    get:
+      summary: Get workout details
+      description: Public endpoint to get a workout
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: workoutId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workout details
+        "404":
+          description: Workout not found
+    put:
+      summary: Update a workout
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: workoutId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated
+    delete:
+      summary: Delete a workout
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: workoutId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+  "/api/accounts/{accountId}/workouts/{workoutId}/registrations":
+    post:
+      summary: Register for a workout
+      description: Public endpoint to create a workout registration (no authentication
+        required)
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: workoutId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Registration created
+    get:
+      summary: List registrations for a workout
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: workoutId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of registrations
+  "/api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}":
+    put:
+      summary: Update a registration
+      description: Admin endpoint to update a workout registration
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: workoutId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: registrationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutRegistrationUpdateDTO"
+      responses:
+        "200":
+          description: Updated registration
+    delete:
+      summary: Delete a registration
+      description: Admin endpoint to delete a workout registration
+      security:
+        - bearerAuth: []
+      tags:
+        - Workouts
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: workoutId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: registrationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+  /api/auth/login:
+    post:
+      summary: Login with username and password
+      description: Authenticate a user and return a JWT token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginCredentials"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Login successful
+                  token:
+                    type: string
+                    description: JWT token for authentication
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      description: Create a new user account with the provided information
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterData"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User registered successfully
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Validation error or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/auth/logout:
+    post:
+      summary: Logout user
+      description: Logout endpoint (JWT tokens are stateless, so logout is handled
+        client-side)
+      tags:
+        - Authentication
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+  /api/auth/me:
+    get:
+      summary: Get current user information
+      description: Retrieve information about the currently authenticated user
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User information retrieved
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/auth/verify:
+    post:
+      summary: Verify JWT token
+      description: Verify if a JWT token is valid and return user information
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: JWT token to verify
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        "200":
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Token is valid
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Token is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/auth/change-password:
+    post:
+      summary: Change user password
+      description: Change the password for the currently authenticated user
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  description: Current password
+                  example: oldpassword123
+                newPassword:
+                  type: string
+                  description: New password (minimum 6 characters)
+                  example: newpassword123
+      responses:
+        "200":
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: User not authenticated or current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/results":
+    put:
+      summary: Update game results
+      description: Update game results including scores, status, and notifications
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+          example: "456"
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+          description: Game ID
+          example: "789"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - homeScore
+                - awayScore
+                - gameStatus
+              properties:
+                homeScore:
+                  type: integer
+                  minimum: 0
+                  description: Home team score
+                  example: 5
+                awayScore:
+                  type: integer
+                  minimum: 0
+                  description: Away team score
+                  example: 3
+                gameStatus:
+                  type: integer
+                  minimum: 0
+                  maximum: 5
+                  description: Game status (0=Incomplete, 1=Final, 2=In Progress, 3=Postponed,
+                    4=Forfeit, 5=Did Not Report)
+                  example: 1
+                emailPlayers:
+                  type: boolean
+                  description: Send email notification to players
+                  example: false
+                postToTwitter:
+                  type: boolean
+                  description: Post results to Twitter
+                  example: false
+                postToBluesky:
+                  type: boolean
+                  description: Post results to Bluesky
+                  example: false
+                postToFacebook:
+                  type: boolean
+                  description: Post results to Facebook
+                  example: false
+      responses:
+        "200":
+          description: Game results updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Game results updated successfully
+                  data:
+                    type: object
+                    properties:
+                      gameId:
+                        type: string
+                        example: "789"
+                      homeScore:
+                        type: integer
+                        example: 5
+                      awayScore:
+                        type: integer
+                        example: 3
+                      gameStatus:
+                        type: integer
+                        example: 1
+                      notifications:
+                        type: array
+                        items:
+                          type: string
+                        example: []
+        "400":
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - no access to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/games":
+    get:
+      summary: Get all games for a season
+      description: Retrieve all games for a season across all leagues with optional
+        filtering
+      tags:
+        - Games
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+          example: "456"
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Start date for filtering games (YYYY-MM-DD)
+          example: 2024-01-01
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: End date for filtering games (YYYY-MM-DD)
+          example: 2024-12-31
+        - in: query
+          name: teamId
+          schema:
+            type: string
+          description: Filter games by team ID
+          example: "101"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Number of items per page
+          example: 50
+      responses:
+        "200":
+          description: Games retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      games:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "789"
+                            gameDate:
+                              type: string
+                              format: date-time
+                              example: 2024-06-15T18:00:00Z
+                            homeTeam:
+                              type: string
+                              example: Red Sox
+                            awayTeam:
+                              type: string
+                              example: Yankees
+                            homeScore:
+                              type: integer
+                              example: 5
+                            awayScore:
+                              type: integer
+                              example: 3
+                            gameStatus:
+                              type: integer
+                              example: 1
+                            gameStatusText:
+                              type: string
+                              example: Final
+                            field:
+                              type: string
+                              example: Fenway Park
+                            league:
+                              type: string
+                              example: Major League
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/leagues":
+    get:
+      summary: Get all leagues for an account
+      description: Retrieve all leagues for a specific account (requires account access)
+      tags:
+        - Leagues
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+      responses:
+        "200":
+          description: Leagues retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      leagues:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "101"
+                            name:
+                              type: string
+                              example: Major League
+                            accountId:
+                              type: string
+                              example: "123"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - no access to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Create a new league
+      description: Create a new league for an account (requires AccountAdmin or
+        Administrator)
+      tags:
+        - Leagues
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: League name
+                  example: Minor League
+      responses:
+        "201":
+          description: League created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      league:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "102"
+                          name:
+                            type: string
+                            example: Minor League
+                          accountId:
+                            type: string
+                            example: "123"
+        "400":
+          description: Missing league name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - requires AccountAdmin or Administrator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: League with this name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/leagues/{leagueId}":
+    get:
+      summary: Get specific league details
+      description: Retrieve details for a specific league (requires account access)
+      tags:
+        - Leagues
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: leagueId
+          required: true
+          schema:
+            type: string
+          description: League ID
+          example: "101"
+      responses:
+        "200":
+          description: League details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      league:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "101"
+                          name:
+                            type: string
+                            example: Major League
+                          accountId:
+                            type: string
+                            example: "123"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - no access to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: League not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/monitoring/health:
+    get:
+      summary: Get comprehensive system health status
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: System health information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - healthy
+                      - warning
+                      - critical
+                  timestamp:
+                    type: string
+                    format: date-time
+                  database:
+                    type: object
+                  performance:
+                    type: object
+                  uptime:
+                    type: number
+  /api/monitoring/performance:
+    get:
+      summary: Get detailed performance metrics
+      tags:
+        - Monitoring
+      parameters:
+        - in: query
+          name: window
+          schema:
+            type: integer
+          description: Time window in minutes (default 5)
+      responses:
+        "200":
+          description: Performance metrics
+  /api/monitoring/slow-queries:
+    get:
+      summary: Get recent slow queries
+      tags:
+        - Monitoring
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Number of queries to return (default 20)
+      responses:
+        "200":
+          description: List of slow queries
+  /api/monitoring/connection-pool:
+    get:
+      summary: Get connection pool status
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Connection pool metrics
+  /api/monitoring/reset:
+    post:
+      summary: Reset performance monitoring data
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Monitoring data reset successfully
+  /api/monitoring/config:
+    get:
+      summary: Get current monitoring configuration
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Current monitoring configuration
+  "/api/accounts/{accountId}/seasons":
+    get:
+      summary: Get all seasons for an account
+      description: Retrieve all seasons for a specific account (requires account access)
+      tags:
+        - Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+      responses:
+        "200":
+          description: Seasons retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      seasons:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "456"
+                            name:
+                              type: string
+                              example: 2024 Season
+                            accountId:
+                              type: string
+                              example: "123"
+                            isCurrent:
+                              type: boolean
+                              example: true
+                            leagues:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    example: "789"
+                                  leagueId:
+                                    type: string
+                                    example: "101"
+                                  leagueName:
+                                    type: string
+                                    example: Major League
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - no access to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/current":
+    get:
+      summary: Get current season for an account
+      description: Retrieve the current season for a specific account
+      tags:
+        - Seasons
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+      responses:
+        "200":
+          description: Current season retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      season:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "456"
+                          name:
+                            type: string
+                            example: 2024 Season
+                          accountId:
+                            type: string
+                            example: "123"
+                          isCurrent:
+                            type: boolean
+                            example: true
+                          leagues:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  example: "789"
+                                leagueId:
+                                  type: string
+                                  example: "101"
+                                leagueName:
+                                  type: string
+                                  example: Major League
+        "404":
+          description: No current season found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}":
+    get:
+      summary: Get specific season details
+      description: Retrieve details for a specific season (requires account access)
+      tags:
+        - Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+          example: "456"
+      responses:
+        "200":
+          description: Season details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      season:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "456"
+                          name:
+                            type: string
+                            example: 2024 Season
+                          accountId:
+                            type: string
+                            example: "123"
+                          leagues:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  example: "789"
+                                leagueId:
+                                  type: string
+                                  example: "101"
+                                leagueName:
+                                  type: string
+                                  example: Major League
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - no access to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/participants/count":
+    get:
+      summary: Get season participants count
+      description: Get the count of participants (contacts with roster entries) for a specific season
+      operationId: getSeasonParticipantsCount
+      tags:
+        - Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+          example: "456"
+      responses:
+        "200":
+          description: Season participants count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      seasonId:
+                        type: string
+                        example: "456"
+                      participantCount:
+                        type: integer
+                        example: 125
+                        description: Number of unique contacts participating in the season
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - no access to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/leagues":
+    get:
+      summary: Get leagues for a specific season
+      description: Retrieve all leagues for a specific season (requires account access)
+      operationId: getSeasonLeagues
+      tags:
+        - Leagues
+        - Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+          example: "123"
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+          example: "456"
+        - in: query
+          name: includeTeams
+          required: false
+          schema:
+            type: string
+          description: Include team data (optional)
+        - in: query
+          name: includePlayerCounts
+          required: false
+          schema:
+            type: string
+            enum: ['true']
+          description: Include player counts for each league (optional)
+        - in: query
+          name: includeManagerCounts
+          required: false
+          schema:
+            type: string
+            enum: ['true']
+          description: Include manager counts for each league (optional)
+      responses:
+        "200":
+          description: Season leagues retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Season leagues retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      leagueSeasons:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "789"
+                              description: League season ID
+                            leagueId:
+                              type: string
+                              example: "456"
+                              description: League ID
+                            leagueName:
+                              type: string
+                              example: "Major League"
+                              description: League name
+                            accountId:
+                              type: string
+                              example: "123"
+                            teamCount:
+                              type: number
+                              example: 8
+                              description: Number of teams in this league
+                            divisions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    example: "div123"
+                                    description: Division season ID
+                                  divisionId:
+                                    type: string
+                                    example: "division456"
+                                    description: Division definition ID
+                                  divisionName:
+                                    type: string
+                                    example: "Major Division"
+                                    description: Division name
+                                  priority:
+                                    type: number
+                                    example: 1
+                                    description: Division priority order
+                                  teams:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        id:
+                                          type: string
+                                          example: "team123"
+                                          description: Team season ID
+                                        teamId:
+                                          type: string
+                                          example: "team456"
+                                          description: Team definition ID
+                                        name:
+                                          type: string
+                                          example: "Eagles"
+                                          description: Team name
+                                        webAddress:
+                                          type: string
+                                          nullable: true
+                                          example: "www.eagles.com"
+                                          description: Team website
+                                        youtubeUserId:
+                                          type: string
+                                          nullable: true
+                                          example: "eagles_baseball"
+                                          description: YouTube channel username
+                                        defaultVideo:
+                                          type: string
+                                          nullable: true
+                                          example: "season_highlights.mp4"
+                                          description: Default video file
+                                        autoPlayVideo:
+                                          type: boolean
+                                          example: false
+                                          description: Whether to auto-play videos
+                                        logoUrl:
+                                          type: string
+                                          example: "https://example.com/logos/eagles.png"
+                                          description: Team logo URL
+                                        playerCount:
+                                          type: number
+                                          example: 15
+                                          description: Number of players on this team (only included if includePlayerCounts=true)
+                                        managerCount:
+                                          type: number
+                                          example: 3
+                                          description: Number of managers on this team (only included if includeManagerCounts=true)
+                            unassignedTeams:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    example: "team789"
+                                    description: Team season ID
+                                  teamId:
+                                    type: string
+                                    example: "team101"
+                                    description: Team definition ID
+                                  name:
+                                    type: string
+                                    example: "Hawks"
+                                    description: Team name
+                                  webAddress:
+                                    type: string
+                                    nullable: true
+                                    example: "www.hawks.com"
+                                    description: Team website
+                                  youtubeUserId:
+                                    type: string
+                                    nullable: true
+                                    example: "hawks_baseball"
+                                    description: YouTube channel username
+                                  defaultVideo:
+                                    type: string
+                                    nullable: true
+                                    example: "team_intro.mp4"
+                                    description: Default video file
+                                  autoPlayVideo:
+                                    type: boolean
+                                    example: false
+                                    description: Whether to auto-play videos
+                                  logoUrl:
+                                    type: string
+                                    example: "https://example.com/logos/hawks.png"
+                                    description: Team logo URL
+                                  playerCount:
+                                    type: number
+                                    example: 12
+                                    description: Number of players on this team (only included if includePlayerCounts=true)
+                                  managerCount:
+                                    type: number
+                                    example: 2
+                                    description: Number of managers on this team (only included if includeManagerCounts=true)
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers":
+    get:
+      summary: List all managers for a team season
+      tags:
+        - TeamManagers
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamSeasonId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of managers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        teamseasonid:
+                          type: string
+                        contactid:
+                          type: string
+                        contacts:
+                          type: object
+                          description: Contact info
+        "500":
+          $ref: "#/components/responses/Error"
+    post:
+      summary: Add a manager to a team season
+      tags:
+        - TeamManagers
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamSeasonId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contactId
+              properties:
+                contactId:
+                  type: string
+      responses:
+        "200":
+          description: Manager added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/managers":
+    get:
+      summary: List all managers for a season (aggregated from team managers)
+      tags:
+        - SeasonManagers
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+          description: Account ID
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+          description: Season ID
+        - in: query
+          name: leagueSeasonId
+          required: false
+          schema:
+            type: string
+          description: Filter by league season ID
+        - in: query
+          name: teamSeasonId
+          required: false
+          schema:
+            type: string
+          description: Filter by team season ID
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+          description: Search by manager name or email
+      responses:
+        "200":
+          description: List of managers for the season
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      managers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique manager identifier
+                              example: "123-456"
+                            contactId:
+                              type: string
+                              description: Contact ID
+                              example: "123"
+                            firstName:
+                              type: string
+                              description: Manager first name
+                              example: "John"
+                            lastName:
+                              type: string
+                              description: Manager last name
+                              example: "Doe"
+                            email:
+                              type: string
+                              nullable: true
+                              description: Manager email address
+                              example: "john.doe@example.com"
+                            phone1:
+                              type: string
+                              nullable: true
+                              description: Primary phone number
+                              example: "555-123-4567"
+                            phone2:
+                              type: string
+                              nullable: true
+                              description: Secondary phone number
+                              example: "555-987-6543"
+                            phone3:
+                              type: string
+                              nullable: true
+                              description: Tertiary phone number
+                              example: "555-456-7890"
+                            hasValidEmail:
+                              type: boolean
+                              description: Whether the manager has a valid email address
+                              example: true
+                            allTeams:
+                              type: array
+                              description: All teams this manager manages
+                              items:
+                                type: object
+                                properties:
+                                  leagueSeasonId:
+                                    type: string
+                                    description: League season ID
+                                    example: "789"
+                                  teamSeasonId:
+                                    type: string
+                                    description: Team season ID
+                                    example: "456"
+                                  teamName:
+                                    type: string
+                                    description: Team name
+                                    example: "Eagles"
+                                  leagueName:
+                                    type: string
+                                    description: League name
+                                    example: "Spring League"
+                      total:
+                        type: integer
+                        description: Total number of managers
+                        example: 25
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+  "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers/{managerId}":
+    delete:
+      summary: Remove a manager from a team season
+      tags:
+        - TeamManagers
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: seasonId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamSeasonId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: managerId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Manager removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "500":
+          $ref: "#/components/responses/Error"
+  /api/webhooks/sendgrid:
+    post:
+      tags:
+        - Webhooks
+      summary: Handle SendGrid webhook events
+      description: Receives and processes webhook events from SendGrid for email
+        delivery tracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  email:
+                    type: string
+                  timestamp:
+                    type: number
+                  event:
+                    type: string
+                    enum:
+                      - delivered
+                      - bounce
+                      - dropped
+                      - open
+                      - click
+                      - processed
+                      - deferred
+                  sg_event_id:
+                    type: string
+                  sg_message_id:
+                    type: string
+      responses:
+        "200":
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  processed:
+                    type: number
+                  total:
+                    type: number
+                  errors:
+                    type: number
+        "400":
+          description: Invalid webhook payload
+        "401":
+          description: Invalid webhook signature
+        "500":
+          description: Internal server error
+  /api/webhooks/health:
+    get:
+      tags:
+        - Webhooks
+      summary: Webhook health check
+      description: Health check endpoint for webhook system
+      responses:
+        "200":
+          description: Webhook system is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                  provider:
+                    type: string
+                  webhooks:
+                    type: object
+  /api/webhooks/stats:
+    get:
+      tags:
+        - Webhooks
+      summary: Get webhook statistics
+      description: Returns statistics about webhook processing
+      responses:
+        "200":
+          description: Webhook statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_events_processed:
+                    type: number
+                  last_event_timestamp:
+                    type: string
+                  provider_status:
+                    type: object
+        "500":
+          description: Failed to get statistics
+  /api/cleanup/trigger:
+    post:
+      tags:
+        - Cleanup
+      summary: Manually trigger cleanup of expired data
+      description: Triggers immediate cleanup of expired player classifieds (older than 45 days). Requires database.cleanup permission.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cleanup completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Cleanup completed successfully
+                  data:
+                    type: object
+                    properties:
+                      expiredPlayersWanted:
+                        type: number
+                        description: Number of expired Players Wanted classifieds deleted
+                        example: 5
+                      expiredTeamsWanted:
+                        type: number
+                        description: Number of expired Teams Wanted classifieds deleted
+                        example: 3
+                      totalDeleted:
+                        type: number
+                        description: Total number of expired classifieds deleted
+                        example: 8
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+        "403":
+          description: Forbidden - database.cleanup permission required
+        "500":
+          description: Internal server error during cleanup
+  /api/cleanup/status:
+    get:
+      tags:
+        - Cleanup
+      summary: Get cleanup service status
+      description: Returns the current status of the cleanup service including next scheduled cleanup time. Requires database.cleanup permission.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cleanup service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      isRunning:
+                        type: boolean
+                        description: Whether the cleanup service is currently running
+                        example: true
+                      nextCleanup:
+                        type: string
+                        format: date-time
+                        description: Next scheduled cleanup time
+                        example: "2024-12-20T02:00:00.000Z"
+                      lastCleanup:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        description: Last cleanup execution time (if available)
+                        example: "2024-12-19T02:00:00.000Z"
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+        "403":
+          description: Forbidden - database.cleanup permission required
+        "500":
+          description: Internal server error
+tags:
+  - name: Cleanup
+    description: Data cleanup and maintenance endpoints
+  - name: Workouts
+    description: Account workouts and registrations
+  - name: TeamManagers
+    description: Team manager assignment endpoints
+  - name: SeasonManagers
+    description: Season-level manager aggregation endpoints
