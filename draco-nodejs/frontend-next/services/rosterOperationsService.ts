@@ -12,11 +12,11 @@ interface ErrorDetail {
   location?: string;
 }
 
-// Backend contact input format (updated to use middleName)
+// Backend contact input format (uses lowercase backend field names)
 interface ContactInputData {
   firstname?: string;
   lastname?: string;
-  middleName?: string; // ✅ Updated to use middleName instead of middlename
+  middlename?: string; // ✅ Uses lowercase middlename to match backend validation
   email?: string;
   phone1?: string;
   phone2?: string;
@@ -541,7 +541,7 @@ export class RosterOperationsService {
       if (contactData.firstName) contactInputData.firstname = contactData.firstName;
       if (contactData.lastName) contactInputData.lastname = contactData.lastName;
       if (contactData.middleName !== undefined)
-        contactInputData.middleName = contactData.middleName;
+        contactInputData.middlename = contactData.middleName;
       if (contactData.email !== undefined) contactInputData.email = contactData.email;
       if (contactData.phone1 !== undefined) contactInputData.phone1 = contactData.phone1;
       if (contactData.phone2 !== undefined) contactInputData.phone2 = contactData.phone2;

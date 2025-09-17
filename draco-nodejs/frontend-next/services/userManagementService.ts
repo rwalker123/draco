@@ -380,7 +380,7 @@ export class UserManagementService {
       backendData.lastname = contactData.lastName.trim();
     }
     if (contactData.middleName !== undefined) {
-      backendData.middleName = contactData.middleName;
+      backendData.middlename = contactData.middleName;
     }
     if (contactData.email && contactData.email.trim()) {
       backendData.email = contactData.email.trim();
@@ -516,7 +516,7 @@ export class UserManagementService {
       backendData.lastname = contactData.lastName;
     }
     if (contactData.middleName !== undefined) {
-      backendData.middleName = contactData.middleName;
+      backendData.middlename = contactData.middleName;
     }
     if (contactData.email !== undefined) {
       backendData.email = contactData.email;
