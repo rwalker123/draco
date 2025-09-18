@@ -1,4 +1,5 @@
-import { User, Role } from '../types/users';
+import { ContactType } from '@draco/shared-schemas';
+import { Role } from '../types/users';
 
 /**
  * Get display name for a role by roleId
@@ -11,14 +12,14 @@ export const getRoleDisplayName = (roleId: string, roles: Role[]): string => {
 /**
  * Format user's full name
  */
-export const formatUserName = (user: User): string => {
+export const formatUserName = (user: ContactType): string => {
   return `${user.firstName} ${user.lastName}`.trim();
 };
 
 /**
  * Validate user data
  */
-export const validateUserData = (user: User): boolean => {
+export const validateUserData = (user: ContactType): boolean => {
   return !!(user.id && user.firstName && user.lastName && user.email && user.userId);
 };
 
@@ -26,12 +27,12 @@ export const validateUserData = (user: User): boolean => {
  * Sort users by specified field
  */
 export const sortUsers = (
-  users: User[],
+  users: ContactType[],
   sortBy: 'firstName' | 'lastName' | 'email' = 'lastName',
-): User[] => {
+): ContactType[] => {
   return [...users].sort((a, b) => {
-    const aValue = a[sortBy].toLowerCase();
-    const bValue = b[sortBy].toLowerCase();
+    const aValue = a[sortBy]?.toLowerCase() || '';
+    const bValue = b[sortBy]?.toLowerCase() || '';
     return aValue.localeCompare(bValue);
   });
 };
@@ -39,7 +40,7 @@ export const sortUsers = (
 /**
  * Filter users by search term
  */
-export const filterUsersBySearch = (users: User[], searchTerm: string): User[] => {
+export const filterUsersBySearch = (users: ContactType[], searchTerm: string): ContactType[] => {
   if (!searchTerm.trim()) return users;
 
   const term = searchTerm.toLowerCase();
@@ -47,7 +48,7 @@ export const filterUsersBySearch = (users: User[], searchTerm: string): User[] =
     (user) =>
       user.firstName.toLowerCase().includes(term) ||
       user.lastName.toLowerCase().includes(term) ||
-      user.email.toLowerCase().includes(term) ||
+      user.email?.toLowerCase().includes(term) ||
       formatUserName(user).toLowerCase().includes(term),
   );
 };
@@ -55,30 +56,30 @@ export const filterUsersBySearch = (users: User[], searchTerm: string): User[] =
 /**
  * Get user's role count
  */
-export const getUserRoleCount = (user: User): number => {
-  return user.roles?.length || 0;
+export const getUserRoleCount = (user: ContactType): number => {
+  return user.contactroles?.length || 0;
 };
 
 /**
  * Check if user has specific role
  */
-export const userHasRole = (user: User, roleId: string): boolean => {
-  return user.roles?.some((role) => role.roleId === roleId) || false;
+export const userHasRole = (user: ContactType, roleId: string): boolean => {
+  return user.contactroles?.some((role) => role.roleId === roleId) || false;
 };
 
 /**
  * Get user's role names as array
  */
-export const getUserRoleNames = (user: User, roles: Role[]): string[] => {
-  return user.roles?.map((role) => getRoleDisplayName(role.roleId, roles)) || [];
+export const getUserRoleNames = (user: ContactType, roles: Role[]): string[] => {
+  return user.contactroles?.map((role) => getRoleDisplayName(role.roleId, roles)) || [];
 };
 
 /**
  * Format user for display in autocomplete
  */
-export const formatUserForAutocomplete = (user: User): { label: string; value: string } => {
+export const formatUserForAutocomplete = (user: ContactType): { label: string; value: string } => {
   return {
-    label: `${formatUserName(user)} (${user.email})`,
+    label: `${formatUserName(user)} (${user.email || ''})`,
     value: user.id,
   };
 };

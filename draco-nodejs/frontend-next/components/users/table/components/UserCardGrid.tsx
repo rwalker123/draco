@@ -4,22 +4,22 @@ import React from 'react';
 import { Box, Fab, Zoom } from '@mui/material';
 import { KeyboardArrowUp as ScrollTopIcon } from '@mui/icons-material';
 import { EnhancedUser, CardSize, UserViewConfig } from '../../../../types/userTable';
-import { User, UserRole } from '../../../../types/users';
 import UserDisplayCard from './UserDisplayCard';
 import UserEmptyState from '../../UserEmptyState';
 import VirtualScrollContainer, {
   createVirtualScrollConfig,
 } from '../../../common/VirtualScrollContainer';
 import { VirtualUserRendererFactory, shouldVirtualize } from '../renderers/VirtualUserRenderers';
+import { Contact, ContactRoleType, ContactType } from '@draco/shared-schemas';
 
 interface UserCardGridProps {
   users: EnhancedUser[];
   cardSize: CardSize;
   viewConfig: UserViewConfig;
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole: (user: User, role: UserRole) => void;
-  onEditContact?: (contact: import('../../../../types/users').Contact) => void;
-  onDeleteContact?: (contact: import('../../../../types/users').Contact) => void;
+  onAssignRole: (user: ContactType) => Promise<void>;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
+  onEditContact?: (contact: Contact) => void;
+  onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
   canManageUsers: boolean;

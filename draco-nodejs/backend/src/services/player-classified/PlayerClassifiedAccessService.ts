@@ -7,7 +7,7 @@ import validator from 'validator';
 import { ITeamsWantedOwnerResponse } from '../../interfaces/playerClassifiedInterfaces.js';
 import { NotFoundError, ValidationError, InternalServerError } from '../../utils/customErrors.js';
 import { logSecurely } from '../../utils/auditLogger.js';
-import { ServiceFactory } from '../../lib/serviceFactory.js';
+import { ServiceFactory } from '../serviceFactory.js';
 import type { PlayerClassifiedDataService } from './PlayerClassifiedDataService.js';
 
 // Database record types for access control operations

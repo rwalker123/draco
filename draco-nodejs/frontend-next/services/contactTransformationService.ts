@@ -1,7 +1,8 @@
-import { Contact, ContactRole, ContactDetails } from '../types/users';
+import { Contact, ContactRole, ContactDetails } from '@draco/shared-schemas';
 import { ContactUpdateResponse } from '../types/userManagementTypeGuards';
 import { getRoleDisplayName } from '../utils/roleUtils';
 
+// todo: this file will eventually be replaced by a more generic response formatter or by using a library like zod for schema validation and transformation
 /**
  * Contact Transformation Service
  * Centralized service for transforming contact data between backend and frontend formats
@@ -18,7 +19,7 @@ export class ContactTransformationService {
       firstName: (backendContact.firstname as string) || (backendContact.firstName as string) || '',
       lastName: (backendContact.lastname as string) || (backendContact.lastName as string) || '',
       middleName:
-        (backendContact.middleName as string) || (backendContact.middlename as string) || null,
+        (backendContact.middleName as string) || (backendContact.middlename as string) || '',
       email: (backendContact.email as string) || '',
       userId: (backendContact.userId as string) || '',
       photoUrl: backendContact.photoUrl as string | undefined,
@@ -36,7 +37,7 @@ export class ContactTransformationService {
       id: response.id,
       firstName: response.firstname,
       lastName: response.lastname,
-      middleName: response.middlename || null, // ✅ Use middlename from response
+      middleName: response.middlename || '', // ✅ Use middlename from response
       email: response.email || '',
       userId: '', // Not provided in ContactUpdateResponse
       photoUrl: response.photoUrl || undefined,

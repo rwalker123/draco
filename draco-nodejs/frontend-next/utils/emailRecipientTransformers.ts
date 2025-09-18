@@ -6,8 +6,6 @@
  */
 
 import { RecipientContact } from '../types/emails/recipients';
-import { UserRole, ContactRole } from '../types/users';
-import { BackendContact } from '../services/emailRecipientService';
 import { isValidEmailFormat } from './emailValidation';
 
 // Type guards for runtime validation
@@ -57,13 +55,6 @@ export function clearTransformationCache(): void {
   transformationCache.clear();
 }
 
-// Memoized transformation functions for better performance
-const memoizedTransformBackendContact = memoize(
-  transformBackendContact,
-  (contact: BackendContact) =>
-    `contact_${contact.id}_${contact.email || ''}_${contact.firstName || ''}_${contact.lastName || ''}`,
-);
-
 const memoizedFilterContactsByQuery = memoize(
   filterContactsByQuery,
   (contacts: RecipientContact[], query: string) =>
@@ -81,16 +72,6 @@ const memoizedSortContactsByDisplayName = memoize(
       .join(',')
       .slice(0, 100)}`,
 );
-
-/**
- * Performance-optimized batch transformation for multiple contacts
- * Uses memoization to avoid re-transforming the same contacts
- * @param contacts - Array of backend contacts to transform
- * @returns Array of transformed recipient contacts
- */
-export function batchTransformBackendContacts(contacts: BackendContact[]): RecipientContact[] {
-  return contacts.map(memoizedTransformBackendContact);
-}
 
 /**
  * Performance-optimized contact filtering with memoization
@@ -190,145 +171,6 @@ export function consolidatePhoneNumbers(
 }
 
 /**
- * Transforms a backend contact role to frontend UserRole format
- * @param contactRole - Backend ContactRole object
- * @returns UserRole for frontend use
- */
-function transformContactRole(contactRole: ContactRole): UserRole {
-  return {
-    id: contactRole.id,
-    roleId: contactRole.roleId,
-    roleName: contactRole.roleName || '',
-    roleData: contactRole.roleData || '',
-    contextName: contactRole.contextName,
-  };
-}
-
-/**
- * Transforms backend contact data to frontend RecipientContact format
- * Handles data validation, normalization, and fallback values
- * @param contact - Backend contact object
- * @returns RecipientContact for frontend components
- */
-export function transformBackendContact(contact: BackendContact): RecipientContact {
-  // Validate required fields
-  if (!contact.id) {
-    console.warn('Contact missing required ID field:', contact);
-  }
-
-  // Extract contact details safely
-  const contactDetails = contact.contactDetails;
-  const consolidatedPhone = consolidatePhoneNumbers(
-    contactDetails?.phone1,
-    contactDetails?.phone2,
-    contactDetails?.phone3,
-  );
-
-  // Generate display name with fallbacks
-  const displayName = generateDisplayName(contact.firstName, contact.lastName, contact.middleName);
-
-  // Validate email
-  const hasValidEmail = validateEmail(contact.email);
-
-  // Transform roles if present
-  const roles = contact.contactroles?.map(transformContactRole) || [];
-
-  return {
-    id: contact.id,
-    firstname: contact.firstName || '',
-    lastname: contact.lastName || '',
-    email: contact.email || undefined,
-    phone: consolidatedPhone || undefined,
-    displayName,
-    hasValidEmail,
-    roles,
-    teams: contact.teams || [],
-  };
-}
-
-/**
- * Deduplicates an array of RecipientContact objects based on contact ID
- * Preserves the first occurrence of each unique contact
- * Uses memoization for performance with large datasets
- * @param contacts - Array of contacts that may contain duplicates
- * @returns Deduplicated array of contacts
- */
-export function deduplicateContacts(contacts: RecipientContact[]): RecipientContact[] {
-  // Early return for empty or single-item arrays
-  if (contacts.length <= 1) {
-    return contacts;
-  }
-
-  // Use Map for O(1) lookups and preserve insertion order
-  const uniqueContacts = new Map<string, RecipientContact>();
-
-  for (const contact of contacts) {
-    if (!uniqueContacts.has(contact.id)) {
-      uniqueContacts.set(contact.id, contact);
-    }
-  }
-
-  return Array.from(uniqueContacts.values());
-}
-
-/**
- * Validates a collection of contacts and provides data quality metrics
- * @param contacts - Array of contacts to validate
- * @returns Validation results with counts and quality metrics
- */
-export function validateContactCollection(contacts: RecipientContact[]): {
-  totalContacts: number;
-  validEmailCount: number;
-  invalidEmailCount: number;
-  contactsWithoutEmail: RecipientContact[];
-  contactsWithEmail: RecipientContact[];
-  duplicateCount: number;
-  dataQualityIssues: string[];
-} {
-  const totalContacts = contacts.length;
-  const contactsWithEmail = contacts.filter((c) => c.hasValidEmail);
-  const contactsWithoutEmail = contacts.filter((c) => !c.hasValidEmail);
-
-  // Check for duplicates
-  const uniqueIds = new Set(contacts.map((c) => c.id));
-  const duplicateCount = totalContacts - uniqueIds.size;
-
-  // Identify data quality issues
-  const dataQualityIssues: string[] = [];
-
-  if (duplicateCount > 0) {
-    dataQualityIssues.push(`${duplicateCount} duplicate contact(s) detected`);
-  }
-
-  const contactsWithoutNames = contacts.filter((c) => !c.firstname?.trim() && !c.lastname?.trim());
-  if (contactsWithoutNames.length > 0) {
-    dataQualityIssues.push(
-      `${contactsWithoutNames.length} contact(s) missing both first and last names`,
-    );
-  }
-
-  const contactsWithPartialNames = contacts.filter(
-    (c) =>
-      (!c.firstname?.trim() && c.lastname?.trim()) || (c.firstname?.trim() && !c.lastname?.trim()),
-  );
-  if (contactsWithPartialNames.length > 0) {
-    dataQualityIssues.push(
-      `${contactsWithPartialNames.length} contact(s) missing either first or last name`,
-    );
-  }
-
-  return {
-    totalContacts,
-    validEmailCount: contactsWithEmail.length,
-    invalidEmailCount: contactsWithoutEmail.length,
-    contactsWithoutEmail,
-    contactsWithEmail,
-    duplicateCount,
-    dataQualityIssues,
-  };
-}
-
-/**
  * Sorts contacts by display name in a locale-aware manner
  * @param contacts - Array of contacts to sort
  * @returns Sorted array of contacts
@@ -357,10 +199,10 @@ export function filterContactsByQuery(
   return contacts.filter((contact) => {
     const searchFields = [
       contact.displayName,
-      contact.firstname,
-      contact.lastname,
+      contact.firstName,
+      contact.lastName,
       contact.email,
-      contact.phone,
+      contact.contactDetails?.phone1, // TODO: add back in consolidated phone numbers
     ]
       .filter(Boolean)
       .map((field) => field?.toLowerCase() || '');

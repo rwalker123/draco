@@ -91,7 +91,7 @@ const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({
             id: accountOwner.contactId,
             firstName: accountOwner.firstName,
             lastName: accountOwner.lastName,
-            photoUrl: accountOwner.photoUrl,
+            photoUrl: accountOwner.photoUrl || '',
           }}
           size={40}
         />

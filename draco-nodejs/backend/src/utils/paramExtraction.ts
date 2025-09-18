@@ -4,6 +4,20 @@
  */
 
 /**
+ * Parse query parameters for pagination and filtering
+ * @param query - The request query object
+ * @returns Object with page, limit, firstName, and lastName
+ */
+export const parseSearchQueryParams = (query: Record<string, string | undefined>) => {
+  return {
+    page: Math.max(1, parseInt(String(query.page || ''), 10) || 1),
+    limit: Math.min(100, Math.max(1, parseInt(String(query.limit || ''), 10) || 50)),
+    firstName: query.firstName ? String(query.firstName).trim() || undefined : undefined,
+    lastName: query.lastName ? String(query.lastName).trim() || undefined : undefined,
+  };
+};
+
+/**
  * Extracts and converts multiple parameters to BigInt with validation
  * @param params - The request params object
  * @param keys - The parameter keys to extract

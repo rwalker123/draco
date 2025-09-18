@@ -3,8 +3,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
-import prisma from './lib/prisma.js';
-import { Container } from './container/index.js';
+import { bigIntSerializer } from './middleware/bigint-serializer.js';
+import swaggerUi from 'swagger-ui-express';
+import { specs } from './config/openapi.js';
+import { globalErrorHandler } from './utils/globalErrorHandler.js';
+import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
+import { DateUtils } from './utils/dateUtils.js';
+
 import testDatabaseRouter from './routes/testdatabase.js';
 import authRouter from './routes/auth.js';
 import passwordResetRouter from './routes/passwordReset.js';
@@ -18,30 +23,21 @@ import teamRosterRouter from './routes/team-roster.js';
 import teamStatsRouter from './routes/team-stats.js';
 import teamMediaRouter from './routes/team-media.js';
 import gamesRouter from './routes/games.js';
-import { bigIntSerializer } from './middleware/bigint-serializer.js';
-import { domainRouting } from './middleware/domainRouting.js';
-import swaggerUi from 'swagger-ui-express';
-import { specs } from './config/openapi.js';
-import { globalErrorHandler } from './utils/globalErrorHandler.js';
 import teamManagersRouter from './routes/teamManagers.js';
 import seasonManagersRouter from './routes/seasonManagers.js';
 import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';
 import monitoringRouter from './routes/monitoring.js';
-import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
+import { domainRouting } from './middleware/domainRouting.js';
 import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhookRoutes.js';
 import cleanupRouter from './routes/cleanup.js';
-import { DateUtils } from './utils/dateUtils.js';
 
 // Load environment variables
 dotenv.config();
 
-// Initialize dependency injection container
-const container = new Container(prisma);
-
 // Start cleanup service
-import { ServiceFactory } from './lib/serviceFactory.js';
+import { ServiceFactory } from './services/serviceFactory.js';
 const cleanupService = ServiceFactory.getCleanupService();
 cleanupService.start();
 
@@ -64,9 +60,6 @@ if (isDevelopment) {
     app.set('trust proxy', trustProxyValue);
   }
 }
-
-// Make container available to all routes
-app.locals.container = container;
 
 // Security middleware
 app.use(helmet());
@@ -182,8 +175,12 @@ app.use(globalErrorHandler as express.ErrorRequestHandler);
 // 404 handler
 app.use('/{*splat}', (_req: express.Request, res: express.Response) => {
   res.status(404).json({
-    success: false,
-    message: 'Route not found',
+    error: {
+      statusCode: 404,
+      isRetryable: false,
+      isOperational: true,
+      message: 'Route not found',
+    },
   });
 });
 

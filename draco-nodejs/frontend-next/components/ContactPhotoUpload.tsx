@@ -47,29 +47,21 @@ const ContactPhotoUpload: React.FC<ContactPhotoUploadProps> = ({
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log('ContactPhotoUpload: Photo selected', {
-      file: file?.name,
-      size: file?.size,
-      type: file?.type,
-    });
 
     if (file) {
       const validationError = validateContactPhotoFile(file);
       if (validationError) {
-        console.error('ContactPhotoUpload: Validation failed', validationError);
         // Error will be handled by parent component
         onPhotoChange(null);
         return;
       }
 
-      console.log('ContactPhotoUpload: Photo validation passed, setting file');
       setPhotoFile(file);
       onPhotoChange(file);
 
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        console.log('ContactPhotoUpload: Preview created');
         setPhotoPreview(e.target?.result as string);
         setPhotoPreviewError(false);
       };

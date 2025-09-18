@@ -1,4 +1,4 @@
-import { EmailService, EmailConfig } from '../emailService.js';
+import { EmailService, EmailConfig } from '../email/emailService.js';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Ensure we run in development provider mode (Ethereal)

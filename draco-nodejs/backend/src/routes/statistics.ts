@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { StatisticsService } from '../services/statisticsService.js';
 import prisma from '../lib/prisma.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 

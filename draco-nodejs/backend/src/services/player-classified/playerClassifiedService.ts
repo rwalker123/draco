@@ -14,16 +14,16 @@ import {
   IClassifiedSearchParams,
   IPlayersWantedUpdateRequest,
   IContactCreatorRequest,
-} from '../interfaces/playerClassifiedInterfaces.js';
-import { NotFoundError, ValidationError, InternalServerError } from '../utils/customErrors.js';
-import { DateUtils } from '../utils/dateUtils.js';
-import { BCRYPT_CONSTANTS } from '../config/playerClassifiedConstants.js';
+} from '../../interfaces/playerClassifiedInterfaces.js';
+import { NotFoundError, ValidationError, InternalServerError } from '../../utils/customErrors.js';
+import { DateUtils } from '../../utils/dateUtils.js';
+import { BCRYPT_CONSTANTS } from '../../config/playerClassifiedConstants.js';
 
 // Import specialized services
-import { PlayerClassifiedValidationService } from './player-classified/PlayerClassifiedValidationService.js';
-import { PlayerClassifiedDataService } from './player-classified/PlayerClassifiedDataService.js';
-import { PlayerClassifiedEmailService } from './player-classified/PlayerClassifiedEmailService.js';
-import { PlayerClassifiedAccessService } from './player-classified/PlayerClassifiedAccessService.js';
+import { PlayerClassifiedValidationService } from './PlayerClassifiedValidationService.js';
+import { PlayerClassifiedDataService } from './PlayerClassifiedDataService.js';
+import { PlayerClassifiedEmailService } from './PlayerClassifiedEmailService.js';
+import { PlayerClassifiedAccessService } from './PlayerClassifiedAccessService.js';
 
 // Database record types for type safety (kept for backward compatibility)
 // These types are also defined in the specialized services
@@ -715,8 +715,8 @@ export class PlayerClassifiedService {
   ): Promise<boolean> {
     try {
       // Import EmailProviderFactory for direct email sending
-      const { EmailProviderFactory } = await import('./email/EmailProviderFactory.js');
-      const { EmailConfigFactory } = await import('../config/email.js');
+      const { EmailProviderFactory } = await import('../email/EmailProviderFactory.js');
+      const { EmailConfigFactory } = await import('../../config/email.js');
 
       const settings = EmailConfigFactory.getEmailSettings();
 

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AppError } from './customErrors.js';
+import { ZodError } from 'zod';
+import { ApiError } from './customErrors.js';
 import { DateUtils } from './dateUtils.js';
 
 export function hasCodeProperty(err: unknown): err is { code: string } {
@@ -20,6 +21,10 @@ function isJWTError(err: unknown): err is jwt.JsonWebTokenError {
   return err instanceof jwt.JsonWebTokenError;
 }
 
+function isZodError(err: unknown): err is ZodError {
+  return err instanceof ZodError;
+}
+
 function logError(err: Error, req: Request): void {
   const logData = {
     error: err.message,
@@ -35,7 +40,7 @@ function logError(err: Error, req: Request): void {
 }
 
 export function globalErrorHandler(
-  err: Error | AppError,
+  err: Error | ApiError,
   req: Request,
   res: Response,
   _next: NextFunction,
@@ -43,10 +48,20 @@ export function globalErrorHandler(
   logError(err, req);
 
   // Handle custom application errors
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
+  if (err instanceof ApiError) {
+    res.status(err.statusCode).json(err.toErrorResponse());
+    return;
+  }
+
+  // Handle Zod validation errors
+  if (isZodError(err)) {
+    const message = err.issues
+      .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+      .join(', ');
+    res.status(400).json({
+      message: `Validation failed: ${message}`,
+      statusCode: 400,
+      isRetryable: false,
     });
     return;
   }
@@ -62,8 +77,9 @@ export function globalErrorHandler(
     }
 
     res.status(401).json({
-      success: false,
       message,
+      statusCode: 401,
+      isRetryable: false,
     });
     return;
   }
@@ -73,32 +89,37 @@ export function globalErrorHandler(
     switch (err.code) {
       case 'P2025':
         res.status(404).json({
-          success: false,
           message: 'Resource not found',
+          statusCode: 404,
+          isRetryable: false,
         });
         return;
       case 'P2002':
         res.status(409).json({
-          success: false,
           message: 'Resource already exists',
+          statusCode: 409,
+          isRetryable: false,
         });
         return;
       case 'P2014':
         res.status(400).json({
-          success: false,
           message: 'Invalid data provided',
+          statusCode: 400,
+          isRetryable: false,
         });
         return;
       case 'P2003':
         res.status(400).json({
-          success: false,
           message: 'Invalid reference to related resource',
+          statusCode: 400,
+          isRetryable: false,
         });
         return;
       default:
         res.status(500).json({
-          success: false,
           message: 'Database error occurred',
+          statusCode: 500,
+          isRetryable: true,
         });
         return;
     }
@@ -107,15 +128,17 @@ export function globalErrorHandler(
   // Handle validation errors
   if (err.name === 'ValidationError') {
     res.status(400).json({
-      success: false,
       message: err.message || 'Validation failed',
+      statusCode: 400,
+      isRetryable: false,
     });
     return;
   }
 
   // Handle generic errors - always return a safe generic message
   res.status(500).json({
-    success: false,
     message: 'Internal server error',
+    statusCode: 500,
+    isRetryable: true,
   });
 }

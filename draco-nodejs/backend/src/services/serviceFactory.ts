@@ -1,9 +1,11 @@
-import { RoleService } from '../services/roleService.js';
-import { TeamService } from '../services/teamService.js';
-import { PlayerClassifiedService } from '../services/playerClassifiedService.js';
-import { CleanupService } from '../services/cleanupService.js';
-import { ContactSecurityService } from '../services/core/ContactSecurityService.js';
+import { RoleService } from './roleService.js';
+import { TeamService } from './teamService.js';
+import { PlayerClassifiedService } from './player-classified/playerClassifiedService.js';
+import { CleanupService } from './cleanupService.js';
+import { ContactSecurityService } from './core/ContactSecurityService.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
+import { RosterService } from './rosterService.js';
+import { ContactService } from './contactService.js';
 import {
   IRoleService,
   IRoleQuery,
@@ -13,7 +15,7 @@ import {
 } from '../interfaces/roleInterfaces.js';
 import { ICleanupService } from '../interfaces/cleanupInterfaces.js';
 import { cleanupConfig } from '../config/cleanup.js';
-import prisma from './prisma.js';
+import prisma from '../lib/prisma.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -26,6 +28,8 @@ export class ServiceFactory {
   private static cleanupService: ICleanupService;
   private static contactSecurityService: ContactSecurityService;
   private static routeProtection: RouteProtection;
+  private static rosterService: RosterService;
+  private static contactService: ContactService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -84,5 +88,19 @@ export class ServiceFactory {
       this.routeProtection = new RouteProtection(roleService, prisma);
     }
     return this.routeProtection;
+  }
+
+  static getRosterService(): RosterService {
+    if (!this.rosterService) {
+      this.rosterService = new RosterService(prisma);
+    }
+    return this.rosterService;
+  }
+
+  static getContactService(): ContactService {
+    if (!this.contactService) {
+      this.contactService = new ContactService(prisma);
+    }
+    return this.contactService;
   }
 }

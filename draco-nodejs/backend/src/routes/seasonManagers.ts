@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { SeasonManagerService, SeasonManagerFilters } from '../services/seasonManagerService.js';
 import prisma from '../lib/prisma.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
 import { RoleService } from '../services/roleService.js';

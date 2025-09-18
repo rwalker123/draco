@@ -1,16 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
-import { RosterService } from '../services/rosterService.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { TeamRequestValidator } from '../utils/teamValidators.js';
-import { RosterResponseFormatter } from '../utils/responseFormatters.js';
-import prisma from '../lib/prisma.js';
+import { CreateRosterMemberSchema, SignRosterMemberSchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
-const rosterService = new RosterService(prisma);
+const rosterService = ServiceFactory.getRosterService();
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster
@@ -23,21 +20,13 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-    const rosterMembers = await rosterService.getRosterMembers(teamSeasonId, seasonId, accountId);
+    const rosterMembers = await rosterService.getTeamRosterMembers(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
 
-    // Get team season info for response
-    const teamSeason = await prisma.teamsseason.findFirst({
-      where: { id: teamSeasonId },
-      select: { id: true, name: true },
-    });
-
-    if (!teamSeason) {
-      res.status(404).json({ success: false, message: 'Team season not found' });
-      return;
-    }
-
-    const response = RosterResponseFormatter.formatRosterMembersResponse(teamSeason, rosterMembers);
-    res.json(response);
+    res.json(rosterMembers);
   }),
 );
 
@@ -49,23 +38,26 @@ router.get(
   '/:teamSeasonId/available-players',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-      const { full } = TeamRequestValidator.validateQueryParams(req);
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-      const availablePlayers = await rosterService.getAvailablePlayers(
-        teamSeasonId,
-        seasonId,
-        accountId,
-        full,
-      );
+    // Parse query parameters with defaults and validation
+    const page = parseInt(String(req.query.page || '1'), 10) || 1;
+    const limit = Math.min(100, parseInt(String(req.query.limit || '50'), 10) || 50);
+    const firstName = req.query.firstName ? String(req.query.firstName).trim() : undefined;
+    const lastName = req.query.lastName ? String(req.query.lastName).trim() : undefined;
 
-      const response = RosterResponseFormatter.formatAvailablePlayersResponse(availablePlayers);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
+    const availablePlayers = await rosterService.getAvailablePlayers(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      page,
+      limit,
+      firstName,
+      lastName,
+    );
+
+    res.json(availablePlayers);
   },
 );
 
@@ -77,25 +69,18 @@ router.post(
   '/:teamSeasonId/roster',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-      const addPlayerData = TeamRequestValidator.validateAddPlayerRequest(req);
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-      const rosterMember = await rosterService.addPlayerToRoster(
-        teamSeasonId,
-        seasonId,
-        accountId,
-        addPlayerData,
-      );
+    const addPlayerData = SignRosterMemberSchema.parse(req.body);
+    const rosterMember = await rosterService.addPlayerToRoster(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      addPlayerData,
+    );
 
-      const playerName = `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`;
-      const response = RosterResponseFormatter.formatAddPlayerResponse(rosterMember, playerName);
-
-      res.status(201).json(response);
-    } catch (error) {
-      next(error);
-    }
+    res.status(201).json(rosterMember);
   },
 );
 
@@ -107,36 +92,26 @@ router.put(
   '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
-        req.params,
-        'accountId',
-        'seasonId',
-        'teamSeasonId',
-        'rosterMemberId',
-      );
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+      'rosterMemberId',
+    );
 
-      const updateData = TeamRequestValidator.validateUpdateRosterMemberRequest(req);
+    const updateData = CreateRosterMemberSchema.parse(req.body);
 
-      const updatedRosterMember = await rosterService.updateRosterMember(
-        rosterMemberId,
-        teamSeasonId,
-        seasonId,
-        accountId,
-        updateData,
-      );
+    const updatedRosterMember = await rosterService.updateRosterMember(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+      updateData,
+    );
 
-      const playerName = `${updatedRosterMember.player.contact.firstName} ${updatedRosterMember.player.contact.lastName}`;
-      const response = RosterResponseFormatter.formatUpdateRosterMemberResponse(
-        updatedRosterMember,
-        playerName,
-      );
-
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
+    res.json(updatedRosterMember);
   },
 );
 
@@ -148,33 +123,25 @@ router.put(
   '/:teamSeasonId/roster/:rosterMemberId/release',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
-        req.params,
-        'accountId',
-        'seasonId',
-        'teamSeasonId',
-        'rosterMemberId',
-      );
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+      'rosterMemberId',
+    );
 
-      const releasedPlayer = await rosterService.releasePlayer(
-        rosterMemberId,
-        teamSeasonId,
-        seasonId,
-        accountId,
-      );
+    const inactive = true;
+    const releasedPlayer = await rosterService.releaseOrActivatePlayer(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+      inactive,
+    );
 
-      const playerName = `${releasedPlayer.player.contact.firstName} ${releasedPlayer.player.contact.lastName}`;
-      const response = RosterResponseFormatter.formatReleasePlayerResponse(
-        releasedPlayer,
-        playerName,
-      );
-
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
+    res.json(releasedPlayer);
   },
 );
 
@@ -186,33 +153,25 @@ router.put(
   '/:teamSeasonId/roster/:rosterMemberId/activate',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
-        req.params,
-        'accountId',
-        'seasonId',
-        'teamSeasonId',
-        'rosterMemberId',
-      );
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+      'rosterMemberId',
+    );
 
-      const activatedPlayer = await rosterService.activatePlayer(
-        rosterMemberId,
-        teamSeasonId,
-        seasonId,
-        accountId,
-      );
+    const inactive = false;
+    const activatedPlayer = await rosterService.releaseOrActivatePlayer(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+      inactive,
+    );
 
-      const playerName = `${activatedPlayer.player.contact.firstName} ${activatedPlayer.player.contact.lastName}`;
-      const response = RosterResponseFormatter.formatActivatePlayerResponse(
-        activatedPlayer,
-        playerName,
-      );
-
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
+    res.json(activatedPlayer);
   },
 );
 
@@ -224,28 +183,23 @@ router.delete(
   '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
-        req.params,
-        'accountId',
-        'seasonId',
-        'teamSeasonId',
-        'rosterMemberId',
-      );
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+      'rosterMemberId',
+    );
 
-      const { playerName } = await rosterService.deleteRosterMember(
-        rosterMemberId,
-        teamSeasonId,
-        seasonId,
-        accountId,
-      );
+    const { playerName } = await rosterService.deleteRosterMember(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
 
-      const response = RosterResponseFormatter.formatDeletePlayerResponse(playerName);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
+    res.json(`Player "${playerName}" has been permanently deleted from the roster`);
   },
 );
 

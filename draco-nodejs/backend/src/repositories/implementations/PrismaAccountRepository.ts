@@ -4,7 +4,7 @@ import { IAccountRepository } from '../interfaces/IAccountRepository.js';
 export class PrismaAccountRepository implements IAccountRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: string | number): Promise<accounts | null> {
+  async findById(id: bigint): Promise<accounts | null> {
     return this.prisma.accounts.findUnique({
       where: { id: BigInt(id) },
     });
@@ -20,14 +20,14 @@ export class PrismaAccountRepository implements IAccountRepository {
     });
   }
 
-  async update(id: string | number, data: Partial<accounts>): Promise<accounts> {
+  async update(id: bigint, data: Partial<accounts>): Promise<accounts> {
     return this.prisma.accounts.update({
       where: { id: BigInt(id) },
       data,
     });
   }
 
-  async delete(id: string | number): Promise<accounts> {
+  async delete(id: bigint): Promise<accounts> {
     return this.prisma.accounts.delete({
       where: { id: BigInt(id) },
     });

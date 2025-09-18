@@ -14,12 +14,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { createUserManagementService } from '../services/userManagementService';
 
-interface Contact {
+interface SearchContact {
   id: string;
   firstName: string;
   lastName: string;
-  email: string | null;
-  userId: string | null;
+  email?: string | undefined;
+  userId?: string | undefined;
   displayName?: string;
   searchText?: string;
 }
@@ -46,10 +46,10 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
   accountId,
 }) => {
   const { token } = useAuth();
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [initialContact, setInitialContact] = useState<Contact | null>(null);
+  const [selectedContact, setSelectedContact] = useState<SearchContact | null>(null);
+  const [initialContact, setInitialContact] = useState<SearchContact | null>(null);
   const [inputValue, setInputValue] = useState('');
-  const [searchResults, setSearchResults] = useState<Contact[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchContact[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -73,12 +73,12 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
         const results = await userService.searchUsers(accountId, query, undefined, undefined);
 
         // Transform users to contacts format for consistency
-        const contacts = results.users.map((user) => ({
+        const contacts: SearchContact[] = results.users.map((user) => ({
           id: user.id,
           firstName: user.firstName,
           lastName: user.lastName,
-          email: user.email,
-          userId: user.userId,
+          email: user.email || undefined,
+          userId: user.userId || undefined,
           displayName: `${user.firstName} ${user.lastName}`,
           searchText: `${user.firstName} ${user.lastName} ${user.email ?? ''}`.trim(),
         }));
@@ -144,7 +144,7 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
   };
 
   // Handle contact selection
-  const handleSelectContact = (contact: Contact) => {
+  const handleSelectContact = (contact: SearchContact) => {
     setSelectedContact(contact);
     setInputValue(contact.displayName || `${contact.firstName} ${contact.lastName}`);
     onChange(contact.id);
@@ -262,7 +262,7 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
                     }}
                   >
                     <ListItemText
-                      primary={`${contact.firstName} ${contact.lastName}`}
+                      primary={contact.displayName || `${contact.firstName} ${contact.lastName}`}
                       secondary={contact.email}
                     />
                   </ListItem>

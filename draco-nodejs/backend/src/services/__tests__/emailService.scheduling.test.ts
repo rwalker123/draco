@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { EmailService } from '../emailService.js';
+import { EmailService } from '../email/emailService.js';
 
 // Mock the centralized prisma module (hoisted)
 const hoisted = vi.hoisted(() => ({

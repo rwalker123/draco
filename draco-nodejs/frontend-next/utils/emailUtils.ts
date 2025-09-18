@@ -1,11 +1,12 @@
 // Email utility functions for frontend
-import type { EmailRecipientStatus, EmailStatus, Contact } from '../types/emails/email';
+import type { EmailRecipientStatus, EmailStatus } from '../types/emails/email';
 import {
   EMAIL_VALIDATION,
   TEMPLATE_PATTERNS,
   isAllowedFileType,
   getFileIcon,
 } from '../constants/emailConstants';
+import { ContactType } from '@draco/shared-schemas';
 
 /**
  * Validates an email address using the standard pattern
@@ -35,8 +36,8 @@ export const validateEmails = (emails: string[]): { valid: string[]; invalid: st
 /**
  * Formats contact display name for email recipient lists
  */
-export const formatContactDisplayName = (contact: Contact): string => {
-  const name = `${contact.firstname} ${contact.lastname}`.trim();
+export const formatContactDisplayName = (contact: ContactType): string => {
+  const name = `${contact.firstName} ${contact.lastName}`.trim();
   if (contact.email) {
     return `${name} <${contact.email}>`;
   }

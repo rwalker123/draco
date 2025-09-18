@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import { Tooltip } from '@mui/material';
 import { getRoleIcon, getRoleColors, getRoleTooltipText } from '../../utils/roleIcons';
-import { UserRole } from '../../types/users';
+import { ContactRoleType } from '@draco/shared-schemas';
 
 interface RoleIconProps {
-  role: UserRole;
+  role: ContactRoleType;
   size?: 'small' | 'medium' | 'large';
   showTooltip?: boolean;
-  onClick?: (role: UserRole) => void;
+  onClick?: (role: ContactRoleType) => void;
   disabled?: boolean;
 }
 

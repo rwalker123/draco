@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createEmailRecipientService } from '../services/emailRecipientService';
-import { transformBackendContact } from '../utils/emailRecipientTransformers';
 import { RecipientContact } from '../types/emails/recipients';
 
 // Pagination state for atomic updates (based on useUserManagement pattern)
@@ -204,7 +203,11 @@ export const useContactSelection = ({
           throw new Error(result.error.message);
         }
 
-        const transformedContacts = result.data.contacts.map(transformBackendContact);
+        const transformedContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
+          ...contact,
+          displayName: contact.firstName + ' ' + contact.lastName,
+          hasValidEmail: !!contact.email,
+        }));
 
         // Atomic state update via reducer
         dispatch({
@@ -241,7 +244,11 @@ export const useContactSelection = ({
           throw new Error(result.error.message);
         }
 
-        const transformedContacts = result.data.contacts.map(transformBackendContact);
+        const transformedContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
+          ...contact,
+          displayName: contact.firstName + ' ' + contact.lastName,
+          hasValidEmail: !!contact.email,
+        }));
 
         // Update pagination state with search results
         dispatch({

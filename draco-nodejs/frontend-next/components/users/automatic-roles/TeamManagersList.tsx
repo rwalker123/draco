@@ -79,7 +79,7 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
                     id: manager.contactId,
                     firstName: manager.firstName,
                     lastName: manager.lastName,
-                    photoUrl: manager.photoUrl,
+                    photoUrl: manager.photoUrl || '',
                   }}
                   size={32}
                 />

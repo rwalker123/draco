@@ -4,8 +4,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { teamsWantedRateLimit } from '../middleware/rateLimitMiddleware.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { ValidationError } from '../utils/customErrors.js';
 import {

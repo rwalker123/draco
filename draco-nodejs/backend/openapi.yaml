@@ -11,73 +11,1750 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    User:
+    RosterMember:
       type: object
       properties:
         id:
           type: string
-          format: uuid
-        name:
+          pattern: ^d+$
+        playerNumber:
+          type: number
+          minimum: 0
+          maximum: 99
+        inactive:
+          type: boolean
+          default: false
+        submittedWaiver:
+          type: boolean
+        dateAdded:
           type: string
-          minLength: 1
-        email:
-          type: string
-          format: email
+          nullable: true
+          format: date
+          default: null
+        player:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            submittedDriversLicense:
+              type: boolean
+              default: false
+            firstYear:
+              type: number
+              minimum: 1900
+              maximum: 2025
+            contact:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^d+$
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                middleName:
+                  type: string
+                  maxLength: 50
+                email:
+                  type: string
+                  maxLength: 100
+                  format: email
+                userId:
+                  type: string
+                  maxLength: 50
+                photoUrl:
+                  type: string
+                  format: uri
+                contactDetails:
+                  type: object
+                  properties:
+                    phone1:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone2:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone3:
+                      type: string
+                      nullable: true
+                      default: ""
+                    streetaddress:
+                      type: string
+                      nullable: true
+                      maxLength: 100
+                      default: ""
+                    city:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    state:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    zip:
+                      type: string
+                      nullable: true
+                      maxLength: 10
+                      default: ""
+                    dateofbirth:
+                      type: string
+                      nullable: true
+                      default: ""
+              required:
+                - id
+                - firstName
+                - lastName
+          required:
+            - id
+            - firstYear
+            - contact
+          description: Schema for a player who is or was on a team roster. This contains
+            details that only ever need to be supplied once
       required:
         - id
-        - name
-        - email
-    CreateUser:
+        - player
+      description: Schema for a roster member including player details
+    RosterPlayer:
       type: object
       properties:
-        name:
+        id:
+          type: string
+          pattern: ^d+$
+        submittedDriversLicense:
+          type: boolean
+          default: false
+        firstYear:
+          type: number
+          minimum: 1900
+          maximum: 2025
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            middleName:
+              type: string
+              maxLength: 50
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            userId:
+              type: string
+              maxLength: 50
+            photoUrl:
+              type: string
+              format: uri
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+                streetaddress:
+                  type: string
+                  nullable: true
+                  maxLength: 100
+                  default: ""
+                city:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                state:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                zip:
+                  type: string
+                  nullable: true
+                  maxLength: 10
+                  default: ""
+                dateofbirth:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+      required:
+        - id
+        - firstYear
+        - contact
+      description: Schema for a player who is or was on a team roster. This contains
+        details that only ever need to be supplied once
+    SignRosterMember:
+      type: object
+      properties:
+        playerNumber:
+          type: number
+          minimum: 0
+          maximum: 99
+        submittedWaiver:
+          type: boolean
+        player:
+          type: object
+          properties:
+            submittedDriversLicense:
+              type: boolean
+            firstYear:
+              type: number
+              minimum: 1900
+              maximum: 2025
+            contact:
+              anyOf:
+                - type: object
+                  properties:
+                    id:
+                      type: string
+                  required:
+                    - id
+                - type: object
+                  properties:
+                    firstName:
+                      type: string
+                      minLength: 1
+                      maxLength: 50
+                    lastName:
+                      type: string
+                      minLength: 1
+                      maxLength: 50
+                    middleName:
+                      type: string
+                      maxLength: 50
+                    email:
+                      type: string
+                      maxLength: 100
+                      format: email
+                    userId:
+                      type: string
+                      maxLength: 50
+                    photoUrl:
+                      type: string
+                      format: uri
+                    contactDetails:
+                      type: object
+                      properties:
+                        phone1:
+                          type: string
+                          nullable: true
+                          default: ""
+                        phone2:
+                          type: string
+                          nullable: true
+                          default: ""
+                        phone3:
+                          type: string
+                          nullable: true
+                          default: ""
+                        streetaddress:
+                          type: string
+                          nullable: true
+                          maxLength: 100
+                          default: ""
+                        city:
+                          type: string
+                          nullable: true
+                          maxLength: 50
+                          default: ""
+                        state:
+                          type: string
+                          nullable: true
+                          maxLength: 50
+                          default: ""
+                        zip:
+                          type: string
+                          nullable: true
+                          maxLength: 10
+                          default: ""
+                        dateofbirth:
+                          type: string
+                          nullable: true
+                          default: ""
+          required:
+            - submittedDriversLicense
+            - firstYear
+            - contact
+      required:
+        - player
+      description: Schema for signing a contact to a roster and providing player details
+    Contact:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        firstName:
           type: string
           minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        middleName:
+          type: string
+          maxLength: 50
         email:
           type: string
+          maxLength: 100
           format: email
+        userId:
+          type: string
+          maxLength: 50
+        photoUrl:
+          type: string
+          format: uri
+        contactDetails:
+          type: object
+          properties:
+            phone1:
+              type: string
+              nullable: true
+              default: ""
+            phone2:
+              type: string
+              nullable: true
+              default: ""
+            phone3:
+              type: string
+              nullable: true
+              default: ""
+            streetaddress:
+              type: string
+              nullable: true
+              maxLength: 100
+              default: ""
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            zip:
+              type: string
+              nullable: true
+              maxLength: 10
+              default: ""
+            dateofbirth:
+              type: string
+              nullable: true
+              default: ""
+        contactroles:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              roleId:
+                type: string
+                maxLength: 50
+              roleName:
+                type: string
+                maxLength: 50
+              roleData:
+                type: string
+                pattern: ^d+$
+              contextName:
+                type: string
+                maxLength: 50
+            required:
+              - id
+              - roleId
+              - roleData
+        creatoraccountid:
+          type: string
+          pattern: ^d+$
       required:
-        - name
-        - email
+        - id
+        - firstName
+        - lastName
+    TeamManager:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        teamSeasonId:
+          type: string
+          pattern: ^d+$
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            middleName:
+              type: string
+              maxLength: 50
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            userId:
+              type: string
+              maxLength: 50
+            photoUrl:
+              type: string
+              format: uri
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+                streetaddress:
+                  type: string
+                  nullable: true
+                  maxLength: 100
+                  default: ""
+                city:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                state:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                zip:
+                  type: string
+                  nullable: true
+                  maxLength: 10
+                  default: ""
+                dateofbirth:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+      required:
+        - id
+        - teamSeasonId
+        - contact
+      description: Schema for a manager of a team for a given season
+    CreateTeamManager:
+      type: object
+      properties:
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+          required:
+            - id
+      required:
+        - contact
+      description: Schema for creating a manager
+    CreateContact:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        contactDetails:
+          type: object
+          properties:
+            phone1:
+              type: string
+              nullable: true
+              default: ""
+            phone2:
+              type: string
+              nullable: true
+              default: ""
+            phone3:
+              type: string
+              nullable: true
+              default: ""
+            streetaddress:
+              type: string
+              nullable: true
+              maxLength: 100
+              default: ""
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            zip:
+              type: string
+              nullable: true
+              maxLength: 10
+              default: ""
+            dateofbirth:
+              type: string
+              nullable: true
+              default: ""
+        photo:
+          type: string
+          format: binary
+          description: Contact photo file
+      required:
+        - firstName
+        - lastName
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: number
+          enum:
+            - 400
+        isRetryable:
+          type: boolean
+          enum:
+            - false
+      required:
+        - message
+        - statusCode
+        - isRetryable
+      description: Validation error (400)
+      example:
+        message: Validation failed
+        statusCode: 400
+        isRetryable: false
+    AuthenticationError:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: number
+          enum:
+            - 401
+        isRetryable:
+          type: boolean
+          enum:
+            - false
+      required:
+        - message
+        - statusCode
+        - isRetryable
+      description: Authentication error (401)
+      example:
+        message: Authentication required
+        statusCode: 401
+        isRetryable: false
+    AuthorizationError:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: number
+          enum:
+            - 403
+        isRetryable:
+          type: boolean
+          enum:
+            - false
+      required:
+        - message
+        - statusCode
+        - isRetryable
+      description: Authorization error (403)
+      example:
+        message: Access denied
+        statusCode: 403
+        isRetryable: false
+    NotFoundError:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: number
+          enum:
+            - 404
+        isRetryable:
+          type: boolean
+          enum:
+            - false
+      required:
+        - message
+        - statusCode
+        - isRetryable
+      description: Resource not found error (404)
+      example:
+        message: Resource not found
+        statusCode: 404
+        isRetryable: false
+    ConflictError:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: number
+          enum:
+            - 409
+        isRetryable:
+          type: boolean
+          enum:
+            - false
+      required:
+        - message
+        - statusCode
+        - isRetryable
+      description: Resource conflict error (409)
+      example:
+        message: Resource conflict
+        statusCode: 409
+        isRetryable: false
+    InternalServerError:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: number
+          enum:
+            - 500
+        isRetryable:
+          type: boolean
+          enum:
+            - true
+      required:
+        - message
+        - statusCode
+        - isRetryable
+      description: Internal server error (500)
+      example:
+        message: Internal server error
+        statusCode: 500
+        isRetryable: true
   parameters: {}
 paths:
-  /api/users/{id}:
-    get:
-      description: Retrieve a user by their unique ID
-      summary: Get a user by ID
+  /api/accounts/{accountId}/contacts:
+    post:
+      description: Create a new contact
+      operationId: createContact
+      security:
+        - bearerAuth: []
       tags:
-        - Users
+        - Contacts
       parameters:
-        - name: id
+        - name: accountId
           in: path
           required: true
           schema:
             type: string
-            format: uuid
-      responses:
-        "200":
-          description: User found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-  /api/users:
-    post:
-      description: Create a new user in the system
-      summary: Create a new user
-      security:
-        - bearerAuth: []
-      tags:
-        - Users
+            format: number
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateUser"
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                middleName:
+                  type: string
+                  maxLength: 50
+                email:
+                  type: string
+                  maxLength: 100
+                  format: email
+                contactDetails:
+                  type: object
+                  properties:
+                    phone1:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone2:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone3:
+                      type: string
+                      nullable: true
+                      default: ""
+                    streetaddress:
+                      type: string
+                      nullable: true
+                      maxLength: 100
+                      default: ""
+                    city:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    state:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    zip:
+                      type: string
+                      nullable: true
+                      maxLength: 10
+                      default: ""
+                    dateofbirth:
+                      type: string
+                      nullable: true
+                      default: ""
+                photo:
+                  type: string
+                  format: binary
+                  description: Contact photo file
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                middleName:
+                  type: string
+                  maxLength: 50
+                email:
+                  type: string
+                  maxLength: 100
+                  format: email
+                contactDetails:
+                  type: object
+                  properties:
+                    phone1:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone2:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone3:
+                      type: string
+                      nullable: true
+                      default: ""
+                    streetaddress:
+                      type: string
+                      nullable: true
+                      maxLength: 100
+                      default: ""
+                    city:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    state:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    zip:
+                      type: string
+                      nullable: true
+                      maxLength: 10
+                      default: ""
+                    dateofbirth:
+                      type: string
+                      nullable: true
+                      default: ""
+                photo:
+                  type: string
+                  format: binary
+                  description: Contact photo file
+            encoding:
+              photo:
+                contentType: image/*
       responses:
-        "201":
-          description: User created
+        "200":
+          description: Contact created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/Contact"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Conflict error - e.g. duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/contacts/{contactId}:
+    put:
+      description: Update an account contact
+      operationId: updateContact
+      summary: Update Contact
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                middleName:
+                  type: string
+                  maxLength: 50
+                email:
+                  type: string
+                  maxLength: 100
+                  format: email
+                contactDetails:
+                  type: object
+                  properties:
+                    phone1:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone2:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone3:
+                      type: string
+                      nullable: true
+                      default: ""
+                    streetaddress:
+                      type: string
+                      nullable: true
+                      maxLength: 100
+                      default: ""
+                    city:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    state:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    zip:
+                      type: string
+                      nullable: true
+                      maxLength: 10
+                      default: ""
+                    dateofbirth:
+                      type: string
+                      nullable: true
+                      default: ""
+                photo:
+                  type: string
+                  format: binary
+                  description: Contact photo file
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                middleName:
+                  type: string
+                  maxLength: 50
+                email:
+                  type: string
+                  maxLength: 100
+                  format: email
+                contactDetails:
+                  type: object
+                  properties:
+                    phone1:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone2:
+                      type: string
+                      nullable: true
+                      default: ""
+                    phone3:
+                      type: string
+                      nullable: true
+                      default: ""
+                    streetaddress:
+                      type: string
+                      nullable: true
+                      maxLength: 100
+                      default: ""
+                    city:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    state:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      default: ""
+                    zip:
+                      type: string
+                      nullable: true
+                      maxLength: 10
+                      default: ""
+                    dateofbirth:
+                      type: string
+                      nullable: true
+                      default: ""
+                photo:
+                  type: string
+                  format: binary
+                  description: Contact photo file
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "200":
+          description: Contact updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Conflict error - e.g. duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/contacts/{contactId}/photo:
+    delete:
+      description: Delete a contact photo
+      operationId: deleteContactPhoto
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Contact photo deleted
+          content:
+            application/json:
+              schema:
+                type: string
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/contacts/{contactId}/roster:
+    get:
+      description: Get a roster entry for a contact. This is information that is
+        global to a player once they are on a team, it is not season specfic
+      operationId: getContactRoster
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Roster entry found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterPlayer"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Roster member or team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}:
+    put:
+      description: Update a roster entry for a team season
+      operationId: updateRosterMember
+      summary: Update roster entry
+      security:
+        - bearerAuth: []
+      tags:
+        - Rosters
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^d+$
+                playerNumber:
+                  type: number
+                  minimum: 0
+                  maximum: 99
+                inactive:
+                  type: boolean
+                  default: false
+                submittedWaiver:
+                  type: boolean
+                dateAdded:
+                  type: string
+                  nullable: true
+                  format: date
+                  default: null
+                player:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      pattern: ^d+$
+                    submittedDriversLicense:
+                      type: boolean
+                      default: false
+                    firstYear:
+                      type: number
+                      minimum: 1900
+                      maximum: 2025
+                    contact:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^d+$
+                        firstName:
+                          type: string
+                          minLength: 1
+                          maxLength: 50
+                        lastName:
+                          type: string
+                          minLength: 1
+                          maxLength: 50
+                        middleName:
+                          type: string
+                          maxLength: 50
+                        email:
+                          type: string
+                          maxLength: 100
+                          format: email
+                        userId:
+                          type: string
+                          maxLength: 50
+                        photoUrl:
+                          type: string
+                          format: uri
+                        contactDetails:
+                          type: object
+                          properties:
+                            phone1:
+                              type: string
+                              nullable: true
+                              default: ""
+                            phone2:
+                              type: string
+                              nullable: true
+                              default: ""
+                            phone3:
+                              type: string
+                              nullable: true
+                              default: ""
+                            streetaddress:
+                              type: string
+                              nullable: true
+                              maxLength: 100
+                              default: ""
+                            city:
+                              type: string
+                              nullable: true
+                              maxLength: 50
+                              default: ""
+                            state:
+                              type: string
+                              nullable: true
+                              maxLength: 50
+                              default: ""
+                            zip:
+                              type: string
+                              nullable: true
+                              maxLength: 10
+                              default: ""
+                            dateofbirth:
+                              type: string
+                              nullable: true
+                              default: ""
+                      required:
+                        - id
+                        - firstName
+                        - lastName
+                  required:
+                    - id
+                    - firstYear
+                    - contact
+                  description: Schema for a player who is or was on a team roster. This contains
+                    details that only ever need to be supplied once
+      responses:
+        "200":
+          description: Roster entry updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Roster member or team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a player from the team for the given season. This is a
+        permanent action and cannot be undone. Use releasePlayer if you want to
+        keep the player stats for the given team season.
+      operationId: deletePlayer
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Player deleted
+          content:
+            application/json:
+              schema:
+                type: string
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster:
+    post:
+      description: Sign a player to the team roster
+      operationId: signPlayer
+      summary: Sing player to roster
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignRosterMember"
+      responses:
+        "201":
+          description: Player signed to roster
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}/release:
+    put:
+      description: Release a player from the team for the given season
+      operationId: releasePlayer
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Player released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}/activate:
+    put:
+      description: Activate a released player from the team for the given season
+      operationId: activatePlayer
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Player activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
+    post:
+      description: Add a manager to the team for the given season
+      operationId: addManager
+      security:
+        - bearerAuth: []
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamManager"
+      responses:
+        "200":
+          description: Manager added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamManager"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers/{managerId}:
+    delete:
+      description: Remove a manager from the team for the given season
+      operationId: removeManager
+      security:
+        - bearerAuth: []
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Manager removed
+          content:
+            application/json:
+              schema:
+                type: string
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"

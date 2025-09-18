@@ -21,47 +21,13 @@ const UserActions: React.FC<UserActionsProps> = ({
 
   const handleEditContact = () => {
     if (onEditContact) {
-      // Convert User to Contact for the edit dialog
-      const contact = {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        userId: user.userId,
-        photoUrl: user.photoUrl,
-        contactDetails: user.contactDetails,
-        contactroles: user.roles?.map((role) => ({
-          id: role.id,
-          roleId: role.roleId,
-          roleName: role.roleName,
-          roleData: role.roleData,
-          contextName: role.contextName,
-        })),
-      };
-      onEditContact(contact);
+      onEditContact(user);
     }
   };
 
   const handleDeleteContact = () => {
     if (onDeleteContact) {
-      // Convert User to Contact for the delete dialog
-      const contact = {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        userId: user.userId,
-        photoUrl: user.photoUrl,
-        contactDetails: user.contactDetails,
-        contactroles: user.roles?.map((role) => ({
-          id: role.id,
-          roleId: role.roleId,
-          roleName: role.roleName,
-          roleData: role.roleData,
-          contextName: role.contextName,
-        })),
-      };
-      onDeleteContact(contact);
+      onDeleteContact(user);
     }
   };
 

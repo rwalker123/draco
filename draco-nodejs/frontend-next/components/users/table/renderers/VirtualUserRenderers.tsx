@@ -8,13 +8,13 @@
 import React from 'react';
 import { VirtualItemRenderer } from '../../../../types/virtualScroll';
 import { EnhancedUser, CardSize } from '../../../../types/userTable';
-import { User, UserRole } from '../../../../types/users';
 import UserDisplayCard from '../components/UserDisplayCard';
+import { ContactRoleType, ContactType } from '@draco/shared-schemas';
 
 // Base interface for user renderers (Interface Segregation)
 interface BaseUserRendererProps {
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole?: (user: User, role: UserRole) => void;
+  onAssignRole: (user: ContactType) => Promise<void>;
+  onRemoveRole?: (user: ContactType, role: ContactRoleType) => void;
   canManageUsers: boolean;
   getRoleDisplayName: (
     roleOrRoleId:

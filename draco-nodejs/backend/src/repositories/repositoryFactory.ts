@@ -2,11 +2,16 @@ import {
   IUserRepository,
   ITeamRepository,
   IAccountRepository,
+  IContactRepository,
+} from './interfaces/index.js';
+import {
   PrismaUserRepository,
   PrismaTeamRepository,
   PrismaAccountRepository,
-} from '../repositories/index.js';
-import prisma from './prisma.js';
+  PrismaContactRepository,
+} from './implementations/index.js';
+
+import prisma from '../lib/prisma.js';
 
 /**
  * Factory functions to create repository instances
@@ -16,6 +21,7 @@ export class RepositoryFactory {
   private static userRepository: IUserRepository;
   private static teamRepository: ITeamRepository;
   private static accountRepository: IAccountRepository;
+  private static contactRepository: IContactRepository;
 
   static getUserRepository(): IUserRepository {
     if (!this.userRepository) {
@@ -38,16 +44,10 @@ export class RepositoryFactory {
     return this.accountRepository;
   }
 
-  // For testing - allows injection of custom repositories
-  static setUserRepository(repository: IUserRepository): void {
-    this.userRepository = repository;
-  }
-
-  static setTeamRepository(repository: ITeamRepository): void {
-    this.teamRepository = repository;
-  }
-
-  static setAccountRepository(repository: IAccountRepository): void {
-    this.accountRepository = repository;
+  static getContactRepository(): IContactRepository {
+    if (!this.contactRepository) {
+      this.contactRepository = new PrismaContactRepository(prisma);
+    }
+    return this.contactRepository;
   }
 }

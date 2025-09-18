@@ -1,18 +1,11 @@
-import {
-  User,
-  Role,
-  UsersResponse,
-  UserSearchParams,
-  Contact,
-  ContactUpdateData,
-  DependencyCheckResult,
-} from '../types/users';
+import { Role, UsersResponse, UserSearchParams, DependencyCheckResult } from '../types/users';
 import {
   validateContactUpdateResponse,
   ContactUpdateResponse,
 } from '../types/userManagementTypeGuards';
 import { ContactTransformationService } from './contactTransformationService';
 import { handleApiErrorResponse } from '../utils/errorHandling';
+import { Contact, ContactType, CreateContactType } from '@draco/shared-schemas';
 
 // Pagination interface for API responses
 interface PaginationInfo {
@@ -40,14 +33,6 @@ export class UserManagementService {
    */
   private transformContactResponseToContact(response: ContactUpdateResponse): Contact {
     return ContactTransformationService.transformContactUpdateResponse(response);
-  }
-
-  /**
-   * Transform Contact to User format
-   * Delegates to shared ContactTransformationService
-   */
-  private transformContactToUser(contact: Contact): User {
-    return ContactTransformationService.transformContactToUser(contact);
   }
 
   /**
@@ -98,9 +83,7 @@ export class UserManagementService {
 
     // Transform contacts to users format for frontend compatibility
     // Backend returns contacts array with contactroles, but frontend expects users with roles
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) =>
-      this.transformContactToUser(contact),
-    );
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => contact);
 
     return {
       users: usersWithRoles,
@@ -127,7 +110,7 @@ export class UserManagementService {
       sortBy?: string;
       sortOrder?: 'asc' | 'desc';
     },
-  ): Promise<{ users: User[]; pagination: PaginationInfo }> {
+  ): Promise<{ users: ContactType[]; pagination: PaginationInfo }> {
     const searchParams = new URLSearchParams();
     searchParams.set('q', query);
     searchParams.set('roles', 'true');
@@ -176,9 +159,7 @@ export class UserManagementService {
     }
 
     // Transform contacts to users format for frontend compatibility
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) =>
-      this.transformContactToUser(contact),
-    );
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => contact);
 
     return {
       users: usersWithRoles,
@@ -354,155 +335,11 @@ export class UserManagementService {
   }
 
   /**
-   * Update contact information (with optional photo)
-   */
-  async updateContact(
-    accountId: string,
-    contactId: string,
-    contactData: ContactUpdateData,
-    photoFile?: File | null,
-  ): Promise<Contact> {
-    console.log('UserManagementService.updateContact called with:', {
-      contactId,
-      contactData,
-      hasPhotoFile: !!photoFile,
-      photoFileName: photoFile?.name,
-    });
-
-    // Transform camelCase frontend data to lowercase backend API format
-    // Only include fields that have actual values (not empty strings)
-    const backendData: Record<string, unknown> = {};
-
-    if (contactData.firstName && contactData.firstName.trim()) {
-      backendData.firstname = contactData.firstName.trim();
-    }
-    if (contactData.lastName && contactData.lastName.trim()) {
-      backendData.lastname = contactData.lastName.trim();
-    }
-    if (contactData.middleName !== undefined) {
-      backendData.middleName = contactData.middleName;
-    }
-    if (contactData.email && contactData.email.trim()) {
-      backendData.email = contactData.email.trim();
-    }
-    if (contactData.phone1 !== undefined) {
-      backendData.phone1 = contactData.phone1;
-    }
-    if (contactData.phone2 !== undefined) {
-      backendData.phone2 = contactData.phone2;
-    }
-    if (contactData.phone3 !== undefined) {
-      backendData.phone3 = contactData.phone3;
-    }
-    if (contactData.streetaddress !== undefined) {
-      backendData.streetaddress = contactData.streetaddress;
-    }
-    if (contactData.city !== undefined) {
-      backendData.city = contactData.city;
-    }
-    if (contactData.state !== undefined) {
-      backendData.state = contactData.state;
-    }
-    if (contactData.zip !== undefined) {
-      backendData.zip = contactData.zip;
-    }
-    if (
-      contactData.dateofbirth !== undefined &&
-      contactData.dateofbirth !== '' &&
-      contactData.dateofbirth !== null
-    ) {
-      // Convert ISO datetime to YYYY-MM-DD format for backend validation
-      try {
-        const date = new Date(contactData.dateofbirth);
-        if (!isNaN(date.getTime())) {
-          backendData.dateofbirth = date.toISOString().split('T')[0];
-        }
-      } catch {
-        console.warn('Invalid dateofbirth format:', contactData.dateofbirth);
-        // Don't include invalid dates
-      }
-    } else if (contactData.dateofbirth === null) {
-      // Explicitly set to null when provided as null
-      backendData.dateofbirth = null;
-    }
-
-    console.log('UserManagementService: Filtered backendData:', backendData);
-
-    // Use FormData if photo is provided, otherwise use JSON
-    let body: FormData | string;
-    let headers: Record<string, string>;
-
-    if (photoFile) {
-      console.log('UserManagementService: Creating FormData with photo', {
-        photoName: photoFile.name,
-        photoSize: photoFile.size,
-        contactData: backendData,
-      });
-
-      const formData = new FormData();
-      // Add all contact data to form data - only include non-empty values
-      Object.entries(backendData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          formData.append(key, String(value));
-        }
-      });
-      // Add photo file
-      formData.append('photo', photoFile);
-
-      console.log('UserManagementService: FormData entries:', Array.from(formData.entries()));
-
-      body = formData;
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        // Don't set Content-Type for FormData - let browser set it with boundary
-      };
-    } else {
-      body = JSON.stringify(backendData);
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      };
-    }
-
-    console.log('UserManagementService: Making PUT request to update contact', {
-      url: `/api/accounts/${accountId}/contacts/${contactId}`,
-      hasPhoto: !!photoFile,
-      headers: Object.keys(headers),
-    });
-
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}`, {
-      method: 'PUT',
-      headers,
-      body,
-    });
-
-    console.log('UserManagementService: Response received', {
-      status: response.status,
-      ok: response.ok,
-      headers: Object.fromEntries(response.headers.entries()),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('UserManagementService: Update failed', { status: response.status, errorData });
-      throw new Error(errorData.message || `Failed to update contact (${response.status})`);
-    }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to update contact');
-    }
-
-    const validatedResponse = validateContactUpdateResponse(data.data.contact);
-    return this.transformContactResponseToContact(validatedResponse);
-  }
-
-  /**
    * Create a new contact
    */
   async createContact(
     accountId: string,
-    contactData: ContactUpdateData,
+    contactData: CreateContactType,
     photoFile?: File | null,
   ): Promise<Contact> {
     console.log('UserManagementService: Creating contact', { accountId, hasPhoto: !!photoFile });
@@ -521,43 +358,43 @@ export class UserManagementService {
     if (contactData.email !== undefined) {
       backendData.email = contactData.email;
     }
-    if (contactData.phone1 !== undefined) {
-      backendData.phone1 = contactData.phone1;
+    if (contactData.contactDetails?.phone1 !== undefined) {
+      backendData.phone1 = contactData.contactDetails.phone1;
     }
-    if (contactData.phone2 !== undefined) {
-      backendData.phone2 = contactData.phone2;
+    if (contactData.contactDetails?.phone2 !== undefined) {
+      backendData.phone2 = contactData.contactDetails.phone2;
     }
-    if (contactData.phone3 !== undefined) {
-      backendData.phone3 = contactData.phone3;
+    if (contactData.contactDetails?.phone3 !== undefined) {
+      backendData.phone3 = contactData.contactDetails.phone3;
     }
-    if (contactData.streetaddress !== undefined) {
-      backendData.streetaddress = contactData.streetaddress;
+    if (contactData.contactDetails?.streetaddress !== undefined) {
+      backendData.streetaddress = contactData.contactDetails.streetaddress;
     }
-    if (contactData.city !== undefined) {
-      backendData.city = contactData.city;
+    if (contactData.contactDetails?.city !== undefined) {
+      backendData.city = contactData.contactDetails.city;
     }
-    if (contactData.state !== undefined) {
-      backendData.state = contactData.state;
+    if (contactData.contactDetails?.state !== undefined) {
+      backendData.state = contactData.contactDetails.state;
     }
-    if (contactData.zip !== undefined) {
-      backendData.zip = contactData.zip;
+    if (contactData.contactDetails?.zip !== undefined) {
+      backendData.zip = contactData.contactDetails.zip;
     }
     if (
-      contactData.dateofbirth !== undefined &&
-      contactData.dateofbirth !== '' &&
-      contactData.dateofbirth !== null
+      contactData.contactDetails?.dateofbirth !== undefined &&
+      contactData.contactDetails?.dateofbirth !== '' &&
+      contactData.contactDetails?.dateofbirth !== null
     ) {
       // Convert ISO datetime to YYYY-MM-DD format for backend validation
       try {
-        const date = new Date(contactData.dateofbirth);
+        const date = new Date(contactData.contactDetails.dateofbirth);
         if (!isNaN(date.getTime())) {
           backendData.dateofbirth = date.toISOString().split('T')[0];
         }
       } catch {
-        console.warn('Invalid dateofbirth format:', contactData.dateofbirth);
+        console.warn('Invalid dateofbirth format:', contactData.contactDetails.dateofbirth);
         // Don't include invalid dates
       }
-    } else if (contactData.dateofbirth === null) {
+    } else if (contactData.contactDetails?.dateofbirth === null) {
       // Explicitly set to null when provided as null
       backendData.dateofbirth = null;
     }

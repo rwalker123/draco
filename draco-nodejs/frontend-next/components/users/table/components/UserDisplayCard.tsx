@@ -21,11 +21,11 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { UserDisplayCardProps } from '../../../../types/userTable';
-import { User, UserRole } from '../../../../types/users';
 import RoleIconGrid from '../../RoleIconGrid';
 import UserAvatar from '../../UserAvatar';
 import { EmailButton } from '../../../emails/common/EmailButton';
 import RegistrationStatusChip from '../../RegistrationStatusChip';
+import { ContactRoleType } from '@draco/shared-schemas';
 
 const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   user,
@@ -74,37 +74,17 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   const config = cardConfig[cardSize];
 
   const handleAssignRole = async () => {
-    // Convert EnhancedUser to User for the callback
-    const baseUser: User = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      userId: user.userId,
-      contactDetails: user.contactDetails,
-      roles: user.roles,
-    };
-    await onAssignRole(baseUser);
+    await onAssignRole(user);
   };
 
-  const handleRemoveRole = (role: UserRole) => {
+  const handleRemoveRole = (role: ContactRoleType) => {
     if (onRemoveRole) {
-      // Convert EnhancedUser to User for the callback
-      const baseUser: User = {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        userId: user.userId,
-        contactDetails: user.contactDetails,
-        roles: user.roles,
-      };
-      onRemoveRole(baseUser, role);
+      onRemoveRole(user, role);
     }
   };
 
   // Convert activeRoleNames to UserRole objects for RoleIconGrid
-  const userRoles: UserRole[] = user.roles || [];
+  const userRoles: ContactRoleType[] = user.contactroles || [];
 
   return (
     <Card
@@ -202,27 +182,10 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
               size="small"
               onClick={(e) => {
                 e.stopPropagation();
-                // Convert EnhancedUser to Contact for the edit dialog
-                const contact = {
-                  id: user.id,
-                  firstName: user.firstName,
-                  lastName: user.lastName,
-                  email: user.email,
-                  userId: user.userId,
-                  photoUrl: user.photoUrl,
-                  contactDetails: user.contactDetails,
-                  contactroles: user.roles?.map((role) => ({
-                    id: role.id,
-                    roleId: role.roleId,
-                    roleName: role.roleName,
-                    roleData: role.roleData,
-                    contextName: role.contextName,
-                  })),
-                };
 
                 // This will be passed down from the parent component that uses useUserManagement
                 if (typeof onEditContact === 'function') {
-                  onEditContact(contact);
+                  onEditContact(user);
                 }
               }}
               sx={{
@@ -245,14 +208,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDeleteContact({
-                    id: user.id,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    email: user.email,
-                    userId: user.userId,
-                    contactDetails: user.contactDetails,
-                  });
+                  onDeleteContact(user);
                 }}
                 sx={{
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -283,24 +239,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
               canManageUsers && onEditContact
                 ? (e) => {
                     e.stopPropagation();
-                    // Convert EnhancedUser to Contact for the edit dialog
-                    const contact = {
-                      id: user.id,
-                      firstName: user.firstName,
-                      lastName: user.lastName,
-                      email: user.email,
-                      userId: user.userId,
-                      photoUrl: user.photoUrl,
-                      contactDetails: user.contactDetails,
-                      contactroles: user.roles?.map((role) => ({
-                        id: role.id,
-                        roleId: role.roleId,
-                        roleName: role.roleName,
-                        roleData: role.roleData,
-                        contextName: role.contextName,
-                      })),
-                    };
-                    onEditContact(contact);
+                    onEditContact(user);
                   }
                 : undefined
             }
@@ -325,7 +264,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
               <RegistrationStatusChip
-                userId={user.userId}
+                userId={user.userId || undefined}
                 contactId={user.id}
                 size={cardSize === 'compact' ? 'small' : 'medium'}
                 canManage={canManageUsers}
@@ -356,9 +295,13 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                 <EmailButton
                   contact={{
                     id: user.id,
-                    firstname: user.firstName,
-                    lastname: user.lastName,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    middleName: user.middleName,
                     email: user.email,
+                    userId: user.userId,
+                    contactDetails: user.contactDetails,
+                    photoUrl: user.photoUrl,
                   }}
                   variant="icon"
                   size={cardSize === 'compact' ? 'small' : 'medium'}

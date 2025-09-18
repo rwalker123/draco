@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
-import { UserRole } from '../../types/users';
 import RoleIcon from './RoleIcon';
+import { ContactRoleType } from '@draco/shared-schemas';
 
 interface RoleIconGridProps {
-  roles: UserRole[];
+  roles: ContactRoleType[];
   canManageUsers?: boolean;
-  onRemoveRole?: (role: UserRole) => void;
+  onRemoveRole?: (role: ContactRoleType) => void;
   maxVisible?: number;
   size?: 'small' | 'medium' | 'large';
   showCount?: boolean;
@@ -35,7 +35,7 @@ const RoleIconGrid: React.FC<RoleIconGridProps> = ({
   const visibleRoles = roles.slice(0, maxVisible);
   const hiddenCount = roles.length - maxVisible;
 
-  const handleRoleClick = (role: UserRole) => {
+  const handleRoleClick = (role: ContactRoleType) => {
     if (canManageUsers && onRemoveRole) {
       onRemoveRole(role);
     }

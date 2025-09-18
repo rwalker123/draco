@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient, Prisma, teamsseason } from '@prisma/client';
-import { NotFoundError } from './customErrors.js';
+import { NotFoundError } from '../utils/customErrors.js';
 
 export interface TeamSeasonValidationResult {
   id: bigint;

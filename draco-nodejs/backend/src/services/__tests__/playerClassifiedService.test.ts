@@ -1,4 +1,4 @@
-import { PlayerClassifiedService } from '../playerClassifiedService.js';
+import { PlayerClassifiedService } from '../player-classified/playerClassifiedService.js';
 import { PrismaClient } from '@prisma/client';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
@@ -125,7 +125,7 @@ describe('PlayerClassifiedService', () => {
     };
 
     // Mock ServiceFactory methods
-    const { ServiceFactory } = await import('../../lib/serviceFactory.js');
+    const { ServiceFactory } = await import('../serviceFactory.js');
     vi.mocked(ServiceFactory.getRoleService).mockReturnValue(mockRoleService as any);
 
     playerClassifiedService = new PlayerClassifiedService(mockPrisma as unknown as PrismaClient);

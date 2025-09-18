@@ -6,8 +6,6 @@ import {
   SearchUsersParams,
   AssignRoleParams,
   RemoveRoleParams,
-  CreateContactParams,
-  UpdateContactParams,
   DeleteContactParams,
   DeletePhotoParams,
 } from '../types/userDataManager';
@@ -69,25 +67,6 @@ export const useUserApiOperations = (
     [userService, accountId],
   );
 
-  const createContact = useCallback(
-    async (params: CreateContactParams) => {
-      await userService.createContact(accountId, params.contactData, params.photoFile);
-    },
-    [userService, accountId],
-  );
-
-  const updateContact = useCallback(
-    async (params: UpdateContactParams) => {
-      return await userService.updateContact(
-        accountId,
-        params.contactId,
-        params.contactData,
-        params.photoFile,
-      );
-    },
-    [userService, accountId],
-  );
-
   const deleteContact = useCallback(
     async (params: DeleteContactParams) => {
       await userService.deleteContact(accountId, params.contactId, params.force);
@@ -107,8 +86,6 @@ export const useUserApiOperations = (
     searchUsersWithFilter,
     assignRole,
     removeRole,
-    createContact,
-    updateContact,
     deleteContact,
     deleteContactPhoto,
   };

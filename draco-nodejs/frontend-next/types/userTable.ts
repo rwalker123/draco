@@ -1,7 +1,8 @@
-import { User, UserRole, UserTableProps } from './users';
+import { ContactType, Contact, ContactRoleType } from '@draco/shared-schemas';
+import { UserTableProps } from './users';
 
 // Enhanced user interface with computed properties for the modern table
-export interface EnhancedUser extends User {
+export interface EnhancedUser extends Contact {
   // Computed display properties
   displayName: string;
   fullAddress: string;
@@ -205,8 +206,8 @@ export interface UserTableRowProps {
   selected: boolean;
   selectable: boolean;
   onToggleSelect: (userId: string) => void;
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole: (user: User, role: UserRole) => void;
+  onAssignRole: (user: ContactType) => Promise<void>;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
   canManageUsers: boolean;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -220,10 +221,10 @@ export interface UserTableRowProps {
 export interface UserDisplayCardProps {
   user: EnhancedUser;
   cardSize: CardSize;
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole: (user: User, role: UserRole) => void;
-  onEditContact?: (contact: import('./users').Contact) => void;
-  onDeleteContact?: (contact: import('./users').Contact) => void;
+  onAssignRole: (user: ContactType) => Promise<void>;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
+  onEditContact?: (contact: ContactType) => void;
+  onDeleteContact?: (contact: ContactType) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
   canManageUsers: boolean;
@@ -324,7 +325,7 @@ export const DEFAULT_BULK_ACTIONS: UserTableAction[] = [
 ];
 
 // Utility type for creating enhanced users
-export type UserEnhancer = (user: User) => EnhancedUser;
+export type UserEnhancer = (user: ContactType) => EnhancedUser;
 
 // Hook return types for the selection system
 export interface UseUserSelectionReturn {

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Stack, Typography, Box } from '@mui/material';
-import { ContactDetails } from '../../../types/users';
+import { ContactDetails } from '@draco/shared-schemas';
 
 interface PhoneNumbersCellProps {
   contactDetails?: ContactDetails;

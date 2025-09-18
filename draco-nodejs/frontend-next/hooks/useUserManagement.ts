@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo, useReducer } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useApiClient } from './useApiClient';
 import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
 import {
@@ -10,21 +11,16 @@ import {
 } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
 import { addCacheBuster } from '../config/contacts';
-import {
-  User,
-  Role,
-  UserRole,
-  UseUserManagementReturn,
-  Contact,
-  ContactUpdateData,
-} from '../types/users';
+import { Role, UseUserManagementReturn } from '../types/users';
 import { extractErrorMessage } from '../types/userManagementTypeGuards';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
+import { Contact, ContactRoleType, ContactType, CreateContactType } from '@draco/shared-schemas';
+import { updateContact as apiUpdateContact } from '@draco/shared-api-client';
 
 // Pagination state for atomic updates
 interface PaginationState {
-  users: User[];
+  users: ContactType[];
   loading: boolean;
   isInitialLoad: boolean;
   isPaginating: boolean;
@@ -36,7 +32,7 @@ interface PaginationState {
 export type PaginationAction =
   | { type: 'START_LOADING' }
   | { type: 'START_PAGINATION'; page: number }
-  | { type: 'SET_DATA'; users: User[]; hasNext: boolean; hasPrev: boolean; page?: number }
+  | { type: 'SET_DATA'; users: ContactType[]; hasNext: boolean; hasPrev: boolean; page?: number }
   | { type: 'RESET_TO_INITIAL' };
 
 // Reducer for atomic pagination state updates
@@ -89,6 +85,7 @@ const paginationReducer = (state: PaginationState, action: PaginationAction): Pa
  */
 export const useUserManagement = (accountId: string): UseUserManagementReturn => {
   const { token } = useAuth();
+  const apiClient = useApiClient();
   const { currentSeasonId, fetchCurrentSeason } = useCurrentSeason(accountId);
 
   // Pagination state using reducer for atomic updates
@@ -129,11 +126,11 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [editContactDialogOpen, setEditContactDialogOpen] = useState(false);
   const [deleteContactDialogOpen, setDeleteContactDialogOpen] = useState(false);
   const [createContactDialogOpen, setCreateContactDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<ContactType | null>(null);
   const [selectedContactForEdit, setSelectedContactForEdit] = useState<Contact | null>(null);
   const [selectedContactForDelete, setSelectedContactForDelete] = useState<Contact | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
-  const [selectedRoleToRemove, setSelectedRoleToRemove] = useState<UserRole | null>(null);
+  const [selectedRoleToRemove, setSelectedRoleToRemove] = useState<ContactRoleType | null>(null);
 
   // Form states
   const [newUserContactId, setNewUserContactId] = useState<string>('');
@@ -180,7 +177,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Atomic pagination data update using reducer
   const updatePaginationData = useCallback(
-    (newUsers: User[], newHasNext: boolean, newHasPrev: boolean, newPage?: number) => {
+    (newUsers: ContactType[], newHasNext: boolean, newHasPrev: boolean, newPage?: number) => {
       dispatch({
         type: 'SET_DATA',
         users: newUsers,
@@ -762,7 +759,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Dialog open handlers
   const openAssignRoleDialog = useCallback(
-    async (user: User) => {
+    async (user: ContactType) => {
       setSelectedUser(user);
       setNewUserContactId(user.id); // Pre-populate with the user's contact ID
       setAssignRoleDialogOpen(true);
@@ -780,7 +777,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setSelectedTeamId('');
   }, []);
 
-  const openRemoveRoleDialog = useCallback((user: User, role: UserRole) => {
+  const openRemoveRoleDialog = useCallback((user: ContactType, role: ContactRoleType) => {
     setSelectedUser(user);
     setSelectedRoleToRemove(role);
     setRemoveRoleDialogOpen(true);
@@ -815,21 +812,45 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   }, []);
 
   const handleEditContact = useCallback(
-    async (contactData: ContactUpdateData, photoFile?: File | null) => {
+    async (contactData: CreateContactType | null, photoFile?: File | null) => {
       if (!userService || !selectedContactForEdit || !accountId) {
         throw new Error('Unable to update contact - missing required data');
       }
 
       setFormLoading(true);
 
-      try {
-        const updatedContact = await userService.updateContact(
-          accountId,
-          selectedContactForEdit.id,
-          contactData,
-          photoFile,
-        );
+      if (!contactData) {
+        throw new Error('TODO: should do photoFile upload only here');
+      }
 
+      // todo: duplicated method in userRosterDataManager - refactor to common utility.
+      // but maybe both these files will go away once we move to new architecture?
+      const result = photoFile
+        ? await apiUpdateContact({
+            path: { accountId, contactId: selectedContactForEdit.id },
+            client: apiClient,
+            throwOnError: false,
+            bodySerializer: (body) => {
+              const formData = new FormData();
+              Object.entries(body).forEach(([key, value]) => {
+                if (value instanceof File) {
+                  formData.append(key, value);
+                } else if (value !== undefined && value !== null) {
+                  formData.append(key, String(value));
+                }
+              });
+              return formData;
+            },
+          })
+        : await apiUpdateContact({
+            path: { accountId, contactId: selectedContactForEdit.id },
+            client: apiClient,
+            throwOnError: false,
+            body: { ...contactData, photo: undefined },
+          });
+
+      if (result.data) {
+        const updatedContact = result.data;
         // Update the specific user in state with new data including cache-busted photo URL
         const updatedUsers = paginationState.users.map((user) => {
           if (user.id === selectedContactForEdit.id) {
@@ -872,12 +893,10 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
         setSuccess('Contact updated successfully');
         closeEditContactDialog();
-      } catch (error) {
-        console.error('Error updating contact:', error);
-        throw error; // Propagate error to dialog
-      } finally {
-        setFormLoading(false);
+      } else {
+        console.error('Error updating contact:', result.error?.message);
       }
+      setFormLoading(false);
     },
     [
       userService,
@@ -891,13 +910,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     ],
   );
 
+  // todo: should combine this with handleEditContact
   const handleCreateContact = useCallback(
-    async (contactData: ContactUpdateData, photoFile?: File | null) => {
+    async (contactData: CreateContactType | null, photoFile?: File | null) => {
       if (!userService || !accountId) {
         throw new Error('Unable to create contact - missing required data');
       }
 
       setFormLoading(true);
+
+      if (!contactData) {
+        throw new Error('TODO: should do photoFile upload only here');
+      }
 
       try {
         await userService.createContact(accountId, contactData, photoFile);

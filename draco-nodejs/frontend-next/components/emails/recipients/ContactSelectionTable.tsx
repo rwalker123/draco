@@ -289,10 +289,10 @@ const ContactSelectionTable: React.FC<ContactSelectionTableProps> = ({
                               bgcolor: isSelected ? 'primary.main' : 'grey.400',
                             }}
                           >
-                            {contact.avatar ? (
+                            {contact.photoUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={contact.avatar}
+                                src={contact.photoUrl}
                                 alt={contact.displayName}
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               />
@@ -307,9 +307,9 @@ const ContactSelectionTable: React.FC<ContactSelectionTableProps> = ({
                             >
                               {contact.displayName}
                             </Typography>
-                            {contact.roles && contact.roles.length > 0 && (
+                            {contact.contactroles && contact.contactroles.length > 0 && (
                               <Typography variant="caption" color="text.secondary">
-                                {contact.roles.map((role) => role.roleName).join(', ')}
+                                {contact.contactroles.map((role) => role.roleName).join(', ')}
                               </Typography>
                             )}
                           </Box>
@@ -331,10 +331,12 @@ const ContactSelectionTable: React.FC<ContactSelectionTableProps> = ({
 
                       {!compact && (
                         <TableCell>
-                          {contact.phone ? (
+                          {contact.contactDetails?.phone1 ? (
                             <Stack direction="row" alignItems="center" spacing={1}>
                               <PhoneIcon fontSize="small" color="action" />
-                              <Typography variant="body2">{contact.phone}</Typography>
+                              <Typography variant="body2">
+                                {contact.contactDetails.phone1}
+                              </Typography>
                             </Stack>
                           ) : (
                             <Typography variant="body2" color="text.secondary">

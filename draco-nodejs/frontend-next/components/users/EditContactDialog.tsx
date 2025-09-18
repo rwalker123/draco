@@ -14,68 +14,37 @@ import {
   Box,
   Stack,
   FormControlLabel,
-  Checkbox,
+  Switch,
 } from '@mui/material';
 import { Edit as EditIcon, Save as SaveIcon, Close as CloseIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { Autocomplete } from '@mui/material';
-import { Contact, ContactUpdateData } from '../../types/users';
 import { formatPhoneNumber } from '../../utils/contactUtils';
 import { US_STATES } from '../../constants/usStates';
-import {
-  validateContactForm,
-  hasValidationErrors,
-  sanitizeContactFormData,
-} from '../../utils/contactValidation';
 import ContactPhotoUpload from '../ContactPhotoUpload';
 import { validateContactPhotoFile } from '../../config/contacts';
 
-function parseDateOnlyToLocalDate(dateOnly: string | null | undefined): Date | null {
-  if (!dateOnly) return null;
-  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateOnly);
-  if (isDateOnly) {
-    const [y, m, d] = dateOnly.split('-').map((p) => parseInt(p, 10));
-    if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
-      return new Date(y, m - 1, d);
-    }
-    return null;
-  }
-  const parsed = new Date(dateOnly);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function formatLocalDateToDateOnlyString(date: Date | null): string | null {
-  if (!date) return null;
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+import { BaseContact, CreateContactType, CreateContactSchema } from '@draco/shared-schemas';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface EditContactDialogProps {
   open: boolean;
-  contact: Contact | null;
+  contact: BaseContact | null;
   onClose: () => void;
-  onSave: (contactData: ContactUpdateData, photoFile?: File | null) => Promise<void>;
+  onSave: (
+    contactData: CreateContactType | null,
+    photoFile?: File | null,
+    autoSignToRoster?: boolean,
+  ) => Promise<void>;
   loading?: boolean;
   mode?: 'create' | 'edit';
   // Optional roster signup functionality
   showRosterSignup?: boolean;
   onRosterSignup?: (shouldSignup: boolean) => void;
   initialRosterSignup?: boolean;
-}
-
-interface FormErrors {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone1?: string;
-  phone2?: string;
-  phone3?: string;
-  state?: string;
-  dateofbirth?: string;
 }
 
 /**
@@ -85,127 +54,74 @@ interface FormErrors {
 const EditContactDialog: React.FC<EditContactDialogProps> = ({
   open,
   contact,
-  onClose,
-  onSave,
   loading = false,
   mode = 'edit',
   showRosterSignup = false,
-  onRosterSignup,
   initialRosterSignup = false,
+  onClose,
+  onSave,
+  onRosterSignup,
 }) => {
-  const [formData, setFormData] = useState<ContactUpdateData>({
-    firstName: '',
-    lastName: '',
-    middleName: '', // ✅ Updated to use middleName
-    email: '',
-    phone1: '',
-    phone2: '',
-    phone3: '',
-    streetaddress: '',
-    city: '',
-    state: '',
-    zip: '',
-    dateofbirth: null,
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    reset,
+    formState: { errors, isDirty },
+  } = useForm({
+    resolver: zodResolver(CreateContactSchema),
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
   const [saveError, setSaveError] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState<string>('');
   const [rosterSignup, setRosterSignup] = useState<boolean>(initialRosterSignup);
+  const [createMultiplePlayers, setCreateMultiplePlayers] = useState(false);
 
   // Reset form when dialog opens/closes or contact changes
   useEffect(() => {
     if (open) {
       if (mode === 'edit' && contact) {
-        // Edit mode: populate with existing contact data
-        const contactDetails = contact.contactDetails;
-        setFormData({
-          firstName: contact.firstName || '',
-          lastName: contact.lastName || '',
-          middleName: contact.middleName || '', // ✅ Use top-level middleName
-          email: contact.email || '',
-          phone1: contactDetails?.phone1 || '',
-          phone2: contactDetails?.phone2 || '',
-          phone3: contactDetails?.phone3 || '',
-          streetaddress: contactDetails?.streetaddress || '',
-          city: contactDetails?.city || '',
-          state: contactDetails?.state || '',
-          zip: contactDetails?.zip || '',
-          dateofbirth: contactDetails?.dateofbirth || null,
-        });
+        reset(contact);
       } else {
-        // Create mode: start with empty form
-        setFormData({
+        // Create mode OR edit mode with no contact: start with empty form
+        reset({
           firstName: '',
           lastName: '',
           middleName: '',
           email: '',
-          phone1: '',
-          phone2: '',
-          phone3: '',
-          streetaddress: '',
-          city: '',
-          state: '',
-          zip: '',
-          dateofbirth: null,
+          contactDetails: {
+            phone1: '',
+            phone2: '',
+            phone3: '',
+            streetaddress: '',
+            city: '',
+            state: '',
+            zip: '',
+            dateofbirth: '',
+          },
         });
       }
-      setErrors({});
       setSaveError('');
       setPhotoFile(null);
       setPhotoError('');
       setRosterSignup(initialRosterSignup);
+    } else {
+      // Also reset when dialog closes to ensure clean state
+      reset({});
+      setSaveError('');
+      setPhotoFile(null);
+      setPhotoError('');
+      setCreateMultiplePlayers(false);
     }
-  }, [open, contact, mode, initialRosterSignup]);
+  }, [open, contact, mode, initialRosterSignup, reset]);
 
-  const validateForm = (isPhotoOnlyUpdate: boolean = false): boolean => {
-    console.log('Validating form data:', { formData, isPhotoOnlyUpdate }); // Debug logging
-
-    // For photo-only updates, skip field validation
-    if (isPhotoOnlyUpdate) {
-      console.log('Skipping field validation for photo-only update');
-      setErrors({});
-      return true;
-    }
-
-    // Convert to the expected format for validation
-    const formDataForValidation = {
-      firstName: formData.firstName || '',
-      lastName: formData.lastName || '',
-      middleName: formData.middleName, // ✅ Use middleName
-      email: formData.email || '',
-      phone1: formData.phone1,
-      phone2: formData.phone2,
-      phone3: formData.phone3,
-      streetaddress: formData.streetaddress,
-      city: formData.city,
-      state: formData.state,
-      zip: formData.zip,
-      dateofbirth: formData.dateofbirth,
-    };
-
-    // Sanitize the form data first
-    const sanitizedData = sanitizeContactFormData(formDataForValidation);
-    console.log('Sanitized form data:', sanitizedData); // Debug logging
-
-    // Use the utility validation function
-    const validationErrors = validateContactForm(sanitizedData);
-    console.log('Validation errors:', validationErrors); // Debug logging
-
-    setErrors(validationErrors);
-    return !hasValidationErrors(validationErrors);
-  };
-
-  const handleInputChange =
-    (field: keyof ContactUpdateData) => (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoneChange =
+    (field: 'phone1' | 'phone2' | 'phone3') => (event: React.ChangeEvent<HTMLInputElement>) => {
       const value = event.target.value;
-      setFormData((prev) => ({ ...prev, [field]: value }));
-
-      // Clear field error when user starts typing
-      if (errors[field as keyof FormErrors]) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
+      const formattedPhone = formatPhoneNumber(value);
+      setValue(`contactDetails.${field}`, formattedPhone);
 
       // Clear save error when user makes changes
       if (saveError) {
@@ -213,36 +129,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
       }
     };
 
-  const handlePhoneChange =
-    (field: 'phone1' | 'phone2' | 'phone3') => (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
-      const formattedPhone = formatPhoneNumber(value);
-      setFormData((prev) => ({ ...prev, [field]: formattedPhone }));
-
-      // Clear field error when user starts typing
-      if (errors[field]) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    };
-
-  const handleDateChange = (date: Date | null) => {
-    const dateString = formatLocalDateToDateOnlyString(date);
-    setFormData((prev) => ({ ...prev, dateofbirth: dateString }));
-
-    // Clear field error when user selects date
-    if (errors.dateofbirth) {
-      setErrors((prev) => ({ ...prev, dateofbirth: undefined }));
-    }
-  };
-
   const handlePhotoChange = (file: File | null) => {
-    console.log('EditContactDialog: Photo change', {
-      hasFile: !!file,
-      fileName: file?.name,
-      fileSize: file?.size,
-      mode,
-    });
-
     if (file) {
       const validationError = validateContactPhotoFile(file);
       if (validationError) {
@@ -254,87 +141,64 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
     }
     setPhotoFile(file);
     setPhotoError('');
-    console.log('EditContactDialog: Photo file set successfully', { hasFile: !!file });
   };
 
-  const handleSave = async () => {
-    // For create mode, always validate all fields
-    if (mode === 'create') {
-      if (!validateForm(false)) {
-        return;
-      }
-    } else {
-      // For edit mode, check if this is a photo-only update
-      const hasDataChanges =
-        contact &&
-        (formData.firstName !== (contact.firstName || '') ||
-          formData.lastName !== (contact.lastName || '') ||
-          formData.middleName !== (contact.middleName || '') || // ✅ Use top-level middleName
-          formData.email !== (contact.email || '') ||
-          formData.phone1 !== (contact.contactDetails?.phone1 || '') ||
-          formData.phone2 !== (contact.contactDetails?.phone2 || '') ||
-          formData.phone3 !== (contact.contactDetails?.phone3 || '') ||
-          formData.streetaddress !== (contact.contactDetails?.streetaddress || '') ||
-          formData.city !== (contact.contactDetails?.city || '') ||
-          formData.state !== (contact.contactDetails?.state || '') ||
-          formData.zip !== (contact.contactDetails?.zip || '') ||
-          formData.dateofbirth !== (contact.contactDetails?.dateofbirth || null));
+  // Reset form for next player (used in multiple create mode)
+  const resetFormForNextPlayer = () => {
+    reset({
+      firstName: '',
+      lastName: '',
+      middleName: '',
+      email: '',
+      contactDetails: {
+        phone1: '',
+        phone2: '',
+        phone3: '',
+        streetaddress: '',
+        city: '',
+        state: '',
+        zip: '',
+        dateofbirth: '',
+      },
+    });
+    setPhotoFile(null);
+    setPhotoError('');
+    setSaveError('');
+  };
 
-      const isPhotoOnlyUpdate = !hasDataChanges && !!photoFile;
-      console.log('Save operation:', {
-        hasDataChanges,
-        hasPhotoFile: !!photoFile,
-        isPhotoOnlyUpdate,
-      });
-
-      if (!validateForm(isPhotoOnlyUpdate)) {
-        return;
-      }
-    }
-
+  const handleSave = handleSubmit(async (data) => {
     try {
-      let dataToSave = formData;
+      let dataToSave: CreateContactType | null = data;
 
-      // For edit mode photo-only updates, send minimal data
-      if (mode === 'edit' && !contact) {
-        console.log('Photo-only update detected, sending empty contact data');
-        dataToSave = {
-          firstName: '',
-          lastName: '',
-          middleName: '',
-          email: '',
-          phone1: '',
-          phone2: '',
-          phone3: '',
-          streetaddress: '',
-          city: '',
-          state: '',
-          zip: '',
-          dateofbirth: null,
-        };
+      // For edit mode, check if this is a photo-only update
+      if (mode === 'edit' && contact) {
+        const hasDataChanges = isDirty;
+        // For photo-only updates, send minimal data
+        if (!hasDataChanges && !!photoFile) {
+          dataToSave = null;
+        }
       }
 
-      console.log('EditContactDialog: Calling onSave with:', {
-        dataToSave,
-        hasPhotoFile: !!photoFile,
-        photoFileName: photoFile?.name,
-        photoFileSize: photoFile?.size,
-        mode,
-      });
+      // Pass the roster signup value directly to onSave to avoid async state issues
+      const autoSignToRoster = showRosterSignup ? rosterSignup : undefined;
+      await onSave(dataToSave, photoFile, autoSignToRoster);
 
-      await onSave(dataToSave, photoFile);
-
-      // Notify parent about roster signup if applicable
+      // Notify parent about roster signup (for any additional logic)
       if (showRosterSignup && onRosterSignup) {
         onRosterSignup(rosterSignup);
       }
 
-      onClose();
+      if (mode === 'create' && createMultiplePlayers) {
+        // Keep dialog open and reset form for next player
+        resetFormForNextPlayer();
+      } else {
+        // Close dialog as usual
+        onClose();
+      }
     } catch (error) {
-      console.error('Error saving contact:', error);
       setSaveError(error instanceof Error ? error.message : `Failed to ${mode} contact`);
     }
-  };
+  });
 
   const handleClose = () => {
     if (!loading) {
@@ -377,23 +241,35 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
               </Alert>
             )}
 
-            {/* Roster signup option for create mode */}
-            {showRosterSignup && mode === 'create' && (
+            {/* Create mode options */}
+            {mode === 'create' && (
               <Alert severity="info" sx={{ mb: 2 }}>
                 <Stack spacing={1}>
                   <Typography variant="body2" fontWeight="medium">
-                    Team Roster Options
+                    Creation Options
                   </Typography>
                   <FormControlLabel
                     control={
-                      <Checkbox
-                        checked={rosterSignup}
-                        onChange={(e) => setRosterSignup(e.target.checked)}
+                      <Switch
+                        checked={createMultiplePlayers}
+                        onChange={(e) => setCreateMultiplePlayers(e.target.checked)}
                         disabled={loading}
                       />
                     }
-                    label="Automatically add this player to the team roster after creation"
+                    label="Create Multiple Players"
                   />
+                  {showRosterSignup && (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={rosterSignup}
+                          onChange={(e) => setRosterSignup(e.target.checked)}
+                          disabled={loading}
+                        />
+                      }
+                      label="Automatically add this player to the team roster after creation"
+                    />
+                  )}
                 </Stack>
               </Alert>
             )}
@@ -440,20 +316,18 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="First Name"
-                  value={formData.firstName}
-                  onChange={handleInputChange('firstName')}
+                  {...register('firstName')}
                   error={!!errors.firstName}
-                  helperText={errors.firstName}
+                  helperText={errors.firstName?.message}
                   required
                   fullWidth
                   disabled={loading}
                 />
                 <TextField
                   label="Last Name"
-                  value={formData.lastName}
-                  onChange={handleInputChange('lastName')}
+                  {...register('lastName')}
                   error={!!errors.lastName}
-                  helperText={errors.lastName}
+                  helperText={errors.lastName?.message}
                   required
                   fullWidth
                   disabled={loading}
@@ -463,23 +337,34 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="Middle Name"
-                  value={formData.middleName}
-                  onChange={handleInputChange('middleName')}
+                  {...register('middleName')}
                   fullWidth
                   disabled={loading}
                 />
-                <DatePicker
-                  label="Date of Birth"
-                  value={parseDateOnlyToLocalDate(formData.dateofbirth)}
-                  onChange={handleDateChange}
-                  disabled={loading}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      error: !!errors.dateofbirth,
-                      helperText: errors.dateofbirth,
-                    },
-                  }}
+                <Controller
+                  name="contactDetails.dateofbirth"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <DatePicker
+                      label="Date of Birth"
+                      value={field.value ? new Date(field.value) : null}
+                      onChange={(date) => {
+                        field.onChange(date ? date.toISOString().split('T')[0] : '');
+                        // Clear save error when user makes changes
+                        if (saveError) {
+                          setSaveError('');
+                        }
+                      }}
+                      disabled={loading}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error: !!fieldState.error,
+                          helperText: fieldState.error?.message,
+                        },
+                      }}
+                    />
+                  )}
                 />
               </Stack>
 
@@ -491,10 +376,9 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
               <TextField
                 label="Email Address"
                 type="email"
-                value={formData.email}
-                onChange={handleInputChange('email')}
+                {...register('email')}
                 error={!!errors.email}
-                helperText={errors.email}
+                helperText={errors.email?.message}
                 fullWidth
                 disabled={loading}
               />
@@ -502,30 +386,30 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="Home Phone"
-                  value={formData.phone1}
+                  {...register('contactDetails.phone1')}
                   onChange={handlePhoneChange('phone1')}
-                  error={!!errors.phone1}
-                  helperText={errors.phone1}
+                  error={!!errors.contactDetails?.phone1}
+                  helperText={errors.contactDetails?.phone1?.message}
                   fullWidth
                   disabled={loading}
                   placeholder="(555) 123-4567"
                 />
                 <TextField
                   label="Cell Phone"
-                  value={formData.phone2}
+                  {...register('contactDetails.phone2')}
                   onChange={handlePhoneChange('phone2')}
-                  error={!!errors.phone2}
-                  helperText={errors.phone2}
+                  error={!!errors.contactDetails?.phone2}
+                  helperText={errors.contactDetails?.phone2?.message}
                   fullWidth
                   disabled={loading}
                   placeholder="(555) 123-4567"
                 />
                 <TextField
                   label="Work Phone"
-                  value={formData.phone3}
+                  {...register('contactDetails.phone3')}
                   onChange={handlePhoneChange('phone3')}
-                  error={!!errors.phone3}
-                  helperText={errors.phone3}
+                  error={!!errors.contactDetails?.phone3}
+                  helperText={errors.contactDetails?.phone3?.message}
                   fullWidth
                   disabled={loading}
                   placeholder="(555) 123-4567"
@@ -539,8 +423,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
 
               <TextField
                 label="Street Address"
-                value={formData.streetaddress}
-                onChange={handleInputChange('streetaddress')}
+                {...register('contactDetails.streetaddress')}
                 fullWidth
                 disabled={loading}
               />
@@ -548,45 +431,46 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="City"
-                  value={formData.city}
-                  onChange={handleInputChange('city')}
+                  {...register('contactDetails.city')}
                   fullWidth
                   disabled={loading}
                 />
-                <Autocomplete
-                  options={US_STATES}
-                  getOptionLabel={(option) =>
-                    typeof option === 'string' ? option : `${option.name} (${option.code})`
-                  }
-                  value={US_STATES.find((state) => state.code === formData.state) || null}
-                  onChange={(event, newValue) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      state: newValue ? newValue.code : '',
-                    }));
-                    // Clear field error when user selects
-                    if (errors.state) {
-                      setErrors((prev) => ({ ...prev, state: undefined }));
-                    }
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="State"
-                      error={!!errors.state}
-                      helperText={errors.state}
-                      disabled={loading}
-                      placeholder="Select a state"
+                <Controller
+                  name="contactDetails.state"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Autocomplete
+                      options={US_STATES}
+                      getOptionLabel={(option) =>
+                        typeof option === 'string' ? option : `${option.name} (${option.code})`
+                      }
+                      value={US_STATES.find((state) => state.code === field.value) || null}
+                      onChange={(_, newValue) => {
+                        field.onChange(newValue ? newValue.code : '');
+                        // Clear save error when user makes changes
+                        if (saveError) {
+                          setSaveError('');
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="State"
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
+                          disabled={loading}
+                          placeholder="Select a state"
+                        />
+                      )}
+                      fullWidth
+                      clearOnBlur
+                      handleHomeEndKeys
                     />
                   )}
-                  fullWidth
-                  clearOnBlur
-                  handleHomeEndKeys
                 />
                 <TextField
                   label="ZIP Code"
-                  value={formData.zip}
-                  onChange={handleInputChange('zip')}
+                  {...register('contactDetails.zip')}
                   fullWidth
                   disabled={loading}
                 />

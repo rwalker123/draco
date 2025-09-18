@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -24,8 +24,6 @@ import {
   Link,
   Card,
   CardContent,
-  FormControlLabel,
-  Checkbox,
   IconButton,
 } from '@mui/material';
 import {
@@ -43,11 +41,18 @@ import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
-import { ContactUpdateData, Contact } from '../../../../../../../../types/users';
+import SignPlayerDialog from '../../../../../../../../components/roster/SignPlayerDialog';
 import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDataManager';
 import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
-import { RosterFormData, RosterPlayer, RosterMember } from '../../../../../../../../types/roster';
-import { COMPONENT_TIMEOUTS } from '../../../../../../../../constants/timeoutConstants';
+import {
+  RosterPlayerType,
+  RosterMember,
+  Contact,
+  BaseContact,
+  CreateContactType,
+  SignRosterMemberType,
+  ContactType,
+} from '@draco/shared-schemas';
 
 interface TeamRosterManagementProps {
   accountId: string;
@@ -65,10 +70,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   // Use the new data manager hook
   const {
     rosterData,
-    availablePlayers,
+    managers,
     season,
     league,
-    managers,
     loading,
     error,
     successMessage,
@@ -79,6 +83,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     fetchLeagueData,
     updateRosterMember,
     updateContact,
+    getContactRoster,
     signPlayer,
     releasePlayer,
     activatePlayer,
@@ -89,7 +94,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     deleteContactPhoto,
     clearError,
     clearSuccessMessage,
-    setError,
   } = useRosterDataManager({
     accountId,
     seasonId,
@@ -101,21 +105,25 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Dialog states
   const [signPlayerDialogOpen, setSignPlayerDialogOpen] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<Contact | RosterPlayer | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Contact | RosterPlayerType | null>(null);
   const [isSigningNewPlayer, setIsSigningNewPlayer] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
 
   // Sign player process states
-  const [isSigningPlayer, setIsSigningPlayer] = useState(false);
   const [signingTimeout, setSigningTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Unified roster information dialog states
-  const [rosterFormData, setRosterFormData] = useState<RosterFormData>({
-    playerNumber: 0,
+  const [rosterFormData, setRosterFormData] = useState<SignRosterMemberType>({
+    playerNumber: undefined,
     submittedWaiver: false,
-    submittedDriversLicense: false,
-    firstYear: 0,
+    player: {
+      submittedDriversLicense: false,
+      firstYear: 0,
+      contact: {
+        id: '',
+      },
+    },
   });
 
   // Add at the top, after other dialog states
@@ -129,7 +137,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const [playerToEdit, setPlayerToEdit] = useState<RosterMember | null>(null);
   const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
   const [autoSignToRoster, setAutoSignToRoster] = useState(false);
-  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [editingContact, setEditingContact] = useState<BaseContact | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [phoneErrors, setPhoneErrors] = useState({
     phone1: '',
@@ -146,12 +154,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     fetchLeagueData();
     fetchManagers();
   }, [fetchRosterData, fetchSeasonData, fetchLeagueData, fetchManagers]);
-
-  useEffect(() => {
-    if (signPlayerDialogOpen) {
-      fetchAvailablePlayers();
-    }
-  }, [signPlayerDialogOpen, fetchAvailablePlayers]);
 
   // Cleanup timeout on unmount or dialog close
   useEffect(() => {
@@ -177,59 +179,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     teamSeasonId,
   ]);
 
-  useEffect(() => {
-    if (signPlayerDialogOpen) {
-      fetchAvailablePlayers();
-    }
-  }, [signPlayerDialogOpen, fetchAvailablePlayers]);
+  // Removed: Initial fetch of all available players - now using dynamic search
 
-  const handleSignPlayer = async () => {
-    if (!selectedPlayer) {
-      setError('Missing required data');
-      return;
-    }
-
-    setIsSigningPlayer(true);
-    setFormLoading(true);
-    saveScrollPosition();
-    clearMessages();
-
-    // Set up timeout for team roster operations
-    const timeoutId = setTimeout(() => {
-      setIsSigningPlayer(false);
-      setFormLoading(false);
-      setError('Signing player took too long. Please try again or check your connection.');
-      restoreScrollPosition();
-    }, COMPONENT_TIMEOUTS.TEAM_ROSTER_LOADING_TIMEOUT_MS);
-
-    setSigningTimeout(timeoutId);
-
-    try {
-      await signPlayer(selectedPlayer.id, rosterFormData);
-
-      // Clear timeout since operation succeeded
-      if (signingTimeout) {
-        clearTimeout(signingTimeout);
-        setSigningTimeout(null);
-      }
-
-      setIsSigningPlayer(false);
-      setFormLoading(false);
-      closeSignPlayerDialog();
-    } catch {
-      // Clear timeout since operation failed
-      if (signingTimeout) {
-        clearTimeout(signingTimeout);
-        setSigningTimeout(null);
-      }
-
-      setIsSigningPlayer(false);
-      setFormLoading(false);
-      // Error is handled by the data manager, but we keep dialog open
-      // Don't call closeSignPlayerDialog() here - let user see the error
-    } finally {
-      restoreScrollPosition();
-    }
+  const handleSignPlayer = async (contactId: string, rosterData: SignRosterMemberType) => {
+    await signPlayer(contactId, rosterData);
   };
 
   // Handler to release player
@@ -281,13 +234,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     }
   };
 
-  // Handler to edit player (legacy - replaced by handleEnhancedContactSave)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleEditPlayer = async () => {
-    // This function is kept for compatibility but is no longer used
-    // The enhanced contact save handler is used instead
-  };
-
   // Open delete dialog
   const openDeleteDialog = (rosterMember: RosterMember) => {
     setPlayerToDelete(rosterMember);
@@ -301,7 +247,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setPlayerToEdit(rosterMember);
 
     // Convert roster member contact to enhanced dialog format
-    const contact: Contact = {
+    const contact: BaseContact = {
       id: rosterMember.player.contact.id,
       firstName: rosterMember.player.contact.firstName || '',
       lastName: rosterMember.player.contact.lastName || '',
@@ -345,11 +291,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Close sign player dialog
   const closeSignPlayerDialog = () => {
-    // Don't allow closing if we're currently signing a player
-    if (isSigningPlayer) {
-      return;
-    }
-
     // Clear any existing timeout
     if (signingTimeout) {
       clearTimeout(signingTimeout);
@@ -359,13 +300,17 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setSignPlayerDialogOpen(false);
     setSelectedPlayer(null);
     setRosterFormData({
-      playerNumber: 0,
+      playerNumber: undefined,
       submittedWaiver: false,
-      submittedDriversLicense: false,
-      firstYear: 0,
+      player: {
+        submittedDriversLicense: false,
+        firstYear: 0,
+        contact: {
+          id: '',
+        },
+      },
     });
     setIsSigningNewPlayer(false);
-    setIsSigningPlayer(false);
     clearMessages();
   };
 
@@ -392,10 +337,15 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setIsSigningNewPlayer(true);
     setSelectedPlayer(null);
     setRosterFormData({
-      playerNumber: 0,
+      playerNumber: undefined,
       submittedWaiver: false,
-      submittedDriversLicense: false,
-      firstYear: 0,
+      player: {
+        submittedDriversLicense: false,
+        firstYear: new Date().getFullYear(),
+        contact: {
+          id: '',
+        },
+      },
     });
     setSignPlayerDialogOpen(true);
   };
@@ -407,103 +357,45 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setRosterFormData({
       playerNumber: rosterMember.playerNumber,
       submittedWaiver: rosterMember.submittedWaiver,
-      submittedDriversLicense: rosterMember.player.submittedDriversLicense,
-      firstYear: rosterMember.player.firstYear,
+      player: {
+        submittedDriversLicense: rosterMember.player.submittedDriversLicense,
+        firstYear: rosterMember.player.firstYear,
+        contact: {
+          id: rosterMember.player.contact.id,
+        },
+      },
     });
     setSignPlayerDialogOpen(true);
   };
 
-  const handleSaveRosterInfo = async () => {
-    if (!selectedPlayer || !rosterData) {
-      setError('Missing required data');
-      return;
-    }
-
-    // Find the roster member to update
-    const rosterMember = rosterData.rosterMembers.find(
-      (member) => member.player.id === selectedPlayer.id,
-    );
-    if (!rosterMember) {
-      setError('Roster member not found');
-      return;
-    }
-
+  // Enhanced contact save handler for EditContactDialog
+  const handleEnhancedContactSave = async (
+    contactData: CreateContactType | null,
+    photoFile?: File | null,
+    autoSignToRoster?: boolean,
+  ) => {
     setFormLoading(true);
     saveScrollPosition();
 
     try {
-      await updateRosterMember(rosterMember.id, rosterFormData);
-      closeSignPlayerDialog();
-    } catch {
-      // Error is handled by the data manager
+      let result: ContactType | string;
+      if (!contactData && isCreatingNewPlayer) {
+        result = 'No data to save';
+      } else if (contactData && isCreatingNewPlayer) {
+        result = await createContact(contactData, photoFile, autoSignToRoster);
+      } else if (playerToEdit) {
+        result = await updateContact(playerToEdit.player.contact.id, contactData, photoFile);
+      } else {
+        throw new Error('Player to edit not found');
+      }
+
+      if (result && typeof result === 'string') {
+        throw new Error(result);
+      }
     } finally {
       setFormLoading(false);
       restoreScrollPosition();
     }
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleCreatePlayer = async () => {
-    // This function is kept for compatibility but is no longer used
-    // The enhanced contact save handler is used instead
-  };
-
-  // Enhanced contact save handler for EditContactDialog
-  const handleEnhancedContactSave = async (
-    contactData: ContactUpdateData,
-    photoFile?: File | null,
-  ) => {
-    console.log('RosterManagement: handleEnhancedContactSave called', {
-      contactData,
-      hasPhotoFile: !!photoFile,
-      photoFileName: photoFile?.name,
-      photoFileSize: photoFile?.size,
-      isCreatingNewPlayer,
-    });
-
-    setFormLoading(true);
-    saveScrollPosition();
-
-    try {
-      if (isCreatingNewPlayer) {
-        await createContact(contactData, photoFile, autoSignToRoster);
-      } else if (playerToEdit) {
-        await updateContact(playerToEdit.player.contactId, contactData, photoFile);
-      }
-    } catch (error) {
-      // Reset loading and scroll state, then propagate error to dialog
-      setFormLoading(false);
-      restoreScrollPosition();
-      throw error;
-    }
-
-    // Success case - cleanup and close dialog will be handled by the data manager operations
-    setFormLoading(false);
-    restoreScrollPosition();
-  };
-
-  // Helper function to format phone numbers as (111) 222-3333 (legacy - not used with enhanced dialog)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const formatPhoneNumber = (value: string) => {
-    // Remove all non-digits
-    const phoneNumber = value.replace(/\D/g, '');
-
-    // Limit to exactly 10 digits
-    const limitedNumber = phoneNumber.slice(0, 10);
-
-    // Format based on length
-    if (limitedNumber.length === 0) return '';
-    if (limitedNumber.length <= 3) return `(${limitedNumber}`;
-    if (limitedNumber.length <= 6)
-      return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3)}`;
-    return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6, 10)}`;
-  };
-
-  // Helper function to validate phone numbers (legacy - not used with enhanced dialog)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const validatePhoneNumber = (phoneNumber: string): boolean => {
-    const digits = phoneNumber.replace(/\D/g, '');
-    return digits.length === 0 || digits.length === 10;
   };
 
   // Helper function to format all contact information
@@ -726,6 +618,56 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       restoreScrollPosition();
     }
   };
+
+  // Memoized handlers to prevent UserAvatar re-renders
+  const handleEditDialog = useCallback((member: RosterMember) => {
+    return () => openEditDialog(member);
+  }, []);
+
+  const handlePhotoDelete = useCallback(
+    (contactId: string) => {
+      return deleteContactPhoto(contactId);
+    },
+    [deleteContactPhoto],
+  );
+
+  // Memoized player avatar component to prevent unnecessary re-renders
+  const PlayerAvatar = useMemo(() => {
+    const PlayerAvatarComponent = React.memo<{
+      member: RosterMember;
+      onEdit: () => void;
+      onPhotoDelete: (contactId: string) => Promise<void>;
+    }>(({ member, onEdit, onPhotoDelete }) => {
+      const user = useMemo(
+        () => ({
+          id: member.player.contact.id,
+          firstName: member.player.contact.firstName,
+          lastName: member.player.contact.lastName,
+          photoUrl: member.player.contact.photoUrl,
+        }),
+        [
+          member.player.contact.id,
+          member.player.contact.firstName,
+          member.player.contact.lastName,
+          member.player.contact.photoUrl,
+        ],
+      );
+
+      return (
+        <UserAvatar
+          user={user}
+          size={32}
+          onClick={onEdit}
+          showHoverEffects={true}
+          enablePhotoActions={true}
+          onPhotoDelete={onPhotoDelete}
+        />
+      );
+    });
+    // Set display name for debugging
+    PlayerAvatarComponent.displayName = 'PlayerAvatarComponent';
+    return PlayerAvatarComponent;
+  }, []);
 
   if (loading) {
     return (
@@ -964,20 +906,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                   <TableCell>{member.playerNumber || '-'}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <UserAvatar
-                        user={{
-                          id: member.player.contact.id,
-                          firstName: member.player.contact.firstName,
-                          lastName: member.player.contact.lastName,
-                          photoUrl: member.player.contact.photoUrl,
-                        }}
-                        size={32}
-                        onClick={() => openEditDialog(member)}
-                        showHoverEffects={true}
-                        enablePhotoActions={true}
-                        onPhotoDelete={async (contactId: string) => {
-                          await deleteContactPhoto(contactId);
-                        }}
+                      <PlayerAvatar
+                        member={member}
+                        onEdit={handleEditDialog(member)}
+                        onPhotoDelete={handlePhotoDelete}
                       />
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
@@ -1092,20 +1024,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                     <TableCell>{member.playerNumber || '-'}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <UserAvatar
-                          user={{
-                            id: member.player.contact.id,
-                            firstName: member.player.contact.firstName,
-                            lastName: member.player.contact.lastName,
-                            photoUrl: member.player.contact.photoUrl,
-                          }}
-                          size={32}
-                          onClick={() => openEditDialog(member)}
-                          showHoverEffects={true}
-                          enablePhotoActions={true}
-                          onPhotoDelete={async (contactId: string) => {
-                            await deleteContactPhoto(contactId);
-                          }}
+                        <PlayerAvatar
+                          member={member}
+                          onEdit={handleEditDialog(member)}
+                          onPhotoDelete={handlePhotoDelete}
                         />
                         <Box sx={{ flex: 1 }}>
                           <Typography
@@ -1186,177 +1108,20 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         </Paper>
       )}
 
-      {/* Unified Sign Player / Edit Roster Dialog */}
-      <Dialog
+      {/* Sign Player Dialog */}
+      <SignPlayerDialog
         open={signPlayerDialogOpen}
-        onClose={isSigningPlayer ? undefined : closeSignPlayerDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {isSigningNewPlayer ? 'Sign Player to Roster' : 'Edit Roster Information'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            {/* Error Alert */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={clearMessages}>
-                {error}
-              </Alert>
-            )}
-
-            {/* Info Alert for signing new players */}
-            {isSigningNewPlayer && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                When you select a player, their existing roster information (first year,
-                {"driver's license status) will be pre-filled. You can modify these values as "}
-                needed.
-              </Alert>
-            )}
-
-            {/* Player Selection (only for signing new players) */}
-            {isSigningNewPlayer && (
-              <Autocomplete
-                options={availablePlayers}
-                getOptionLabel={(option) => {
-                  // Handle Contact objects directly
-                  const last = option.lastName || '';
-                  const first = option.firstName || '';
-                  const middle = option.middleName || ''; // ✅ Use top-level middleName
-                  return `${last}${first ? ', ' + first : ''}${middle ? ' ' + middle : ''}`.trim();
-                }}
-                value={
-                  isSigningNewPlayer && selectedPlayer && 'firstName' in selectedPlayer
-                    ? selectedPlayer
-                    : null
-                }
-                onChange={(_, newValue) => {
-                  if (newValue) {
-                    // For Contact objects, we don't have firstYear or submittedDriversLicense
-                    // These will be set to defaults when the player is signed
-                    setSelectedPlayer(newValue);
-                    setRosterFormData({
-                      ...rosterFormData,
-                      firstYear: 0,
-                      submittedDriversLicense: false,
-                    });
-                  } else {
-                    setSelectedPlayer(null);
-                    setRosterFormData({
-                      ...rosterFormData,
-                      firstYear: 0,
-                      submittedDriversLicense: false,
-                    });
-                  }
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Player"
-                    fullWidth
-                    variant="outlined"
-                    sx={{ mb: 2 }}
-                  />
-                )}
-                noOptionsText={
-                  availablePlayers.length === 0 ? 'No available players' : 'No players found'
-                }
-              />
-            )}
-
-            {/* Player Name Display (only for editing existing players) */}
-            {!isSigningNewPlayer && selectedPlayer && 'contact' in selectedPlayer && (
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-                {formatName(selectedPlayer.contact)}
-              </Typography>
-            )}
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                label="Player Number"
-                type="number"
-                value={rosterFormData.playerNumber}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 0;
-                  setRosterFormData({ ...rosterFormData, playerNumber: Math.max(0, value) });
-                }}
-                inputProps={{ min: 0 }}
-                fullWidth
-                variant="outlined"
-                helperText="Enter the player's jersey number (0 for no number)"
-                error={rosterFormData.playerNumber < 0}
-              />
-
-              <TextField
-                label="First Year"
-                type="number"
-                value={rosterFormData.firstYear}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 0;
-                  setRosterFormData({ ...rosterFormData, firstYear: Math.max(0, value) });
-                }}
-                inputProps={{ min: 0 }}
-                fullWidth
-                variant="outlined"
-                helperText="Enter the player's first year in the league"
-                error={rosterFormData.firstYear < 0}
-              />
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={rosterFormData.submittedWaiver}
-                    onChange={(e) =>
-                      setRosterFormData({ ...rosterFormData, submittedWaiver: e.target.checked })
-                    }
-                  />
-                }
-                label="Submitted Waiver"
-              />
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={rosterFormData.submittedDriversLicense}
-                    onChange={(e) =>
-                      setRosterFormData({
-                        ...rosterFormData,
-                        submittedDriversLicense: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Submitted Driver's License"
-              />
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeSignPlayerDialog} disabled={isSigningPlayer}>
-            Cancel
-          </Button>
-          <Button
-            onClick={isSigningNewPlayer ? handleSignPlayer : handleSaveRosterInfo}
-            variant="contained"
-            disabled={isSigningNewPlayer ? !selectedPlayer || isSigningPlayer : formLoading}
-            startIcon={
-              isSigningPlayer ? (
-                <CircularProgress size={20} />
-              ) : isSigningNewPlayer ? (
-                <PersonAddIcon />
-              ) : (
-                <SportsIcon />
-              )
-            }
-          >
-            {isSigningPlayer
-              ? 'Signing...'
-              : isSigningNewPlayer
-                ? 'Sign Player'
-                : 'Save Roster Info'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onClose={closeSignPlayerDialog}
+        onSignPlayer={handleSignPlayer}
+        onUpdateRosterMember={updateRosterMember}
+        getContactRoster={getContactRoster}
+        fetchAvailablePlayers={fetchAvailablePlayers}
+        isSigningNewPlayer={isSigningNewPlayer}
+        selectedPlayer={selectedPlayer}
+        initialRosterData={rosterFormData}
+        error={error}
+        onClearError={clearError}
+      />
 
       {/* Delete Player Dialog */}
       <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog} maxWidth="sm" fullWidth>

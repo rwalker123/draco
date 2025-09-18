@@ -3,7 +3,7 @@
 import React from 'react';
 import { Stack, Typography, Chip } from '@mui/material';
 import { Phone as PhoneIcon } from '@mui/icons-material';
-import { ContactDetails } from '../../types/users';
+import { ContactDetails } from '@draco/shared-schemas';
 import { getPhoneNumbers } from '../../utils/contactUtils';
 
 interface PhoneDisplayProps {

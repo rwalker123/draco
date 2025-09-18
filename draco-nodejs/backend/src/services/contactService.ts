@@ -1,22 +1,121 @@
-import { Prisma } from '@prisma/client';
+import { contacts, Prisma, PrismaClient } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import {
   ContactQueryOptions,
   ContactResponse,
   ContactWithRoleAndDetailsRaw,
-  ContactEntry,
   AccountOwnerRaw,
   TeamManagerWithTeams,
   AutomaticRoleHoldersResponse,
-  BaseContact,
 } from '../interfaces/contactInterfaces.js';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles.js';
 import { RoleType } from '../types/roles.js';
 import { getContactPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import {
+  BaseContactType,
+  ContactType,
+  CreateContactType,
+  RosterPlayerType,
+} from '@draco/shared-schemas';
+import { NotFoundError } from '../utils/customErrors.js';
+import { ContactResponseFormatter } from '../utils/responseFormatters.js';
+import { RepositoryFactory, IContactRepository, dbRosterPlayer } from '../repositories/index.js';
 
 export class ContactService {
+  private contactRepository: IContactRepository;
+  constructor(private prisma: PrismaClient) {
+    this.contactRepository = RepositoryFactory.getContactRepository();
+  }
+
+  /**
+   * Get a contact's roster
+   * @param contactId
+   * @returns RosterPlayerType
+   */
+  async getContactRoster(contactId: bigint): Promise<RosterPlayerType> {
+    const dbRoster: dbRosterPlayer | null =
+      await this.contactRepository.findRosterByContactId(contactId);
+
+    if (!dbRoster) {
+      throw new NotFoundError('Roster not found');
+    }
+
+    const response = ContactResponseFormatter.formatRosterPlayerResponse(dbRoster);
+    return response;
+  }
+
+  /**
+   * Get a contact
+   * @param contactId
+   * @returns ContactType
+   */
+  async getContact(contactId: bigint): Promise<ContactType | null> {
+    const dbContact = await this.contactRepository.findById(contactId);
+    if (!dbContact) {
+      throw new NotFoundError('Contact not found');
+    }
+    return ContactResponseFormatter.formatContactResponse(dbContact);
+  }
+
+  /**
+   * Create a contact
+   * @param contact
+   * @returns ContactType
+   */
+  async createContact(contact: CreateContactType, accountId: bigint): Promise<ContactType> {
+    // convert to db contact
+    const dbCreateContact: Partial<contacts> = {
+      firstname: contact.firstName,
+      lastname: contact.lastName,
+      middlename: contact.middleName || '',
+      email: contact.email || null,
+      phone1: contact.contactDetails?.phone1 || null,
+      phone2: contact.contactDetails?.phone2 || null,
+      phone3: contact.contactDetails?.phone3 || null,
+      creatoraccountid: accountId,
+      streetaddress: contact.contactDetails?.streetaddress || null,
+      city: contact.contactDetails?.city || null,
+      state: contact.contactDetails?.state || null,
+      zip: contact.contactDetails?.zip || null,
+      dateofbirth: contact.contactDetails?.dateofbirth
+        ? DateUtils.parseDateOfBirthForDatabase(contact.contactDetails.dateofbirth)
+        : new Date('1900-01-01'),
+    };
+
+    const dbContact = await this.contactRepository.create(dbCreateContact);
+    return ContactResponseFormatter.formatContactResponse(dbContact);
+  }
+
+  /**
+   * Update a contact
+   * @param contact
+   * @returns ContactType
+   */
+  async updateContact(contact: CreateContactType, contactId: bigint): Promise<ContactType> {
+    // convert to db contact
+    const dbCreateContact: Partial<contacts> = {
+      firstname: contact.firstName,
+      lastname: contact.lastName,
+      middlename: contact.middleName || '',
+      email: contact.email || null,
+      phone1: contact.contactDetails?.phone1 || null,
+      phone2: contact.contactDetails?.phone2 || null,
+      phone3: contact.contactDetails?.phone3 || null,
+      streetaddress: contact.contactDetails?.streetaddress || null,
+      city: contact.contactDetails?.city || null,
+      state: contact.contactDetails?.state || null,
+      zip: contact.contactDetails?.zip || null,
+      dateofbirth: contact.contactDetails?.dateofbirth
+        ? DateUtils.parseDateOfBirthForDatabase(contact.contactDetails.dateofbirth)
+        : new Date('1900-01-01'),
+    };
+
+    const dbContact = await this.contactRepository.update(contactId, dbCreateContact);
+    return ContactResponseFormatter.formatContactResponse(dbContact);
+  }
+
   /**
    * Get contacts with their roles for a specific account and season
    * Uses raw SQL for complex role context joins when includeRoles is true
@@ -24,7 +123,7 @@ export class ContactService {
    * @param seasonId - The season ID for role context (optional, defaults to null for backward compatibility)
    * @param options - Query options including includeRoles, searchQuery, and pagination
    */
-  static async getContactsWithRoles(
+  async getContactsWithRoles(
     accountId: bigint,
     seasonId?: bigint | null,
     options: ContactQueryOptions = {},
@@ -39,7 +138,7 @@ export class ContactService {
 
     // If roles are not requested, use the simple Prisma query
     if (!includeRoles) {
-      return ContactService.getContactsSimple(accountId, options);
+      return this.getContactsSimple(accountId, options);
     }
 
     // Build the raw SQL query with proper parameter binding
@@ -161,13 +260,13 @@ export class ContactService {
     const rows = await prisma.$queryRaw<ContactWithRoleAndDetailsRaw[]>(query);
 
     // Transform the flat rows into the desired structure
-    return ContactService.transformContactRows(rows, accountId, pagination, includeContactDetails);
+    return this.transformContactRows(rows, accountId, pagination, includeContactDetails);
   }
 
   /**
    * Simple contact query without roles using Prisma ORM
    */
-  private static async getContactsSimple(
+  private async getContactsSimple(
     accountId: bigint,
     options: ContactQueryOptions = {},
   ): Promise<ContactResponse> {
@@ -254,13 +353,14 @@ export class ContactService {
     const contacts = await prisma.contacts.findMany(queryOptions);
 
     // Transform response (simple contacts without roles)
-    const transformedContacts: ContactEntry[] = contacts.map((contact) => ({
+    const transformedContacts: ContactType[] = contacts.map((contact) => ({
       id: contact.id.toString(),
+      creatoraccountid: accountId.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
       middleName: contact.middlename,
-      email: contact.email,
-      userId: contact.userid,
+      email: contact.email || undefined,
+      userId: contact.userid || undefined,
       photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
       contactroles: [],
       ...(includeContactDetails && {
@@ -302,14 +402,14 @@ export class ContactService {
   /**
    * Transform raw SQL rows into structured contact response
    */
-  private static transformContactRows(
+  private transformContactRows(
     rows: ContactWithRoleAndDetailsRaw[],
     accountId: bigint,
     pagination?: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
     includeContactDetails?: boolean,
   ): ContactResponse {
     // Group rows by contact ID
-    const contactMap = new Map<string, ContactEntry>();
+    const contactMap = new Map<string, ContactType>();
 
     // Process each row
     for (const row of rows) {
@@ -317,13 +417,14 @@ export class ContactService {
 
       // Get or create contact entry
       if (!contactMap.has(contactId)) {
-        const contactEntry: ContactEntry = {
+        const contactEntry: ContactType = {
           id: contactId,
+          creatoraccountid: accountId.toString(),
           firstName: row.firstname,
           lastName: row.lastname,
-          middleName: row.middlename,
-          email: row.email,
-          userId: row.userid,
+          middleName: row.middlename || '',
+          email: row.email || undefined,
+          userId: row.userid || undefined,
           photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
           contactroles: [],
         };
@@ -365,7 +466,7 @@ export class ContactService {
           (role as { contextName?: string }).contextName = row.role_context_name;
         }
 
-        contact.contactroles.push(role);
+        contact.contactroles?.push(role);
       }
     }
 
@@ -406,7 +507,7 @@ export class ContactService {
   /**
    * Get automatic role holders (Account Owner and Team Managers) for the current season
    */
-  static async getAutomaticRoleHolders(accountId: bigint): Promise<AutomaticRoleHoldersResponse> {
+  async getAutomaticRoleHolders(accountId: bigint): Promise<AutomaticRoleHoldersResponse> {
     try {
       // Get current season for this account
       const currentSeasonRecord = await prisma.currentseason.findUnique({
@@ -433,9 +534,9 @@ export class ContactService {
             id: accountOwnerResult[0].id.toString(),
             firstName: accountOwnerResult[0].firstname,
             lastName: accountOwnerResult[0].lastname,
-            middleName: null,
-            email: accountOwnerResult[0].email,
-            userId: accountOwnerResult[0].userid,
+            middleName: '',
+            email: accountOwnerResult[0].email || undefined,
+            userId: accountOwnerResult[0].userid || undefined,
             photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
           },
           teamManagers: [], // No team managers without a current season
@@ -457,13 +558,13 @@ export class ContactService {
         throw new Error(`Account owner not found for account ${accountId.toString()}`);
       }
 
-      const accountOwner: BaseContact = {
+      const accountOwner: BaseContactType = {
         id: accountOwnerResult[0].id.toString(),
         firstName: accountOwnerResult[0].firstname,
         lastName: accountOwnerResult[0].lastname,
-        middleName: null, // Account owner queries don't include middle name
-        email: accountOwnerResult[0].email,
-        userId: accountOwnerResult[0].userid,
+        middleName: '', // Account owner queries don't include middle name
+        email: accountOwnerResult[0].email || undefined,
+        userId: accountOwnerResult[0].userid || undefined,
         photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
       };
 
@@ -513,9 +614,8 @@ export class ContactService {
             id: contactId,
             firstName: row.contacts.firstname,
             lastName: row.contacts.lastname,
-            middleName: null, // Team manager queries don't include middle name
-            email: row.contacts.email,
-            userId: null, // Team manager queries don't include userId
+            middleName: '', // Team manager queries don't include middle name
+            email: row.contacts.email || undefined,
             photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
             teams: [],
           });

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { User } from '../types/users';
+import { ContactType } from '@draco/shared-schemas';
 import { UserDataManager } from '../types/userDataManager';
 import { PaginationAction } from './useUserManagement';
 
@@ -16,7 +16,7 @@ export const useUserDataManager = (dispatch: React.Dispatch<PaginationAction>): 
   );
 
   const setData = useCallback(
-    (users: User[], hasNext: boolean, hasPrev: boolean, page?: number) => {
+    (users: ContactType[], hasNext: boolean, hasPrev: boolean, page?: number) => {
       dispatch({
         type: 'SET_DATA',
         users,

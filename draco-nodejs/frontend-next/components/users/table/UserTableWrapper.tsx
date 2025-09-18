@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Paper } from '@mui/material';
-import { User, UserRole, Contact } from '../../../types/users';
+import { Contact, ContactRoleType, ContactType } from '@draco/shared-schemas';
 import UserTableContent from './UserTableContent';
 import UserTableSkeleton from './UserTableSkeleton';
 import UserCardGrid from './components/UserCardGrid';
@@ -13,7 +13,7 @@ import { ViewMode, DEFAULT_VIEW_CONFIG } from '../../../types/userTable';
 
 interface UserTableWrapperProps {
   // Data props
-  users: User[];
+  users: ContactType[];
   loading: boolean;
   isInitialLoad: boolean;
 
@@ -23,8 +23,8 @@ interface UserTableWrapperProps {
 
   // Action handlers
   canManageUsers: boolean;
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole: (user: User, role: UserRole) => void;
+  onAssignRole: (user: ContactType) => Promise<void>;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;

@@ -5,7 +5,7 @@ import { Tooltip, Box, IconButton } from '@mui/material';
 import { CheckCircle, PersonOutline, Close as CloseIcon } from '@mui/icons-material';
 
 interface RegistrationStatusChipProps {
-  userId: string | null;
+  userId?: string | undefined;
   contactId?: string;
   size?: 'small' | 'medium';
   canManage?: boolean;

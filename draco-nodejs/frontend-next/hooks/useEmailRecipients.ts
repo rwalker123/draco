@@ -20,7 +20,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { EmailRecipientService, Season } from '../services/emailRecipientService';
 import { RecipientContact } from '../types/emails/recipients';
-import { transformBackendContact, deduplicateContacts } from '../utils/emailRecipientTransformers';
 import { EmailRecipientError, EmailRecipientErrorCode } from '../types/errors';
 import { normalizeError, logError, createEmailRecipientError, safe } from '../utils/errorHandling';
 
@@ -166,23 +165,23 @@ export function useEmailRecipients(accountId: string, seasonId?: string): UseEma
         limit: 50,
       });
 
-      if (result.success) {
-        // Transform results with error handling
-        const transformResult = safe(
-          () => {
-            const transformedResults = result.data.contacts.map(transformBackendContact);
-            return deduplicateContacts(transformedResults);
-          },
-          { operation: 'transform_search_results', accountId, query },
-        );
-
-        if (transformResult.success) {
-          return transformResult.data;
-        } else {
-          throw transformResult.error;
-        }
+      if (result && result.success) {
+        const recipientContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
+          ...contact,
+          displayName: contact.firstName + ' ' + contact.lastName,
+          hasValidEmail: !!contact.email,
+        }));
+        return recipientContacts;
       } else {
-        throw result.error;
+        const normalizedError =
+          result?.error ??
+          createEmailRecipientError(
+            EmailRecipientErrorCode.UNKNOWN_ERROR,
+            'Failed to search contacts',
+            { context: { operation: 'useEmailRecipients.searchContacts', accountId, query } },
+          );
+        logError(normalizedError, 'useEmailRecipients.searchContacts');
+        throw normalizedError;
       }
     },
     [service, isValidAccountId, accountId, token, seasonId],
@@ -357,8 +356,8 @@ export function useContactSearch(contacts: RecipientContact[]): UseContactSearch
             const searchableFields = [
               contact.displayName,
               contact.email,
-              contact.firstname,
-              contact.lastname,
+              contact.firstName,
+              contact.lastName,
             ].filter((field) => field && typeof field === 'string');
 
             if (searchableFields.length === 0) {

@@ -236,7 +236,7 @@ describe('PlayerClassifieds Routes', () => {
     };
 
     // Mock ServiceFactory methods
-    const { ServiceFactory } = await import('../../lib/serviceFactory.js');
+    const { ServiceFactory } = await import('../../services/serviceFactory.js');
     vi.mocked(ServiceFactory.getPlayerClassifiedService).mockReturnValue(
       mockPlayerClassifiedService,
     );

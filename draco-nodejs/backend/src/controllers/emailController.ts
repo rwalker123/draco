@@ -2,7 +2,7 @@
 // Follows SRP - handles HTTP requests only
 
 import { Request, Response } from 'express';
-import { EmailService } from '../services/emailService.js';
+import { EmailService } from '../services/email/emailService.js';
 import { EmailTemplateService } from '../services/emailTemplateService.js';
 import { EmailAttachmentService } from '../services/emailAttachmentService.js';
 import {

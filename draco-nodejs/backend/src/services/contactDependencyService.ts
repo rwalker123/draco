@@ -6,7 +6,7 @@
 import prisma from '../lib/prisma.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { ContactPhotoService } from './contactPhotoService.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export interface ContactDependency {
   table: string;

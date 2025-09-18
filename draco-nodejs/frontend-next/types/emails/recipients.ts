@@ -1,14 +1,10 @@
 // Recipient selection types for email composition
-import { UserRole } from '../users';
-import { Contact } from './email';
+import { Contact } from '@draco/shared-schemas';
 
 // Enhanced recipient interface for frontend display
 export interface RecipientContact extends Contact {
   displayName: string;
   hasValidEmail: boolean;
-  avatar?: string;
-  roles?: UserRole[];
-  teams?: string[];
 }
 
 // Base group interface for common properties

@@ -9,11 +9,11 @@ import {
   EmailSettings,
   EmailRecipientSelection,
   EmailAttachment,
-} from '../interfaces/emailInterfaces.js';
-import { EmailProviderFactory } from './email/EmailProviderFactory.js';
-import { EmailConfigFactory } from '../config/email.js';
-import { EmailAttachmentService } from './emailAttachmentService.js';
-import prisma from '../lib/prisma.js';
+} from '../../interfaces/emailInterfaces.js';
+import { EmailProviderFactory } from './EmailProviderFactory.js';
+import { EmailConfigFactory } from '../../config/email.js';
+import { EmailAttachmentService } from '../emailAttachmentService.js';
+import prisma from '../../lib/prisma.js';
 
 // Email queue management interfaces
 interface EmailQueueJob {
