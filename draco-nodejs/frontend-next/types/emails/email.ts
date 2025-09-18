@@ -17,14 +17,6 @@ export interface EmailComposeRequest {
   scheduledSend?: Date;
 }
 
-export interface Contact {
-  id: string;
-  firstname: string;
-  lastname: string;
-  email?: string;
-  phone?: string;
-}
-
 export interface EmailTemplate {
   id: string;
   accountId: string;
@@ -127,10 +119,3 @@ export interface ApiResponse<T> {
 }
 
 export type EmailMode = 'mailto' | 'advanced';
-
-export interface EmailAction {
-  mode: EmailMode;
-  recipients: Contact[];
-  subject?: string;
-  body?: string;
-}

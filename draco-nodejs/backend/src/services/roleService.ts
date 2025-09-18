@@ -10,7 +10,7 @@ import {
   hasRoleOrHigher,
 } from '../config/roles.js';
 import { IRoleService } from '../interfaces/roleInterfaces.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class RoleService implements IRoleService {
   private prisma: PrismaClient;

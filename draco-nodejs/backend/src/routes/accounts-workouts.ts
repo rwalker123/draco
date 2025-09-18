@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import {
   validateListWorkouts,

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Contact } from '../types/users';
+import { Contact } from '@draco/shared-schemas';
 import { ContactTransformationService } from './contactTransformationService';
 
 export interface SelfRegisterInput {

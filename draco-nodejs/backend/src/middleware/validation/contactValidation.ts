@@ -230,36 +230,6 @@ export const validateContactSearch = [
   handleValidationErrors,
 ];
 
-// File upload validation
-export const validatePhotoUpload = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.file) {
-    next();
-    return;
-  }
-
-  const file = req.file;
-  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  const maxSize = 5 * 1024 * 1024; // 5MB
-
-  if (!allowedMimeTypes.includes(file.mimetype)) {
-    res.status(400).json({
-      error: 'Invalid file type',
-      details: `Allowed types: ${allowedMimeTypes.join(', ')}`,
-    });
-    return;
-  }
-
-  if (file.size > maxSize) {
-    res.status(400).json({
-      error: 'File too large',
-      details: `Maximum file size is ${maxSize / (1024 * 1024)}MB`,
-    });
-    return;
-  }
-
-  next();
-};
-
 // Dynamic validation for contact updates - uses photo validation if only photo present
 export const validateContactUpdateDynamic = async (
   req: Request,

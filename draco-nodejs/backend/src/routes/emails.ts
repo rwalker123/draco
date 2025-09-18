@@ -4,7 +4,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { EmailController } from '../controllers/emailController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 import multer from 'multer';
 import { ATTACHMENT_CONFIG } from '../config/attachments.js';
 

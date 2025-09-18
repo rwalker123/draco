@@ -4,7 +4,7 @@ import { IUserRepository } from '../interfaces/IUserRepository.js';
 export class PrismaUserRepository implements IUserRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: string | number): Promise<aspnetusers | null> {
+  async findById(id: bigint): Promise<aspnetusers | null> {
     return this.prisma.aspnetusers.findUnique({
       where: { id: String(id) },
     });
@@ -20,14 +20,14 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
-  async update(id: string | number, data: Partial<aspnetusers>): Promise<aspnetusers> {
+  async update(id: bigint, data: Partial<aspnetusers>): Promise<aspnetusers> {
     return this.prisma.aspnetusers.update({
       where: { id: String(id) },
       data,
     });
   }
 
-  async delete(id: string | number): Promise<aspnetusers> {
+  async delete(id: bigint): Promise<aspnetusers> {
     return this.prisma.aspnetusers.delete({
       where: { id: String(id) },
     });

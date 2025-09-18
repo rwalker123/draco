@@ -21,12 +21,12 @@ import {
   Security as SecurityIcon,
 } from '@mui/icons-material';
 import { EnhancedUser, UserCardAction } from '../../../../types/userTable';
-import { User, UserRole } from '../../../../types/users';
+import { ContactRoleType, ContactType } from '@draco/shared-schemas';
 
 interface UserCardActionsProps {
   user: EnhancedUser;
   canManageUsers: boolean;
-  onRemoveRole?: (user: User, role: UserRole) => void;
+  onRemoveRole?: (user: ContactType, role: ContactRoleType) => void;
   showQuickActions?: boolean;
   showContextMenu?: boolean;
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
@@ -175,7 +175,7 @@ const UserCardActions: React.FC<UserCardActionsProps> = ({
           <Box sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>
             {user.displayName}
           </Box>
-          <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{user.email}</Box>
+          <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{user.email || '—'}</Box>
         </Box>
 
         {/* Primary Actions */}

@@ -9,7 +9,7 @@ import {
   TeamValidationOptions,
 } from '../utils/teamValidation.js';
 import { extractTeamParams } from '../utils/paramExtraction.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { asyncHandler } from '../routes/utils/asyncHandler.js';
 
 // Extend Express Request interface to include validated team season
 declare global {

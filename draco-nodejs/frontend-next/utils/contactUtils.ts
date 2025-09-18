@@ -1,4 +1,4 @@
-import { ContactDetails } from '../types/users';
+import { ContactDetails } from '@draco/shared-schemas';
 
 /**
  * Format phone number for display

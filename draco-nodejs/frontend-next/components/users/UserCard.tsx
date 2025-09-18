@@ -41,18 +41,20 @@ const UserCard: React.FC<UserCardProps> = ({
                     // Convert User to Contact for the edit dialog
                     const contact = {
                       id: user.id,
+                      creatoraccountid: '',
                       firstName: user.firstName,
                       lastName: user.lastName,
+                      middleName: user.middleName,
                       email: user.email,
                       userId: user.userId,
                       photoUrl: user.photoUrl,
                       contactDetails: user.contactDetails,
-                      contactroles: user.roles?.map((role) => ({
+                      contactroles: (user.contactroles ?? []).map((role) => ({
                         id: role.id,
                         roleId: role.roleId,
                         roleName: role.roleName,
                         roleData: role.roleData,
-                        contextName: role.contextName,
+                        contextName: role.contextName || '',
                       })),
                     };
                     onEditContact(contact);
@@ -77,9 +79,12 @@ const UserCard: React.FC<UserCardProps> = ({
             <EmailButton
               contact={{
                 id: user.id,
-                firstname: user.firstName,
-                lastname: user.lastName,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                middleName: user.middleName,
                 email: user.email,
+                photoUrl: user.photoUrl,
+                userId: user.userId,
               }}
               variant="icon"
               size="small"
@@ -110,7 +115,7 @@ const UserCard: React.FC<UserCardProps> = ({
       </TableCell>
       <TableCell>
         <UserRoleChips
-          roles={user.roles || []}
+          roles={user.contactroles || []}
           canManageUsers={canManageUsers}
           onRemoveRole={(role) => onRemoveRole(user, role)}
           onAssignRole={onAssignRole}

@@ -290,14 +290,6 @@ export interface IAdminActionRequest {
   reason?: string;
 }
 
-// Bulk operations request
-export interface IBulkOperationRequest {
-  operation: 'delete' | 'flag';
-  classifiedIds: bigint[];
-  classifiedType: 'players' | 'teams' | 'all';
-  reason?: string;
-}
-
 // ============================================================================
 // ANALYTICS AND REPORTING INTERFACES
 // ============================================================================

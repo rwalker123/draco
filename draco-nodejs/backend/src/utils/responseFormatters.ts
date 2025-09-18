@@ -1,46 +1,64 @@
 import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService.js';
-import { RosterMember } from '../services/rosterService.js';
-import { ContactEntry, NamedContact, RawManager } from '../interfaces/contactInterfaces.js';
+import { RosterMember, TeamRosterMembersType, RosterPlayerType } from '@draco/shared-schemas';
+import { BaseContactType, TeamManagerType } from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
-import { DateUtils } from './dateUtils.js';
+import { getContactPhotoUrl } from '../config/logo.js';
+import { DateUtils } from '../utils/dateUtils.js';
+import {
+  dbBaseContact,
+  dbRosterPlayer,
+  dbRosterMember,
+  dbTeamSeason,
+  dbRosterSeason,
+  dbTeamManagerWithContact,
+} from '../repositories/index.js';
 
-export interface ApiResponse<T> {
+// todo: delete this once the shared api client is used more widely
+interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
 }
 
-export interface FormattedRosterMember {
-  id: string;
-  playerNumber: number;
-  inactive: boolean;
-  submittedWaiver: boolean;
-  dateAdded: string | null;
-}
+export class ContactResponseFormatter {
+  static formatContactResponse(contact: dbBaseContact): BaseContactType {
+    const contactEntry: BaseContactType = {
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      middleName: contact.middlename,
+      email: contact.email || undefined,
+      userId: contact.userid || undefined, // Roster contacts don't have userId
+      photoUrl: getContactPhotoUrl(contact.creatoraccountid.toString(), contact.id.toString()),
+      contactDetails: {
+        phone1: contact.phone1,
+        phone2: contact.phone2,
+        phone3: contact.phone3,
+        streetaddress: contact.streetaddress,
+        city: contact.city,
+        state: contact.state,
+        zip: contact.zip,
+        dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
+      },
+    };
+    return contactEntry;
+  }
 
-export interface FormattedRosterContact extends FormattedRosterMember {
-  player: {
-    id: string;
-    contactId: string;
-    submittedDriversLicense: boolean | null;
-    firstYear: number | null;
-    contact: ContactEntry;
-  };
-}
+  static formatManyContactsResponse(contacts: dbBaseContact[]): BaseContactType[] {
+    return contacts.map((contact) => this.formatContactResponse(contact));
+  }
 
-export interface FormattedRosterPlayer extends FormattedRosterMember {
-  player: {
-    id: string;
-    submittedDriversLicense: boolean | null;
-    firstYear: number | null;
-    contact: NamedContact;
-  };
-}
-
-export interface FormattedManager {
-  id: string;
-  teamSeasonId: string;
-  contact: ContactEntry;
+  static formatRosterPlayerResponse(dbRoster: dbRosterPlayer): RosterPlayerType {
+    const contact: dbBaseContact = dbRoster.contacts;
+    const contactEntry: BaseContactType = ContactResponseFormatter.formatContactResponse(contact);
+    const rosterPlayer: RosterPlayerType = {
+      id: dbRoster.id.toString(),
+      submittedDriversLicense: dbRoster.submitteddriverslicense,
+      firstYear: dbRoster.firstyear,
+      contact: contactEntry,
+    };
+    return rosterPlayer;
+  }
 }
 
 export class TeamResponseFormatter {
@@ -115,102 +133,46 @@ export class TeamResponseFormatter {
 
 export class RosterResponseFormatter {
   static formatRosterMembersResponse(
-    teamSeason: { id: bigint; name: string },
-    rosterMembers: RosterMember[],
-  ): ApiResponse<{
-    teamSeason: { id: string; name: string };
-    rosterMembers: FormattedRosterContact[];
-  }> {
-    return {
-      success: true,
-      data: {
-        teamSeason: {
-          id: teamSeason.id.toString(),
-          name: teamSeason.name,
-        },
-        rosterMembers: rosterMembers.map((member) => ({
-          id: member.id.toString(),
-          playerNumber: member.playerNumber,
-          inactive: member.inactive,
-          submittedWaiver: member.submittedWaiver,
-          dateAdded: DateUtils.formatDateTimeForResponse(member.dateAdded),
-          player: {
-            id: member.player.id.toString(),
-            contactId: member.player.contactId.toString(),
-            submittedDriversLicense: member.player.submittedDriversLicense,
-            firstYear: member.player.firstYear,
-            contact: {
-              id: member.player.contact.id,
-              userId: member.player.contact.userId,
-              contactroles: member.player.contact.contactroles,
-              firstName: member.player.contact.firstName,
-              lastName: member.player.contact.lastName,
-              middleName: member.player.contact.middleName ?? '',
-              email: member.player.contact.email,
-              phone1: member.player.contact.contactDetails?.phone1 ?? '',
-              phone2: member.player.contact.contactDetails?.phone2 ?? '',
-              phone3: member.player.contact.contactDetails?.phone3 ?? '',
-              photoUrl: member.player.contact.photoUrl,
-              streetaddress: member.player.contact.contactDetails?.streetaddress ?? null,
-              city: member.player.contact.contactDetails?.city ?? null,
-              state: member.player.contact.contactDetails?.state ?? null,
-              zip: member.player.contact.contactDetails?.zip ?? null,
-              dateofbirth: member.player.contact.contactDetails?.dateofbirth ?? null,
-            },
-          },
-        })),
+    dbTeamSeason: dbTeamSeason,
+    dbRosterMembers: dbRosterSeason[],
+  ): TeamRosterMembersType {
+    const rosterMembers: RosterMember[] = dbRosterMembers.map((member) => {
+      return this.formatRosterMemberResponse(member);
+    });
+
+    const teamRosterMembers: TeamRosterMembersType = {
+      teamSeason: {
+        id: dbTeamSeason.id.toString(),
+        name: dbTeamSeason.name,
       },
+      rosterMembers: rosterMembers,
     };
+
+    return teamRosterMembers;
   }
 
-  static formatAvailablePlayersResponse(availablePlayers: ContactEntry[]): ApiResponse<{
-    availablePlayers: Array<ContactEntry>;
-  }> {
-    return {
-      success: true,
-      data: {
-        availablePlayers: availablePlayers,
-      },
-    };
-  }
+  static formatRosterMemberResponse(member: dbRosterMember): RosterMember {
+    const contact: dbBaseContact = member.roster.contacts;
 
-  static formatAddPlayerResponse(
-    rosterMember: RosterMember,
-    playerName: string,
-  ): ApiResponse<{
-    message: string;
-    rosterMember: FormattedRosterContact;
-  }> {
-    return {
-      success: true,
-      data: {
-        message: `Player "${playerName}" signed to team roster`,
-        rosterMember: {
-          id: rosterMember.id.toString(),
-          playerNumber: rosterMember.playerNumber,
-          inactive: rosterMember.inactive,
-          submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
-          player: {
-            id: rosterMember.player.id.toString(),
-            contactId: rosterMember.player.contactId.toString(),
-            submittedDriversLicense: rosterMember.player.submittedDriversLicense,
-            firstYear: rosterMember.player.firstYear,
-            contact: {
-              id: rosterMember.player.contact.id,
-              firstName: rosterMember.player.contact.firstName,
-              lastName: rosterMember.player.contact.lastName,
-              middleName: rosterMember.player.contact.middleName ?? '',
-              email: rosterMember.player.contact.email,
-              userId: rosterMember.player.contact.userId,
-              photoUrl: rosterMember.player.contact.photoUrl,
-              contactDetails: rosterMember.player.contact.contactDetails,
-              contactroles: rosterMember.player.contact.contactroles,
-            },
-          },
-        },
-      },
+    const contactEntry: BaseContactType = ContactResponseFormatter.formatContactResponse(contact);
+
+    const player: RosterPlayerType = {
+      id: member.roster.id.toString(),
+      submittedDriversLicense: member.roster.submitteddriverslicense,
+      firstYear: member.roster.firstyear,
+      contact: contactEntry,
     };
+
+    const rosterMember: RosterMember = {
+      id: member.id.toString(),
+      playerNumber: member.playernumber,
+      inactive: member.inactive,
+      submittedWaiver: member.submittedwaiver,
+      dateAdded: member.dateadded,
+      player: player,
+    };
+
+    return rosterMember;
   }
 
   static formatUpdateRosterMemberResponse(
@@ -218,63 +180,13 @@ export class RosterResponseFormatter {
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: FormattedRosterPlayer;
+    rosterMember: RosterMember;
   }> {
     return {
       success: true,
       data: {
         message: `Roster information updated for "${playerName}"`,
-        rosterMember: {
-          id: rosterMember.id.toString(),
-          playerNumber: rosterMember.playerNumber,
-          inactive: rosterMember.inactive,
-          submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
-          player: {
-            id: rosterMember.player.id.toString(),
-            contact: {
-              id: rosterMember.player.contactId.toString(),
-              firstName: rosterMember.player.contact.firstName,
-              lastName: rosterMember.player.contact.lastName,
-              middleName: rosterMember.player.contact.middleName ?? '',
-            },
-            submittedDriversLicense: rosterMember.player.submittedDriversLicense,
-            firstYear: rosterMember.player.firstYear,
-          },
-        },
-      },
-    };
-  }
-
-  static formatReleasePlayerResponse(
-    rosterMember: RosterMember,
-    playerName: string,
-  ): ApiResponse<{
-    message: string;
-    rosterMember: FormattedRosterPlayer;
-  }> {
-    return {
-      success: true,
-      data: {
-        message: `Player "${playerName}" has been released from the team`,
-        rosterMember: {
-          id: rosterMember.id.toString(),
-          playerNumber: rosterMember.playerNumber,
-          inactive: rosterMember.inactive,
-          submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
-          player: {
-            id: rosterMember.player.id.toString(),
-            contact: {
-              id: rosterMember.player.contactId.toString(),
-              firstName: rosterMember.player.contact.firstName,
-              lastName: rosterMember.player.contact.lastName,
-              middleName: rosterMember.player.contact.middleName ?? '',
-            },
-            submittedDriversLicense: rosterMember.player.submittedDriversLicense,
-            firstYear: rosterMember.player.firstYear,
-          },
-        },
+        rosterMember,
       },
     };
   }
@@ -284,30 +196,13 @@ export class RosterResponseFormatter {
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: FormattedRosterPlayer;
+    rosterMember: RosterMember;
   }> {
     return {
       success: true,
       data: {
         message: `Player "${playerName}" has been reactivated`,
-        rosterMember: {
-          id: rosterMember.id.toString(),
-          playerNumber: rosterMember.playerNumber,
-          inactive: rosterMember.inactive,
-          submittedWaiver: rosterMember.submittedWaiver,
-          dateAdded: DateUtils.formatDateTimeForResponse(rosterMember.dateAdded),
-          player: {
-            id: rosterMember.player.id.toString(),
-            contact: {
-              id: rosterMember.player.contactId.toString(),
-              firstName: rosterMember.player.contact.firstName,
-              lastName: rosterMember.player.contact.lastName,
-              middleName: rosterMember.player.contact.middleName ?? '',
-            },
-            submittedDriversLicense: rosterMember.player.submittedDriversLicense,
-            firstYear: rosterMember.player.firstYear,
-          },
-        },
+        rosterMember,
       },
     };
   }
@@ -349,37 +244,34 @@ export class StatsResponseFormatter {
 }
 
 export class ManagerResponseFormatter {
-  static formatManagersListResponse(rawManagers: RawManager[]): FormattedManager[] {
+  static formatManagersListResponse(rawManagers: dbTeamManagerWithContact[]): TeamManagerType[] {
     return rawManagers.map((manager) => ({
       id: manager.id.toString(),
       teamSeasonId: manager.teamseasonid.toString(),
       contact: {
         id: manager.contacts.id.toString(),
-        userId: manager.contacts.userid,
+        creatoraccountid: '', // Placeholder, as creatoraccountid is not in RawManager
+        userId: manager.contacts.userid || undefined,
         firstName: manager.contacts.firstname,
         lastName: manager.contacts.lastname,
-        middleName: manager.contacts.middlename,
-        email: manager.contacts.email,
+        middleName: manager.contacts.middlename || '',
+        email: manager.contacts.email || undefined,
         contactroles: [],
       },
     }));
   }
 
-  static formatAddManagerResponse(rawManager: RawManager): ApiResponse<FormattedManager> {
+  static formatAddManagerResponse(rawManager: dbTeamManagerWithContact): TeamManagerType {
     return {
-      success: true,
-      data: {
-        id: rawManager.id.toString(),
-        teamSeasonId: rawManager.teamseasonid.toString(),
-        contact: {
-          id: rawManager.contacts.id.toString(),
-          userId: rawManager.contacts.userid,
-          firstName: rawManager.contacts.firstname,
-          lastName: rawManager.contacts.lastname,
-          middleName: rawManager.contacts.middlename,
-          email: rawManager.contacts.email,
-          contactroles: [],
-        },
+      id: rawManager.id.toString(),
+      teamSeasonId: rawManager.teamseasonid.toString(),
+      contact: {
+        id: rawManager.contacts.id.toString(),
+        userId: rawManager.contacts.userid || undefined,
+        firstName: rawManager.contacts.firstname,
+        lastName: rawManager.contacts.lastname,
+        middleName: rawManager.contacts.middlename || '',
+        email: rawManager.contacts.email || undefined,
       },
     };
   }

@@ -2,8 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService, LoginCredentials, RegisterData } from '../services/authService.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { authRateLimit, passwordRateLimit } from '../middleware/rateLimitMiddleware.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import prisma from '../lib/prisma.js';
 

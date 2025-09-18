@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Box, Typography, IconButton, Tooltip, SxProps, Theme } from '@mui/material';
 import { PhotoCamera as PhotoCameraIcon, Close as CloseIcon } from '@mui/icons-material';
 import Image from 'next/image';
@@ -184,4 +184,5 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   );
 };
 
-export default UserAvatar;
+// Memoize the component to prevent unnecessary re-renders when props haven't changed
+export default memo(UserAvatar);

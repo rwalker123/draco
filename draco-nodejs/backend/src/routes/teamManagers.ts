@@ -1,154 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { TeamManagerService } from '../services/teamManagerService.js';
 import prisma from '../lib/prisma.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
-import { ValidationError, ConflictError } from '../utils/customErrors.js';
+import { asyncHandler } from './utils/asyncHandler.js';
+import { ValidationError } from '../utils/customErrors.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
-
-/**
- * @swagger
- * tags:
- *   - name: TeamManagers
- *     description: Team manager assignment endpoints
- */
-
-/**
- * @swagger
- * /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
- *   get:
- *     summary: List all managers for a team season
- *     tags: [TeamManagers]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: seasonId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: teamSeasonId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of managers
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       teamseasonid:
- *                         type: string
- *                       contactid:
- *                         type: string
- *                       contacts:
- *                         type: object
- *                         description: Contact info
- *       500:
- *         $ref: '#/components/responses/Error'
- *   post:
- *     summary: Add a manager to a team season
- *     tags: [TeamManagers]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: seasonId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: teamSeasonId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [contactId]
- *             properties:
- *               contactId:
- *                 type: string
- *     responses:
- *       200:
- *         description: Manager added
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *       400:
- *         $ref: '#/components/responses/Error'
- *       409:
- *         $ref: '#/components/responses/Error'
- *       500:
- *         $ref: '#/components/responses/Error'
- */
-
-/**
- * @swagger
- * /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers/{managerId}:
- *   delete:
- *     summary: Remove a manager from a team season
- *     tags: [TeamManagers]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: seasonId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: teamSeasonId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: managerId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Manager removed
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *       500:
- *         $ref: '#/components/responses/Error'
- */
 
 const router = Router({ mergeParams: true });
 const teamManagerService = new TeamManagerService(prisma);
@@ -159,7 +14,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const managers = await teamManagerService.listManagers(teamSeasonId);
-    res.json({ success: true, data: managers });
+    res.json(managers);
   }),
 );
 
@@ -174,12 +29,6 @@ router.post(
       throw new ValidationError('contactId is required');
     }
 
-    // Prevent duplicate
-    const existing = await teamManagerService.findManager(teamSeasonId, BigInt(contactId));
-    if (existing) {
-      throw new ConflictError('Manager already exists for this team');
-    }
-
     const response = await teamManagerService.addManager(teamSeasonId, BigInt(contactId));
     res.json(response);
   }),
@@ -191,7 +40,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const { managerId } = extractBigIntParams(req.params, 'managerId');
     await teamManagerService.removeManager(managerId);
-    res.json({ success: true });
+    res.json();
   }),
 );
 

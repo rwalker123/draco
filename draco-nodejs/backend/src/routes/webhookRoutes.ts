@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { WebhookController } from '../controllers/webhookController.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 
 const router = Router();
 

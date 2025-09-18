@@ -25,7 +25,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ITeamsWantedFormState } from '../../types/playerClassifieds';
 import { formatPhoneNumber } from '../../utils/contactUtils';
 import { isValidEmailFormat } from '../../utils/emailValidation';
-import { validatePhoneNumber } from '../../utils/contactValidation';
 
 interface CreateTeamsWantedDialogProps {
   open: boolean;
@@ -135,11 +134,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else {
-      const phoneValidation = validatePhoneNumber(formData.phone);
-      if (!phoneValidation.isValid) {
-        newErrors.phone = phoneValidation.message || 'Please enter a valid phone number';
-      }
     }
 
     if (!formData.experience.trim()) {

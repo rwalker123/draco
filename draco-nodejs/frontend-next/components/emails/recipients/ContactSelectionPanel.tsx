@@ -229,10 +229,10 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
               fontSize: compact ? '0.875rem' : '1rem',
             }}
           >
-            {contact.avatar ? (
+            {contact.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={contact.avatar}
+                src={contact.photoUrl}
                 alt={contact.displayName}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -274,11 +274,11 @@ const ContactSelectionPanel: React.FC<ContactSelectionPanelProps> = ({
                       </Typography>
                     </>
                   )}
-                  {contact.phone && (
+                  {contact.contactDetails?.phone1 && (
                     <>
                       <PhoneIcon fontSize="small" color="action" />
                       <Typography variant="caption" color="text.secondary">
-                        {contact.phone}
+                        {contact.contactDetails.phone1}
                       </Typography>
                     </>
                   )}

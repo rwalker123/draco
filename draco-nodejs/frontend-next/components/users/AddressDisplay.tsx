@@ -3,7 +3,7 @@
 import React from 'react';
 import { Stack, Typography } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
-import { ContactDetails } from '../../types/users';
+import { ContactDetails } from '@draco/shared-schemas';
 import { formatAddress } from '../../utils/contactUtils';
 
 interface AddressDisplayProps {

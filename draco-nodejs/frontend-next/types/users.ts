@@ -1,5 +1,8 @@
+// todo: much of this can be deleted once we fully transition to zod schemas and validation
+
 // Import context data types
 import { League, Team, LeagueSeason } from '../services/contextDataService';
+import { Contact, CreateContactType, ContactType, ContactRoleType } from '@draco/shared-schemas';
 
 // Contact dependency types
 export interface ContactDependency {
@@ -16,50 +19,6 @@ export interface DependencyCheckResult {
   totalDependencies: number;
 }
 
-// Contact details interface (middleName removed - moved to top-level)
-export interface ContactDetails {
-  phone1: string | null;
-  phone2: string | null;
-  phone3: string | null;
-  streetaddress: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  dateofbirth: string | null;
-  // ❌ Removed: middlename: string | null;
-}
-
-// Named contact interface (matches backend)
-export interface NamedContact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string | null;
-}
-
-// Base contact interface for common fields
-export interface BaseContact extends NamedContact {
-  email: string;
-  userId: string;
-  photoUrl?: string;
-  contactDetails?: ContactDetails;
-}
-
-// Backend API response types
-export interface ContactRole {
-  id: string;
-  roleId: string;
-  roleName?: string;
-  roleData: string;
-  contextName?: string;
-}
-
-// Updated Contact interface (extends BaseContact)
-export interface Contact extends BaseContact {
-  contactroles?: ContactRole[];
-  creatoraccountid?: string;
-}
-
 export interface ContactsResponse {
   success: boolean;
   data: {
@@ -73,19 +32,6 @@ export interface ContactsResponse {
   };
 }
 
-// Updated User interface (extends BaseContact)
-export interface User extends BaseContact {
-  roles?: UserRole[];
-}
-
-export interface UserRole {
-  id: string;
-  roleId: string;
-  roleName: string;
-  roleData: string;
-  contextName?: string;
-}
-
 export interface Role {
   id: string;
   name: string;
@@ -93,7 +39,7 @@ export interface Role {
 
 // API response types
 export interface UsersResponse {
-  users: User[];
+  users: ContactType[];
   pagination: {
     page: number;
     limit: number;
@@ -114,11 +60,11 @@ export interface UserSearchParams {
 
 // Component prop types
 export interface UserTableProps {
-  users: User[];
+  users: ContactType[];
   loading: boolean;
   isInitialLoad?: boolean;
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole: (user: User, role: UserRole) => void;
+  onAssignRole: (user: ContactType) => Promise<void>;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
   onAddUser?: () => void;
@@ -148,10 +94,10 @@ export interface UserSearchBarProps {
 }
 
 export interface UserCardProps {
-  user: User;
+  user: ContactType;
   canManageUsers: boolean;
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole: (user: User, role: UserRole) => void;
+  onAssignRole: (user: ContactType) => Promise<void>;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
@@ -164,11 +110,11 @@ export interface UserCardProps {
 }
 
 export interface UserRoleChipsProps {
-  roles: UserRole[];
+  roles: ContactRoleType[];
   canManageUsers: boolean;
-  onRemoveRole: (role: UserRole) => void;
-  onAssignRole?: (user: User) => Promise<void>;
-  user: User;
+  onRemoveRole: (role: ContactRoleType) => void;
+  onAssignRole?: (user: ContactType) => Promise<void>;
+  user: ContactType;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
@@ -188,7 +134,7 @@ export interface AssignRoleDialogProps {
   loading: boolean;
   accountId: string;
   // Pre-population props
-  preselectedUser?: User | null;
+  preselectedUser?: ContactType | null;
   isUserReadonly?: boolean;
   // Context data props
   leagues?: League[];
@@ -205,8 +151,8 @@ export interface RemoveRoleDialogProps {
   open: boolean;
   onClose: () => void;
   onRemove: () => void;
-  selectedUser: User | null;
-  selectedRoleToRemove: UserRole | null;
+  selectedUser: ContactType | null;
+  selectedRoleToRemove: ContactRoleType | null;
   loading: boolean;
 }
 
@@ -214,28 +160,13 @@ export interface EditContactDialogProps {
   open: boolean;
   contact: Contact | null;
   onClose: () => void;
-  onSave: (contactData: ContactUpdateData, photoFile?: File | null) => Promise<void>;
+  onSave: (contactData: CreateContactType, photoFile?: File | null) => Promise<void>;
   onDeletePhoto?: (contactId: string) => Promise<void>;
   loading?: boolean;
 }
 
-export interface ContactUpdateData {
-  firstName?: string;
-  lastName?: string;
-  middleName?: string; // ✅ Updated to use middleName instead of middlename
-  email?: string;
-  phone1?: string;
-  phone2?: string;
-  phone3?: string;
-  streetaddress?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  dateofbirth?: string | null;
-}
-
 export interface UserActionsProps {
-  user: User;
+  user: ContactType;
   canManageUsers: boolean;
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
@@ -244,7 +175,7 @@ export interface UserActionsProps {
 // Hook return types
 export interface UseUserManagementReturn {
   // State
-  users: User[];
+  users: ContactType[];
   roles: Role[];
   loading: boolean;
   isInitialLoad: boolean;
@@ -266,11 +197,11 @@ export interface UseUserManagementReturn {
   editContactDialogOpen: boolean;
   deleteContactDialogOpen: boolean;
   createContactDialogOpen: boolean;
-  selectedUser: User | null;
+  selectedUser: ContactType | null;
   selectedContactForEdit: Contact | null;
   selectedContactForDelete: Contact | null;
   selectedRole: string;
-  selectedRoleToRemove: UserRole | null;
+  selectedRoleToRemove: ContactRoleType | null;
   newUserContactId: string;
   formLoading: boolean;
 
@@ -312,15 +243,21 @@ export interface UseUserManagementReturn {
   handleRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleAssignRole: () => void;
   handleRemoveRole: () => void;
-  openAssignRoleDialog: (user: User) => Promise<void>;
+  openAssignRoleDialog: (user: ContactType) => Promise<void>;
   closeAssignRoleDialog: () => void;
-  openRemoveRoleDialog: (user: User, role: UserRole) => void;
+  openRemoveRoleDialog: (user: ContactType, role: ContactRoleType) => void;
   openEditContactDialog: (contact: Contact) => void;
   closeEditContactDialog: () => void;
-  handleEditContact: (contactData: ContactUpdateData, photoFile?: File | null) => Promise<void>;
+  handleEditContact: (
+    contactData: CreateContactType | null,
+    photoFile?: File | null,
+  ) => Promise<void>;
   openCreateContactDialog: () => void;
   closeCreateContactDialog: () => void;
-  handleCreateContact: (contactData: ContactUpdateData, photoFile?: File | null) => Promise<void>;
+  handleCreateContact: (
+    contactData: CreateContactType | null,
+    photoFile?: File | null,
+  ) => Promise<void>;
   handleDeleteContactPhoto: (contactId: string) => Promise<void>;
   openDeleteContactDialog: (contact: Contact) => void;
   closeDeleteContactDialog: () => void;
@@ -329,9 +266,9 @@ export interface UseUserManagementReturn {
   setAssignRoleDialogOpen: (open: boolean) => void;
   setRemoveRoleDialogOpen: (open: boolean) => void;
   setEditContactDialogOpen: (open: boolean) => void;
-  setSelectedUser: (user: User | null) => void;
+  setSelectedUser: (user: ContactType | null) => void;
   setSelectedRole: (role: string) => void;
-  setSelectedRoleToRemove: (role: UserRole | null) => void;
+  setSelectedRoleToRemove: (role: ContactRoleType | null) => void;
   setNewUserContactId: (contactId: string) => void;
   setSelectedLeagueId: (leagueId: string) => void;
   setSelectedTeamId: (teamId: string) => void;

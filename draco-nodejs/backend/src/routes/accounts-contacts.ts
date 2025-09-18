@@ -1,68 +1,57 @@
 // Account Contacts & Users Management Routes for Draco Sports Manager
 // Handles all contact and user management within accounts
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { ServiceFactory } from '../lib/serviceFactory.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 import validator from 'validator';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import { extractAccountParams, extractContactParams } from '../utils/paramExtraction.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import prisma from '../lib/prisma.js';
-import { ContactService } from '../services/contactService.js';
 import { ContactSearchResult } from '../interfaces/accountInterfaces.js';
-import { ContactInputData } from '../interfaces/contactInterfaces.js';
 import { ContactDependencyService } from '../services/contactDependencyService.js';
-import { upload, handleContactPhotoUpload } from './contact-media.js';
-import { getContactPhotoUrl } from '../config/logo.js';
-import {
-  validateContactUpdateDynamic,
-  validatePhotoUpload,
-  sanitizeContactData,
-} from '../middleware/validation/contactValidation.js';
+import { handleContactPhotoUpload } from './utils/fileUpload.js';
+import { sanitizeContactData } from '../middleware/validation/contactValidation.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { logRegistrationEvent } from '../utils/auditLogger.js';
 import { ContactValidationService, ValidationType } from '../utils/contactValidation.js';
+import { ContactType, CreateContactSchema, CreateContactType } from '@draco/shared-schemas';
+import {
+  handleContactPhotoUploadMiddleware,
+  parseFormDataJSON,
+  validatePhotoUpload,
+} from '../middleware/fileUpload.js';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
 const routeProtection = ServiceFactory.getRouteProtection();
 const contactSecurityService = ServiceFactory.getContactSecurityService();
+const contactService = ServiceFactory.getContactService();
 
 /**
- * @swagger
- * /api/accounts/{accountId}/contacts/me:
- *   get:
- *     summary: Get current user's contact for an account
- *     description: Returns the authenticated user's contact within the specified account, or 404 if not registered
- *     tags: [Accounts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     responses:
- *       200:
- *         description: Contact found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     contact:
- *                       type: object
- *       404:
- *         description: Not registered with this account
+ * GET /api/accounts/:accountId/contacts/:contactId/roster
+ * Get contact roster
+ */
+router.get(
+  '/:accountId/contacts/:contactId/roster',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { contactId } = extractContactParams(req.params);
+
+    const roster = await contactService.getContactRoster(BigInt(contactId));
+
+    if (!roster) {
+      throw new NotFoundError('Roster not found');
+    }
+
+    res.json(roster);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/contacts/me
+ * Get current user's contact
  */
 router.get(
   '/:accountId/contacts/me',
@@ -107,42 +96,8 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/contacts/me/link-by-name:
- *   post:
- *     summary: Link existing contact in account to current user by matching name
- *     description: Finds a unique contact in the specified account by first/middle/last name and links it to the authenticated user's userid. Fails if none or multiple matches found, or if already linked.
- *     tags: [Accounts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [firstName, lastName]
- *             properties:
- *               firstName:
- *                 type: string
- *               middleName:
- *                 type: string
- *               lastName:
- *                 type: string
- *     responses:
- *       200:
- *         description: Contact linked successfully
- *       404:
- *         description: No unique match found
- *       409:
- *         description: Contact already linked to a user
+ * POST /api/accounts/:accountId/contacts/me/link-by-name
+ * Link a contact to the authenticated user by name
  */
 router.post(
   '/:accountId/contacts/me/link-by-name',
@@ -296,41 +251,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/contacts/me:
- *   post:
- *     summary: Self-register current user to an account
- *     description: Creates a contact for the authenticated user within the specified account
- *     tags: [Accounts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               firstName:
- *                 type: string
- *               middleName:
- *                 type: string
- *               lastName:
- *                 type: string
- *               email:
- *                 type: string
- *     responses:
- *       201:
- *         description: Contact created
- *       409:
- *         description: Already registered
+ * POST /api/accounts/:accountId/contacts/me
+ * Self-register a contact
  */
 router.post(
   '/:accountId/contacts/me',
@@ -560,7 +482,7 @@ router.get(
     const paginationParams = PaginationHelper.parseParams(req.query);
 
     // Use ContactService to get contacts with roles
-    const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
+    const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       onlyWithRoles: filterOnlyWithRoles,
       includeContactDetails,
@@ -726,7 +648,7 @@ router.get(
     const paginationParams = PaginationHelper.parseParams(req.query);
 
     // Use ContactService to get contacts with roles
-    const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
+    const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       includeContactDetails,
       searchQuery: q,
@@ -776,7 +698,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
-    const result = await ContactService.getAutomaticRoleHolders(accountId);
+    const result = await contactService.getAutomaticRoleHolders(accountId);
 
     res.json({
       success: true,
@@ -795,122 +717,36 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   validatePhotoUpload,
-  (req: Request, res: Response, next: NextFunction) => {
-    upload.single('photo')(req, res, (err: unknown) => {
-      if (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        res.status(400).json({
-          success: false,
-          message: message,
-        });
-      } else {
-        next();
-      }
-    });
-  },
-  validateContactUpdateDynamic,
+  handleContactPhotoUploadMiddleware,
+  parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
 
-    // Sanitize the input data
-    const sanitizedData: ContactInputData = sanitizeContactData(req.body);
-    const {
-      firstname,
-      lastname,
-      middlename,
-      email,
-      phone1,
-      phone2,
-      phone3,
-      streetaddress,
-      city,
-      state,
-      zip,
-      dateofbirth,
-    } = sanitizedData;
-
-    // Verify the contact exists and belongs to this account
-    const existingContact = await contactSecurityService.getValidatedContact(contactId, accountId, {
-      id: true,
-      firstname: true,
-      lastname: true,
-      middlename: true,
-      email: true,
-      phone1: true,
-      phone2: true,
-      phone3: true,
-      streetaddress: true,
-      city: true,
-      state: true,
-      zip: true,
-      dateofbirth: true,
-    });
-    if (!existingContact) {
-      throw new NotFoundError('Contact not found');
+    // Check if we have either body data or a file
+    const hasBodyData = req.body && Object.keys(req.body).length > 0;
+    if (!hasBodyData && !req.file) {
+      throw new ValidationError('No data to save');
     }
 
-    // Build update data object, only including fields that are provided
-    const updateData: Record<string, string | Date | null> = {};
+    // validate the request body
+    let contact: ContactType | null;
+    if (hasBodyData) {
+      const updateContactData: CreateContactType = CreateContactSchema.parse(req.body);
 
-    if (firstname !== undefined) updateData.firstname = firstname as string;
-    if (lastname !== undefined) updateData.lastname = lastname as string;
-    if (middlename !== undefined) updateData.middlename = middlename || '';
-    if (email !== undefined) updateData.email = email || null;
-    if (phone1 !== undefined) updateData.phone1 = phone1 || null;
-    if (phone2 !== undefined) updateData.phone2 = phone2 || null;
-    if (phone3 !== undefined) updateData.phone3 = phone3 || null;
-    if (streetaddress !== undefined) updateData.streetaddress = streetaddress || null;
-    if (city !== undefined) updateData.city = city || null;
-    if (state !== undefined) updateData.state = state || null;
-    if (zip !== undefined) updateData.zip = zip || null;
-    if (dateofbirth !== undefined)
-      updateData.dateofbirth = DateUtils.parseDateOfBirthForDatabase(dateofbirth as string | null);
-
-    // Update the contact (only if we have data to update)
-    let updatedContact;
-    if (Object.keys(updateData).length > 0) {
-      updatedContact = await prisma.contacts.update({
-        where: { id: contactId },
-        data: updateData,
-      });
+      contact = await contactService.updateContact(updateContactData, BigInt(contactId));
     } else {
-      // No updates needed, fetch fresh data with same fields as update query would return
-      updatedContact = await prisma.contacts.findUniqueOrThrow({
-        where: { id: contactId },
-      });
+      contact = await contactService.getContact(BigInt(contactId));
+      if (!contact) {
+        throw new NotFoundError('Contact not found');
+      }
     }
 
     // Handle photo upload if provided
-    let photoUrl = null;
     if (req.file) {
-      photoUrl = await handleContactPhotoUpload(req, accountId, contactId);
-    } else {
-      // Generate photo URL for existing photo (if any)
-      photoUrl = getContactPhotoUrl(accountId.toString(), contactId.toString());
+      await handleContactPhotoUpload(req, accountId, contactId);
     }
 
-    res.json({
-      success: true,
-      data: {
-        message: `Contact "${updatedContact.firstname} ${updatedContact.lastname}" updated successfully`,
-        contact: {
-          id: updatedContact.id.toString(),
-          firstname: updatedContact.firstname,
-          lastname: updatedContact.lastname,
-          middlename: updatedContact.middlename,
-          email: updatedContact.email || undefined,
-          phone1: updatedContact.phone1 || undefined,
-          phone2: updatedContact.phone2 || undefined,
-          phone3: updatedContact.phone3 || undefined,
-          streetaddress: updatedContact.streetaddress || undefined,
-          city: updatedContact.city || undefined,
-          state: updatedContact.state || undefined,
-          zip: updatedContact.zip || undefined,
-          dateofbirth: DateUtils.formatDateOfBirthForResponse(updatedContact.dateofbirth),
-          photoUrl,
-        },
-      },
-    });
+    res.json(contact);
   }),
 );
 
@@ -924,107 +760,23 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   validatePhotoUpload,
-  (req: Request, res: Response, next: NextFunction) => {
-    upload.single('photo')(req, res, (err: unknown) => {
-      if (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        res.status(400).json({
-          success: false,
-          message: message,
-        });
-      } else {
-        next();
-      }
-    });
-  },
+  handleContactPhotoUploadMiddleware,
+  parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
-    // Sanitize the input data
-    const sanitizedData: ContactInputData = sanitizeContactData(req.body);
-    const {
-      firstname,
-      lastname,
-      middlename,
-      email,
-      phone1,
-      phone2,
-      phone3,
-      streetaddress,
-      city,
-      state,
-      zip,
-      dateofbirth,
-    } = sanitizedData;
-
-    // Validate required fields
-    if (!firstname || !lastname) {
-      throw new ValidationError('First name and last name are required');
-    }
-
-    // Validate email format if provided
-    if (email) {
-      if (!validator.isEmail(email)) {
-        throw new ValidationError('Please enter a valid email address');
-      }
-    }
-
-    console.log('Backend: Creating contact with data:', {
-      firstname,
-      lastname,
-      hasPhotoFile: !!req.file,
-    });
-
-    // Create the contact
-    const newContact = await prisma.contacts.create({
-      data: {
-        firstname,
-        lastname,
-        middlename: middlename || '',
-        email: email || null,
-        phone1: phone1 || null,
-        phone2: phone2 || null,
-        phone3: phone3 || null,
-        streetaddress: streetaddress || null,
-        city: city || null,
-        state: state || null,
-        zip: zip || null,
-        creatoraccountid: accountId,
-        dateofbirth: DateUtils.parseDateOfBirthForDatabase(dateofbirth),
-      },
-    });
+    const createContactData: CreateContactType = CreateContactSchema.parse(req.body);
+    const contact: ContactType = await contactService.createContact(
+      createContactData,
+      BigInt(accountId),
+    );
 
     // Handle photo upload if provided
-    let photoUrl = null;
     if (req.file) {
-      photoUrl = await handleContactPhotoUpload(req, accountId, newContact.id);
-    } else {
-      // Generate photo URL for existing photo (if any)
-      photoUrl = getContactPhotoUrl(accountId.toString(), newContact.id.toString());
+      await handleContactPhotoUpload(req, accountId, BigInt(contact.id));
     }
 
-    res.status(201).json({
-      success: true,
-      data: {
-        message: `Contact "${newContact.firstname} ${newContact.lastname}" created successfully`,
-        contact: {
-          id: newContact.id.toString(),
-          firstname: newContact.firstname,
-          lastname: newContact.lastname,
-          middlename: newContact.middlename,
-          email: newContact.email,
-          phone1: newContact.phone1,
-          phone2: newContact.phone2,
-          phone3: newContact.phone3,
-          streetaddress: newContact.streetaddress,
-          city: newContact.city,
-          state: newContact.state,
-          zip: newContact.zip,
-          dateofbirth: DateUtils.formatDateOfBirthForResponse(newContact.dateofbirth),
-          photoUrl,
-        },
-      },
-    });
+    res.status(201).json(contact);
   }),
 );
 

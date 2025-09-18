@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { Button, IconButton, Tooltip } from '@mui/material';
 import { Email as EmailIcon } from '@mui/icons-material';
-import { Contact, EmailMode } from '../../../types/emails/email';
+import { EmailMode } from '../../../types/emails/email';
+import { BaseContact } from '@draco/shared-schemas';
 import { generateContactMailto, hasValidEmail } from './mailtoUtils';
 import { EmailQuickDialog } from '../dialogs/EmailQuickDialog';
 
 interface EmailButtonProps {
-  contact: Contact;
+  contact: BaseContact;
   variant?: 'button' | 'icon';
   size?: 'small' | 'medium' | 'large';
   className?: string;
@@ -83,7 +84,7 @@ export function EmailButton({
       <span>{buttonContent}</span>
     </Tooltip>
   ) : (
-    <Tooltip title={`Email ${contact.firstname} ${contact.lastname}`} placement="top">
+    <Tooltip title={`Email ${contact.firstName} ${contact.lastName}`} placement="top">
       <span>{buttonContent}</span>
     </Tooltip>
   );

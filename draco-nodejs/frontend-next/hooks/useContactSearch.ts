@@ -10,9 +10,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createUserManagementService } from '../services/userManagementService';
 import { createEmailRecipientService } from '../services/emailRecipientService';
-import type { User } from '../types/users';
 import type { RecipientContact } from '../types/emails/recipients';
-import { transformBackendContact } from '../utils/emailRecipientTransformers';
+import { ContactType } from '@draco/shared-schemas';
 
 // Search modes determine which service to use
 export type SearchMode = 'users' | 'recipients';
@@ -29,7 +28,7 @@ export interface ContactSearchOptions {
 }
 
 export interface ContactSearchState {
-  results: User[] | RecipientContact[];
+  results: ContactType[] | RecipientContact[];
   loading: boolean;
   error: string | null;
   hasSearched: boolean;
@@ -169,7 +168,13 @@ export function useContactSearch(
           }
 
           // Transform backend contacts to recipient contacts
-          const transformedContacts = searchResult.data.contacts.map(transformBackendContact);
+          const transformedContacts: RecipientContact[] = searchResult.data.contacts.map(
+            (contact) => ({
+              ...contact,
+              displayName: contact.firstName + ' ' + contact.lastName,
+              hasValidEmail: !!contact.email,
+            }),
+          );
 
           setSearchState((prev) => ({
             ...prev,

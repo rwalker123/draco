@@ -68,7 +68,6 @@ import { EmailRecipientError, EmailRecipientErrorCode } from '../../../types/err
 import { normalizeError, createEmailRecipientError, safeAsync } from '../../../utils/errorHandling';
 import { createEmailRecipientService } from '../../../services/emailRecipientService';
 import { useAuth } from '../../../context/AuthContext';
-import { transformBackendContact } from '../../../utils/emailRecipientTransformers';
 
 export interface AdvancedRecipientDialogProps {
   open: boolean;
@@ -371,9 +370,13 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           }
 
           if (result.success) {
-            const transformedContacts = result.data.contacts.map(transformBackendContact);
+            const recipientContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
+              ...contact,
+              displayName: contact.firstName + ' ' + contact.lastName,
+              hasValidEmail: !!contact.email,
+            }));
 
-            setCurrentPageContacts(transformedContacts);
+            setCurrentPageContacts(recipientContacts);
 
             // Note: We no longer add all contacts to cache here
             // Only selected contacts are cached when user selects them
@@ -381,7 +384,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
             setServerPaginationState({
               hasNext: result.data.pagination?.hasNext || false,
               hasPrev: result.data.pagination?.hasPrev || false,
-              totalContacts: transformedContacts.length,
+              totalContacts: recipientContacts.length,
             });
             setCurrentPage(page);
           } else {
@@ -466,12 +469,15 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         });
 
         if (searchResult.success) {
-          // Transform backend contacts to recipient contacts
-          const { transformBackendContact } = await import(
-            '../../../utils/emailRecipientTransformers'
+          const recipientContacts: RecipientContact[] = searchResult.data.contacts.map(
+            (contact) => ({
+              ...contact,
+              displayName: contact.firstName + ' ' + contact.lastName,
+              hasValidEmail: !!contact.email,
+            }),
           );
-          const transformedContacts = searchResult.data.contacts.map(transformBackendContact);
-          setSearchContacts(transformedContacts);
+
+          setSearchContacts(recipientContacts);
           setHasSearched(true);
           setSearchCurrentPage(page);
 
@@ -480,7 +486,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
           setSearchPaginationState({
             hasNext: pagination?.hasNext || false,
             hasPrev: pagination?.hasPrev || page > 1,
-            totalContacts: transformedContacts.length,
+            totalContacts: recipientContacts.length,
           });
         } else {
           throw new Error(searchResult.error.message);

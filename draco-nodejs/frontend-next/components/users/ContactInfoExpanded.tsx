@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Stack, Typography, IconButton, Collapse, Box, Chip } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
-import { ContactDetails } from '../../types/users';
+import { ContactDetails } from '@draco/shared-schemas';
 import { hasContactDetails, getFormattedName } from '../../utils/contactUtils';
 import ContactInfoDisplay from './ContactInfoDisplay';
 

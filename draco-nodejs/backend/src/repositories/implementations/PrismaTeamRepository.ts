@@ -4,7 +4,7 @@ import { ITeamRepository } from '../interfaces/ITeamRepository.js';
 export class PrismaTeamRepository implements ITeamRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: string | number): Promise<teamsseason | null> {
+  async findById(id: bigint): Promise<teamsseason | null> {
     return this.prisma.teamsseason.findUnique({
       where: { id: Number(id) },
     });
@@ -20,14 +20,14 @@ export class PrismaTeamRepository implements ITeamRepository {
     });
   }
 
-  async update(id: string | number, data: Partial<teamsseason>): Promise<teamsseason> {
+  async update(id: bigint, data: Partial<teamsseason>): Promise<teamsseason> {
     return this.prisma.teamsseason.update({
       where: { id: Number(id) },
       data,
     });
   }
 
-  async delete(id: string | number): Promise<teamsseason> {
+  async delete(id: bigint): Promise<teamsseason> {
     return this.prisma.teamsseason.delete({
       where: { id: Number(id) },
     });

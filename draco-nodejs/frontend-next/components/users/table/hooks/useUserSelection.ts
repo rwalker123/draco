@@ -5,11 +5,11 @@ import {
   SelectionMode,
   UserSelectionState,
 } from '../../../../types/userTable';
-import { User } from '../../../../types/users';
 import { getFullName } from '../../../../utils/contactUtils';
+import { ContactType } from '@draco/shared-schemas';
 
 // Utility functions for user enhancement and selection
-export const enhanceUser = (user: User): EnhancedUser => {
+export const enhanceUser = (user: ContactType): EnhancedUser => {
   const displayName = getFullName(user.firstName, user.lastName, user.middleName);
 
   // Build full address from contact details
@@ -32,24 +32,23 @@ export const enhanceUser = (user: User): EnhancedUser => {
       contact?.dateofbirth,
   );
 
-  // Get active role names
-  const activeRoleNames = user.roles?.map((role) => role.roleName).filter(Boolean) || [];
-
-  return {
+  const enhancedUser: EnhancedUser = {
     ...user,
     displayName,
     fullAddress,
     primaryPhone,
-    roleCount: user.roles?.length || 0,
+    roleCount: user.contactroles?.length || 0,
     hasContactInfo,
-    activeRoleNames,
+    activeRoleNames: user.contactroles?.map((role) => role.roleName || '').filter(Boolean) || [],
     selected: false,
     selectable: true,
   };
+
+  return enhancedUser;
 };
 
 // Hook for creating enhanced users from regular users
-export const useEnhancedUsers = (users: User[]): EnhancedUser[] => {
+export const useEnhancedUsers = (users: ContactType[]): EnhancedUser[] => {
   return useMemo(() => users.map(enhanceUser), [users]);
 };
 

@@ -1,9 +1,9 @@
-import { User } from './users';
+import { ContactType } from '@draco/shared-schemas';
 
 // Data Manager Interfaces
 export interface UserDataManager {
   setLoading(isPaginating?: boolean, page?: number): void;
-  setData(users: User[], hasNext: boolean, hasPrev: boolean, page?: number): void;
+  setData(users: ContactType[], hasNext: boolean, hasPrev: boolean, page?: number): void;
   setError(error: string): void;
   clearData(): void;
   handleApiError(error: unknown, operation: string): void;
@@ -26,7 +26,7 @@ export interface SearchUsersParams {
 }
 
 export interface UserResponse {
-  users: User[];
+  users: ContactType[];
   pagination: {
     hasNext: boolean;
     hasPrev: boolean;
@@ -38,8 +38,6 @@ export interface UserApiOperations {
   searchUsersWithFilter(params: SearchUsersParams): Promise<UserResponse>;
   assignRole(params: AssignRoleParams): Promise<void>;
   removeRole(params: RemoveRoleParams): Promise<void>;
-  createContact(params: CreateContactParams): Promise<void>;
-  updateContact(params: UpdateContactParams): Promise<User>;
   deleteContact(params: DeleteContactParams): Promise<void>;
   deleteContactPhoto(params: DeletePhotoParams): Promise<void>;
 }
@@ -55,17 +53,6 @@ export interface RemoveRoleParams {
   contactId: string;
   roleId: string;
   roleData: string;
-}
-
-export interface CreateContactParams {
-  contactData: Record<string, unknown>;
-  photoFile?: File | null;
-}
-
-export interface UpdateContactParams {
-  contactId: string;
-  contactData: Record<string, unknown>;
-  photoFile?: File | null;
 }
 
 export interface DeleteContactParams {

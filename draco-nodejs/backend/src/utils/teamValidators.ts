@@ -1,25 +1,9 @@
+// todo: (code review flag) this file eventually will be replaced by zod schema validation
 import { Request } from 'express';
 import { ValidationError } from './customErrors.js';
-import { ContactInputData } from '../interfaces/contactInterfaces.js';
 
 export interface TeamUpdateRequest {
   name: string;
-}
-
-export interface AddPlayerToRosterRequest {
-  contactId?: string;
-  contactData?: ContactInputData;
-  playerNumber?: number;
-  submittedWaiver?: boolean;
-  submittedDriversLicense?: boolean;
-  firstYear?: number;
-}
-
-export interface UpdateRosterMemberRequest {
-  playerNumber?: number;
-  submittedWaiver?: boolean;
-  submittedDriversLicense?: boolean;
-  firstYear?: number;
 }
 
 export class TeamRequestValidator {
@@ -32,57 +16,6 @@ export class TeamRequestValidator {
 
     return {
       name: name.trim(),
-    };
-  }
-
-  static validateAddPlayerRequest(req: Request): AddPlayerToRosterRequest {
-    const {
-      contactId,
-      contactData,
-      playerNumber,
-      submittedWaiver,
-      submittedDriversLicense,
-      firstYear,
-    } = req.body;
-
-    // Validate that either contactId or contactData is provided
-    if (!contactId && !contactData) {
-      throw new ValidationError('Either contactId or contactData is required');
-    }
-
-    // If contactData is provided, validate required fields
-    if (contactData && (!contactData.firstname || !contactData.lastname)) {
-      throw new ValidationError('First name and last name are required for contact creation');
-    }
-
-    // Validate player number
-    if (playerNumber !== undefined && playerNumber < 0) {
-      throw new ValidationError('Player number must be 0 or greater');
-    }
-
-    return {
-      contactId,
-      contactData,
-      playerNumber,
-      submittedWaiver,
-      submittedDriversLicense,
-      firstYear,
-    };
-  }
-
-  static validateUpdateRosterMemberRequest(req: Request): UpdateRosterMemberRequest {
-    const { playerNumber, submittedWaiver, submittedDriversLicense, firstYear } = req.body;
-
-    // Validate player number
-    if (playerNumber !== undefined && playerNumber < 0) {
-      throw new ValidationError('Player number must be 0 or greater');
-    }
-
-    return {
-      playerNumber,
-      submittedWaiver,
-      submittedDriversLicense,
-      firstYear,
     };
   }
 

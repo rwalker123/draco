@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 import { authRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { RegistrationService } from '../services/registrationService.js';

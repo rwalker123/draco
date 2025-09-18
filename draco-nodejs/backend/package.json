@@ -21,7 +21,7 @@
     "type-check": "tsc --noEmit",
     "build:lambda": "npm run build && cd dist && zip -r ../draco-backend.zip . && cd ..",
     "generate:openapi": "tsx scripts/generate-openapi.ts",
-    "generate:client": "openapi-ts --input ./openapi.json --output ../shared/shared-api-client -c @hey-api/client-next"
+    "generate:client": "openapi-ts --input ./openapi.json --output ../shared/shared-api-client/generated -c @hey-api/client-next"
   },
   "keywords": [],
   "author": "",
@@ -52,7 +52,6 @@
     "multer": "^2.0.1",
     "nodemailer": "^7.0.6",
     "on-finished": "^2.4.1",
-    "serverless-http": "^3.2.0",
     "sharp": "^0.34.3",
     "swagger-ui-express": "^5.0.0",
     "validator": "^13.15.15",

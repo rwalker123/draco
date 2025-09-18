@@ -4,13 +4,8 @@
  * Enhanced with comprehensive error handling and retry logic
  */
 
-import { Contact, ContactRole } from '../types/users';
+import { ContactType } from '@draco/shared-schemas';
 import { RecipientContact, League } from '../types/emails/recipients';
-import {
-  transformBackendContact,
-  deduplicateContacts,
-  validateContactCollection,
-} from '../utils/emailRecipientTransformers';
 import { EmailRecipientErrorCode, AsyncResult, Result } from '../types/errors';
 import {
   handleApiError,
@@ -44,12 +39,6 @@ export interface BackendTeam {
   divisionName?: string;
 }
 
-// Backend contact interface (what comes from API)
-export interface BackendContact extends Contact {
-  contactroles?: ContactRole[];
-  teams?: string[];
-}
-
 // Options for fetching contacts
 export interface ContactFetchOptions {
   seasonId?: string;
@@ -74,7 +63,7 @@ export interface ContactSearchOptions {
 export interface ContactsResponse {
   success: boolean;
   data: {
-    contacts: BackendContact[];
+    contacts: ContactType[];
   };
   pagination?: {
     page: number;
@@ -335,7 +324,7 @@ export class EmailRecipientService {
     accountId: string,
     token: string | null,
     options: ContactFetchOptions = {},
-  ): AsyncResult<{ contacts: BackendContact[]; pagination?: ContactsResponse['pagination'] }> {
+  ): AsyncResult<{ contacts: ContactType[]; pagination?: ContactsResponse['pagination'] }> {
     if (!accountId || accountId.trim() === '') {
       return {
         success: false,
@@ -401,7 +390,7 @@ export class EmailRecipientService {
     token: string | null,
     query: string,
     options: ContactSearchOptions = {},
-  ): AsyncResult<{ contacts: BackendContact[]; pagination?: ContactsResponse['pagination'] }> {
+  ): AsyncResult<{ contacts: ContactType[]; pagination?: ContactsResponse['pagination'] }> {
     if (!accountId || accountId.trim() === '') {
       return {
         success: false,
@@ -581,7 +570,7 @@ export class EmailRecipientService {
     token: string | null,
     seasonId: string,
     teamSeasonId: string,
-  ): AsyncResult<BackendContact[]> {
+  ): AsyncResult<ContactType[]> {
     const headersResult = this.getHeaders(token);
     if (!headersResult.success) {
       return { success: false, error: headersResult.error };
@@ -613,7 +602,7 @@ export class EmailRecipientService {
     token: string | null,
     seasonId: string,
     teamSeasonId: string,
-  ): AsyncResult<BackendContact[]> {
+  ): AsyncResult<ContactType[]> {
     const headersResult = this.getHeaders(token);
     if (!headersResult.success) {
       return { success: false, error: headersResult.error };
@@ -897,7 +886,7 @@ export class EmailRecipientService {
         ]);
 
         // Handle contacts result
-        let contacts: BackendContact[] = [];
+        let contacts: ContactType[] = [];
         let contactsPagination: ContactsResponse['pagination'] | undefined;
         if (contactsResult.status === 'fulfilled' && contactsResult.value.success) {
           contacts = contactsResult.value.data.contacts;
@@ -910,42 +899,14 @@ export class EmailRecipientService {
           logError(contactsResult.value.error, 'Failed to fetch contacts');
         }
 
-        // Transform contacts with error handling
-        const transformResult = safe(
-          () => {
-            const transformedContacts = contacts.map(transformBackendContact);
-            return deduplicateContacts(transformedContacts);
-          },
-          { operation: 'transform_contacts', accountId },
-        );
-
-        if (!transformResult.success) {
-          throw transformResult.error;
-        }
-
-        const deduplicatedContacts = transformResult.data;
-
-        // Validate and log data quality metrics
-        const validation = validateContactCollection(deduplicatedContacts);
-        if (validation.dataQualityIssues.length > 0) {
-          logError(
-            createEmailRecipientError(
-              EmailRecipientErrorCode.INVALID_DATA,
-              'Data quality issues detected',
-              {
-                details: { issues: validation.dataQualityIssues },
-                context: { operation: 'validate_contacts', accountId },
-              },
-            ),
-            'Data quality validation',
-          );
-        }
-
-        // Log performance metrics
-        // Removed console.debug for production
+        const recipientContacts: RecipientContact[] = contacts.map((contact) => ({
+          ...contact,
+          displayName: contact.firstName + ' ' + contact.lastName,
+          hasValidEmail: !!contact.email,
+        }));
 
         return {
-          contacts: deduplicatedContacts,
+          contacts: recipientContacts,
           currentSeason,
           pagination: contactsPagination,
         };

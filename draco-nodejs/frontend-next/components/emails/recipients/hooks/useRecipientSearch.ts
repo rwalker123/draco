@@ -82,8 +82,8 @@ export const useRecipientSearch = (
         const searchableText = [
           contact.displayName,
           contact.email,
-          contact.firstname,
-          contact.lastname,
+          contact.firstName,
+          contact.lastName,
           // Note: roles and teams properties may not exist on all contacts
         ]
           .filter(Boolean)

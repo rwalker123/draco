@@ -20,7 +20,8 @@ import {
   Divider,
 } from '@mui/material';
 import { Warning as WarningIcon, Error as ErrorIcon, Info as InfoIcon } from '@mui/icons-material';
-import { Contact, DependencyCheckResult } from '../../types/users';
+import { DependencyCheckResult } from '../../types/users';
+import { Contact } from '@draco/shared-schemas';
 import { createUserManagementService } from '../../services/userManagementService';
 import { useAuth } from '../../context/AuthContext';
 
