@@ -83,6 +83,10 @@ export const ContactSchema = BaseContactSchema.extend({
     .optional(),
 });
 
+export const RoleWithContactSchema = ContactRoleSchema.extend({
+  contact: NamedContactSchema,
+});
+
 export const CreateContactSchema = BaseContactSchema.omit({
   id: true,
   userId: true,
@@ -101,6 +105,7 @@ export type BaseContactType = z.infer<typeof BaseContactSchema>;
 export type ContactRoleType = z.infer<typeof ContactRoleSchema>;
 export type ContactType = z.infer<typeof ContactSchema>;
 export type CreateContactType = z.infer<typeof CreateContactSchema>;
+export type RoleWithContactType = z.infer<typeof RoleWithContactSchema>;
 
 // create classes for the types as contact objects are extended in other schemas
 export class NamedContact implements NamedContactType {

@@ -5,7 +5,12 @@ import {
 } from '../types/userManagementTypeGuards';
 import { ContactTransformationService } from './contactTransformationService';
 import { handleApiErrorResponse } from '../utils/errorHandling';
-import { Contact, ContactType, CreateContactType } from '@draco/shared-schemas';
+import {
+  Contact,
+  ContactType,
+  CreateContactType,
+  RoleWithContactType,
+} from '@draco/shared-schemas';
 
 // Pagination interface for API responses
 interface PaginationInfo {
@@ -281,7 +286,7 @@ export class UserManagementService {
     roleId: string,
     roleData: string,
     seasonId?: string | null,
-  ): Promise<void> {
+  ): Promise<RoleWithContactType> {
     const body: { roleId: string; roleData: string; seasonId?: string } = {
       roleId,
       roleData,
@@ -304,6 +309,9 @@ export class UserManagementService {
     if (!response.ok) {
       await handleApiErrorResponse(response, 'Failed to assign role');
     }
+
+    const result = await response.json();
+    return result.data.assignedRole;
   }
 
   /**

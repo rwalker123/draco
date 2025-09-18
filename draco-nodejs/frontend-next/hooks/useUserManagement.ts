@@ -15,7 +15,13 @@ import { Role, UseUserManagementReturn } from '../types/users';
 import { extractErrorMessage } from '../types/userManagementTypeGuards';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
-import { Contact, ContactRoleType, ContactType, CreateContactType } from '@draco/shared-schemas';
+import {
+  Contact,
+  ContactRoleType,
+  ContactType,
+  CreateContactType,
+  RoleWithContactType,
+} from '@draco/shared-schemas';
 import { updateContact as apiUpdateContact } from '@draco/shared-api-client';
 
 // Pagination state for atomic updates
@@ -1103,6 +1109,40 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     ],
   );
 
+  // Handle role assignment incremental update
+  const handleRoleAssigned = useCallback(
+    (assignedRole: RoleWithContactType) => {
+      const updatedUsers = paginationState.users.map((user) => {
+        if (user.id === assignedRole.contact.id) {
+          // Convert RoleWithContactType to ContactRoleType for the user's contactroles array
+          const newRole: ContactRoleType = {
+            id: assignedRole.id,
+            roleId: assignedRole.roleId,
+            roleName: assignedRole.roleName,
+            roleData: assignedRole.roleData,
+            contextName: assignedRole.contextName,
+          };
+
+          return {
+            ...user,
+            contactroles: [...(user.contactroles || []), newRole],
+          };
+        }
+        return user;
+      });
+
+      // Use existing dispatch pattern (same as handleEditContact, etc.)
+      dispatch({
+        type: 'SET_DATA',
+        users: [...updatedUsers],
+        hasNext: paginationState.hasNext,
+        hasPrev: paginationState.hasPrev,
+        page: paginationState.page,
+      });
+    },
+    [paginationState],
+  );
+
   // Role display name helper - now uses contextName from backend for role display
   const getRoleDisplayNameHelper = useCallback(
     (
@@ -1206,5 +1246,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setSuccess,
     loadContextData,
     getRoleDisplayName: getRoleDisplayNameHelper,
+    handleRoleAssigned,
   };
 };

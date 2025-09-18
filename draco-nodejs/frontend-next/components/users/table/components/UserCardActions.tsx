@@ -26,7 +26,7 @@ import { ContactRoleType, ContactType } from '@draco/shared-schemas';
 interface UserCardActionsProps {
   user: EnhancedUser;
   canManageUsers: boolean;
-  onRemoveRole?: (user: ContactType, role: ContactRoleType) => void;
+  onRemoveRole?: (user: ContactType, role: ContactRoleType) => Promise<void>;
   showQuickActions?: boolean;
   showContextMenu?: boolean;
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';

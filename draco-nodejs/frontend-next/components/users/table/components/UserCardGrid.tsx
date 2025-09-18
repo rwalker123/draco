@@ -17,9 +17,9 @@ interface UserCardGridProps {
   cardSize: CardSize;
   viewConfig: UserViewConfig;
   onAssignRole: (user: ContactType) => Promise<void>;
-  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
-  onEditContact?: (contact: Contact) => void;
-  onDeleteContact?: (contact: Contact) => void;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => Promise<void>;
+  onEditContact?: (contact: Contact) => Promise<void>;
+  onDeleteContact?: (contact: Contact) => Promise<void>;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
   canManageUsers: boolean;

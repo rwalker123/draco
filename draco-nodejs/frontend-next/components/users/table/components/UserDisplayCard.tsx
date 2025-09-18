@@ -77,9 +77,9 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
     await onAssignRole(user);
   };
 
-  const handleRemoveRole = (role: ContactRoleType) => {
+  const handleRemoveRole = async (role: ContactRoleType) => {
     if (onRemoveRole) {
-      onRemoveRole(user, role);
+      await onRemoveRole(user, role);
     }
   };
 

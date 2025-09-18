@@ -2,7 +2,13 @@
 
 // Import context data types
 import { League, Team, LeagueSeason } from '../services/contextDataService';
-import { Contact, CreateContactType, ContactType, ContactRoleType } from '@draco/shared-schemas';
+import {
+  Contact,
+  CreateContactType,
+  ContactType,
+  ContactRoleType,
+  RoleWithContactType,
+} from '@draco/shared-schemas';
 
 // Contact dependency types
 export interface ContactDependency {
@@ -64,9 +70,9 @@ export interface UserTableProps {
   loading: boolean;
   isInitialLoad?: boolean;
   onAssignRole: (user: ContactType) => Promise<void>;
-  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
-  onEditContact?: (contact: Contact) => void;
-  onDeleteContact?: (contact: Contact) => void;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => Promise<void>;
+  onEditContact?: (contact: Contact) => Promise<void>;
+  onDeleteContact?: (contact: Contact) => Promise<void>;
   onAddUser?: () => void;
   canManageUsers: boolean;
   page: number;
@@ -97,9 +103,9 @@ export interface UserCardProps {
   user: ContactType;
   canManageUsers: boolean;
   onAssignRole: (user: ContactType) => Promise<void>;
-  onRemoveRole: (user: ContactType, role: ContactRoleType) => void;
-  onEditContact?: (contact: Contact) => void;
-  onDeleteContact?: (contact: Contact) => void;
+  onRemoveRole: (user: ContactType, role: ContactRoleType) => Promise<void>;
+  onEditContact?: (contact: Contact) => Promise<void>;
+  onDeleteContact?: (contact: Contact) => Promise<void>;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
   getRoleDisplayName: (
@@ -112,7 +118,7 @@ export interface UserCardProps {
 export interface UserRoleChipsProps {
   roles: ContactRoleType[];
   canManageUsers: boolean;
-  onRemoveRole: (role: ContactRoleType) => void;
+  onRemoveRole: (role: ContactRoleType) => Promise<void>;
   onAssignRole?: (user: ContactType) => Promise<void>;
   user: ContactType;
   getRoleDisplayName: (
@@ -125,13 +131,9 @@ export interface UserRoleChipsProps {
 export interface AssignRoleDialogProps {
   open: boolean;
   onClose: () => void;
-  onAssign: () => void;
-  selectedRole: string;
-  newUserContactId: string;
+  onSuccess?: (result: { message: string; assignedRole: RoleWithContactType }) => void;
+  onError?: (error: string) => void;
   roles: Role[];
-  onUserChange: (contactId: string) => void;
-  onRoleChange: (roleId: string) => void;
-  loading: boolean;
   accountId: string;
   // Pre-population props
   preselectedUser?: ContactType | null;
@@ -140,10 +142,6 @@ export interface AssignRoleDialogProps {
   leagues?: League[];
   teams?: Team[];
   leagueSeasons?: LeagueSeason[];
-  selectedLeagueId?: string;
-  selectedTeamId?: string;
-  onLeagueChange?: (leagueId: string) => void;
-  onTeamChange?: (teamId: string) => void;
   contextDataLoading?: boolean;
 }
 
@@ -281,4 +279,5 @@ export interface UseUserManagementReturn {
       | string
       | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
   ) => string;
+  handleRoleAssigned: (assignedRole: RoleWithContactType) => void;
 }

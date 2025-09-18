@@ -14,7 +14,7 @@ import { ContactRoleType, ContactType } from '@draco/shared-schemas';
 // Base interface for user renderers (Interface Segregation)
 interface BaseUserRendererProps {
   onAssignRole: (user: ContactType) => Promise<void>;
-  onRemoveRole?: (user: ContactType, role: ContactRoleType) => void;
+  onRemoveRole?: (user: ContactType, role: ContactRoleType) => Promise<void>;
   canManageUsers: boolean;
   getRoleDisplayName: (
     roleOrRoleId:
