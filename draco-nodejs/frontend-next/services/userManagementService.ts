@@ -1,8 +1,5 @@
-import { Role, UsersResponse, UserSearchParams, DependencyCheckResult } from '../types/users';
-import {
-  validateContactUpdateResponse,
-  ContactUpdateResponse,
-} from '../types/userManagementTypeGuards';
+import { DependencyCheckResult, Role } from '../types/users';
+import { ContactUpdateResponse } from '../types/userManagementTypeGuards';
 import { ContactTransformationService } from './contactTransformationService';
 import { handleApiErrorResponse } from '../utils/errorHandling';
 import {
@@ -304,10 +301,10 @@ export class UserManagementService {
     // Filter out undefined/empty values and format dates
     const backendData: Record<string, unknown> = {};
     if (contactData.firstName !== undefined) {
-      backendData.firstname = contactData.firstName;
+      backendData.firstName = contactData.firstName;
     }
     if (contactData.lastName !== undefined) {
-      backendData.lastname = contactData.lastName;
+      backendData.lastName = contactData.lastName;
     }
     if (contactData.middleName !== undefined) {
       backendData.middleName = contactData.middleName;
@@ -356,19 +353,11 @@ export class UserManagementService {
       backendData.dateOfBirth = null;
     }
 
-    console.log('UserManagementService: Filtered backendData for creation:', backendData);
-
     // Use FormData if photo is provided, otherwise use JSON
     let body: FormData | string;
     let headers: Record<string, string>;
 
     if (photoFile) {
-      console.log('UserManagementService: Creating FormData with photo', {
-        photoName: photoFile.name,
-        photoSize: photoFile.size,
-        contactData: backendData,
-      });
-
       const formData = new FormData();
       // Add all contact data to form data - only include non-empty values
       Object.entries(backendData).forEach(([key, value]) => {
@@ -378,8 +367,6 @@ export class UserManagementService {
       });
       // Add photo file
       formData.append('photo', photoFile);
-
-      console.log('UserManagementService: FormData entries:', Array.from(formData.entries()));
 
       body = formData;
       headers = {
@@ -394,22 +381,10 @@ export class UserManagementService {
       };
     }
 
-    console.log('UserManagementService: Making POST request to create contact', {
-      url: `/api/accounts/${accountId}/contacts`,
-      hasPhoto: !!photoFile,
-      headers: Object.keys(headers),
-    });
-
     const response = await fetch(`/api/accounts/${accountId}/contacts`, {
       method: 'POST',
       headers,
       body,
-    });
-
-    console.log('UserManagementService: Response received', {
-      status: response.status,
-      ok: response.ok,
-      headers: Object.fromEntries(response.headers.entries()),
     });
 
     if (!response.ok) {
@@ -419,12 +394,11 @@ export class UserManagementService {
     }
 
     const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to create contact');
+    if (data.error) {
+      throw new Error(data.error || 'Failed to create contact');
     }
 
-    const validatedResponse = validateContactUpdateResponse(data.data.contact);
-    return this.transformContactResponseToContact(validatedResponse);
+    return data;
   }
 
   /**

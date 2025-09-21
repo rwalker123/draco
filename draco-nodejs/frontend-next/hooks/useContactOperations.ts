@@ -7,6 +7,7 @@ import { createUserManagementService } from '../services/userManagementService';
 import { ContactType, CreateContactType } from '@draco/shared-schemas';
 import { updateContact as apiUpdateContact } from '@draco/shared-api-client';
 import { addCacheBuster } from '../config/contacts';
+import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 
 export interface ContactOperationData {
   contactData: CreateContactType;
@@ -75,17 +76,9 @@ export function useContactOperations(accountId: string) {
               path: { accountId, contactId },
               client: apiClient,
               throwOnError: false,
-              bodySerializer: (body) => {
-                const formData = new FormData();
-                Object.entries(body).forEach(([key, value]) => {
-                  if (value instanceof File) {
-                    formData.append(key, value);
-                  } else if (value !== undefined && value !== null) {
-                    formData.append(key, String(value));
-                  }
-                });
-                return formData;
-              },
+              body: { ...data.contactData, photo: data.photoFile },
+              ...formDataBodySerializer,
+              headers: { 'Content-Type': null },
             })
           : await apiUpdateContact({
               path: { accountId, contactId },

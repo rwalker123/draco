@@ -21,7 +21,6 @@ import {
   CreateContactType,
   RoleWithContactType,
 } from '@draco/shared-schemas';
-import { updateContact as apiUpdateContact } from '@draco/shared-api-client';
 
 // Pagination state for atomic updates
 interface PaginationState {
