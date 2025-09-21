@@ -1,13 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { TeamStatsService } from '../services/teamStatsService.js';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { TeamRequestValidator } from '../utils/teamValidators.js';
 import { StatsResponseFormatter, TeamResponseFormatter } from '../utils/responseFormatters.js';
 import { validateTeamSeasonBasic } from '../utils/teamValidation.js';
 import prisma from '../lib/prisma.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router({ mergeParams: true });
-const teamStatsService = new TeamStatsService(prisma);
+const teamStatsService = ServiceFactory.getTeamStatsService();
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/record

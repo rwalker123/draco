@@ -4,8 +4,6 @@ import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-
-import { WorkoutService } from '../services/workoutService.js';
 import { WORKOUT_CONSTANTS } from '../utils/workoutMappers.js';
 import { ListWorkoutsFilter } from '../interfaces/workoutInterfaces.js';
 
@@ -20,7 +18,7 @@ interface WorkoutQueryParams {
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
-const service = new WorkoutService();
+const service = ServiceFactory.getWorkoutService();
 
 // Rate limiting for public registration endpoint
 const registrationLimiter = rateLimit({

@@ -20,6 +20,12 @@ import { RegistrationService } from './registrationService.js';
 import { AuthService } from './authService.js';
 import { ContactDependencyService } from './contactDependencyService.js';
 import { ContactPhotoService } from './contactPhotoService.js';
+import { StatisticsService } from './statisticsService.js';
+import { TeamStatsService } from './teamStatsService.js';
+import { TeamManagerService } from './teamManagerService.js';
+import { EmailTemplateService } from './emailTemplateService.js';
+import { EmailAttachmentService } from './emailAttachmentService.js';
+import { WorkoutService } from './workoutService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -38,6 +44,12 @@ export class ServiceFactory {
   private static authService: AuthService;
   private static contactDependencyService: ContactDependencyService;
   private static contactPhotoService: ContactPhotoService;
+  private static statisticsService: StatisticsService;
+  private static teamStatsService: TeamStatsService;
+  private static teamManagerService: TeamManagerService;
+  private static emailTemplateService: EmailTemplateService;
+  private static emailAttachmentService: EmailAttachmentService;
+  private static workoutService: WorkoutService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -138,5 +150,47 @@ export class ServiceFactory {
       this.contactPhotoService = new ContactPhotoService(prisma);
     }
     return this.contactPhotoService;
+  }
+
+  static getStatisticsService(): StatisticsService {
+    if (!this.statisticsService) {
+      this.statisticsService = new StatisticsService(prisma);
+    }
+    return this.statisticsService;
+  }
+
+  static getTeamStatsService(): TeamStatsService {
+    if (!this.teamStatsService) {
+      this.teamStatsService = new TeamStatsService(prisma);
+    }
+    return this.teamStatsService;
+  }
+
+  static getTeamManagerService(): TeamManagerService {
+    if (!this.teamManagerService) {
+      this.teamManagerService = new TeamManagerService(prisma);
+    }
+    return this.teamManagerService;
+  }
+
+  static getEmailTemplateService(): EmailTemplateService {
+    if (!this.emailTemplateService) {
+      this.emailTemplateService = new EmailTemplateService();
+    }
+    return this.emailTemplateService;
+  }
+
+  static getEmailAttachmentService(): EmailAttachmentService {
+    if (!this.emailAttachmentService) {
+      this.emailAttachmentService = new EmailAttachmentService();
+    }
+    return this.emailAttachmentService;
+  }
+
+  static getWorkoutService(): WorkoutService {
+    if (!this.workoutService) {
+      this.workoutService = new WorkoutService();
+    }
+    return this.workoutService;
   }
 }
