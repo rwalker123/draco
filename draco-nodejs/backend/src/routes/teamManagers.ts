@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { TeamManagerService } from '../services/teamManagerService.js';
-import prisma from '../lib/prisma.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router({ mergeParams: true });
-const teamManagerService = new TeamManagerService(prisma);
+const teamManagerService = ServiceFactory.getTeamManagerService();
 
 // GET: List all managers for a team season
 router.get(

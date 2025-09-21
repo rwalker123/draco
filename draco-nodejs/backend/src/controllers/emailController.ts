@@ -15,6 +15,7 @@ import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import prisma from '../lib/prisma.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 export class EmailController {
   private emailService: EmailService;
@@ -23,8 +24,8 @@ export class EmailController {
 
   constructor() {
     this.emailService = new EmailService();
-    this.templateService = new EmailTemplateService();
-    this.attachmentService = new EmailAttachmentService();
+    this.templateService = ServiceFactory.getEmailTemplateService();
+    this.attachmentService = ServiceFactory.getEmailAttachmentService();
   }
 
   /**
