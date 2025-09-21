@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma.js';
-import { asyncHandler } from './utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { DateUtils } from '../utils/dateUtils.js';
 
 const testDatabaseRouter = Router();

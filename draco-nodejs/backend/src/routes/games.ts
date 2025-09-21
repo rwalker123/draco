@@ -5,7 +5,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { IRoleQuery } from '../interfaces/roleInterfaces.js';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.js';
 import { GameStatus, GameType } from '../types/gameEnums.js';
-import { asyncHandler } from './utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 import {
   ValidationError,

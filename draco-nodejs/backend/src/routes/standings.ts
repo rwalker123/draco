@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { asyncHandler } from './utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractSeasonParams } from '../utils/paramExtraction.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 
