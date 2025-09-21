@@ -718,9 +718,9 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const handleContactUpdated = useCallback(
     (contact: ContactType, isCreate: boolean) => {
       if (isCreate) {
-        // For new contacts, we could add to the list, but it's safer to reload the first page
-        // to ensure proper pagination and sorting
+        // Reset to loading state and immediately fetch the first page so the UI updates
         dispatch({ type: 'RESET_TO_INITIAL' });
+        void loadUsers(1);
       } else {
         // For updates, update the specific contact in the current list
         const updatedUsers = paginationState.users.map((user) => {
@@ -747,7 +747,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         });
       }
     },
-    [paginationState],
+    [paginationState, loadUsers],
   );
 
   // Handle photo deletion incremental update
