@@ -67,7 +67,7 @@ jobs:
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
               },
               body: JSON.stringify({
-                model: 'gpt-5.0-codex',
+                model: 'gpt-5-codex',
                 input: prompt,
                 max_output_tokens: 1200,
               }),
