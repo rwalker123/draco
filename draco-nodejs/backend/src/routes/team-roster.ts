@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { asyncHandler } from './utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { CreateRosterMemberSchema, SignRosterMemberSchema } from '@draco/shared-schemas';
 

@@ -5,7 +5,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import prisma from '../lib/prisma.js';
-import { asyncHandler } from './utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { extractAccountParams, extractSeasonParams } from '../utils/paramExtraction.js';
 

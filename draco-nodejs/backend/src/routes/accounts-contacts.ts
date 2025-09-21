@@ -4,7 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { asyncHandler } from './utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import { extractAccountParams, extractContactParams } from '../utils/paramExtraction.js';
 import { handleContactPhotoUpload } from './utils/fileUpload.js';
