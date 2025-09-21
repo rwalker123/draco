@@ -1,0 +1,15 @@
+import { z } from 'zod';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z);
+
+// these are using coerce as they are coming on the query string as strings
+export const PagingSchema = z.object({
+  page: z.coerce.number().default(1),
+  limit: z.coerce.number().min(1).max(100).default(50),
+  skip: z.coerce.number().min(0).default(0),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
+
+export type PagingType = z.infer<typeof PagingSchema>;

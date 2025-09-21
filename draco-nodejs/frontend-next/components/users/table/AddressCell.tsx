@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { Typography, Box } from '@mui/material';
-import { ContactDetails } from '@draco/shared-schemas';
+import { ContactDetailsType } from '@draco/shared-schemas';
 
 interface AddressCellProps {
-  contactDetails?: ContactDetails;
+  contactDetails?: ContactDetailsType;
   compact?: boolean;
 }
 
@@ -22,10 +22,10 @@ const AddressCell: React.FC<AddressCellProps> = ({ contactDetails, compact = tru
     );
   }
 
-  const { streetaddress, city, state, zip } = contactDetails;
+  const { streetAddress, city, state, zip } = contactDetails;
 
   // Check if we have any address components
-  const hasAddress = streetaddress || city || state || zip;
+  const hasAddress = streetAddress || city || state || zip;
 
   if (!hasAddress) {
     return (
@@ -38,8 +38,8 @@ const AddressCell: React.FC<AddressCellProps> = ({ contactDetails, compact = tru
   // Format address components
   const addressParts = [];
 
-  if (streetaddress) {
-    addressParts.push(streetaddress);
+  if (streetAddress) {
+    addressParts.push(streetAddress);
   }
 
   // City, State ZIP on same line

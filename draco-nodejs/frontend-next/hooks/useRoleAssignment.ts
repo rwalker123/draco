@@ -100,7 +100,6 @@ export function useRoleAssignment(accountId: string) {
           assignedRole,
         };
       } catch (err) {
-        console.error('Role assignment error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to assign role';
         return { success: false, error: errorMessage };
       } finally {

@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { Table, TableBody, TableContainer, TableHead, TableRow, TableCell } from '@mui/material';
-import { Contact, ContactRoleType, ContactType } from '@draco/shared-schemas';
+import { ContactRoleType, ContactType } from '@draco/shared-schemas';
 import UserCard from '../UserCard';
 import UserEmptyState from '../UserEmptyState';
 
@@ -11,8 +11,8 @@ interface UserTableContentProps {
   canManageUsers: boolean;
   onAssignRole: (user: ContactType) => Promise<void>;
   onRemoveRole: (user: ContactType, role: ContactRoleType) => Promise<void>;
-  onEditContact: (contact: Contact) => Promise<void>;
-  onDeleteContact?: (contact: Contact) => Promise<void>;
+  onEditContact: (contact: ContactType) => Promise<void>;
+  onDeleteContact?: (contact: ContactType) => Promise<void>;
   onDeleteContactPhoto: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
   getRoleDisplayName: (

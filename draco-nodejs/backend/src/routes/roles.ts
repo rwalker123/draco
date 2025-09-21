@@ -9,39 +9,15 @@ import { asyncHandler } from './utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { DateUtils } from '../utils/dateUtils.js';
-
-// Type definitions for Prisma query results
-interface ContactRole {
-  id: bigint;
-  contactId: bigint;
-  roleId: string;
-  roleData: bigint;
-  accountId: bigint;
-}
-
-interface AspNetRole {
-  id: string;
-  name: string;
-}
-
-interface ContactWithRoles {
-  id: bigint;
-  firstname: string;
-  lastname: string;
-  email: string | null;
-  userid: string | null;
-  contactroles: Array<{
-    id: bigint;
-    roleid: string;
-    roledata: bigint;
-  }>;
-}
+import { ContactRoleType, CreateContactRoleType } from '@draco/shared-schemas';
+import { RoleContextData } from '@/interfaces/roleInterfaces.js';
 
 const router = Router();
 const roleService = ServiceFactory.getRoleService();
+const routeProtection = ServiceFactory.getRouteProtection();
 
 /**
- * GET /api/role-test/user-roles
+ * GET /api/roles/user-roles
  * Get current user's roles (for testing)
  */
 router.get(
@@ -62,12 +38,10 @@ router.get(
         username: req.user.username,
         accountId: accountId?.toString(),
         globalRoles: userRoles.globalRoles,
-        contactRoles: userRoles.contactRoles.map((cr: ContactRole) => ({
+        contactRoles: userRoles.contactRoles.map((cr: ContactRoleType) => ({
           id: cr.id.toString(),
-          contactId: cr.contactId.toString(),
           roleId: cr.roleId,
           roleData: cr.roleData.toString(),
-          accountId: cr.accountId.toString(),
         })),
       },
     });
@@ -75,12 +49,13 @@ router.get(
 );
 
 /**
- * GET /api/role-test/check-role
+ * GET /api/roles/check-role
  * Check if current user has a specific role
  */
 router.get(
   '/check-role',
   authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req, res): Promise<void> => {
     if (!req.user?.id) {
       throw new AuthenticationError('User not found');
@@ -92,8 +67,8 @@ router.get(
       throw new ValidationError('roleId is required');
     }
 
-    const context = {
-      accountId: accountId ? BigInt(accountId as string) : undefined,
+    const context: RoleContextData = {
+      accountId: accountId ? BigInt(accountId as string) : BigInt(0),
       teamId: teamId ? BigInt(teamId as string) : undefined,
       leagueId: leagueId ? BigInt(leagueId as string) : undefined,
     };
@@ -114,12 +89,13 @@ router.get(
 );
 
 /**
- * GET /api/role-test/check-permission
+ * GET /api/roles/check-permission
  * Check if current user has a specific permission
  */
 router.get(
   '/check-permission',
   authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req, res): Promise<void> => {
     if (!req.user?.id) {
       throw new AuthenticationError('User not found');
@@ -131,8 +107,8 @@ router.get(
       throw new ValidationError('permission is required');
     }
 
-    const context = {
-      accountId: accountId ? BigInt(accountId as string) : undefined,
+    const context: RoleContextData = {
+      accountId: accountId ? BigInt(accountId as string) : BigInt(0),
       teamId: teamId ? BigInt(teamId as string) : undefined,
       leagueId: leagueId ? BigInt(leagueId as string) : undefined,
     };
@@ -156,7 +132,7 @@ router.get(
 );
 
 /**
- * GET /api/role-test/role-ids
+ * GET /api/roles/role-ids
  * Get all role IDs and names (for reference)
  */
 router.get(
@@ -175,7 +151,7 @@ router.get(
     res.json({
       success: true,
       data: {
-        roles: roles.map((role: AspNetRole) => ({
+        roles: roles.map((role) => ({
           id: role.id,
           name: role.name,
         })),
@@ -185,12 +161,13 @@ router.get(
 );
 
 /**
- * GET /api/role-test/account-users/:accountId
+ * GET /api/roles/account-users/:accountId
  * Get all users with roles in a specific account
  */
 router.get(
   '/account-users/:accountId',
   authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
 
@@ -208,7 +185,7 @@ router.get(
       },
     });
 
-    const usersWithRoles = contacts.map((contact: ContactWithRoles) => ({
+    const usersWithRoles = contacts.map((contact) => ({
       contactId: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
@@ -232,12 +209,13 @@ router.get(
 );
 
 /**
- * POST /api/role-test/assign-role
+ * POST /api/roles/assign-role
  * Assign a role to a contact (for testing)
  */
 router.post(
   '/assign-role',
   authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req, res): Promise<void> => {
     const { contactId, roleId, roleData, accountId } = req.body;
 
@@ -245,12 +223,15 @@ router.post(
       throw new ValidationError('contactId, roleId, roleData, and accountId are required');
     }
 
-    const assignedRole = await roleService.assignRole(
-      req.user!.id,
-      BigInt(contactId),
+    const contactRoleData: CreateContactRoleType = {
       roleId,
-      BigInt(roleData),
+      roleData: BigInt(roleData),
+    };
+
+    const assignedRole = await roleService.assignRole(
       BigInt(accountId),
+      BigInt(contactId),
+      contactRoleData,
     );
 
     res.json({
@@ -258,7 +239,6 @@ router.post(
       data: {
         assignedRole: {
           id: assignedRole.id.toString(),
-          contactId: assignedRole.contactId.toString(),
           roleId: assignedRole.roleId,
           roleData: assignedRole.roleData.toString(),
           accountId: assignedRole.accountId.toString(),
@@ -269,7 +249,7 @@ router.post(
 );
 
 /**
- * GET /api/role-test/roles/metadata
+ * GET /api/roles/roles/metadata
  * Get role hierarchy and permissions metadata for frontend caching
  */
 router.get(

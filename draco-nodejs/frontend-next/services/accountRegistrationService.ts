@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Contact } from '@draco/shared-schemas';
+import { ContactType } from '@draco/shared-schemas';
 import { ContactTransformationService } from './contactTransformationService';
 
 export interface SelfRegisterInput {
@@ -38,12 +38,12 @@ export interface CombinedExistingUserPayload {
 export type CombinedRegistrationPayload = CombinedNewUserPayload | CombinedExistingUserPayload;
 
 export const AccountRegistrationService = {
-  async fetchMyContact(accountId: string, token?: string): Promise<Contact | null> {
+  async fetchMyContact(accountId: string, token?: string): Promise<ContactType | null> {
     try {
       const response = await axios.get(`/api/accounts/${accountId}/contacts/me`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      const backendContact = response.data?.data?.contact;
+      const backendContact = response.data;
       if (!backendContact) return null;
       return ContactTransformationService.transformBackendContact(backendContact);
     } catch (err: unknown) {
@@ -59,7 +59,11 @@ export const AccountRegistrationService = {
     }
   },
 
-  async selfRegister(accountId: string, input: SelfRegisterInput, token: string): Promise<Contact> {
+  async selfRegister(
+    accountId: string,
+    input: SelfRegisterInput,
+    token: string,
+  ): Promise<ContactType> {
     const response = await axios.post(
       `/api/accounts/${accountId}/contacts/me`,
       {
@@ -74,14 +78,14 @@ export const AccountRegistrationService = {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    const backendContact = response.data?.data?.contact;
+    const backendContact = response.data;
     return ContactTransformationService.transformBackendContact(backendContact);
   },
 
   async combinedRegister(
     accountId: string,
     payload: CombinedRegistrationPayload,
-  ): Promise<{ token?: string; user?: unknown; contact: Contact }> {
+  ): Promise<{ token?: string; user?: unknown; contact: ContactType }> {
     const response = await axios.post(`/api/accounts/${accountId}/registration`, payload);
     const { token, user, contact } = response.data || {};
     return {

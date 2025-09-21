@@ -4,70 +4,14 @@ import { authRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { RegistrationService } from '../services/registrationService.js';
 import { logRegistrationEvent } from '../utils/auditLogger.js';
+import { ContactValidationWithSignInSchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const registrationService = new RegistrationService();
 
 /**
- * @swagger
- * /api/accounts/{accountId}/registration:
- *   post:
- *     summary: Combined login + account registration
- *     description: For users not logged in. Supports creating a new user or logging in an existing user and registering them to the account.
- *     tags: [Accounts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             oneOf:
- *               - properties:
- *                   mode:
- *                     type: string
- *                     enum: [newUser]
- *                   email:
- *                     type: string
- *                   password:
- *                     type: string
- *                   firstName:
- *                     type: string
- *                   middleName:
- *                     type: string
- *                   lastName:
- *                     type: string
- *                 required: [mode, email, password, firstName, lastName]
- *               - properties:
- *                   mode:
- *                     type: string
- *                     enum: [existingUser]
- *                   usernameOrEmail:
- *                     type: string
- *                   password:
- *                     type: string
- *                   firstName:
- *                     type: string
- *                   middleName:
- *                     type: string
- *                   lastName:
- *                     type: string
- *                 required: [mode, usernameOrEmail, password, firstName]
- *     responses:
- *       201:
- *         description: Registered to account and token issued
- *       400:
- *         description: Validation error
- *       401:
- *         description: Invalid credentials
- *       409:
- *         description: Already registered
+ * POST /api/accounts/:accountId/registration
+ * Register a new user or existing user
  */
 router.post(
   '/:accountId/registration',
@@ -87,81 +31,18 @@ router.post(
       return;
     }
 
+    const input = ContactValidationWithSignInSchema.parse(req.body);
+
     if (mode === 'newUser') {
-      const {
-        email,
-        password,
-        firstName,
-        middleName,
-        lastName,
-        validationType,
-        streetAddress,
-        dateOfBirth,
-      } = req.body;
-      const result = await registrationService.registerAndCreateContactNewUser({
-        email,
-        password,
-        firstName,
-        middleName,
-        lastName,
-        accountId,
-        validationType,
-        streetAddress,
-        dateOfBirth,
-      });
-      if (!result.success) {
-        logRegistrationEvent(req, 'registration_newUser', 'validation_error', {
-          accountId,
-          timingMs: Date.now() - start,
-        });
-        res.status(result.statusCode || 400).json({ success: false, message: result.message });
-        return;
-      }
-      logRegistrationEvent(req, 'registration_newUser', 'success', {
-        accountId,
-        timingMs: Date.now() - start,
-      });
-      res.status(201).json({ success: true, ...result.payload });
+      const result = await registrationService.registerAndCreateContactNewUser(accountId, input);
+
+      res.status(201).json({ success: true, data: result });
       return;
     }
 
-    // existingUser
-    const {
-      usernameOrEmail,
-      password,
-      firstName,
-      middleName,
-      lastName,
-      validationType,
-      streetAddress,
-      dateOfBirth,
-    } = req.body;
+    const result = await registrationService.loginAndCreateContactExistingUser(accountId, input);
 
-    const result = await registrationService.loginAndCreateContactExistingUser({
-      usernameOrEmail,
-      password,
-      firstName,
-      middleName,
-      lastName,
-      accountId,
-      validationType,
-      streetAddress,
-      dateOfBirth,
-    });
-
-    if (!result.success) {
-      logRegistrationEvent(req, 'registration_existingUser', 'auth_error', {
-        accountId,
-        timingMs: Date.now() - start,
-      });
-      res.status(result.statusCode || 400).json({ success: false, message: result.message });
-      return;
-    }
-    logRegistrationEvent(req, 'registration_existingUser', 'success', {
-      accountId,
-      timingMs: Date.now() - start,
-    });
-    res.status(201).json({ success: true, ...result.payload });
+    res.status(201).json({ success: true, data: result });
   }),
 );
 

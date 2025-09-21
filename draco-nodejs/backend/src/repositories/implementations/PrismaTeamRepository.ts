@@ -1,5 +1,6 @@
-import { PrismaClient, teamsseason, teams, leagueseason, divisionseason } from '@prisma/client';
+import { PrismaClient, teamsseason, teams, teamseasonmanager } from '@prisma/client';
 import { ITeamRepository } from '../interfaces/ITeamRepository.js';
+import { dbTeamSeasonManagerContact, dbTeamSeasonWithLeague } from '../types/dbTypes.js';
 
 export class PrismaTeamRepository implements ITeamRepository {
   constructor(private prisma: PrismaClient) {}
@@ -63,14 +64,7 @@ export class PrismaTeamRepository implements ITeamRepository {
     teamSeasonId: bigint,
     seasonId: bigint,
     accountId: bigint,
-  ): Promise<{
-    id: number;
-    teamname: string;
-    leagueseason: leagueseason & {
-      leagues: { name: string };
-      divisionseason: divisionseason[];
-    };
-  } | null> {
+  ): Promise<dbTeamSeasonWithLeague | null> {
     const result = await this.prisma.teamsseason.findFirst({
       where: {
         id: teamSeasonId,
@@ -93,24 +87,83 @@ export class PrismaTeamRepository implements ITeamRepository {
       },
     });
 
-    if (!result) return null;
-
-    return {
-      id: Number(result.id),
-      teamname: result.name,
-      leagueseason: {
-        ...result.leagueseason,
-        leagues: result.leagueseason.league,
-      } as leagueseason & {
-        leagues: { name: string };
-        divisionseason: divisionseason[];
-      },
-    };
+    return result;
   }
 
   async findTeamDefinition(teamId: bigint): Promise<teams | null> {
     return this.prisma.teams.findUnique({
       where: { id: teamId },
+    });
+  }
+
+  async findTeamManager(
+    contactId: bigint,
+    teamId: bigint,
+    seasonId: bigint,
+  ): Promise<teamseasonmanager | null> {
+    return this.prisma.teamseasonmanager.findFirst({
+      where: {
+        contactid: contactId,
+        teamseasonid: teamId,
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+          },
+        },
+      },
+    });
+  }
+
+  async findTeamSeason(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<teamsseason | null> {
+    return this.prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: { seasonid: seasonId, league: { accountid: accountId } },
+      },
+    });
+  }
+
+  async findTeamSeasonManagers(
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeasonManagerContact[]> {
+    // Query team managers for the current season using Prisma relations
+    return await this.prisma.teamseasonmanager.findMany({
+      where: {
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+          },
+        },
+        contacts: {
+          creatoraccountid: accountId,
+        },
+      },
+      include: {
+        contacts: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+        teamsseason: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [
+        { contacts: { lastname: 'asc' } },
+        { contacts: { firstname: 'asc' } },
+        { teamsseason: { name: 'asc' } },
+      ],
     });
   }
 }

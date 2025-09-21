@@ -1,4 +1,4 @@
-import { NamedContact, BaseContact, Contact } from '@draco/shared-schemas';
+import { NamedContactType, BaseContactType } from '@draco/shared-schemas';
 
 export interface MailtoOptions {
   to?: string[];
@@ -40,7 +40,7 @@ export function generateMailtoUrl(options: MailtoOptions): string {
  * Generate mailto URL for single contact
  */
 export function generateContactMailto(
-  contact: BaseContact,
+  contact: BaseContactType,
   subject?: string,
   body?: string,
 ): string {
@@ -59,7 +59,7 @@ export function generateContactMailto(
  * Generate mailto URL for multiple contacts
  */
 export function generateBulkMailto(
-  contacts: Contact[],
+  contacts: BaseContactType[],
   options: Omit<MailtoOptions, 'to'> = {},
 ): string {
   const emailAddresses = contacts
@@ -80,13 +80,13 @@ export function generateBulkMailto(
 /**
  * Check if contact has valid email address
  */
-export function hasValidEmail(contact: BaseContact): boolean {
+export function hasValidEmail(contact: BaseContactType): boolean {
   return Boolean(contact.email && contact.email.trim().length > 0);
 }
 
 /**
  * Get display name for contact
  */
-export function getContactDisplayName(contact: NamedContact): string {
+export function getContactDisplayName(contact: NamedContactType): string {
   return `${contact.firstName} ${contact.lastName}`.trim();
 }

@@ -86,7 +86,7 @@ components:
                       type: string
                       nullable: true
                       default: ""
-                    streetaddress:
+                    streetAddress:
                       type: string
                       nullable: true
                       maxLength: 100
@@ -106,7 +106,7 @@ components:
                       nullable: true
                       maxLength: 10
                       default: ""
-                    dateofbirth:
+                    dateOfBirth:
                       type: string
                       nullable: true
                       default: ""
@@ -179,7 +179,7 @@ components:
                   type: string
                   nullable: true
                   default: ""
-                streetaddress:
+                streetAddress:
                   type: string
                   nullable: true
                   maxLength: 100
@@ -199,7 +199,7 @@ components:
                   nullable: true
                   maxLength: 10
                   default: ""
-                dateofbirth:
+                dateOfBirth:
                   type: string
                   nullable: true
                   default: ""
@@ -277,7 +277,7 @@ components:
                           type: string
                           nullable: true
                           default: ""
-                        streetaddress:
+                        streetAddress:
                           type: string
                           nullable: true
                           maxLength: 100
@@ -297,7 +297,7 @@ components:
                           nullable: true
                           maxLength: 10
                           default: ""
-                        dateofbirth:
+                        dateOfBirth:
                           type: string
                           nullable: true
                           default: ""
@@ -350,7 +350,7 @@ components:
               type: string
               nullable: true
               default: ""
-            streetaddress:
+            streetAddress:
               type: string
               nullable: true
               maxLength: 100
@@ -370,7 +370,7 @@ components:
               nullable: true
               maxLength: 10
               default: ""
-            dateofbirth:
+            dateOfBirth:
               type: string
               nullable: true
               default: ""
@@ -379,9 +379,6 @@ components:
           items:
             type: object
             properties:
-              id:
-                type: string
-                pattern: ^d+$
               roleId:
                 type: string
                 maxLength: 50
@@ -394,10 +391,13 @@ components:
               contextName:
                 type: string
                 maxLength: 50
+              id:
+                type: string
+                pattern: ^d+$
             required:
-              - id
               - roleId
               - roleData
+              - id
         creatoraccountid:
           type: string
           pattern: ^d+$
@@ -456,7 +456,7 @@ components:
                   type: string
                   nullable: true
                   default: ""
-                streetaddress:
+                streetAddress:
                   type: string
                   nullable: true
                   maxLength: 100
@@ -476,7 +476,7 @@ components:
                   nullable: true
                   maxLength: 10
                   default: ""
-                dateofbirth:
+                dateOfBirth:
                   type: string
                   nullable: true
                   default: ""
@@ -536,7 +536,7 @@ components:
               type: string
               nullable: true
               default: ""
-            streetaddress:
+            streetAddress:
               type: string
               nullable: true
               maxLength: 100
@@ -556,7 +556,7 @@ components:
               nullable: true
               maxLength: 10
               default: ""
-            dateofbirth:
+            dateOfBirth:
               type: string
               nullable: true
               default: ""
@@ -752,7 +752,7 @@ paths:
                       type: string
                       nullable: true
                       default: ""
-                    streetaddress:
+                    streetAddress:
                       type: string
                       nullable: true
                       maxLength: 100
@@ -772,7 +772,7 @@ paths:
                       nullable: true
                       maxLength: 10
                       default: ""
-                    dateofbirth:
+                    dateOfBirth:
                       type: string
                       nullable: true
                       default: ""
@@ -814,7 +814,7 @@ paths:
                       type: string
                       nullable: true
                       default: ""
-                    streetaddress:
+                    streetAddress:
                       type: string
                       nullable: true
                       maxLength: 100
@@ -834,7 +834,7 @@ paths:
                       nullable: true
                       maxLength: 10
                       default: ""
-                    dateofbirth:
+                    dateOfBirth:
                       type: string
                       nullable: true
                       default: ""
@@ -946,7 +946,7 @@ paths:
                       type: string
                       nullable: true
                       default: ""
-                    streetaddress:
+                    streetAddress:
                       type: string
                       nullable: true
                       maxLength: 100
@@ -966,7 +966,7 @@ paths:
                       nullable: true
                       maxLength: 10
                       default: ""
-                    dateofbirth:
+                    dateOfBirth:
                       type: string
                       nullable: true
                       default: ""
@@ -1008,7 +1008,7 @@ paths:
                       type: string
                       nullable: true
                       default: ""
-                    streetaddress:
+                    streetAddress:
                       type: string
                       nullable: true
                       maxLength: 100
@@ -1028,7 +1028,7 @@ paths:
                       nullable: true
                       maxLength: 10
                       default: ""
-                    dateofbirth:
+                    dateOfBirth:
                       type: string
                       nullable: true
                       default: ""
@@ -1291,7 +1291,7 @@ paths:
                               type: string
                               nullable: true
                               default: ""
-                            streetaddress:
+                            streetAddress:
                               type: string
                               nullable: true
                               maxLength: 100
@@ -1311,7 +1311,7 @@ paths:
                               nullable: true
                               maxLength: 10
                               default: ""
-                            dateofbirth:
+                            dateOfBirth:
                               type: string
                               nullable: true
                               default: ""

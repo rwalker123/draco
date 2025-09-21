@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   EnhancedUser,
   UserSelectionConfig,
@@ -14,7 +14,7 @@ export const enhanceUser = (user: ContactType): EnhancedUser => {
 
   // Build full address from contact details
   const contact = user.contactDetails;
-  const addressParts = [contact?.streetaddress, contact?.city, contact?.state, contact?.zip].filter(
+  const addressParts = [contact?.streetAddress, contact?.city, contact?.state, contact?.zip].filter(
     Boolean,
   );
   const fullAddress = addressParts.join(', ') || '';
@@ -27,9 +27,9 @@ export const enhanceUser = (user: ContactType): EnhancedUser => {
     contact?.phone1 ||
       contact?.phone2 ||
       contact?.phone3 ||
-      contact?.streetaddress ||
+      contact?.streetAddress ||
       fullAddress ||
-      contact?.dateofbirth,
+      contact?.dateOfBirth,
   );
 
   const enhancedUser: EnhancedUser = {
@@ -48,8 +48,45 @@ export const enhanceUser = (user: ContactType): EnhancedUser => {
 };
 
 // Hook for creating enhanced users from regular users
+// Optimized to prevent unnecessary object recreation with individual user memoization
 export const useEnhancedUsers = (users: ContactType[]): EnhancedUser[] => {
-  return useMemo(() => users.map(enhanceUser), [users]);
+  const cacheRef = useRef<Map<string, { user: ContactType; enhanced: EnhancedUser }>>(new Map());
+
+  return useMemo(() => {
+    const cache = cacheRef.current;
+    const newCache = new Map<string, { user: ContactType; enhanced: EnhancedUser }>();
+
+    const enhancedUsers = users.map((user) => {
+      const cached = cache.get(user.id);
+
+      // Check if we can reuse the cached enhanced user
+      if (
+        cached &&
+        cached.user.firstName === user.firstName &&
+        cached.user.lastName === user.lastName &&
+        cached.user.middleName === user.middleName &&
+        cached.user.email === user.email &&
+        cached.user.photoUrl === user.photoUrl &&
+        cached.user.userId === user.userId &&
+        JSON.stringify(cached.user.contactDetails) === JSON.stringify(user.contactDetails) &&
+        JSON.stringify(cached.user.contactroles) === JSON.stringify(user.contactroles)
+      ) {
+        // Reuse the cached enhanced user
+        newCache.set(user.id, cached);
+        return cached.enhanced;
+      }
+
+      // Create new enhanced user
+      const enhanced = enhanceUser(user);
+      newCache.set(user.id, { user, enhanced });
+      return enhanced;
+    });
+
+    // Update the cache reference
+    cacheRef.current = newCache;
+
+    return enhancedUsers;
+  }, [users]);
 };
 
 // Hook for creating selection configuration with defaults

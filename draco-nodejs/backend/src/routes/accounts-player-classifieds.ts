@@ -15,17 +15,6 @@ import {
   IPlayersWantedUpdateRequest,
   IContactCreatorRequest,
 } from '../interfaces/playerClassifiedInterfaces.js';
-import {
-  validatePlayersWantedCreate,
-  validateTeamsWantedCreate,
-  validateTeamsWantedVerification,
-  validatePlayersWantedDeletion,
-  validateSearchParams,
-  validateAccountId,
-  validateClassifiedId,
-  validateTeamsWantedUpdate,
-  validateContactRequest,
-} from '../middleware/validation/playerClassifiedValidation.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -144,7 +133,6 @@ router.post(
   '/players-wanted',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  validatePlayersWantedCreate,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const contactId = req.accountBoundary!.contactId;
@@ -168,7 +156,6 @@ router.post(
 router.post(
   '/teams-wanted',
   teamsWantedRateLimit, // Add IP-based rate limiting for anonymous submissions
-  validateTeamsWantedCreate,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
@@ -192,7 +179,6 @@ router.post(
  */
 router.get(
   '/players-wanted',
-  validateSearchParams,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
@@ -224,7 +210,6 @@ router.get(
   '/teams-wanted',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  validateSearchParams,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
@@ -254,7 +239,6 @@ router.get(
  */
 router.post(
   '/teams-wanted/:classifiedId/verify',
-  ...validateTeamsWantedVerification,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const { accessCode } = req.body;
@@ -320,13 +304,6 @@ router.post(
  */
 router.put(
   '/teams-wanted/:classifiedId',
-  // Validate path parameters for all requests
-  ...validateAccountId,
-  ...validateClassifiedId,
-
-  // Validate request body (accessCode is optional for authenticated users)
-  ...validateTeamsWantedUpdate,
-
   // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -403,9 +380,6 @@ router.put(
  */
 router.delete(
   '/teams-wanted/:classifiedId',
-  // Validate path parameters for all requests
-  ...validateAccountId,
-  ...validateClassifiedId,
   // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -435,7 +409,6 @@ router.delete(
   '/players-wanted/:classifiedId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  ...validatePlayersWantedDeletion,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const contactId = req.accountBoundary!.contactId;
@@ -490,8 +463,6 @@ router.get(
 router.get(
   '/teams-wanted/:classifiedId/contact',
   // Validate path parameters for all requests
-  ...validateAccountId,
-  ...validateClassifiedId,
   // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   teamsWantedRateLimit,
@@ -553,7 +524,6 @@ router.get(
 router.post(
   '/players-wanted/:classifiedId/contact',
   teamsWantedRateLimit, // Reuse existing rate limiting for anonymous requests
-  validateContactRequest, // Use secure express-validator middleware
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const classifiedId = req.params.classifiedId;

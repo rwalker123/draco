@@ -13,7 +13,6 @@ import { DateUtils } from './utils/dateUtils.js';
 import testDatabaseRouter from './routes/testdatabase.js';
 import authRouter from './routes/auth.js';
 import passwordResetRouter from './routes/passwordReset.js';
-import roleTestRouter from './routes/roleTest.js';
 import accountsRouter from './routes/accounts.js';
 import seasonsRouter from './routes/seasons.js';
 import leagueSeasonsRouter from './routes/leagueSeasons.js';
@@ -32,6 +31,7 @@ import { domainRouting } from './middleware/domainRouting.js';
 import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhookRoutes.js';
 import cleanupRouter from './routes/cleanup.js';
+import rolesRouter from './routes/roles.js';
 
 // Load environment variables
 dotenv.config();
@@ -147,7 +147,6 @@ app.get('/apidocs', swaggerUi.setup(specs));
 app.use('/api/testdatabase', testDatabaseRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
-app.use('/api/roleTest', roleTestRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/cleanup', cleanupRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);
@@ -168,7 +167,7 @@ app.use('/api/accounts/:accountId/seasons/:seasonId/standings', standingsRouter)
 app.use('/api', emailsRouter);
 app.use('/api/webhooks', webhookRouter);
 app.use('/api/accounts', accountsRouter);
-
+app.use('/api/roles', rolesRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 

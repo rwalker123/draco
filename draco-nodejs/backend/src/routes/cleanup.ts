@@ -7,12 +7,6 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { cleanupRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from './utils/asyncHandler.js';
-import {
-  validateCleanupTrigger,
-  validateCleanupStatus,
-  validateCleanupConfigUpdate,
-  sanitizeCleanupData,
-} from '../middleware/validation/cleanupValidation.js';
 
 const router = Router();
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -30,12 +24,11 @@ router.post(
   '/trigger',
   authenticateToken,
   routeProtection.requirePermission('database.cleanup'),
-  validateCleanupTrigger,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const cleanupService = ServiceFactory.getCleanupService();
 
     // Sanitize and extract validated parameters
-    const sanitizedParams = sanitizeCleanupData(req.body);
+    const sanitizedParams = req.body;
 
     const result = await cleanupService.manualCleanup(sanitizedParams);
 
@@ -56,7 +49,6 @@ router.get(
   '/status',
   authenticateToken,
   routeProtection.requirePermission('database.cleanup'),
-  validateCleanupStatus,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const cleanupService = ServiceFactory.getCleanupService();
 
@@ -78,7 +70,6 @@ router.put(
   '/config',
   authenticateToken,
   routeProtection.requirePermission('database.cleanup'),
-  validateCleanupConfigUpdate,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     // For now, just return success - actual configuration update logic
     // would be implemented in the service layer

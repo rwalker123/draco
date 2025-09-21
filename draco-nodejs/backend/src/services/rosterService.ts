@@ -3,8 +3,8 @@ import { ConflictError, NotFoundError, ValidationError } from '../utils/customEr
 import { DateUtils } from '../utils/dateUtils.js';
 import { ContactResponseFormatter, RosterResponseFormatter } from '../utils/responseFormatters.js';
 import {
-  CreateRosterMember,
-  RosterMember,
+  CreateRosterMemberType,
+  RosterMemberType,
   TeamRosterMembersType,
   BaseContactType,
   SignRosterMemberType,
@@ -174,7 +174,7 @@ export class RosterService {
     seasonId: bigint,
     accountId: bigint,
     addPlayerData: SignRosterMemberType,
-  ): Promise<RosterMember> {
+  ): Promise<RosterMemberType> {
     // Extract variables from addPlayerData with proper type handling
     const { playerNumber, submittedWaiver } = addPlayerData;
     const { submittedDriversLicense, firstYear, contact } = addPlayerData.player;
@@ -243,13 +243,13 @@ export class RosterService {
           phone1: contactData.contactDetails?.phone1 || null,
           phone2: contactData.contactDetails?.phone2 || null,
           phone3: contactData.contactDetails?.phone3 || null,
-          streetaddress: contactData.contactDetails?.streetaddress || null,
+          streetaddress: contactData.contactDetails?.streetAddress || null,
           city: contactData.contactDetails?.city || null,
           state: contactData.contactDetails?.state || null,
           zip: contactData.contactDetails?.zip || null,
           creatoraccountid: accountId,
-          dateofbirth: contactData.contactDetails?.dateofbirth
-            ? DateUtils.parseDateOfBirthForDatabase(contactData.contactDetails.dateofbirth)
+          dateofbirth: contactData.contactDetails?.dateOfBirth
+            ? DateUtils.parseDateOfBirthForDatabase(contactData.contactDetails.dateOfBirth)
             : new Date('1900-01-01'),
         },
         select: {
@@ -351,7 +351,7 @@ export class RosterService {
       },
     });
 
-    const rosterMember: RosterMember =
+    const rosterMember: RosterMemberType =
       RosterResponseFormatter.formatRosterMemberResponse(newRosterMember);
     return rosterMember;
   }
@@ -361,8 +361,8 @@ export class RosterService {
     teamSeasonId: bigint,
     seasonId: bigint,
     accountId: bigint,
-    updateData: CreateRosterMember,
-  ): Promise<RosterMember> {
+    updateData: CreateRosterMemberType,
+  ): Promise<RosterMemberType> {
     const { playerNumber, submittedWaiver } = updateData;
     const { submittedDriversLicense, firstYear } = updateData.player;
 
@@ -422,7 +422,7 @@ export class RosterService {
       },
     });
 
-    const rosterMember: RosterMember =
+    const rosterMember: RosterMemberType =
       RosterResponseFormatter.formatRosterMemberResponse(updatedRosterMember);
     return rosterMember;
   }
@@ -433,7 +433,7 @@ export class RosterService {
     seasonId: bigint,
     accountId: bigint,
     inactive: boolean,
-  ): Promise<RosterMember> {
+  ): Promise<RosterMemberType> {
     // Verify the roster member exists and belongs to this team season
     const dbRosterMember = await this.prisma.rosterseason.findFirst({
       where: {
@@ -476,7 +476,7 @@ export class RosterService {
       },
     });
 
-    const rosterMember: RosterMember =
+    const rosterMember: RosterMemberType =
       RosterResponseFormatter.formatRosterMemberResponse(updatedRosterMember);
     return rosterMember;
   }

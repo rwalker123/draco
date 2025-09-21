@@ -1,15 +1,15 @@
 import { Router, Request, Response } from 'express';
-import { SeasonManagerService, SeasonManagerFilters } from '../services/seasonManagerService.js';
+import { SeasonManagerFilters } from '../services/seasonManagerService.js';
 import prisma from '../lib/prisma.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
-import { RoleService } from '../services/roleService.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router({ mergeParams: true });
-const seasonManagerService = new SeasonManagerService(prisma);
-const roleService = new RoleService(prisma);
+const seasonManagerService = ServiceFactory.getSeasonManagerService();
+const roleService = ServiceFactory.getRoleService();
 const routeProtection = new RouteProtection(roleService, prisma);
 
 // GET: List all managers for a season

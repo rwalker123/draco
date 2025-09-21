@@ -2,11 +2,9 @@ import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
 import { ContactTransformationService } from '../services/contactTransformationService';
-import { Contact, ContactType, CreateContactType, RosterPlayerType } from '@draco/shared-schemas';
+import { BaseContactType, RosterMemberType, RosterPlayerType } from '@draco/shared-schemas';
 import {
   updateRosterMember as apiUpdateRosterMember,
-  updateContact as apiUpdateContact,
-  createContact as apiCreateContact,
   signPlayer as apiSignPlayer,
   releasePlayer as apiReleasePlayer,
   activatePlayer as apiActivatePlayer,
@@ -17,13 +15,11 @@ import {
   getContactRoster as apiGetContactRoster,
 } from '@draco/shared-api-client';
 import {
-  RosterMember,
   TeamManagerType,
   TeamRosterMembersType,
   SignRosterMemberType,
 } from '@draco/shared-schemas';
 import axios from 'axios';
-import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { addCacheBuster } from '@/config/contacts';
 
 interface Season {
@@ -63,18 +59,13 @@ interface RosterDataManagerState {
 interface RosterDataManagerActions {
   // Data fetching
   fetchRosterData: () => Promise<void>;
-  fetchAvailablePlayers: (firstName?: string, lastName?: string) => Promise<Contact[]>;
+  fetchAvailablePlayers: (firstName?: string, lastName?: string) => Promise<BaseContactType[]>;
   fetchManagers: () => Promise<void>;
   fetchSeasonData: () => Promise<void>;
   fetchLeagueData: () => Promise<void>;
 
   // Operations with optimistic updates
   updateRosterMember: (rosterMemberId: string, updates: RosterMemberUpdates) => Promise<void>;
-  updateContact: (
-    contactId: string,
-    contactData: CreateContactType | null,
-    photoFile?: File | null,
-  ) => Promise<ContactType | string>;
   getContactRoster: (contactId: string) => Promise<RosterPlayerType | undefined>;
   signPlayer: (contactId: string, rosterData: SignRosterMemberType) => Promise<void>;
   releasePlayer: (rosterMemberId: string) => Promise<void>;
@@ -82,11 +73,6 @@ interface RosterDataManagerActions {
   deletePlayer: (rosterMemberId: string) => Promise<void>;
   addManager: (contactId: string) => Promise<void>;
   removeManager: (managerId: string) => Promise<void>;
-  createContact: (
-    contactData: CreateContactType,
-    photoFile?: File | null,
-    autoSignToRoster?: boolean,
-  ) => Promise<ContactType | string>;
   deleteContactPhoto: (contactId: string) => Promise<void>;
 
   // State management
@@ -94,6 +80,7 @@ interface RosterDataManagerActions {
   clearSuccessMessage: () => void;
   setError: (error: string) => void;
   setSuccessMessage: (message: string) => void;
+  setRosterData: (data: TeamRosterMembersType) => void;
 }
 
 export const useRosterDataManager = (
@@ -236,7 +223,7 @@ export const useRosterDataManager = (
 
   // Fetch available players - returns data directly instead of storing in state
   const fetchAvailablePlayers = useCallback(
-    async (firstName?: string, lastName?: string): Promise<Contact[]> => {
+    async (firstName?: string, lastName?: string): Promise<BaseContactType[]> => {
       if (!accountId || !seasonId || !teamSeasonId || !token) return [];
 
       try {
@@ -341,7 +328,7 @@ export const useRosterDataManager = (
         const updatedRosterData: TeamRosterMembersType = {
           ...dataCacheRef.current.rosterData!,
           rosterMembers: dataCacheRef.current.rosterData!.rosterMembers.map((member) =>
-            member.id === rosterMemberId ? (result.data as RosterMember) : member,
+            member.id === rosterMemberId ? (result.data as RosterMemberType) : member,
           ),
         };
 
@@ -355,73 +342,6 @@ export const useRosterDataManager = (
       }
     },
     [accountId, seasonId, teamSeasonId, rosterData, setRosterData, setSuccessMessage, setError],
-  );
-
-  // Update contact with optimistic updates
-  const updateContact = useCallback(
-    async (
-      contactId: string,
-      contactData: CreateContactType | null,
-      photoFile?: File | null,
-    ): Promise<ContactType | string> => {
-      if (!rosterData) {
-        throw new Error('Service not initialized or no roster data available');
-      }
-
-      const result = photoFile
-        ? await apiUpdateContact({
-            path: { accountId, contactId },
-            client: apiClient,
-            body: { ...contactData, photo: photoFile },
-            headers: {
-              'Content-Type': null, // ✅ This deletes the hardcoded JSON content-type
-            },
-            ...formDataBodySerializer,
-            throwOnError: false,
-          })
-        : await apiUpdateContact({
-            path: { accountId, contactId },
-            client: apiClient,
-            body: { ...contactData, photo: undefined },
-            throwOnError: false,
-          });
-
-      if (result.data) {
-        // ✅ Add cache buster to photoUrl if a photo was uploaded
-        const updatedContact = result.data as ContactType;
-        if (photoFile && updatedContact.photoUrl) {
-          updatedContact.photoUrl = addCacheBuster(updatedContact.photoUrl, Date.now());
-        }
-
-        // Update the specific contact data in the rosterMembers array
-        // while preserving the TeamRosterData structure
-        const updatedRosterData: TeamRosterMembersType = {
-          ...rosterData,
-          rosterMembers: rosterData.rosterMembers.map((member) =>
-            member.player.contact.id === contactId
-              ? { ...member, player: { ...member.player, contact: updatedContact } }
-              : member,
-          ),
-        };
-
-        dataCacheRef.current.rosterData = updatedRosterData;
-        setRosterData(updatedRosterData);
-        if (contactData) {
-          setSuccessMessage(
-            `Player "${contactData.firstName} ${contactData.lastName}" updated successfully`,
-          );
-        } else {
-          setSuccessMessage('Player photo updated successfully');
-        }
-        setError(null);
-        return result.data as ContactType;
-      } else {
-        setError(result.error?.message || 'Failed to update player');
-        setSuccessMessage(null);
-        return result.error?.message;
-      }
-    },
-    [accountId, rosterData, setRosterData, setSuccessMessage, setError],
   );
 
   const getContactRoster = useCallback(
@@ -462,7 +382,7 @@ export const useRosterDataManager = (
           ...dataCacheRef.current.rosterData!,
           rosterMembers: [
             ...dataCacheRef.current.rosterData!.rosterMembers,
-            result.data as RosterMember,
+            result.data as RosterMemberType,
           ],
         };
 
@@ -633,83 +553,6 @@ export const useRosterDataManager = (
     ],
   );
 
-  // Create contact with optimistic updates
-  const createContact = useCallback(
-    async (
-      contactData: CreateContactType,
-      photoFile?: File | null,
-      autoSignToRoster?: boolean,
-    ): Promise<ContactType | string> => {
-      // create the contact with photo if provided
-      const result = photoFile
-        ? await apiCreateContact({
-            path: { accountId },
-            client: apiClient,
-            body: { ...contactData, photo: photoFile },
-            headers: {
-              'Content-Type': null, // ✅ This deletes the hardcoded JSON content-type
-            },
-            ...formDataBodySerializer,
-            throwOnError: false,
-          })
-        : await apiCreateContact({
-            path: { accountId },
-            client: apiClient,
-            throwOnError: false,
-            body: { ...contactData, photo: undefined },
-          });
-
-      // if the contact was created, sign the player to the roster if requested
-      if (result.data) {
-        if (autoSignToRoster && seasonId && teamSeasonId) {
-          const signRosterData: SignRosterMemberType = {
-            submittedWaiver: false,
-            player: {
-              submittedDriversLicense: false,
-              firstYear: new Date().getFullYear(),
-              contact: { id: result.data.id },
-            },
-          };
-
-          const signPlayerResult = await apiSignPlayer({
-            path: { accountId, seasonId, teamSeasonId },
-            body: signRosterData,
-            client: apiClient,
-            throwOnError: false,
-          });
-
-          if (signPlayerResult.data) {
-            // Add the new roster member to the current roster data
-            const updatedRosterData: TeamRosterMembersType = {
-              ...rosterData,
-              rosterMembers: [...rosterData.rosterMembers, signPlayerResult.data],
-            } as TeamRosterMembersType;
-
-            dataCacheRef.current.rosterData = updatedRosterData;
-            setRosterData(updatedRosterData);
-            setSuccessMessage(
-              autoSignToRoster
-                ? `Player "${contactData.firstName} ${contactData.lastName}" created and signed to roster successfully`
-                : `Player "${contactData.firstName} ${contactData.lastName}" created successfully`,
-            );
-          } else {
-            // If no roster member was created, just show success message
-            setSuccessMessage(
-              `Player "${contactData.firstName} ${contactData.lastName}" created successfully`,
-            );
-          }
-        }
-        setError(null);
-        return result.data as ContactType;
-      } else {
-        const errorMessage = result.error?.message || 'Failed to create player';
-        setError(errorMessage);
-        return errorMessage;
-      }
-    },
-    [accountId, seasonId, teamSeasonId, rosterData, setRosterData, setSuccessMessage, setError],
-  );
-
   // Delete contact photo with optimistic updates
   const deleteContactPhoto = useCallback(
     async (contactId: string) => {
@@ -771,7 +614,6 @@ export const useRosterDataManager = (
     fetchSeasonData,
     fetchLeagueData,
     updateRosterMember,
-    updateContact,
     getContactRoster,
     signPlayer,
     releasePlayer,
@@ -779,11 +621,11 @@ export const useRosterDataManager = (
     deletePlayer,
     addManager,
     removeManager,
-    createContact,
     deleteContactPhoto,
     clearError,
     clearSuccessMessage,
     setError,
     setSuccessMessage,
+    setRosterData,
   };
 };

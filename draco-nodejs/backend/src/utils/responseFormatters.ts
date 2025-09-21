@@ -1,6 +1,18 @@
 import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService.js';
-import { RosterMember, TeamRosterMembersType, RosterPlayerType } from '@draco/shared-schemas';
-import { BaseContactType, TeamManagerType } from '@draco/shared-schemas';
+import {
+  BaseContactType,
+  RosterMemberType,
+  TeamRosterMembersType,
+  TeamManagerType,
+  RosterPlayerType,
+  BaseRoleType,
+  RoleWithContactType,
+  RoleCheckResultType,
+  ContactType,
+  TeamManagerWithTeamsType,
+  PagedContactType,
+  ContactRoleType,
+} from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
 import { getContactPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
@@ -11,7 +23,13 @@ import {
   dbTeamSeason,
   dbRosterSeason,
   dbTeamManagerWithContact,
+  dbGlobalRoles,
+  dbContactRoles,
+  dbContactWithRoleAndDetails,
+  dbTeamSeasonManagerContact,
 } from '../repositories/index.js';
+import { ROLE_NAMES } from '../config/roles.js';
+import { PaginationHelper } from './pagination.js';
 
 // todo: delete this once the shared api client is used more widely
 interface ApiResponse<T> {
@@ -34,11 +52,11 @@ export class ContactResponseFormatter {
         phone1: contact.phone1,
         phone2: contact.phone2,
         phone3: contact.phone3,
-        streetaddress: contact.streetaddress,
+        streetAddress: contact.streetaddress,
         city: contact.city,
         state: contact.state,
         zip: contact.zip,
-        dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
+        dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
       },
     };
     return contactEntry;
@@ -58,6 +76,164 @@ export class ContactResponseFormatter {
       contact: contactEntry,
     };
     return rosterPlayer;
+  }
+
+  /**
+   * Transform raw SQL rows into structured contact response
+   */
+  static formatPagedContactRolesResponse(
+    rows: dbContactWithRoleAndDetails[],
+    accountId: bigint,
+    pagination?: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+    includeContactDetails?: boolean,
+  ): PagedContactType {
+    // Group rows by contact ID
+    const contactMap = new Map<string, ContactType>();
+
+    // Process each row
+    for (const row of rows) {
+      const contactId = row.id.toString();
+
+      // Get or create contact entry
+      if (!contactMap.has(contactId)) {
+        const contactEntry: ContactType = {
+          id: contactId,
+          creatoraccountid: accountId.toString(),
+          firstName: row.firstname,
+          lastName: row.lastname,
+          middleName: row.middlename || '',
+          email: row.email || undefined,
+          userId: row.userid || undefined,
+          photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
+          contactroles: [],
+        };
+
+        // Add contact details if available and requested
+        if (includeContactDetails && 'phone1' in row) {
+          const contactRow = row as dbContactWithRoleAndDetails;
+          contactEntry.contactDetails = {
+            phone1: contactRow.phone1,
+            phone2: contactRow.phone2,
+            phone3: contactRow.phone3,
+            streetAddress: contactRow.streetaddress,
+            city: contactRow.city,
+            state: contactRow.state,
+            zip: contactRow.zip,
+            dateOfBirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
+          };
+        }
+
+        contactMap.set(contactId, contactEntry);
+      }
+
+      // Add role if present
+      if (row.roleid && row.roledata) {
+        const contact = contactMap.get(contactId)!;
+
+        // Map role ID to role name
+        const roleName = ROLE_NAMES[row.roleid];
+
+        const role = {
+          id: row.contactrole_id?.toString() || `${row.roleid}-${row.roledata}`,
+          roleId: row.roleid,
+          roleName: roleName,
+          roleData: row.roledata.toString(),
+        };
+
+        // Add context name if available (team or league name)
+        if (row.role_context_name) {
+          (role as { contextName?: string }).contextName = row.role_context_name;
+        }
+
+        contact.contactroles?.push(role);
+      }
+    }
+
+    // Convert map to array and sort
+    const allContacts = Array.from(contactMap.values()).sort((a, b) => {
+      const lastNameCompare = a.lastName.localeCompare(b.lastName);
+      if (lastNameCompare !== 0) return lastNameCompare;
+      return a.firstName.localeCompare(b.firstName);
+    });
+
+    // Handle pagination with efficient hasNext approach
+    if (pagination) {
+      // Check if we have more results than requested (the +1 record)
+      const hasNext = allContacts.length > pagination.limit;
+
+      // Remove the extra contact if present
+      const contacts = hasNext ? allContacts.slice(0, pagination.limit) : allContacts;
+
+      return {
+        contacts,
+        total: contacts.length, // Only the contacts returned, not global total
+        pagination: {
+          page: pagination.page,
+          limit: pagination.limit,
+          hasNext,
+          hasPrev: pagination.page > 1,
+        },
+      };
+    }
+
+    // Return all contacts without pagination
+    return {
+      contacts: allContacts,
+      total: allContacts.length,
+    };
+  }
+
+  static formatPagedContactResponse(
+    accountId: bigint,
+    contactsWithTotalCount: { contacts: dbBaseContact[]; total: number },
+    includeContactDetails?: boolean,
+    pagination?: { page: number; limit: number },
+  ): PagedContactType {
+    // Transform response (simple contacts without roles)
+    const transformedContacts: ContactType[] = contactsWithTotalCount.contacts.map((contact) => ({
+      id: contact.id.toString(),
+      creatoraccountid: accountId.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      middleName: contact.middlename,
+      email: contact.email || undefined,
+      userId: contact.userid || undefined,
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      contactroles: [],
+      ...(includeContactDetails && {
+        contactDetails: {
+          phone1: contact.phone1,
+          phone2: contact.phone2,
+          phone3: contact.phone3,
+          streetAddress: contact.streetaddress,
+          city: contact.city,
+          state: contact.state,
+          zip: contact.zip,
+          dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
+        },
+      }),
+    }));
+
+    // Format response
+    if (pagination) {
+      const response = PaginationHelper.formatResponse(
+        transformedContacts,
+        pagination.page,
+        pagination.limit,
+        contactsWithTotalCount.total,
+      );
+
+      return {
+        contacts: response.data,
+        total: response.pagination.total,
+        pagination: response.pagination,
+      };
+    }
+
+    return {
+      contacts: transformedContacts,
+      total: contactsWithTotalCount.total,
+    };
   }
 }
 
@@ -129,6 +305,39 @@ export class TeamResponseFormatter {
       },
     };
   }
+
+  static formatTeamManagerWithTeams(
+    accountId: bigint,
+    teamManagersResult: dbTeamSeasonManagerContact[],
+  ): TeamManagerWithTeamsType[] {
+    // Group team managers by contact
+    const teamManagersMap = new Map<string, TeamManagerWithTeamsType>();
+
+    for (const row of teamManagersResult) {
+      const contactId = row.contacts.id.toString();
+
+      if (!teamManagersMap.has(contactId)) {
+        teamManagersMap.set(contactId, {
+          id: contactId,
+          firstName: row.contacts.firstname,
+          lastName: row.contacts.lastname,
+          middleName: '', // Team manager queries don't include middle name
+          email: row.contacts.email || undefined,
+          photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
+          teams: [],
+        });
+      }
+
+      const manager = teamManagersMap.get(contactId)!;
+      manager.teams.push({
+        teamSeasonId: row.teamsseason.id.toString(),
+        teamName: row.teamsseason.name,
+      });
+    }
+
+    const teamManagers = Array.from(teamManagersMap.values());
+    return teamManagers;
+  }
 }
 
 export class RosterResponseFormatter {
@@ -136,7 +345,7 @@ export class RosterResponseFormatter {
     dbTeamSeason: dbTeamSeason,
     dbRosterMembers: dbRosterSeason[],
   ): TeamRosterMembersType {
-    const rosterMembers: RosterMember[] = dbRosterMembers.map((member) => {
+    const rosterMembers: RosterMemberType[] = dbRosterMembers.map((member) => {
       return this.formatRosterMemberResponse(member);
     });
 
@@ -151,7 +360,7 @@ export class RosterResponseFormatter {
     return teamRosterMembers;
   }
 
-  static formatRosterMemberResponse(member: dbRosterMember): RosterMember {
+  static formatRosterMemberResponse(member: dbRosterMember): RosterMemberType {
     const contact: dbBaseContact = member.roster.contacts;
 
     const contactEntry: BaseContactType = ContactResponseFormatter.formatContactResponse(contact);
@@ -163,7 +372,7 @@ export class RosterResponseFormatter {
       contact: contactEntry,
     };
 
-    const rosterMember: RosterMember = {
+    const rosterMember: RosterMemberType = {
       id: member.id.toString(),
       playerNumber: member.playernumber,
       inactive: member.inactive,
@@ -176,11 +385,11 @@ export class RosterResponseFormatter {
   }
 
   static formatUpdateRosterMemberResponse(
-    rosterMember: RosterMember,
+    rosterMember: RosterMemberType,
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: RosterMember;
+    rosterMember: RosterMemberType;
   }> {
     return {
       success: true,
@@ -192,11 +401,11 @@ export class RosterResponseFormatter {
   }
 
   static formatActivatePlayerResponse(
-    rosterMember: RosterMember,
+    rosterMember: RosterMemberType,
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: RosterMember;
+    rosterMember: RosterMemberType;
   }> {
     return {
       success: true,
@@ -274,5 +483,120 @@ export class ManagerResponseFormatter {
         email: rawManager.contacts.email || undefined,
       },
     };
+  }
+}
+
+export class RoleResponseFormatter {
+  /**
+   * Format the database global roles into the BaseRoleType array
+   * @param dbRoles - The database global roles
+   * @returns The formatted BaseRoleType array
+   */
+  static formatBaseRoles(dbRoles: dbGlobalRoles[]): BaseRoleType[] {
+    return dbRoles.map((role) => ({
+      roleId: role.roleid,
+      name: ROLE_NAMES[role.roleid],
+    }));
+  }
+
+  /**
+   * Format the database global roles into the string array
+   * @param dbRoles - The database global roles
+   * @returns The formatted string array
+   */
+  static formatGlobalRoles(dbRoles: dbGlobalRoles[]): string[] {
+    return dbRoles.map((role) => role.roleid);
+  }
+
+  /**
+   * Format the database contact role into the ContactRoleType
+   * @param dbContactRole - The database contact role
+   * @returns The formatted ContactRoleType
+   */
+  static formatContactRole(dbContactRole: dbContactRoles): ContactRoleType {
+    return {
+      id: dbContactRole.id.toString(),
+      roleId: dbContactRole.roleid,
+      roleData: dbContactRole.roledata.toString(),
+    };
+  }
+
+  /**
+   * Format the database contact roles into the RoleWithContactType array
+   * @param dbContact - The database contact
+   * @param dbContactRoles - The database contact roles
+   * @returns The formatted RoleWithContactType array
+   */
+  static formatRoleWithContact(
+    dbContact: dbBaseContact,
+    dbContactRoles: dbContactRoles[],
+    contextNames?: Map<string, string>,
+  ): RoleWithContactType[] {
+    return dbContactRoles.map((role) => {
+      const roleName = ROLE_NAMES[role.roleid];
+      const contextKey = `${role.roleid}-${role.roledata}`;
+      const contextName = contextNames?.get(contextKey);
+
+      return {
+        id: role.id.toString(),
+        contact: {
+          id: dbContact.id.toString(),
+        },
+        roleId: role.roleid,
+        roleName: roleName,
+        roleData: role.roledata.toString(),
+        contextName: contextName,
+        accountId: role.accountid.toString(),
+      };
+    });
+  }
+
+  /**
+   * Format the database global role into the RoleCheckResultType
+   * @param dbGlobalRole - The database global role
+   * @returns The formatted RoleCheckResultType
+   */
+  static formatGlobalRoleCheckResult(dbGlobalRole: string): RoleCheckResultType {
+    return {
+      roleId: dbGlobalRole,
+      accountId: '',
+      userId: '',
+      hasRole: true,
+      roleLevel: 'global',
+      context: '',
+    };
+  }
+
+  /**
+   * Format the database contact role into the RoleCheckResultType
+   * @param dbContactRole - The database contact role
+   * @returns The formatted RoleCheckResultType
+   */
+  static formatContactRoleCheckResult(dbContactRole: dbContactRoles): RoleCheckResultType {
+    return {
+      roleId: dbContactRole.roleid,
+      accountId: dbContactRole.accountid.toString(),
+      userId: dbContactRole.contactid.toString(),
+      hasRole: true,
+      roleLevel: 'contact',
+      context: dbContactRole.accountid.toString(),
+    };
+  }
+
+  /**
+   * Format the database contact roles into the RoleWithContactType array
+   * @param dbContactRoles - The database contact roles
+   * @returns The formatted RoleWithContactType array
+   */
+  static formatRoleWithContacts(dbContactRoles: dbContactRoles[]): RoleWithContactType[] {
+    return dbContactRoles.map((role) => ({
+      id: role.id.toString(),
+      contact: {
+        id: role.contactid.toString(),
+      },
+      roleId: role.roleid,
+      roleData: role.roledata.toString(),
+      accountId: role.accountid.toString(),
+    }));
   }
 }

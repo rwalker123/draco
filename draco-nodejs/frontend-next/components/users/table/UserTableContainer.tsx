@@ -78,60 +78,16 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
 }) => {
   // Component initialization
 
-  // Use external search props or fall back to local state
+  // External search is now the only supported mode - no local search fallback
   const currentSearchTerm = externalSearchTerm ?? '';
-  const isExternalSearch = Boolean(
-    externalSearchTerm !== undefined && externalOnSearchChange && externalOnSearch,
-  );
-
-  // Local state for enhanced functionality
-  const [localSearchTerm, setLocalSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<string>('lastName');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentViewMode, setCurrentViewMode] = useState<ViewMode>(viewMode);
 
-  // Use the appropriate search term based on mode
-  const searchTerm = isExternalSearch ? currentSearchTerm : localSearchTerm;
-
-  // Enhance users with computed properties
+  // Enhance users with computed properties only - no local filtering or sorting
+  // Server provides the correct order and filtering
   const enhancedUsers = useEnhancedUsers(users);
 
-  // Apply search filtering and sorting
-  const locallyFilteredUsers = useMemo(() => {
-    let filtered = enhancedUsers;
-
-    // Apply search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (user) =>
-          user.displayName.toLowerCase().includes(searchLower) ||
-          user.email?.toLowerCase().includes(searchLower) ||
-          user.contactDetails?.phone1?.includes(searchTerm) ||
-          user.contactDetails?.phone2?.includes(searchTerm) ||
-          user.contactDetails?.phone3?.includes(searchTerm),
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const aValue = a[sortField as keyof EnhancedUser];
-      const bValue = b[sortField as keyof EnhancedUser];
-
-      if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return sortDirection === 'asc' ? -1 : 1;
-      if (bValue == null) return sortDirection === 'asc' ? 1 : -1;
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  }, [enhancedUsers, searchTerm, sortField, sortDirection]);
-
-  // When using external search, don't use local filtering - users are already filtered by backend
-  const filteredUsers = isExternalSearch ? enhancedUsers : locallyFilteredUsers;
+  // Always use enhanced users - server handles all filtering and sorting
+  const filteredUsers = enhancedUsers;
 
   // Note: Virtualization is handled by UserTableWrapper now
 
@@ -167,37 +123,31 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
     return [...defaultActions, ...customActions];
   }, [customActions, onAssignRole]);
 
-  // Stable event handlers with proper memoization
+  // Stable event handlers - external search only
   const handleSearchChange = useCallback(
     (term: string) => {
-      if (isExternalSearch && externalOnSearchChange) {
+      if (externalOnSearchChange) {
         externalOnSearchChange(term);
-      } else {
-        setLocalSearchTerm(term);
       }
     },
-    [isExternalSearch, externalOnSearchChange],
+    [externalOnSearchChange],
   );
 
   const handleSearchSubmit = useCallback(() => {
-    if (isExternalSearch && externalOnSearch) {
+    if (externalOnSearch) {
       externalOnSearch();
     }
-    // For local search, it's applied automatically via useUserFiltering
-  }, [isExternalSearch, externalOnSearch]);
+  }, [externalOnSearch]);
 
   const handleSearchClear = useCallback(() => {
-    if (isExternalSearch && externalOnClearSearch) {
+    if (externalOnClearSearch) {
       externalOnClearSearch();
-    } else {
-      setLocalSearchTerm('');
     }
-  }, [isExternalSearch, externalOnClearSearch]);
+  }, [externalOnClearSearch]);
 
   const handleSortChange = useCallback(
     (field: string, direction: SortDirection) => {
-      setSortField(field);
-      setSortDirection(direction);
+      // Forward to external sort handler - no local sorting
       onSortChange?.(field, direction);
     },
     [onSortChange],
@@ -280,7 +230,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
         <UserTableToolbar
           userCount={filteredUsers.length}
           selectedUsers={[]} // Will be provided by UserSelectionProvider
-          searchTerm={searchTerm}
+          searchTerm={currentSearchTerm}
           onSearchChange={handleSearchChange}
           onSearchSubmit={handleSearchSubmit}
           onSearchClear={handleSearchClear}
@@ -299,8 +249,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
         <UserTableHeader
           users={filteredUsers}
           viewMode={currentViewMode}
-          sortField={sortField}
-          sortDirection={sortDirection}
           selectionMode={selectionConfig.mode}
           selectionState={{
             selectedIds: new Set(),
@@ -333,7 +281,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
               .onRevokeRegistration
           }
           getRoleDisplayName={getRoleDisplayName}
-          searchTerm={searchTerm}
+          searchTerm={currentSearchTerm}
           hasFilters={false}
           loadingDelay={500}
           skeletonRows={5}

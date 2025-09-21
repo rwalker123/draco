@@ -1,13 +1,11 @@
-import { PrismaClient, aspnetusers, aspnetuserroles, aspnetroles } from '@prisma/client';
+import { PrismaClient, aspnetusers, aspnetroles, aspnetuserroles } from '@prisma/client';
 import { IUserRepository } from '../interfaces/IUserRepository.js';
 
 export class PrismaUserRepository implements IUserRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: bigint): Promise<aspnetusers | null> {
-    return this.prisma.aspnetusers.findUnique({
-      where: { id: String(id) },
-    });
+  async findById(_id: bigint): Promise<aspnetusers | null> {
+    throw Error('findById is not implemented due to no bigint id in users table');
   }
 
   async findMany(where?: Record<string, unknown>): Promise<aspnetusers[]> {
@@ -20,32 +18,27 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
-  async update(id: bigint, data: Partial<aspnetusers>): Promise<aspnetusers> {
-    return this.prisma.aspnetusers.update({
-      where: { id: String(id) },
-      data,
-    });
+  async update(_id: bigint, _data: Partial<aspnetusers>): Promise<aspnetusers> {
+    throw Error('update is not implemented due to no bigint id in users table');
   }
 
-  async delete(id: bigint): Promise<aspnetusers> {
-    return this.prisma.aspnetusers.delete({
-      where: { id: String(id) },
-    });
+  async delete(_id: bigint): Promise<aspnetusers> {
+    throw Error('delete is not implemented due to no bigint id in users table');
   }
 
   async count(where?: Record<string, unknown>): Promise<number> {
     return this.prisma.aspnetusers.count({ where });
   }
 
-  async findByEmail(email: string): Promise<aspnetusers | null> {
-    return this.prisma.aspnetusers.findFirst({
-      where: { email },
-    });
-  }
-
   async findByUsername(username: string): Promise<aspnetusers | null> {
     return this.prisma.aspnetusers.findUnique({
       where: { username },
+    });
+  }
+
+  async findByUserId(userId: string): Promise<aspnetusers | null> {
+    return this.prisma.aspnetusers.findUnique({
+      where: { id: userId },
     });
   }
 
@@ -70,6 +63,13 @@ export class PrismaUserRepository implements IUserRepository {
     return this.prisma.aspnetusers.update({
       where: { id: userId },
       data: { passwordhash: hashedPassword },
+    });
+  }
+
+  async updateUser(userId: string, data: Partial<aspnetusers>): Promise<aspnetusers> {
+    return this.prisma.aspnetusers.update({
+      where: { id: userId },
+      data,
     });
   }
 }

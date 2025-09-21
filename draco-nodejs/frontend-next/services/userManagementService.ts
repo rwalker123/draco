@@ -6,10 +6,10 @@ import {
 import { ContactTransformationService } from './contactTransformationService';
 import { handleApiErrorResponse } from '../utils/errorHandling';
 import {
-  Contact,
   ContactType,
   CreateContactType,
   RoleWithContactType,
+  ContactRoleType,
 } from '@draco/shared-schemas';
 
 // Pagination interface for API responses
@@ -36,77 +36,17 @@ export class UserManagementService {
    * Transform ContactUpdateResponse (backend format) to Contact (frontend format)
    * Delegates to shared ContactTransformationService
    */
-  private transformContactResponseToContact(response: ContactUpdateResponse): Contact {
+  private transformContactResponseToContact(response: ContactUpdateResponse): ContactType {
     return ContactTransformationService.transformContactUpdateResponse(response);
   }
 
   /**
-   * Fetch users with optional search and pagination
-   */
-  async fetchUsers(accountId: string, params: UserSearchParams): Promise<UsersResponse> {
-    const searchParams = new URLSearchParams();
-
-    // Add pagination parameters
-    searchParams.append('page', params.page.toString());
-    searchParams.append('limit', params.limit.toString());
-
-    // Add sorting parameters
-    if (params.sortBy) searchParams.append('sortBy', params.sortBy);
-    if (params.sortOrder) searchParams.append('sortOrder', params.sortOrder);
-
-    // Add roles parameter to include role data
-    searchParams.append('roles', 'true');
-
-    // Add contact details parameter to include contact information
-    searchParams.append('contactDetails', 'true');
-
-    // Add seasonId parameter if provided
-    if (params.seasonId) {
-      searchParams.append('seasonId', params.seasonId);
-    }
-
-    // Add onlyWithRoles parameter if provided
-    if (params.onlyWithRoles) {
-      searchParams.append('onlyWithRoles', 'true');
-    }
-
-    const response = await fetch(`/api/accounts/${accountId}/contacts?${searchParams.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to load users');
-    }
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load users');
-    }
-
-    // Transform contacts to users format for frontend compatibility
-    // Backend returns contacts array with contactroles, but frontend expects users with roles
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => contact);
-
-    return {
-      users: usersWithRoles,
-      pagination: data.pagination || {
-        page: 1,
-        limit: 10,
-        hasNext: false,
-        hasPrev: false,
-      },
-    };
-  }
-
-  /**
-   * Search users by name or email
+   * Search users by name or email, or fetch all users if query is empty
+   * This unified method handles both search and list-all functionality
    */
   async searchUsers(
     accountId: string,
-    query: string,
+    query: string = '', // Default to empty string for list-all
     seasonId?: string | null,
     onlyWithRoles?: boolean,
     pagination?: {
@@ -117,9 +57,15 @@ export class UserManagementService {
     },
   ): Promise<{ users: ContactType[]; pagination: PaginationInfo }> {
     const searchParams = new URLSearchParams();
-    searchParams.set('q', query);
+
+    // Only add query parameter if it's not empty
+    if (query.trim()) {
+      searchParams.set('q', query);
+    }
+
     searchParams.set('roles', 'true');
     searchParams.set('contactDetails', 'true');
+
     if (seasonId) {
       searchParams.set('seasonId', seasonId);
     }
@@ -130,7 +76,7 @@ export class UserManagementService {
     // Add pagination parameters if provided
     if (pagination) {
       if (pagination.page !== undefined) {
-        searchParams.set('page', (pagination.page + 1).toString()); // Backend uses 1-based pagination
+        searchParams.set('page', pagination.page.toString());
       }
       if (pagination.limit !== undefined) {
         searchParams.set('limit', pagination.limit.toString());
@@ -159,12 +105,12 @@ export class UserManagementService {
     }
 
     const data = await response.json();
-    if (!data.success) {
+    if (!data) {
       throw new Error(data.message || 'Failed to search users');
     }
 
     // Transform contacts to users format for frontend compatibility
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => contact);
+    const usersWithRoles = (data.contacts || []).map((contact: ContactType) => contact);
 
     return {
       users: usersWithRoles,
@@ -180,7 +126,7 @@ export class UserManagementService {
    * Fetch available roles
    */
   async fetchRoles(): Promise<Role[]> {
-    const response = await fetch('/api/roleTest/role-ids', {
+    const response = await fetch('/api/roles/role-ids', {
       headers: {
         Authorization: `Bearer ${this.token}`,
         'Content-Type': 'application/json',
@@ -235,11 +181,11 @@ export class UserManagementService {
     }
 
     const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load automatic role holders');
+    if (data.error) {
+      throw new Error(data.error || 'Failed to load automatic role holders');
     }
 
-    return data.data;
+    return data;
   }
 
   /**
@@ -258,7 +204,7 @@ export class UserManagementService {
       accountId: string;
     }>;
   }> {
-    const response = await fetch(`/api/roleTest/user-roles?accountId=${accountId}`, {
+    const response = await fetch(`/api/roles/user-roles?accountId=${accountId}`, {
       headers: {
         Authorization: `Bearer ${this.token}`,
         'Content-Type': 'application/json',
@@ -311,7 +257,7 @@ export class UserManagementService {
     }
 
     const result = await response.json();
-    return result.data.assignedRole;
+    return result;
   }
 
   /**
@@ -322,7 +268,7 @@ export class UserManagementService {
     contactId: string,
     roleId: string,
     roleData: string,
-  ): Promise<void> {
+  ): Promise<ContactRoleType> {
     const response = await fetch(
       `/api/accounts/${accountId}/contacts/${contactId}/roles/${roleId}`,
       {
@@ -340,6 +286,9 @@ export class UserManagementService {
     if (!response.ok) {
       await handleApiErrorResponse(response, 'Failed to remove role');
     }
+
+    const data = await response.json();
+    return data; // Backend now returns ContactRoleType with unique id
   }
 
   /**
@@ -349,7 +298,7 @@ export class UserManagementService {
     accountId: string,
     contactData: CreateContactType,
     photoFile?: File | null,
-  ): Promise<Contact> {
+  ): Promise<ContactType> {
     console.log('UserManagementService: Creating contact', { accountId, hasPhoto: !!photoFile });
 
     // Filter out undefined/empty values and format dates
@@ -375,8 +324,8 @@ export class UserManagementService {
     if (contactData.contactDetails?.phone3 !== undefined) {
       backendData.phone3 = contactData.contactDetails.phone3;
     }
-    if (contactData.contactDetails?.streetaddress !== undefined) {
-      backendData.streetaddress = contactData.contactDetails.streetaddress;
+    if (contactData.contactDetails?.streetAddress !== undefined) {
+      backendData.streetAddress = contactData.contactDetails.streetAddress;
     }
     if (contactData.contactDetails?.city !== undefined) {
       backendData.city = contactData.contactDetails.city;
@@ -388,23 +337,23 @@ export class UserManagementService {
       backendData.zip = contactData.contactDetails.zip;
     }
     if (
-      contactData.contactDetails?.dateofbirth !== undefined &&
-      contactData.contactDetails?.dateofbirth !== '' &&
-      contactData.contactDetails?.dateofbirth !== null
+      contactData.contactDetails?.dateOfBirth !== undefined &&
+      contactData.contactDetails?.dateOfBirth !== '' &&
+      contactData.contactDetails?.dateOfBirth !== null
     ) {
       // Convert ISO datetime to YYYY-MM-DD format for backend validation
       try {
-        const date = new Date(contactData.contactDetails.dateofbirth);
+        const date = new Date(contactData.contactDetails.dateOfBirth);
         if (!isNaN(date.getTime())) {
           backendData.dateofbirth = date.toISOString().split('T')[0];
         }
       } catch {
-        console.warn('Invalid dateofbirth format:', contactData.contactDetails.dateofbirth);
+        console.warn('Invalid dateofbirth format:', contactData.contactDetails.dateOfBirth);
         // Don't include invalid dates
       }
-    } else if (contactData.contactDetails?.dateofbirth === null) {
+    } else if (contactData.contactDetails?.dateOfBirth === null) {
       // Explicitly set to null when provided as null
-      backendData.dateofbirth = null;
+      backendData.dateOfBirth = null;
     }
 
     console.log('UserManagementService: Filtered backendData for creation:', backendData);
@@ -516,11 +465,11 @@ export class UserManagementService {
     }
 
     const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to check dependencies');
+    if (data.error) {
+      throw new Error(data.error || 'Failed to check dependencies');
     }
 
-    return data.data;
+    return data;
   }
 
   /**
@@ -550,11 +499,11 @@ export class UserManagementService {
     }
 
     const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to delete contact');
+    if (data.error) {
+      throw new Error(data.error || 'Failed to delete contact');
     }
 
-    return data.data;
+    return data;
   }
 
   /**

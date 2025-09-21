@@ -10,16 +10,16 @@ import VirtualScrollContainer, {
   createVirtualScrollConfig,
 } from '../../../common/VirtualScrollContainer';
 import { VirtualUserRendererFactory, shouldVirtualize } from '../renderers/VirtualUserRenderers';
-import { Contact, ContactRoleType, ContactType } from '@draco/shared-schemas';
+import { ContactRoleType, BaseContactType } from '@draco/shared-schemas';
 
 interface UserCardGridProps {
   users: EnhancedUser[];
   cardSize: CardSize;
   viewConfig: UserViewConfig;
-  onAssignRole: (user: ContactType) => Promise<void>;
-  onRemoveRole: (user: ContactType, role: ContactRoleType) => Promise<void>;
-  onEditContact?: (contact: Contact) => Promise<void>;
-  onDeleteContact?: (contact: Contact) => Promise<void>;
+  onAssignRole: (user: BaseContactType) => Promise<void>;
+  onRemoveRole: (user: BaseContactType, role: ContactRoleType) => Promise<void>;
+  onEditContact?: (contact: BaseContactType) => Promise<void>;
+  onDeleteContact?: (contact: BaseContactType) => Promise<void>;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
   canManageUsers: boolean;

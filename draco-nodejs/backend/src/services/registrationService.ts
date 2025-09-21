@@ -1,359 +1,181 @@
-import prisma from '../lib/prisma.js';
-import { AuthService } from './authService.js';
-import { ContactValidationService, ValidationType } from '../utils/contactValidation.js';
-import validator from 'validator';
-
-interface ServiceResult<T> {
-  success: boolean;
-  message?: string;
-  statusCode?: number;
-  payload?: T;
-}
-
-interface NewUserPayload {
-  email: string;
-  password: string;
-  firstName: string;
-  middleName?: string;
-  lastName: string;
-  accountId: bigint;
-  validationType?: ValidationType;
-  streetAddress?: string;
-  dateOfBirth?: string;
-}
-
-interface ExistingUserPayload {
-  usernameOrEmail: string;
-  password: string;
-  firstName: string;
-  middleName?: string;
-  lastName?: string;
-  accountId: bigint;
-  validationType?: ValidationType;
-  streetAddress?: string;
-  dateOfBirth?: string;
-}
+import {
+  AuthenticationError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from '../utils/customErrors.js';
+import {
+  BaseContactType,
+  ContactValidationType,
+  ContactValidationWithSignInType,
+  RegisteredUserType,
+} from '@draco/shared-schemas';
+import { ServiceFactory } from './serviceFactory.js';
+import { Mutex } from 'async-mutex';
 
 export class RegistrationService {
-  private readonly authService = new AuthService();
+  private readonly authService = ServiceFactory.getAuthService();
+  private readonly contactService = ServiceFactory.getContactService();
+  private userCreateMutex = new Mutex();
 
-  async registerAndCreateContactNewUser(data: NewUserPayload): Promise<
-    ServiceResult<{
-      token: string;
-      user: { id: string; username: string; email: string };
-      contact: unknown;
-    }>
-  > {
-    const {
-      email,
-      password,
-      firstName,
-      middleName,
-      lastName,
-      accountId,
-      validationType,
-      streetAddress,
-      dateOfBirth,
-    } = data;
+  /**
+   * Register and create a contact for a new user
+   * @param data - New user payload
+   * @returns Service result with token, user, and contact
+   */
+  async registerAndCreateContactNewUser(
+    accountId: bigint,
+    data: ContactValidationWithSignInType,
+  ): Promise<RegisteredUserType> {
+    return await this.userCreateMutex.runExclusive(async () => {
+      // Step 1: Find and validate contact
+      const validatedContact = await this.findAndValidateContact(accountId, data);
 
-    // Basic validation
-    if (!email || !password || !firstName || !lastName) {
-      return { success: false, statusCode: 400, message: 'Missing required fields' };
-    }
-    if (!validator.isEmail(email)) {
-      return { success: false, statusCode: 400, message: 'Invalid email format' };
-    }
-    if (password.length < 6) {
-      return { success: false, statusCode: 400, message: 'Password must be at least 6 characters' };
-    }
-
-    // Validate contact information FIRST (before creating user)
-    if (validationType) {
-      const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
-        firstName,
-        middleName,
-        lastName,
-        validationType,
-        streetAddress,
-        dateOfBirth,
-        skipUserIdCheck: true, // Allow finding contacts regardless of userid status
-      });
-
-      if (!validationResult.success) {
-        return {
-          success: false,
-          statusCode: validationResult.statusCode || 400,
-          message: validationResult.error || 'Contact validation failed',
-        };
+      if (!validatedContact) {
+        throw new ConflictError('Contact validation failed');
       }
 
       // If contact was found, check if it's already linked to another user
-      if (validationResult.contact && validationResult.contact.userid) {
-        return {
-          success: false,
-          statusCode: 409,
-          message: 'This contact is already registered to another user.',
-        };
+      if (validatedContact.userId) {
+        throw new ConflictError('This contact is already registered to another user.');
       }
-    }
 
-    return await prisma.$transaction(async (tx) => {
-      // Step 1: Find and validate contact again within transaction (to avoid race conditions)
-      let contact;
-      if (validationType) {
-        const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
-          firstName,
-          middleName,
-          lastName,
-          validationType,
-          streetAddress,
-          dateOfBirth,
-          skipUserIdCheck: true, // Allow finding contacts regardless of userid status
-        });
-
-        if (!validationResult.success) {
-          return {
-            success: false,
-            statusCode: validationResult.statusCode || 400,
-            message: validationResult.error || 'Contact validation failed',
-          } as ServiceResult<never>;
-        }
-
-        // If contact was found, check if it's already linked to another user
-        if (validationResult.contact && validationResult.contact.userid) {
-          return {
-            success: false,
-            statusCode: 409,
-            message: 'This contact is already registered to another user.',
-          } as ServiceResult<never>;
-        }
-
-        contact = validationResult.contact!;
+      if (!data.userName) {
+        throw new ValidationError('userName is required');
       }
 
       // Step 2: Register user via AuthService (WITHIN TRANSACTION)
-      const registerResult = await this.authService.register(
-        {
-          username: email,
-          email,
-          password,
-          firstName,
-          lastName,
-        },
-        tx,
-      );
-      if (!registerResult.success || !registerResult.token || !registerResult.user) {
-        return {
-          success: false,
-          statusCode: 400,
-          message: registerResult.message || 'User registration failed',
-        } as ServiceResult<never>;
+      const registerResult = await this.authService.register({
+        userName: data.userName,
+        password: data.password,
+      });
+
+      if (!registerResult || !registerResult.token || !registerResult.id) {
+        throw new ConflictError('User registration failed');
       }
 
-      let linkedContact;
-      if (validationType && contact) {
-        // Step 3: Link existing contact to new user
-        linkedContact = await tx.contacts.update({
-          where: { id: contact.id },
-          data: { userid: registerResult.user.id },
-        });
-      } else {
-        // Legacy: Create new contact (for backward compatibility when no validation type provided)
-        linkedContact = await tx.contacts.create({
-          data: {
-            userid: registerResult.user.id,
-            creatoraccountid: accountId,
-            firstname: firstName,
-            lastname: lastName,
-            middlename: middleName || '',
-            email,
-            dateofbirth: new Date('1900-01-01'),
-          },
-        });
-      }
+      // Step 3: Link existing contact to new user
+      const linkedContact = await this.contactService.registerContactUser(
+        registerResult.id,
+        BigInt(validatedContact.id),
+      );
 
       return {
-        success: true,
-        payload: {
-          token: registerResult.token,
-          user: registerResult.user,
-          contact: {
-            id: linkedContact.id.toString(),
-            firstname: linkedContact.firstname,
-            lastname: linkedContact.lastname,
-            middlename: linkedContact.middlename,
-            email: linkedContact.email || undefined,
-          },
-        },
-      } as ServiceResult<{
-        token: string;
-        user: { id: string; username: string; email: string };
-        contact: unknown;
-      }>;
+        id: registerResult.id,
+        userName: registerResult.userName,
+        token: registerResult.token,
+        contact: linkedContact,
+      };
     });
   }
 
-  async loginAndCreateContactExistingUser(data: ExistingUserPayload): Promise<
-    ServiceResult<{
-      token: string;
-      user: { id: string; username: string; email: string };
-      contact: unknown;
-    }>
-  > {
-    const {
-      usernameOrEmail,
-      password,
-      firstName,
-      middleName,
-      lastName,
-      accountId,
-      validationType,
-      streetAddress,
-      dateOfBirth,
-    } = data;
-
-    if (!usernameOrEmail || !password || !firstName) {
-      return { success: false, statusCode: 400, message: 'Missing required fields' };
-    }
-
+  async loginAndCreateContactExistingUser(
+    accountId: bigint,
+    data: ContactValidationWithSignInType,
+  ): Promise<RegisteredUserType> {
     // Step 1: Login user FIRST via AuthService
-    const loginResult = await this.authService.login({ username: usernameOrEmail, password });
+    const authenticatedUser = await this.authService.login({
+      userName: data.userName,
+      password: data.password,
+    });
 
-    if (!loginResult.success || !loginResult.token || !loginResult.user) {
-      return {
-        success: false,
-        statusCode: 401,
-        message: loginResult.message || 'Invalid credentials',
-      };
+    if (!authenticatedUser || !authenticatedUser.token || !authenticatedUser.id) {
+      throw new AuthenticationError('Invalid credentials');
     }
 
-    // Extract user and token (TypeScript now knows they exist)
-    const { user: authenticatedUser, token } = loginResult;
-
-    return await prisma.$transaction(async (tx) => {
+    return await this.userCreateMutex.runExclusive(async () => {
       // Step 2: Check if user is already registered in this account
-      const existing = await tx.contacts.findFirst({
-        where: { userid: authenticatedUser.id, creatoraccountid: accountId },
-      });
+      const existingContact = await this.contactService.getContactByUserId(
+        authenticatedUser.id,
+        accountId,
+      );
 
-      if (existing) {
+      if (existingContact) {
         // User is already registered with this account
         // If validation info was provided, check if they're trying to register as a different contact
-        if (validationType && (firstName || lastName)) {
-          const existingFirstName = (existing.firstname || '').toLowerCase().trim();
-          const existingLastName = (existing.lastname || '').toLowerCase().trim();
-          const providedFirstName = (firstName || '').toLowerCase().trim();
-          const providedLastName = (lastName || '').toLowerCase().trim();
+        const existingFirstName = (existingContact.firstName || '').toLowerCase().trim();
+        const existingLastName = (existingContact.lastName || '').toLowerCase().trim();
+        const providedFirstName = (data.firstName || '').toLowerCase().trim();
+        const providedLastName = (data.lastName || '').toLowerCase().trim();
 
-          // Check if the provided names match the existing contact
-          const namesMatch =
-            existingFirstName === providedFirstName && existingLastName === providedLastName;
+        // Check if the provided names match the existing contact
+        const namesMatch =
+          existingFirstName === providedFirstName && existingLastName === providedLastName;
 
-          if (!namesMatch) {
-            // User is trying to register as a different contact
-            return {
-              success: false,
-              statusCode: 409,
-              message: `You are already registered as ${existing.firstname} ${existing.lastname}. You cannot register as a different contact in this account.`,
-            };
-          }
+        if (!namesMatch) {
+          // User is trying to register as a different contact
+          throw new ConflictError(
+            `You are already registered as ${existingContact.firstName} ${existingContact.lastName}. You cannot register as a different contact in this account.`,
+          );
         }
 
         // Names match or no validation info provided - return success with existing contact
         return {
-          success: true,
-          payload: {
-            token,
-            user: authenticatedUser,
-            contact: {
-              id: existing.id.toString(),
-              firstname: existing.firstname,
-              lastname: existing.lastname,
-              middlename: existing.middlename,
-              email: existing.email || undefined,
-            },
-          },
-        } as ServiceResult<{
-          token: string;
-          user: { id: string; username: string; email: string };
-          contact: unknown;
-        }>;
+          id: authenticatedUser.id,
+          userName: authenticatedUser.userName,
+          token: authenticatedUser.token,
+          contact: existingContact,
+        };
       }
 
-      let linkedContact;
-      if (validationType) {
-        // Step 3: Find contact matching validation info (with skipUserIdCheck=true)
-        const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
-          firstName,
-          middleName,
-          lastName: lastName || '',
-          validationType,
-          streetAddress,
-          dateOfBirth,
-          skipUserIdCheck: true, // Allow finding contacts regardless of userid status
-        });
+      // Step 3: Find contact matching validation info (with skipUserIdCheck=true)
+      const validationResult = await this.findAndValidateContact(accountId, data);
 
-        if (!validationResult.success) {
-          return {
-            success: false,
-            statusCode: validationResult.statusCode || 400,
-            message: validationResult.error || 'Contact validation failed',
-          } as ServiceResult<never>;
-        }
+      if (!validationResult) {
+        throw new ConflictError('Contact validation failed');
+      }
 
-        const contact = validationResult.contact!;
+      const contact = validationResult;
 
-        // Step 4: Check userid status and handle appropriately
-        if (contact.userid === null) {
-          // Contact is unlinked, link it to the authenticated user
-          linkedContact = await tx.contacts.update({
-            where: { id: contact.id },
-            data: { userid: authenticatedUser.id },
-          });
-        } else if (contact.userid === authenticatedUser.id) {
-          // Contact is already linked to this user (shouldn't happen due to step 2, but handle gracefully)
-          linkedContact = contact;
-        } else {
-          // Contact is linked to a different user
-          return {
-            success: false,
-            statusCode: 409,
-            message: 'This contact is already registered to another user.',
-          } as ServiceResult<never>;
-        }
+      let linkedContact = null;
+
+      // Step 4: Check userid status and handle appropriately
+      if (contact.userId === null) {
+        // Contact is unlinked, link it to the authenticated user
+        linkedContact = await this.contactService.registerContactUser(
+          authenticatedUser.id,
+          BigInt(contact.id),
+        );
       } else {
-        // Legacy: Create new contact (for backward compatibility when no validation type provided)
-        linkedContact = await tx.contacts.create({
-          data: {
-            userid: authenticatedUser.id,
-            creatoraccountid: accountId,
-            firstname: firstName,
-            lastname: lastName || '',
-            middlename: middleName || '',
-            email: authenticatedUser.email || null,
-            dateofbirth: new Date('1900-01-01'),
-          },
-        });
+        // Contact is linked to a different user
+        throw new ConflictError('This contact is already registered to another user.');
       }
-
       return {
-        success: true,
-        payload: {
-          token,
-          user: authenticatedUser,
-          contact: {
-            id: linkedContact.id.toString(),
-            firstname: linkedContact.firstname,
-            lastname: linkedContact.lastname,
-            middlename: linkedContact.middlename,
-            email: linkedContact.email || undefined,
-          },
-        },
-      } as ServiceResult<{
-        token: string;
-        user: { id: string; username: string; email: string };
-        contact: unknown;
-      }>;
+        id: authenticatedUser.id,
+        userName: authenticatedUser.userName,
+        token: authenticatedUser.token,
+        contact: linkedContact,
+      };
     });
+  }
+
+  /**
+   * Find and validate a contact for registration
+   * @param accountId - Account ID to search within
+   * @param input - Contact validation input
+   * @returns Validation result with contact if found
+   */
+  private async findAndValidateContact(
+    accountId: bigint,
+    input: ContactValidationType,
+  ): Promise<BaseContactType> {
+    const candidates = await this.contactService.findAndValidateContact(accountId, input);
+    if (candidates.length === 0) {
+      throw new NotFoundError(
+        'No contact found matching your information. Please verify your details or contact the administrator.',
+      );
+    }
+
+    if (candidates.length > 1) {
+      throw new ConflictError('Multiple contacts found. Please contact administrator.');
+    }
+
+    const contact = candidates[0];
+
+    if (contact.userId) {
+      throw new ConflictError('This contact is already registered to another user.');
+    }
+
+    return contact;
   }
 }

@@ -17,7 +17,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { PersonAdd as PersonAddIcon, SportsBasketball as SportsIcon } from '@mui/icons-material';
-import { Contact, RosterPlayerType, SignRosterMemberType } from '@draco/shared-schemas';
+import { BaseContactType, RosterPlayerType, SignRosterMemberType } from '@draco/shared-schemas';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useDelayedLoading } from '../../hooks/useDelayedLoading';
 
@@ -27,9 +27,9 @@ interface SignPlayerDialogProps {
   onSignPlayer: (contactId: string, rosterData: SignRosterMemberType) => Promise<void>;
   onUpdateRosterMember: (rosterMemberId: string, updates: SignRosterMemberType) => Promise<void>;
   getContactRoster: (contactId: string) => Promise<RosterPlayerType | undefined>;
-  fetchAvailablePlayers: (firstName?: string, lastName?: string) => Promise<Contact[]>;
+  fetchAvailablePlayers: (firstName?: string, lastName?: string) => Promise<BaseContactType[]>;
   isSigningNewPlayer: boolean;
-  selectedPlayer: Contact | RosterPlayerType | null;
+  selectedPlayer: BaseContactType | RosterPlayerType | null;
   initialRosterData?: SignRosterMemberType;
   error?: string | null;
   onClearError: () => void;
@@ -50,7 +50,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
 }) => {
   // Search states - contained within this component
   const [searchInput, setSearchInput] = useState('');
-  const [availablePlayers, setAvailablePlayers] = useState<Contact[]>([]);
+  const [availablePlayers, setAvailablePlayers] = useState<BaseContactType[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
   // Use custom hooks for debouncing and delayed loading
@@ -61,7 +61,9 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Dialog-specific states
-  const [selectedPlayer, setSelectedPlayer] = useState<Contact | RosterPlayerType | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<BaseContactType | RosterPlayerType | null>(
+    null,
+  );
   const [loadingPlayerRoster, setLoadingPlayerRoster] = useState(false);
   const [isSigningPlayer, setIsSigningPlayer] = useState(false);
   const [signMultiplePlayers, setSignMultiplePlayers] = useState(false);
@@ -216,7 +218,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
 
   // Handle player selection
   const handlePlayerSelect = useCallback(
-    async (newValue: Contact | null) => {
+    async (newValue: BaseContactType | null) => {
       if (newValue) {
         setSelectedPlayer(newValue);
         setLoadingPlayerRoster(true);
@@ -323,7 +325,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   ]);
 
   // Helper function to format names as "Last, First Middle"
-  const formatName = (contact: Contact) => {
+  const formatName = (contact: BaseContactType) => {
     const lastName = contact.lastName || '';
     const firstName = contact.firstName || '';
     const middleName = contact.middleName || '';

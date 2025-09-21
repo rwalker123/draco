@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Box, Typography, Container } from '@mui/material';
 import { isPublicRoute } from '../../../config/routePermissions';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
@@ -119,13 +120,19 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
 
     // Not a member - show registration form
     return (
-      <div style={{ padding: 16 }}>
-        <h3>
-          {user
-            ? "You're not registered with this organization yet"
-            : 'Register to this organization'}
-        </h3>
-        {user && <p>Register to continue.</p>}
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            {user
+              ? "You're not registered with this organization yet"
+              : 'Register to this organization'}
+          </Typography>
+          {user && (
+            <Typography variant="body1" color="text.secondary">
+              Register to continue.
+            </Typography>
+          )}
+        </Box>
         {user ? (
           <RegistrationForm
             isAuthenticated={true}
@@ -141,7 +148,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
             error={error}
           />
         )}
-      </div>
+      </Container>
     );
   }, [
     isPublic,

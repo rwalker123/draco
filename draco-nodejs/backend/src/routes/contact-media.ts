@@ -7,6 +7,7 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
 const routeProtection = ServiceFactory.getRouteProtection();
+const contactService = ServiceFactory.getContactService();
 
 /**
  * GET /api/accounts/:accountId/contacts/:contactId/photo
@@ -18,13 +19,9 @@ router.get(
     const { accountId, contactId } = req.params;
 
     // Verify the contact exists and belongs to this account
-    const contactSecurityService = ServiceFactory.getContactSecurityService();
-    const isValidContact = await contactSecurityService.isContactInAccount(
-      BigInt(contactId),
-      BigInt(accountId),
-    );
+    const contact = await contactService.getContact(BigInt(accountId), BigInt(contactId));
 
-    if (!isValidContact) {
+    if (!contact) {
       throw new NotFoundError('Contact not found');
     }
 
@@ -58,16 +55,7 @@ router.delete(
     const { accountId, contactId } = req.params;
 
     // Verify the contact exists and belongs to this account
-    const contactSecurityService = ServiceFactory.getContactSecurityService();
-    const contact = await contactSecurityService.getValidatedContact(
-      BigInt(contactId),
-      BigInt(accountId),
-      {
-        id: true,
-        firstname: true,
-        lastname: true,
-      },
-    );
+    const contact = await contactService.getContact(BigInt(accountId), BigInt(contactId));
 
     if (!contact) {
       throw new NotFoundError('Contact not found');
@@ -76,7 +64,7 @@ router.delete(
     // Delete the photo from storage service
     await storageService.deleteContactPhoto(accountId, contactId);
 
-    res.json(`Photo deleted for ${contact.firstname} ${contact.lastname}`);
+    res.json(`Photo deleted for ${contact.firstName} ${contact.lastName}`);
   },
 );
 

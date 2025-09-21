@@ -111,7 +111,7 @@
                         "nullable": true,
                         "default": ""
                       },
-                      "streetaddress": {
+                      "streetAddress": {
                         "type": "string",
                         "nullable": true,
                         "maxLength": 100,
@@ -135,7 +135,7 @@
                         "maxLength": 10,
                         "default": ""
                       },
-                      "dateofbirth": {
+                      "dateOfBirth": {
                         "type": "string",
                         "nullable": true,
                         "default": ""
@@ -232,7 +232,7 @@
                     "nullable": true,
                     "default": ""
                   },
-                  "streetaddress": {
+                  "streetAddress": {
                     "type": "string",
                     "nullable": true,
                     "maxLength": 100,
@@ -256,7 +256,7 @@
                     "maxLength": 10,
                     "default": ""
                   },
-                  "dateofbirth": {
+                  "dateOfBirth": {
                     "type": "string",
                     "nullable": true,
                     "default": ""
@@ -361,7 +361,7 @@
                             "nullable": true,
                             "default": ""
                           },
-                          "streetaddress": {
+                          "streetAddress": {
                             "type": "string",
                             "nullable": true,
                             "maxLength": 100,
@@ -385,7 +385,7 @@
                             "maxLength": 10,
                             "default": ""
                           },
-                          "dateofbirth": {
+                          "dateOfBirth": {
                             "type": "string",
                             "nullable": true,
                             "default": ""
@@ -461,7 +461,7 @@
                 "nullable": true,
                 "default": ""
               },
-              "streetaddress": {
+              "streetAddress": {
                 "type": "string",
                 "nullable": true,
                 "maxLength": 100,
@@ -485,7 +485,7 @@
                 "maxLength": 10,
                 "default": ""
               },
-              "dateofbirth": {
+              "dateOfBirth": {
                 "type": "string",
                 "nullable": true,
                 "default": ""
@@ -497,10 +497,6 @@
             "items": {
               "type": "object",
               "properties": {
-                "id": {
-                  "type": "string",
-                  "pattern": "^d+$"
-                },
                 "roleId": {
                   "type": "string",
                   "maxLength": 50
@@ -516,12 +512,16 @@
                 "contextName": {
                   "type": "string",
                   "maxLength": 50
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
                 }
               },
               "required": [
-                "id",
                 "roleId",
-                "roleData"
+                "roleData",
+                "id"
               ]
             }
           },
@@ -599,7 +599,7 @@
                     "nullable": true,
                     "default": ""
                   },
-                  "streetaddress": {
+                  "streetAddress": {
                     "type": "string",
                     "nullable": true,
                     "maxLength": 100,
@@ -623,7 +623,7 @@
                     "maxLength": 10,
                     "default": ""
                   },
-                  "dateofbirth": {
+                  "dateOfBirth": {
                     "type": "string",
                     "nullable": true,
                     "default": ""
@@ -706,7 +706,7 @@
                 "nullable": true,
                 "default": ""
               },
-              "streetaddress": {
+              "streetAddress": {
                 "type": "string",
                 "nullable": true,
                 "maxLength": 100,
@@ -730,7 +730,7 @@
                 "maxLength": 10,
                 "default": ""
               },
-              "dateofbirth": {
+              "dateOfBirth": {
                 "type": "string",
                 "nullable": true,
                 "default": ""
@@ -1004,7 +1004,7 @@
                         "nullable": true,
                         "default": ""
                       },
-                      "streetaddress": {
+                      "streetAddress": {
                         "type": "string",
                         "nullable": true,
                         "maxLength": 100,
@@ -1028,7 +1028,7 @@
                         "maxLength": 10,
                         "default": ""
                       },
-                      "dateofbirth": {
+                      "dateOfBirth": {
                         "type": "string",
                         "nullable": true,
                         "default": ""
@@ -1084,7 +1084,7 @@
                         "nullable": true,
                         "default": ""
                       },
-                      "streetaddress": {
+                      "streetAddress": {
                         "type": "string",
                         "nullable": true,
                         "maxLength": 100,
@@ -1108,7 +1108,7 @@
                         "maxLength": 10,
                         "default": ""
                       },
-                      "dateofbirth": {
+                      "dateOfBirth": {
                         "type": "string",
                         "nullable": true,
                         "default": ""
@@ -1280,7 +1280,7 @@
                         "nullable": true,
                         "default": ""
                       },
-                      "streetaddress": {
+                      "streetAddress": {
                         "type": "string",
                         "nullable": true,
                         "maxLength": 100,
@@ -1304,7 +1304,7 @@
                         "maxLength": 10,
                         "default": ""
                       },
-                      "dateofbirth": {
+                      "dateOfBirth": {
                         "type": "string",
                         "nullable": true,
                         "default": ""
@@ -1360,7 +1360,7 @@
                         "nullable": true,
                         "default": ""
                       },
-                      "streetaddress": {
+                      "streetAddress": {
                         "type": "string",
                         "nullable": true,
                         "maxLength": 100,
@@ -1384,7 +1384,7 @@
                         "maxLength": 10,
                         "default": ""
                       },
-                      "dateofbirth": {
+                      "dateOfBirth": {
                         "type": "string",
                         "nullable": true,
                         "default": ""
@@ -1784,7 +1784,7 @@
                                 "nullable": true,
                                 "default": ""
                               },
-                              "streetaddress": {
+                              "streetAddress": {
                                 "type": "string",
                                 "nullable": true,
                                 "maxLength": 100,
@@ -1808,7 +1808,7 @@
                                 "maxLength": 10,
                                 "default": ""
                               },
-                              "dateofbirth": {
+                              "dateOfBirth": {
                                 "type": "string",
                                 "nullable": true,
                                 "default": ""

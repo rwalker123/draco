@@ -1,4 +1,4 @@
-import { Contact, ContactRole, ContactDetails } from '@draco/shared-schemas';
+import { ContactType, ContactRoleType, ContactDetailsType } from '@draco/shared-schemas';
 import { ContactUpdateResponse } from '../types/userManagementTypeGuards';
 import { getRoleDisplayName } from '../utils/roleUtils';
 
@@ -13,7 +13,7 @@ export class ContactTransformationService {
    * Transform backend contact data (with flexible field naming) to frontend Contact format
    * Handles both camelCase and lowercase field names from different backend endpoints
    */
-  static transformBackendContact(backendContact: Record<string, unknown>): Contact {
+  static transformBackendContact(backendContact: Record<string, unknown>): ContactType {
     return {
       id: (backendContact.id as string) || '',
       firstName: (backendContact.firstname as string) || (backendContact.firstName as string) || '',
@@ -24,7 +24,7 @@ export class ContactTransformationService {
       userId: (backendContact.userId as string) || '',
       photoUrl: backendContact.photoUrl as string | undefined,
       contactDetails: this.transformContactDetails(backendContact),
-      contactroles: (backendContact.contactroles as ContactRole[]) || [],
+      contactroles: (backendContact.contactroles as ContactRoleType[]) || [],
     };
   }
 
@@ -32,7 +32,7 @@ export class ContactTransformationService {
    * Transform ContactUpdateResponse (backend format) to Contact (frontend format)
    * Used for API responses from contact update/create operations
    */
-  static transformContactUpdateResponse(response: ContactUpdateResponse): Contact {
+  static transformContactUpdateResponse(response: ContactUpdateResponse): ContactType {
     return {
       id: response.id,
       firstName: response.firstname,
@@ -45,12 +45,11 @@ export class ContactTransformationService {
         phone1: response.phone1 || null,
         phone2: response.phone2 || null,
         phone3: response.phone3 || null,
-        streetaddress: response.streetaddress || null,
+        streetAddress: response.streetaddress || null,
         city: response.city || null,
         state: response.state || null,
         zip: response.zip || null,
-        dateofbirth: response.dateofbirth || null,
-        // ❌ Removed: middlename (moved to top-level middleName)
+        dateOfBirth: response.dateofbirth || null,
       },
       contactroles: [], // Not provided in ContactUpdateResponse
     };
@@ -60,9 +59,9 @@ export class ContactTransformationService {
    * Transform Contact to User format
    * Shared transformation logic for converting Contact objects to User objects
    */
-  static transformContactToUser(contact: Contact) {
+  static transformContactToUser(contact: ContactType) {
     const transformedRoles =
-      contact.contactroles?.map((cr: ContactRole) => ({
+      contact.contactroles?.map((cr: ContactRoleType) => ({
         id: cr.id,
         roleId: cr.roleId,
         roleName: cr.roleName || getRoleDisplayName(cr.roleId),
@@ -87,7 +86,9 @@ export class ContactTransformationService {
    * Helper method to transform contact details from backend format
    * Handles nested contact details from various backend response formats
    */
-  private static transformContactDetails(backendContact: Record<string, unknown>): ContactDetails {
+  private static transformContactDetails(
+    backendContact: Record<string, unknown>,
+  ): ContactDetailsType {
     // Handle case where contact details are nested in a contactDetails object
     const nestedDetails = backendContact.contactDetails as Record<string, unknown> | undefined;
 
@@ -96,12 +97,11 @@ export class ContactTransformationService {
         phone1: (nestedDetails.phone1 as string) || null,
         phone2: (nestedDetails.phone2 as string) || null,
         phone3: (nestedDetails.phone3 as string) || null,
-        streetaddress: (nestedDetails.streetaddress as string) || null,
+        streetAddress: (nestedDetails.streetAddress as string) || null,
         city: (nestedDetails.city as string) || null,
         state: (nestedDetails.state as string) || null,
         zip: (nestedDetails.zip as string) || null,
-        dateofbirth: (nestedDetails.dateofbirth as string) || null,
-        // ❌ Removed: middlename (moved to top-level middleName)
+        dateOfBirth: (nestedDetails.dateOfBirth as string) || null,
       };
     }
 
@@ -110,11 +110,11 @@ export class ContactTransformationService {
       phone1: (backendContact.phone1 as string) || null,
       phone2: (backendContact.phone2 as string) || null,
       phone3: (backendContact.phone3 as string) || null,
-      streetaddress: (backendContact.streetaddress as string) || null,
+      streetAddress: (backendContact.streetAddress as string) || null,
       city: (backendContact.city as string) || null,
       state: (backendContact.state as string) || null,
       zip: (backendContact.zip as string) || null,
-      dateofbirth: (backendContact.dateofbirth as string) || null,
+      dateOfBirth: (backendContact.dateOfBirth as string) || null,
       // ❌ Removed: middlename (moved to top-level middleName)
     };
   }

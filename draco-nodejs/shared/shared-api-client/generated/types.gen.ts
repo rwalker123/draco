@@ -28,11 +28,11 @@ export type RosterMember = {
         phone1?: string | null;
         phone2?: string | null;
         phone3?: string | null;
-        streetaddress?: string | null;
+        streetAddress?: string | null;
         city?: string | null;
         state?: string | null;
         zip?: string | null;
-        dateofbirth?: string | null;
+        dateOfBirth?: string | null;
       };
     };
   };
@@ -57,11 +57,11 @@ export type RosterPlayer = {
       phone1?: string | null;
       phone2?: string | null;
       phone3?: string | null;
-      streetaddress?: string | null;
+      streetAddress?: string | null;
       city?: string | null;
       state?: string | null;
       zip?: string | null;
-      dateofbirth?: string | null;
+      dateOfBirth?: string | null;
     };
   };
 };
@@ -90,11 +90,11 @@ export type SignRosterMember = {
             phone1?: string | null;
             phone2?: string | null;
             phone3?: string | null;
-            streetaddress?: string | null;
+            streetAddress?: string | null;
             city?: string | null;
             state?: string | null;
             zip?: string | null;
-            dateofbirth?: string | null;
+            dateOfBirth?: string | null;
           };
         };
   };
@@ -112,18 +112,18 @@ export type Contact = {
     phone1?: string | null;
     phone2?: string | null;
     phone3?: string | null;
-    streetaddress?: string | null;
+    streetAddress?: string | null;
     city?: string | null;
     state?: string | null;
     zip?: string | null;
-    dateofbirth?: string | null;
+    dateOfBirth?: string | null;
   };
   contactroles?: Array<{
-    id: string;
     roleId: string;
     roleName?: string;
     roleData: string;
     contextName?: string;
+    id: string;
   }>;
   creatoraccountid?: string;
 };
@@ -146,11 +146,11 @@ export type TeamManager = {
       phone1?: string | null;
       phone2?: string | null;
       phone3?: string | null;
-      streetaddress?: string | null;
+      streetAddress?: string | null;
       city?: string | null;
       state?: string | null;
       zip?: string | null;
-      dateofbirth?: string | null;
+      dateOfBirth?: string | null;
     };
   };
 };
@@ -173,11 +173,11 @@ export type CreateContact = {
     phone1?: string | null;
     phone2?: string | null;
     phone3?: string | null;
-    streetaddress?: string | null;
+    streetAddress?: string | null;
     city?: string | null;
     state?: string | null;
     zip?: string | null;
-    dateofbirth?: string | null;
+    dateOfBirth?: string | null;
   };
   /**
    * Contact photo file
@@ -249,11 +249,11 @@ export type CreateContactData = {
       phone1?: string | null;
       phone2?: string | null;
       phone3?: string | null;
-      streetaddress?: string | null;
+      streetAddress?: string | null;
       city?: string | null;
       state?: string | null;
       zip?: string | null;
-      dateofbirth?: string | null;
+      dateOfBirth?: string | null;
     };
     /**
      * Contact photo file
@@ -315,11 +315,11 @@ export type UpdateContactData = {
       phone1?: string | null;
       phone2?: string | null;
       phone3?: string | null;
-      streetaddress?: string | null;
+      streetAddress?: string | null;
       city?: string | null;
       state?: string | null;
       zip?: string | null;
-      dateofbirth?: string | null;
+      dateOfBirth?: string | null;
     };
     /**
      * Contact photo file
@@ -517,11 +517,11 @@ export type UpdateRosterMemberData = {
           phone1?: string | null;
           phone2?: string | null;
           phone3?: string | null;
-          streetaddress?: string | null;
+          streetAddress?: string | null;
           city?: string | null;
           state?: string | null;
           zip?: string | null;
-          dateofbirth?: string | null;
+          dateOfBirth?: string | null;
         };
       };
     };

@@ -11,7 +11,8 @@ import {
 } from '../../../../components/users';
 import EditContactDialog from '../../../../components/users/EditContactDialog';
 import DeleteContactDialog from '../../../../components/users/DeleteContactDialog';
-import ConfirmationDialog from '../../../../components/common/ConfirmationDialog';
+import PhotoDeleteDialog from '../../../../components/users/PhotoDeleteDialog';
+import RevokeRegistrationDialog from '../../../../components/users/RevokeRegistrationDialog';
 import {
   AutomaticRolesSection,
   AccountOwnerDisplay,
@@ -46,7 +47,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     onlyWithRoles,
 
     // Form loading state
-    formLoading,
 
     // Context data states
     leagues,
@@ -65,17 +65,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handleNextPage,
     handlePrevPage,
     handleRowsPerPageChange,
-    handleRemoveRole,
-    handleEditContact,
-    handleCreateContact,
-    handleDeleteContactPhoto,
-    handleRevokeRegistration,
-    handleDeleteContact,
     setSearchTerm,
     setError,
     setSuccess,
     getRoleDisplayName,
     handleRoleAssigned,
+    handleRoleRemoved,
+    handleContactUpdated,
+    handlePhotoDeleted,
+    handleRegistrationRevoked,
+    handleContactDeleted,
+    loadContextData,
   } = useUserManagement(accountId);
 
   // Check if user can manage users (this is handled in the hook)
@@ -89,14 +89,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     [dialogs.photoDeleteConfirmDialog],
   );
 
-  const confirmDeletePhoto = useCallback(async () => {
-    const contactId = dialogs.photoDeleteConfirmDialog.data;
-    if (contactId) {
-      await handleDeleteContactPhoto(contactId);
-      dialogs.photoDeleteConfirmDialog.close();
-    }
-  }, [dialogs.photoDeleteConfirmDialog, handleDeleteContactPhoto]);
-
   const handleRevokeWithConfirm = useCallback(
     async (contactId: string) => {
       dialogs.revokeConfirmDialog.open(contactId);
@@ -104,23 +96,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     [dialogs.revokeConfirmDialog],
   );
 
-  const confirmRevoke = useCallback(async () => {
-    const contactId = dialogs.revokeConfirmDialog.data;
-    if (contactId) {
-      await handleRevokeRegistration(contactId);
-      dialogs.revokeConfirmDialog.close();
-    }
-  }, [dialogs.revokeConfirmDialog, handleRevokeRegistration]);
-
   // Async wrapper functions to match the interface expectations
   const handleAssignRoleWrapper = useCallback(
     async (user: ContactType) => {
       dialogs.assignRoleDialog.open(user);
+      await loadContextData();
     },
-    [dialogs.assignRoleDialog],
+    [dialogs.assignRoleDialog, loadContextData],
   );
 
-  // Handle success and error events from the self-contained dialog
+  // Handle success events from the self-contained dialogs
   const handleAssignRoleSuccess = useCallback(
     (result: { message: string; assignedRole: RoleWithContactType }) => {
       setSuccess(result.message);
@@ -130,11 +115,66 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     [setSuccess, handleRoleAssigned, dialogs.assignRoleDialog],
   );
 
-  const handleAssignRoleError = useCallback(
-    (error: string) => {
-      setError(error);
+  const handleRemoveRoleSuccess = useCallback(
+    (result: {
+      message: string;
+      removedRole: { contactId: string; roleId: string; id: string };
+    }) => {
+      setSuccess(result.message);
+      handleRoleRemoved(result.removedRole.contactId, result.removedRole.id);
+      dialogs.removeRoleDialog.close();
     },
-    [setError],
+    [setSuccess, handleRoleRemoved, dialogs.removeRoleDialog],
+  );
+
+  const handleEditContactSuccess = useCallback(
+    (result: { message: string; contact: ContactType; isCreate: boolean }) => {
+      setSuccess(result.message);
+      handleContactUpdated(result.contact, result.isCreate);
+      if (result.isCreate) {
+        dialogs.createContactDialog.close();
+      } else {
+        dialogs.editContactDialog.close();
+      }
+    },
+    [setSuccess, handleContactUpdated, dialogs.createContactDialog, dialogs.editContactDialog],
+  );
+
+  const handlePhotoDeleteSuccess = useCallback(
+    (result: { message: string; contactId: string }) => {
+      setSuccess(result.message);
+      handlePhotoDeleted(result.contactId);
+      dialogs.photoDeleteConfirmDialog.close();
+    },
+    [setSuccess, handlePhotoDeleted, dialogs.photoDeleteConfirmDialog],
+  );
+
+  const handleRevokeRegistrationSuccess = useCallback(
+    (result: { message: string; contactId: string }) => {
+      setSuccess(result.message);
+      handleRegistrationRevoked(result.contactId);
+      dialogs.revokeConfirmDialog.close();
+    },
+    [setSuccess, handleRegistrationRevoked, dialogs.revokeConfirmDialog],
+  );
+
+  const handleContactDeleteSuccess = useCallback(
+    (result: {
+      message: string;
+      contactId: string;
+      dependenciesDeleted?: number;
+      wasForced: boolean;
+    }) => {
+      const finalMessage =
+        result.dependenciesDeleted && result.dependenciesDeleted > 0
+          ? `${result.message} (${result.dependenciesDeleted} related records deleted)`
+          : result.message;
+
+      setSuccess(finalMessage);
+      handleContactDeleted(result.contactId);
+      dialogs.deleteContactDialog.close();
+    },
+    [setSuccess, handleContactDeleted, dialogs.deleteContactDialog],
   );
 
   const handleRemoveRoleWrapper = useCallback(
@@ -252,7 +292,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         open={dialogs.assignRoleDialog.isOpen}
         onClose={dialogs.assignRoleDialog.close}
         onSuccess={handleAssignRoleSuccess}
-        onError={handleAssignRoleError}
         roles={roles}
         accountId={accountId}
         // Pre-population props
@@ -268,18 +307,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       <RemoveRoleDialog
         open={dialogs.removeRoleDialog.isOpen}
         onClose={dialogs.removeRoleDialog.close}
-        onRemove={handleRemoveRole}
+        onSuccess={handleRemoveRoleSuccess}
         selectedUser={dialogs.removeRoleDialog.data?.user || null}
         selectedRoleToRemove={dialogs.removeRoleDialog.data?.role || null}
-        loading={formLoading}
+        accountId={accountId}
       />
 
       <EditContactDialog
         open={dialogs.editContactDialog.isOpen}
         contact={dialogs.editContactDialog.data || null}
         onClose={dialogs.editContactDialog.close}
-        onSave={handleEditContact}
-        loading={formLoading}
+        onSuccess={handleEditContactSuccess}
+        accountId={accountId}
       />
 
       <EditContactDialog
@@ -287,40 +326,34 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         contact={null}
         mode="create"
         onClose={dialogs.createContactDialog.close}
-        onSave={handleCreateContact}
-        loading={formLoading}
+        onSuccess={handleEditContactSuccess}
+        accountId={accountId}
       />
 
       <DeleteContactDialog
         open={dialogs.deleteContactDialog.isOpen}
         contact={dialogs.deleteContactDialog.data || null}
         onClose={dialogs.deleteContactDialog.close}
-        onDelete={handleDeleteContact}
-        loading={formLoading}
+        onSuccess={handleContactDeleteSuccess}
+        accountId={accountId}
       />
 
-      {/* Photo deletion confirmation dialog */}
-      <ConfirmationDialog
+      {/* Photo deletion dialog */}
+      <PhotoDeleteDialog
         open={dialogs.photoDeleteConfirmDialog.isOpen}
+        contactId={dialogs.photoDeleteConfirmDialog.data || null}
         onClose={dialogs.photoDeleteConfirmDialog.close}
-        onConfirm={confirmDeletePhoto}
-        title="Delete Photo"
-        message="Are you sure you want to delete this photo? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        confirmButtonColor="error"
+        onSuccess={handlePhotoDeleteSuccess}
+        accountId={accountId}
       />
 
-      {/* Revoke registration confirmation dialog */}
-      <ConfirmationDialog
+      {/* Revoke registration dialog */}
+      <RevokeRegistrationDialog
         open={dialogs.revokeConfirmDialog.isOpen}
+        contactId={dialogs.revokeConfirmDialog.data || null}
         onClose={dialogs.revokeConfirmDialog.close}
-        onConfirm={confirmRevoke}
-        title="Remove Registration"
-        message="Are you sure you want to remove registration for this user? They will no longer be linked to a login."
-        confirmText="Remove"
-        cancelText="Cancel"
-        confirmButtonColor="error"
+        onSuccess={handleRevokeRegistrationSuccess}
+        accountId={accountId}
       />
     </main>
   );

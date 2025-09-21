@@ -2,13 +2,6 @@
  * Pagination utilities for consistent pagination across the API
  */
 
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
 export interface PaginationMeta {
   page: number;
   limit: number;

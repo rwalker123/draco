@@ -1,4 +1,4 @@
-import { ContactDetails } from '@draco/shared-schemas';
+import { ContactDetailsType } from '@draco/shared-schemas';
 
 /**
  * Format phone number for display
@@ -23,9 +23,9 @@ export const formatPhoneNumber = (phone: string | null): string => {
 /**
  * Format address for display
  */
-export const formatAddress = (contactDetails: ContactDetails): string => {
+export const formatAddress = (contactDetails: ContactDetailsType): string => {
   const parts = [
-    contactDetails.streetaddress,
+    contactDetails.streetAddress,
     contactDetails.city,
     contactDetails.state,
     contactDetails.zip,
@@ -38,7 +38,7 @@ export const formatAddress = (contactDetails: ContactDetails): string => {
  * Get formatted phone numbers
  */
 export const getPhoneNumbers = (
-  contactDetails: ContactDetails,
+  contactDetails: ContactDetailsType,
 ): Array<{ type: string; number: string }> => {
   const phones = [];
 
@@ -93,17 +93,17 @@ export const getFormattedName = (
 /**
  * Check if contact has any contact details
  */
-export const hasContactDetails = (contactDetails?: ContactDetails): boolean => {
+export const hasContactDetails = (contactDetails?: ContactDetailsType): boolean => {
   if (!contactDetails) return false;
 
   return !!(
     contactDetails.phone1 ||
     contactDetails.phone2 ||
     contactDetails.phone3 ||
-    contactDetails.streetaddress ||
+    contactDetails.streetAddress ||
     contactDetails.city ||
     contactDetails.state ||
     contactDetails.zip ||
-    contactDetails.dateofbirth
+    contactDetails.dateOfBirth
   );
 };

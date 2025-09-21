@@ -14,6 +14,7 @@ import {
   MenuItem,
   CircularProgress,
   Typography,
+  Alert,
 } from '@mui/material';
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { AssignRoleDialogProps } from '../../types/users';
@@ -25,13 +26,12 @@ import { useRoleAssignment } from '../../hooks/useRoleAssignment';
 
 /**
  * AssignRoleDialog Component
- * Dialog for assigning roles to users
+ * Dialog for assigning roles to users with self-contained error handling
  */
 const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   open,
   onClose,
   onSuccess,
-  onError,
   roles,
   accountId,
   // Pre-population props
@@ -48,6 +48,7 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   const [newUserContactId, setNewUserContactId] = useState<string>('');
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   // Use the role assignment hook
   const { assignRole, loading } = useRoleAssignment(accountId);
@@ -60,6 +61,7 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
       setSelectedLeagueId('');
       setSelectedTeamId('');
       setNewUserContactId('');
+      setError(null); // Clear any previous errors
     }
   }, [open]);
 
@@ -73,15 +75,22 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
     // Reset context selections when role changes
     setSelectedLeagueId('');
     setSelectedTeamId('');
+    // Clear error when user makes changes
+    setError(null);
   }, []);
 
   // Handle user change
   const handleUserChange = useCallback((contactId: string) => {
     setNewUserContactId(contactId);
+    // Clear error when user makes changes
+    setError(null);
   }, []);
 
-  // Handle assign with internal API call
+  // Handle assign with internal error handling
   const handleAssign = useCallback(async () => {
+    // Clear any previous errors
+    setError(null);
+
     const contactId = isUserReadonly && preselectedUser ? preselectedUser.id : newUserContactId;
 
     const result = await assignRole(accountId, {
@@ -98,7 +107,8 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
       });
       onClose(); // Close dialog on success
     } else {
-      onError?.(result.error || 'Failed to assign role');
+      // Handle error internally
+      setError(result.error || 'Failed to assign role');
     }
   }, [
     selectedRole,
@@ -110,7 +120,6 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
     assignRole,
     accountId,
     onSuccess,
-    onError,
     onClose,
   ]);
 
@@ -119,6 +128,12 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
       <DialogTitle>Assign Role to User</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
+          {/* Error display */}
+          {error && (
+            <Alert severity="error" onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
           {preselectedUser && isUserReadonly ? (
             <Stack spacing={1}>
               <Typography variant="body2" color="text.secondary">

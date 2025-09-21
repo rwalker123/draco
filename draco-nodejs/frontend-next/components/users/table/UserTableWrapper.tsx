@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Paper } from '@mui/material';
-import { Contact, ContactRoleType, ContactType } from '@draco/shared-schemas';
+import { ContactRoleType, ContactType } from '@draco/shared-schemas';
 import UserTableContent from './UserTableContent';
 import UserTableSkeleton from './UserTableSkeleton';
 import UserCardGrid from './components/UserCardGrid';
@@ -25,8 +25,8 @@ interface UserTableWrapperProps {
   canManageUsers: boolean;
   onAssignRole: (user: ContactType) => Promise<void>;
   onRemoveRole: (user: ContactType, role: ContactRoleType) => Promise<void>;
-  onEditContact?: (contact: Contact) => Promise<void>;
-  onDeleteContact?: (contact: Contact) => Promise<void>;
+  onEditContact?: (contact: ContactType) => Promise<void>;
+  onDeleteContact?: (contact: ContactType) => Promise<void>;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   onRevokeRegistration?: (contactId: string) => void;
   getRoleDisplayName: (

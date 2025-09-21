@@ -472,11 +472,11 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
         )}
 
         {/* Additional Contact Details */}
-        {config.showDetails && (user.contactDetails?.dateofbirth || user.middleName) && (
+        {config.showDetails && (user.contactDetails?.dateOfBirth || user.middleName) && (
           <>
             <Divider sx={{ my: 1 }} />
             <Box sx={{ minWidth: 0 }}>
-              {user.contactDetails?.dateofbirth && (
+              {user.contactDetails?.dateOfBirth && (
                 <Stack
                   direction="row"
                   alignItems="center"
@@ -495,7 +495,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                       flex: 1,
                     }}
                   >
-                    Born: {new Date(user.contactDetails.dateofbirth).toLocaleDateString()}
+                    Born: {new Date(user.contactDetails?.dateOfBirth).toLocaleDateString()}
                   </Typography>
                 </Stack>
               )}

@@ -275,8 +275,6 @@ export const createMockAccountContext = (overrides: Partial<AccountContextType> 
     loading: false,
     error: null,
     setCurrentAccount: vi.fn(),
-    fetchUserAccounts: vi.fn(),
-    hasAccessToAccount: vi.fn(),
     clearAccounts: vi.fn(),
   };
 
@@ -286,15 +284,14 @@ export const createMockAccountContext = (overrides: Partial<AccountContextType> 
 export const createMockRoleContext = (overrides: Partial<RoleContextType> = {}) => {
   const defaultContext: RoleContextType = {
     userRoles: {
+      accountId: '1',
       globalRoles: ['TeamAdmin'],
       contactRoles: [
         {
           id: '1',
-          contactId: 'contact-1',
           roleId: 'role-1',
           roleName: 'TeamAdmin',
           roleData: '{}',
-          accountId: '1',
         },
       ],
     },
@@ -324,7 +321,7 @@ export const createMockRoleContext = (overrides: Partial<RoleContextType> = {}) 
   context.hasRoleInAccount = (roleId: string, accountId: string) => {
     if (!context.userRoles) return false;
     return context.userRoles.contactRoles.some(
-      (role) => role.roleName === roleId && role.accountId === accountId,
+      (role) => role.roleName === roleId && context.userRoles?.accountId === accountId,
     );
   };
 

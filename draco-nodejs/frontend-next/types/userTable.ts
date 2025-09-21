@@ -1,8 +1,8 @@
-import { ContactType, Contact, ContactRoleType } from '@draco/shared-schemas';
+import { ContactType, ContactRoleType } from '@draco/shared-schemas';
 import { UserTableProps } from './users';
 
 // Enhanced user interface with computed properties for the modern table
-export interface EnhancedUser extends Contact {
+export interface EnhancedUser extends ContactType {
   // Computed display properties
   displayName: string;
   fullAddress: string;

@@ -26,20 +26,22 @@ import { US_STATES } from '../../constants/usStates';
 import ContactPhotoUpload from '../ContactPhotoUpload';
 import { validateContactPhotoFile } from '../../config/contacts';
 
-import { BaseContact, CreateContactType, CreateContactSchema } from '@draco/shared-schemas';
+import {
+  BaseContactType,
+  CreateContactType,
+  CreateContactSchema,
+  ContactType,
+} from '@draco/shared-schemas';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useContactOperations } from '../../hooks/useContactOperations';
 
 interface EditContactDialogProps {
   open: boolean;
-  contact: BaseContact | null;
+  contact: BaseContactType | null;
   onClose: () => void;
-  onSave: (
-    contactData: CreateContactType | null,
-    photoFile?: File | null,
-    autoSignToRoster?: boolean,
-  ) => Promise<void>;
-  loading?: boolean;
+  onSuccess?: (result: { message: string; contact: ContactType; isCreate: boolean }) => void;
+  accountId: string;
   mode?: 'create' | 'edit';
   // Optional roster signup functionality
   showRosterSignup?: boolean;
@@ -49,17 +51,17 @@ interface EditContactDialogProps {
 
 /**
  * EditContactDialog Component
- * Dialog for editing contact information following existing patterns
+ * Self-contained dialog for editing contact information with internal API calls and error handling
  */
 const EditContactDialog: React.FC<EditContactDialogProps> = ({
   open,
   contact,
-  loading = false,
+  accountId,
   mode = 'edit',
   showRosterSignup = false,
   initialRosterSignup = false,
   onClose,
-  onSave,
+  onSuccess,
   onRosterSignup,
 }) => {
   const {
@@ -72,6 +74,9 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
   } = useForm({
     resolver: zodResolver(CreateContactSchema),
   });
+
+  // Use the contact operations hook
+  const { createContact, updateContact, loading } = useContactOperations(accountId);
 
   const [saveError, setSaveError] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -95,11 +100,11 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
             phone1: '',
             phone2: '',
             phone3: '',
-            streetaddress: '',
+            streetAddress: '',
             city: '',
             state: '',
             zip: '',
-            dateofbirth: '',
+            dateOfBirth: '',
           },
         });
       }
@@ -154,11 +159,11 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
         phone1: '',
         phone2: '',
         phone3: '',
-        streetaddress: '',
+        streetAddress: '',
         city: '',
         state: '',
         zip: '',
-        dateofbirth: '',
+        dateOfBirth: '',
       },
     });
     setPhotoFile(null);
@@ -168,6 +173,9 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
 
   const handleSave = handleSubmit(async (data) => {
     try {
+      // Clear any previous errors
+      setSaveError('');
+
       let dataToSave: CreateContactType | null = data;
 
       // For edit mode, check if this is a photo-only update
@@ -179,21 +187,42 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
         }
       }
 
-      // Pass the roster signup value directly to onSave to avoid async state issues
-      const autoSignToRoster = showRosterSignup ? rosterSignup : undefined;
-      await onSave(dataToSave, photoFile, autoSignToRoster);
+      // Call the appropriate operation based on mode
+      const result =
+        mode === 'create'
+          ? await createContact({
+              contactData: dataToSave!,
+              photoFile,
+            })
+          : await updateContact(contact!.id, {
+              contactData: dataToSave!,
+              photoFile,
+            });
 
-      // Notify parent about roster signup (for any additional logic)
-      if (showRosterSignup && onRosterSignup) {
-        onRosterSignup(rosterSignup);
-      }
+      if (result.success && result.contact) {
+        // Notify parent about roster signup (for any additional logic)
+        if (showRosterSignup && onRosterSignup) {
+          onRosterSignup(rosterSignup);
+        }
 
-      if (mode === 'create' && createMultiplePlayers) {
-        // Keep dialog open and reset form for next player
-        resetFormForNextPlayer();
+        // Notify parent of successful operation
+        onSuccess?.({
+          message:
+            result.message || `Contact ${mode === 'create' ? 'created' : 'updated'} successfully`,
+          contact: result.contact,
+          isCreate: mode === 'create',
+        });
+
+        if (mode === 'create' && createMultiplePlayers) {
+          // Keep dialog open and reset form for next player
+          resetFormForNextPlayer();
+        } else {
+          // Close dialog as usual
+          onClose();
+        }
       } else {
-        // Close dialog as usual
-        onClose();
+        // Handle error internally
+        setSaveError(result.error || `Failed to ${mode} contact`);
       }
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : `Failed to ${mode} contact`);
@@ -342,7 +371,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
                   disabled={loading}
                 />
                 <Controller
-                  name="contactDetails.dateofbirth"
+                  name="contactDetails.dateOfBirth"
                   control={control}
                   render={({ field, fieldState }) => (
                     <DatePicker
@@ -423,7 +452,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
 
               <TextField
                 label="Street Address"
-                {...register('contactDetails.streetaddress')}
+                {...register('contactDetails.streetAddress')}
                 fullWidth
                 disabled={loading}
               />

@@ -2,14 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma.js';
 
-// Type definitions for Prisma query results
-interface UserRole {
-  userid: string;
-  aspnetroles: {
-    name: string;
-  } | null;
-}
-
 export interface JWTPayload {
   userId: string;
   username: string;
@@ -150,46 +142,4 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     // Continue without user if token is invalid
     next();
   }
-};
-
-/**
- * Middleware to check if user has specific role
- */
-export const requireRole = (roleName: string) => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          message: 'Authentication required',
-        });
-        return;
-      }
-
-      const userRoles = await prisma.aspnetuserroles.findMany({
-        where: { userid: req.user.id },
-        include: { aspnetroles: true },
-      });
-
-      const hasRole = userRoles.some(
-        (userRole: UserRole) => userRole.aspnetroles?.name === roleName,
-      );
-
-      if (!hasRole) {
-        res.status(403).json({
-          success: false,
-          message: `Role '${roleName}' required`,
-        });
-        return;
-      }
-
-      next();
-    } catch (error) {
-      console.error('Role check error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
-    }
-  };
 };

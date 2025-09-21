@@ -1,3 +1,4 @@
+import { PrismaClient } from '@prisma/client';
 import { createStorageService } from './storageService.js';
 
 /**
@@ -5,7 +6,12 @@ import { createStorageService } from './storageService.js';
  * Provides centralized photo operations following SOLID principles
  */
 export class ContactPhotoService {
-  private static storageService = createStorageService();
+  private storageService = createStorageService();
+  private prisma: PrismaClient;
+
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
+  }
 
   /**
    * Delete a contact's photo from storage
@@ -13,7 +19,7 @@ export class ContactPhotoService {
    * @param contactId - Contact ID
    * @returns Promise<void>
    */
-  static async deleteContactPhoto(accountId: bigint, contactId: bigint): Promise<void> {
+  async deleteContactPhoto(accountId: bigint, contactId: bigint): Promise<void> {
     try {
       await this.storageService.deleteContactPhoto(accountId.toString(), contactId.toString());
       console.log(
@@ -36,7 +42,7 @@ export class ContactPhotoService {
    * @param contactId - Contact ID
    * @returns Promise<boolean>
    */
-  static async hasPhoto(accountId: bigint, contactId: bigint): Promise<boolean> {
+  async hasPhoto(accountId: bigint, contactId: bigint): Promise<boolean> {
     try {
       const photoBuffer = await this.storageService.getContactPhoto(
         accountId.toString(),

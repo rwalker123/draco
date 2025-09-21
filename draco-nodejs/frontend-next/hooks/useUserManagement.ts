@@ -16,7 +16,6 @@ import { extractErrorMessage } from '../types/userManagementTypeGuards';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
 import {
-  Contact,
   ContactRoleType,
   ContactType,
   CreateContactType,
@@ -127,27 +126,19 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const { users, loading, isInitialLoad, isPaginating, page, hasNext, hasPrev } = paginationState;
 
   // Dialog states
-  const [assignRoleDialogOpen, setAssignRoleDialogOpen] = useState(false);
-  const [removeRoleDialogOpen, setRemoveRoleDialogOpen] = useState(false);
-  const [editContactDialogOpen, setEditContactDialogOpen] = useState(false);
   const [deleteContactDialogOpen, setDeleteContactDialogOpen] = useState(false);
-  const [createContactDialogOpen, setCreateContactDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ContactType | null>(null);
-  const [selectedContactForEdit, setSelectedContactForEdit] = useState<Contact | null>(null);
-  const [selectedContactForDelete, setSelectedContactForDelete] = useState<Contact | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>('');
-  const [selectedRoleToRemove, setSelectedRoleToRemove] = useState<ContactRoleType | null>(null);
+  const [selectedContactForDelete, setSelectedContactForDelete] = useState<ContactType | null>(
+    null,
+  );
 
   // Form states
-  const [newUserContactId, setNewUserContactId] = useState<string>('');
   const [formLoading, setFormLoading] = useState(false);
 
   // Context data states
   const [leagues, setLeagues] = useState<League[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [leagueSeasons, setLeagueSeasons] = useState<LeagueSeason[]>([]);
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [contextDataLoading, setContextDataLoading] = useState(false);
 
   // Automatic role holders state
@@ -198,7 +189,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   // Load users with pagination
   const loadUsers = useCallback(
     async (
-      currentPage = 0,
+      currentPage = 1,
       limit?: number,
       isPaginating = false,
       onlyWithRolesOverride?: boolean,
@@ -214,15 +205,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         }
         setError(null);
 
-        const response = await userService.fetchUsers(accountId, {
-          page: currentPage, // Backend uses 1-based pagination
-          limit: limit || rowsPerPageRef.current,
-          sortBy: 'lastname',
-          sortOrder: 'asc',
-          seasonId: currentSeasonId,
-          onlyWithRoles:
-            onlyWithRolesOverride !== undefined ? onlyWithRolesOverride : onlyWithRoles,
-        });
+        const response = await userService.searchUsers(
+          accountId,
+          '', // Empty query for list-all functionality
+          currentSeasonId,
+          onlyWithRolesOverride !== undefined ? onlyWithRolesOverride : onlyWithRoles,
+          {
+            page: currentPage, // Backend uses 1-based pagination
+            limit: limit || rowsPerPageRef.current,
+            sortBy: 'lastname',
+            sortOrder: 'asc',
+          },
+        );
 
         // Atomic state update via reducer
         // When paginating, the page has already been set by START_PAGINATION
@@ -242,23 +236,25 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Load users with explicit season ID (for initialization)
   const loadUsersWithSeason = useCallback(
-    async (seasonId: string | null, currentPage = 0, limit?: number) => {
+    async (seasonId: string | null, currentPage = 1, limit?: number) => {
       if (!userService || !accountId) return;
 
       try {
         dispatch({ type: 'START_LOADING' });
         setError(null);
 
-        const params = {
-          page: currentPage + 1, // Backend uses 1-based pagination
-          limit: limit || rowsPerPageRef.current,
-          sortBy: 'lastname',
-          sortOrder: 'asc' as const,
-          seasonId: seasonId,
-          onlyWithRoles: onlyWithRoles,
-        };
-
-        const response = await userService.fetchUsers(accountId, params);
+        const response = await userService.searchUsers(
+          accountId,
+          '', // Empty query for list-all functionality
+          seasonId,
+          onlyWithRoles,
+          {
+            page: currentPage, // Backend uses 1-based pagination
+            limit: limit || rowsPerPageRef.current,
+            sortBy: 'lastname',
+            sortOrder: 'asc',
+          },
+        );
 
         dispatch({
           type: 'SET_DATA',
@@ -430,8 +426,9 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             1,
           );
         } else {
-          // Use the new API operations layer
-          const response = await apiOperations.fetchUsersWithFilter({
+          // Use the unified API operations layer
+          const response = await apiOperations.searchUsersWithFilter({
+            searchTerm: '', // Empty search term for list-all
             page: 1,
             limit: rowsPerPageRef.current,
             sortBy: 'lastname',
@@ -618,122 +615,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     ],
   );
 
-  // Role assignment handler
-  const handleAssignRole = useCallback(async () => {
-    if (!selectedRole || !newUserContactId || !userService) return;
-
-    try {
-      setFormLoading(true);
-      setError(null);
-
-      // Determine the correct roleData based on the role type
-      let roleData: string = accountId;
-      let needsSeasonId = false;
-
-      // Use the role IDs from roleUtils
-      const ROLE_IDS = {
-        ACCOUNT_ADMIN: '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
-        ACCOUNT_PHOTO_ADMIN: 'a87ea9a3-47e2-49d1-9e1e-c35358d1a677',
-        LEAGUE_ADMIN: '672DDF06-21AC-4D7C-B025-9319CC69281A',
-        TEAM_ADMIN: '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
-        TEAM_PHOTO_ADMIN: '55FD3262-343F-4000-9561-6BB7F658DEB7',
-      };
-
-      switch (selectedRole) {
-        case ROLE_IDS.LEAGUE_ADMIN:
-          if (!selectedLeagueId) {
-            throw new Error('Please select a league');
-          }
-          roleData = selectedLeagueId;
-          needsSeasonId = true;
-          break;
-        case ROLE_IDS.TEAM_ADMIN:
-        case ROLE_IDS.TEAM_PHOTO_ADMIN:
-          if (!selectedTeamId) {
-            throw new Error('Please select a team');
-          }
-          roleData = selectedTeamId;
-          needsSeasonId = true;
-          break;
-        case ROLE_IDS.ACCOUNT_ADMIN:
-        case ROLE_IDS.ACCOUNT_PHOTO_ADMIN:
-          roleData = accountId;
-          break;
-        default:
-          // For any other roles, use accountId as default
-          roleData = accountId;
-      }
-
-      console.log('Attempting to assign role:', {
-        accountId,
-        contactId: newUserContactId,
-        roleId: selectedRole,
-        roleData,
-        seasonId: needsSeasonId ? currentSeasonId : undefined,
-        userService: !!userService,
-      });
-
-      await userService.assignRole(
-        accountId,
-        newUserContactId,
-        selectedRole,
-        roleData,
-        needsSeasonId ? currentSeasonId : undefined,
-      );
-
-      setSuccess('Role assigned successfully');
-      setAssignRoleDialogOpen(false);
-      setSelectedUser(null);
-      setSelectedRole('');
-      setNewUserContactId('');
-      setSelectedLeagueId('');
-      setSelectedTeamId('');
-      loadUsers(page);
-    } catch (err) {
-      console.error('Role assignment error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to assign role');
-    } finally {
-      setFormLoading(false);
-    }
-  }, [
-    selectedRole,
-    newUserContactId,
-    userService,
-    accountId,
-    selectedLeagueId,
-    selectedTeamId,
-    currentSeasonId,
-    page,
-    loadUsers,
-  ]);
-
-  // Role removal handler
-  const handleRemoveRole = useCallback(async () => {
-    if (!selectedUser || !selectedRoleToRemove || !userService) return;
-
-    try {
-      setFormLoading(true);
-      setError(null);
-
-      await userService.removeRole(
-        accountId,
-        selectedUser.id,
-        selectedRoleToRemove.roleId,
-        selectedRoleToRemove.roleData,
-      );
-
-      setSuccess('Role removed successfully');
-      setRemoveRoleDialogOpen(false);
-      setSelectedUser(null);
-      setSelectedRoleToRemove(null);
-      loadUsers(page);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove role');
-    } finally {
-      setFormLoading(false);
-    }
-  }, [selectedUser, selectedRoleToRemove, userService, accountId, page, loadUsers]);
-
   // Context data loading function
   const loadContextData = useCallback(async () => {
     if (!contextDataService || !currentSeasonId) return;
@@ -764,50 +645,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   }, [contextDataService, accountId, currentSeasonId]);
 
   // Dialog open handlers
-  const openAssignRoleDialog = useCallback(
-    async (user: ContactType) => {
-      setSelectedUser(user);
-      setNewUserContactId(user.id); // Pre-populate with the user's contact ID
-      setAssignRoleDialogOpen(true);
-      await loadContextData(); // Load leagues and teams data
-    },
-    [loadContextData],
-  );
 
-  const closeAssignRoleDialog = useCallback(() => {
-    setAssignRoleDialogOpen(false);
-    setSelectedUser(null);
-    setSelectedRole('');
-    setNewUserContactId('');
-    setSelectedLeagueId('');
-    setSelectedTeamId('');
-  }, []);
-
-  const openRemoveRoleDialog = useCallback((user: ContactType, role: ContactRoleType) => {
-    setSelectedUser(user);
-    setSelectedRoleToRemove(role);
-    setRemoveRoleDialogOpen(true);
-  }, []);
-
-  const openEditContactDialog = useCallback((contact: Contact) => {
-    setSelectedContactForEdit(contact);
-    setEditContactDialogOpen(true);
-  }, []);
-
-  const closeEditContactDialog = useCallback(() => {
-    setEditContactDialogOpen(false);
-    setSelectedContactForEdit(null);
-  }, []);
-
-  const openCreateContactDialog = useCallback(() => {
-    setCreateContactDialogOpen(true);
-  }, []);
-
-  const closeCreateContactDialog = useCallback(() => {
-    setCreateContactDialogOpen(false);
-  }, []);
-
-  const openDeleteContactDialog = useCallback((contact: Contact) => {
+  const openDeleteContactDialog = useCallback((contact: ContactType) => {
     setSelectedContactForDelete(contact);
     setDeleteContactDialogOpen(true);
   }, []);
@@ -816,298 +655,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setDeleteContactDialogOpen(false);
     setSelectedContactForDelete(null);
   }, []);
-
-  const handleEditContact = useCallback(
-    async (contactData: CreateContactType | null, photoFile?: File | null) => {
-      if (!userService || !selectedContactForEdit || !accountId) {
-        throw new Error('Unable to update contact - missing required data');
-      }
-
-      setFormLoading(true);
-
-      if (!contactData) {
-        throw new Error('TODO: should do photoFile upload only here');
-      }
-
-      // todo: duplicated method in userRosterDataManager - refactor to common utility.
-      // but maybe both these files will go away once we move to new architecture?
-      const result = photoFile
-        ? await apiUpdateContact({
-            path: { accountId, contactId: selectedContactForEdit.id },
-            client: apiClient,
-            throwOnError: false,
-            bodySerializer: (body) => {
-              const formData = new FormData();
-              Object.entries(body).forEach(([key, value]) => {
-                if (value instanceof File) {
-                  formData.append(key, value);
-                } else if (value !== undefined && value !== null) {
-                  formData.append(key, String(value));
-                }
-              });
-              return formData;
-            },
-          })
-        : await apiUpdateContact({
-            path: { accountId, contactId: selectedContactForEdit.id },
-            client: apiClient,
-            throwOnError: false,
-            body: { ...contactData, photo: undefined },
-          });
-
-      if (result.data) {
-        const updatedContact = result.data;
-        // Update the specific user in state with new data including cache-busted photo URL
-        const updatedUsers = paginationState.users.map((user) => {
-          if (user.id === selectedContactForEdit.id) {
-            // Apply cache busting to photo URL if present
-            const updatedPhotoUrl = updatedContact.photoUrl
-              ? addCacheBuster(updatedContact.photoUrl, Date.now())
-              : undefined;
-
-            return {
-              ...user,
-              firstName: updatedContact.firstName || user.firstName,
-              lastName: updatedContact.lastName || user.lastName,
-              middleName: updatedContact.middleName || user.middleName, // ✅ Use top-level middleName
-              email: updatedContact.email || user.email,
-              photoUrl: updatedPhotoUrl,
-              contactDetails: {
-                ...user.contactDetails,
-                phone1: updatedContact.contactDetails?.phone1 || null,
-                phone2: updatedContact.contactDetails?.phone2 || null,
-                phone3: updatedContact.contactDetails?.phone3 || null,
-                streetaddress: updatedContact.contactDetails?.streetaddress || null,
-                city: updatedContact.contactDetails?.city || null,
-                state: updatedContact.contactDetails?.state || null,
-                zip: updatedContact.contactDetails?.zip || null,
-                dateofbirth: updatedContact.contactDetails?.dateofbirth || null,
-                // ❌ Removed: middlename (moved to top-level middleName)
-              },
-            };
-          }
-          return user;
-        });
-
-        dispatch({
-          type: 'SET_DATA',
-          users: [...updatedUsers], // Force new array reference to trigger re-render
-          hasNext: paginationState.hasNext,
-          hasPrev: paginationState.hasPrev,
-          page: paginationState.page,
-        });
-
-        setSuccess('Contact updated successfully');
-        closeEditContactDialog();
-      } else {
-        console.error('Error updating contact:', result.error?.message);
-      }
-      setFormLoading(false);
-    },
-    [
-      userService,
-      selectedContactForEdit,
-      accountId,
-      paginationState.page,
-      paginationState.hasNext,
-      paginationState.hasPrev,
-      paginationState.users,
-      closeEditContactDialog,
-    ],
-  );
-
-  // todo: should combine this with handleEditContact
-  const handleCreateContact = useCallback(
-    async (contactData: CreateContactType | null, photoFile?: File | null) => {
-      if (!userService || !accountId) {
-        throw new Error('Unable to create contact - missing required data');
-      }
-
-      setFormLoading(true);
-
-      if (!contactData) {
-        throw new Error('TODO: should do photoFile upload only here');
-      }
-
-      try {
-        await userService.createContact(accountId, contactData, photoFile);
-
-        // Reload the user list to show the new contact
-        await loadUsers(1);
-
-        setSuccess('Contact created successfully');
-        closeCreateContactDialog();
-      } catch (error) {
-        console.error('Error creating contact:', error);
-        throw error; // Propagate error to dialog
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [userService, accountId, loadUsers, closeCreateContactDialog],
-  );
-
-  const handleDeleteContactPhoto = useCallback(
-    async (contactId: string) => {
-      if (!userService || !accountId) {
-        setError('Unable to delete contact photo - missing required data');
-        return;
-      }
-
-      try {
-        await userService.deleteContactPhoto(accountId, contactId);
-        setSuccess('Contact photo deleted successfully');
-
-        // Update the specific user to remove the photo URL
-        const updatedUsers = paginationState.users.map((user) => {
-          if (user.id === contactId) {
-            return {
-              ...user,
-              photoUrl: undefined,
-            };
-          }
-          return user;
-        });
-
-        dispatch({
-          type: 'SET_DATA',
-          users: [...updatedUsers], // Force new array reference to trigger re-render
-          hasNext: paginationState.hasNext,
-          hasPrev: paginationState.hasPrev,
-          page: paginationState.page,
-        });
-      } catch (error) {
-        console.error('Error deleting contact photo:', error);
-        setError(extractErrorMessage(error));
-      }
-    },
-    [
-      userService,
-      accountId,
-      paginationState.page,
-      paginationState.hasNext,
-      paginationState.hasPrev,
-      paginationState.users,
-    ],
-  );
-
-  const handleDeleteContact = useCallback(
-    async (contactId: string, force: boolean) => {
-      if (!userService || !accountId) {
-        setError('Unable to delete contact - missing required data');
-        return;
-      }
-
-      try {
-        setFormLoading(true);
-
-        const result = await userService.deleteContact(accountId, contactId, force);
-
-        // Refresh the users list to remove the deleted contact
-        // If we have a search term, use the search functionality to preserve the search state
-        if (searchTerm.trim()) {
-          // Use the search function which maintains the search state properly
-          await handleSearch();
-        } else {
-          // For regular refresh without search, use the current page but handle empty page edge case
-          const currentPage = paginationState.page;
-          dispatch({ type: 'START_LOADING' });
-
-          const usersResponse = await userService.fetchUsers(accountId, {
-            page: currentPage,
-            limit: rowsPerPage,
-            seasonId: currentSeasonId,
-            onlyWithRoles,
-          });
-
-          // If current page is empty and we have previous pages, go back one page
-          if (usersResponse.users.length === 0 && currentPage > 1) {
-            const previousPageResponse = await userService.fetchUsers(accountId, {
-              page: currentPage - 1,
-              limit: rowsPerPage,
-              seasonId: currentSeasonId,
-              onlyWithRoles,
-            });
-
-            dispatch({
-              type: 'SET_DATA',
-              users: previousPageResponse.users,
-              hasNext: previousPageResponse.pagination.hasNext ?? false,
-              hasPrev: previousPageResponse.pagination.hasPrev ?? false,
-              page: currentPage - 1,
-            });
-          } else {
-            dispatch({
-              type: 'SET_DATA',
-              users: usersResponse.users,
-              hasNext: usersResponse.pagination.hasNext ?? false,
-              hasPrev: usersResponse.pagination.hasPrev ?? false,
-              page: currentPage,
-            });
-          }
-        }
-
-        setSuccess(
-          `${result.message}${result.dependenciesDeleted > 0 ? ` (${result.dependenciesDeleted} related records deleted)` : ''}`,
-        );
-        closeDeleteContactDialog();
-      } catch (error) {
-        console.error('Error deleting contact:', error);
-        setError(error instanceof Error ? error.message : 'Failed to delete contact');
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [
-      userService,
-      accountId,
-      paginationState.page,
-      searchTerm,
-      rowsPerPage,
-      currentSeasonId,
-      onlyWithRoles,
-      closeDeleteContactDialog,
-      handleSearch,
-    ],
-  );
-
-  const handleRevokeRegistration = useCallback(
-    async (contactId: string) => {
-      if (!userService || !accountId) {
-        setError('Unable to revoke registration - missing required data');
-        return;
-      }
-
-      try {
-        await userService.revokeRegistration(accountId, contactId);
-        setSuccess('Registration removed successfully');
-
-        // Update users in-place to clear userId
-        const updatedUsers = paginationState.users.map((u) =>
-          u.id === contactId ? { ...u, userId: '' } : u,
-        );
-
-        dispatch({
-          type: 'SET_DATA',
-          users: [...updatedUsers],
-          hasNext: paginationState.hasNext,
-          hasPrev: paginationState.hasPrev,
-          page: paginationState.page,
-        });
-      } catch (error) {
-        console.error('Error revoking registration:', error);
-        setError(extractErrorMessage(error));
-      }
-    },
-    [
-      userService,
-      accountId,
-      paginationState.users,
-      paginationState.hasNext,
-      paginationState.hasPrev,
-      paginationState.page,
-    ],
-  );
 
   // Handle role assignment incremental update
   const handleRoleAssigned = useCallback(
@@ -1139,6 +686,137 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         hasPrev: paginationState.hasPrev,
         page: paginationState.page,
       });
+    },
+    [paginationState],
+  );
+
+  // Handle role removal incremental update
+  const handleRoleRemoved = useCallback(
+    (contactId: string, id: string) => {
+      const updatedUsers = paginationState.users.map((user) => {
+        if (user.id === contactId) {
+          return {
+            ...user,
+            contactroles: (user.contactroles || []).filter((role) => role.id !== id),
+          };
+        }
+        return user;
+      });
+
+      // Use existing dispatch pattern
+      dispatch({
+        type: 'SET_DATA',
+        users: [...updatedUsers],
+        hasNext: paginationState.hasNext,
+        hasPrev: paginationState.hasPrev,
+        page: paginationState.page,
+      });
+    },
+    [paginationState],
+  );
+
+  // Handle contact create/update incremental update
+  const handleContactUpdated = useCallback(
+    (contact: ContactType, isCreate: boolean) => {
+      if (isCreate) {
+        // For new contacts, we could add to the list, but it's safer to reload the first page
+        // to ensure proper pagination and sorting
+        dispatch({ type: 'RESET_TO_INITIAL' });
+      } else {
+        // For updates, update the specific contact in the current list
+        const updatedUsers = paginationState.users.map((user) => {
+          if (user.id === contact.id) {
+            return {
+              ...user,
+              firstName: contact.firstName,
+              lastName: contact.lastName,
+              middleName: contact.middleName,
+              email: contact.email,
+              photoUrl: contact.photoUrl,
+              contactDetails: contact.contactDetails,
+            };
+          }
+          return user;
+        });
+
+        dispatch({
+          type: 'SET_DATA',
+          users: [...updatedUsers],
+          hasNext: paginationState.hasNext,
+          hasPrev: paginationState.hasPrev,
+          page: paginationState.page,
+        });
+      }
+    },
+    [paginationState],
+  );
+
+  // Handle photo deletion incremental update
+  const handlePhotoDeleted = useCallback(
+    (contactId: string) => {
+      const updatedUsers = paginationState.users.map((user) => {
+        if (user.id === contactId) {
+          return {
+            ...user,
+            photoUrl: undefined,
+          };
+        }
+        return user;
+      });
+
+      dispatch({
+        type: 'SET_DATA',
+        users: [...updatedUsers],
+        hasNext: paginationState.hasNext,
+        hasPrev: paginationState.hasPrev,
+        page: paginationState.page,
+      });
+    },
+    [paginationState],
+  );
+
+  // Handle registration revocation incremental update
+  const handleRegistrationRevoked = useCallback(
+    (contactId: string) => {
+      const updatedUsers = paginationState.users.map((user) => {
+        if (user.id === contactId) {
+          return {
+            ...user,
+            userId: '', // Clear the userId to indicate no registration
+          };
+        }
+        return user;
+      });
+
+      dispatch({
+        type: 'SET_DATA',
+        users: [...updatedUsers],
+        hasNext: paginationState.hasNext,
+        hasPrev: paginationState.hasPrev,
+        page: paginationState.page,
+      });
+    },
+    [paginationState],
+  );
+
+  // Handle contact deletion incremental update
+  const handleContactDeleted = useCallback(
+    (contactId: string) => {
+      // Remove the contact from the current list
+      const updatedUsers = paginationState.users.filter((user) => user.id !== contactId);
+
+      // If this was the last item on the current page and we're not on page 1, go back one page
+      if (updatedUsers.length === 0 && paginationState.page > 1) {
+        dispatch({ type: 'RESET_TO_INITIAL' });
+      } else {
+        dispatch({
+          type: 'SET_DATA',
+          users: [...updatedUsers],
+          hasNext: paginationState.hasNext,
+          hasPrev: paginationState.hasPrev,
+          page: paginationState.page,
+        });
+      }
     },
     [paginationState],
   );
@@ -1183,25 +861,15 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     isPaginating, // Use the state from reducer
 
     // Dialog states
-    assignRoleDialogOpen,
-    removeRoleDialogOpen,
-    editContactDialogOpen,
     deleteContactDialogOpen,
-    createContactDialogOpen,
     selectedUser,
-    selectedContactForEdit,
     selectedContactForDelete,
-    selectedRole,
-    selectedRoleToRemove,
-    newUserContactId,
     formLoading,
 
     // Context data states
     leagues,
     teams,
     leagueSeasons,
-    selectedLeagueId,
-    selectedTeamId,
     contextDataLoading,
 
     // Automatic role holders states
@@ -1216,36 +884,19 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     handleNextPage,
     handlePrevPage,
     handleRowsPerPageChange,
-    handleAssignRole,
-    handleRemoveRole,
-    openAssignRoleDialog,
-    closeAssignRoleDialog,
-    openRemoveRoleDialog,
-    openEditContactDialog,
-    closeEditContactDialog,
-    handleEditContact,
-    openCreateContactDialog,
-    closeCreateContactDialog,
-    handleCreateContact,
-    handleDeleteContactPhoto,
     openDeleteContactDialog,
     closeDeleteContactDialog,
-    handleDeleteContact,
-    handleRevokeRegistration,
-    setAssignRoleDialogOpen,
-    setRemoveRoleDialogOpen,
-    setEditContactDialogOpen,
     setSelectedUser,
-    setSelectedRole,
-    setSelectedRoleToRemove,
-    setNewUserContactId,
-    setSelectedLeagueId,
-    setSelectedTeamId,
     setSearchTerm,
     setError,
     setSuccess,
     loadContextData,
     getRoleDisplayName: getRoleDisplayNameHelper,
     handleRoleAssigned,
+    handleRoleRemoved,
+    handleContactUpdated,
+    handlePhotoDeleted,
+    handleRegistrationRevoked,
+    handleContactDeleted,
   };
 };

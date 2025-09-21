@@ -137,7 +137,7 @@ export function globalErrorHandler(
 
   // Handle generic errors - always return a safe generic message
   res.status(500).json({
-    message: 'Internal server error',
+    message: err.message || 'Internal server error',
     statusCode: 500,
     isRetryable: true,
   });

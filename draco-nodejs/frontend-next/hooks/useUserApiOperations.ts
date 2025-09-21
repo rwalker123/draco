@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { UserManagementService } from '../services/userManagementService';
 import {
   UserApiOperations,
-  FetchUsersParams,
   SearchUsersParams,
   AssignRoleParams,
   RemoveRoleParams,
@@ -14,20 +13,6 @@ export const useUserApiOperations = (
   userService: UserManagementService,
   accountId: string,
 ): UserApiOperations => {
-  const fetchUsersWithFilter = useCallback(
-    async (params: FetchUsersParams) => {
-      return await userService.fetchUsers(accountId, {
-        page: params.page,
-        limit: params.limit,
-        sortBy: params.sortBy,
-        sortOrder: params.sortOrder,
-        seasonId: params.seasonId,
-        onlyWithRoles: params.onlyWithRoles,
-      });
-    },
-    [userService, accountId],
-  );
-
   const searchUsersWithFilter = useCallback(
     async (params: SearchUsersParams) => {
       const result = await userService.searchUsers(
@@ -35,6 +20,12 @@ export const useUserApiOperations = (
         params.searchTerm,
         params.seasonId,
         params.onlyWithRoles,
+        {
+          page: params.page || 1,
+          limit: params.limit || 50,
+          sortBy: params.sortBy || 'lastname',
+          sortOrder: params.sortOrder || 'asc',
+        },
       );
       return {
         users: result.users,
@@ -82,7 +73,6 @@ export const useUserApiOperations = (
   );
 
   return {
-    fetchUsersWithFilter,
     searchUsersWithFilter,
     assignRole,
     removeRole,

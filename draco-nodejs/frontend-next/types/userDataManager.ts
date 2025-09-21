@@ -23,6 +23,11 @@ export interface SearchUsersParams {
   searchTerm: string;
   seasonId: string | null;
   onlyWithRoles?: boolean;
+  // Add pagination parameters for unified functionality
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface UserResponse {
@@ -34,7 +39,6 @@ export interface UserResponse {
 }
 
 export interface UserApiOperations {
-  fetchUsersWithFilter(params: FetchUsersParams): Promise<UserResponse>;
   searchUsersWithFilter(params: SearchUsersParams): Promise<UserResponse>;
   assignRole(params: AssignRoleParams): Promise<void>;
   removeRole(params: RemoveRoleParams): Promise<void>;

@@ -1,8 +1,8 @@
 // Recipient selection types for email composition
-import { Contact } from '@draco/shared-schemas';
+import { ContactType } from '@draco/shared-schemas';
 
 // Enhanced recipient interface for frontend display
-export interface RecipientContact extends Contact {
+export interface RecipientContact extends ContactType {
   displayName: string;
   hasValidEmail: boolean;
 }
