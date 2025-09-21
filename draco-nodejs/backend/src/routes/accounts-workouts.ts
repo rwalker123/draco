@@ -4,14 +4,7 @@ import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import {
-  validateListWorkouts,
-  validateWorkoutCreate,
-  validateWorkoutUpdate,
-  validateRegistrationCreate,
-  validateSourcesUpdate,
-  validateRegistrationUpdate,
-} from '../middleware/validation/workoutValidation.js';
+
 import { WorkoutService } from '../services/workoutService.js';
 import { WORKOUT_CONSTANTS } from '../utils/workoutMappers.js';
 import { ListWorkoutsFilter } from '../interfaces/workoutInterfaces.js';
@@ -79,7 +72,6 @@ const registrationLimiter = rateLimit({
 router.get(
   '/:accountId/workouts',
   optionalAuth,
-  validateListWorkouts,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const includeRegistrationCounts = req.query.includeRegistrationCounts === 'true';
@@ -96,21 +88,8 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/sources:
- *   get:
- *     summary: Get where-heard options
- *     description: Public endpoint returning the configured options for registrations
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Options
+ * GET /api/accounts/{accountId}/workouts/sources
+ * Get the allowed where-heard options for a workout
  */
 router.get(
   '/:accountId/workouts/sources',
@@ -123,41 +102,14 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/sources:
- *   put:
- *     summary: Replace where-heard options
- *     description: Admin endpoint to upsert the allowed where-heard options array
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               options:
- *                 type: array
- *                 items:
- *                   type: string
- *     responses:
- *       200:
- *         description: Saved
+ * PUT /api/accounts/{accountId}/workouts/sources
+ * Update the allowed where-heard options for a workout
  */
 router.put(
   '/:accountId/workouts/sources',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('workout.manage'),
-  validateSourcesUpdate,
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     await service.putSources(accountId.toString(), req.body);
@@ -166,35 +118,8 @@ router.put(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/sources:
- *   post:
- *     summary: Add a single where-heard option
- *     description: Admin endpoint to append a new option to the where-heard list
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               option:
- *                 type: string
- *                 maxLength: 25
- *     responses:
- *       200:
- *         description: Option added
- *       400:
- *         description: Invalid input
+ * POST /api/accounts/{accountId}/workouts/sources
+ * Add a single where-heard option to the allowed options
  */
 router.post(
   '/:accountId/workouts/sources',
@@ -253,37 +178,12 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/{workoutId}/registrations:
- *   post:
- *     summary: Register for a workout
- *     description: Public endpoint to create a workout registration (no authentication required)
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: workoutId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       201:
- *         description: Registration created
+ * POST /api/accounts/{accountId}/workouts/:workoutId/registrations
+ * Create a registration for a workout
  */
 router.post(
   '/:accountId/workouts/:workoutId/registrations',
   registrationLimiter,
-  validateRegistrationCreate,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
@@ -293,46 +193,14 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}:
- *   put:
- *     summary: Update a registration
- *     description: Admin endpoint to update a workout registration
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: workoutId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: registrationId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/WorkoutRegistrationUpdateDTO'
- *     responses:
- *       200:
- *         description: Updated registration
+ * PUT /api/accounts/{accountId}/workouts/:workoutId/registrations/:registrationId
+ * Update a registration for a workout
  */
 router.put(
   '/:accountId/workouts/:workoutId/registrations/:registrationId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('workout.manage'),
-  validateRegistrationUpdate,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
@@ -343,33 +211,8 @@ router.put(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}:
- *   delete:
- *     summary: Delete a registration
- *     description: Admin endpoint to delete a workout registration
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: workoutId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: registrationId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Deleted
+ * DELETE /api/accounts/{accountId}/workouts/:workoutId/registrations/:registrationId
+ * Delete a registration for a workout
  */
 router.delete(
   '/:accountId/workouts/:workoutId/registrations/:registrationId',
@@ -386,29 +229,14 @@ router.delete(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts:
- *   post:
- *     summary: Create a workout
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       201:
- *         description: Workout created
+ * POST /api/accounts/{accountId}/workouts
+ * Create a workout
  */
 router.post(
   '/:accountId/workouts',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('workout.manage'),
-  validateWorkoutCreate,
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     const w = await service.createWorkout(accountId, req.body);
@@ -417,34 +245,14 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/{workoutId}:
- *   put:
- *     summary: Update a workout
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: workoutId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Updated
+ * PUT /api/accounts/{accountId}/workouts/:workoutId
+ * Update a workout
  */
 router.put(
   '/:accountId/workouts/:workoutId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('workout.manage'),
-  validateWorkoutUpdate,
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');

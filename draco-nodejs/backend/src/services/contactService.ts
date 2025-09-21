@@ -1,32 +1,33 @@
-import { contacts, Prisma, PrismaClient } from '@prisma/client';
-import prisma from '../lib/prisma.js';
-import { PaginationHelper } from '../utils/pagination.js';
-import {
-  ContactQueryOptions,
-  ContactResponse,
-  ContactWithRoleAndDetailsRaw,
-  AccountOwnerRaw,
-  TeamManagerWithTeams,
-  AutomaticRoleHoldersResponse,
-} from '../interfaces/contactInterfaces.js';
-import { ROLE_IDS, ROLE_NAMES } from '../config/roles.js';
-import { RoleType } from '../types/roles.js';
-import { getContactPhotoUrl } from '../config/logo.js';
+import { contacts } from '@prisma/client';
+import { ContactQueryOptions } from '../interfaces/contactInterfaces.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
+  AutomaticRoleHoldersType,
   BaseContactType,
-  ContactType,
+  PagedContactType,
   CreateContactType,
   RosterPlayerType,
+  ContactValidationType,
 } from '@draco/shared-schemas';
-import { NotFoundError } from '../utils/customErrors.js';
-import { ContactResponseFormatter } from '../utils/responseFormatters.js';
-import { RepositoryFactory, IContactRepository, dbRosterPlayer } from '../repositories/index.js';
+import { ConflictError, NotFoundError } from '../utils/customErrors.js';
+import { ContactResponseFormatter, TeamResponseFormatter } from '../utils/responseFormatters.js';
+import {
+  RepositoryFactory,
+  IContactRepository,
+  dbRosterPlayer,
+  ISeasonRepository,
+  ITeamRepository,
+} from '../repositories/index.js';
 
 export class ContactService {
   private contactRepository: IContactRepository;
-  constructor(private prisma: PrismaClient) {
+  private seasonRepository: ISeasonRepository;
+  private teamRepository: ITeamRepository;
+
+  constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
+    this.seasonRepository = RepositoryFactory.getSeasonRepository();
+    this.teamRepository = RepositoryFactory.getTeamRepository();
   }
 
   /**
@@ -49,10 +50,10 @@ export class ContactService {
   /**
    * Get a contact
    * @param contactId
-   * @returns ContactType
+   * @returns BaseContactType
    */
-  async getContact(contactId: bigint): Promise<ContactType | null> {
-    const dbContact = await this.contactRepository.findById(contactId);
+  async getContact(accountId: bigint, contactId: bigint): Promise<BaseContactType | null> {
+    const dbContact = await this.contactRepository.findContactInAccount(contactId, accountId);
     if (!dbContact) {
       throw new NotFoundError('Contact not found');
     }
@@ -60,11 +61,62 @@ export class ContactService {
   }
 
   /**
+   * Get a contact by user ID
+   * @param userId
+   * @returns BaseContactType
+   */
+  async getContactByUserId(userId: string, accountId: bigint): Promise<BaseContactType | null> {
+    const dbContact = await this.contactRepository.findByUserId(userId, accountId);
+    if (!dbContact) {
+      throw new NotFoundError('Contact not found');
+    }
+    return ContactResponseFormatter.formatContactResponse(dbContact);
+  }
+
+  /**
+   * Register a contact user
+   * @param userId
+   * @param contactId
+   * @returns BaseContactType
+   */
+  async registerContactUser(userId: string, contactId: bigint): Promise<BaseContactType> {
+    const updatedContact = await this.contactRepository.update(contactId, {
+      userid: userId,
+    });
+
+    return ContactResponseFormatter.formatContactResponse(updatedContact);
+  }
+
+  /**
+   * Unlink a contact user
+   * @param userId
+   * @param contactId
+   * @returns BaseContactType
+   */
+  async unlinkContactUser(accountId: bigint, contactId: bigint): Promise<BaseContactType> {
+    const existingContact = await this.getContact(accountId, BigInt(contactId));
+
+    if (!existingContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    if (existingContact.userId === null) {
+      throw new ConflictError('Contact is not registered');
+    }
+
+    const updatedContact = await this.contactRepository.update(contactId, {
+      userid: null,
+    });
+
+    return ContactResponseFormatter.formatContactResponse(updatedContact);
+  }
+
+  /**
    * Create a contact
    * @param contact
-   * @returns ContactType
+   * @returns BaseContactType
    */
-  async createContact(contact: CreateContactType, accountId: bigint): Promise<ContactType> {
+  async createContact(contact: CreateContactType, accountId: bigint): Promise<BaseContactType> {
     // convert to db contact
     const dbCreateContact: Partial<contacts> = {
       firstname: contact.firstName,
@@ -75,12 +127,12 @@ export class ContactService {
       phone2: contact.contactDetails?.phone2 || null,
       phone3: contact.contactDetails?.phone3 || null,
       creatoraccountid: accountId,
-      streetaddress: contact.contactDetails?.streetaddress || null,
+      streetaddress: contact.contactDetails?.streetAddress || null,
       city: contact.contactDetails?.city || null,
       state: contact.contactDetails?.state || null,
       zip: contact.contactDetails?.zip || null,
-      dateofbirth: contact.contactDetails?.dateofbirth
-        ? DateUtils.parseDateOfBirthForDatabase(contact.contactDetails.dateofbirth)
+      dateofbirth: contact.contactDetails?.dateOfBirth
+        ? DateUtils.parseDateOfBirthForDatabase(contact.contactDetails.dateOfBirth)
         : new Date('1900-01-01'),
     };
 
@@ -91,9 +143,9 @@ export class ContactService {
   /**
    * Update a contact
    * @param contact
-   * @returns ContactType
+   * @returns BaseContactType
    */
-  async updateContact(contact: CreateContactType, contactId: bigint): Promise<ContactType> {
+  async updateContact(contact: CreateContactType, contactId: bigint): Promise<BaseContactType> {
     // convert to db contact
     const dbCreateContact: Partial<contacts> = {
       firstname: contact.firstName,
@@ -103,12 +155,12 @@ export class ContactService {
       phone1: contact.contactDetails?.phone1 || null,
       phone2: contact.contactDetails?.phone2 || null,
       phone3: contact.contactDetails?.phone3 || null,
-      streetaddress: contact.contactDetails?.streetaddress || null,
+      streetaddress: contact.contactDetails?.streetAddress || null,
       city: contact.contactDetails?.city || null,
       state: contact.contactDetails?.state || null,
       zip: contact.contactDetails?.zip || null,
-      dateofbirth: contact.contactDetails?.dateofbirth
-        ? DateUtils.parseDateOfBirthForDatabase(contact.contactDetails.dateofbirth)
+      dateofbirth: contact.contactDetails?.dateOfBirth
+        ? DateUtils.parseDateOfBirthForDatabase(contact.contactDetails.dateOfBirth)
         : new Date('1900-01-01'),
     };
 
@@ -127,140 +179,27 @@ export class ContactService {
     accountId: bigint,
     seasonId?: bigint | null,
     options: ContactQueryOptions = {},
-  ): Promise<ContactResponse> {
-    const {
-      includeRoles = false,
-      onlyWithRoles = false,
-      searchQuery,
-      pagination,
-      includeContactDetails = false,
-    } = options;
+  ): Promise<PagedContactType> {
+    const { includeRoles = false, pagination, includeContactDetails = false } = options;
+
+    if (pagination && pagination.page < 1) {
+      pagination.page = 1;
+    }
 
     // If roles are not requested, use the simple Prisma query
     if (!includeRoles) {
       return this.getContactsSimple(accountId, options);
     }
 
-    // Build the raw SQL query with proper parameter binding
-    const query = Prisma.sql`
-      SELECT
-        contacts.id,
-        contacts.firstname,
-        contacts.lastname,
-        contacts.email,
-        contacts.userid,
-        ${
-          includeContactDetails
-            ? Prisma.sql`
-        contacts.phone1,
-        contacts.phone2,
-        contacts.phone3,
-        contacts.streetaddress,
-        contacts.city,
-        contacts.state,
-        contacts.zip,
-        contacts.dateofbirth,
-        contacts.middlename,
-        `
-            : Prisma.empty
-        }
-        CASE
-          -- Team roles: Join teamsseason to get team name, validate season
-          WHEN cr.roleid = ${ROLE_IDS[RoleType.TEAM_ADMIN]} THEN ts.name
-          WHEN cr.roleid = ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]} THEN ts.name
-
-          -- League role: Join leagueseason to get league name, validate season
-          WHEN cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]} THEN l.name
-
-          -- Account roles: No additional name needed (validated by roledata = accountId)
-          WHEN cr.roleid = ${ROLE_IDS[RoleType.ACCOUNT_ADMIN]} THEN 'Account Admin'
-          WHEN cr.roleid = ${ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]} THEN 'Account Photo Admin'
-
-          -- Global roles: No additional restrictions
-          WHEN cr.roleid = ${ROLE_IDS[RoleType.ADMINISTRATOR]} THEN 'Administrator'
-
-          ELSE NULL
-        END AS role_context_name,
-        cr.roleid,
-        cr.roledata
-      FROM contacts
-      LEFT JOIN contactroles cr ON (
-        contacts.id = cr.contactid 
-        AND cr.accountid = ${accountId}
-        AND (
-          -- Include all valid roles based on type-specific validation
-          cr.roleid IS NULL  -- This won't match but keeps structure
-          
-          -- Account roles: Validate roledata matches accountId
-          OR (cr.roleid IN (${ROLE_IDS[RoleType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
-          
-          -- Global roles: No additional restrictions
-          OR cr.roleid = ${ROLE_IDS[RoleType.ADMINISTRATOR]}
-          
-          -- Team and League roles: Will be validated by subsequent joins
-          OR cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]}, ${ROLE_IDS[RoleType.LEAGUE_ADMIN]})
-        )
-      )
-      -- Team roles: Join to teamsseason and validate season
-      LEFT JOIN teamsseason ts ON (
-        cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]})
-        AND cr.roledata = ts.id
-      )
-      LEFT JOIN leagueseason ls_ts ON (
-        cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]})
-        AND ts.leagueseasonid = ls_ts.id
-        AND ls_ts.seasonid = ${seasonId}
-      )
-      -- League role: Join to leagueseason and validate season
-      LEFT JOIN leagueseason ls ON (
-        cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]}
-        AND cr.roledata = ls.id
-        AND ls.seasonid = ${seasonId}
-      )
-      LEFT JOIN league l ON (
-        cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]}
-        AND ls.leagueid = l.id
-      )
-      WHERE
-        contacts.creatoraccountid = ${accountId}
-        ${
-          searchQuery
-            ? Prisma.sql`
-          AND (
-            contacts.firstname ILIKE ${`%${searchQuery}%`}
-            OR contacts.lastname ILIKE ${`%${searchQuery}%`}
-            OR contacts.email ILIKE ${`%${searchQuery}%`}
-          )
-        `
-            : Prisma.empty
-        }
-        AND (
-          ${
-            !onlyWithRoles
-              ? Prisma.sql`
-          -- Include contacts with no roles but only for the given account
-          cr.roleid IS NULL OR
-          `
-              : Prisma.empty
-          }
-          -- Include valid team roles (must have valid season)
-          (cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]}) AND ls_ts.id IS NOT NULL)
-          
-          -- Include valid league roles (must have valid season)
-          OR (cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]} AND ls.id IS NOT NULL)
-          
-          -- Include valid account roles
-          OR (cr.roleid IN (${ROLE_IDS[RoleType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
-        )
-      ORDER BY contacts.lastname, contacts.firstname, cr.roleid
-      ${pagination ? Prisma.sql`LIMIT ${pagination.limit + 1} OFFSET ${(pagination.page - 1) * pagination.limit}` : Prisma.empty}
-    `;
-
-    // Execute the raw query
-    const rows = await prisma.$queryRaw<ContactWithRoleAndDetailsRaw[]>(query);
+    const rows = await this.contactRepository.searchContactsWithRoles(accountId, options, seasonId);
 
     // Transform the flat rows into the desired structure
-    return this.transformContactRows(rows, accountId, pagination, includeContactDetails);
+    return ContactResponseFormatter.formatPagedContactRolesResponse(
+      rows,
+      accountId,
+      pagination,
+      includeContactDetails,
+    );
   }
 
   /**
@@ -269,367 +208,54 @@ export class ContactService {
   private async getContactsSimple(
     accountId: bigint,
     options: ContactQueryOptions = {},
-  ): Promise<ContactResponse> {
-    const { searchQuery, pagination, includeContactDetails = false } = options;
+  ): Promise<PagedContactType> {
+    const { includeContactDetails, pagination } = options;
 
-    // Build where clause
-    const whereClause: Prisma.contactsWhereInput = {
-      creatoraccountid: accountId,
-    };
+    const contactsWithTotalCount = await this.contactRepository.searchContactsByName(
+      accountId,
+      options,
+    );
 
-    // Add search conditions if search query provided
-    if (searchQuery) {
-      whereClause.OR = [
-        {
-          firstname: {
-            contains: searchQuery,
-            mode: 'insensitive',
-          },
-        },
-        {
-          lastname: {
-            contains: searchQuery,
-            mode: 'insensitive',
-          },
-        },
-        {
-          email: {
-            contains: searchQuery,
-            mode: 'insensitive',
-          },
-        },
-      ];
-    }
-
-    // Get total count
-    const totalCount = await prisma.contacts.count({
-      where: whereClause,
-    });
-
-    // Build contact selection
-    const contactSelect = {
-      id: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-      userid: true,
-      ...(includeContactDetails && {
-        phone1: true,
-        phone2: true,
-        phone3: true,
-        streetaddress: true,
-        city: true,
-        state: true,
-        zip: true,
-        dateofbirth: true,
-        middlename: true,
-      }),
-    } as const;
-
-    // Build query options
-    const queryOptions: Prisma.contactsFindManyArgs = {
-      where: whereClause,
-      select: contactSelect,
-    };
-
-    // Add pagination if provided
-    if (pagination) {
-      const allowedSortFields = ['firstname', 'lastname', 'email', 'id'];
-      const sortBy = PaginationHelper.validateSortField(pagination.sortBy, allowedSortFields);
-
-      queryOptions.orderBy = sortBy
-        ? PaginationHelper.getPrismaOrderBy(sortBy, pagination.sortOrder)
-        : [{ lastname: 'asc' }, { firstname: 'asc' }];
-
-      queryOptions.skip = (pagination.page - 1) * pagination.limit;
-      queryOptions.take = pagination.limit;
-    } else {
-      // Default ordering for search results
-      queryOptions.orderBy = [{ lastname: 'asc' }, { firstname: 'asc' }];
-      queryOptions.take = 10; // Default limit for search
-    }
-
-    // Execute query
-    const contacts = await prisma.contacts.findMany(queryOptions);
-
-    // Transform response (simple contacts without roles)
-    const transformedContacts: ContactType[] = contacts.map((contact) => ({
-      id: contact.id.toString(),
-      creatoraccountid: accountId.toString(),
-      firstName: contact.firstname,
-      lastName: contact.lastname,
-      middleName: contact.middlename,
-      email: contact.email || undefined,
-      userId: contact.userid || undefined,
-      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
-      contactroles: [],
-      ...(includeContactDetails && {
-        contactDetails: {
-          phone1: contact.phone1,
-          phone2: contact.phone2,
-          phone3: contact.phone3,
-          streetaddress: contact.streetaddress,
-          city: contact.city,
-          state: contact.state,
-          zip: contact.zip,
-          dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-        },
-      }),
-    }));
-
-    // Format response
-    if (pagination) {
-      const response = PaginationHelper.formatResponse(
-        transformedContacts,
-        pagination.page,
-        pagination.limit,
-        totalCount,
-      );
-
-      return {
-        contacts: response.data,
-        total: response.pagination.total,
-        pagination: response.pagination,
-      };
-    }
-
-    return {
-      contacts: transformedContacts,
-      total: totalCount,
-    };
-  }
-
-  /**
-   * Transform raw SQL rows into structured contact response
-   */
-  private transformContactRows(
-    rows: ContactWithRoleAndDetailsRaw[],
-    accountId: bigint,
-    pagination?: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
-    includeContactDetails?: boolean,
-  ): ContactResponse {
-    // Group rows by contact ID
-    const contactMap = new Map<string, ContactType>();
-
-    // Process each row
-    for (const row of rows) {
-      const contactId = row.id.toString();
-
-      // Get or create contact entry
-      if (!contactMap.has(contactId)) {
-        const contactEntry: ContactType = {
-          id: contactId,
-          creatoraccountid: accountId.toString(),
-          firstName: row.firstname,
-          lastName: row.lastname,
-          middleName: row.middlename || '',
-          email: row.email || undefined,
-          userId: row.userid || undefined,
-          photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
-          contactroles: [],
-        };
-
-        // Add contact details if available and requested
-        if (includeContactDetails && 'phone1' in row) {
-          const contactRow = row as ContactWithRoleAndDetailsRaw;
-          contactEntry.contactDetails = {
-            phone1: contactRow.phone1,
-            phone2: contactRow.phone2,
-            phone3: contactRow.phone3,
-            streetaddress: contactRow.streetaddress,
-            city: contactRow.city,
-            state: contactRow.state,
-            zip: contactRow.zip,
-            dateofbirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
-          };
-        }
-
-        contactMap.set(contactId, contactEntry);
-      }
-
-      // Add role if present
-      if (row.roleid && row.roledata) {
-        const contact = contactMap.get(contactId)!;
-
-        // Map role ID to role name
-        const roleName = ROLE_NAMES[row.roleid];
-
-        const role = {
-          id: `${row.roleid}-${row.roledata}`,
-          roleId: row.roleid,
-          roleName: roleName,
-          roleData: row.roledata.toString(),
-        };
-
-        // Add context name if available (team or league name)
-        if (row.role_context_name) {
-          (role as { contextName?: string }).contextName = row.role_context_name;
-        }
-
-        contact.contactroles?.push(role);
-      }
-    }
-
-    // Convert map to array and sort
-    const allContacts = Array.from(contactMap.values()).sort((a, b) => {
-      const lastNameCompare = a.lastName.localeCompare(b.lastName);
-      if (lastNameCompare !== 0) return lastNameCompare;
-      return a.firstName.localeCompare(b.firstName);
-    });
-
-    // Handle pagination with efficient hasNext approach
-    if (pagination) {
-      // Check if we have more results than requested (the +1 record)
-      const hasNext = allContacts.length > pagination.limit;
-
-      // Remove the extra contact if present
-      const contacts = hasNext ? allContacts.slice(0, pagination.limit) : allContacts;
-
-      return {
-        contacts,
-        total: contacts.length, // Only the contacts returned, not global total
-        pagination: {
-          page: pagination.page,
-          limit: pagination.limit,
-          hasNext,
-          hasPrev: pagination.page > 1,
-        },
-      };
-    }
-
-    // Return all contacts without pagination
-    return {
-      contacts: allContacts,
-      total: allContacts.length,
-    };
+    const response: PagedContactType = ContactResponseFormatter.formatPagedContactResponse(
+      accountId,
+      contactsWithTotalCount,
+      includeContactDetails,
+      pagination,
+    );
+    return response;
   }
 
   /**
    * Get automatic role holders (Account Owner and Team Managers) for the current season
    */
-  async getAutomaticRoleHolders(accountId: bigint): Promise<AutomaticRoleHoldersResponse> {
+  async getAutomaticRoleHolders(accountId: bigint): Promise<AutomaticRoleHoldersType> {
     try {
-      // Get current season for this account
-      const currentSeasonRecord = await prisma.currentseason.findUnique({
-        where: { accountid: accountId },
-        select: { seasonid: true },
-      });
+      // No current season, but we still need to return account owner
+      const dbAccountOwner = await this.contactRepository.findAccountOwner(accountId);
 
-      if (!currentSeasonRecord) {
-        // No current season, but we still need to return account owner
-        const accountOwnerResult = await prisma.$queryRaw<AccountOwnerRaw[]>`
-          SELECT contacts.id, contacts.firstname, contacts.lastname, contacts.email, contacts.userid
-          FROM accounts 
-          JOIN contacts ON accounts.id = contacts.creatoraccountid 
-          WHERE accounts.id = ${accountId} 
-            AND accounts.owneruserid = contacts.userid
-        `;
+      if (!dbAccountOwner) {
+        throw new Error(`Account owner not found for account ${accountId.toString()}`);
+      }
 
-        if (!accountOwnerResult[0]) {
-          throw new Error(`Account owner not found for account ${accountId.toString()}`);
-        }
+      const accountOwner = ContactResponseFormatter.formatContactResponse(dbAccountOwner);
 
+      const dbCurrentSeason = await this.seasonRepository.findCurrentSeason(accountId);
+      if (!dbCurrentSeason) {
         return {
-          accountOwner: {
-            id: accountOwnerResult[0].id.toString(),
-            firstName: accountOwnerResult[0].firstname,
-            lastName: accountOwnerResult[0].lastname,
-            middleName: '',
-            email: accountOwnerResult[0].email || undefined,
-            userId: accountOwnerResult[0].userid || undefined,
-            photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
-          },
+          accountOwner,
           teamManagers: [], // No team managers without a current season
         };
       }
 
-      const currentSeasonId = currentSeasonRecord.seasonid;
+      const dbTeamManagers = await this.teamRepository.findTeamSeasonManagers(
+        dbCurrentSeason.id,
+        accountId,
+      );
 
-      // Query account owner
-      const accountOwnerResult = await prisma.$queryRaw<AccountOwnerRaw[]>`
-        SELECT contacts.id, contacts.firstname, contacts.lastname, contacts.email, contacts.userid
-        FROM accounts 
-        JOIN contacts ON accounts.id = contacts.creatoraccountid 
-        WHERE accounts.id = ${accountId} 
-          AND accounts.owneruserid = contacts.userid
-      `;
-
-      if (!accountOwnerResult[0]) {
-        throw new Error(`Account owner not found for account ${accountId.toString()}`);
-      }
-
-      const accountOwner: BaseContactType = {
-        id: accountOwnerResult[0].id.toString(),
-        firstName: accountOwnerResult[0].firstname,
-        lastName: accountOwnerResult[0].lastname,
-        middleName: '', // Account owner queries don't include middle name
-        email: accountOwnerResult[0].email || undefined,
-        userId: accountOwnerResult[0].userid || undefined,
-        photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
-      };
-
-      // Query team managers for the current season using Prisma relations
-      const teamManagersResult = await prisma.teamseasonmanager.findMany({
-        where: {
-          teamsseason: {
-            leagueseason: {
-              seasonid: currentSeasonId,
-            },
-          },
-          contacts: {
-            creatoraccountid: accountId,
-          },
-        },
-        include: {
-          contacts: {
-            select: {
-              id: true,
-              firstname: true,
-              lastname: true,
-              email: true,
-            },
-          },
-          teamsseason: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: [
-          { contacts: { lastname: 'asc' } },
-          { contacts: { firstname: 'asc' } },
-          { teamsseason: { name: 'asc' } },
-        ],
-      });
-
-      // Group team managers by contact
-      const teamManagersMap = new Map<string, TeamManagerWithTeams>();
-
-      for (const row of teamManagersResult) {
-        const contactId = row.contacts.id.toString();
-
-        if (!teamManagersMap.has(contactId)) {
-          teamManagersMap.set(contactId, {
-            id: contactId,
-            firstName: row.contacts.firstname,
-            lastName: row.contacts.lastname,
-            middleName: '', // Team manager queries don't include middle name
-            email: row.contacts.email || undefined,
-            photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
-            teams: [],
-          });
-        }
-
-        const manager = teamManagersMap.get(contactId)!;
-        manager.teams.push({
-          teamSeasonId: row.teamsseason.id.toString(),
-          teamName: row.teamsseason.name,
-        });
-      }
-
-      const teamManagers = Array.from(teamManagersMap.values());
-
+      const teamManagers = TeamResponseFormatter.formatTeamManagerWithTeams(
+        accountId,
+        dbTeamManagers,
+      );
       return {
         accountOwner,
         teamManagers,
@@ -638,5 +264,65 @@ export class ContactService {
       console.error('Error getting automatic role holders:', error);
       throw error;
     }
+  }
+
+  /**
+   * Find and validate a contact
+   * @param accountId
+   * @param whereClause
+   */
+  async findAndValidateContact(
+    accountId: bigint,
+    input: ContactValidationType,
+  ): Promise<BaseContactType[]> {
+    // Build base query for name matching
+    const whereClause: {
+      creatoraccountid: bigint;
+      userid?: null | undefined;
+      firstname: { equals: string; mode: 'insensitive' };
+      lastname: { equals: string; mode: 'insensitive' };
+      middlename?: { equals: string; mode: 'insensitive' };
+      streetaddress?: { equals: string; mode: 'insensitive' };
+      dateofbirth?: Date;
+    } = {
+      creatoraccountid: accountId,
+      firstname: { equals: input.firstName.trim(), mode: 'insensitive' },
+      lastname: { equals: input.lastName.trim(), mode: 'insensitive' },
+    };
+
+    // Add middle name if provided
+    if (input.middleName && input.middleName.trim().length > 0) {
+      whereClause.middlename = { equals: input.middleName.trim(), mode: 'insensitive' };
+    }
+
+    // Add validation field based on type
+    if (input.validationType === 'streetAddress') {
+      whereClause.streetaddress = {
+        equals: input.contactDetails!.streetAddress!.trim(),
+        mode: 'insensitive',
+      };
+    } else if (input.validationType === 'dateOfBirth') {
+      // Use the same DateUtils logic that was used when originally storing the contact
+      // This ensures we create the exact same Date object for database matching
+      const parsedDate = DateUtils.parseDateOfBirthForDatabase(input.contactDetails!.dateOfBirth!);
+      whereClause.dateofbirth = parsedDate;
+    }
+
+    const dbContacts = await this.contactRepository.findMany({
+      whereClause,
+    });
+
+    return dbContacts.map((dbContact) => ContactResponseFormatter.formatContactResponse(dbContact));
+  }
+
+  /**
+   * Check if the contact is the account owner
+   */
+  async checkIfAccountOwner(contactId: bigint, accountId: bigint): Promise<boolean> {
+    const dbAccountOwner = await this.contactRepository.findAccountOwner(accountId);
+    if (!dbAccountOwner) {
+      return false;
+    }
+    return dbAccountOwner.id === contactId;
   }
 }

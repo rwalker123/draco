@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { Typography, Box } from '@mui/material';
-import { ContactDetails } from '@draco/shared-schemas';
+import { ContactDetailsType } from '@draco/shared-schemas';
 import { formatDateOfBirth } from '../../../utils/dateUtils';
 
 interface DateOfBirthCellProps {
-  contactDetails?: ContactDetails;
+  contactDetails?: ContactDetailsType;
   compact?: boolean;
 }
 
@@ -15,7 +15,7 @@ interface DateOfBirthCellProps {
  * Displays date of birth in a compact table cell format
  */
 const DateOfBirthCell: React.FC<DateOfBirthCellProps> = ({ contactDetails, compact = true }) => {
-  if (!contactDetails?.dateofbirth) {
+  if (!contactDetails?.dateOfBirth) {
     return (
       <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
         —
@@ -23,7 +23,7 @@ const DateOfBirthCell: React.FC<DateOfBirthCellProps> = ({ contactDetails, compa
     );
   }
 
-  const formattedDate = formatDateOfBirth(contactDetails.dateofbirth);
+  const formattedDate = formatDateOfBirth(contactDetails.dateOfBirth);
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

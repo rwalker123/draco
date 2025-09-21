@@ -1,6 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
+import { SignInCredentialsType } from '@draco/shared-schemas';
 
 interface User {
   id: string;
@@ -15,7 +16,7 @@ export interface AuthContextType {
   token: string | null;
   loading: boolean;
   error: string | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (creds: SignInCredentialsType) => Promise<boolean>;
   logout: (refreshPage?: boolean) => void;
   fetchUser: (overrideToken?: string) => Promise<void>;
   setAuthToken: (newToken: string) => void;
@@ -53,19 +54,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line
   }, [token]);
 
-  const login = async (username: string, password: string) => {
+  const login = async (creds: SignInCredentialsType) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post('/api/auth/login', { username, password });
-      if (response.data.success && response.data.token) {
+      const response = await axios.post('/api/auth/login', {
+        userName: creds.userName,
+        password: creds.password,
+      });
+      if (response.data && response.data.token) {
         setToken(response.data.token);
         localStorage.setItem('jwtToken', response.data.token);
         await fetchUser(response.data.token);
         setLoading(false);
         return true;
       } else {
-        setError(response.data.message || 'Sign in failed');
+        setError(response.data?.message || 'Sign in failed');
         setLoading(false);
         return false;
       }

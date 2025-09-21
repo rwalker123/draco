@@ -1,16 +1,16 @@
 // Role configuration and constants for Draco Sports Manager
 
-import { RoleType } from '../types/roles.js';
+import { RoleNamesType } from '../types/roles.js';
 
 // Role ID mappings (these should match the actual IDs in the aspnetroles table)
 // These will be populated from the database during initialization
 export const ROLE_IDS: Record<string, string> = {
-  [RoleType.ADMINISTRATOR]: '',
-  [RoleType.ACCOUNT_ADMIN]: '',
-  [RoleType.ACCOUNT_PHOTO_ADMIN]: '',
-  [RoleType.LEAGUE_ADMIN]: '',
-  [RoleType.TEAM_ADMIN]: '',
-  [RoleType.TEAM_PHOTO_ADMIN]: '',
+  [RoleNamesType.ADMINISTRATOR]: '',
+  [RoleNamesType.ACCOUNT_ADMIN]: '',
+  [RoleNamesType.ACCOUNT_PHOTO_ADMIN]: '',
+  [RoleNamesType.LEAGUE_ADMIN]: '',
+  [RoleNamesType.TEAM_ADMIN]: '',
+  [RoleNamesType.TEAM_PHOTO_ADMIN]: '',
 };
 
 // Role name mappings (these should match the actual names in the aspnetroles table)
@@ -30,77 +30,66 @@ export const ROLE_PERMISSIONS_BY_ID: Record<
 > = {};
 
 // Role context types
-export enum RoleContextType {
+export enum RoleContextTypeNames {
   GLOBAL = 'global',
   ACCOUNT = 'account',
   TEAM = 'team',
   LEAGUE = 'league',
 }
 
-// Role data types for different contexts
-export interface RoleDataContext {
-  accountId: bigint;
-  teamId?: bigint;
-  leagueId?: bigint;
-  seasonId?: bigint;
-}
-
 // Role assignment validation rules
 export const ROLE_ASSIGNMENT_RULES: Record<string, string[]> = {
   // Who can assign which roles
-  [RoleType.ADMINISTRATOR]: [RoleType.ADMINISTRATOR],
-  [RoleType.ACCOUNT_ADMIN]: [RoleType.ADMINISTRATOR, RoleType.ACCOUNT_ADMIN],
-  [RoleType.ACCOUNT_PHOTO_ADMIN]: [RoleType.ADMINISTRATOR, RoleType.ACCOUNT_ADMIN],
-  [RoleType.LEAGUE_ADMIN]: [RoleType.ADMINISTRATOR, RoleType.ACCOUNT_ADMIN],
-  [RoleType.TEAM_ADMIN]: [RoleType.ADMINISTRATOR, RoleType.ACCOUNT_ADMIN, RoleType.LEAGUE_ADMIN],
-  [RoleType.TEAM_PHOTO_ADMIN]: [
-    RoleType.ADMINISTRATOR,
-    RoleType.ACCOUNT_ADMIN,
-    RoleType.LEAGUE_ADMIN,
-    RoleType.TEAM_ADMIN,
+  [RoleNamesType.ADMINISTRATOR]: [RoleNamesType.ADMINISTRATOR],
+  [RoleNamesType.ACCOUNT_ADMIN]: [RoleNamesType.ADMINISTRATOR, RoleNamesType.ACCOUNT_ADMIN],
+  [RoleNamesType.ACCOUNT_PHOTO_ADMIN]: [RoleNamesType.ADMINISTRATOR, RoleNamesType.ACCOUNT_ADMIN],
+  [RoleNamesType.LEAGUE_ADMIN]: [RoleNamesType.ADMINISTRATOR, RoleNamesType.ACCOUNT_ADMIN],
+  [RoleNamesType.TEAM_ADMIN]: [
+    RoleNamesType.ADMINISTRATOR,
+    RoleNamesType.ACCOUNT_ADMIN,
+    RoleNamesType.LEAGUE_ADMIN,
+  ],
+  [RoleNamesType.TEAM_PHOTO_ADMIN]: [
+    RoleNamesType.ADMINISTRATOR,
+    RoleNamesType.ACCOUNT_ADMIN,
+    RoleNamesType.LEAGUE_ADMIN,
+    RoleNamesType.TEAM_ADMIN,
   ],
 };
 
 // Role inheritance rules (which roles include other roles)
 export const ROLE_INHERITANCE: Record<string, string[]> = {
-  [RoleType.ADMINISTRATOR]: [
-    RoleType.ACCOUNT_ADMIN,
-    RoleType.ACCOUNT_PHOTO_ADMIN,
-    RoleType.LEAGUE_ADMIN,
-    RoleType.TEAM_ADMIN,
-    RoleType.TEAM_PHOTO_ADMIN,
+  [RoleNamesType.ADMINISTRATOR]: [
+    RoleNamesType.ACCOUNT_ADMIN,
+    RoleNamesType.ACCOUNT_PHOTO_ADMIN,
+    RoleNamesType.LEAGUE_ADMIN,
+    RoleNamesType.TEAM_ADMIN,
+    RoleNamesType.TEAM_PHOTO_ADMIN,
   ],
-  [RoleType.ACCOUNT_ADMIN]: [
-    RoleType.ACCOUNT_PHOTO_ADMIN,
-    RoleType.LEAGUE_ADMIN,
-    RoleType.TEAM_ADMIN,
-    RoleType.TEAM_PHOTO_ADMIN,
+  [RoleNamesType.ACCOUNT_ADMIN]: [
+    RoleNamesType.ACCOUNT_PHOTO_ADMIN,
+    RoleNamesType.LEAGUE_ADMIN,
+    RoleNamesType.TEAM_ADMIN,
+    RoleNamesType.TEAM_PHOTO_ADMIN,
   ],
-  [RoleType.LEAGUE_ADMIN]: [RoleType.TEAM_ADMIN, RoleType.TEAM_PHOTO_ADMIN],
-  [RoleType.TEAM_ADMIN]: [RoleType.TEAM_PHOTO_ADMIN],
+  [RoleNamesType.LEAGUE_ADMIN]: [RoleNamesType.TEAM_ADMIN, RoleNamesType.TEAM_PHOTO_ADMIN],
+  [RoleNamesType.TEAM_ADMIN]: [RoleNamesType.TEAM_PHOTO_ADMIN],
 };
 
 // Default roles for new accounts
-export const DEFAULT_ACCOUNT_ROLES = [RoleType.ACCOUNT_ADMIN];
+export const DEFAULT_ACCOUNT_ROLES = [RoleNamesType.ACCOUNT_ADMIN];
 
 // Default roles for new teams
-export const DEFAULT_TEAM_ROLES = [RoleType.TEAM_ADMIN];
+export const DEFAULT_TEAM_ROLES = [RoleNamesType.TEAM_ADMIN];
 
 // Default roles for new leagues
-export const DEFAULT_LEAGUE_ROLES = [RoleType.LEAGUE_ADMIN];
+export const DEFAULT_LEAGUE_ROLES = [RoleNamesType.LEAGUE_ADMIN];
 
 // Role validation functions
-export const validateRoleAssignment = (
-  assignerRoles: string[],
-  targetRole: string,
-  _context: RoleDataContext,
-): boolean => {
+export const validateRoleAssignment = (assignerRoles: string[], targetRole: string): boolean => {
   // Now we receive role IDs, so use the ID-based rules
   const allowedAssigners = ROLE_ASSIGNMENT_RULES_BY_ID[targetRole] || [];
-  console.log('allowedAssigners:', allowedAssigners);
   const isAllowed = allowedAssigners.some((role: string) => assignerRoles.includes(role));
-  console.log('validateRoleAssignment:', assignerRoles, targetRole, _context);
-  console.log('isAllowed:', isAllowed);
   return isAllowed;
 };
 

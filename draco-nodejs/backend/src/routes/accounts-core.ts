@@ -5,8 +5,7 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { Prisma } from '@prisma/client';
-// Import removed - these utilities not used in core operations
-import { RoleType } from '../types/roles.js';
+import { RoleNamesType } from '../types/roles.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
@@ -28,77 +27,8 @@ export const roleService = ServiceFactory.getRoleService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 /**
- * @swagger
- * /api/accounts/search:
- *   get:
- *     summary: Search for accounts
- *     description: Public search for accounts by name, type, or affiliation (no authentication required)
- *     tags: [Accounts]
- *     parameters:
- *       - in: query
- *         name: q
- *         required: true
- *         schema:
- *           type: string
- *         description: Search query for account name, type, or affiliation
- *         example: "baseball"
- *     responses:
- *       200:
- *         description: Search results
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     accounts:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           id:
- *                             type: string
- *                             example: "123"
- *                           name:
- *                             type: string
- *                             example: "Local Baseball League"
- *                           accountType:
- *                             type: string
- *                             example: "Baseball League"
- *                           firstYear:
- *                             type: integer
- *                             example: 2020
- *                           affiliation:
- *                             type: string
- *                             example: "National Baseball Association"
- *                           urls:
- *                             type: array
- *                             items:
- *                               type: object
- *                               properties:
- *                                 id:
- *                                   type: string
- *                                   example: "456"
- *                                 url:
- *                                   type: string
- *                                   example: "www.localbaseball.com"
- *       400:
- *         description: Missing search query
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ * GET /api/accounts/search
+ * Search for accounts by name
  */
 router.get(
   '/search',
@@ -207,76 +137,8 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/accounts/by-domain:
- *   get:
- *     summary: Get account by domain
- *     description: Get account information by domain (no authentication required, used by domain routing middleware)
- *     tags: [Accounts]
- *     responses:
- *       200:
- *         description: Account found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     account:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: string
- *                           example: "123"
- *                         name:
- *                           type: string
- *                           example: "Local Baseball League"
- *                         accountType:
- *                           type: string
- *                           example: "Baseball League"
- *                         accountTypeId:
- *                           type: string
- *                           example: "1"
- *                         firstYear:
- *                           type: integer
- *                           example: 2020
- *                         timezoneId:
- *                           type: integer
- *                           example: 1
- *                         urls:
- *                           type: array
- *                           items:
- *                             type: object
- *                             properties:
- *                               id:
- *                                 type: string
- *                                 example: "456"
- *                               url:
- *                                 type: string
- *                                 example: "www.localbaseball.com"
- *       400:
- *         description: Missing host header
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: No account found for this domain
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ * GET /api/accounts/by-domain
+ * Get account by domain
  */
 router.get(
   '/by-domain',
@@ -352,8 +214,8 @@ router.get(
     const userId = req.user!.id;
 
     // Check if user is global administrator
-    const isAdmin = await roleService.hasRole(userId, ROLE_IDS[RoleType.ADMINISTRATOR], {
-      accountId: undefined,
+    const isAdmin = await roleService.hasRole(userId, ROLE_IDS[RoleNamesType.ADMINISTRATOR], {
+      accountId: BigInt(0),
     });
 
     const accountSelect: Prisma.accountsSelect = {
@@ -405,7 +267,7 @@ router.get(
         return;
       }
 
-      const accountIds = accountAdminRoles.map((role) => role.accountId);
+      const accountIds = accountAdminRoles.map((role) => BigInt(role.accountId));
 
       accounts = await prisma.accounts.findMany({
         where: {
@@ -823,7 +685,11 @@ router.delete(
   }),
 );
 
-// Lightweight endpoint to get only the account name
+/**
+ * GET /api/accounts/:accountId/name
+ *
+ * Get account name
+ */
 router.get(
   '/:accountId/name',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -839,7 +705,10 @@ router.get(
   }),
 );
 
-// Lightweight endpoint to get account name and logo URL
+/**
+ * GET /api/accounts/:accountId/header
+ * Get account name and logo URL
+ */
 router.get(
   '/:accountId/header',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {

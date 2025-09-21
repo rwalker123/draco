@@ -46,12 +46,11 @@ import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDat
 import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
 import {
   RosterPlayerType,
-  RosterMember,
-  Contact,
-  BaseContact,
-  CreateContactType,
+  RosterMemberType,
+  BaseContactType,
   SignRosterMemberType,
   ContactType,
+  TeamRosterMembersType,
 } from '@draco/shared-schemas';
 
 interface TeamRosterManagementProps {
@@ -82,7 +81,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     fetchSeasonData,
     fetchLeagueData,
     updateRosterMember,
-    updateContact,
     getContactRoster,
     signPlayer,
     releasePlayer,
@@ -90,10 +88,12 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     deletePlayer,
     addManager,
     removeManager,
-    createContact,
     deleteContactPhoto,
     clearError,
     clearSuccessMessage,
+    setError,
+    setSuccessMessage,
+    setRosterData,
   } = useRosterDataManager({
     accountId,
     seasonId,
@@ -105,10 +105,12 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Dialog states
   const [signPlayerDialogOpen, setSignPlayerDialogOpen] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<Contact | RosterPlayerType | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<BaseContactType | RosterPlayerType | null>(
+    null,
+  );
   const [isSigningNewPlayer, setIsSigningNewPlayer] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
+  const [playerToDelete, setPlayerToDelete] = useState<RosterMemberType | null>(null);
 
   // Sign player process states
   const [signingTimeout, setSigningTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -134,10 +136,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Enhanced dialog states for EditContactDialog
   const [editPlayerDialogOpen, setEditPlayerDialogOpen] = useState(false);
-  const [playerToEdit, setPlayerToEdit] = useState<RosterMember | null>(null);
   const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
   const [autoSignToRoster, setAutoSignToRoster] = useState(false);
-  const [editingContact, setEditingContact] = useState<BaseContact | null>(null);
+  const [editingContact, setEditingContact] = useState<BaseContactType | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [phoneErrors, setPhoneErrors] = useState({
     phone1: '',
@@ -186,7 +187,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Handler to release player
-  const handleReleasePlayer = async (rosterMember: RosterMember) => {
+  const handleReleasePlayer = async (rosterMember: RosterMemberType) => {
     setFormLoading(true);
     saveScrollPosition();
 
@@ -201,7 +202,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Handler to activate player
-  const handleActivatePlayer = async (rosterMember: RosterMember) => {
+  const handleActivatePlayer = async (rosterMember: RosterMemberType) => {
     setFormLoading(true);
     saveScrollPosition();
 
@@ -235,19 +236,18 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Open delete dialog
-  const openDeleteDialog = (rosterMember: RosterMember) => {
+  const openDeleteDialog = (rosterMember: RosterMemberType) => {
     setPlayerToDelete(rosterMember);
     setDeleteDialogOpen(true);
   };
 
   // Open edit dialog
-  const openEditDialog = (rosterMember: RosterMember) => {
+  const openEditDialog = (rosterMember: RosterMemberType) => {
     setIsCreatingNewPlayer(false);
     setAutoSignToRoster(false);
-    setPlayerToEdit(rosterMember);
 
     // Convert roster member contact to enhanced dialog format
-    const contact: BaseContact = {
+    const contact: BaseContactType = {
       id: rosterMember.player.contact.id,
       firstName: rosterMember.player.contact.firstName || '',
       lastName: rosterMember.player.contact.lastName || '',
@@ -258,11 +258,11 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         phone1: rosterMember.player.contact.contactDetails?.phone1 || '',
         phone2: rosterMember.player.contact.contactDetails?.phone2 || '',
         phone3: rosterMember.player.contact.contactDetails?.phone3 || '',
-        streetaddress: rosterMember.player.contact.contactDetails?.streetaddress || '',
+        streetAddress: rosterMember.player.contact.contactDetails?.streetAddress || '',
         city: rosterMember.player.contact.contactDetails?.city || '',
         state: rosterMember.player.contact.contactDetails?.state || '',
         zip: rosterMember.player.contact.contactDetails?.zip || '',
-        dateofbirth: rosterMember.player.contact.contactDetails?.dateofbirth || '',
+        dateOfBirth: rosterMember.player.contact.contactDetails?.dateOfBirth || '',
         // ❌ Removed: middlename (moved to top-level middleName)
       },
       photoUrl: (rosterMember.player.contact as any).photoUrl || undefined, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -277,17 +277,16 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const openCreatePlayerDialog = () => {
     setIsCreatingNewPlayer(true);
     setAutoSignToRoster(true);
-    setPlayerToEdit(null);
     setEditingContact(null); // No contact when creating new
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
   };
 
   // Clear messages
-  const clearMessages = () => {
+  const clearMessages = useCallback(() => {
     clearError();
     clearSuccessMessage();
-  };
+  }, [clearError, clearSuccessMessage]);
 
   // Close sign player dialog
   const closeSignPlayerDialog = () => {
@@ -320,17 +319,18 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setPlayerToDelete(null);
   };
 
-  // Close edit dialog
-  const closeEditDialog = () => {
-    setEditPlayerDialogOpen(false);
-    setPlayerToEdit(null);
-    setIsCreatingNewPlayer(false);
-    setAutoSignToRoster(false);
-    setEditingContact(null);
-    setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
-    setEmailError('');
-    clearMessages();
-  };
+  // Reactive cleanup when dialog closes (from any source)
+  useEffect(() => {
+    if (!editPlayerDialogOpen) {
+      // Reset parent state when dialog closes
+      setIsCreatingNewPlayer(false);
+      setAutoSignToRoster(false);
+      setEditingContact(null);
+      setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
+      setEmailError('');
+      clearMessages();
+    }
+  }, [editPlayerDialogOpen, clearMessages]);
 
   // Open sign player dialog
   const openSignPlayerDialog = () => {
@@ -351,7 +351,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Open roster dialog
-  const openRosterDialog = (rosterMember: RosterMember) => {
+  const openRosterDialog = (rosterMember: RosterMemberType) => {
     setIsSigningNewPlayer(false);
     setSelectedPlayer(rosterMember.player);
     setRosterFormData({
@@ -368,49 +368,109 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setSignPlayerDialogOpen(true);
   };
 
-  // Enhanced contact save handler for EditContactDialog
-  const handleEnhancedContactSave = async (
-    contactData: CreateContactType | null,
-    photoFile?: File | null,
-    autoSignToRoster?: boolean,
-  ) => {
-    setFormLoading(true);
-    saveScrollPosition();
+  // Enhanced contact success handler for new EditContactDialog
+  const handleEnhancedContactSuccess = useCallback(
+    async (result: { message: string; contact: ContactType; isCreate: boolean }) => {
+      saveScrollPosition();
 
-    try {
-      let result: ContactType | string;
-      if (!contactData && isCreatingNewPlayer) {
-        result = 'No data to save';
-      } else if (contactData && isCreatingNewPlayer) {
-        result = await createContact(contactData, photoFile, autoSignToRoster);
-      } else if (playerToEdit) {
-        result = await updateContact(playerToEdit.player.contact.id, contactData, photoFile);
-      } else {
-        throw new Error('Player to edit not found');
-      }
+      try {
+        if (result.isCreate && autoSignToRoster) {
+          // Handle automatic roster signup for new players
+          // This implements the same logic as the original createContact function
+          const signRosterData: SignRosterMemberType = {
+            submittedWaiver: false,
+            player: {
+              submittedDriversLicense: false,
+              firstYear: new Date().getFullYear(),
+              contact: { id: result.contact.id },
+            },
+          };
 
-      if (result && typeof result === 'string') {
-        throw new Error(result);
+          try {
+            // Use the existing signPlayer function from useRosterDataManager
+            await signPlayer(result.contact.id, signRosterData);
+
+            setSuccessMessage(
+              `Player "${result.contact.firstName} ${result.contact.lastName}" created and signed to roster successfully`,
+            );
+          } catch (signError) {
+            // If roster signup fails, still show contact creation success
+            setSuccessMessage(
+              `Player "${result.contact.firstName} ${result.contact.lastName}" created successfully, but failed to sign to roster`,
+            );
+            console.error('Failed to sign player to roster:', signError);
+          }
+        } else {
+          // For edit operations or create without roster signup
+          if (result.isCreate) {
+            // Refresh roster data to show the new contact in available players
+            await fetchRosterData();
+            setSuccessMessage(result.message);
+          } else {
+            // For edit operations, update the contact in the current roster data optimistically
+            // This implements the same logic as the original updateContact function
+            const updatedRosterData: TeamRosterMembersType = {
+              ...rosterData,
+              rosterMembers: rosterData.rosterMembers.map((member) =>
+                member.player.contact.id === result.contact.id
+                  ? {
+                      ...member,
+                      player: {
+                        ...member.player,
+                        contact: {
+                          ...member.player.contact,
+                          firstName: result.contact.firstName,
+                          lastName: result.contact.lastName,
+                          middleName: result.contact.middleName,
+                          email: result.contact.email,
+                          photoUrl: result.contact.photoUrl,
+                          contactDetails: result.contact.contactDetails,
+                        },
+                      },
+                    }
+                  : member,
+              ),
+            };
+
+            // Update the roster data state (same pattern as original)
+            setRosterData(updatedRosterData);
+            setSuccessMessage(result.message);
+          }
+        }
+
+        // Dialog closes itself after calling onSuccess - no need to close here
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to update roster');
+      } finally {
+        restoreScrollPosition();
       }
-    } finally {
-      setFormLoading(false);
-      restoreScrollPosition();
-    }
-  };
+    },
+    [
+      autoSignToRoster,
+      saveScrollPosition,
+      restoreScrollPosition,
+      setSuccessMessage,
+      setError,
+      signPlayer,
+      fetchRosterData,
+      rosterData,
+      setRosterData,
+    ],
+  );
 
   // Helper function to format all contact information
-  const formatContactInfo = (contact: Contact) => {
+  const formatContactInfo = (contact: BaseContactType) => {
     const info = [];
 
     // Address first
     if (
-      contact.contactDetails?.streetaddress ||
+      contact.contactDetails?.streetAddress ||
       contact.contactDetails?.city ||
       contact.contactDetails?.state ||
       contact.contactDetails?.zip
     ) {
       const addressParts = [
-        contact.contactDetails?.streetaddress,
+        contact.contactDetails?.streetAddress,
         contact.contactDetails?.city,
         contact.contactDetails?.state,
         contact.contactDetails?.zip,
@@ -418,7 +478,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
       if (addressParts.length > 0) {
         const fullAddress = addressParts.join(', ');
-        const streetAddress = contact.contactDetails?.streetaddress || '';
+        const streetAddress = contact.contactDetails?.streetAddress || '';
         const cityStateZip = [
           contact.contactDetails?.city,
           contact.contactDetails?.state,
@@ -525,7 +585,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Helper function to format names as "Last, First Middle"
-  const formatName = (contact: Contact) => {
+  const formatName = (contact: BaseContactType) => {
     const lastName = contact.lastName || '';
     const firstName = contact.firstName || '';
     const middleName = contact.middleName || ''; // ✅ Use top-level middleName
@@ -542,16 +602,16 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Helper function to format verification information
-  const formatVerificationInfo = (member: RosterMember) => {
+  const formatVerificationInfo = (member: RosterMemberType) => {
     const info = [];
 
     // Age and Date of Birth first
     if (
-      member.player.contact.contactDetails?.dateofbirth &&
-      typeof member.player.contact.contactDetails.dateofbirth === 'string'
+      member.player.contact.contactDetails?.dateOfBirth &&
+      typeof member.player.contact.contactDetails.dateOfBirth === 'string'
     ) {
       try {
-        const birthDate = parseISO(member.player.contact.contactDetails.dateofbirth);
+        const birthDate = parseISO(member.player.contact.contactDetails.dateOfBirth);
         const today = new Date();
         const age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -620,7 +680,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   // Memoized handlers to prevent UserAvatar re-renders
-  const handleEditDialog = useCallback((member: RosterMember) => {
+  const handleEditDialog = useCallback((member: RosterMemberType) => {
     return () => openEditDialog(member);
   }, []);
 
@@ -634,7 +694,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   // Memoized player avatar component to prevent unnecessary re-renders
   const PlayerAvatar = useMemo(() => {
     const PlayerAvatarComponent = React.memo<{
-      member: RosterMember;
+      member: RosterMemberType;
       onEdit: () => void;
       onPhotoDelete: (contactId: string) => Promise<void>;
     }>(({ member, onEdit, onPhotoDelete }) => {
@@ -1162,9 +1222,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       <EditContactDialog
         open={editPlayerDialogOpen}
         contact={editingContact}
-        onClose={closeEditDialog}
-        onSave={handleEnhancedContactSave}
-        loading={formLoading}
+        onClose={() => setEditPlayerDialogOpen(false)}
+        onSuccess={handleEnhancedContactSuccess}
+        accountId={accountId}
         mode={isCreatingNewPlayer ? 'create' : 'edit'}
         showRosterSignup={isCreatingNewPlayer}
         onRosterSignup={setAutoSignToRoster}

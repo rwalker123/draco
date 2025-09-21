@@ -3,7 +3,7 @@
 import React from 'react';
 import { Stack, Typography, Card, CardContent, Divider, Chip, Box } from '@mui/material';
 import { Person as PersonIcon, Email as EmailIcon, Cake as CakeIcon } from '@mui/icons-material';
-import { ContactDetails } from '@draco/shared-schemas';
+import { ContactDetailsType } from '@draco/shared-schemas';
 import { formatDateOfBirth } from '../../utils/dateUtils';
 import { getFullName } from '../../utils/contactUtils';
 import PhoneDisplay from './PhoneDisplay';
@@ -14,7 +14,7 @@ interface ContactInfoDisplayProps {
   lastName: string;
   middleName?: string | null;
   email: string | null;
-  contactDetails?: ContactDetails;
+  contactDetails?: ContactDetailsType;
   compact?: boolean;
   showHeader?: boolean;
 }
@@ -81,7 +81,7 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
                 sx={{ mr: 0.5, mb: 0.5 }}
               />
             )}
-            {contactDetails?.streetaddress && (
+            {contactDetails?.streetAddress && (
               <Chip
                 label={`📍 ${contactDetails.city || 'Address'}`}
                 size="small"
@@ -89,9 +89,9 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
                 sx={{ mr: 0.5, mb: 0.5 }}
               />
             )}
-            {contactDetails?.dateofbirth && (
+            {contactDetails?.dateOfBirth && (
               <Chip
-                label={`🎂 ${formatDateOfBirth(contactDetails.dateofbirth)}`}
+                label={`🎂 ${formatDateOfBirth(contactDetails.dateOfBirth)}`}
                 size="small"
                 variant="outlined"
                 sx={{ mr: 0.5, mb: 0.5 }}
@@ -145,12 +145,12 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
                 <AddressDisplay contactDetails={contactDetails!} />
 
                 {/* Date of Birth */}
-                {contactDetails?.dateofbirth && (
+                {contactDetails?.dateOfBirth && (
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <CakeIcon color="action" fontSize="small" />
                     <Typography variant="body2">
                       <strong>Date of Birth:</strong>{' '}
-                      {formatDateOfBirth(contactDetails.dateofbirth)}
+                      {formatDateOfBirth(contactDetails.dateOfBirth)}
                     </Typography>
                   </Stack>
                 )}

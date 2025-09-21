@@ -15,8 +15,6 @@ export interface AccountContextType {
   loading: boolean;
   error: string | null;
   setCurrentAccount: (account: Account) => void;
-  fetchUserAccounts: () => Promise<void>;
-  hasAccessToAccount: (accountId: string) => boolean;
   clearAccounts: () => void;
 }
 
@@ -47,11 +45,9 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
     } else if (token && userRoles && !currentAccount && userRoles.contactRoles.length > 0) {
       setLoading(true);
-      // Initialize with a default account if user has roles
-      const firstAccount = userRoles.contactRoles[0];
       setCurrentAccount({
-        id: firstAccount.accountId,
-        name: `Account ${firstAccount.accountId}`, // You might want to fetch the actual account name
+        id: userRoles.accountId,
+        name: `Account ${userRoles.accountId}`, // You might want to fetch the actual account name
       });
       setLoading(false);
     } else if (!token || !userRoles) {
@@ -61,50 +57,6 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   }, [authLoading, roleLoading, token, userRoles, currentAccount]);
-
-  const fetchUserAccounts = async () => {
-    if (!token || !userRoles) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      // This would be an API call to get accounts the user has access to
-      // For now, we'll use the accounts from userRoles
-      const accounts: Account[] = userRoles.contactRoles.map((role) => ({
-        id: role.accountId,
-        name: `Account ${role.accountId}`, // In a real app, you'd fetch the actual account names
-      }));
-
-      setUserAccounts(accounts);
-
-      // Set current account if none is set
-      if (!currentAccount && accounts.length > 0) {
-        setCurrentAccount(accounts[0]);
-      }
-    } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        setError(err.response.data.message);
-      } else {
-        setError('Failed to fetch user accounts');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const hasAccessToAccount = (accountId: string): boolean => {
-    if (!userRoles) return false;
-
-    // Check global roles first - Administrator has access to all accounts
-    for (const globalRole of userRoles.globalRoles) {
-      if (globalRole === 'Administrator' || globalRole === '93DAC465-4C64-4422-B444-3CE79C549329') {
-        return true; // Administrator has access to all accounts
-      }
-    }
-
-    // Check contact roles
-    return userRoles.contactRoles.some((role) => role.accountId === accountId);
-  };
 
   const clearAccounts = () => {
     setCurrentAccount(null);
@@ -120,8 +72,6 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         loading,
         error,
         setCurrentAccount,
-        fetchUserAccounts,
-        hasAccessToAccount,
         clearAccounts,
       }}
     >

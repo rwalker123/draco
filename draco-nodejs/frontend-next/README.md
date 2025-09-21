@@ -1,4 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Draco Sports Manager - Frontend
+
+This is the frontend application for Draco Sports Manager, built with [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript, and Material-UI 7.
+
+## Architecture
+
+📚 **[Frontend Architecture Documentation](./FRONTEND_ARCHITECTURE.md)** - Comprehensive guide to our frontend architecture patterns, principles, and best practices including:
+
+- Dialog management patterns with self-contained components
+- Type safety with shared schemas from `@draco/shared-schemas`
+- Service hook patterns for API integration
+- Real data update patterns (no optimistic updates)
+- State management with useReducer dispatch patterns
 
 ## Getting Started
 

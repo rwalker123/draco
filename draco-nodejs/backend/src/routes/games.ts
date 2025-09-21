@@ -5,8 +5,8 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { IRoleQuery } from '../interfaces/roleInterfaces.js';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.js';
 import { GameStatus, GameType } from '../types/gameEnums.js';
-import { ContactRole } from '../types/roles.js';
 import { asyncHandler } from './utils/asyncHandler.js';
+
 import {
   ValidationError,
   NotFoundError,
@@ -19,11 +19,12 @@ import { BatchQueryHelper } from '../utils/batchQueries.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';
+import { ContactRoleType } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const roleService = ServiceFactory.getRoleQuery();
 const routeProtection = ServiceFactory.getRouteProtection();
-const contactSecurityService = ServiceFactory.getContactSecurityService();
+const contactService = ServiceFactory.getContactService();
 
 // Helper function to parse ISO date string without timezone conversion
 const parseGameDate = (dateString: string): Date => {
@@ -50,143 +51,8 @@ const parseGameDate = (dateString: string): Date => {
 };
 
 /**
- * @swagger
- * /api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/results:
- *   put:
- *     summary: Update game results
- *     description: Update game results including scores, status, and notifications
- *     tags: [Games]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *         example: "123"
- *       - in: path
- *         name: seasonId
- *         required: true
- *         schema:
- *           type: string
- *         description: Season ID
- *         example: "456"
- *       - in: path
- *         name: gameId
- *         required: true
- *         schema:
- *           type: string
- *         description: Game ID
- *         example: "789"
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - homeScore
- *               - awayScore
- *               - gameStatus
- *             properties:
- *               homeScore:
- *                 type: integer
- *                 minimum: 0
- *                 description: Home team score
- *                 example: 5
- *               awayScore:
- *                 type: integer
- *                 minimum: 0
- *                 description: Away team score
- *                 example: 3
- *               gameStatus:
- *                 type: integer
- *                 minimum: 0
- *                 maximum: 5
- *                 description: Game status (0=Incomplete, 1=Final, 2=In Progress, 3=Postponed, 4=Forfeit, 5=Did Not Report)
- *                 example: 1
- *               emailPlayers:
- *                 type: boolean
- *                 description: Send email notification to players
- *                 example: false
- *               postToTwitter:
- *                 type: boolean
- *                 description: Post results to Twitter
- *                 example: false
- *               postToBluesky:
- *                 type: boolean
- *                 description: Post results to Bluesky
- *                 example: false
- *               postToFacebook:
- *                 type: boolean
- *                 description: Post results to Facebook
- *                 example: false
- *     responses:
- *       200:
- *         description: Game results updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Game results updated successfully"
- *                 data:
- *                   type: object
- *                   properties:
- *                     gameId:
- *                       type: string
- *                       example: "789"
- *                     homeScore:
- *                       type: integer
- *                       example: 5
- *                     awayScore:
- *                       type: integer
- *                       example: 3
- *                     gameStatus:
- *                       type: integer
- *                       example: 1
- *                     notifications:
- *                       type: array
- *                       items:
- *                         type: string
- *                       example: []
- *       400:
- *         description: Invalid input data
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       403:
- *         description: Forbidden - no access to account
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Game not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ * PUT /api/accounts/:accountId/games/:gameId/results
+ * Update the results for a game
  */
 router.put(
   '/:gameId/results',
@@ -310,118 +176,8 @@ router.put(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/seasons/{seasonId}/games:
- *   get:
- *     summary: Get all games for a season
- *     description: Retrieve all games for a season across all leagues with optional filtering
- *     tags: [Games]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *         description: Account ID
- *         example: "123"
- *       - in: path
- *         name: seasonId
- *         required: true
- *         schema:
- *           type: string
- *         description: Season ID
- *         example: "456"
- *       - in: query
- *         name: startDate
- *         schema:
- *           type: string
- *           format: date
- *         description: Start date for filtering games (YYYY-MM-DD)
- *         example: "2024-01-01"
- *       - in: query
- *         name: endDate
- *         schema:
- *           type: string
- *           format: date
- *         description: End date for filtering games (YYYY-MM-DD)
- *         example: "2024-12-31"
- *       - in: query
- *         name: teamId
- *         schema:
- *           type: string
- *         description: Filter games by team ID
- *         example: "101"
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *         description: Page number for pagination
- *         example: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *         description: Number of items per page
- *         example: 50
- *     responses:
- *       200:
- *         description: Games retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     games:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           id:
- *                             type: string
- *                             example: "789"
- *                           gameDate:
- *                             type: string
- *                             format: date-time
- *                             example: "2024-06-15T18:00:00Z"
- *                           homeTeam:
- *                             type: string
- *                             example: "Red Sox"
- *                           awayTeam:
- *                             type: string
- *                             example: "Yankees"
- *                           homeScore:
- *                             type: integer
- *                             example: 5
- *                           awayScore:
- *                             type: integer
- *                             example: 3
- *                           gameStatus:
- *                             type: integer
- *                             example: 1
- *                           gameStatusText:
- *                             type: string
- *                             example: "Final"
- *                           field:
- *                             type: string
- *                             example: "Fenway Park"
- *                           league:
- *                             type: string
- *                             example: "Major League"
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ * GET /api/accounts/:accountId/games
+ * Get games for a season
  */
 router.get(
   '/',
@@ -892,16 +648,14 @@ async function userHasTeamAdminRights(
   // 1. Check contactrole for TeamAdmin
   const userRoles = await roleService.getUserRoles(userId, BigInt(accountId));
   const isTeamAdmin = userRoles.contactRoles.some(
-    (role: ContactRole) =>
+    (role: ContactRoleType) =>
       role.roleId === 'TeamAdmin' &&
       teamSeasonId &&
       teamSeasonId.toString() === role.roleData.toString(),
   );
   if (isTeamAdmin) return true;
   // 2. Look up contactid for this user/account
-  const contact = await contactSecurityService.getUserContactInAccount(userId, BigInt(accountId), {
-    id: true,
-  });
+  const contact = await contactService.getContactByUserId(userId, BigInt(accountId));
   if (!contact) return false;
   // 3. Check teamseasonmanager for this contactid
   const managerRecord = await prisma.teamseasonmanager.findFirst({

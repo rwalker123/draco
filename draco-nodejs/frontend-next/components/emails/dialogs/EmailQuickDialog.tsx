@@ -18,13 +18,13 @@ import {
   Radio,
 } from '@mui/material';
 import { EmailMode } from '../../../types/emails/email';
-import { BaseContact } from '@draco/shared-schemas';
+import { BaseContactType } from '@draco/shared-schemas';
 import { getContactDisplayName } from '../common/mailtoUtils';
 
 interface EmailQuickDialogProps {
   open: boolean;
   onClose: () => void;
-  contact: BaseContact;
+  contact: BaseContactType;
   onSend: (mode: EmailMode, subject?: string, body?: string) => void;
 }
 

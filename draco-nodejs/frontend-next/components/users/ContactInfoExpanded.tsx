@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Stack, Typography, IconButton, Collapse, Box, Chip } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
-import { ContactDetails } from '@draco/shared-schemas';
+import { ContactDetailsType } from '@draco/shared-schemas';
 import { hasContactDetails, getFormattedName } from '../../utils/contactUtils';
 import ContactInfoDisplay from './ContactInfoDisplay';
 
@@ -12,7 +12,7 @@ interface ContactInfoExpandedProps {
   lastName: string;
   middleName?: string | null;
   email: string | null;
-  contactDetails?: ContactDetails;
+  contactDetails?: ContactDetailsType;
   initiallyExpanded?: boolean;
 }
 
@@ -61,10 +61,10 @@ const ContactInfoExpanded: React.FC<ContactInfoExpandedProps> = ({
           {(contactDetails?.phone1 || contactDetails?.phone2 || contactDetails?.phone3) && (
             <Chip label="📞" size="small" variant="outlined" sx={{ minWidth: 'auto', px: 0.5 }} />
           )}
-          {contactDetails?.streetaddress && (
+          {contactDetails?.streetAddress && (
             <Chip label="📍" size="small" variant="outlined" sx={{ minWidth: 'auto', px: 0.5 }} />
           )}
-          {contactDetails?.dateofbirth && (
+          {contactDetails?.dateOfBirth && (
             <Chip label="🎂" size="small" variant="outlined" sx={{ minWidth: 'auto', px: 0.5 }} />
           )}
         </Stack>

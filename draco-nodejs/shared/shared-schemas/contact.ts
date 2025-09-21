@@ -1,10 +1,14 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { ContactRoleSchema } from './role.js';
 
 extendZodWithOpenApi(z);
 
-export const NamedContactSchema = z.object({
+export const ContactIdSchema = z.object({
   id: z.bigint().transform((val) => val.toString()),
+});
+
+export const NamedContactSchema = ContactIdSchema.extend({
   firstName: z.string().trim().min(1).max(50),
   lastName: z.string().trim().min(1).max(50),
   middleName: z.string().trim().max(50).optional(),
@@ -47,11 +51,11 @@ export const ContactDetailsSchema = z.object({
   phone1: PhoneNumberSchema,
   phone2: PhoneNumberSchema,
   phone3: PhoneNumberSchema,
-  streetaddress: z.string().trim().max(100).nullable().default(''),
+  streetAddress: z.string().trim().max(100).nullable().default(''),
   city: z.string().trim().max(50).nullable().default(''),
   state: z.string().trim().max(50).nullable().default(''),
   zip: z.string().trim().max(10).nullable().default(''),
-  dateofbirth: z.string().trim().nullable().default(''),
+  dateOfBirth: z.string().trim().nullable().default(''),
 });
 
 // Canonical base Contact interface - single source of truth for Contact structure
@@ -65,15 +69,6 @@ export const BaseContactSchema = NamedContactSchema.extend({
   contactDetails: ContactDetailsSchema.optional(),
 });
 
-// Contact roles sub-interface for reusability
-export const ContactRoleSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
-  roleId: z.string().trim().max(50),
-  roleName: z.string().trim().max(50).optional(),
-  roleData: z.bigint().transform((val) => val.toString()),
-  contextName: z.string().trim().max(50).optional(),
-});
-
 // Interface for contact entry used in internal processing (extends base)
 export const ContactSchema = BaseContactSchema.extend({
   contactroles: z.array(ContactRoleSchema).optional(),
@@ -81,6 +76,21 @@ export const ContactSchema = BaseContactSchema.extend({
     .bigint()
     .transform((val) => val.toString())
     .optional(),
+});
+
+export const RoleWithContactSchema = ContactRoleSchema.extend({
+  accountId: z.bigint().transform((val) => val.toString()),
+  contact: ContactIdSchema,
+});
+
+export const RoleWithContactsSchema = ContactRoleSchema.extend({
+  accountId: z.bigint().transform((val) => val.toString()),
+  contacts: ContactIdSchema.array(),
+});
+
+export const UserRolesSchema = z.object({
+  globalRoles: z.string().array(),
+  contactRoles: RoleWithContactSchema.array(),
 });
 
 export const CreateContactSchema = BaseContactSchema.omit({
@@ -95,89 +105,112 @@ export const CreateContactSchema = BaseContactSchema.omit({
   }),
 });
 
+export const CreateContactRoleSchema = z.object({
+  roleId: z.string().trim().max(50),
+  roleData: z.string().transform((val) => BigInt(val)),
+  contextName: z.string().trim().max(50).optional(),
+});
+
+export const PagedContactSchema = z
+  .object({
+    contacts: BaseContactSchema.array(),
+    total: z.number(),
+    pagination: z
+      .object({
+        page: z.number(),
+        limit: z.number(),
+        hasNext: z.boolean(),
+        hasPrev: z.boolean(),
+      })
+      .optional(),
+  })
+  .openapi({
+    title: 'ContactResponse',
+    description: 'Response for contact search',
+  });
+
+export const TeamWithNameSchema = z.object({
+  teamSeasonId: z.string(),
+  teamName: z.string(),
+});
+
+// Team manager with associated teams (extends BaseContact)
+export const TeamManagerWithTeams = BaseContactSchema.extend({
+  teams: TeamWithNameSchema.array(),
+});
+
+// Clean return type for getAutomaticRoleHolders
+export const AutomaticRoleHoldersSchema = z
+  .object({
+    accountOwner: BaseContactSchema, // NOT nullable - every account must have owner
+    teamManagers: TeamManagerWithTeams.array(),
+  })
+  .openapi({
+    title: 'AutomaticRoleHolders',
+    description: 'Automatic role holders',
+  });
+
+export const ContactValidationSchema = CreateContactSchema.safeExtend({
+  validationType: z.enum(['streetAddress', 'dateOfBirth']),
+})
+  .refine(
+    (data) => {
+      if (data.validationType === 'streetAddress') {
+        return data.contactDetails?.streetAddress && data.contactDetails.streetAddress.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Street address is required when validation type is 'streetAddress'",
+      path: ['contactDetails.streetAddress'],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.validationType === 'dateOfBirth') {
+        return data.contactDetails?.dateOfBirth && data.contactDetails.dateOfBirth.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Date of birth is required when validation type is 'dateOfBirth'",
+      path: ['contactDetails.dateOfBirth'],
+    },
+  );
+
+export const SignInUserNameSchema = z.email().trim().max(100);
+
+export const SignInCredentialsSchema = z.object({
+  userName: SignInUserNameSchema,
+  password: z.string().trim().min(6).max(100),
+});
+
+export const ContactValidationWithSignInSchema = ContactValidationSchema.safeExtend(
+  SignInCredentialsSchema.shape,
+);
+
+export const RegisteredUserSchema = z.object({
+  id: z.string(),
+  userName: SignInUserNameSchema,
+  token: z.string().optional(),
+  contact: BaseContactSchema.optional(),
+});
+
 export type NamedContactType = z.infer<typeof NamedContactSchema>;
 export type ContactDetailsType = z.infer<typeof ContactDetailsSchema>;
 export type BaseContactType = z.infer<typeof BaseContactSchema>;
 export type ContactRoleType = z.infer<typeof ContactRoleSchema>;
 export type ContactType = z.infer<typeof ContactSchema>;
 export type CreateContactType = z.infer<typeof CreateContactSchema>;
-
-// create classes for the types as contact objects are extended in other schemas
-export class NamedContact implements NamedContactType {
-  id: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-
-  constructor(data: NamedContactType) {
-    this.id = data.id;
-    this.firstName = data.firstName;
-    this.lastName = data.lastName;
-    this.middleName = data.middleName;
-  }
-}
-export class ContactDetails implements ContactDetailsType {
-  phone1: string | null;
-  phone2: string | null;
-  phone3: string | null;
-  streetaddress: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  dateofbirth: string | null;
-
-  constructor(data: ContactDetailsType) {
-    this.phone1 = data.phone1;
-    this.phone2 = data.phone2;
-    this.phone3 = data.phone3;
-    this.streetaddress = data.streetaddress;
-    this.city = data.city;
-    this.state = data.state;
-    this.zip = data.zip;
-    this.dateofbirth = data.dateofbirth;
-  }
-}
-
-export class BaseContact extends NamedContact implements BaseContactType {
-  email?: string;
-  userId?: string;
-  photoUrl?: string;
-  contactDetails?: ContactDetails | undefined;
-
-  constructor(data: BaseContactType) {
-    super(data);
-    this.email = data.email;
-    this.userId = data.userId;
-    this.photoUrl = data.photoUrl;
-    this.contactDetails = data.contactDetails ? new ContactDetails(data.contactDetails) : undefined;
-  }
-}
-
-export class ContactRole implements ContactRoleType {
-  id: string;
-  roleId: string;
-  roleName?: string;
-  roleData: string;
-  contextName?: string;
-
-  constructor(data: ContactRoleType) {
-    this.id = data.id;
-    this.roleId = data.roleId;
-    this.roleName = data.roleName;
-    this.roleData = data.roleData;
-    this.contextName = data.contextName;
-  }
-}
-
-export class Contact extends BaseContact implements ContactType {
-  contactroles?: ContactRole[] | undefined;
-  creatoraccountid?: string;
-
-  constructor(data: ContactType) {
-    super(data);
-    this.contactroles = data.contactroles
-      ? data.contactroles.map((role) => new ContactRole(role))
-      : undefined;
-    this.creatoraccountid = data.creatoraccountid;
-  }
-}
+export type RoleWithContactType = z.infer<typeof RoleWithContactSchema>;
+export type CreateContactRoleType = z.infer<typeof CreateContactRoleSchema>;
+export type UserRolesType = z.infer<typeof UserRolesSchema>;
+export type PagedContactType = z.infer<typeof PagedContactSchema>;
+export type TeamWithNameType = z.infer<typeof TeamWithNameSchema>;
+export type TeamManagerWithTeamsType = z.infer<typeof TeamManagerWithTeams>;
+export type AutomaticRoleHoldersType = z.infer<typeof AutomaticRoleHoldersSchema>;
+export type ContactValidationType = z.infer<typeof ContactValidationSchema>;
+export type ContactValidationWithSignInType = z.infer<typeof ContactValidationWithSignInSchema>;
+export type SignInUserNameType = z.infer<typeof SignInUserNameSchema>;
+export type SignInCredentialsType = z.infer<typeof SignInCredentialsSchema>;
+export type RegisteredUserType = z.infer<typeof RegisteredUserSchema>;

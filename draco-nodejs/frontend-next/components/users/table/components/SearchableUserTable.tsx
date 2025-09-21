@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, memo } from 'react';
+import React, { useCallback, memo } from 'react';
 import { Box, Paper } from '@mui/material';
 import { UserTableSearchProps } from '../../../../types/userTable';
 
@@ -21,21 +21,14 @@ const SearchableUserTable: React.FC<SearchableUserTableProps> = memo(
     searchPlaceholder = 'Search users...',
     showAdvancedSearch = false,
   }) => {
-    // Local search state (fallback if external search props not provided)
-    const [localSearchTerm, setLocalSearchTerm] = useState('');
-    const [localSearchLoading, setLocalSearchLoading] = useState(false);
-
-    // Use external search props or fall back to local state
-    const searchTerm = externalSearchTerm !== undefined ? externalSearchTerm : localSearchTerm;
-    const searchLoading =
-      externalSearchLoading !== undefined ? externalSearchLoading : localSearchLoading;
+    // External search only - no local fallback
+    const searchTerm = externalSearchTerm ?? '';
+    const searchLoading = externalSearchLoading ?? false;
 
     const handleSearchChange = useCallback(
       (value: string) => {
         if (externalOnSearchChange) {
           externalOnSearchChange(value);
-        } else {
-          setLocalSearchTerm(value);
         }
       },
       [externalOnSearchChange],
@@ -44,22 +37,12 @@ const SearchableUserTable: React.FC<SearchableUserTableProps> = memo(
     const handleSearch = useCallback(() => {
       if (externalOnSearch) {
         externalOnSearch();
-      } else {
-        // Local search implementation
-        setLocalSearchLoading(true);
-        // Simulate search delay
-        setTimeout(() => {
-          setLocalSearchLoading(false);
-        }, 500);
       }
     }, [externalOnSearch]);
 
     const handleClearSearch = useCallback(() => {
       if (externalOnClearSearch) {
         externalOnClearSearch();
-      } else {
-        setLocalSearchTerm('');
-        setLocalSearchLoading(false);
       }
     }, [externalOnClearSearch]);
 

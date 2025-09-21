@@ -8,7 +8,7 @@ import { ContactRoleType } from '@draco/shared-schemas';
 interface RoleIconGridProps {
   roles: ContactRoleType[];
   canManageUsers?: boolean;
-  onRemoveRole?: (role: ContactRoleType) => void;
+  onRemoveRole?: (role: ContactRoleType) => Promise<void>;
   maxVisible?: number;
   size?: 'small' | 'medium' | 'large';
   showCount?: boolean;

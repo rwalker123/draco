@@ -1,31 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import prisma from '../lib/prisma.js';
-import type { Prisma } from '@prisma/client';
-
-export interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-export interface RegisterData {
-  username: string;
-  email: string;
-  password: string;
-  firstName?: string;
-  lastName?: string;
-}
-
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  token?: string;
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-  };
-}
+import { AuthenticationError, ValidationError } from '../utils/customErrors.js';
+import { RepositoryFactory } from '../repositories/index.js';
+import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 
 export interface JWTPayload {
   userId: string;
@@ -44,203 +21,113 @@ export class AuthService {
   })();
   private readonly JWT_EXPIRES_IN = '24h';
 
+  private readonly userRepository = RepositoryFactory.getUserRepository();
+
   /**
    * Authenticate user with username and password
    */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    try {
-      const { username, password } = credentials;
+  async login(credentials: SignInCredentialsType): Promise<RegisteredUserType> {
+    const { userName, password } = credentials;
 
-      // Find user by username
-      const user = await prisma.aspnetusers.findUnique({
-        where: { username },
-        include: {
-          aspnetuserroles: {
-            include: {
-              aspnetroles: true,
-            },
-          },
-        },
-      });
+    const user = await this.userRepository.findByUsername(userName);
 
-      if (!user) {
-        return {
-          success: false,
-          message: 'Invalid username or password',
-        };
-      }
-
-      // Check if user is locked out
-      if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
-        return {
-          success: false,
-          message: 'Account is temporarily locked. Please try again later.',
-        };
-      }
-
-      // Verify password
-      if (!user.passwordhash) {
-        return {
-          success: false,
-          message: 'Invalid username or password',
-        };
-      }
-
-      const isPasswordValid = await this.verifyPassword(password, user.passwordhash);
-      if (!isPasswordValid) {
-        // Increment failed login count
-        await this.incrementFailedLoginCount(user.id);
-        return {
-          success: false,
-          message: 'Invalid username or password',
-        };
-      }
-
-      // Reset failed login count on successful login
-      if (user.accessfailedcount > 0) {
-        await prisma.aspnetusers.update({
-          where: { id: user.id },
-          data: { accessfailedcount: 0 },
-        });
-      }
-
-      // Generate JWT token
-      const token = this.generateToken(user.id, user.username || '');
-
-      return {
-        success: true,
-        message: 'Login successful',
-        token,
-        user: {
-          id: user.id,
-          username: user.username || '',
-          email: user.email || '',
-        },
-      };
-    } catch (error) {
-      console.error('Login error:', error);
-      return {
-        success: false,
-        message: 'An error occurred during login',
-      };
+    if (!user) {
+      throw new AuthenticationError('Invalid username or password');
     }
+
+    // Check if user is locked out
+    if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
+      throw new AuthenticationError('Account is temporarily locked. Please try again later.');
+    }
+
+    // Verify password
+    if (!user.passwordhash) {
+      throw new AuthenticationError('Invalid username or password');
+    }
+
+    const isPasswordValid = await this.verifyPassword(password, user.passwordhash);
+    if (!isPasswordValid) {
+      // Increment failed login count
+      await this.incrementFailedLoginCount(user.id);
+      throw new AuthenticationError('Invalid username or password');
+    }
+
+    // Reset failed login count on successful login
+    if (user.accessfailedcount > 0) {
+      this.userRepository.update(BigInt(user.id), {
+        accessfailedcount: 0,
+      });
+    }
+
+    // Generate JWT token
+    const token = this.generateToken(user.id, user.username || '');
+
+    return {
+      token,
+      id: user.id,
+      userName: user.username || '',
+    };
   }
 
   /**
    * Register a new user
    */
-  async register(data: RegisterData, tx?: Prisma.TransactionClient): Promise<AuthResponse> {
-    try {
-      const { username, email, password } = data;
+  async register(credentials: SignInCredentialsType): Promise<RegisteredUserType> {
+    const { userName, password } = credentials;
 
-      // Use transaction client if provided, otherwise use regular prisma
-      const dbClient = tx || prisma;
+    // Check if username already exists
+    const existingUser = await this.userRepository.findByUsername(userName);
 
-      // Check if username already exists
-      const existingUser = await dbClient.aspnetusers.findUnique({
-        where: { username },
-      });
-
-      if (existingUser) {
-        return {
-          success: false,
-          message: 'Username already exists',
-        };
-      }
-
-      // Check if email already exists
-      if (email) {
-        const existingEmail = await dbClient.aspnetusers.findFirst({
-          where: { email },
-        });
-
-        if (existingEmail) {
-          return {
-            success: false,
-            message: 'Email already exists',
-          };
-        }
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 12);
-
-      // Generate user ID (GUID format)
-      const userId = this.generateUserId();
-
-      // Create user
-      const newUser = await dbClient.aspnetusers.create({
-        data: {
-          id: userId,
-          username,
-          email,
-          emailconfirmed: false,
-          passwordhash: hashedPassword,
-          securitystamp: this.generateSecurityStamp(),
-          phonenumberconfirmed: false,
-          twofactorenabled: false,
-          lockoutenabled: true,
-          accessfailedcount: 0,
-        },
-      });
-
-      // Note: Contact creation moved to explicit registration flows. This endpoint is login-only.
-
-      // Generate JWT token
-      const token = this.generateToken(newUser.id, newUser.username || '');
-
-      return {
-        success: true,
-        message: 'Registration successful',
-        token,
-        user: {
-          id: newUser.id,
-          username: newUser.username || '',
-          email: newUser.email || '',
-        },
-      };
-    } catch (error) {
-      console.error('Registration error:', error);
-      return {
-        success: false,
-        message: 'An error occurred during registration',
-      };
+    if (existingUser) {
+      throw new ValidationError('Username already exists');
     }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Generate user ID (GUID format)
+    const userId = this.generateUserId();
+
+    // Create user
+    const newUser = await this.userRepository.create({
+      id: userId,
+      username: userName,
+      email: '',
+      emailconfirmed: false,
+      passwordhash: hashedPassword,
+      securitystamp: this.generateSecurityStamp(),
+      phonenumberconfirmed: false,
+      twofactorenabled: false,
+      lockoutenabled: true,
+      accessfailedcount: 0,
+    });
+
+    // Generate JWT token
+    const token = this.generateToken(newUser.id, newUser.username || '');
+
+    return {
+      token,
+      id: newUser.id,
+      userName: newUser.username || '',
+    };
   }
 
   /**
    * Verify JWT token and return user info
    */
-  async verifyToken(token: string): Promise<AuthResponse> {
-    try {
-      const decoded = jwt.verify(token, this.JWT_SECRET) as JWTPayload;
+  async verifyToken(token: string): Promise<RegisteredUserType> {
+    const decoded = jwt.verify(token, this.JWT_SECRET) as JWTPayload;
 
-      const user = await prisma.aspnetusers.findUnique({
-        where: { id: decoded.userId },
-      });
+    const user = await this.userRepository.findByUserId(decoded.userId);
 
-      if (!user) {
-        return {
-          success: false,
-          message: 'User not found',
-        };
-      }
-
-      return {
-        success: true,
-        message: 'Token valid',
-        user: {
-          id: user.id,
-          username: user.username || '',
-          email: user.email || '',
-        },
-      };
-    } catch (_error) {
-      return {
-        success: false,
-        message: 'Invalid token',
-      };
+    if (!user) {
+      throw new AuthenticationError('User not found');
     }
+
+    return {
+      id: user.id,
+      userName: user.username || '',
+    };
   }
 
   /**
@@ -250,114 +137,67 @@ export class AuthService {
     userId: string,
     currentPassword: string,
     newPassword: string,
-  ): Promise<AuthResponse> {
-    try {
-      // Find user
-      const user = await prisma.aspnetusers.findUnique({
-        where: { id: userId },
-      });
+  ): Promise<RegisteredUserType> {
+    // Find user
+    const user = await this.userRepository.findByUserId(userId);
 
-      if (!user) {
-        return {
-          success: false,
-          message: 'User not found',
-        };
-      }
-
-      // Verify current password
-      if (!user.passwordhash) {
-        return {
-          success: false,
-          message: 'User has no password set',
-        };
-      }
-
-      const isCurrentPasswordValid = await this.verifyPassword(currentPassword, user.passwordhash);
-      if (!isCurrentPasswordValid) {
-        return {
-          success: false,
-          message: 'Current password is incorrect',
-        };
-      }
-
-      // Hash new password
-      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
-
-      // Update password
-      await prisma.aspnetusers.update({
-        where: { id: userId },
-        data: { passwordhash: hashedNewPassword },
-      });
-
-      return {
-        success: true,
-        message: 'Password changed successfully',
-      };
-    } catch (error) {
-      console.error('Change password error:', error);
-      return {
-        success: false,
-        message: 'An error occurred while changing password',
-      };
+    if (!user) {
+      throw new AuthenticationError('User not found');
     }
+
+    // Verify current password
+    if (!user.passwordhash) {
+      throw new AuthenticationError('User has no password set');
+    }
+
+    const isCurrentPasswordValid = await this.verifyPassword(currentPassword, user.passwordhash);
+    if (!isCurrentPasswordValid) {
+      throw new AuthenticationError('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await this.userRepository.updatePassword(userId, hashedNewPassword);
+
+    return {
+      id: user.id,
+      userName: user.username || '',
+    };
   }
 
   /**
    * Refresh JWT token
    */
-  async refreshToken(userId: string): Promise<AuthResponse> {
-    try {
-      // Find user
-      const user = await prisma.aspnetusers.findUnique({
-        where: { id: userId },
-      });
+  async refreshToken(userId: string): Promise<RegisteredUserType> {
+    // Find user
+    const user = await this.userRepository.findByUserId(userId);
 
-      if (!user) {
-        return {
-          success: false,
-          message: 'User not found',
-        };
-      }
-
-      // Check if user is locked out
-      if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
-        return {
-          success: false,
-          message: 'Account is temporarily locked',
-        };
-      }
-
-      // Generate new token
-      const token = this.generateToken(user.id, user.username || '');
-
-      return {
-        success: true,
-        message: 'Token refreshed successfully',
-        token,
-        user: {
-          id: user.id,
-          username: user.username || '',
-          email: user.email || '',
-        },
-      };
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      return {
-        success: false,
-        message: 'An error occurred while refreshing token',
-      };
+    if (!user) {
+      throw new AuthenticationError('User not found');
     }
+
+    // Check if user is locked out
+    if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
+      throw new AuthenticationError('Account is temporarily locked');
+    }
+
+    // Generate new token
+    const token = this.generateToken(user.id, user.username || '');
+
+    return {
+      id: user.id,
+      userName: user.username || '',
+      token,
+    };
   }
 
   /**
    * Verify password against hash
    */
   private async verifyPassword(password: string, hash: string): Promise<boolean> {
-    try {
-      return await bcrypt.compare(password, hash);
-    } catch (_error) {
-      return false;
-    }
+    return await bcrypt.compare(password, hash);
   }
 
   /**
@@ -391,13 +231,8 @@ export class AuthService {
    * Increment failed login count
    */
   private async incrementFailedLoginCount(userId: string): Promise<void> {
-    await prisma.aspnetusers.update({
-      where: { id: userId },
-      data: {
-        accessfailedcount: {
-          increment: 1,
-        },
-      },
+    await this.userRepository.updateUser(userId, {
+      accessfailedcount: 1,
     });
   }
 }

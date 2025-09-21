@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { Button, IconButton, Tooltip } from '@mui/material';
 import { Email as EmailIcon } from '@mui/icons-material';
 import { EmailMode } from '../../../types/emails/email';
-import { BaseContact } from '@draco/shared-schemas';
+import { BaseContactType } from '@draco/shared-schemas';
 import { generateContactMailto, hasValidEmail } from './mailtoUtils';
 import { EmailQuickDialog } from '../dialogs/EmailQuickDialog';
 
 interface EmailButtonProps {
-  contact: BaseContact;
+  contact: BaseContactType;
   variant?: 'button' | 'icon';
   size?: 'small' | 'medium' | 'large';
   className?: string;

@@ -1,33 +1,26 @@
 // Cleanup Service for Draco Sports Manager
 // Handles automatic cleanup of expired data including player classifieds
 
-import { PrismaClient } from '@prisma/client';
 import {
   ICleanupService,
-  ICleanupRepository,
   ICleanupConfig,
   CleanupResult,
   CleanupStatus,
 } from '../interfaces/cleanupInterfaces.js';
-import { PrismaCleanupRepository } from '../repositories/implementations/PrismaCleanupRepository.js';
+
+import { ICleanupRepository, RepositoryFactory } from '../repositories/index.js';
 import { ValidationError, InternalServerError } from '../utils/customErrors.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
 
 export class CleanupService implements ICleanupService {
-  private prisma: PrismaClient;
   private repository: ICleanupRepository;
   private cleanupInterval: NodeJS.Timeout | null = null;
   private config: ICleanupConfig;
   private lastCleanup: Date | null = null;
   private lastError: string | null = null;
 
-  constructor(
-    prisma: PrismaClient,
-    config?: Partial<ICleanupConfig>,
-    repository?: ICleanupRepository,
-  ) {
-    this.prisma = prisma;
-    this.repository = repository || new PrismaCleanupRepository(prisma);
+  constructor(config?: Partial<ICleanupConfig>, repository?: ICleanupRepository) {
+    this.repository = repository || RepositoryFactory.getCleanupRepository();
 
     // Use provided configuration or defaults
     this.config = {

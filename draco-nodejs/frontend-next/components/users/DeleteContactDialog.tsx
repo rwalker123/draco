@@ -18,19 +18,24 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  Stack,
 } from '@mui/material';
 import { Warning as WarningIcon, Error as ErrorIcon, Info as InfoIcon } from '@mui/icons-material';
 import { DependencyCheckResult } from '../../types/users';
-import { Contact } from '@draco/shared-schemas';
-import { createUserManagementService } from '../../services/userManagementService';
-import { useAuth } from '../../context/AuthContext';
+import { BaseContactType } from '@draco/shared-schemas';
+import { useContactDeletion } from '../../hooks/useContactDeletion';
 
 interface DeleteContactDialogProps {
   open: boolean;
-  contact: Contact | null;
+  contact: BaseContactType | null;
   onClose: () => void;
-  onDelete: (contactId: string, force: boolean) => Promise<void>;
-  loading?: boolean;
+  onSuccess?: (result: {
+    message: string;
+    contactId: string;
+    dependenciesDeleted?: number;
+    wasForced: boolean;
+  }) => void;
+  accountId: string;
 }
 
 const getRiskLevelColor = (riskLevel: string) => {
@@ -63,45 +68,22 @@ const getRiskLevelIcon = (riskLevel: string) => {
   }
 };
 
+/**
+ * DeleteContactDialog Component
+ * Self-contained dialog for deleting contacts with internal error handling and dependency checking
+ */
 const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({
   open,
   contact,
   onClose,
-  onDelete,
-  loading = false,
+  onSuccess,
+  accountId,
 }) => {
-  const { token } = useAuth();
-  const [checkingDependencies, setCheckingDependencies] = useState(false);
   const [dependencyResult, setDependencyResult] = useState<DependencyCheckResult | null>(null);
   const [forceDelete, setForceDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const checkDependencies = useCallback(async () => {
-    if (!contact || !token) return;
-
-    setCheckingDependencies(true);
-    setError(null);
-
-    try {
-      const userService = createUserManagementService(token);
-      // Extract accountId from contact.userId or current URL
-      const pathSegments = window.location.pathname.split('/');
-      const accountIdIndex = pathSegments.indexOf('account');
-      const accountId = accountIdIndex !== -1 ? pathSegments[accountIdIndex + 1] : '';
-
-      if (!accountId) {
-        throw new Error('Unable to determine account ID');
-      }
-
-      const result = await userService.checkContactDependencies(accountId, contact.id);
-      setDependencyResult(result.dependencyCheck);
-    } catch (err) {
-      console.error('Error checking dependencies:', err);
-      setError(err instanceof Error ? err.message : 'Failed to check dependencies');
-    } finally {
-      setCheckingDependencies(false);
-    }
-  }, [contact, token]);
+  const { deleteContact, checkDependencies, loading, checkingDependencies } =
+    useContactDeletion(accountId);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -109,7 +91,16 @@ const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({
       setForceDelete(false);
       setError(null);
       setDependencyResult(null);
-      checkDependencies();
+      // Call checkDependencies directly to avoid circular dependency
+      const performCheck = async () => {
+        const result = await checkDependencies(contact.id);
+        if (result.success) {
+          setDependencyResult(result.dependencyCheck || null);
+        } else {
+          setError(result.error || 'Failed to check dependencies');
+        }
+      };
+      performCheck();
     } else {
       setDependencyResult(null);
       setForceDelete(false);
@@ -117,17 +108,27 @@ const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({
     }
   }, [open, contact, checkDependencies]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!contact) return;
 
-    try {
-      await onDelete(contact.id, forceDelete);
-      onClose();
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      setError(error instanceof Error ? error.message : 'Failed to delete contact');
+    // Clear any previous errors
+    setError(null);
+
+    const result = await deleteContact(contact.id, forceDelete);
+
+    if (result.success) {
+      onSuccess?.({
+        message: result.message || 'Contact deleted successfully',
+        contactId: result.contactId!,
+        dependenciesDeleted: result.dependenciesDeleted,
+        wasForced: result.wasForced || false,
+      });
+      onClose(); // Close dialog on success
+    } else {
+      // Handle error internally
+      setError(result.error || 'Failed to delete contact');
     }
-  };
+  }, [contact, forceDelete, deleteContact, onSuccess, onClose]);
 
   const canProceed = checkingDependencies ? false : dependencyResult?.canDelete || forceDelete;
 
@@ -145,23 +146,28 @@ const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({
       </DialogTitle>
 
       <DialogContent>
-        <Typography variant="body1" gutterBottom>
-          Contact:{' '}
-          <strong>
-            {contact.firstName} {contact.lastName}
-          </strong>
-          {contact.email && (
-            <Typography variant="body2" color="text.secondary">
-              {contact.email}
-            </Typography>
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          {/* Error display */}
+          {error && (
+            <Alert severity="error" onClose={() => setError(null)}>
+              {error}
+            </Alert>
           )}
-        </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+          <Box>
+            <Typography variant="body1" gutterBottom>
+              Contact:{' '}
+              <strong>
+                {contact.firstName} {contact.lastName}
+              </strong>
+            </Typography>
+            {contact.email && (
+              <Typography variant="body2" color="text.secondary">
+                {contact.email}
+              </Typography>
+            )}
+          </Box>
+        </Stack>
 
         {checkingDependencies && (
           <Box display="flex" alignItems="center" gap={2} sx={{ mt: 2, mb: 2 }}>

@@ -7,7 +7,6 @@ import validator from 'validator';
 import { ITeamsWantedOwnerResponse } from '../../interfaces/playerClassifiedInterfaces.js';
 import { NotFoundError, ValidationError, InternalServerError } from '../../utils/customErrors.js';
 import { logSecurely } from '../../utils/auditLogger.js';
-import { ServiceFactory } from '../serviceFactory.js';
 import type { PlayerClassifiedDataService } from './PlayerClassifiedDataService.js';
 
 // Database record types for access control operations
@@ -362,31 +361,6 @@ export class PlayerClassifiedAccessService {
     }
 
     return validator.isUUID(accessCode);
-  }
-
-  /**
-   * Check if contact exists and belongs to account
-   *
-   * Verifies that a contact exists and belongs to the specified account.
-   * Used for additional security checks in permission verification.
-   *
-   * @param contactId - ID of the contact to check
-   * @param accountId - Account ID for boundary verification
-   * @returns True if contact exists and belongs to account, false otherwise
-   *
-   * @security Enforces account boundary by checking contact-account relationship
-   *
-   * @example
-   * ```typescript
-   * const isValid = await accessService.isContactInAccount(789n, 123n);
-   * if (!isValid) {
-   *   throw new ValidationError('Contact not found in account');
-   * }
-   * ```
-   */
-  async isContactInAccount(contactId: bigint, accountId: bigint): Promise<boolean> {
-    const contactSecurityService = ServiceFactory.getContactSecurityService();
-    return await contactSecurityService.isContactInAccount(contactId, accountId);
   }
 
   /**

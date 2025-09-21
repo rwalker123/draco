@@ -3,9 +3,11 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { IRoleMiddleware } from '../interfaces/roleInterfaces.js';
-import { RoleContext, RoleType, UserRoles } from '../types/roles.js';
-import { ROLE_IDS } from '../config/roles.js';
 import { PrismaClient } from '@prisma/client';
+import { ROLE_IDS } from '../config/roles.js';
+import { RoleContextData } from '../interfaces/roleInterfaces.js';
+import { RoleNamesType } from '../types/roles.js';
+import { UserRolesType } from '@draco/shared-schemas';
 
 // Extend the Request interface to include user and role information
 declare global {
@@ -15,7 +17,7 @@ declare global {
         id: string;
         username: string;
       };
-      userRoles?: UserRoles;
+      userRoles?: UserRolesType;
       accountBoundary?: {
         accountId: bigint;
         contactId: bigint;
@@ -53,7 +55,7 @@ export class RouteProtection {
   /**
    * Middleware to require a specific role
    */
-  requireRole = (requiredRole: string, context?: Partial<RoleContext>) => {
+  requireRole = (requiredRole: string) => {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
         if (!req.user?.id) {
@@ -64,11 +66,11 @@ export class RouteProtection {
           return;
         }
 
-        const roleContext: RoleContext = {
-          accountId: context?.accountId || this.extractAccountId(req),
-          teamId: context?.teamId || this.extractTeamId(req),
-          leagueId: context?.leagueId || this.extractLeagueId(req),
-          seasonId: context?.seasonId || this.extractSeasonId(req),
+        const roleContext: RoleContextData = {
+          accountId: this.extractAccountId(req) || BigInt(0),
+          teamId: this.extractTeamId(req),
+          leagueId: this.extractLeagueId(req),
+          seasonId: this.extractSeasonId(req),
         };
 
         const roleCheck = await this.roleService.hasRole(req.user.id, requiredRole, roleContext);
@@ -100,7 +102,7 @@ export class RouteProtection {
   /**
    * Middleware to require a specific permission
    */
-  requirePermission = (requiredPermission: string, context?: Partial<RoleContext>) => {
+  requirePermission = (requiredPermission: string, context?: Partial<RoleContextData>) => {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
         if (!req.user?.id) {
@@ -111,8 +113,8 @@ export class RouteProtection {
           return;
         }
 
-        const roleContext: RoleContext = {
-          accountId: context?.accountId || this.extractAccountId(req),
+        const roleContext: RoleContextData = {
+          accountId: context?.accountId || this.extractAccountId(req) || BigInt(0),
           teamId: context?.teamId || this.extractTeamId(req),
           leagueId: context?.leagueId || this.extractLeagueId(req),
           seasonId: context?.seasonId || this.extractSeasonId(req),
@@ -233,25 +235,25 @@ export class RouteProtection {
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
 
         // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(ROLE_IDS[RoleType.ADMINISTRATOR])) {
+        if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
           req.userRoles = userRoles;
           return next();
         }
 
         // Allow if user has account admin role
         if (
-          userRoles.globalRoles.includes(ROLE_IDS[RoleType.ACCOUNT_ADMIN]) ||
-          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])
+          userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
+          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
         ) {
           req.userRoles = userRoles;
           return next();
         }
 
         // Check if user has team-specific roles
-        const teamContext = { accountId, teamId };
+        const teamContext: RoleContextData = { accountId: accountId, teamId: teamId };
         const hasTeamRole = await this.roleService.hasRole(
           req.user.id,
-          ROLE_IDS[RoleType.TEAM_ADMIN],
+          ROLE_IDS[RoleNamesType.TEAM_ADMIN],
           teamContext,
         );
 
@@ -310,25 +312,25 @@ export class RouteProtection {
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
 
         // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(ROLE_IDS[RoleType.ADMINISTRATOR])) {
+        if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
           req.userRoles = userRoles;
           return next();
         }
 
         // Allow if user has account admin role
         if (
-          userRoles.globalRoles.includes(ROLE_IDS[RoleType.ACCOUNT_ADMIN]) ||
-          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])
+          userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
+          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
         ) {
           req.userRoles = userRoles;
           return next();
         }
 
         // Check if user has league-specific roles
-        const leagueContext = { accountId, leagueId };
+        const leagueContext: RoleContextData = { accountId: accountId, leagueId: leagueId };
         const hasLeagueRole = await this.roleService.hasRole(
           req.user.id,
-          ROLE_IDS[RoleType.LEAGUE_ADMIN],
+          ROLE_IDS[RoleNamesType.LEAGUE_ADMIN],
           leagueContext,
         );
 
@@ -354,12 +356,12 @@ export class RouteProtection {
   /**
    * Convenience methods for common role requirements
    */
-  requireAdministrator = () => this.requireRole(ROLE_IDS[RoleType.ADMINISTRATOR]);
-  requireAccountAdmin = () => this.requireRole(ROLE_IDS[RoleType.ACCOUNT_ADMIN]);
-  requireAccountPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]);
-  requireLeagueAdmin = () => this.requireRole(ROLE_IDS[RoleType.LEAGUE_ADMIN]);
-  requireTeamAdmin = () => this.requireRole(ROLE_IDS[RoleType.TEAM_ADMIN]);
-  requireTeamPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]);
+  requireAdministrator = () => this.requireRole(ROLE_IDS[RoleNamesType.ADMINISTRATOR]);
+  requireAccountAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]);
+  requireAccountPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]);
+  requireLeagueAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]);
+  requireTeamAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.TEAM_ADMIN]);
+  requireTeamPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]);
 
   /**
    * Extract account ID from request (from URL params, body, or query)

@@ -14,7 +14,7 @@ import { AccountLeague, AccountField, AccountUmpire } from '../interfaces/accoun
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
-const contactSecurityService = ServiceFactory.getContactSecurityService();
+const contactService = ServiceFactory.getContactService();
 
 /**
  * GET /api/accounts/:accountId/user-teams
@@ -33,9 +33,7 @@ router.get(
     }
 
     // Get the user's contact record for this account
-    const userContact = await contactSecurityService.getUserContactInAccount(userId, accountId, {
-      id: true,
-    });
+    const userContact = await contactService.getContactByUserId(userId, accountId);
 
     if (!userContact) {
       // User doesn't have a contact record for this account, return empty teams
@@ -85,7 +83,7 @@ router.get(
     const userTeams = await prisma.rosterseason.findMany({
       where: {
         roster: {
-          contactid: userContact.id,
+          contactid: BigInt(userContact.id),
         },
         teamsseason: {
           leagueseason: {
@@ -119,7 +117,7 @@ router.get(
     // Get teams where the user is a manager
     const managedTeams = await prisma.teamseasonmanager.findMany({
       where: {
-        contactid: userContact.id,
+        contactid: BigInt(userContact.id),
         teamsseason: {
           leagueseason: {
             seasonid: currentSeason.id,

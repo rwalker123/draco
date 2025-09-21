@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Alert, Box, Typography } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
+import { useUserDialogs } from '../../../../hooks/useUserDialogs';
 import {
   UserTableEnhanced,
   AssignRoleDialog,
@@ -10,23 +11,22 @@ import {
 } from '../../../../components/users';
 import EditContactDialog from '../../../../components/users/EditContactDialog';
 import DeleteContactDialog from '../../../../components/users/DeleteContactDialog';
-import ConfirmationDialog from '../../../../components/common/ConfirmationDialog';
+import PhotoDeleteDialog from '../../../../components/users/PhotoDeleteDialog';
+import RevokeRegistrationDialog from '../../../../components/users/RevokeRegistrationDialog';
 import {
   AutomaticRolesSection,
   AccountOwnerDisplay,
 } from '../../../../components/users/automatic-roles';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { ContactType, ContactRoleType, RoleWithContactType } from '@draco/shared-schemas';
 
 interface UserManagementProps {
   accountId: string;
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
-  // Confirmation dialog state for photo deletion
-  const [photoDeleteConfirmOpen, setPhotoDeleteConfirmOpen] = useState(false);
-  const [contactToDeletePhoto, setContactToDeletePhoto] = useState<string | null>(null);
-  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
-  const [contactToRevoke, setContactToRevoke] = useState<string | null>(null);
+  // Use the new dialog hooks
+  const dialogs = useUserDialogs();
 
   // Use custom hook for all state and logic
   const {
@@ -46,26 +46,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     isShowingSearchResults,
     onlyWithRoles,
 
-    // Dialog states
-    assignRoleDialogOpen,
-    removeRoleDialogOpen,
-    editContactDialogOpen,
-    deleteContactDialogOpen,
-    createContactDialogOpen,
-    selectedUser,
-    selectedContactForEdit,
-    selectedContactForDelete,
-    selectedRole,
-    selectedRoleToRemove,
-    newUserContactId,
-    formLoading,
+    // Form loading state
 
     // Context data states
     leagues,
     teams,
     leagueSeasons,
-    selectedLeagueId,
-    selectedTeamId,
     contextDataLoading,
 
     // Automatic role holders states
@@ -79,72 +65,142 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handleNextPage,
     handlePrevPage,
     handleRowsPerPageChange,
-    handleAssignRole,
-    handleRemoveRole,
-    openAssignRoleDialog,
-    closeAssignRoleDialog,
-    openRemoveRoleDialog,
-    openEditContactDialog,
-    closeEditContactDialog,
-    handleEditContact,
-    openCreateContactDialog,
-    closeCreateContactDialog,
-    handleCreateContact,
-    handleDeleteContactPhoto,
-    handleRevokeRegistration,
-    openDeleteContactDialog,
-    closeDeleteContactDialog,
-    handleDeleteContact,
-    setRemoveRoleDialogOpen,
-    setSelectedRole,
-    setNewUserContactId,
-    setSelectedLeagueId,
-    setSelectedTeamId,
     setSearchTerm,
     setError,
     setSuccess,
     getRoleDisplayName,
+    handleRoleAssigned,
+    handleRoleRemoved,
+    handleContactUpdated,
+    handlePhotoDeleted,
+    handleRegistrationRevoked,
+    handleContactDeleted,
+    loadContextData,
   } = useUserManagement(accountId);
 
   // Check if user can manage users (this is handled in the hook)
   const canManageUsers = true; // The hook handles permission checking
 
   // Wrapper function for photo deletion with confirmation
-  const handleDeleteContactPhotoWithConfirm = useCallback(async (contactId: string) => {
-    setContactToDeletePhoto(contactId);
-    setPhotoDeleteConfirmOpen(true);
-  }, []);
+  const handleDeleteContactPhotoWithConfirm = useCallback(
+    async (contactId: string) => {
+      dialogs.photoDeleteConfirmDialog.open(contactId);
+    },
+    [dialogs.photoDeleteConfirmDialog],
+  );
 
-  const confirmDeletePhoto = useCallback(async () => {
-    if (contactToDeletePhoto) {
-      await handleDeleteContactPhoto(contactToDeletePhoto);
-      setPhotoDeleteConfirmOpen(false);
-      setContactToDeletePhoto(null);
-    }
-  }, [contactToDeletePhoto, handleDeleteContactPhoto]);
+  const handleRevokeWithConfirm = useCallback(
+    async (contactId: string) => {
+      dialogs.revokeConfirmDialog.open(contactId);
+    },
+    [dialogs.revokeConfirmDialog],
+  );
 
-  const handleRevokeWithConfirm = useCallback(async (contactId: string) => {
-    setContactToRevoke(contactId);
-    setRevokeConfirmOpen(true);
-  }, []);
+  // Async wrapper functions to match the interface expectations
+  const handleAssignRoleWrapper = useCallback(
+    async (user: ContactType) => {
+      dialogs.assignRoleDialog.open(user);
+      await loadContextData();
+    },
+    [dialogs.assignRoleDialog, loadContextData],
+  );
 
-  const confirmRevoke = useCallback(async () => {
-    if (contactToRevoke) {
-      await handleRevokeRegistration(contactToRevoke);
-      setRevokeConfirmOpen(false);
-      setContactToRevoke(null);
-    }
-  }, [contactToRevoke, handleRevokeRegistration]);
+  // Handle success events from the self-contained dialogs
+  const handleAssignRoleSuccess = useCallback(
+    (result: { message: string; assignedRole: RoleWithContactType }) => {
+      setSuccess(result.message);
+      handleRoleAssigned(result.assignedRole);
+      dialogs.assignRoleDialog.close();
+    },
+    [setSuccess, handleRoleAssigned, dialogs.assignRoleDialog],
+  );
 
-  const cancelRevoke = useCallback(() => {
-    setRevokeConfirmOpen(false);
-    setContactToRevoke(null);
-  }, []);
+  const handleRemoveRoleSuccess = useCallback(
+    (result: {
+      message: string;
+      removedRole: { contactId: string; roleId: string; id: string };
+    }) => {
+      setSuccess(result.message);
+      handleRoleRemoved(result.removedRole.contactId, result.removedRole.id);
+      dialogs.removeRoleDialog.close();
+    },
+    [setSuccess, handleRoleRemoved, dialogs.removeRoleDialog],
+  );
 
-  const cancelDeletePhoto = useCallback(() => {
-    setPhotoDeleteConfirmOpen(false);
-    setContactToDeletePhoto(null);
-  }, []);
+  const handleEditContactSuccess = useCallback(
+    (result: { message: string; contact: ContactType; isCreate: boolean }) => {
+      setSuccess(result.message);
+      handleContactUpdated(result.contact, result.isCreate);
+      if (result.isCreate) {
+        dialogs.createContactDialog.close();
+      } else {
+        dialogs.editContactDialog.close();
+      }
+    },
+    [setSuccess, handleContactUpdated, dialogs.createContactDialog, dialogs.editContactDialog],
+  );
+
+  const handlePhotoDeleteSuccess = useCallback(
+    (result: { message: string; contactId: string }) => {
+      setSuccess(result.message);
+      handlePhotoDeleted(result.contactId);
+      dialogs.photoDeleteConfirmDialog.close();
+    },
+    [setSuccess, handlePhotoDeleted, dialogs.photoDeleteConfirmDialog],
+  );
+
+  const handleRevokeRegistrationSuccess = useCallback(
+    (result: { message: string; contactId: string }) => {
+      setSuccess(result.message);
+      handleRegistrationRevoked(result.contactId);
+      dialogs.revokeConfirmDialog.close();
+    },
+    [setSuccess, handleRegistrationRevoked, dialogs.revokeConfirmDialog],
+  );
+
+  const handleContactDeleteSuccess = useCallback(
+    (result: {
+      message: string;
+      contactId: string;
+      dependenciesDeleted?: number;
+      wasForced: boolean;
+    }) => {
+      const finalMessage =
+        result.dependenciesDeleted && result.dependenciesDeleted > 0
+          ? `${result.message} (${result.dependenciesDeleted} related records deleted)`
+          : result.message;
+
+      setSuccess(finalMessage);
+      handleContactDeleted(result.contactId);
+      dialogs.deleteContactDialog.close();
+    },
+    [setSuccess, handleContactDeleted, dialogs.deleteContactDialog],
+  );
+
+  const handleRemoveRoleWrapper = useCallback(
+    async (user: ContactType, role: ContactRoleType) => {
+      dialogs.removeRoleDialog.open(user, role);
+    },
+    [dialogs.removeRoleDialog],
+  );
+
+  const handleEditContactWrapper = useCallback(
+    async (contact: ContactType) => {
+      dialogs.editContactDialog.open(contact);
+    },
+    [dialogs.editContactDialog],
+  );
+
+  const handleDeleteContactWrapper = useCallback(
+    async (contact: ContactType) => {
+      dialogs.deleteContactDialog.open(contact);
+    },
+    [dialogs.deleteContactDialog],
+  );
+
+  const handleAddUserWrapper = useCallback(async () => {
+    dialogs.createContactDialog.open();
+  }, [dialogs.createContactDialog]);
 
   // No global event bridge; using explicit prop wiring instead
 
@@ -190,11 +246,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         users={users}
         loading={loading}
         isInitialLoad={isInitialLoad}
-        onAssignRole={openAssignRoleDialog}
-        onRemoveRole={openRemoveRoleDialog}
-        onEditContact={openEditContactDialog}
-        onDeleteContact={openDeleteContactDialog}
-        onAddUser={openCreateContactDialog}
+        onAssignRole={handleAssignRoleWrapper}
+        onRemoveRole={handleRemoveRoleWrapper}
+        onEditContact={handleEditContactWrapper}
+        onDeleteContact={handleDeleteContactWrapper}
+        onAddUser={handleAddUserWrapper}
         canManageUsers={canManageUsers}
         page={page}
         rowsPerPage={rowsPerPage}
@@ -233,86 +289,71 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
 
       {/* Dialog Sections */}
       <AssignRoleDialog
-        open={assignRoleDialogOpen}
-        onClose={closeAssignRoleDialog}
-        onAssign={handleAssignRole}
-        selectedRole={selectedRole}
-        newUserContactId={newUserContactId}
+        open={dialogs.assignRoleDialog.isOpen}
+        onClose={dialogs.assignRoleDialog.close}
+        onSuccess={handleAssignRoleSuccess}
         roles={roles}
-        onUserChange={setNewUserContactId}
-        onRoleChange={setSelectedRole}
-        loading={formLoading}
         accountId={accountId}
         // Pre-population props
-        preselectedUser={selectedUser}
-        isUserReadonly={!!selectedUser}
+        preselectedUser={dialogs.assignRoleDialog.data || null}
+        isUserReadonly={!!dialogs.assignRoleDialog.data}
         // Context data props
         leagues={leagues}
         teams={teams}
         leagueSeasons={leagueSeasons}
-        selectedLeagueId={selectedLeagueId}
-        selectedTeamId={selectedTeamId}
-        onLeagueChange={setSelectedLeagueId}
-        onTeamChange={setSelectedTeamId}
         contextDataLoading={contextDataLoading}
       />
 
       <RemoveRoleDialog
-        open={removeRoleDialogOpen}
-        onClose={() => setRemoveRoleDialogOpen(false)}
-        onRemove={handleRemoveRole}
-        selectedUser={selectedUser}
-        selectedRoleToRemove={selectedRoleToRemove}
-        loading={formLoading}
+        open={dialogs.removeRoleDialog.isOpen}
+        onClose={dialogs.removeRoleDialog.close}
+        onSuccess={handleRemoveRoleSuccess}
+        selectedUser={dialogs.removeRoleDialog.data?.user || null}
+        selectedRoleToRemove={dialogs.removeRoleDialog.data?.role || null}
+        accountId={accountId}
       />
 
       <EditContactDialog
-        open={editContactDialogOpen}
-        contact={selectedContactForEdit}
-        onClose={closeEditContactDialog}
-        onSave={handleEditContact}
-        loading={formLoading}
+        open={dialogs.editContactDialog.isOpen}
+        contact={dialogs.editContactDialog.data || null}
+        onClose={dialogs.editContactDialog.close}
+        onSuccess={handleEditContactSuccess}
+        accountId={accountId}
       />
 
       <EditContactDialog
-        open={createContactDialogOpen}
+        open={dialogs.createContactDialog.isOpen}
         contact={null}
         mode="create"
-        onClose={closeCreateContactDialog}
-        onSave={handleCreateContact}
-        loading={formLoading}
+        onClose={dialogs.createContactDialog.close}
+        onSuccess={handleEditContactSuccess}
+        accountId={accountId}
       />
 
       <DeleteContactDialog
-        open={deleteContactDialogOpen}
-        contact={selectedContactForDelete}
-        onClose={closeDeleteContactDialog}
-        onDelete={handleDeleteContact}
-        loading={formLoading}
+        open={dialogs.deleteContactDialog.isOpen}
+        contact={dialogs.deleteContactDialog.data || null}
+        onClose={dialogs.deleteContactDialog.close}
+        onSuccess={handleContactDeleteSuccess}
+        accountId={accountId}
       />
 
-      {/* Photo deletion confirmation dialog */}
-      <ConfirmationDialog
-        open={photoDeleteConfirmOpen}
-        onClose={cancelDeletePhoto}
-        onConfirm={confirmDeletePhoto}
-        title="Delete Photo"
-        message="Are you sure you want to delete this photo? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        confirmButtonColor="error"
+      {/* Photo deletion dialog */}
+      <PhotoDeleteDialog
+        open={dialogs.photoDeleteConfirmDialog.isOpen}
+        contactId={dialogs.photoDeleteConfirmDialog.data || null}
+        onClose={dialogs.photoDeleteConfirmDialog.close}
+        onSuccess={handlePhotoDeleteSuccess}
+        accountId={accountId}
       />
 
-      {/* Revoke registration confirmation dialog */}
-      <ConfirmationDialog
-        open={revokeConfirmOpen}
-        onClose={cancelRevoke}
-        onConfirm={confirmRevoke}
-        title="Remove Registration"
-        message="Are you sure you want to remove registration for this user? They will no longer be linked to a login."
-        confirmText="Remove"
-        cancelText="Cancel"
-        confirmButtonColor="error"
+      {/* Revoke registration dialog */}
+      <RevokeRegistrationDialog
+        open={dialogs.revokeConfirmDialog.isOpen}
+        contactId={dialogs.revokeConfirmDialog.data || null}
+        onClose={dialogs.revokeConfirmDialog.close}
+        onSuccess={handleRevokeRegistrationSuccess}
+        accountId={accountId}
       />
     </main>
   );

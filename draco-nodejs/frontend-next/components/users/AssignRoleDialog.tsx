@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -14,6 +14,7 @@ import {
   MenuItem,
   CircularProgress,
   Typography,
+  Alert,
 } from '@mui/material';
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { AssignRoleDialogProps } from '../../types/users';
@@ -21,21 +22,17 @@ import ContactAutocomplete from '../ContactAutocomplete';
 import LeagueSelector from '../LeagueSelector';
 import TeamSelector from '../TeamSelector';
 import { getRoleDisplayName, isTeamBasedRole, isLeagueBasedRole } from '../../utils/roleUtils';
+import { useRoleAssignment } from '../../hooks/useRoleAssignment';
 
 /**
  * AssignRoleDialog Component
- * Dialog for assigning roles to users
+ * Dialog for assigning roles to users with self-contained error handling
  */
 const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   open,
   onClose,
-  onAssign,
-  selectedRole,
-  newUserContactId,
+  onSuccess,
   roles,
-  onUserChange,
-  onRoleChange,
-  loading,
   accountId,
   // Pre-population props
   preselectedUser,
@@ -44,21 +41,99 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   leagues = [],
   teams = [],
   leagueSeasons = [],
-  selectedLeagueId = '',
-  selectedTeamId = '',
-  onLeagueChange,
-  onTeamChange,
   contextDataLoading = false,
 }) => {
+  // Internal state management
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [newUserContactId, setNewUserContactId] = useState<string>('');
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  // Use the role assignment hook
+  const { assignRole, loading } = useRoleAssignment(accountId);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      // Reset form state when opening
+      setSelectedRole('');
+      setSelectedLeagueId('');
+      setSelectedTeamId('');
+      setNewUserContactId('');
+      setError(null); // Clear any previous errors
+    }
+  }, [open]);
+
   // Determine which role is selected to show appropriate context selector
   const isLeagueAdmin = selectedRole ? isLeagueBasedRole(selectedRole) : false;
   const isTeamAdmin = selectedRole ? isTeamBasedRole(selectedRole) : false;
+
+  // Handle role change
+  const handleRoleChange = useCallback((roleId: string) => {
+    setSelectedRole(roleId);
+    // Reset context selections when role changes
+    setSelectedLeagueId('');
+    setSelectedTeamId('');
+    // Clear error when user makes changes
+    setError(null);
+  }, []);
+
+  // Handle user change
+  const handleUserChange = useCallback((contactId: string) => {
+    setNewUserContactId(contactId);
+    // Clear error when user makes changes
+    setError(null);
+  }, []);
+
+  // Handle assign with internal error handling
+  const handleAssign = useCallback(async () => {
+    // Clear any previous errors
+    setError(null);
+
+    const contactId = isUserReadonly && preselectedUser ? preselectedUser.id : newUserContactId;
+
+    const result = await assignRole(accountId, {
+      roleId: selectedRole,
+      contactId,
+      leagueId: selectedLeagueId || undefined,
+      teamId: selectedTeamId || undefined,
+    });
+
+    if (result.success && result.assignedRole) {
+      onSuccess?.({
+        message: result.message || 'Role assigned successfully',
+        assignedRole: result.assignedRole,
+      });
+      onClose(); // Close dialog on success
+    } else {
+      // Handle error internally
+      setError(result.error || 'Failed to assign role');
+    }
+  }, [
+    selectedRole,
+    newUserContactId,
+    selectedLeagueId,
+    selectedTeamId,
+    isUserReadonly,
+    preselectedUser,
+    assignRole,
+    accountId,
+    onSuccess,
+    onClose,
+  ]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Assign Role to User</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
+          {/* Error display */}
+          {error && (
+            <Alert severity="error" onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
           {preselectedUser && isUserReadonly ? (
             <Stack spacing={1}>
               <Typography variant="body2" color="text.secondary">
@@ -89,7 +164,7 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
             <ContactAutocomplete
               label="Select User"
               value={newUserContactId}
-              onChange={onUserChange}
+              onChange={handleUserChange}
               required
               accountId={accountId}
             />
@@ -98,7 +173,7 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
             <InputLabel>Role</InputLabel>
             <Select
               value={selectedRole}
-              onChange={(e) => onRoleChange(e.target.value)}
+              onChange={(e) => handleRoleChange(e.target.value)}
               label="Role"
             >
               {roles
@@ -112,11 +187,11 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
           </FormControl>
 
           {/* League selector for LeagueAdmin role */}
-          {isLeagueAdmin && onLeagueChange && (
+          {isLeagueAdmin && (
             <LeagueSelector
               leagues={leagues}
               value={selectedLeagueId}
-              onChange={onLeagueChange}
+              onChange={setSelectedLeagueId}
               label="Select League"
               required
               loading={contextDataLoading}
@@ -124,12 +199,12 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
           )}
 
           {/* Team selector for TeamAdmin role */}
-          {isTeamAdmin && onTeamChange && (
+          {isTeamAdmin && (
             <TeamSelector
               teams={teams}
               leagueSeasons={leagueSeasons}
               value={selectedTeamId}
-              onChange={onTeamChange}
+              onChange={setSelectedTeamId}
               label="Select Team"
               required
               loading={contextDataLoading}
@@ -143,12 +218,12 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
           Cancel
         </Button>
         <Button
-          onClick={onAssign}
+          onClick={handleAssign}
           variant="contained"
           disabled={
-            !newUserContactId ||
             !selectedRole ||
             loading ||
+            (!(isUserReadonly && preselectedUser) && !newUserContactId) ||
             (isLeagueAdmin && !selectedLeagueId) ||
             (isTeamAdmin && !selectedTeamId)
           }

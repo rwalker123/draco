@@ -4,20 +4,21 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import validator from 'validator';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import { extractAccountParams, extractContactParams } from '../utils/paramExtraction.js';
-import { PaginationHelper } from '../utils/pagination.js';
-import prisma from '../lib/prisma.js';
-import { ContactSearchResult } from '../interfaces/accountInterfaces.js';
-import { ContactDependencyService } from '../services/contactDependencyService.js';
 import { handleContactPhotoUpload } from './utils/fileUpload.js';
-import { sanitizeContactData } from '../middleware/validation/contactValidation.js';
-import { DateUtils } from '../utils/dateUtils.js';
-import { logRegistrationEvent } from '../utils/auditLogger.js';
-import { ContactValidationService, ValidationType } from '../utils/contactValidation.js';
-import { ContactType, CreateContactSchema, CreateContactType } from '@draco/shared-schemas';
+import {
+  ContactType,
+  CreateContactSchema,
+  CreateContactType,
+  CreateContactRoleSchema,
+  CreateContactRoleType,
+  RoleWithContactType,
+  ContactValidationWithSignInSchema,
+  PagingType,
+  PagingSchema,
+} from '@draco/shared-schemas';
 import {
   handleContactPhotoUploadMiddleware,
   parseFormDataJSON,
@@ -25,10 +26,11 @@ import {
 } from '../middleware/fileUpload.js';
 
 const router = Router({ mergeParams: true });
-export const roleService = ServiceFactory.getRoleService();
+const roleService = ServiceFactory.getRoleService();
 const routeProtection = ServiceFactory.getRouteProtection();
-const contactSecurityService = ServiceFactory.getContactSecurityService();
 const contactService = ServiceFactory.getContactService();
+const registrationService = ServiceFactory.getRegistrationService();
+const contactDependencyService = ServiceFactory.getContactDependencyService();
 
 /**
  * GET /api/accounts/:accountId/contacts/:contactId/roster
@@ -60,193 +62,8 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
-    const existing = await prisma.contacts.findFirst({
-      where: {
-        userid: req.user!.id,
-        creatoraccountid: accountId,
-      },
-    });
-
-    if (!existing) {
-      res.status(404).json({ success: false, message: 'Not registered with this account' });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        contact: {
-          id: existing.id.toString(),
-          firstname: existing.firstname,
-          lastname: existing.lastname,
-          middlename: existing.middlename,
-          email: existing.email || undefined,
-          phone1: existing.phone1 || undefined,
-          phone2: existing.phone2 || undefined,
-          phone3: existing.phone3 || undefined,
-          streetaddress: existing.streetaddress || undefined,
-          city: existing.city || undefined,
-          state: existing.state || undefined,
-          zip: existing.zip || undefined,
-          dateofbirth: DateUtils.formatDateOfBirthForResponse(existing.dateofbirth),
-        },
-      },
-    });
-  }),
-);
-
-/**
- * POST /api/accounts/:accountId/contacts/me/link-by-name
- * Link a contact to the authenticated user by name
- */
-router.post(
-  '/:accountId/contacts/me/link-by-name',
-  authenticateToken,
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const { firstName, middleName, lastName, validationType, streetAddress, dateOfBirth } =
-      req.body || {};
-    const start = Date.now();
-
-    // Validate required validation type and corresponding field
-    if (validationType && validationType !== 'streetAddress' && validationType !== 'dateOfBirth') {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid validation type. Must be "streetAddress" or "dateOfBirth"',
-      });
-      return;
-    }
-
-    // Use enhanced validation if validation type is provided, otherwise fall back to name-only matching
-    if (validationType) {
-      const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
-        firstName,
-        middleName,
-        lastName,
-        validationType: validationType as ValidationType,
-        streetAddress,
-        dateOfBirth,
-      });
-
-      if (!validationResult.success) {
-        logRegistrationEvent(req, 'registration_linkByName', 'validation_error', {
-          accountId,
-          timingMs: Date.now() - start,
-        });
-        res.status(validationResult.statusCode || 400).json({
-          success: false,
-          message: validationResult.error,
-        });
-        return;
-      }
-
-      const contact = validationResult.contact!;
-
-      // Link the contact to the authenticated user
-      const updated = await prisma.contacts.update({
-        where: { id: contact.id },
-        data: { userid: req.user!.id },
-      });
-
-      logRegistrationEvent(req, 'registration_linkByName', 'success', {
-        accountId,
-        userId: req.user!.id,
-        validationType: validationType as string | undefined,
-        timingMs: Date.now() - start,
-      });
-
-      res.json({
-        success: true,
-        data: {
-          contact: {
-            id: updated.id.toString(),
-            firstname: updated.firstname,
-            lastname: updated.lastname,
-            middlename: updated.middlename,
-            email: updated.email || undefined,
-          },
-        },
-      });
-      return;
-    }
-
-    // Legacy name-only matching for backward compatibility
-    if (!firstName || !lastName) {
-      res.status(400).json({ success: false, message: 'First and last name are required' });
-      return;
-    }
-
-    // Build case-insensitive filters for name-only matching
-    const whereClause: {
-      creatoraccountid: bigint;
-      userid: null;
-      firstname: { equals: string; mode: 'insensitive' };
-      lastname: { equals: string; mode: 'insensitive' };
-      middlename?: { equals: string; mode: 'insensitive' };
-    } = {
-      creatoraccountid: accountId,
-      userid: null,
-      firstname: { equals: String(firstName), mode: 'insensitive' },
-      lastname: { equals: String(lastName), mode: 'insensitive' },
-    };
-    if (typeof middleName === 'string' && middleName.trim().length > 0) {
-      whereClause.middlename = { equals: String(middleName), mode: 'insensitive' };
-    }
-
-    const candidates = await prisma.contacts.findMany({ where: whereClause });
-
-    if (candidates.length === 0) {
-      logRegistrationEvent(req, 'registration_linkByName', 'not_found', {
-        accountId,
-        timingMs: Date.now() - start,
-      });
-      res.status(404).json({ success: false, message: 'No matching contact found' });
-      return;
-    }
-    if (candidates.length > 1) {
-      logRegistrationEvent(req, 'registration_linkByName', 'duplicate_matches', {
-        accountId,
-        timingMs: Date.now() - start,
-      });
-      res.status(404).json({
-        success: false,
-        message: 'Multiple matching contacts found. Please contact admin.',
-      });
-      return;
-    }
-
-    const contact = candidates[0];
-    if (contact.userid) {
-      logRegistrationEvent(req, 'registration_linkByName', 'already_linked', {
-        accountId,
-        timingMs: Date.now() - start,
-      });
-      res.status(409).json({ success: false, message: 'Contact is already linked to a user' });
-      return;
-    }
-
-    const updated = await prisma.contacts.update({
-      where: { id: contact.id },
-      data: { userid: req.user!.id },
-    });
-
-    logRegistrationEvent(req, 'registration_linkByName', 'success', {
-      accountId,
-      userId: req.user!.id,
-      timingMs: Date.now() - start,
-    });
-    res.json({
-      success: true,
-      data: {
-        contact: {
-          id: updated.id.toString(),
-          firstname: updated.firstname,
-          lastname: updated.lastname,
-          middlename: updated.middlename,
-          email: updated.email || undefined,
-        },
-      },
-    });
+    const existing = await contactService.getContactByUserId(req.user!.id, BigInt(accountId));
+    res.json(existing);
   }),
 );
 
@@ -259,137 +76,19 @@ router.post(
   authenticateToken,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const start = Date.now();
 
-    // Guard: existing membership
-    const existing = await prisma.contacts.findFirst({
-      where: {
-        userid: req.user!.id,
-        creatoraccountid: accountId,
-      },
-    });
-    if (existing) {
-      logRegistrationEvent(req, 'registration_selfRegister', 'already_linked', {
-        accountId,
-        userId: req.user!.id,
-        timingMs: Date.now() - start,
-      });
-      res.status(409).json({ success: false, message: 'Already registered with this account' });
-      return;
+    const existingContact = await contactService.getContactByUserId(req.user!.id, accountId);
+    if (existingContact) {
+      throw new ConflictError('Already registered with this account');
     }
 
-    // Normalize input: accept camelCase from FE, convert to backend lowercase for processing
-    const body = req.body || {};
-    const normalizedInput: Record<string, unknown> = {
-      firstname: body.firstname ?? body.firstName,
-      middlename: body.middlename ?? body.middleName,
-      lastname: body.lastname ?? body.lastName,
-      email: body.email,
-      validationType: body.validationType,
-      streetAddress: body.streetAddress,
-      dateOfBirth: body.dateOfBirth,
-    };
-
-    const { firstname, middlename, lastname } = sanitizeContactData(normalizedInput);
-    const { validationType, streetAddress, dateOfBirth } = normalizedInput;
-
-    // Use enhanced validation if validation type is provided
-    if (validationType) {
-      const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
-        firstName: firstname || '',
-        middleName: middlename,
-        lastName: lastname || '',
-        validationType: validationType as ValidationType,
-        streetAddress: streetAddress as string | undefined,
-        dateOfBirth: dateOfBirth as string | undefined,
-      });
-
-      if (!validationResult.success) {
-        logRegistrationEvent(req, 'registration_selfRegister', 'validation_error', {
-          accountId,
-          timingMs: Date.now() - start,
-        });
-        res.status(validationResult.statusCode || 400).json({
-          success: false,
-          message: validationResult.error,
-        });
-        return;
-      }
-
-      const contact = validationResult.contact!;
-
-      // Link the contact to the authenticated user
-      const updated = await prisma.contacts.update({
-        where: { id: contact.id },
-        data: { userid: req.user!.id },
-      });
-
-      logRegistrationEvent(req, 'registration_selfRegister', 'success', {
-        accountId,
-        userId: req.user!.id,
-        validationType: validationType as string | undefined,
-        timingMs: Date.now() - start,
-      });
-
-      res.status(201).json({
-        success: true,
-        data: {
-          contact: {
-            id: updated.id.toString(),
-            firstname: updated.firstname,
-            lastname: updated.lastname,
-            middlename: updated.middlename,
-            email: updated.email || undefined,
-            dateofbirth: DateUtils.formatDateOfBirthForResponse(updated.dateofbirth),
-          },
-        },
-      });
-      return;
-    }
-
-    // Legacy: Create new contact (for backward compatibility when no validation type provided)
-    const email = normalizedInput.email as string;
-
-    // Validate required fields and email format
-    if (!firstname || !lastname) {
-      res.status(400).json({ success: false, message: 'First name and last name are required' });
-      return;
-    }
-    if (email && !validator.isEmail(email)) {
-      res.status(400).json({ success: false, message: 'Please enter a valid email address' });
-      return;
-    }
-
-    const created = await prisma.contacts.create({
-      data: {
-        userid: req.user!.id,
-        creatoraccountid: accountId,
-        firstname,
-        lastname,
-        middlename: middlename || '',
-        email: email || null,
-        dateofbirth: DateUtils.parseDateOfBirthForDatabase(null),
-      },
-    });
-
-    logRegistrationEvent(req, 'registration_selfRegister', 'success', {
+    const contactValidation = ContactValidationWithSignInSchema.parse(req.body);
+    const registeredUser = await registrationService.registerAndCreateContactNewUser(
       accountId,
-      userId: req.user!.id,
-      timingMs: Date.now() - start,
-    });
-    res.status(201).json({
-      success: true,
-      data: {
-        contact: {
-          id: created.id.toString(),
-          firstname: created.firstname,
-          lastname: created.lastname,
-          middlename: created.middlename,
-          email: created.email || undefined,
-          dateofbirth: DateUtils.formatDateOfBirthForResponse(created.dateofbirth),
-        },
-      },
-    });
+      contactValidation,
+    );
+
+    res.status(201).json(registeredUser);
   }),
 );
 
@@ -405,52 +104,8 @@ router.delete(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
 
-    const existingContact = await contactSecurityService.getValidatedContact(contactId, accountId, {
-      id: true,
-      userid: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-    });
-
-    if (!existingContact) {
-      throw new NotFoundError('Contact not found');
-    }
-
-    if (existingContact.userid === null) {
-      res.status(409).json({ success: false, message: 'Contact is not registered' });
-      return;
-    }
-
-    const updated = await prisma.contacts.update({
-      where: { id: existingContact.id },
-      data: { userid: null },
-      select: {
-        id: true,
-        firstname: true,
-        lastname: true,
-        email: true,
-        userid: true,
-      },
-    });
-
-    logRegistrationEvent(req, 'registration_revoke', 'success', {
-      accountId,
-      userId: req.user!.id,
-    });
-
-    res.json({
-      success: true,
-      data: {
-        contact: {
-          id: updated.id.toString(),
-          firstname: updated.firstname,
-          lastname: updated.lastname,
-          email: updated.email || undefined,
-          userid: updated.userid,
-        },
-      },
-    });
+    const updated = await contactService.unlinkContactUser(accountId, BigInt(contactId));
+    res.json(updated);
   }),
 );
 
@@ -479,29 +134,17 @@ router.get(
     const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
 
     // Parse pagination parameters
-    const paginationParams = PaginationHelper.parseParams(req.query);
+    const paginationParams: PagingType = PagingSchema.parse(req.query);
 
     // Use ContactService to get contacts with roles
     const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       onlyWithRoles: filterOnlyWithRoles,
       includeContactDetails,
-      pagination: {
-        page: paginationParams.page,
-        limit: paginationParams.limit,
-        sortBy: paginationParams.sortBy,
-        sortOrder: paginationParams.sortOrder,
-      },
+      pagination: paginationParams,
     });
 
-    res.json({
-      success: true,
-      data: {
-        accountId: accountId.toString(),
-        contacts: result.contacts,
-      },
-      pagination: result.pagination,
-    });
+    res.json(result);
   }),
 );
 
@@ -516,59 +159,16 @@ router.post(
   routeProtection.requirePermission('account.roles.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
-    const { roleId, roleData, seasonId } = req.body;
 
-    if (!roleId || roleData === undefined || roleData === null) {
-      throw new ValidationError('Role ID and role data are required');
-    }
+    const roleData: CreateContactRoleType = CreateContactRoleSchema.parse(req.body);
 
-    // Validate roleData is a valid number/bigint
-    let roleDataBigInt: bigint;
-    try {
-      roleDataBigInt = BigInt(roleData);
-    } catch (_error) {
-      throw new ValidationError('Role data must be a valid numeric ID');
-    }
+    const assignedRole: RoleWithContactType = await roleService.assignRole(
+      accountId,
+      contactId,
+      roleData,
+    );
 
-    // Validate seasonId if provided
-    let seasonIdBigInt: bigint | undefined;
-    if (seasonId !== undefined && seasonId !== null) {
-      try {
-        seasonIdBigInt = BigInt(seasonId);
-      } catch (_error) {
-        throw new ValidationError('Season ID must be a valid numeric ID');
-      }
-    }
-
-    try {
-      const assignedRole = await roleService.assignRole(
-        req.user!.id,
-        contactId,
-        roleId,
-        roleDataBigInt,
-        accountId,
-        seasonIdBigInt,
-      );
-
-      res.status(201).json({
-        success: true,
-        data: {
-          assignedRole: {
-            id: assignedRole.id.toString(),
-            contactId: assignedRole.contactId.toString(),
-            roleId: assignedRole.roleId,
-            roleData: assignedRole.roleData.toString(),
-            accountId: assignedRole.accountId.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      // Re-throw with more context if it's a validation error from roleService
-      if (error instanceof Error && error.message.includes('roleData must be')) {
-        throw new ValidationError(error.message);
-      }
-      throw error;
-    }
+    res.status(201).json(assignedRole);
   }),
 );
 
@@ -590,24 +190,14 @@ router.delete(
       throw new ValidationError('Role data is required');
     }
 
-    const wasRemoved = await roleService.removeRole(
-      req.user!.id,
+    const contactRole = await roleService.removeRole(
       contactId,
       roleId,
       BigInt(roleData),
       accountId,
     );
 
-    if (!wasRemoved) {
-      throw new ValidationError(
-        'Role not found or roleData does not match. Unable to remove role.',
-      );
-    }
-
-    res.json({
-      success: true,
-      message: 'Role removed successfully',
-    });
+    res.json(contactRole);
   }),
 );
 
@@ -631,58 +221,21 @@ router.get(
     const includeRoles = roles === 'true';
     const includeContactDetails = contactDetails === 'true';
 
-    if (!q || typeof q !== 'string') {
-      res.json({
-        success: true,
-        data: {
-          contacts: [],
-        },
-      });
-      return;
-    }
-
     // Parse season ID if provided
     const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
 
     // Parse pagination parameters for search results
-    const paginationParams = PaginationHelper.parseParams(req.query);
+    const paginationParams = PagingSchema.parse(req.query);
 
     // Use ContactService to get contacts with roles
     const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       includeContactDetails,
-      searchQuery: q,
-      pagination: {
-        page: paginationParams.page,
-        limit: paginationParams.limit,
-        sortBy: paginationParams.sortBy,
-        sortOrder: paginationParams.sortOrder,
-      },
+      searchQuery: q ? q.toString() : undefined,
+      pagination: paginationParams,
     });
 
-    // Transform contacts for search response format
-    const searchContacts: ContactSearchResult[] = result.contacts.map((contact) => ({
-      id: contact.id,
-      firstName: contact.firstName,
-      lastName: contact.lastName,
-      middleName: contact.middleName,
-      email: contact.email,
-      userId: contact.userId,
-      displayName: `${contact.firstName} ${contact.lastName}`,
-      searchText: `${contact.firstName} ${contact.lastName} (${contact.email})`,
-      photoUrl: contact.photoUrl,
-      ...(includeRoles && { contactroles: contact.contactroles }),
-      ...(includeContactDetails &&
-        contact.contactDetails && { contactDetails: contact.contactDetails }),
-    }));
-
-    res.json({
-      success: true,
-      data: {
-        contacts: searchContacts,
-      },
-      pagination: result.pagination,
-    });
+    res.json(result);
   }),
 );
 
@@ -700,10 +253,7 @@ router.get(
 
     const result = await contactService.getAutomaticRoleHolders(accountId);
 
-    res.json({
-      success: true,
-      data: result,
-    });
+    res.json(result);
   }),
 );
 
@@ -735,7 +285,7 @@ router.put(
 
       contact = await contactService.updateContact(updateContactData, BigInt(contactId));
     } else {
-      contact = await contactService.getContact(BigInt(contactId));
+      contact = await contactService.getContact(accountId, BigInt(contactId));
       if (!contact) {
         throw new NotFoundError('Contact not found');
       }
@@ -781,83 +331,6 @@ router.post(
 );
 
 /**
- * POST /api/accounts/:accountId/roster
- * Create a new roster entry (player) in an account
- */
-router.post(
-  '/:accountId/roster',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.contacts.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const { contactId, submittedDriversLicense, firstYear } = req.body;
-
-    if (!contactId) {
-      throw new ValidationError('ContactId is required');
-    }
-
-    // Verify the contact exists and belongs to this account
-    const contact = await prisma.contacts.findFirst({
-      where: {
-        id: BigInt(contactId),
-        creatoraccountid: accountId,
-      },
-      select: {
-        firstname: true,
-        lastname: true,
-      },
-    });
-
-    if (!contact) {
-      throw new NotFoundError('Contact not found');
-    }
-
-    // Check if a roster entry already exists for this contact
-    const existingRoster = await prisma.roster.findFirst({
-      where: {
-        contactid: BigInt(contactId),
-      },
-    });
-
-    if (existingRoster) {
-      throw new ConflictError('A roster entry already exists for this contact');
-    }
-
-    // Create the roster entry
-    const newRoster = await prisma.roster.create({
-      data: {
-        contactid: BigInt(contactId),
-        submitteddriverslicense: submittedDriversLicense || false,
-        firstyear: firstYear || 0,
-      },
-      include: {
-        contacts: {
-          select: {
-            firstname: true,
-            lastname: true,
-          },
-        },
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        message: `Roster entry created for "${newRoster.contacts.firstname} ${newRoster.contacts.lastname}"`,
-        player: {
-          id: newRoster.id.toString(),
-          contactId: newRoster.contactid.toString(),
-          submittedDriversLicense: newRoster.submitteddriverslicense,
-          firstYear: newRoster.firstyear,
-          contact: newRoster.contacts,
-        },
-      },
-    });
-  }),
-);
-
-/**
  * DELETE /api/accounts/:accountId/contacts/:contactId
  * Delete a contact from an account
  * Query parameters:
@@ -876,33 +349,20 @@ router.delete(
     const onlyCheck = check === 'true';
 
     // Verify the contact exists and belongs to this account first
-    const existingContact = await contactSecurityService.getValidatedContact(contactId, accountId, {
-      id: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-    });
+    const existingContact = await contactService.getContact(accountId, BigInt(contactId));
 
     if (!existingContact) {
       throw new NotFoundError('Contact not found');
     }
 
     // Check dependencies
-    const dependencyCheck = await ContactDependencyService.checkDependencies(contactId, accountId);
+    const dependencyCheck = await contactDependencyService.checkDependencies(contactId, accountId);
 
     // If only checking dependencies, return the result
     if (onlyCheck) {
       res.json({
-        success: true,
-        data: {
-          contact: {
-            id: existingContact.id.toString(),
-            firstName: existingContact.firstname,
-            lastName: existingContact.lastname,
-            email: existingContact.email,
-          },
-          dependencyCheck,
-        },
+        contact: existingContact,
+        dependencyCheck,
       });
       return;
     }
@@ -910,35 +370,26 @@ router.delete(
     // Handle deletion
     if (!dependencyCheck.canDelete && !forceDelete) {
       throw new ValidationError(
-        `Cannot delete contact "${existingContact.firstname} ${existingContact.lastname}": ${dependencyCheck.message}`,
+        `Cannot delete contact "${existingContact.firstName} ${existingContact.lastName}": ${dependencyCheck.message}`,
       );
     }
 
     // Perform deletion
     if (forceDelete) {
-      await ContactDependencyService.forceDeleteContact(contactId, accountId);
+      await contactDependencyService.forceDeleteContact(contactId, accountId);
     } else {
-      await ContactDependencyService.safeDeleteContact(contactId, accountId);
+      await contactDependencyService.safeDeleteContact(contactId, accountId);
     }
 
     // Log the deletion for audit purposes
     console.log(
-      `Contact deleted: ${existingContact.firstname} ${existingContact.lastname} (ID: ${contactId}) by user ${req.user?.username || 'unknown'} ${forceDelete ? '[FORCED]' : '[SAFE]'}`,
+      `Contact deleted: ${existingContact.firstName} ${existingContact.lastName} (ID: ${contactId}) by user ${req.user?.username || 'unknown'} ${forceDelete ? '[FORCED]' : '[SAFE]'}`,
     );
 
     res.json({
-      success: true,
-      data: {
-        message: `Contact "${existingContact.firstname} ${existingContact.lastname}" deleted successfully`,
-        deletedContact: {
-          id: existingContact.id.toString(),
-          firstName: existingContact.firstname,
-          lastName: existingContact.lastname,
-          email: existingContact.email,
-        },
-        dependenciesDeleted: dependencyCheck.totalDependencies,
-        wasForced: forceDelete,
-      },
+      deletedContact: existingContact,
+      dependenciesDeleted: dependencyCheck.totalDependencies,
+      wasForced: forceDelete,
     });
   }),
 );

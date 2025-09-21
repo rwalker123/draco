@@ -72,6 +72,9 @@ draco-nodejs/
 
 ## 🚀 Quick Start
 
+### Contributor Guide
+- Review the [Repository Guidelines](AGENTS.md) before making changes.
+
 ### Prerequisites
 
 - **Node.js** v18 or higher

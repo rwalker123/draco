@@ -1,6 +1,21 @@
 'use client';
 import React, { useState } from 'react';
 import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  FormControl,
+  FormControlLabel,
+  RadioGroup,
+  Radio,
+  Alert,
+  Paper,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material';
+import {
   CombinedRegistrationPayload,
   SelfRegisterInput,
 } from '../../services/accountRegistrationService';
@@ -86,158 +101,174 @@ export const RegistrationForm: React.FC<Props> = (props) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {/* Tabs for unauthenticated users */}
-      {!isAuthenticated && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <button type="button" disabled={mode === 'newUser'} onClick={() => setMode('newUser')}>
-            Create login + register
-          </button>
-          <button
-            type="button"
-            disabled={mode === 'existingUser'}
-            onClick={() => setMode('existingUser')}
-          >
-            I&apos;m already a user
-          </button>
-        </div>
-      )}
-
-      {/* Login credentials for unauthenticated users */}
-      {!isAuthenticated && (
-        <>
-          {mode === 'newUser' ? (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <input
-                placeholder="Email"
-                type="email"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
-              <input
-                placeholder="Password"
-                type="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-              />
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <input
-                placeholder="Username or Email"
-                type="text"
-                name="usernameOrEmail"
-                value={usernameOrEmail}
-                onChange={(e) => setUsernameOrEmail(e.target.value)}
-                autoComplete="username"
-                required
-              />
-              <input
-                placeholder="Password"
-                type="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Name fields */}
-      <div
-        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: isAuthenticated ? 0 : 8 }}
+    <Paper sx={{ p: 3 }}>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
       >
-        <input
-          placeholder="First name"
-          type="text"
-          name="firstName"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          autoComplete="given-name"
-          required
-        />
-        <input
-          placeholder="Middle name (optional)"
-          type="text"
-          name="middleName"
-          value={middleName}
-          onChange={(e) => setMiddleName(e.target.value)}
-          autoComplete="additional-name"
-        />
-        <input
-          placeholder="Last name"
-          type="text"
-          name="lastName"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          autoComplete="family-name"
-          required={isAuthenticated || mode === 'newUser'}
-        />
-      </div>
-
-      {/* Validation section */}
-      <div style={{ marginTop: 16 }}>
-        <h4>Additional Verification Required</h4>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
-          <label>
-            <input
-              type="radio"
-              value="streetAddress"
-              checked={validationType === 'streetAddress'}
-              onChange={(e) => setValidationType(e.target.value as ValidationType)}
-            />
-            Verify with Street Address
-          </label>
-          <label>
-            <input
-              type="radio"
-              value="dateOfBirth"
-              checked={validationType === 'dateOfBirth'}
-              onChange={(e) => setValidationType(e.target.value as ValidationType)}
-            />
-            Verify with Date of Birth
-          </label>
-        </div>
-
-        {validationType === 'streetAddress' ? (
-          <input
-            placeholder="Street Address"
-            type="text"
-            name="streetAddress"
-            value={streetAddress}
-            onChange={(e) => setStreetAddress(e.target.value)}
-            autoComplete="street-address"
-            required
-            style={{ width: '100%' }}
-          />
-        ) : (
-          <input
-            type="date"
-            name="dateOfBirth"
-            placeholder="Date of Birth"
-            value={dateOfBirth}
-            onChange={(e) => setDateOfBirth(e.target.value)}
-            autoComplete="bday"
-            required
-            style={{ width: '100%' }}
-          />
+        {/* Tabs for unauthenticated users */}
+        {!isAuthenticated && (
+          <ToggleButtonGroup
+            value={mode}
+            exclusive
+            onChange={(_, newMode) => newMode && setMode(newMode)}
+            size="small"
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="newUser">Create login + register</ToggleButton>
+            <ToggleButton value="existingUser">I&apos;m already a user</ToggleButton>
+          </ToggleButtonGroup>
         )}
-      </div>
 
-      {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
+        {/* Login credentials for unauthenticated users */}
+        {!isAuthenticated && (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            {mode === 'newUser' ? (
+              <>
+                <TextField
+                  fullWidth
+                  label="Email"
+                  type="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
+              </>
+            ) : (
+              <>
+                <TextField
+                  fullWidth
+                  label="Username or Email"
+                  name="usernameOrEmail"
+                  value={usernameOrEmail}
+                  onChange={(e) => setUsernameOrEmail(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </>
+            )}
+          </Stack>
+        )}
 
-      <button type="submit" disabled={loading} style={{ marginTop: 8 }}>
-        {loading ? 'Registering...' : 'Register'}
-      </button>
-    </form>
+        {/* Name fields */}
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <TextField
+            fullWidth
+            label="First name"
+            name="firstName"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            autoComplete="given-name"
+            required
+          />
+          <TextField
+            fullWidth
+            label="Middle name (optional)"
+            name="middleName"
+            value={middleName}
+            onChange={(e) => setMiddleName(e.target.value)}
+            autoComplete="additional-name"
+          />
+          <TextField
+            fullWidth
+            label="Last name"
+            name="lastName"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            autoComplete="family-name"
+            required={isAuthenticated || mode === 'newUser'}
+          />
+        </Stack>
+
+        {/* Validation section */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Additional Verification Required
+          </Typography>
+          <FormControl component="fieldset" sx={{ mb: 2 }}>
+            <RadioGroup
+              value={validationType}
+              onChange={(e) => setValidationType(e.target.value as ValidationType)}
+              row
+            >
+              <FormControlLabel
+                value="streetAddress"
+                control={<Radio />}
+                label="Verify with Street Address"
+              />
+              <FormControlLabel
+                value="dateOfBirth"
+                control={<Radio />}
+                label="Verify with Date of Birth"
+              />
+            </RadioGroup>
+          </FormControl>
+
+          {validationType === 'streetAddress' ? (
+            <TextField
+              fullWidth
+              label="Street Address"
+              name="streetAddress"
+              value={streetAddress}
+              onChange={(e) => setStreetAddress(e.target.value)}
+              autoComplete="street-address"
+              required
+            />
+          ) : (
+            <TextField
+              fullWidth
+              label="Date of Birth"
+              type="date"
+              name="dateOfBirth"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              autoComplete="bday"
+              required
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          )}
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading}
+          sx={{ mt: 2, alignSelf: 'flex-start' }}
+        >
+          {loading ? 'Registering...' : 'Register'}
+        </Button>
+      </Box>
+    </Paper>
   );
 };

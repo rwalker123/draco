@@ -1,7 +1,20 @@
 // Segregated Role Service Interfaces
 // Follows Interface Segregation Principle to avoid fat interfaces
 
-import { ContactRole, UserRoles, RoleCheckResult, RoleContext } from '../types/roles.js';
+import {
+  ContactRoleType,
+  CreateContactRoleType,
+  RoleWithContactType,
+  UserRolesType,
+} from '@draco/shared-schemas';
+import { RoleCheckResultType } from '@draco/shared-schemas';
+
+export interface RoleContextData {
+  accountId: bigint;
+  teamId?: bigint;
+  leagueId?: bigint;
+  seasonId?: bigint;
+}
 
 /**
  * Interface for role query operations
@@ -11,7 +24,7 @@ export interface IRoleQuery {
   /**
    * Get all roles for a user (both global and contact roles)
    */
-  getUserRoles(userId: string, accountId?: bigint): Promise<UserRoles>;
+  getUserRoles(userId: string, accountId?: bigint): Promise<UserRolesType>;
 
   /**
    * Get global roles for a user from aspnetuserroles table
@@ -21,12 +34,12 @@ export interface IRoleQuery {
   /**
    * Get contact roles for a user in a specific account
    */
-  getContactRoles(userId: string, accountId: bigint): Promise<ContactRole[]>;
+  getContactRoles(userId: string, accountId: bigint): Promise<RoleWithContactType[]>;
 
   /**
    * Get all users with a specific role in an account
    */
-  getUsersWithRole(roleId: string, accountId: bigint): Promise<ContactRole[]>;
+  getUsersWithRole(roleId: string, accountId: bigint): Promise<RoleWithContactType[]>;
 
   /**
    * Get role name by ID
@@ -47,17 +60,17 @@ export interface IRoleVerification {
   /**
    * Check if a user has a specific role in a context
    */
-  hasRole(userId: string, roleId: string, context: RoleContext): Promise<RoleCheckResult>;
+  hasRole(userId: string, roleId: string, context: RoleContextData): Promise<RoleCheckResultType>;
 
   /**
    * Check if user has role or higher in hierarchy
    */
-  hasRoleOrHigher(userId: string, requiredRole: string, context: RoleContext): Promise<boolean>;
+  hasRoleOrHigher(userId: string, requiredRole: string, context: RoleContextData): Promise<boolean>;
 
   /**
    * Check if user has permission
    */
-  hasPermission(userId: string, permission: string, context: RoleContext): Promise<boolean>;
+  hasPermission(userId: string, permission: string, context: RoleContextData): Promise<boolean>;
 }
 
 /**
@@ -69,24 +82,20 @@ export interface IRoleManagement {
    * Assign a role to a contact
    */
   assignRole(
-    assignerUserId: string,
-    contactId: bigint,
-    roleId: string,
-    roleData: bigint,
     accountId: bigint,
-    seasonId?: bigint,
-  ): Promise<ContactRole>;
+    contactId: bigint,
+    roleData: CreateContactRoleType,
+  ): Promise<RoleWithContactType>;
 
   /**
    * Remove a role from a contact
    */
   removeRole(
-    assignerUserId: string,
     contactId: bigint,
     roleId: string,
     roleData: bigint,
     accountId: bigint,
-  ): Promise<boolean>;
+  ): Promise<ContactRoleType>;
 }
 
 /**

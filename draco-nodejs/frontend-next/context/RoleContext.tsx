@@ -10,19 +10,13 @@ import React, {
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { ROLE_NAME_TO_ID } from '../utils/roleUtils';
-
-interface ContactRole {
-  id: string;
-  contactId: string;
-  roleId: string;
-  roleName?: string;
-  roleData: string;
-  accountId: string;
-}
+import { useParams } from 'next/navigation';
+import { ContactRoleType } from '@draco/shared-schemas';
 
 interface UserRoles {
+  accountId: string;
   globalRoles: string[];
-  contactRoles: ContactRole[];
+  contactRoles: ContactRoleType[];
 }
 
 export interface RoleContextType {
@@ -62,6 +56,9 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const { user, token, loading: authLoading } = useAuth();
   const [userRoles, setUserRoles] = useState<UserRoles | null>(null);
   const [roleMetadata, setRoleMetadata] = useState<RoleMetadata | null>(null);
+  const { accountId } = useParams();
+  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
+
   // Initialize loading as true if we have auth but need to fetch roles
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +95,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Fetch fresh metadata from API
-      const response = await axios.get('/api/roleTest/roles/metadata', {
+      const response = await axios.get('/api/roles/roles/metadata', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -136,8 +133,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const url = accountId
-          ? `/api/roleTest/user-roles?accountId=${accountId}`
-          : `/api/roleTest/user-roles`;
+          ? `/api/roles/user-roles?accountId=${accountId}`
+          : `/api/roles/user-roles`;
 
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` },
@@ -145,6 +142,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
         if (response.data.success) {
           setUserRoles({
+            accountId: response.data.data.accountId,
             globalRoles: response.data.data.globalRoles || [],
             contactRoles: response.data.data.contactRoles || [],
           });
@@ -163,11 +161,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user && token) {
-      fetchUserRoles();
+      fetchUserRoles(accountIdStr || undefined);
     } else {
       clearRoles();
     }
-  }, [user, token, fetchUserRoles]);
+  }, [user, token, fetchUserRoles, accountIdStr]);
 
   const clearRoles = () => {
     setUserRoles(null);
@@ -195,7 +193,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       const contactRoleId = ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId;
       if (contactRoleId === actualRoleId) {
         // Validate context if provided
-        if (context?.accountId && contactRole.accountId !== context.accountId) {
+        if (context?.accountId && userRoles.accountId !== context.accountId) {
           continue;
         }
         if (context?.teamId && contactRole.roleData !== context.teamId) {
@@ -257,7 +255,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     // Check contact roles
     for (const contactRole of userRoles.contactRoles) {
       // Validate context if provided
-      if (context?.accountId && contactRole.accountId !== context.accountId) {
+      if (context?.accountId && userRoles.accountId !== context.accountId) {
         continue;
       }
       if (context?.teamId && contactRole.roleData !== context.teamId) {

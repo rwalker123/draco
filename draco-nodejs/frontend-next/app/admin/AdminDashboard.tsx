@@ -80,7 +80,7 @@ const AdminDashboard: React.FC = () => {
                 <ListItem key={role.id}>
                   <ListItemText
                     primary={`Role: ${role.roleName || role.roleId}`}
-                    secondary={`Account: ${role.accountId} | Context: ${role.roleData}`}
+                    secondary={`Account: ${userRoles.accountId} | Context: ${role.roleData}`}
                   />
                 </ListItem>
               ))}

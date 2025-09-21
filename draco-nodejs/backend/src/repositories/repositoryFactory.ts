@@ -3,12 +3,20 @@ import {
   ITeamRepository,
   IAccountRepository,
   IContactRepository,
+  IRoleRepository,
+  ISeasonRepository,
+  ILeagueRepository,
+  ICleanupRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
   PrismaTeamRepository,
   PrismaAccountRepository,
   PrismaContactRepository,
+  PrismaRoleRepository,
+  PrismaSeasonRepository,
+  PrismaLeagueRepository,
+  PrismaCleanupRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -22,6 +30,17 @@ export class RepositoryFactory {
   private static teamRepository: ITeamRepository;
   private static accountRepository: IAccountRepository;
   private static contactRepository: IContactRepository;
+  private static roleRepository: IRoleRepository;
+  private static seasonRepository: ISeasonRepository;
+  private static leagueRepository: ILeagueRepository;
+  private static cleanupRepository: ICleanupRepository;
+
+  static getLeagueRepository(): ILeagueRepository {
+    if (!this.leagueRepository) {
+      this.leagueRepository = new PrismaLeagueRepository(prisma);
+    }
+    return this.leagueRepository;
+  }
 
   static getUserRepository(): IUserRepository {
     if (!this.userRepository) {
@@ -49,5 +68,26 @@ export class RepositoryFactory {
       this.contactRepository = new PrismaContactRepository(prisma);
     }
     return this.contactRepository;
+  }
+
+  static getRoleRepository(): IRoleRepository {
+    if (!this.roleRepository) {
+      this.roleRepository = new PrismaRoleRepository(prisma);
+    }
+    return this.roleRepository;
+  }
+
+  static getSeasonRepository(): ISeasonRepository {
+    if (!this.seasonRepository) {
+      this.seasonRepository = new PrismaSeasonRepository(prisma);
+    }
+    return this.seasonRepository;
+  }
+
+  static getCleanupRepository(): ICleanupRepository {
+    if (!this.cleanupRepository) {
+      this.cleanupRepository = new PrismaCleanupRepository(prisma);
+    }
+    return this.cleanupRepository;
   }
 }

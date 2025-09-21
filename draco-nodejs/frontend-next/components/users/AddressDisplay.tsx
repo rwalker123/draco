@@ -3,11 +3,11 @@
 import React from 'react';
 import { Stack, Typography } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
-import { ContactDetails } from '@draco/shared-schemas';
+import { ContactDetailsType } from '@draco/shared-schemas';
 import { formatAddress } from '../../utils/contactUtils';
 
 interface AddressDisplayProps {
-  contactDetails: ContactDetails;
+  contactDetails: ContactDetailsType;
   compact?: boolean;
 }
 
@@ -47,8 +47,8 @@ const AddressDisplay: React.FC<AddressDisplayProps> = ({ contactDetails, compact
       </Stack>
 
       <Stack spacing={0.5} sx={{ pl: 3 }}>
-        {contactDetails.streetaddress && (
-          <Typography variant="body2">{contactDetails.streetaddress}</Typography>
+        {contactDetails.streetAddress && (
+          <Typography variant="body2">{contactDetails.streetAddress}</Typography>
         )}
 
         {(contactDetails.city || contactDetails.state || contactDetails.zip) && (

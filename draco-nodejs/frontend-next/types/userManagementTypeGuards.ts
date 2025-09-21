@@ -280,14 +280,6 @@ export function extractErrorMessage(error: unknown): string {
   return 'An unknown error occurred';
 }
 
-// Utility function to validate and transform contact update response
-export function validateContactUpdateResponse(data: unknown): ContactUpdateResponse {
-  if (!isContactUpdateResponse(data)) {
-    throw new Error('Invalid contact update response format');
-  }
-  return data;
-}
-
 // Utility function to validate and transform user search response
 export function validateUserSearchResponse(data: unknown): UserSearchResponse {
   if (!isUserSearchResponse(data)) {

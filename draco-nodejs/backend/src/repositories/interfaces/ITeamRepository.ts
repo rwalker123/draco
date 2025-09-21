@@ -1,5 +1,6 @@
-import { teamsseason, teams, leagueseason, divisionseason } from '@prisma/client';
+import { teamsseason, teams, teamseasonmanager } from '@prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
+import { dbTeamSeasonManagerContact, dbTeamSeasonWithLeague } from '../types/dbTypes.js';
 
 export interface ITeamRepository extends IBaseRepository<teamsseason> {
   findBySeasonId(seasonId: bigint, accountId: bigint): Promise<teamsseason[]>;
@@ -7,13 +8,20 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     teamSeasonId: bigint,
     seasonId: bigint,
     accountId: bigint,
-  ): Promise<{
-    id: number;
-    teamname: string;
-    leagueseason: leagueseason & {
-      leagues: { name: string };
-      divisionseason: divisionseason[];
-    };
-  } | null>;
+  ): Promise<dbTeamSeasonWithLeague | null>;
   findTeamDefinition(teamId: bigint): Promise<teams | null>;
+  findTeamManager(
+    contactId: bigint,
+    teamId: bigint,
+    seasonId: bigint,
+  ): Promise<teamseasonmanager | null>;
+  findTeamSeason(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<teamsseason | null>;
+  findTeamSeasonManagers(
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeasonManagerContact[]>;
 }

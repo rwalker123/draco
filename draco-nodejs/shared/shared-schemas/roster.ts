@@ -70,7 +70,7 @@ export const SignRosterMemberSchema = RosterMemberSchema.omit({
 
 // todo should have called these with Type at the end, like RosterPlayerType, etc.
 export type RosterPlayerType = z.infer<typeof RosterPlayerSchema>;
-export type RosterMember = z.infer<typeof RosterMemberSchema>;
-export type CreateRosterMember = z.infer<typeof CreateRosterMemberSchema>;
+export type RosterMemberType = z.infer<typeof RosterMemberSchema>;
+export type CreateRosterMemberType = z.infer<typeof CreateRosterMemberSchema>;
 export type SignRosterMemberType = z.infer<typeof SignRosterMemberSchema>;
 export type TeamRosterMembersType = z.infer<typeof TeamRosterMembersSchema>;

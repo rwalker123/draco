@@ -68,7 +68,7 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
   }, [user, roleLoading, userRoles, next, accountId, router]);
 
   const handleLogin = async () => {
-    const success = await login(email, password);
+    const success = await login({ userName: email, password: password });
     if (success) {
       setNeedsRedirect(true);
     }
