@@ -14,6 +14,8 @@ import {
   TeamManagerSchema,
   CreateTeamManagerSchema,
   CreateContactSchema,
+  AccountSchema,
+  AccountSearchQuerySchema,
 } from '@draco/shared-schemas';
 
 const registry = new OpenAPIRegistry();
@@ -25,6 +27,11 @@ const ContactSchemaRef = registry.register('Contact', ContactSchema);
 const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
 const CreateTeamManagerSchemaRef = registry.register('CreateTeamManager', CreateTeamManagerSchema);
 const CreateContactSchemaRef = registry.register('CreateContact', CreateContactSchema);
+const AccountSchemaRef = registry.register('Account', AccountSchema);
+const AccountSearchQuerySchemaRef = registry.register(
+  'AccountSearchQuery',
+  AccountSearchQuerySchema,
+);
 
 // Register error schemas
 const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
@@ -47,6 +54,45 @@ registry.registerComponent('securitySchemes', 'bearerAuth', {
   type: 'http',
   scheme: 'bearer',
   bearerFormat: 'JWT',
+});
+
+// GET /api/accounts/search
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/search',
+  operationId: 'searchAccounts',
+  summary: 'Search accounts',
+  description: 'Public search for accounts by name or type',
+  tags: ['Accounts'],
+  request: {
+    query: AccountSearchQuerySchemaRef,
+  },
+  responses: {
+    200: {
+      description: 'Accounts matching the search query',
+      content: {
+        'application/json': {
+          schema: AccountSchemaRef.array(),
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
 });
 
 // POST /api/accounts/{accountId}/contacts

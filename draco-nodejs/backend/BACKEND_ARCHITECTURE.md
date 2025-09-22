@@ -55,6 +55,7 @@ graph TD
 
 **Responsibilities**:
 - Parse and validate route parameters using `extractAccountParams()`, `extractContactParams()`
+- Return shared data model types directly (e.g., `Account[]`), avoiding route-specific wrapper results
 - Validate request body and query parameters with Zod schemas from shared-schemas
 - Apply authentication middleware (`authenticateToken`)
 - Enforce permissions (`routeProtection.requirePermission()`)
@@ -138,6 +139,7 @@ export class ContactService {
 
 **Responsibilities**:
 - Encapsulate all database operations
+- Organize repositories by domain (e.g., `AccountsRepository`) rather than per-endpoint variants
 - Return native Prisma types
 - Handle database-specific logic (transactions, complex queries)
 - No knowledge of shared schema types

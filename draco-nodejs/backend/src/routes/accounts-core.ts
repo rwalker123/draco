@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { Prisma } from '@prisma/client';
+import { AccountSearchQuerySchema } from '@draco/shared-schemas';
 import { RoleNamesType } from '../types/roles.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
@@ -13,7 +14,6 @@ import { getAccountLogoUrl } from '../config/logo.js';
 import { ROLE_IDS } from '../config/roles.js';
 import prisma from '../lib/prisma.js';
 import {
-  AccountSearchResult,
   PublicAccountResponse,
   PublicSeasonResponse,
   AccountListResponse,
@@ -24,6 +24,7 @@ import {
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
+const accountsService = ServiceFactory.getAccountsService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 /**
@@ -33,106 +34,11 @@ const routeProtection = ServiceFactory.getRouteProtection();
 router.get(
   '/search',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { q } = req.query; // search query
+    const { q } = AccountSearchQuerySchema.parse(req.query);
 
-    if (!q || typeof q !== 'string') {
-      throw new ValidationError('Search query is required');
-    }
+    const accounts = await accountsService.searchAccounts(q);
 
-    const searchTerm = q.trim();
-
-    // Define the findMany args as a constant for type inference
-    const accountSearchArgs = {
-      where: {
-        OR: [
-          {
-            name: {
-              contains: searchTerm,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-          {
-            accounttypes: {
-              name: {
-                contains: searchTerm,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        accounttypeid: true,
-        firstyear: true,
-        affiliationid: true,
-        timezoneid: true,
-        accounttypes: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        accountsurl: {
-          select: {
-            id: true,
-            url: true,
-          },
-          orderBy: {
-            id: Prisma.SortOrder.asc,
-          },
-        },
-      },
-      orderBy: {
-        name: Prisma.SortOrder.asc,
-      },
-      take: 20, // Limit results
-    };
-
-    type AccountWithTypeAndUrls = Prisma.accountsGetPayload<typeof accountSearchArgs>;
-    type AccountUrl = AccountWithTypeAndUrls['accountsurl'][number];
-
-    // Search accounts by name, type, or affiliation
-    const accounts: AccountWithTypeAndUrls[] = await prisma.accounts.findMany(accountSearchArgs);
-
-    // Get affiliations separately
-    const affiliationIds = [...new Set(accounts.map((acc) => acc.affiliationid))];
-    const affiliations: AccountAffiliation[] = await prisma.affiliations.findMany({
-      where: {
-        id: { in: affiliationIds },
-      },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-      },
-    });
-
-    const affiliationMap = new Map<string, AccountAffiliation>(
-      affiliations.map((aff) => [aff.id.toString(), aff]),
-    );
-
-    res.json({
-      success: true,
-      data: {
-        accounts: accounts.map(
-          (account: AccountWithTypeAndUrls): AccountSearchResult => ({
-            id: account.id.toString(),
-            name: account.name,
-            accountType: account.accounttypes?.name,
-            firstYear: account.firstyear,
-            affiliation: account.affiliationid
-              ? affiliationMap.get(account.affiliationid.toString())?.name
-              : undefined,
-            urls: account.accountsurl.map((url: AccountUrl) => ({
-              id: url.id.toString(),
-              url: url.url,
-            })),
-          }),
-        ),
-      },
-    });
+    res.json(accounts);
   }),
 );
 

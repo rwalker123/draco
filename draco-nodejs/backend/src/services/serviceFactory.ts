@@ -24,6 +24,7 @@ import { StatisticsService } from './statisticsService.js';
 import { TeamStatsService } from './teamStatsService.js';
 import { TeamManagerService } from './teamManagerService.js';
 import { EmailTemplateService } from './emailTemplateService.js';
+import { AccountsService } from './accountsService.js';
 import { EmailAttachmentService } from './emailAttachmentService.js';
 import { WorkoutService } from './workoutService.js';
 
@@ -50,6 +51,7 @@ export class ServiceFactory {
   private static emailTemplateService: EmailTemplateService;
   private static emailAttachmentService: EmailAttachmentService;
   private static workoutService: WorkoutService;
+  private static accountsService: AccountsService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -164,6 +166,13 @@ export class ServiceFactory {
       this.teamStatsService = new TeamStatsService(prisma);
     }
     return this.teamStatsService;
+  }
+
+  static getAccountsService(): AccountsService {
+    if (!this.accountsService) {
+      this.accountsService = new AccountsService();
+    }
+    return this.accountsService;
   }
 
   static getTeamManagerService(): TeamManagerService {

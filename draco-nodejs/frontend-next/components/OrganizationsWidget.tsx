@@ -20,15 +20,23 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { AccountType } from '@draco/shared-schemas';
+import { searchAccounts } from '@draco/shared-api-client';
+import { useApiClient } from '../hooks/useApiClient';
 
-export interface Account {
+export type OrganizationAccount = AccountType & {
+  ownerName?: string;
+};
+
+interface AccountListApiItem {
   id: string;
   name: string;
-  accountType: string;
-  firstYear: number;
-  affiliation?: string;
-  urls: Array<{ id: string; url: string }>;
-  ownerName?: string;
+  accountType?: string | null;
+  firstYear?: number | null;
+  affiliation?: string | null;
+  affiliationId?: string | null;
+  urls?: { id: string; url: string }[];
+  ownerName?: string | null;
 }
 
 interface OrganizationsWidgetProps {
@@ -38,7 +46,7 @@ interface OrganizationsWidgetProps {
   sx?: React.CSSProperties | Record<string, unknown>;
   onOrganizationClick?: (accountId: string) => void;
   // If organizations are provided, use them instead of loading user's organizations
-  organizations?: Account[];
+  organizations?: OrganizationAccount[];
   loading?: boolean;
   error?: string | null;
   onSearch?: (searchTerm: string) => void;
@@ -47,7 +55,7 @@ interface OrganizationsWidgetProps {
   // Account ID to exclude from the list (e.g., current account)
   excludeAccountId?: string;
   // Callback when organizations are loaded
-  onOrganizationsLoaded?: (organizations: Account[]) => void;
+  onOrganizationsLoaded?: (organizations: OrganizationAccount[]) => void;
 }
 
 const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
@@ -65,11 +73,12 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   excludeAccountId,
   onOrganizationsLoaded,
 }) => {
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<OrganizationAccount[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, token } = useAuth();
+  const apiClient = useApiClient();
   const router = useRouter();
 
   // Use provided values if available, otherwise use internal state
@@ -82,6 +91,18 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const filteredAccounts = excludeAccountId
     ? displayAccounts.filter((account) => account.id !== excludeAccountId)
     : displayAccounts;
+
+  const getOwnerDisplayName = useCallback((account: OrganizationAccount): string | undefined => {
+    if (account.accountOwner) {
+      const names = [account.accountOwner.firstName, account.accountOwner.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      return names || undefined;
+    }
+
+    return account.ownerName ?? undefined;
+  }, []);
 
   const loadUserAccounts = useCallback(async () => {
     if (!user || providedOrganizations) return; // Don't load if organizations are provided
@@ -99,11 +120,30 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          const accountsData = data.data.accounts || [];
-          setAccounts(accountsData);
+          const accountsData = Array.isArray(data.data.accounts)
+            ? (data.data.accounts as AccountListApiItem[])
+            : [];
+          const normalizedAccounts: OrganizationAccount[] = accountsData.map((account) => ({
+            id: account.id,
+            name: account.name,
+            accountType: account.accountType ?? undefined,
+            firstYear: account.firstYear ?? null,
+            affiliation:
+              account.affiliation && account.affiliationId
+                ? {
+                    id: account.affiliationId,
+                    name: account.affiliation,
+                    url: undefined,
+                  }
+                : undefined,
+            urls: account.urls?.map((url) => ({ id: url.id, url: url.url })) ?? [],
+            ownerName: account.ownerName ?? undefined,
+          }));
+
+          setAccounts(normalizedAccounts);
           // Notify parent component about loaded organizations
           if (onOrganizationsLoaded) {
-            onOrganizationsLoaded(accountsData);
+            onOrganizationsLoaded(normalizedAccounts);
           }
         } else {
           setError(data.message || 'Failed to load your organizations');
@@ -134,27 +174,21 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       setError(null);
 
       try {
-        const response = await fetch(
-          `/api/accounts/search?q=${encodeURIComponent(displaySearchTerm)}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        );
+        const result = await searchAccounts({
+          client: apiClient,
+          throwOnError: false,
+          query: { q: displaySearchTerm.trim() },
+        });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setAccounts(data.data.accounts || []);
-          } else {
-            setError(data.message || 'Search failed');
-          }
-        } else {
-          setError('Failed to search accounts. Please try again.');
+        if (result.error) {
+          setAccounts([]);
+          setError(result.error.message || 'Search failed');
+          return;
         }
-      } catch {
+
+        setAccounts(result.data ?? []);
+      } catch (error) {
+        console.error('Account search failed:', error);
         setError('Failed to search accounts. Please try again.');
       } finally {
         setLoading(false);
@@ -282,68 +316,75 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       {/* Organizations Display */}
       {limitedAccounts.length > 0 && (
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          {limitedAccounts.map((account) => (
-            <Card
-              key={account.id}
-              sx={{
-                minWidth: 280,
-                flex: '1 1 300px',
-                height: '100%',
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-                  borderColor: 'primary.main',
-                },
-              }}
-            >
-              <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                  {account.name}
-                </Typography>
-                <Typography color="text.secondary" gutterBottom>
-                  {account.accountType}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Established: {account.firstYear}
-                </Typography>
-                {account.affiliation && (
-                  <Typography variant="body2" color="text.secondary">
-                    Affiliation: {account.affiliation}
+          {limitedAccounts.map((account) => {
+            const ownerDisplayName = getOwnerDisplayName(account);
+            const showOwner = Boolean(user && ownerDisplayName);
+
+            return (
+              <Card
+                key={account.id}
+                sx={{
+                  minWidth: 280,
+                  flex: '1 1 300px',
+                  height: '100%',
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+                    borderColor: 'primary.main',
+                  },
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                    {account.name}
                   </Typography>
-                )}
-                {account.urls && account.urls.length > 0 && (
+                  {account.accountType && (
+                    <Typography color="text.secondary" gutterBottom>
+                      {account.accountType}
+                    </Typography>
+                  )}
                   <Typography variant="body2" color="text.secondary">
-                    Website: {account.urls[0].url}
+                    Established: {account.firstYear ?? '—'}
                   </Typography>
-                )}
-                {user && account.ownerName && (
-                  <Typography variant="body2" color="text.secondary">
-                    Owner: {account.ownerName}
-                  </Typography>
-                )}
-              </CardContent>
-              <CardActions>
-                <Button
-                  size="small"
-                  startIcon={<ViewIcon />}
-                  onClick={() => handleViewAccount(account.id)}
-                  sx={{
-                    color: 'primary.main',
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                >
-                  View Organization
-                </Button>
-              </CardActions>
-            </Card>
-          ))}
+                  {account.affiliation && (
+                    <Typography variant="body2" color="text.secondary">
+                      Affiliation: {account.affiliation.name}
+                    </Typography>
+                  )}
+                  {account.urls && account.urls.length > 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      Website: {account.urls[0].url}
+                    </Typography>
+                  )}
+                  {showOwner && (
+                    <Typography variant="body2" color="text.secondary">
+                      Owner: {ownerDisplayName}
+                    </Typography>
+                  )}
+                </CardContent>
+                <CardActions>
+                  <Button
+                    size="small"
+                    startIcon={<ViewIcon />}
+                    onClick={() => handleViewAccount(account.id)}
+                    sx={{
+                      color: 'primary.main',
+                      '&:hover': {
+                        bgcolor: 'transparent',
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    View Organization
+                  </Button>
+                </CardActions>
+              </Card>
+            );
+          })}
         </Box>
       )}
 

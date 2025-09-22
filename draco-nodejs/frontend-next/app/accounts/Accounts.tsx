@@ -3,26 +3,20 @@ import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import OrganizationsWidget from '../../components/OrganizationsWidget';
-
-interface Account {
-  id: string;
-  name: string;
-  accountType: string;
-  firstYear: number;
-  affiliation?: string;
-  urls: Array<{ id: string; url: string }>;
-  ownerName?: string;
-}
+import { searchAccounts } from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
+import type { OrganizationAccount } from '../../components/OrganizationsWidget';
 
 const Accounts: React.FC = () => {
   const [showSignup, setShowSignup] = useState(false);
-  const [searchResults, setSearchResults] = useState<Account[]>([]);
+  const [searchResults, setSearchResults] = useState<OrganizationAccount[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
   const accountId = params?.accountId as string | undefined;
+  const apiClient = useApiClient();
 
   // If accountId is provided, redirect to that account's home page
   React.useEffect(() => {
@@ -31,34 +25,34 @@ const Accounts: React.FC = () => {
     }
   }, [accountId, router]);
 
-  const handleSearch = useCallback(async (searchTerm: string) => {
-    if (!searchTerm.trim()) return;
+  const handleSearch = useCallback(
+    async (term: string) => {
+      const trimmedTerm = term.trim();
+      if (!trimmedTerm) return;
 
-    setIsSearching(true);
-    try {
-      const response = await fetch(`/api/accounts/search?q=${encodeURIComponent(searchTerm)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      setIsSearching(true);
+      try {
+        const result = await searchAccounts({
+          client: apiClient,
+          throwOnError: false,
+          query: { q: trimmedTerm },
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setSearchResults(data.data.accounts || []);
-        } else {
+        if (result.error) {
           setSearchResults([]);
+          return;
         }
-      } else {
+
+        setSearchResults(result.data ?? []);
+      } catch (error) {
+        console.error('Account search failed:', error);
         setSearchResults([]);
+      } finally {
+        setIsSearching(false);
       }
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
+    },
+    [apiClient],
+  );
 
   const handleCreateAccount = () => {
     if (user) {
