@@ -1,4 +1,4 @@
-import { getAccountName } from '../../../../../../../../lib/metadataFetchers';
+import { getAccountBranding } from '../../../../../../../../lib/metadataFetchers';
 import TeamRosterManagementClientWrapper from './TeamRosterManagementClientWrapper';
 
 export async function generateMetadata({
@@ -7,9 +7,10 @@ export async function generateMetadata({
   params: Promise<{ accountId: string; seasonId: string }>;
 }) {
   const { accountId } = await params;
-  const accountName = await getAccountName(accountId);
+  const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   return {
     title: `${accountName} Team Roster`,
+    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
   };
 }
 

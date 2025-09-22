@@ -7,9 +7,10 @@ export async function generateMetadata({
   params: Promise<{ accountId: string; seasonId: string; teamSeasonId: string }>;
 }) {
   const { accountId, seasonId, teamSeasonId } = await params;
-  const { account, league, team } = await getTeamInfo(accountId, seasonId, teamSeasonId);
+  const { account, league, team, iconUrl } = await getTeamInfo(accountId, seasonId, teamSeasonId);
   return {
     title: `${account} ${league} ${team}`,
+    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
   };
 }
 

@@ -1,4 +1,4 @@
-import { getAccountName } from '../../../../lib/metadataFetchers';
+import { getAccountBranding } from '../../../../lib/metadataFetchers';
 import StatisticsClientWrapper from './StatisticsClientWrapper';
 
 export async function generateMetadata({
@@ -7,10 +7,11 @@ export async function generateMetadata({
   params: Promise<{ accountId: string; seasonId: string }>;
 }) {
   const { accountId } = await params;
-  const accountName = await getAccountName(accountId);
+  const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   return {
     title: `${accountName} Statistics`,
     description: `View detailed baseball statistics for ${accountName}`,
+    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
   };
 }
 
