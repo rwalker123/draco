@@ -68,7 +68,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const router = useRouter();
 
   // Use provided values if available, otherwise use internal state
-  const displayAccounts = providedOrganizations || accounts;
+  const displayAccounts: AccountType[] = providedOrganizations || accounts;
   const displayLoading = providedLoading !== undefined ? providedLoading : loading;
   const displayError = providedError !== undefined ? providedError : error;
   const displaySearchTerm = providedSearchTerm !== undefined ? providedSearchTerm : searchTerm;
@@ -94,10 +94,10 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setAccounts(data);
+          setAccounts(data.data?.accounts || []);
           // Notify parent component about loaded organizations
           if (onOrganizationsLoaded) {
-            onOrganizationsLoaded(data);
+            onOrganizationsLoaded(data.data?.accounts || []);
           }
         } else {
           setError(data.message || 'Failed to load your organizations');

@@ -49,7 +49,7 @@ export class AccountResponseFormatter {
     return accounts.map((account) => this.formatAccount(account, affiliationMap));
   }
 
-  private static formatAccount(
+  static formatAccount(
     account: dbAccount,
     affiliationMap: Map<string, dbAccountAffiliation>,
   ): AccountType {

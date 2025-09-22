@@ -29,6 +29,8 @@ export async function getAccountBranding(accountId: string): Promise<AccountBran
   }
 
   try {
+    // NOTE: Metadata fetchers run on the server and sit outside Next.js rewrites,
+    // so we call the backend directly via the configured API URL instead of the shared client.
     const res = await fetch(`${apiUrl}/api/accounts/${accountId}/header`, {
       next: { revalidate: 60 },
     });
@@ -71,6 +73,7 @@ export async function getTeamInfo(
       throw new Error('NEXT_PUBLIC_API_URL environment variable is required for SSR');
     }
 
+    // NOTE: See comment above about calling the backend directly from server utilities.
     const res = await fetch(
       `${apiUrl}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`,
     );
@@ -98,6 +101,7 @@ export async function getLeagueName(
   }
 
   try {
+    // NOTE: Server-side fetch avoids Next rewrites for the same reason as other helpers here.
     const res = await fetch(
       `${apiUrl}/api/accounts/${accountId}/seasons/${seasonId}/league-seasons/${leagueSeasonId}`,
     );

@@ -759,6 +759,14 @@ components:
           maxLength: 100
       required:
         - q
+    AccountDomainLookupHeaders:
+      type: object
+      properties:
+        host:
+          type: string
+          minLength: 1
+      required:
+        - host
     ValidationError:
       type: object
       properties:
@@ -923,6 +931,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/by-domain:
+    get:
+      operationId: getAccountByDomain
+      summary: Get account by domain
+      description: Public lookup of an account by inbound request host domain.
+      tags:
+        - Accounts
+      parameters:
+        - schema:
+            type: string
+            minLength: 1
+          required: true
+          name: host
+          in: header
+      responses:
+        "200":
+          description: Account matching the provided domain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Account not found for the provided domain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Internal server error
           content:

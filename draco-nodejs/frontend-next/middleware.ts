@@ -34,20 +34,25 @@ export async function middleware(request: NextRequest) {
   // Strip port if present (e.g., www.example.com:3000 -> www.example.com)
   host = host.replace(/:\d+$/, '');
 
-  // Use relative URL so Next.js rewrites can handle the routing
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) {
+    return NextResponse.next();
+  }
+
+  // Resolve the account by domain directly against the backend
   try {
-    const res = await fetch('/api/accounts/by-domain', {
-      method: 'GET',
+    // NOTE: Middleware executes before Next.js rewrites, so we hit the backend directly via fetch.
+    // Using the generated API client here would try to call a relative path and never reach the backend.
+    const response = await fetch(`${apiUrl}/api/accounts/by-domain`, {
       headers: {
-        'Content-Type': 'application/json',
-        Host: host,
+        'x-forwarded-host': host,
       },
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.data && data.data.account && data.data.account.id) {
-        // Redirect to the account home page
-        return NextResponse.redirect(new URL(`/account/${data.data.account.id}/home`, request.url));
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data?.id) {
+        return NextResponse.redirect(new URL(`/account/${data.id}/home`, request.url));
       }
     }
   } catch {

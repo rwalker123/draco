@@ -20,6 +20,12 @@ export const AccountSearchQuerySchema = z.object({
 
 export type AccountSearchQueryType = z.infer<typeof AccountSearchQuerySchema>;
 
+export const AccountDomainLookupHeadersSchema = z.object({
+  host: z.string().trim().min(1, { message: 'Host header is required' }),
+});
+
+export type AccountDomainLookupHeadersType = z.infer<typeof AccountDomainLookupHeadersSchema>;
+
 export const AccountTypeSchema = z.object({
   id: z.string(),
   name: z.string(),
