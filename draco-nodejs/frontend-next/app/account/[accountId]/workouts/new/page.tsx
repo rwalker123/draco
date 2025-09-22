@@ -1,12 +1,13 @@
-import { getAccountName } from '../../../../../lib/metadataFetchers';
+import { getAccountBranding } from '../../../../../lib/metadataFetchers';
 import NewWorkoutClientWrapper from './NewWorkoutClientWrapper';
 
 export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
   const { accountId } = await params;
-  const accountName = await getAccountName(accountId);
+  const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   return {
     title: `New Workout - ${accountName}`,
     description: `Create a new workout for ${accountName}`,
+    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
   };
 }
 

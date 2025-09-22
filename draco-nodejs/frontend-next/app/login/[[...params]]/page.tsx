@@ -1,4 +1,4 @@
-import { getAccountName } from '../../../lib/metadataFetchers';
+import { getAccountBranding } from '../../../lib/metadataFetchers';
 import { Suspense } from 'react';
 import LoginClientWrapper from '../LoginClientWrapper';
 
@@ -10,13 +10,20 @@ export async function generateMetadata({
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const { accountId } = (await searchParams) as any;
   let title = 'Sign In - Draco Sports Manager';
+  let icons: { icon: string } | undefined;
   if (accountId) {
-    const accountName = await getAccountName(accountId);
+    const { name: accountName, iconUrl } = await getAccountBranding(accountId);
     if (accountName) {
       title = `Sign In - ${accountName}`;
     }
+    if (iconUrl) {
+      icons = { icon: iconUrl };
+    }
   }
-  return { title };
+  return {
+    title,
+    ...(icons ? { icons } : {}),
+  };
 }
 
 export default function Page() {

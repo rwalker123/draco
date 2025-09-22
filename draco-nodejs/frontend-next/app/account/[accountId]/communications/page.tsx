@@ -1,12 +1,13 @@
-import { getAccountName } from '../../../../lib/metadataFetchers';
+import { getAccountBranding } from '../../../../lib/metadataFetchers';
 import CommunicationsClientWrapper from './CommunicationsClientWrapper';
 
 // Dynamically set the page title to "{Account Name} Communications"
 export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
   const { accountId } = await params;
-  const accountName = await getAccountName(accountId);
+  const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   return {
     title: `${accountName} Communications`,
+    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
   };
 }
 
