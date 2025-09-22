@@ -306,18 +306,28 @@ export const createMockRoleContext = (overrides: Partial<RoleContextType> = {}) 
     clearRoles: vi.fn(),
   };
 
+  let mergedUserRoles: RoleContextType['userRoles'] = defaultContext.userRoles;
+
+  if (Object.prototype.hasOwnProperty.call(overrides, 'userRoles')) {
+    const overrideUserRoles = overrides.userRoles;
+
+    if (overrideUserRoles && overrideUserRoles !== null) {
+      mergedUserRoles = {
+        accountId: overrideUserRoles.accountId ?? defaultContext.userRoles?.accountId ?? '1',
+        globalRoles: overrideUserRoles.globalRoles ?? defaultContext.userRoles?.globalRoles ?? [],
+        contactRoles:
+          overrideUserRoles.contactRoles ?? defaultContext.userRoles?.contactRoles ?? [],
+      };
+    } else {
+      // preserve explicit null/undefined override value
+      mergedUserRoles = overrideUserRoles as RoleContextType['userRoles'];
+    }
+  }
+
   const context: RoleContextType = {
     ...defaultContext,
     ...overrides,
-    userRoles: overrides.userRoles
-      ? {
-          accountId: overrides.userRoles.accountId ?? defaultContext.userRoles?.accountId ?? '1',
-          globalRoles:
-            overrides.userRoles.globalRoles ?? defaultContext.userRoles?.globalRoles ?? [],
-          contactRoles:
-            overrides.userRoles.contactRoles ?? defaultContext.userRoles?.contactRoles ?? [],
-        }
-      : defaultContext.userRoles,
+    userRoles: mergedUserRoles,
   };
 
   // Override hasRole to use the actual userRoles from the context
