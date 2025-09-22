@@ -5,7 +5,7 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { Prisma } from '@prisma/client';
-import { AccountSearchQuerySchema } from '@draco/shared-schemas';
+import { AccountSearchQuerySchema, AccountDomainLookupHeadersSchema } from '@draco/shared-schemas';
 import { RoleNamesType } from '../types/roles.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
@@ -49,63 +49,14 @@ router.get(
 router.get(
   '/by-domain',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    // Use X-Forwarded-Host if present (for local dev proxy), else Host
-    const host = req.get('x-forwarded-host') || req.get('host');
+    const forwardedHost = req.get('x-forwarded-host');
+    const hostHeader = forwardedHost ?? req.get('host') ?? '';
 
-    if (!host) {
-      throw new ValidationError('Host header is required');
-    }
+    const { host } = AccountDomainLookupHeadersSchema.parse({ host: hostHeader });
 
-    // Compose protocol + host for matching (check both http and https)
-    const hostLower = host.toLowerCase();
-    const urlVariants = [
-      `http://${hostLower}`,
-      `https://${hostLower}`,
-      `http://www.${hostLower}`,
-      `https://www.${hostLower}`,
-      `http://${hostLower.replace('www.', '')}`,
-      `https://${hostLower.replace('www.', '')}`,
-    ];
+    const account = await accountsService.getAccountByDomain(host);
 
-    // Look up the host in the accountsurl table with more precise matching
-    const accountUrl = await prisma.accountsurl.findFirst({
-      where: {
-        url: { in: urlVariants },
-      },
-      include: {
-        accounts: {
-          include: {
-            accounttypes: true,
-          },
-        },
-      },
-    });
-
-    if (!accountUrl) {
-      throw new NotFoundError('No account found for this domain');
-    }
-
-    const account = accountUrl.accounts;
-
-    res.json({
-      success: true,
-      data: {
-        account: {
-          id: account.id.toString(),
-          name: account.name,
-          accountType: account.accounttypes?.name,
-          accountTypeId: account.accounttypeid.toString(),
-          firstYear: account.firstyear,
-          timezoneId: account.timezoneid,
-          urls: [
-            {
-              id: accountUrl.id.toString(),
-              url: accountUrl.url,
-            },
-          ],
-        },
-      },
-    });
+    res.json(account);
   }),
 );
 

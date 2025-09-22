@@ -1,18 +1,15 @@
 'use client';
 import { useMemo } from 'react';
-import { createClient, createConfig } from '@draco/shared-api-client/generated/client';
 import { useAuth } from '../context/AuthContext';
+import { createApiClient } from '../lib/apiClientFactory';
 
 export const useApiClient = () => {
   const { token } = useAuth();
 
   const apiClient = useMemo(() => {
-    return createClient(
-      createConfig({
-        auth: () => token || '',
-        baseUrl: '',
-      }),
-    );
+    return createApiClient({
+      token: token || undefined,
+    });
   }, [token]);
 
   return apiClient;

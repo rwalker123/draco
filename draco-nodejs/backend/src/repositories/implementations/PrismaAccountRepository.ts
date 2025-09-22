@@ -62,6 +62,28 @@ export class PrismaAccountRepository implements IAccountRepository {
     return accountUrl?.accounts || null;
   }
 
+  async findAccountByUrls(urls: string[]): Promise<dbAccount | null> {
+    if (!urls.length) {
+      return null;
+    }
+
+    return this.prisma.accounts.findFirst({
+      where: {
+        accountsurl: {
+          some: {
+            url: {
+              in: urls,
+            },
+          },
+        },
+      },
+      include: {
+        accountsurl: true,
+        accounttypes: true,
+      },
+    });
+  }
+
   async searchByTerm(searchTerm: string, limit = 20): Promise<dbAccount[]> {
     return this.prisma.accounts.findMany({
       where: {

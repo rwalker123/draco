@@ -16,6 +16,7 @@ import {
   CreateContactSchema,
   AccountSchema,
   AccountSearchQuerySchema,
+  AccountDomainLookupHeadersSchema,
 } from '@draco/shared-schemas';
 
 const registry = new OpenAPIRegistry();
@@ -31,6 +32,10 @@ const AccountSchemaRef = registry.register('Account', AccountSchema);
 const AccountSearchQuerySchemaRef = registry.register(
   'AccountSearchQuery',
   AccountSearchQuerySchema,
+);
+const AccountDomainLookupHeadersSchemaRef = registry.register(
+  'AccountDomainLookupHeaders',
+  AccountDomainLookupHeadersSchema,
 );
 
 // Register error schemas
@@ -81,6 +86,53 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/by-domain
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/by-domain',
+  operationId: 'getAccountByDomain',
+  summary: 'Get account by domain',
+  description: 'Public lookup of an account by inbound request host domain.',
+  tags: ['Accounts'],
+  request: {
+    headers: AccountDomainLookupHeadersSchemaRef,
+  },
+  responses: {
+    200: {
+      description: 'Account matching the provided domain',
+      content: {
+        'application/json': {
+          schema: AccountSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Account not found for the provided domain',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
         },
       },
     },
