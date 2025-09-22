@@ -5,6 +5,30 @@ interface AccountBranding {
   iconUrl: string | null;
 }
 
+const DEFAULT_ACCOUNT_FAVICON_PATH = '/branding/default-sports-favicon.svg' as const;
+
+function resolveAccountFavicon(accountHeaderData: unknown): string {
+  if (typeof accountHeaderData !== 'object' || !accountHeaderData) {
+    return DEFAULT_ACCOUNT_FAVICON_PATH;
+  }
+
+  const branding = (accountHeaderData as { branding?: unknown }).branding;
+  if (typeof branding === 'object' && branding) {
+    const { faviconUrl, tabIconUrl } = branding as {
+      faviconUrl?: string | null;
+      tabIconUrl?: string | null;
+    };
+    if (faviconUrl) {
+      return faviconUrl;
+    }
+    if (tabIconUrl) {
+      return tabIconUrl;
+    }
+  }
+
+  return DEFAULT_ACCOUNT_FAVICON_PATH;
+}
+
 async function fetchAccountName(apiUrl: string, accountId: string): Promise<string> {
   try {
     const res = await fetch(`${apiUrl}/api/accounts/${accountId}/name`, {
@@ -39,7 +63,7 @@ export async function getAccountBranding(accountId: string): Promise<AccountBran
       if (data?.success && data?.data?.name) {
         return {
           name: data.data.name,
-          iconUrl: data.data.accountLogoUrl ?? null,
+          iconUrl: resolveAccountFavicon(data.data),
         };
       }
     }
@@ -50,7 +74,7 @@ export async function getAccountBranding(accountId: string): Promise<AccountBran
   const fallbackName = await fetchAccountName(apiUrl, accountId);
   return {
     name: fallbackName,
-    iconUrl: null,
+    iconUrl: DEFAULT_ACCOUNT_FAVICON_PATH,
   };
 }
 

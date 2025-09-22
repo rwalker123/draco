@@ -71,6 +71,11 @@ dist
 # Gatsby files
 .cache/
 public
+!frontend-next/public/
+frontend-next/public/*
+!frontend-next/public/branding/
+frontend-next/public/branding/*
+!frontend-next/public/branding/default-sports-favicon.svg
 
 # Storybook build outputs
 .out

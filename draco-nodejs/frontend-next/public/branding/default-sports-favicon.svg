@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="shieldGradient" x1="12%" y1="8%" x2="88%" y2="92%" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0052CC" />
+      <stop offset="100%" stop-color="#06C167" />
+    </linearGradient>
+    <linearGradient id="ballGradient" x1="30%" y1="20%" x2="80%" y2="70%" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.4" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#shieldGradient)" />
+  <path
+    d="M12 28c7 2.5 14 3.8 20 3.8s13-1.3 20-3.8"
+    fill="none"
+    stroke="#042A5E"
+    stroke-width="3.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M12 40c7-2.5 14-3.8 20-3.8s13 1.3 20 3.8"
+    fill="none"
+    stroke="#042A5E"
+    stroke-width="3.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M26 10c4.8 5 7.2 12.5 7.2 22s-2.4 17-7.2 22"
+    fill="none"
+    stroke="#042A5E"
+    stroke-width="3.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M38 10c-4.8 5-7.2 12.5-7.2 22s2.4 17 7.2 22"
+    fill="none"
+    stroke="#042A5E"
+    stroke-width="3.5"
+    stroke-linecap="round"
+  />
+  <circle cx="40" cy="24" r="11" fill="#F9F9F9" stroke="#042A5E" stroke-width="2" />
+  <circle cx="40" cy="24" r="9" fill="url(#ballGradient)" />
+  <path
+    d="M33.8 19.2c2.4 2 6.8 2 9.2 0"
+    fill="none"
+    stroke="#DD3345"
+    stroke-width="1.6"
+    stroke-linecap="round"
+  />
+  <path
+    d="M33.4 28.6c2-1.4 6.6-1.4 8.6 0"
+    fill="none"
+    stroke="#DD3345"
+    stroke-width="1.6"
+    stroke-linecap="round"
+  />
+</svg>
