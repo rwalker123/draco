@@ -23,21 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import { AccountType } from '@draco/shared-schemas';
 import { searchAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
-
-export type OrganizationAccount = AccountType & {
-  ownerName?: string;
-};
-
-interface AccountListApiItem {
-  id: string;
-  name: string;
-  accountType?: string | null;
-  firstYear?: number | null;
-  affiliation?: string | null;
-  affiliationId?: string | null;
-  urls?: { id: string; url: string }[];
-  ownerName?: string | null;
-}
+import { getContactDisplayName } from '../utils/contactUtils';
 
 interface OrganizationsWidgetProps {
   title?: string;
@@ -46,7 +32,7 @@ interface OrganizationsWidgetProps {
   sx?: React.CSSProperties | Record<string, unknown>;
   onOrganizationClick?: (accountId: string) => void;
   // If organizations are provided, use them instead of loading user's organizations
-  organizations?: OrganizationAccount[];
+  organizations?: AccountType[];
   loading?: boolean;
   error?: string | null;
   onSearch?: (searchTerm: string) => void;
@@ -55,7 +41,7 @@ interface OrganizationsWidgetProps {
   // Account ID to exclude from the list (e.g., current account)
   excludeAccountId?: string;
   // Callback when organizations are loaded
-  onOrganizationsLoaded?: (organizations: OrganizationAccount[]) => void;
+  onOrganizationsLoaded?: (organizations: AccountType[]) => void;
 }
 
 const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
@@ -73,7 +59,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   excludeAccountId,
   onOrganizationsLoaded,
 }) => {
-  const [accounts, setAccounts] = useState<OrganizationAccount[]>([]);
+  const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,18 +78,6 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     ? displayAccounts.filter((account) => account.id !== excludeAccountId)
     : displayAccounts;
 
-  const getOwnerDisplayName = useCallback((account: OrganizationAccount): string | undefined => {
-    if (account.accountOwner) {
-      const names = [account.accountOwner.firstName, account.accountOwner.lastName]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
-      return names || undefined;
-    }
-
-    return account.ownerName ?? undefined;
-  }, []);
-
   const loadUserAccounts = useCallback(async () => {
     if (!user || providedOrganizations) return; // Don't load if organizations are provided
     setLoading(true);
@@ -120,30 +94,10 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          const accountsData = Array.isArray(data.data.accounts)
-            ? (data.data.accounts as AccountListApiItem[])
-            : [];
-          const normalizedAccounts: OrganizationAccount[] = accountsData.map((account) => ({
-            id: account.id,
-            name: account.name,
-            accountType: account.accountType ?? undefined,
-            firstYear: account.firstYear ?? null,
-            affiliation:
-              account.affiliation && account.affiliationId
-                ? {
-                    id: account.affiliationId,
-                    name: account.affiliation,
-                    url: undefined,
-                  }
-                : undefined,
-            urls: account.urls?.map((url) => ({ id: url.id, url: url.url })) ?? [],
-            ownerName: account.ownerName ?? undefined,
-          }));
-
-          setAccounts(normalizedAccounts);
+          setAccounts(data);
           // Notify parent component about loaded organizations
           if (onOrganizationsLoaded) {
-            onOrganizationsLoaded(normalizedAccounts);
+            onOrganizationsLoaded(data);
           }
         } else {
           setError(data.message || 'Failed to load your organizations');
@@ -186,7 +140,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
           return;
         }
 
-        setAccounts(result.data ?? []);
+        setAccounts(result.data as AccountType[]);
       } catch (error) {
         console.error('Account search failed:', error);
         setError('Failed to search accounts. Please try again.');
@@ -317,7 +271,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       {limitedAccounts.length > 0 && (
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           {limitedAccounts.map((account) => {
-            const ownerDisplayName = getOwnerDisplayName(account);
+            const ownerDisplayName = getContactDisplayName(account.accountOwner?.contact);
             const showOwner = Boolean(user && ownerDisplayName);
 
             return (
@@ -342,17 +296,17 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                     {account.name}
                   </Typography>
-                  {account.accountType && (
+                  {account.configuration?.accountType && (
                     <Typography color="text.secondary" gutterBottom>
-                      {account.accountType}
+                      {account.configuration.accountType.name}
                     </Typography>
                   )}
                   <Typography variant="body2" color="text.secondary">
-                    Established: {account.firstYear ?? '—'}
+                    Established: {account.configuration?.firstYear ?? '—'}
                   </Typography>
-                  {account.affiliation && (
+                  {account.configuration?.affiliation && (
                     <Typography variant="body2" color="text.secondary">
-                      Affiliation: {account.affiliation.name}
+                      Affiliation: {account.configuration.affiliation.name}
                     </Typography>
                   )}
                   {account.urls && account.urls.length > 0 && (

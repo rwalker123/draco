@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { EmailMode } from '../../../types/emails/email';
 import { BaseContactType } from '@draco/shared-schemas';
-import { getContactDisplayName } from '../common/mailtoUtils';
+import { getContactDisplayName } from '../../../utils/contactUtils';
 
 interface EmailQuickDialogProps {
   open: boolean;
@@ -46,7 +46,7 @@ export function EmailQuickDialog({ open, onClose, contact, onSend }: EmailQuickD
     onClose();
   };
 
-  const contactName = getContactDisplayName(contact);
+  const contactName = getContactDisplayName(contact, true);
 
   return (
     <Dialog

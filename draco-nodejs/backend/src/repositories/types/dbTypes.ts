@@ -158,28 +158,10 @@ export type dbAuthResponse = {
   };
 };
 
-export type dbAccountSearchResult = Prisma.accountsGetPayload<{
-  select: {
-    id: true;
-    name: true;
-    accounttypeid: true;
-    firstyear: true;
-    affiliationid: true;
-    accounttypes: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-    accountsurl: {
-      select: {
-        id: true;
-        url: true;
-      };
-      orderBy: {
-        id: 'asc';
-      };
-    };
+export type dbAccount = Prisma.accountsGetPayload<{
+  include: {
+    accounttypes: true;
+    accountsurl: true;
   };
 }>;
 

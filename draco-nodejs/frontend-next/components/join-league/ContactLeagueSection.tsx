@@ -3,10 +3,10 @@ import { Box, Button, Typography } from '@mui/material';
 import { ContactSupport, Language, Twitter, Facebook } from '@mui/icons-material';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
-import { SocialAccount } from '../../types/account';
+import { AccountType } from '@draco/shared-schemas';
 
 interface ContactLeagueSectionProps {
-  account: SocialAccount;
+  account: AccountType;
 }
 
 const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) => {
@@ -47,10 +47,10 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
             </Button>
           )}
 
-          {account.twitterAccountName && (
+          {account.socials?.twitterAccountName && (
             <Button
               variant="outlined"
-              href={`https://twitter.com/${account.twitterAccountName?.replace('@', '') || account.twitterAccountName}`}
+              href={`https://twitter.com/${account.socials.twitterAccountName?.replace('@', '') || account.socials.twitterAccountName}`}
               target="_blank"
               rel="noopener noreferrer"
               startIcon={<Twitter />}
@@ -72,10 +72,10 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
             </Button>
           )}
 
-          {account.facebookFanPage && (
+          {account.socials?.facebookFanPage && (
             <Button
               variant="outlined"
-              href={account.facebookFanPage}
+              href={account.socials.facebookFanPage}
               target="_blank"
               rel="noopener noreferrer"
               startIcon={<Facebook />}

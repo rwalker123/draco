@@ -15,7 +15,7 @@ import {
   AccountType,
 } from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
-import { getContactPhotoUrl } from '../config/logo.js';
+import { getAccountLogoUrl, getContactPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
   dbBaseContact,
@@ -28,7 +28,7 @@ import {
   dbContactRoles,
   dbContactWithRoleAndDetails,
   dbTeamSeasonManagerContact,
-  dbAccountSearchResult,
+  dbAccount,
   dbAccountAffiliation,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
@@ -42,15 +42,15 @@ interface ApiResponse<T> {
 }
 
 export class AccountResponseFormatter {
-  static formatAccountSummaries(
-    accounts: dbAccountSearchResult[],
+  static formatAccounts(
+    accounts: dbAccount[],
     affiliationMap: Map<string, dbAccountAffiliation>,
   ): AccountType[] {
     return accounts.map((account) => this.formatAccount(account, affiliationMap));
   }
 
   private static formatAccount(
-    account: dbAccountSearchResult,
+    account: dbAccount,
     affiliationMap: Map<string, dbAccountAffiliation>,
   ): AccountType {
     const affiliationId = account.affiliationid ? account.affiliationid.toString() : undefined;
@@ -59,15 +59,32 @@ export class AccountResponseFormatter {
     return {
       id: account.id.toString(),
       name: account.name,
-      accountType: account.accounttypes?.name ?? undefined,
-      firstYear: account.firstyear,
-      affiliation: affiliationRecord
-        ? {
-            id: affiliationRecord.id.toString(),
-            name: affiliationRecord.name,
-            url: affiliationRecord.url,
-          }
-        : undefined,
+      accountLogoUrl: getAccountLogoUrl(account.id.toString()),
+      configuration: {
+        accountType: account.accounttypes
+          ? {
+              id: account.accounttypes.id.toString(),
+              name: account.accounttypes.name,
+            }
+          : undefined,
+        affiliation: affiliationRecord
+          ? {
+              id: affiliationRecord.id.toString(),
+              name: affiliationRecord.name,
+              url: affiliationRecord.url,
+            }
+          : undefined,
+
+        firstYear: account.firstyear,
+        timezoneId: account.timezoneid,
+      },
+      socials: {
+        autoPlayVideo: account.autoplayvideo,
+        twitterAccountName: account.twitteraccountname,
+        facebookFanPage: account.facebookfanpage ?? undefined,
+        youtubeUserId: account.youtubeuserid,
+        defaultVideo: account.defaultvideo,
+      },
       urls: account.accountsurl.map((url) => ({
         id: url.id.toString(),
         url: url.url,

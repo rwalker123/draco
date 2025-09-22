@@ -28,7 +28,7 @@ import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
 import { listWorkouts } from '../../../services/workoutService';
 import { WorkoutSummary } from '../../../types/workouts';
-import { Account } from '../../../types/account';
+import { AccountType } from '@draco/shared-schemas';
 import { JoinLeagueDashboard } from '../../../components/join-league';
 
 interface Season {
@@ -38,7 +38,7 @@ interface Season {
 }
 
 const BaseballAccountHome: React.FC = () => {
-  const [account, setAccount] = useState<Account | null>(null);
+  const [account, setAccount] = useState<AccountType | null>(null);
   const [currentSeason, setCurrentSeason] = useState<Season | null>(null);
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
@@ -205,9 +205,9 @@ const BaseballAccountHome: React.FC = () => {
       {/* Unified Header with Logo and Page Content */}
       <Box>
         <AccountPageHeader accountId={account.id} accountLogoUrl={account.accountLogoUrl}>
-          {account.affiliation &&
-            account.affiliation.name &&
-            account.affiliation.name.trim().toLowerCase() !== 'no affiliation' && (
+          {account.configuration?.affiliation &&
+            account.configuration.affiliation.name &&
+            account.configuration.affiliation.name.trim().toLowerCase() !== 'no affiliation' && (
               <Box
                 sx={{
                   display: 'flex',
@@ -217,11 +217,11 @@ const BaseballAccountHome: React.FC = () => {
                   justifyContent: 'center',
                 }}
               >
-                {account.affiliation.url ? (
+                {account.configuration.affiliation.url ? (
                   <Chip
-                    label={account.affiliation.name}
+                    label={account.configuration.affiliation.name}
                     component="a"
-                    href={account.affiliation.url}
+                    href={account.configuration.affiliation.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     clickable
@@ -242,7 +242,7 @@ const BaseballAccountHome: React.FC = () => {
                   />
                 ) : (
                   <Chip
-                    label={account.affiliation.name}
+                    label={account.configuration.affiliation.name}
                     sx={{
                       bgcolor: 'rgba(255,255,255,0.1)',
                       color: 'white',
@@ -269,7 +269,7 @@ const BaseballAccountHome: React.FC = () => {
             >
               <LocationIcon fontSize="small" />
               {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
-              {account.firstYear}
+              {account.configuration?.firstYear}
             </Typography>
             <ThemeSwitcher />
           </Box>
@@ -375,10 +375,10 @@ const BaseballAccountHome: React.FC = () => {
                 Visit Website
               </Button>
             )}
-            {account.twitterAccountName && (
+            {account.socials?.twitterAccountName && (
               <Button
                 variant="outlined"
-                href={`https://twitter.com/${account.twitterAccountName?.replace('@', '') || account.twitterAccountName}`}
+                href={`https://twitter.com/${account.socials.twitterAccountName?.replace('@', '') || account.socials.twitterAccountName}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
@@ -393,10 +393,10 @@ const BaseballAccountHome: React.FC = () => {
                 Twitter
               </Button>
             )}
-            {account.facebookFanPage && (
+            {account.socials?.facebookFanPage && (
               <Button
                 variant="outlined"
-                href={account.facebookFanPage}
+                href={account.socials.facebookFanPage}
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
