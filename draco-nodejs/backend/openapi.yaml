@@ -1007,6 +1007,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/managed:
+    get:
+      operationId: getManagedAccounts
+      summary: Get accounts managed by the authenticated user
+      description: Returns accounts where the user holds AccountAdmin privileges or is
+        a global Administrator.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Accounts managed by the authenticated user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Account"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/contacts:
     post:
       description: Create a new contact

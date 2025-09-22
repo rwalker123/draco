@@ -47,11 +47,14 @@ import type {
   AccountTypeReference,
   AccountAffiliationType,
 } from '@draco/shared-schemas';
+import { getManagedAccounts } from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
 
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
   const { hasRole } = useRole();
   const { setCurrentAccount } = useAccount();
+  const apiClient = useApiClient();
 
   const [accounts, setAccounts] = useState<SharedAccountType[]>([]);
   const [accountTypes, setAccountTypes] = useState<AccountTypeReference[]>([]);
@@ -134,20 +137,16 @@ const AccountManagement: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Load accounts (my-accounts endpoint handles role-based access)
-      const accountsResponse = await fetch('/api/accounts/my-accounts', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const { data, error: managedError } = await getManagedAccounts({
+        client: apiClient,
+        throwOnError: false,
       });
 
-      if (!accountsResponse.ok) {
-        throw new Error('Failed to load accounts');
+      if (managedError) {
+        throw new Error(managedError.message || 'Failed to load accounts');
       }
 
-      const accountsData: SharedAccountType[] = await accountsResponse.json();
-      setAccounts(accountsData);
+      setAccounts((data as SharedAccountType[]) ?? []);
 
       // Load account types
       const typesResponse = await fetch('/api/accounts/types', {
@@ -179,7 +178,7 @@ const AccountManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, apiClient]);
 
   useEffect(() => {
     if (token) {

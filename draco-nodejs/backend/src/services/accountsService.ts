@@ -7,19 +7,25 @@ import {
   dbBaseContact,
   IContactRepository,
   IUserRepository,
+  IRoleRepository,
+  dbGlobalRoles,
 } from '../repositories/index.js';
 import { AccountResponseFormatter } from '../utils/responseFormatters.js';
 import { NotFoundError } from '../utils/customErrors.js';
+import { ROLE_IDS } from '../config/roles.js';
+import { RoleNamesType } from '../types/roles.js';
 
 export class AccountsService {
   private readonly accountRepository: IAccountRepository;
   private readonly contactRepository: IContactRepository;
   private readonly userRepository: IUserRepository;
+  private readonly roleRepository: IRoleRepository;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.userRepository = RepositoryFactory.getUserRepository();
+    this.roleRepository = RepositoryFactory.getRoleRepository();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -42,6 +48,95 @@ export class AccountsService {
     }
 
     const accounts = await this.accountRepository.findAccountsWithRelations(accountIds);
+    return this.formatAccounts(accounts);
+  }
+
+  async getManagedAccountsForUser(userId: string): Promise<AccountType[]> {
+    const adminRoleId = ROLE_IDS[RoleNamesType.ADMINISTRATOR] || RoleNamesType.ADMINISTRATOR;
+    const globalRoles: dbGlobalRoles[] = await this.roleRepository.findGlobalRoles(userId);
+    const hasAdministratorRole = globalRoles.some((role) => role.roleid === adminRoleId);
+
+    if (hasAdministratorRole) {
+      const accounts = await this.accountRepository.findAccountsWithRelations();
+      return this.formatAccounts(accounts);
+    }
+
+    const accountAdminRoleId = ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] || RoleNamesType.ACCOUNT_ADMIN;
+
+    const managedAccountIds = await this.roleRepository.findAccountIdsForUserRoles(userId, [
+      accountAdminRoleId,
+    ]);
+
+    if (managedAccountIds.length === 0) {
+      return [];
+    }
+
+    const accounts = await this.accountRepository.findAccountsWithRelations(managedAccountIds);
+    return this.formatAccounts(accounts);
+  }
+
+  async searchAccounts(searchTerm: string): Promise<AccountType[]> {
+    const normalizedSearchTerm = searchTerm.trim();
+    const accounts: dbAccount[] = await this.accountRepository.searchByTerm(normalizedSearchTerm);
+
+    if (accounts.length === 0) {
+      return [];
+    }
+
+    const affiliationIds = Array.from(
+      new Set(
+        accounts
+          .map((account) => account.affiliationid)
+          .filter((affiliationId): affiliationId is bigint => affiliationId !== null),
+      ),
+    );
+
+    let affiliations: dbAccountAffiliation[] = [];
+    if (affiliationIds.length > 0) {
+      affiliations = await this.accountRepository.findAffiliationsByIds(affiliationIds);
+    }
+
+    const affiliationMap = new Map<string, dbAccountAffiliation>(
+      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
+    );
+
+    return AccountResponseFormatter.formatAccounts(accounts, affiliationMap);
+  }
+
+  async getAccountByDomain(host: string): Promise<AccountType> {
+    const normalizedHost = host.trim().toLowerCase();
+    const withoutWww = normalizedHost.replace(/^www\./, '');
+
+    const urlVariants = Array.from(
+      new Set([
+        `http://${normalizedHost}`,
+        `https://${normalizedHost}`,
+        `http://www.${withoutWww}`,
+        `https://www.${withoutWww}`,
+        `http://${withoutWww}`,
+        `https://${withoutWww}`,
+      ]),
+    );
+
+    const account = await this.accountRepository.findAccountByUrls(urlVariants);
+
+    if (!account) {
+      throw new NotFoundError('No account found for this domain');
+    }
+
+    const affiliationIds = account.affiliationid ? [account.affiliationid] : [];
+    const affiliations: dbAccountAffiliation[] = affiliationIds.length
+      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
+      : [];
+
+    const affiliationMap = new Map<string, dbAccountAffiliation>(
+      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
+    );
+
+    return AccountResponseFormatter.formatAccount(account, affiliationMap);
+  }
+
+  private async formatAccounts(accounts: dbAccount[]): Promise<AccountType[]> {
     if (accounts.length === 0) {
       return [];
     }
@@ -113,66 +208,5 @@ export class AccountsService {
       ownerContacts: ownerContactMap,
       ownerUsersByAccount: ownerUserMap,
     });
-  }
-
-  async searchAccounts(searchTerm: string): Promise<AccountType[]> {
-    const normalizedSearchTerm = searchTerm.trim();
-    const accounts: dbAccount[] = await this.accountRepository.searchByTerm(normalizedSearchTerm);
-
-    if (accounts.length === 0) {
-      return [];
-    }
-
-    const affiliationIds = Array.from(
-      new Set(
-        accounts
-          .map((account) => account.affiliationid)
-          .filter((affiliationId): affiliationId is bigint => affiliationId !== null),
-      ),
-    );
-
-    let affiliations: dbAccountAffiliation[] = [];
-    if (affiliationIds.length > 0) {
-      affiliations = await this.accountRepository.findAffiliationsByIds(affiliationIds);
-    }
-
-    const affiliationMap = new Map<string, dbAccountAffiliation>(
-      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
-    );
-
-    return AccountResponseFormatter.formatAccounts(accounts, affiliationMap);
-  }
-
-  async getAccountByDomain(host: string): Promise<AccountType> {
-    const normalizedHost = host.trim().toLowerCase();
-    const withoutWww = normalizedHost.replace(/^www\./, '');
-
-    const urlVariants = Array.from(
-      new Set([
-        `http://${normalizedHost}`,
-        `https://${normalizedHost}`,
-        `http://www.${withoutWww}`,
-        `https://www.${withoutWww}`,
-        `http://${withoutWww}`,
-        `https://${withoutWww}`,
-      ]),
-    );
-
-    const account = await this.accountRepository.findAccountByUrls(urlVariants);
-
-    if (!account) {
-      throw new NotFoundError('No account found for this domain');
-    }
-
-    const affiliationIds = account.affiliationid ? [account.affiliationid] : [];
-    const affiliations: dbAccountAffiliation[] = affiliationIds.length
-      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
-      : [];
-
-    const affiliationMap = new Map<string, dbAccountAffiliation>(
-      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
-    );
-
-    return AccountResponseFormatter.formatAccount(account, affiliationMap);
   }
 }

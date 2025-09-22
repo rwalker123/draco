@@ -70,6 +70,20 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/managed
+ * Return the accounts managed by the authenticated user (AccountAdmin or Administrator)
+ */
+router.get(
+  '/managed',
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const accounts = await accountsService.getManagedAccountsForUser(userId);
+    res.json(accounts);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId
  * Get public account information (no authentication required)
  */

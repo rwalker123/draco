@@ -21,7 +21,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { AccountType } from '@draco/shared-schemas';
-import { searchAccounts } from '@draco/shared-api-client';
+import { searchAccounts, getMyAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { getContactDisplayName } from '../utils/contactUtils';
 
@@ -83,23 +83,21 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/accounts/my-accounts', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+      const { data, error: accountsError } = await getMyAccounts({
+        client: apiClient,
+        throwOnError: false,
       });
 
-      if (response.ok) {
-        const data: AccountType[] = await response.json();
-        setAccounts(data);
-        // Notify parent component about loaded organizations
-        if (onOrganizationsLoaded) {
-          onOrganizationsLoaded(data);
-        }
-      } else {
-        setError('Failed to load your organizations. Please try again.');
+      if (accountsError) {
+        setError(accountsError.message || 'Failed to load your organizations. Please try again.');
+        setAccounts([]);
+        return;
+      }
+
+      const organizations = (data as AccountType[]) || [];
+      setAccounts(organizations);
+      if (onOrganizationsLoaded) {
+        onOrganizationsLoaded(organizations);
       }
     } catch {
       setError('Failed to load your organizations. Please try again.');
