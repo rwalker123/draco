@@ -55,19 +55,20 @@ draco-nodejs/
 │   ├── dist/               # Compiled JavaScript output
 │   ├── package.json        # Backend dependencies
 │   └── tsconfig.json       # TypeScript configuration
-├── frontend/                # Frontend application
-│   ├── src/                # Source code
-│   │   ├── components/     # React components
-│   │   ├── context/        # React context providers
-│   │   ├── utils/          # Utility functions
-│   │   ├── App.tsx         # Main application component
-│   │   └── index.tsx       # Application entry point
-│   ├── public/             # Static assets
-│   ├── package.json        # Frontend dependencies
-│   └── tsconfig.json       # TypeScript configuration
-├── run-backend.sh          # Backend helper script
-├── run-frontend.sh         # Frontend helper script
-└── ARCHITECTURE.md         # Detailed architecture documentation
+├── frontend-next/            # Next.js frontend application
+│   ├── app/                  # App Router routes and layouts
+│   ├── components/           # Shared UI components
+│   ├── context/              # React context providers
+│   ├── hooks/                # Custom React hooks
+│   ├── services/             # API data access helpers
+│   ├── types/                # Frontend-specific TypeScript types
+│   ├── package.json          # Frontend workspace configuration
+│   └── tsconfig.json         # Frontend TypeScript configuration
+├── shared/                   # Generated schemas and API clients
+│   ├── shared-api-client/    # OpenAPI-generated REST client
+│   └── shared-schemas/       # Shared Zod schema definitions
+├── package.json              # Root workspace manager
+└── ARCHITECTURE.md           # Detailed architecture documentation
 ```
 
 ## 🚀 Quick Start
@@ -108,11 +109,11 @@ draco-nodejs/
 
 3. **Set up the frontend**
    ```bash
-   cd ../frontend
+   cd ../frontend-next
    npm install
-   
+
    # Start development server
-   npm start
+   npm run dev
    ```
 
 4. **Access the application**

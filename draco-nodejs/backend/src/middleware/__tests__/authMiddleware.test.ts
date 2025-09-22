@@ -4,12 +4,25 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-vi.mock('jsonwebtoken', () => ({
-  default: {
-    verify: vi.fn(),
-    JsonWebTokenError: class JsonWebTokenError extends Error {},
-  },
-}));
+vi.mock('jsonwebtoken', () => {
+  class JsonWebTokenError extends Error {}
+  class TokenExpiredError extends JsonWebTokenError {
+    expiredAt: Date;
+
+    constructor(message: string, expiredAt: Date) {
+      super(message);
+      this.expiredAt = expiredAt;
+    }
+  }
+
+  return {
+    default: {
+      verify: vi.fn(),
+      JsonWebTokenError,
+      TokenExpiredError,
+    },
+  };
+});
 
 vi.mock('@prisma/client', () => {
   const mockFindUnique = vi.fn();
@@ -68,6 +81,28 @@ describe('authenticateToken middleware', () => {
     );
     expect(res.statusCode).toBe(401);
     expect(res._getJSONData().message).toMatch(/Invalid token/);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 if token is expired', async () => {
+    (jwt.verify as any).mockImplementation(() => {
+      throw new jwt.TokenExpiredError('expired', new Date());
+    });
+
+    const req = httpMocks.createRequest({
+      headers: { authorization: `Bearer expired.token` },
+    });
+    const res = httpMocks.createResponse();
+    const next = vi.fn();
+
+    await authenticateToken(
+      req as unknown as Request,
+      res as unknown as Response,
+      next as unknown as NextFunction,
+    );
+
+    expect(res.statusCode).toBe(401);
+    expect(res._getJSONData().message).toMatch(/Token expired/);
     expect(next).not.toHaveBeenCalled();
   });
 
