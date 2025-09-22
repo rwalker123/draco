@@ -104,8 +104,9 @@ export interface IPlayersWantedResponse extends IPlayersWantedClassified {
 
 // Teams Wanted response (public view without contact info)
 export interface ITeamsWantedPublicResponse
-  extends Omit<ITeamsWantedClassified, 'accessCode' | 'email' | 'phone'> {
+  extends Omit<ITeamsWantedClassified, 'accessCode' | 'email' | 'phone' | 'birthDate'> {
   // Public view excludes PII (email, phone) and access code for security
+  age: number | null;
   account: {
     id: string;
     name: string;
@@ -125,6 +126,7 @@ export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'acce
 export interface ITeamsWantedContactInfo {
   email: string;
   phone: string;
+  birthDate: string | null;
 }
 
 // Teams Wanted response (owner view with access code)
