@@ -92,15 +92,11 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAccounts(data.data?.accounts || []);
-          // Notify parent component about loaded organizations
-          if (onOrganizationsLoaded) {
-            onOrganizationsLoaded(data.data?.accounts || []);
-          }
-        } else {
-          setError(data.message || 'Failed to load your organizations');
+        const data: AccountType[] = await response.json();
+        setAccounts(data);
+        // Notify parent component about loaded organizations
+        if (onOrganizationsLoaded) {
+          onOrganizationsLoaded(data);
         }
       } else {
         setError('Failed to load your organizations. Please try again.');

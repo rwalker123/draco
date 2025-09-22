@@ -9,6 +9,7 @@ export interface IContactRepository extends IBaseRepository<contacts> {
   findAccountOwner(accountId: bigint): Promise<dbBaseContact | null>;
   isAccountOwner(contactId: bigint, accountId: bigint): Promise<boolean>;
   findByUserId(userId: string, accountId: bigint): Promise<dbBaseContact | null>;
+  findContactsByUserIds(userIds: string[]): Promise<dbBaseContact[]>;
   searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,

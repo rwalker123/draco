@@ -117,6 +117,35 @@ export class PrismaContactRepository implements IContactRepository {
     });
   }
 
+  async findContactsByUserIds(userIds: string[]): Promise<dbBaseContact[]> {
+    if (!userIds.length) {
+      return [];
+    }
+
+    return await this.prisma.contacts.findMany({
+      where: {
+        userid: { in: userIds },
+      },
+      select: {
+        id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        phone1: true,
+        phone2: true,
+        phone3: true,
+        streetaddress: true,
+        city: true,
+        state: true,
+        zip: true,
+        dateofbirth: true,
+        middlename: true,
+        creatoraccountid: true,
+        userid: true,
+      },
+    });
+  }
+
   async searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,

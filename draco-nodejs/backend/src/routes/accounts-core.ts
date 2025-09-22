@@ -6,24 +6,19 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { Prisma } from '@prisma/client';
 import { AccountSearchQuerySchema, AccountDomainLookupHeadersSchema } from '@draco/shared-schemas';
-import { RoleNamesType } from '../types/roles.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { getAccountLogoUrl } from '../config/logo.js';
-import { ROLE_IDS } from '../config/roles.js';
 import prisma from '../lib/prisma.js';
 import {
   PublicAccountResponse,
   PublicSeasonResponse,
-  AccountListResponse,
-  AccountListContact,
   AccountAffiliation,
   PublicSeason,
 } from '../interfaces/accountInterfaces.js';
 
 const router = Router({ mergeParams: true });
-export const roleService = ServiceFactory.getRoleService();
 const accountsService = ServiceFactory.getAccountsService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
@@ -62,150 +57,15 @@ router.get(
 
 /**
  * GET /api/accounts/my-accounts
- * Get accounts accessible to the current user (Account Admin or Administrator)
+ * Return the accounts accessible to the authenticated user using shared schema types
  */
 router.get(
   '/my-accounts',
   authenticateToken,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
-
-    // Check if user is global administrator
-    const isAdmin = await roleService.hasRole(userId, ROLE_IDS[RoleNamesType.ADMINISTRATOR], {
-      accountId: BigInt(0),
-    });
-
-    const accountSelect: Prisma.accountsSelect = {
-      id: true,
-      name: true,
-      accounttypeid: true,
-      owneruserid: true,
-      firstyear: true,
-      affiliationid: true,
-      timezoneid: true,
-      twitteraccountname: true,
-      youtubeuserid: true,
-      facebookfanpage: true,
-      defaultvideo: true,
-      autoplayvideo: true,
-      accounttypes: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    };
-    const accountListArgs = {
-      select: accountSelect,
-      orderBy: {
-        name: Prisma.SortOrder.asc,
-      },
-    } as const;
-    type AccountList = Prisma.accountsGetPayload<typeof accountListArgs>;
-
-    let accounts: AccountList[] = [];
-    if (isAdmin.hasRole) {
-      // Administrator can see all accounts
-      accounts = await prisma.accounts.findMany(accountListArgs);
-    } else {
-      // Account Admin can only see accounts they have access to
-      const userRoles = await roleService.getUserRoles(userId);
-      const accountAdminRoles = userRoles.contactRoles.filter(
-        (role) => role.roleId === 'AccountAdmin' && role.accountId,
-      );
-
-      if (accountAdminRoles.length === 0) {
-        res.json({
-          success: true,
-          data: {
-            accounts: [],
-          },
-        });
-        return;
-      }
-
-      const accountIds = accountAdminRoles.map((role) => BigInt(role.accountId));
-
-      accounts = await prisma.accounts.findMany({
-        where: {
-          id: { in: accountIds },
-        },
-        select: accountSelect,
-        orderBy: {
-          name: 'asc',
-        },
-      });
-    }
-
-    // Common code for both branches
-    const affiliationIds = [...new Set(accounts.map((acc) => acc.affiliationid))];
-    const affiliations = await prisma.affiliations.findMany({
-      where: {
-        id: { in: affiliationIds },
-      },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-      },
-    });
-
-    const affiliationMap = new Map(affiliations.map((aff) => [aff.id.toString(), aff]));
-
-    // Get contact information for owner users
-    const ownerUserIds = [
-      ...new Set(accounts.map((acc) => acc.owneruserid).filter((id) => id !== null)),
-    ];
-    const contacts: AccountListContact[] = (
-      await prisma.contacts.findMany({
-        where: {
-          userid: { in: ownerUserIds },
-        },
-        select: {
-          userid: true,
-          firstname: true,
-          lastname: true,
-          email: true,
-        },
-      })
-    ).map((contact) => ({
-      userid: contact.userid ?? '',
-      firstname: contact.firstname,
-      lastname: contact.lastname,
-      email: contact.email,
-    }));
-
-    const contactMap = new Map<string, AccountListContact>(
-      contacts.map((contact) => [contact.userid, contact]),
-    );
-
-    res.json({
-      success: true,
-      data: {
-        accounts: accounts.map((account: AccountList): AccountListResponse => {
-          const contact = account.owneruserid ? contactMap.get(account.owneruserid) : undefined;
-          return {
-            id: account.id.toString(),
-            name: account.name,
-            accountTypeId: account.accounttypeid.toString(),
-            accountType: account.accounttypes?.name,
-            ownerUserId: account.owneruserid ? account.owneruserid.toString() : null,
-            ownerName: contact ? `${contact.firstname} ${contact.lastname}` : 'Unknown Owner',
-            ownerEmail: contact?.email ?? '',
-            firstYear: account.firstyear,
-            affiliationId: account.affiliationid.toString(),
-            affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
-            timezoneId: account.timezoneid ?? '',
-            twitterAccountName: account.twitteraccountname ?? '',
-            youtubeUserId: account.youtubeuserid ?? null,
-            facebookFanPage: account.facebookfanpage ?? null,
-            defaultVideo: account.defaultvideo ?? '',
-            autoPlayVideo: account.autoplayvideo,
-            accountLogoUrl: getAccountLogoUrl(account.id.toString()),
-          };
-        }),
-      },
-    });
+    const accounts = await accountsService.getAccountsForUser(userId);
+    res.json(accounts);
   }),
 );
 

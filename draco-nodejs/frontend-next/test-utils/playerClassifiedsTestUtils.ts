@@ -306,7 +306,19 @@ export const createMockRoleContext = (overrides: Partial<RoleContextType> = {}) 
     clearRoles: vi.fn(),
   };
 
-  const context = { ...defaultContext, ...overrides };
+  const context: RoleContextType = {
+    ...defaultContext,
+    ...overrides,
+    userRoles: overrides.userRoles
+      ? {
+          accountId: overrides.userRoles.accountId ?? defaultContext.userRoles?.accountId ?? '1',
+          globalRoles:
+            overrides.userRoles.globalRoles ?? defaultContext.userRoles?.globalRoles ?? [],
+          contactRoles:
+            overrides.userRoles.contactRoles ?? defaultContext.userRoles?.contactRoles ?? [],
+        }
+      : defaultContext.userRoles,
+  };
 
   // Override hasRole to use the actual userRoles from the context
   context.hasRole = (roleId: string) => {

@@ -131,4 +131,19 @@ export class PrismaAccountRepository implements IAccountRepository {
       },
     });
   }
+
+  async findAccountsWithRelations(accountIds?: bigint[]): Promise<dbAccount[]> {
+    const whereClause = accountIds && accountIds.length ? { id: { in: accountIds } } : undefined;
+
+    return this.prisma.accounts.findMany({
+      where: whereClause,
+      include: {
+        accounttypes: true,
+        accountsurl: true,
+      },
+      orderBy: {
+        name: Prisma.SortOrder.asc,
+      },
+    });
+  }
 }
