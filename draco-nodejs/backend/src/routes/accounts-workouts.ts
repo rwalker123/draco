@@ -33,39 +33,12 @@ const registrationLimiter = rateLimit({
 });
 
 /**
- * @swagger
- * tags:
- *   - name: Workouts
- *     description: Account workouts and registrations
+ * Workouts API routes for account-specific workout management and registrations.
  */
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts:
- *   get:
- *     summary: List workouts
- *     description: Public endpoint to list workouts for an account
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [upcoming, past, all]
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *     responses:
- *       200:
- *         description: List of workouts
+ * GET /api/accounts/:accountId/workouts
+ * Public endpoint that lists workouts with optional status and pagination filters.
  */
 router.get(
   '/:accountId/workouts',
@@ -137,28 +110,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/{workoutId}:
- *   get:
- *     summary: Get workout details
- *     description: Public endpoint to get a workout
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: workoutId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Workout details
- *       404:
- *         description: Workout not found
+ * GET /api/accounts/:accountId/workouts/:workoutId
+ * Retrieves a single workout for public consumption, returning 404 when absent.
  */
 router.get(
   '/:accountId/workouts/:workoutId',
@@ -260,27 +213,8 @@ router.put(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/{workoutId}:
- *   delete:
- *     summary: Delete a workout
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: workoutId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Deleted
+ * DELETE /api/accounts/:accountId/workouts/:workoutId
+ * Deletes a workout when the caller has the workout.manage permission.
  */
 router.delete(
   '/:accountId/workouts/:workoutId',
@@ -296,27 +230,8 @@ router.delete(
 );
 
 /**
- * @swagger
- * /api/accounts/{accountId}/workouts/{workoutId}/registrations:
- *   get:
- *     summary: List registrations for a workout
- *     security:
- *       - bearerAuth: []
- *     tags: [Workouts]
- *     parameters:
- *       - in: path
- *         name: accountId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: workoutId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of registrations
+ * GET /api/accounts/:accountId/workouts/:workoutId/registrations
+ * Lists registrations for a workout (requires workout.manage permission).
  */
 router.get(
   '/:accountId/workouts/:workoutId/registrations',
