@@ -129,8 +129,8 @@ export interface ITeamsWantedContactInfo {
   birthDate: string | null;
 }
 
-// Teams Wanted response (owner view with access code)
-export interface ITeamsWantedOwnerResponse extends ITeamsWantedClassified {
+// Teams Wanted response (owner view with verified contact info)
+export interface ITeamsWantedOwnerResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
   account: {
     id: string;
     name: string;
