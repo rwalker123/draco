@@ -7,31 +7,8 @@ import { DateUtils } from '../utils/dateUtils.js';
 const router = Router();
 
 /**
- * @swagger
- * /api/monitoring/health:
- *   get:
- *     summary: Get comprehensive system health status
- *     tags: [Monitoring]
- *     responses:
- *       200:
- *         description: System health information
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   enum: [healthy, warning, critical]
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- *                 database:
- *                   type: object
- *                 performance:
- *                   type: object
- *                 uptime:
- *                   type: number
+ * GET /api/monitoring/health
+ * Provides aggregated health details covering database connectivity, performance, and uptime.
  */
 router.get('/health', async (req: Request, res: Response) => {
   try {
@@ -89,20 +66,8 @@ router.get('/health', async (req: Request, res: Response) => {
 });
 
 /**
- * @swagger
- * /api/monitoring/performance:
- *   get:
- *     summary: Get detailed performance metrics
- *     tags: [Monitoring]
- *     parameters:
- *       - in: query
- *         name: window
- *         schema:
- *           type: integer
- *         description: Time window in minutes (default 5)
- *     responses:
- *       200:
- *         description: Performance metrics
+ * GET /api/monitoring/performance
+ * Returns recent performance metrics, optionally scoped by a time window.
  */
 router.get('/performance', (req: Request, res: Response) => {
   try {
@@ -158,20 +123,8 @@ router.get('/performance', (req: Request, res: Response) => {
 });
 
 /**
- * @swagger
- * /api/monitoring/slow-queries:
- *   get:
- *     summary: Get recent slow queries
- *     tags: [Monitoring]
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Number of queries to return (default 20)
- *     responses:
- *       200:
- *         description: List of slow queries
+ * GET /api/monitoring/slow-queries
+ * Lists recent slow database queries with optional limits.
  */
 router.get('/slow-queries', (req: Request, res: Response) => {
   try {
@@ -201,14 +154,8 @@ router.get('/slow-queries', (req: Request, res: Response) => {
 });
 
 /**
- * @swagger
- * /api/monitoring/connection-pool:
- *   get:
- *     summary: Get connection pool status
- *     tags: [Monitoring]
- *     responses:
- *       200:
- *         description: Connection pool metrics
+ * GET /api/monitoring/connection-pool
+ * Reports current database connection pool utilization and recommendations.
  */
 router.get('/connection-pool', (req: Request, res: Response) => {
   try {
@@ -266,14 +213,8 @@ function getConnectionPoolRecommendations(metrics: {
 }
 
 /**
- * @swagger
- * /api/monitoring/reset:
- *   post:
- *     summary: Reset performance monitoring data
- *     tags: [Monitoring]
- *     responses:
- *       200:
- *         description: Monitoring data reset successfully
+ * POST /api/monitoring/reset
+ * Clears collected monitoring statistics.
  */
 router.post('/reset', (req: Request, res: Response) => {
   try {
@@ -293,14 +234,8 @@ router.post('/reset', (req: Request, res: Response) => {
 });
 
 /**
- * @swagger
- * /api/monitoring/config:
- *   get:
- *     summary: Get current monitoring configuration
- *     tags: [Monitoring]
- *     responses:
- *       200:
- *         description: Current monitoring configuration
+ * GET /api/monitoring/config
+ * Returns current monitoring configuration values and system metadata.
  */
 router.get('/config', (req: Request, res: Response) => {
   try {
