@@ -1,6 +1,6 @@
 import { Prisma, PrismaClient, accounts } from '@prisma/client';
 import { IAccountRepository } from '../interfaces/index.js';
-import { dbAccountAffiliation, dbAccountSearchResult } from '../types/index.js';
+import { dbAccountAffiliation, dbAccount } from '../types/index.js';
 
 export class PrismaAccountRepository implements IAccountRepository {
   constructor(private prisma: PrismaClient) {}
@@ -62,7 +62,7 @@ export class PrismaAccountRepository implements IAccountRepository {
     return accountUrl?.accounts || null;
   }
 
-  async searchByTerm(searchTerm: string, limit = 20): Promise<dbAccountSearchResult[]> {
+  async searchByTerm(searchTerm: string, limit = 20): Promise<dbAccount[]> {
     return this.prisma.accounts.findMany({
       where: {
         OR: [
@@ -82,27 +82,9 @@ export class PrismaAccountRepository implements IAccountRepository {
           },
         ],
       },
-      select: {
-        id: true,
-        name: true,
-        accounttypeid: true,
-        firstyear: true,
-        affiliationid: true,
-        accounttypes: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        accountsurl: {
-          select: {
-            id: true,
-            url: true,
-          },
-          orderBy: {
-            id: Prisma.SortOrder.asc,
-          },
-        },
+      include: {
+        accountsurl: true,
+        accounttypes: true,
       },
       orderBy: {
         name: Prisma.SortOrder.asc,

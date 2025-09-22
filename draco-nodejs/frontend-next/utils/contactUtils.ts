@@ -1,4 +1,4 @@
-import { ContactDetailsType } from '@draco/shared-schemas';
+import { ContactDetailsType, NamedContactType } from '@draco/shared-schemas';
 
 /**
  * Format phone number for display
@@ -88,6 +88,21 @@ export const getFormattedName = (
   }
 
   return formattedName;
+};
+
+/**
+ * Get display name for contact
+ */
+export const getContactDisplayName = (
+  contact: NamedContactType | undefined,
+  shortName: boolean = false,
+): string => {
+  if (!contact) return '';
+  if (shortName) {
+    return `${contact.firstName} ${contact.lastName}`.trim();
+  }
+
+  return getFormattedName(contact.firstName, contact.lastName, contact.middleName);
 };
 
 /**

@@ -5,11 +5,11 @@ import { useAuth } from '../../context/AuthContext';
 import OrganizationsWidget from '../../components/OrganizationsWidget';
 import { searchAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
-import type { OrganizationAccount } from '../../components/OrganizationsWidget';
+import { AccountType } from '@draco/shared-schemas';
 
 const Accounts: React.FC = () => {
   const [showSignup, setShowSignup] = useState(false);
-  const [searchResults, setSearchResults] = useState<OrganizationAccount[]>([]);
+  const [searchResults, setSearchResults] = useState<AccountType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const { user } = useAuth();
@@ -43,7 +43,7 @@ const Accounts: React.FC = () => {
           return;
         }
 
-        setSearchResults(result.data ?? []);
+        setSearchResults((result.data as AccountType[]) ?? []);
       } catch (error) {
         console.error('Account search failed:', error);
         setSearchResults([]);

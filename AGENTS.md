@@ -7,6 +7,10 @@ For domain-specific workflows, start with these focused references:
 - Frontend (Next.js): [Frontend Agent Guide](draco-nodejs/frontend-next/AGENTS.md)
 - Shared Schemas & API Client: [Shared Agent Guide](draco-nodejs/shared/AGENTS.md)
 
+## Restricted Modifications
+- Never create or edit files beneath `draco-nodejs/shared/shared-schemas` without first pausing to obtain explicit approval; stop work and request confirmation before making any change in that directory.
+- Don't make up data model hacks and workarounds because this is restricted, never do that. For example, never force cast like .. as unknown as some other type.
+
 ## Project Structure & Module Organization
 The root `package.json` supervises npm workspaces for `draco-nodejs/backend`, `draco-nodejs/frontend-next`, and `draco-nodejs/shared/*`. Backend TypeScript code lives in `backend/src` with controllers, routes, services, and middleware split into dedicated folders; database schema and migrations stay in `backend/prisma`. The Next.js app sits in `frontend-next/app` and `components`, with shared state and utilities in `context`, `hooks`, and `utils`. Generated schemas and API clients are stored under `draco-nodejs/shared` and must be regenerated when the OpenAPI spec changes.
 

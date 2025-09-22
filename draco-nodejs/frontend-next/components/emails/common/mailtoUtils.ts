@@ -1,4 +1,4 @@
-import { NamedContactType, BaseContactType } from '@draco/shared-schemas';
+import { BaseContactType } from '@draco/shared-schemas';
 
 export interface MailtoOptions {
   to?: string[];
@@ -82,11 +82,4 @@ export function generateBulkMailto(
  */
 export function hasValidEmail(contact: BaseContactType): boolean {
   return Boolean(contact.email && contact.email.trim().length > 0);
-}
-
-/**
- * Get display name for contact
- */
-export function getContactDisplayName(contact: NamedContactType): string {
-  return `${contact.firstName} ${contact.lastName}`.trim();
 }

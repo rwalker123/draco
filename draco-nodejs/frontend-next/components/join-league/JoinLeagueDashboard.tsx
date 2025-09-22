@@ -4,11 +4,11 @@ import TrainingSection from './TrainingSection';
 import PlayersWantedPreview from './PlayersWantedPreview';
 import ContactLeagueSection from './ContactLeagueSection';
 import { WorkoutSummary } from '../../types/workouts';
-import { SocialAccount } from '../../types/account';
+import { AccountType } from '@draco/shared-schemas';
 
 interface JoinLeagueDashboardProps {
   accountId: string;
-  account: SocialAccount;
+  account: AccountType;
   workouts: WorkoutSummary[];
   token?: string;
 }

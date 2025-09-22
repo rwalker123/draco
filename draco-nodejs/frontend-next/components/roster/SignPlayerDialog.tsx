@@ -20,6 +20,7 @@ import { PersonAdd as PersonAddIcon, SportsBasketball as SportsIcon } from '@mui
 import { BaseContactType, RosterPlayerType, SignRosterMemberType } from '@draco/shared-schemas';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useDelayedLoading } from '../../hooks/useDelayedLoading';
+import { getContactDisplayName } from '../../utils/contactUtils';
 
 interface SignPlayerDialogProps {
   open: boolean;
@@ -324,23 +325,6 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     resetFormForNextPlayer,
   ]);
 
-  // Helper function to format names as "Last, First Middle"
-  const formatName = (contact: BaseContactType) => {
-    const lastName = contact.lastName || '';
-    const firstName = contact.firstName || '';
-    const middleName = contact.middleName || '';
-
-    let formattedName = lastName;
-    if (firstName) {
-      formattedName += `, ${firstName}`;
-    }
-    if (middleName) {
-      formattedName += ` ${middleName}`;
-    }
-
-    return formattedName;
-  };
-
   return (
     <Dialog open={open} onClose={isSigningPlayer ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
@@ -373,7 +357,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
           {isSigningNewPlayer && (
             <Autocomplete
               options={availablePlayers}
-              getOptionLabel={(option) => formatName(option)}
+              getOptionLabel={(option) => getContactDisplayName(option)}
               filterOptions={(options) => options}
               value={selectedPlayer && 'firstName' in selectedPlayer ? selectedPlayer : null}
               inputValue={searchInput}
@@ -405,7 +389,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
           {/* Player Name Display (only for editing existing players) */}
           {!isSigningNewPlayer && selectedPlayer && 'contact' in selectedPlayer && (
             <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-              {formatName((selectedPlayer as RosterPlayerType).contact)}
+              {getContactDisplayName((selectedPlayer as RosterPlayerType).contact)}
             </Typography>
           )}
 

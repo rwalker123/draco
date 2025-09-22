@@ -757,31 +757,56 @@
           "name": {
             "type": "string"
           },
-          "accountType": {
+          "accountLogoUrl": {
             "type": "string"
           },
-          "firstYear": {
-            "type": "integer",
-            "nullable": true
-          },
-          "affiliation": {
+          "configuration": {
             "type": "object",
             "properties": {
-              "id": {
-                "type": "string"
+              "accountType": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
               },
-              "name": {
-                "type": "string"
+              "firstYear": {
+                "type": "integer",
+                "nullable": true
               },
-              "url": {
+              "timezoneId": {
                 "type": "string",
                 "nullable": true
+              },
+              "affiliation": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
               }
-            },
-            "required": [
-              "id",
-              "name"
-            ]
+            }
           },
           "urls": {
             "type": "array",
@@ -800,42 +825,179 @@
                 "id",
                 "url"
               ]
-            }
+            },
+            "default": []
           },
           "accountOwner": {
             "type": "object",
             "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^d+$"
+              "user": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "userName": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "format": "email"
+                  },
+                  "token": {
+                    "type": "string"
+                  },
+                  "contact": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^d+$"
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 50
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 50
+                      },
+                      "middleName": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "email": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "email"
+                      },
+                      "userId": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "photoUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "contactDetails": {
+                        "type": "object",
+                        "properties": {
+                          "phone1": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "phone2": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "phone3": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "streetAddress": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 100,
+                            "default": ""
+                          },
+                          "city": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 50,
+                            "default": ""
+                          },
+                          "state": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 50,
+                            "default": ""
+                          },
+                          "zip": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 10,
+                            "default": ""
+                          },
+                          "dateOfBirth": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "firstName",
+                      "lastName"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "userName"
+                ]
               },
-              "firstName": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "lastName": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "middleName": {
-                "type": "string",
-                "maxLength": 50
+              "contact": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^d+$"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "middleName": {
+                    "type": "string",
+                    "maxLength": 50
+                  }
+                },
+                "required": [
+                  "id",
+                  "firstName",
+                  "lastName"
+                ]
               }
-            },
-            "required": [
-              "id",
-              "firstName",
-              "lastName"
-            ]
+            }
+          },
+          "socials": {
+            "type": "object",
+            "properties": {
+              "twitterAccountName": {
+                "type": "string"
+              },
+              "facebookFanPage": {
+                "type": "string"
+              },
+              "youtubeUserId": {
+                "type": "string",
+                "nullable": true
+              },
+              "defaultVideo": {
+                "type": "string",
+                "nullable": true
+              },
+              "autoPlayVideo": {
+                "type": "boolean",
+                "default": false
+              }
+            }
           }
         },
         "required": [
           "id",
-          "name",
-          "firstYear",
-          "urls"
+          "name"
         ]
       },
       "AccountSearchQuery": {

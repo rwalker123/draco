@@ -52,6 +52,7 @@ import {
   ContactType,
   TeamRosterMembersType,
 } from '@draco/shared-schemas';
+import { getContactDisplayName } from '../../../../../../../../utils/contactUtils';
 
 interface TeamRosterManagementProps {
   accountId: string;
@@ -584,23 +585,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     );
   };
 
-  // Helper function to format names as "Last, First Middle"
-  const formatName = (contact: BaseContactType) => {
-    const lastName = contact.lastName || '';
-    const firstName = contact.firstName || '';
-    const middleName = contact.middleName || ''; // ✅ Use top-level middleName
-
-    let formattedName = lastName;
-    if (firstName) {
-      formattedName += `, ${firstName}`;
-    }
-    if (middleName) {
-      formattedName += ` ${middleName}`;
-    }
-
-    return formattedName;
-  };
-
   // Helper function to format verification information
   const formatVerificationInfo = (member: RosterMemberType) => {
     const info = [];
@@ -973,7 +957,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                       />
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {formatName(member.player.contact)}
+                          {getContactDisplayName(member.player.contact)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           First Year: {member.player.firstYear || 'Not set'}
@@ -1094,7 +1078,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                             variant="body1"
                             sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}
                           >
-                            {formatName(member.player.contact)}
+                            {getContactDisplayName(member.player.contact)}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             First Year: {member.player.firstYear || 'Not set'}
@@ -1194,8 +1178,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
             Are you sure you want to permanently delete{' '}
-            <strong>{playerToDelete ? formatName(playerToDelete.player.contact) : ''}</strong> from
-            the roster?
+            <strong>
+              {playerToDelete ? getContactDisplayName(playerToDelete.player.contact) : ''}
+            </strong>{' '}
+            from the roster?
           </Typography>
           <Alert severity="warning">
             This action cannot be undone. The player will be permanently removed from the team
@@ -1249,7 +1235,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
             options={activePlayers.filter(
               (member) => !managers.some((m) => m.contact.id === member.player.contact.id),
             )}
-            getOptionLabel={(option) => formatName(option.player.contact)}
+            getOptionLabel={(option) => getContactDisplayName(option.player.contact)}
             value={
               activePlayers.find(
                 (member) => member.player.contact.id === selectedManagerContactId,

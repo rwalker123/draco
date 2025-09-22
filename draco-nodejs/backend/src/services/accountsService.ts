@@ -3,7 +3,7 @@ import {
   RepositoryFactory,
   IAccountRepository,
   dbAccountAffiliation,
-  dbAccountSearchResult,
+  dbAccount,
 } from '../repositories/index.js';
 import { AccountResponseFormatter } from '../utils/responseFormatters.js';
 
@@ -16,8 +16,7 @@ export class AccountsService {
 
   async searchAccounts(searchTerm: string): Promise<AccountType[]> {
     const normalizedSearchTerm = searchTerm.trim();
-    const accounts: dbAccountSearchResult[] =
-      await this.accountRepository.searchByTerm(normalizedSearchTerm);
+    const accounts: dbAccount[] = await this.accountRepository.searchByTerm(normalizedSearchTerm);
 
     if (accounts.length === 0) {
       return [];
@@ -40,6 +39,6 @@ export class AccountsService {
       affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
     );
 
-    return AccountResponseFormatter.formatAccountSummaries(accounts, affiliationMap);
+    return AccountResponseFormatter.formatAccounts(accounts, affiliationMap);
   }
 }
