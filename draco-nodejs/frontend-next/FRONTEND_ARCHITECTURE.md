@@ -186,6 +186,22 @@ export function useServiceHook(accountId: string) {
 }
 ```
 
+### OpenAPI Client Integration
+
+Generated operations from `@draco/shared-api-client` expect a configured HTTP client. Always hydrate them with the shared instance returned from `useApiClient`, which wraps `createClient`/`createConfig` and injects the active auth token.
+
+```typescript
+const apiClient = useApiClient();
+
+const result = await apiGetContactRoster({
+  path: { accountId, contactId },
+  client: apiClient,
+  throwOnError: false,
+});
+```
+
+Leaving out the `client` parameter causes the generated helper to throw because it has no transport configuration. Keep the `client: apiClient` field in every OpenAPI call (for example `apiUpdateRosterMember({...})` in `useRosterDataManager`) so requests inherit the authenticated base configuration.
+
 ### State Management Pattern
 
 Use consistent state management patterns throughout the application.

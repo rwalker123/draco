@@ -15,3 +15,8 @@
 - `types` and `utils` — Shared types and helpers sourced from `@draco/shared-schemas`.
 
 Refer back to the architecture guide for component patterns, data flow, and integration examples.
+
+## OpenAPI Client Usage
+- Always create the generated OpenAPI client with `useApiClient()`.
+- Every call to a generated operation **must** include `client: apiClient` in the options object (see `useRosterDataManager` for examples).
+- Omitting the client causes the helper to throw because it lacks the HTTP transport configuration.
