@@ -11,6 +11,8 @@ interface JoinLeagueDashboardProps {
   account: AccountType;
   workouts: WorkoutSummary[];
   token?: string;
+  showViewAllWorkoutsButton?: boolean;
+  onViewAllWorkouts?: () => void;
 }
 
 const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
@@ -18,6 +20,8 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
   account,
   workouts,
   token,
+  showViewAllWorkoutsButton,
+  onViewAllWorkouts,
 }) => {
   const hasAnyContent = workouts.length > 0;
 
@@ -78,7 +82,13 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
             },
           }}
         >
-          <TrainingSection workouts={workouts} accountId={accountId} token={token} />
+          <TrainingSection
+            workouts={workouts}
+            accountId={accountId}
+            token={token}
+            showViewAllWorkoutsButton={showViewAllWorkoutsButton}
+            onViewAllWorkouts={onViewAllWorkouts}
+          />
         </Box>
 
         {/* Players Wanted Section */}
