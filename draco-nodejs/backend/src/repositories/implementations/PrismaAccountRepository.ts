@@ -1,5 +1,6 @@
-import { PrismaClient, accounts } from '@prisma/client';
+import { Prisma, PrismaClient, accounts } from '@prisma/client';
 import { IAccountRepository } from '../interfaces/index.js';
+import { dbAccountAffiliation, dbAccountSearchResult } from '../types/index.js';
 
 export class PrismaAccountRepository implements IAccountRepository {
   constructor(private prisma: PrismaClient) {}
@@ -59,5 +60,71 @@ export class PrismaAccountRepository implements IAccountRepository {
       },
     });
     return accountUrl?.accounts || null;
+  }
+
+  async searchByTerm(searchTerm: string, limit = 20): Promise<dbAccountSearchResult[]> {
+    return this.prisma.accounts.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: searchTerm,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            accounttypes: {
+              name: {
+                contains: searchTerm,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        accounttypeid: true,
+        firstyear: true,
+        affiliationid: true,
+        accounttypes: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        accountsurl: {
+          select: {
+            id: true,
+            url: true,
+          },
+          orderBy: {
+            id: Prisma.SortOrder.asc,
+          },
+        },
+      },
+      orderBy: {
+        name: Prisma.SortOrder.asc,
+      },
+      take: limit,
+    });
+  }
+
+  async findAffiliationsByIds(ids: bigint[]): Promise<dbAccountAffiliation[]> {
+    if (!ids.length) {
+      return [];
+    }
+
+    return this.prisma.affiliations.findMany({
+      where: {
+        id: { in: ids },
+      },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+      },
+    });
   }
 }

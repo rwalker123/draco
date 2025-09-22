@@ -748,6 +748,109 @@
           "lastName"
         ]
       },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "accountType": {
+            "type": "string"
+          },
+          "firstYear": {
+            "type": "integer",
+            "nullable": true
+          },
+          "affiliation": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "url"
+              ]
+            }
+          },
+          "accountOwner": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "middleName": {
+                "type": "string",
+                "maxLength": 50
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "firstYear",
+          "urls"
+        ]
+      },
+      "AccountSearchQuery": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "q"
+        ]
+      },
       "ValidationError": {
         "type": "object",
         "properties": {
@@ -938,6 +1041,63 @@
     "parameters": {}
   },
   "paths": {
+    "/api/accounts/search": {
+      "get": {
+        "operationId": "searchAccounts",
+        "summary": "Search accounts",
+        "description": "Public search for accounts by name or type",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accounts matching the search query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Account"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/contacts": {
       "post": {
         "description": "Create a new contact",

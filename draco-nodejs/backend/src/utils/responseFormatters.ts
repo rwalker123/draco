@@ -12,6 +12,7 @@ import {
   TeamManagerWithTeamsType,
   PagedContactType,
   ContactRoleType,
+  AccountType,
 } from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
 import { getContactPhotoUrl } from '../config/logo.js';
@@ -27,6 +28,8 @@ import {
   dbContactRoles,
   dbContactWithRoleAndDetails,
   dbTeamSeasonManagerContact,
+  dbAccountSearchResult,
+  dbAccountAffiliation,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
 import { PaginationHelper } from './pagination.js';
@@ -36,6 +39,41 @@ interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
+}
+
+export class AccountResponseFormatter {
+  static formatAccountSummaries(
+    accounts: dbAccountSearchResult[],
+    affiliationMap: Map<string, dbAccountAffiliation>,
+  ): AccountType[] {
+    return accounts.map((account) => this.formatAccount(account, affiliationMap));
+  }
+
+  private static formatAccount(
+    account: dbAccountSearchResult,
+    affiliationMap: Map<string, dbAccountAffiliation>,
+  ): AccountType {
+    const affiliationId = account.affiliationid ? account.affiliationid.toString() : undefined;
+    const affiliationRecord = affiliationId ? affiliationMap.get(affiliationId) : undefined;
+
+    return {
+      id: account.id.toString(),
+      name: account.name,
+      accountType: account.accounttypes?.name ?? undefined,
+      firstYear: account.firstyear,
+      affiliation: affiliationRecord
+        ? {
+            id: affiliationRecord.id.toString(),
+            name: affiliationRecord.name,
+            url: affiliationRecord.url,
+          }
+        : undefined,
+      urls: account.accountsurl.map((url) => ({
+        id: url.id.toString(),
+        url: url.url,
+      })),
+    };
+  }
 }
 
 export class ContactResponseFormatter {

@@ -44,7 +44,7 @@ router.post(
     }
     await storageService.saveAccountLogo(accountId, req.file.buffer);
     const accountLogoUrl = getAccountLogoUrl(accountId);
-    res.json({ success: true, accountLogoUrl });
+    res.json(accountLogoUrl);
   }),
 );
 
@@ -73,7 +73,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = req.params.accountId;
     await storageService.deleteAccountLogo(accountId);
-    res.json({ success: true });
+    res.json(true);
   }),
 );
 

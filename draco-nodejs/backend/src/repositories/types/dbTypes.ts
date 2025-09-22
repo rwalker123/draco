@@ -157,3 +157,36 @@ export type dbAuthResponse = {
     username: string;
   };
 };
+
+export type dbAccountSearchResult = Prisma.accountsGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    accounttypeid: true;
+    firstyear: true;
+    affiliationid: true;
+    accounttypes: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+    accountsurl: {
+      select: {
+        id: true;
+        url: true;
+      };
+      orderBy: {
+        id: 'asc';
+      };
+    };
+  };
+}>;
+
+export type dbAccountAffiliation = Prisma.affiliationsGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    url: true;
+  };
+}>;
