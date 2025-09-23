@@ -22,15 +22,17 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import BaseballAccountHome from '../BaseballAccountHome';
+import { getAccountById } from '@draco/shared-api-client';
+import { useApiClient } from '../../../../hooks/useApiClient';
 
 interface Account {
   id: string;
   name: string;
-  accountType: string;
-  accountTypeId: string;
-  firstYear: number;
+  accountType?: string;
+  accountTypeId?: string;
+  firstYear: number | null;
   affiliation?: string;
-  timezoneId: string;
+  timezoneId?: string;
   twitterAccountName?: string;
   facebookFanPage?: string;
   urls: Array<{ id: string; url: string }>;
@@ -50,62 +52,111 @@ const AccountHome: React.FC = () => {
   const { user } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
+  const apiClient = useApiClient();
+  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
 
   useEffect(() => {
-    if (!accountId) return;
+    if (!accountIdStr) {
+      setAccount(null);
+      setSeasons([]);
+      setError('Account not found or not publicly accessible');
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
 
     const fetchAccountData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`/api/accounts/${accountId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const result = await getAccountById({
+          client: apiClient,
+          path: { accountId: accountIdStr },
+          query: { includeCurrentSeason: true },
+          throwOnError: false,
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setAccount(data.data.account);
-            setSeasons(data.data.seasons || []);
-          } else {
-            setError(data.message || 'Account not found or not publicly accessible');
-          }
-        } else {
-          setError('Account not found or not publicly accessible');
+        if (!isMounted) {
+          return;
         }
-      } catch {
+
+        if (!result.data) {
+          setError('Account not found or not publicly accessible');
+          setAccount(null);
+          setSeasons([]);
+          return;
+        }
+
+        const { account: accountData, seasons: seasonList } = result.data;
+
+        setAccount({
+          id: accountData.id,
+          name: accountData.name,
+          accountType: accountData.configuration?.accountType?.name,
+          accountTypeId: accountData.configuration?.accountType?.id,
+          firstYear: accountData.configuration?.firstYear ?? null,
+          affiliation: accountData.configuration?.affiliation?.name ?? undefined,
+          timezoneId: accountData.configuration?.timezoneId ?? undefined,
+          twitterAccountName: accountData.socials?.twitterAccountName ?? undefined,
+          facebookFanPage: accountData.socials?.facebookFanPage ?? undefined,
+          urls: accountData.urls ?? [],
+        });
+        setSeasons(seasonList ?? []);
+      } catch (err) {
+        if (!isMounted) {
+          return;
+        }
+        console.error('Failed to load account information', err);
         setError('Failed to load account information');
+        setAccount(null);
+        setSeasons([]);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAccountData();
-  }, [accountId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountIdStr, apiClient]);
 
   const handleViewSeasons = () => {
+    if (!accountIdStr) {
+      return;
+    }
+
     if (user) {
-      router.push(`/account/${accountId}/seasons`);
+      router.push(`/account/${accountIdStr}/seasons`);
     } else {
       router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`);
     }
   };
 
   const handleManageAccount = () => {
+    if (!accountIdStr) {
+      return;
+    }
+
     if (user) {
-      router.push(`/account/${accountId}/management`);
+      router.push(`/account/${accountIdStr}/management`);
     } else {
       router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`);
     }
   };
 
   const handleAccountSettings = () => {
+    if (!accountIdStr) {
+      return;
+    }
+
     if (user) {
-      router.push(`/account/${accountId}/settings`);
+      router.push(`/account/${accountIdStr}/settings`);
     } else {
       router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`);
     }
@@ -139,11 +190,15 @@ const AccountHome: React.FC = () => {
   }
 
   // Render baseball-specific home page for baseball accounts
-  if (account.accountType.toLowerCase() === 'baseball') {
+  if (account.accountType?.toLowerCase() === 'baseball') {
     return <BaseballAccountHome />;
   }
 
   const currentSeason = seasons.find((s) => s.isCurrent);
+  const yearsActive =
+    typeof account.firstYear === 'number'
+      ? new Date().getFullYear() - account.firstYear + 1
+      : 'N/A';
 
   return (
     <main className="min-h-screen bg-background">
@@ -154,7 +209,7 @@ const AccountHome: React.FC = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
           <Chip
-            label={account.accountType}
+            label={account.accountType ?? 'Account'}
             color="primary"
             variant="outlined"
             icon={<Business />}
@@ -164,7 +219,7 @@ const AccountHome: React.FC = () => {
           )}
         </Box>
         <Typography variant="body1" color="text.secondary">
-          Established in {account.firstYear} • {account.timezoneId}
+          Established in {account.firstYear ?? 'N/A'} • {account.timezoneId ?? 'Unknown timezone'}
         </Typography>
       </Box>
 
@@ -233,7 +288,7 @@ const AccountHome: React.FC = () => {
         <Card sx={{ flex: '1 1 200px' }}>
           <CardContent>
             <Typography variant="h4" color="primary">
-              {new Date().getFullYear() - account.firstYear + 1}
+              {yearsActive}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Years Active

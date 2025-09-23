@@ -139,10 +139,28 @@ export class PrismaAccountRepository implements IAccountRepository {
       where: whereClause,
       include: {
         accounttypes: true,
-        accountsurl: true,
+        accountsurl: {
+          orderBy: {
+            id: Prisma.SortOrder.asc,
+          },
+        },
       },
       orderBy: {
         name: Prisma.SortOrder.asc,
+      },
+    });
+  }
+
+  async findAccountWithRelationsById(accountId: bigint): Promise<dbAccount | null> {
+    return this.prisma.accounts.findUnique({
+      where: { id: accountId },
+      include: {
+        accounttypes: true,
+        accountsurl: {
+          orderBy: {
+            id: Prisma.SortOrder.asc,
+          },
+        },
       },
     });
   }
