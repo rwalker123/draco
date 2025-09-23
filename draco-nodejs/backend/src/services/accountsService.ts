@@ -1,4 +1,4 @@
-import { AccountType } from '@draco/shared-schemas';
+import { AccountType, AccountWithSeasonsType } from '@draco/shared-schemas';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -9,6 +9,7 @@ import {
   IUserRepository,
   IRoleRepository,
   dbGlobalRoles,
+  ISeasonRepository,
 } from '../repositories/index.js';
 import { AccountResponseFormatter } from '../utils/responseFormatters.js';
 import { NotFoundError } from '../utils/customErrors.js';
@@ -20,12 +21,14 @@ export class AccountsService {
   private readonly contactRepository: IContactRepository;
   private readonly userRepository: IUserRepository;
   private readonly roleRepository: IRoleRepository;
+  private readonly seasonRepository: ISeasonRepository;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.userRepository = RepositoryFactory.getUserRepository();
     this.roleRepository = RepositoryFactory.getRoleRepository();
+    this.seasonRepository = RepositoryFactory.getSeasonRepository();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -134,6 +137,54 @@ export class AccountsService {
     );
 
     return AccountResponseFormatter.formatAccount(account, affiliationMap);
+  }
+
+  async getAccountById(
+    accountId: bigint,
+    options?: { includeCurrentSeason?: boolean },
+  ): Promise<AccountWithSeasonsType> {
+    const account = await this.accountRepository.findAccountWithRelationsById(accountId);
+
+    if (!account) {
+      throw new NotFoundError('Account not found');
+    }
+
+    const affiliationIds = account.affiliationid ? [account.affiliationid] : [];
+    const affiliations = affiliationIds.length
+      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
+      : [];
+
+    const affiliationMap = new Map<string, dbAccountAffiliation>(
+      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
+    );
+
+    const formattedAccount = AccountResponseFormatter.formatAccount(account, affiliationMap);
+
+    const includeCurrentSeason = options?.includeCurrentSeason ?? false;
+    const currentSeasonRecord = await this.seasonRepository.findCurrentSeason(accountId);
+
+    const currentSeason = currentSeasonRecord
+      ? {
+          id: currentSeasonRecord.id.toString(),
+          name: currentSeasonRecord.name,
+        }
+      : null;
+
+    const seasons =
+      includeCurrentSeason && currentSeason
+        ? [
+            {
+              ...currentSeason,
+              isCurrent: true,
+            },
+          ]
+        : [];
+
+    return {
+      account: formattedAccount,
+      currentSeason,
+      seasons,
+    };
   }
 
   private async formatAccounts(accounts: dbAccount[]): Promise<AccountType[]> {

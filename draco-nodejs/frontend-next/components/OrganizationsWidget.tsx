@@ -94,17 +94,19 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
         return;
       }
 
-      const organizations = (data as AccountType[]) || [];
+      const organizations = ((data as AccountType[]) || []).filter((account) =>
+        excludeAccountId ? account.id !== excludeAccountId : true,
+      );
       setAccounts(organizations);
       if (onOrganizationsLoaded) {
-        onOrganizationsLoaded(filteredAccounts);
+        onOrganizationsLoaded(organizations);
       }
     } catch {
       setError('Failed to load your organizations. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, providedOrganizations, onOrganizationsLoaded, apiClient]);
+  }, [user, providedOrganizations, onOrganizationsLoaded, apiClient, excludeAccountId]);
 
   useEffect(() => {
     if (user && !providedOrganizations) {

@@ -28,18 +28,14 @@ import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
 import { listWorkouts } from '../../../services/workoutService';
 import { WorkoutSummary } from '../../../types/workouts';
-import { AccountType } from '@draco/shared-schemas';
 import { JoinLeagueDashboard } from '../../../components/join-league';
-
-interface Season {
-  id: string;
-  name: string;
-  isCurrent: boolean;
-}
+import { getAccountById } from '@draco/shared-api-client';
+import { useApiClient } from '../../../hooks/useApiClient';
+import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
-  const [currentSeason, setCurrentSeason] = useState<Season | null>(null);
+  const [currentSeason, setCurrentSeason] = useState<AccountSeasonWithStatusType | null>(null);
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,45 +47,72 @@ const BaseballAccountHome: React.FC = () => {
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
+  const apiClient = useApiClient();
 
   // Fetch public account data
   useEffect(() => {
-    if (!accountIdStr) return;
+    if (!accountIdStr) {
+      setAccount(null);
+      setCurrentSeason(null);
+      setError('Account ID not found');
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
 
     const fetchAccountData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // Fetch account data
-        const accountResponse = await fetch(`/api/accounts/${accountIdStr}?includeCurrentSeason`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const result = await getAccountById({
+          client: apiClient,
+          path: { accountId: accountIdStr },
+          query: { includeCurrentSeason: true },
+          throwOnError: false,
         });
 
-        if (accountResponse.ok) {
-          const accountData = await accountResponse.json();
-          if (accountData.success) {
-            setAccount(accountData.data.account);
-            setCurrentSeason(accountData.data.currentSeason || null);
-          } else {
-            setError(accountData.message || 'Account not found or not publicly accessible');
-          }
-        } else {
-          setError('Account not found or not publicly accessible');
+        if (!isMounted) {
+          return;
         }
+
+        if (!result.data) {
+          setError('Account not found or not publicly accessible');
+          setAccount(null);
+          setCurrentSeason(null);
+          return;
+        }
+
+        const accountData = result.data.account;
+        setAccount(accountData as AccountType);
+
+        const currentSeasonCandidate = result.data.seasons?.find((season) => season.isCurrent) ?? {
+          ...result.data.currentSeason,
+          isCurrent: true,
+        };
+        setCurrentSeason(currentSeasonCandidate as AccountSeasonWithStatusType);
       } catch (err) {
+        if (!isMounted) {
+          return;
+        }
         console.error('Failed to fetch account data:', err);
         setError('Failed to load account data');
+        setAccount(null);
+        setCurrentSeason(null);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAccountData();
-  }, [accountIdStr]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountIdStr, apiClient]);
 
   // Fetch user teams if logged in
   useEffect(() => {
