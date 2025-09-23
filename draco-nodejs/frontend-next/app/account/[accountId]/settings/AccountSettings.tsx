@@ -8,6 +8,9 @@ import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import UrlManagement from '../../../../components/UrlManagement';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { getAccountById } from '@draco/shared-api-client';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import type { AccountType } from '@draco/shared-schemas';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -38,28 +41,15 @@ function a11yProps(index: number) {
   };
 }
 
-interface Account {
-  id: string;
-  name: string;
-  accountType?: string;
-  firstYear?: number;
-  affiliation?: { name: string; url: string } | null;
-  timezoneId?: string;
-  twitterAccountName?: string;
-  facebookFanPage?: string;
-  youtubeUserId?: string;
-  urls?: Array<{ id: string; url: string }>;
-  ownerName?: string;
-}
-
 const AccountSettings: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const { token } = useAuth();
   const { hasRole } = useRole();
+  const apiClient = useApiClient();
 
   const [tabValue, setTabValue] = useState(0);
-  const [account, setAccount] = useState<Account | null>(null);
+  const [account, setAccount] = useState<AccountType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,28 +60,32 @@ const AccountSettings: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountIdStr}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      if (!accountIdStr) {
+        setError('Account ID not found');
+        setAccount(null);
+        return;
+      }
+
+      const result = await getAccountById({
+        client: apiClient,
+        path: { accountId: accountIdStr },
+        throwOnError: false,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAccount(data.data.account);
-        } else {
-          setError(data.message || 'Failed to load account data');
-        }
-      } else {
-        setError('Failed to load account data');
+      if (result.error || !result.data) {
+        setError(result.error?.message || 'Failed to load account data');
+        setAccount(null);
+        return;
       }
-    } catch {
+
+      setAccount(result.data.account as AccountType);
+    } catch (err) {
+      console.error('Failed to load account data', err);
       setError('Failed to load account data');
     } finally {
       setLoading(false);
     }
-  }, [accountIdStr]);
+  }, [accountIdStr, apiClient]);
 
   useEffect(() => {
     if (accountId && token) {
@@ -202,13 +196,14 @@ const AccountSettings: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 <strong>Account Name:</strong> {account.name}
                 <br />
-                <strong>Account Type:</strong> {account.accountType}
+                <strong>Account Type:</strong>{' '}
+                {account.configuration?.accountType?.name ?? 'Unknown'}
                 <br />
-                <strong>First Year:</strong> {account.firstYear}
+                <strong>First Year:</strong> {account.configuration?.firstYear ?? 'N/A'}
                 <br />
-                <strong>Affiliation:</strong> {account.affiliation?.name || 'None'}
+                <strong>Affiliation:</strong> {account.configuration?.affiliation?.name || 'None'}
                 <br />
-                <strong>Timezone:</strong> {account.timezoneId}
+                <strong>Timezone:</strong> {account.configuration?.timezoneId || 'Not set'}
               </Typography>
             </Box>
           </TabPanel>
@@ -229,11 +224,14 @@ const AccountSettings: React.FC = () => {
 
             <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
               <Typography variant="body2" color="text.secondary">
-                <strong>Twitter Account:</strong> {account.twitterAccountName || 'Not configured'}
+                <strong>Twitter Account:</strong>{' '}
+                {account.socials?.twitterAccountName || 'Not configured'}
                 <br />
-                <strong>Facebook Fan Page:</strong> {account.facebookFanPage || 'Not configured'}
+                <strong>Facebook Fan Page:</strong>{' '}
+                {account.socials?.facebookFanPage || 'Not configured'}
                 <br />
-                <strong>YouTube User ID:</strong> {account.youtubeUserId || 'Not configured'}
+                <strong>YouTube User ID:</strong>{' '}
+                {account.socials?.youtubeUserId || 'Not configured'}
               </Typography>
             </Box>
           </TabPanel>
@@ -254,7 +252,10 @@ const AccountSettings: React.FC = () => {
 
             <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
               <Typography variant="body2" color="text.secondary">
-                <strong>Owner:</strong> {account.ownerName || 'Not assigned'}
+                <strong>Owner:</strong>{' '}
+                {account.accountOwner?.contact
+                  ? `${account.accountOwner.contact.firstName} ${account.accountOwner.contact.lastName}`
+                  : 'Not assigned'}
                 <br />
                 <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}
                 <br />

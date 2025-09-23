@@ -17,6 +17,8 @@ import {
   AccountSchema,
   AccountSearchQuerySchema,
   AccountDomainLookupHeadersSchema,
+  AccountWithSeasonsSchema,
+  AccountDetailsQuerySchema,
 } from '@draco/shared-schemas';
 
 const registry = new OpenAPIRegistry();
@@ -36,6 +38,14 @@ const AccountSearchQuerySchemaRef = registry.register(
 const AccountDomainLookupHeadersSchemaRef = registry.register(
   'AccountDomainLookupHeaders',
   AccountDomainLookupHeadersSchema,
+);
+const AccountWithSeasonsSchemaRef = registry.register(
+  'AccountWithSeasons',
+  AccountWithSeasonsSchema,
+);
+const AccountDetailsQuerySchemaRef = registry.register(
+  'AccountDetailsQuery',
+  AccountDetailsQuerySchema,
 );
 
 // Register error schemas
@@ -130,6 +140,64 @@ registry.registerPath({
     },
     404: {
       description: 'Account not found for the provided domain',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/{accountId}
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/{accountId}',
+  operationId: 'getAccountById',
+  summary: 'Get account by ID',
+  description: 'Retrieve account details and optional current season information.',
+  tags: ['Accounts'],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  request: {
+    query: AccountDetailsQuerySchemaRef,
+  },
+  responses: {
+    200: {
+      description: 'Account details',
+      content: {
+        'application/json': {
+          schema: AccountWithSeasonsSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Account not found',
       content: {
         'application/json': {
           schema: NotFoundErrorSchemaRef,

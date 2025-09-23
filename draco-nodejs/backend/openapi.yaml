@@ -750,6 +750,7 @@ components:
       required:
         - id
         - name
+        - accountLogoUrl
     AccountSearchQuery:
       type: object
       properties:
@@ -767,6 +768,230 @@ components:
           minLength: 1
       required:
         - host
+    AccountWithSeasons:
+      type: object
+      properties:
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            accountLogoUrl:
+              type: string
+            configuration:
+              type: object
+              properties:
+                accountType:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                    - id
+                    - name
+                firstYear:
+                  type: integer
+                  nullable: true
+                timezoneId:
+                  type: string
+                  nullable: true
+                affiliation:
+                  type: object
+                  nullable: true
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    url:
+                      type: string
+                      nullable: true
+                  required:
+                    - id
+                    - name
+            urls:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  url:
+                    type: string
+                    minLength: 1
+                required:
+                  - id
+                  - url
+              default: []
+            accountOwner:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userName:
+                      type: string
+                      maxLength: 100
+                      format: email
+                    token:
+                      type: string
+                    contact:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^d+$
+                        firstName:
+                          type: string
+                          minLength: 1
+                          maxLength: 50
+                        lastName:
+                          type: string
+                          minLength: 1
+                          maxLength: 50
+                        middleName:
+                          type: string
+                          maxLength: 50
+                        email:
+                          type: string
+                          maxLength: 100
+                          format: email
+                        userId:
+                          type: string
+                          maxLength: 50
+                        photoUrl:
+                          type: string
+                          format: uri
+                        contactDetails:
+                          type: object
+                          properties:
+                            phone1:
+                              type: string
+                              nullable: true
+                              default: ""
+                            phone2:
+                              type: string
+                              nullable: true
+                              default: ""
+                            phone3:
+                              type: string
+                              nullable: true
+                              default: ""
+                            streetAddress:
+                              type: string
+                              nullable: true
+                              maxLength: 100
+                              default: ""
+                            city:
+                              type: string
+                              nullable: true
+                              maxLength: 50
+                              default: ""
+                            state:
+                              type: string
+                              nullable: true
+                              maxLength: 50
+                              default: ""
+                            zip:
+                              type: string
+                              nullable: true
+                              maxLength: 10
+                              default: ""
+                            dateOfBirth:
+                              type: string
+                              nullable: true
+                              default: ""
+                      required:
+                        - id
+                        - firstName
+                        - lastName
+                  required:
+                    - id
+                    - userName
+                contact:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      pattern: ^d+$
+                    firstName:
+                      type: string
+                      minLength: 1
+                      maxLength: 50
+                    lastName:
+                      type: string
+                      minLength: 1
+                      maxLength: 50
+                    middleName:
+                      type: string
+                      maxLength: 50
+                  required:
+                    - id
+                    - firstName
+                    - lastName
+            socials:
+              type: object
+              properties:
+                twitterAccountName:
+                  type: string
+                facebookFanPage:
+                  type: string
+                youtubeUserId:
+                  type: string
+                  nullable: true
+                defaultVideo:
+                  type: string
+                  nullable: true
+                autoPlayVideo:
+                  type: boolean
+                  default: false
+          required:
+            - id
+            - name
+            - accountLogoUrl
+        currentSeason:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+          required:
+            - id
+            - name
+        seasons:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              isCurrent:
+                type: boolean
+            required:
+              - id
+              - name
+              - isCurrent
+      required:
+        - account
+        - currentSeason
+        - seasons
+    AccountDetailsQuery:
+      type: object
+      properties:
+        includeCurrentSeason:
+          type: boolean
+          nullable: true
+          default: false
     ValidationError:
       type: object
       properties:
@@ -966,6 +1191,52 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
         "404":
           description: Account not found for the provided domain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}:
+    get:
+      operationId: getAccountById
+      summary: Get account by ID
+      description: Retrieve account details and optional current season information.
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: boolean
+            nullable: true
+            default: false
+          required: false
+          name: includeCurrentSeason
+          in: query
+      responses:
+        "200":
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountWithSeasons"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Account not found
           content:
             application/json:
               schema:
