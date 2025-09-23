@@ -150,6 +150,83 @@ export const AutomaticRoleHoldersSchema = z
     description: 'Automatic role holders',
   });
 
+const booleanQueryParam = z.preprocess((value) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+
+  return undefined;
+}, z.boolean().optional());
+
+export const ContactDeletionQuerySchema = z
+  .object({
+    force: booleanQueryParam.default(false),
+    check: booleanQueryParam.default(false),
+  })
+  .openapi({
+    title: 'ContactDeletionQuery',
+    description: 'Query parameters controlling deletion vs preview behaviour',
+  });
+
+export const ContactDependencySchema = z
+  .object({
+    table: z.string(),
+    count: z.number().int().nonnegative(),
+    description: z.string(),
+    riskLevel: z.enum(['critical', 'high', 'medium', 'low']),
+  })
+  .openapi({
+    title: 'ContactDependency',
+    description: 'Dependency record referencing related data preventing contact deletion',
+  });
+
+export const ContactDependencyCheckSchema = z
+  .object({
+    canDelete: z.boolean(),
+    dependencies: ContactDependencySchema.array(),
+    message: z.string(),
+    totalDependencies: z.number().int().nonnegative(),
+  })
+  .openapi({
+    title: 'ContactDependencyCheck',
+    description: 'Result of dependency analysis for a contact deletion request',
+  });
+
+export const ContactDeletionPreviewSchema = z
+  .object({
+    contact: BaseContactSchema,
+    dependencyCheck: ContactDependencyCheckSchema,
+  })
+  .openapi({
+    title: 'ContactDeletionPreview',
+    description: 'Preview information returned when requesting a deletion dependency check',
+  });
+
+export const ContactDeletionSummarySchema = z
+  .object({
+    deletedContact: BaseContactSchema,
+    dependenciesDeleted: z.number().int().nonnegative(),
+    wasForced: z.boolean(),
+    message: z.string().optional(),
+  })
+  .openapi({
+    title: 'ContactDeletionSummary',
+    description: 'Summary returned after a contact has been deleted',
+  });
+
+export const ContactDeletionResponseSchema = z
+  .union([ContactDeletionPreviewSchema, ContactDeletionSummarySchema])
+  .openapi({
+    title: 'ContactDeletionResponse',
+    description: 'Response returned from the contact deletion endpoint',
+  });
+
 export const ContactValidationSchema = CreateContactSchema.safeExtend({
   validationType: z.enum(['streetAddress', 'dateOfBirth']),
 })
@@ -209,6 +286,12 @@ export type PagedContactType = z.infer<typeof PagedContactSchema>;
 export type TeamWithNameType = z.infer<typeof TeamWithNameSchema>;
 export type TeamManagerWithTeamsType = z.infer<typeof TeamManagerWithTeams>;
 export type AutomaticRoleHoldersType = z.infer<typeof AutomaticRoleHoldersSchema>;
+export type ContactDeletionQueryType = z.infer<typeof ContactDeletionQuerySchema>;
+export type ContactDependencyType = z.infer<typeof ContactDependencySchema>;
+export type ContactDependencyCheckType = z.infer<typeof ContactDependencyCheckSchema>;
+export type ContactDeletionPreviewType = z.infer<typeof ContactDeletionPreviewSchema>;
+export type ContactDeletionSummaryType = z.infer<typeof ContactDeletionSummarySchema>;
+export type ContactDeletionResponseType = z.infer<typeof ContactDeletionResponseSchema>;
 export type ContactValidationType = z.infer<typeof ContactValidationSchema>;
 export type ContactValidationWithSignInType = z.infer<typeof ContactValidationWithSignInSchema>;
 export type SignInUserNameType = z.infer<typeof SignInUserNameSchema>;

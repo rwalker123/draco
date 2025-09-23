@@ -9,20 +9,10 @@ import { ValidationError } from '../utils/customErrors.js';
 import { ContactPhotoService } from './contactPhotoService.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { ContactService } from './contactService.js';
-
-export interface ContactDependency {
-  table: string;
-  count: number;
-  description: string;
-  riskLevel: 'critical' | 'high' | 'medium' | 'low';
-}
-
-export interface DependencyCheckResult {
-  canDelete: boolean;
-  dependencies: ContactDependency[];
-  message: string;
-  totalDependencies: number;
-}
+import {
+  ContactDependencyType,
+  ContactDependencyCheckType,
+} from '@draco/shared-schemas';
 
 /**
  * Configuration for contact dependency checks
@@ -30,7 +20,7 @@ export interface DependencyCheckResult {
  */
 const DEPENDENCY_CONFIG: Record<
   string,
-  { description: string; riskLevel: ContactDependency['riskLevel'] }
+  { description: string; riskLevel: ContactDependencyType['riskLevel'] }
 > = {
   // Critical - Core player/user data
   roster: { description: 'Player records', riskLevel: 'critical' },
@@ -71,8 +61,8 @@ export class ContactDependencyService {
   /**
    * Check all dependencies for a contact before deletion
    */
-  async checkDependencies(contactId: bigint, accountId: bigint): Promise<DependencyCheckResult> {
-    const dependencies: ContactDependency[] = [];
+  async checkDependencies(contactId: bigint, accountId: bigint): Promise<ContactDependencyCheckType> {
+    const dependencies: ContactDependencyType[] = [];
 
     // First check if this contact is the account owner - this is a blocking condition
     const isAccountOwner = await this.contactService.checkIfAccountOwner(contactId, accountId);

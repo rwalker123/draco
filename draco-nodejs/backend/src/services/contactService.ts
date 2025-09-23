@@ -8,6 +8,9 @@ import {
   CreateContactType,
   RosterPlayerType,
   ContactValidationType,
+  ContactDependencyCheckType,
+  ContactDeletionPreviewType,
+  ContactDeletionSummaryType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError } from '../utils/customErrors.js';
 import { ContactResponseFormatter, TeamResponseFormatter } from '../utils/responseFormatters.js';
@@ -18,16 +21,20 @@ import {
   ISeasonRepository,
   ITeamRepository,
 } from '../repositories/index.js';
+import { ServiceFactory } from './serviceFactory.js';
+import type { ContactDependencyService } from './contactDependencyService.js';
 
 export class ContactService {
   private contactRepository: IContactRepository;
   private seasonRepository: ISeasonRepository;
   private teamRepository: ITeamRepository;
+  private contactDependencyService: ContactDependencyService;
 
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.seasonRepository = RepositoryFactory.getSeasonRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
+    this.contactDependencyService = ServiceFactory.getContactDependencyService();
   }
 
   /**
@@ -324,5 +331,52 @@ export class ContactService {
       return false;
     }
     return dbAccountOwner.id === contactId;
+  }
+
+  async previewContactDeletion(
+    accountId: bigint,
+    contactId: bigint,
+  ): Promise<ContactDeletionPreviewType> {
+    const contact = await this.getContact(accountId, contactId);
+    const dependencyCheck: ContactDependencyCheckType =
+      await this.contactDependencyService.checkDependencies(contactId, accountId);
+
+    return {
+      contact,
+      dependencyCheck,
+    };
+  }
+
+  async deleteContact(
+    accountId: bigint,
+    contactId: bigint,
+    options: { force?: boolean } = {},
+  ): Promise<ContactDeletionSummaryType> {
+    const contact = await this.getContact(accountId, contactId);
+    const dependencyCheck: ContactDependencyCheckType =
+      await this.contactDependencyService.checkDependencies(contactId, accountId);
+
+    const wasForced = options.force ?? false;
+
+    if (wasForced) {
+      await this.contactDependencyService.forceDeleteContact(contactId, accountId);
+    } else {
+      await this.contactDependencyService.safeDeleteContact(contactId, accountId);
+    }
+
+    console.log(
+      `Contact deleted: ${contact.firstName ?? ''} ${contact.lastName ?? ''} (ID: ${contactId.toString()}) ${
+        wasForced ? '[FORCED]' : '[SAFE]'
+      }`,
+    );
+
+    return {
+      deletedContact: contact,
+      dependenciesDeleted: dependencyCheck.totalDependencies,
+      wasForced,
+      message: wasForced
+        ? 'Contact deleted with dependencies via force delete.'
+        : 'Contact deleted successfully.',
+    };
   }
 }

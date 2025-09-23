@@ -18,6 +18,9 @@ import {
   ContactValidationWithSignInSchema,
   PagingType,
   PagingSchema,
+  ContactDeletionQuerySchema,
+  ContactDeletionPreviewType,
+  ContactDeletionSummaryType,
 } from '@draco/shared-schemas';
 import {
   handleContactPhotoUploadMiddleware,
@@ -30,7 +33,6 @@ const roleService = ServiceFactory.getRoleService();
 const routeProtection = ServiceFactory.getRouteProtection();
 const contactService = ServiceFactory.getContactService();
 const registrationService = ServiceFactory.getRegistrationService();
-const contactDependencyService = ServiceFactory.getContactDependencyService();
 
 /**
  * GET /api/accounts/:accountId/contacts/:contactId/roster
@@ -316,12 +318,8 @@ router.post(
     const { accountId } = extractAccountParams(req.params);
 
     const createContactData: CreateContactType = CreateContactSchema.parse(req.body);
-    const contact: ContactType = await contactService.createContact(
-      createContactData,
-      BigInt(accountId),
-    );
+    const contact: ContactType = await contactService.createContact(createContactData, accountId);
 
-    // Handle photo upload if provided
     if (req.file) {
       await handleContactPhotoUpload(req, accountId, BigInt(contact.id));
     }
@@ -344,53 +342,23 @@ router.delete(
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
-    const { force, check } = req.query;
-    const forceDelete = force === 'true';
-    const onlyCheck = check === 'true';
+    const { force, check } = ContactDeletionQuerySchema.parse(req.query);
 
-    // Verify the contact exists and belongs to this account first
-    const existingContact = await contactService.getContact(accountId, BigInt(contactId));
-
-    if (!existingContact) {
-      throw new NotFoundError('Contact not found');
-    }
-
-    // Check dependencies
-    const dependencyCheck = await contactDependencyService.checkDependencies(contactId, accountId);
-
-    // If only checking dependencies, return the result
-    if (onlyCheck) {
-      res.json({
-        contact: existingContact,
-        dependencyCheck,
-      });
+    if (check) {
+      const preview: ContactDeletionPreviewType = await contactService.previewContactDeletion(
+        accountId,
+        contactId,
+      );
+      res.json(preview);
       return;
     }
 
-    // Handle deletion
-    if (!dependencyCheck.canDelete && !forceDelete) {
-      throw new ValidationError(
-        `Cannot delete contact "${existingContact.firstName} ${existingContact.lastName}": ${dependencyCheck.message}`,
-      );
-    }
-
-    // Perform deletion
-    if (forceDelete) {
-      await contactDependencyService.forceDeleteContact(contactId, accountId);
-    } else {
-      await contactDependencyService.safeDeleteContact(contactId, accountId);
-    }
-
-    // Log the deletion for audit purposes
-    console.log(
-      `Contact deleted: ${existingContact.firstName} ${existingContact.lastName} (ID: ${contactId}) by user ${req.user?.username || 'unknown'} ${forceDelete ? '[FORCED]' : '[SAFE]'}`,
-    );
-
-    res.json({
-      deletedContact: existingContact,
-      dependenciesDeleted: dependencyCheck.totalDependencies,
-      wasForced: forceDelete,
+    const deletionSummary: ContactDeletionSummaryType = await contactService.deleteContact(accountId, contactId, {
+      force,
     });
+
+    res.json(deletionSummary);
+
   }),
 );
 

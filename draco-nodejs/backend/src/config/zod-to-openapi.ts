@@ -19,6 +19,8 @@ import {
   AccountDomainLookupHeadersSchema,
   AccountWithSeasonsSchema,
   AccountDetailsQuerySchema,
+  ContactDeletionQuerySchema,
+  ContactDeletionResponseSchema,
 } from '@draco/shared-schemas';
 
 const registry = new OpenAPIRegistry();
@@ -46,6 +48,14 @@ const AccountWithSeasonsSchemaRef = registry.register(
 const AccountDetailsQuerySchemaRef = registry.register(
   'AccountDetailsQuery',
   AccountDetailsQuerySchema,
+);
+const ContactDeletionQuerySchemaRef = registry.register(
+  'ContactDeletionQuery',
+  ContactDeletionQuerySchema,
+);
+const ContactDeletionResponseSchemaRef = registry.register(
+  'ContactDeletionResponse',
+  ContactDeletionResponseSchema,
 );
 
 // Register error schemas
@@ -294,10 +304,11 @@ registry.registerPath({
 registry.registerPath({
   method: 'post',
   path: '/api/accounts/{accountId}/contacts',
-  description: 'Create a new contact',
-  operationId: 'createContact',
+  operationId: 'createAccountContact',
+  summary: 'Create account contact',
+  description: 'Create a new contact within the specified account. Supports optional photo upload.',
+  tags: ['Account Contacts'],
   security: [{ bearerAuth: [] }],
-  tags: ['Contacts'],
   parameters: [
     {
       name: 'accountId',
@@ -313,27 +324,16 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: CreateContactSchemaRef.partial(),
+          schema: CreateContactSchemaRef,
         },
         'multipart/form-data': {
-          schema: CreateContactSchemaRef.partial().extend({
-            photo: z.string().optional().openapi({
-              type: 'string',
-              format: 'binary',
-              description: 'Contact photo file',
-            }),
-          }),
-          encoding: {
-            photo: {
-              contentType: 'image/*',
-            },
-          },
+          schema: CreateContactSchemaRef,
         },
       },
     },
   },
   responses: {
-    200: {
+    201: {
       description: 'Contact created',
       content: {
         'application/json': {
@@ -358,7 +358,91 @@ registry.registerPath({
       },
     },
     403: {
-      description: 'Access denied - Account admin required',
+      description: 'Insufficient permissions',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Account not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// DELETE /api/accounts/{accountId}/contacts/{contactId}
+registry.registerPath({
+  method: 'delete',
+  path: '/api/accounts/{accountId}/contacts/{contactId}',
+  operationId: 'deleteAccountContact',
+  summary: 'Delete account contact',
+  description: 'Delete a contact or preview dependencies when check=true.',
+  tags: ['Account Contacts'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'contactId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  request: {
+    query: ContactDeletionQuerySchemaRef,
+  },
+  responses: {
+    200: {
+      description: 'Deletion preview or result',
+      content: {
+        'application/json': {
+          schema: ContactDeletionResponseSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Insufficient permissions',
       content: {
         'application/json': {
           schema: AuthorizationErrorSchemaRef,
@@ -370,14 +454,6 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: NotFoundErrorSchemaRef,
-        },
-      },
-    },
-    409: {
-      description: 'Conflict error - e.g. duplicate email',
-      content: {
-        'application/json': {
-          schema: ConflictErrorSchemaRef,
         },
       },
     },
