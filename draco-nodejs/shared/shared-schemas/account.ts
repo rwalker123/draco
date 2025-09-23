@@ -82,8 +82,11 @@ export const AccountNameSchema = z.object({
   name: z.string(),
 });
 
-export const AccountSchema = AccountNameSchema.extend({
-  accountLogoUrl: z.string().optional(),
+export const AccountHeaderSchema = AccountNameSchema.extend({
+  accountLogoUrl: z.string(),
+});
+
+export const AccountSchema = AccountHeaderSchema.extend({
   configuration: AccountConfigurationSchema.optional(),
   urls: z.array(AccountUrlSchema).default([]),
   accountOwner: z
@@ -128,3 +131,4 @@ export type AccountSeasonWithStatusType = z.infer<typeof AccountSeasonWithStatus
 export type AccountCurrentSeasonType = z.infer<typeof AccountCurrentSeasonSchema>;
 export type AccountDetailsQueryType = z.infer<typeof AccountDetailsQuerySchema>;
 export type AccountNameType = z.infer<typeof AccountNameSchema>;
+export type AccountHeaderType = z.infer<typeof AccountHeaderSchema>;
