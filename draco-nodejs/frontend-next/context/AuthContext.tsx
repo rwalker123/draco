@@ -15,6 +15,7 @@ export interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  initialized: boolean;
   error: string | null;
   login: (creds: SignInCredentialsType) => Promise<boolean>;
   logout: (refreshPage?: boolean) => void;
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   // Initialize loading as false to prevent server/client hydration mismatch
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,8 +42,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // If no token, set loading to false immediately
       if (!storedToken) {
         setLoading(false);
+        setInitialized(true);
       }
       // If there is a token, loading will be set to false by fetchUser
+    } else {
+      setInitialized(true);
     }
   }, []);
 
@@ -50,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       fetchUser();
     } else {
       setUser(null);
+      setInitialized(true);
     }
     // eslint-disable-next-line
   }, [token]);
@@ -84,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('jwtToken');
+    setInitialized(true);
 
     if (refreshPage) {
       // Refresh the current page to update all components and access controls
@@ -96,6 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setError(null);
     localStorage.removeItem('jwtToken');
+    setInitialized(true);
   };
 
   const setAuthToken = (newToken: string) => {
@@ -108,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!authToken) {
       setUser(null);
       setLoading(false);
+      setInitialized(true);
       return;
     }
 
@@ -135,6 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('jwtToken');
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
   };
 
@@ -144,6 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         token,
         loading,
+        initialized,
         error,
         login,
         logout,

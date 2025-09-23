@@ -15,9 +15,6 @@ import accountsPlayerClassifiedsRouter from './accounts-player-classifieds.js';
 const router = Router({ mergeParams: true });
 
 // Mount sub-routers with appropriate prefixes
-// Core account operations (search, get, create, update, delete, my-accounts)
-router.use('/', accountsCoreRouter);
-
 // Contact and user management endpoints
 router.use('/', accountsContactsRouter);
 
@@ -41,5 +38,9 @@ router.use('/', accountsWorkoutsRouter);
 
 // PlayerClassifieds endpoints
 router.use('/:accountId/player-classifieds', accountsPlayerClassifiedsRouter);
+
+// Core account operations (search, get, create, update, delete, my-accounts)
+// Placed last so static routes like /types are matched before the generic /:accountId handler
+router.use('/', accountsCoreRouter);
 
 export default router;
