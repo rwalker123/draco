@@ -77,9 +77,12 @@ export const AccountConfigurationSchema = z.object({
   affiliation: AccountAffiliationSchema.nullable().optional(),
 });
 
-export const AccountSchema = z.object({
+export const AccountNameSchema = z.object({
   id: z.string(),
   name: z.string(),
+});
+
+export const AccountSchema = AccountNameSchema.extend({
   accountLogoUrl: z.string().optional(),
   configuration: AccountConfigurationSchema.optional(),
   urls: z.array(AccountUrlSchema).default([]),
@@ -124,3 +127,4 @@ export type AccountWithSeasonsType = z.infer<typeof AccountWithSeasonsSchema>;
 export type AccountSeasonWithStatusType = z.infer<typeof AccountSeasonWithStatusSchema>;
 export type AccountCurrentSeasonType = z.infer<typeof AccountCurrentSeasonSchema>;
 export type AccountDetailsQueryType = z.infer<typeof AccountDetailsQuerySchema>;
+export type AccountNameType = z.infer<typeof AccountNameSchema>;
