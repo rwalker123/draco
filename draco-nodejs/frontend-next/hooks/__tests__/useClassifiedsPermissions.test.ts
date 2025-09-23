@@ -83,6 +83,7 @@ describe('useClassifiedsPermissions', () => {
       // Set up mock role context with no roles for this test
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: [],
           contactRoles: [],
         },
@@ -112,6 +113,7 @@ describe('useClassifiedsPermissions', () => {
     it('should grant full permissions to AccountAdmin', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['AccountAdmin'],
           contactRoles: [],
         },
@@ -132,6 +134,7 @@ describe('useClassifiedsPermissions', () => {
     it('should grant full permissions to ContactAdmin', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['ContactAdmin'],
           contactRoles: [],
         },
@@ -153,6 +156,7 @@ describe('useClassifiedsPermissions', () => {
     it('should grant limited permissions to TeamAdmin', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },
@@ -173,6 +177,7 @@ describe('useClassifiedsPermissions', () => {
     it('should grant minimal permissions to TeamMember', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamMember'],
           contactRoles: [],
         },
@@ -194,6 +199,7 @@ describe('useClassifiedsPermissions', () => {
     it('should grant minimal permissions to Contact', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['Contact'],
           contactRoles: [],
         },
@@ -221,6 +227,7 @@ describe('useClassifiedsPermissions', () => {
     it('should check specific role permissions', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },
@@ -237,6 +244,7 @@ describe('useClassifiedsPermissions', () => {
     it('should handle multiple roles correctly', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin', 'ContactAdmin'],
           contactRoles: [],
         },
@@ -256,6 +264,7 @@ describe('useClassifiedsPermissions', () => {
     it('should handle account-specific roles', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['AccountAdmin'],
           contactRoles: [],
         },
@@ -321,6 +330,7 @@ describe('useClassifiedsPermissions', () => {
     it('should handle empty user roles', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: [],
           contactRoles: [],
         },
@@ -356,6 +366,7 @@ describe('useClassifiedsPermissions', () => {
     it('should handle missing account context', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },
@@ -377,6 +388,7 @@ describe('useClassifiedsPermissions', () => {
     it('should work with real role context implementation', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },
@@ -416,6 +428,7 @@ describe('useClassifiedsPermissions', () => {
     it('should handle role changes correctly', () => {
       let mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },
@@ -431,6 +444,7 @@ describe('useClassifiedsPermissions', () => {
       // Change to AccountAdmin
       mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['AccountAdmin'],
           contactRoles: [],
         },
@@ -453,6 +467,7 @@ describe('useClassifiedsPermissions', () => {
     it('should check ownership for Players Wanted permissions', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },
@@ -508,6 +523,7 @@ describe('useClassifiedsPermissions', () => {
     it('should check admin override for Teams Wanted permissions', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['AccountAdmin'],
           contactRoles: [],
         },
@@ -536,6 +552,7 @@ describe('useClassifiedsPermissions', () => {
     it('should handle access code verification for Teams Wanted', async () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },
@@ -569,6 +586,7 @@ describe('useClassifiedsPermissions', () => {
     it('should clear verified access codes', () => {
       const mockRoleContext = createMockRoleContext({
         userRoles: {
+          accountId: '1',
           globalRoles: ['TeamAdmin'],
           contactRoles: [],
         },

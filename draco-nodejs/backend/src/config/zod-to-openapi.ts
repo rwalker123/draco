@@ -147,6 +147,81 @@ registry.registerPath({
   },
 });
 
+// GET /api/accounts/my-accounts
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/my-accounts',
+  operationId: 'getMyAccounts',
+  summary: "Get the authenticated user's accounts",
+  description: 'Returns the accounts associated with the logged-in user via account membership.',
+  tags: ['Accounts'],
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Accounts accessible to the authenticated user',
+      content: {
+        'application/json': {
+          schema: AccountSchemaRef.array(),
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/managed
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/managed',
+  operationId: 'getManagedAccounts',
+  summary: 'Get accounts managed by the authenticated user',
+  description:
+    'Returns accounts where the user holds AccountAdmin privileges or is a global Administrator.',
+  tags: ['Accounts'],
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Accounts managed by the authenticated user',
+      content: {
+        'application/json': {
+          schema: AccountSchemaRef.array(),
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
 // POST /api/accounts/{accountId}/contacts
 registry.registerPath({
   method: 'post',

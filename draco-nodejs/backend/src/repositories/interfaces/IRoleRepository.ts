@@ -19,4 +19,5 @@ export interface IRoleRepository extends IBaseRepository<contactroles> {
     accountId: bigint,
   ): Promise<contactroles | null>;
   getUsersWithRole(roleId: string, accountId: bigint): Promise<contactroles[]>;
+  findAccountIdsForUserRoles(userId: string, roleIds: string[]): Promise<bigint[]>;
 }

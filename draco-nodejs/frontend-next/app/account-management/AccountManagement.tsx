@@ -42,47 +42,23 @@ import { useAccount } from '../../context/AccountContext';
 import ContactAutocomplete from '../../components/ContactAutocomplete';
 import { US_TIMEZONES, getTimezoneLabel } from '../../utils/timezones';
 import EditAccountLogoDialog from '../../components/EditAccountLogoDialog';
-
-interface Account {
-  id: string;
-  name: string;
-  accountTypeId: string;
-  accountType: string;
-  ownerUserId: string;
-  ownerName: string;
-  ownerEmail: string;
-  firstYear: number;
-  affiliationId: string;
-  affiliation: string;
-  timezoneId: string;
-  twitterAccountName: string;
-  youtubeUserId: string;
-  facebookFanPage: string;
-  defaultVideo: string;
-  autoPlayVideo: boolean;
-  accountLogoUrl?: string;
-}
-
-interface AccountType {
-  id: string;
-  name: string;
-  filePath: string;
-}
-
-interface Affiliation {
-  id: string;
-  name: string;
-  url: string;
-}
+import type {
+  AccountType as SharedAccountType,
+  AccountTypeReference,
+  AccountAffiliationType,
+} from '@draco/shared-schemas';
+import { getManagedAccounts } from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
 
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
   const { hasRole } = useRole();
   const { setCurrentAccount } = useAccount();
+  const apiClient = useApiClient();
 
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
-  const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
+  const [accounts, setAccounts] = useState<SharedAccountType[]>([]);
+  const [accountTypes, setAccountTypes] = useState<AccountTypeReference[]>([]);
+  const [affiliations, setAffiliations] = useState<AccountAffiliationType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,7 +66,7 @@ const AccountManagement: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<SharedAccountType | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -104,30 +80,73 @@ const AccountManagement: React.FC = () => {
 
   // Add state for logo dialog
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
-  const [logoDialogAccount, setLogoDialogAccount] = useState<Account | null>(null);
+  const [logoDialogAccount, setLogoDialogAccount] = useState<SharedAccountType | null>(null);
   const [logoRefreshKey, setLogoRefreshKey] = useState(0);
 
   const isGlobalAdmin = hasRole('Administrator');
+
+  const getAccountTypeName = useCallback(
+    (account: SharedAccountType) => account.configuration?.accountType?.name ?? 'Unknown',
+    [],
+  );
+
+  const getAffiliationName = useCallback(
+    (account: SharedAccountType) => account.configuration?.affiliation?.name ?? '—',
+    [],
+  );
+
+  const getOwnerDisplayName = useCallback((account: SharedAccountType) => {
+    const contact = account.accountOwner?.contact;
+    if (contact) {
+      return `${contact.firstName} ${contact.lastName}`.trim();
+    }
+    const userEmail = account.accountOwner?.user?.userName;
+    if (userEmail) {
+      return userEmail;
+    }
+    return 'Unknown Owner';
+  }, []);
+
+  const getOwnerUserId = useCallback(
+    (account: SharedAccountType) => account.accountOwner?.user?.id ?? '',
+    [],
+  );
+
+  const getAccountTypeId = useCallback(
+    (account: SharedAccountType) => account.configuration?.accountType?.id ?? '',
+    [],
+  );
+
+  const getAffiliationId = useCallback(
+    (account: SharedAccountType) => account.configuration?.affiliation?.id ?? '1',
+    [],
+  );
+
+  const getTimezoneId = useCallback(
+    (account: SharedAccountType) => account.configuration?.timezoneId ?? 'Eastern Standard Time',
+    [],
+  );
+
+  const getFirstYearValue = useCallback(
+    (account: SharedAccountType) => account.configuration?.firstYear ?? new Date().getFullYear(),
+    [],
+  );
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load accounts (my-accounts endpoint handles role-based access)
-      const accountsResponse = await fetch('/api/accounts/my-accounts', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const { data, error: managedError } = await getManagedAccounts({
+        client: apiClient,
+        throwOnError: false,
       });
 
-      if (!accountsResponse.ok) {
-        throw new Error('Failed to load accounts');
+      if (managedError) {
+        throw new Error(managedError.message || 'Failed to load accounts');
       }
 
-      const accountsData = await accountsResponse.json();
-      setAccounts(accountsData.data.accounts);
+      setAccounts((data as SharedAccountType[]) ?? []);
 
       // Load account types
       const typesResponse = await fetch('/api/accounts/types', {
@@ -159,7 +178,7 @@ const AccountManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, apiClient]);
 
   useEffect(() => {
     if (token) {
@@ -256,29 +275,29 @@ const AccountManagement: React.FC = () => {
     }
   };
 
-  const openEditDialog = (account: Account) => {
+  const openEditDialog = (account: SharedAccountType) => {
     setSelectedAccount(account);
     setFormData({
       name: account.name,
-      accountTypeId: account.accountTypeId,
-      ownerUserId: account.ownerUserId,
-      affiliationId: account.affiliationId,
-      timezoneId: account.timezoneId,
-      firstYear: account.firstYear,
+      accountTypeId: getAccountTypeId(account),
+      ownerUserId: getOwnerUserId(account),
+      affiliationId: getAffiliationId(account),
+      timezoneId: getTimezoneId(account),
+      firstYear: getFirstYearValue(account),
     });
     setEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (account: Account) => {
+  const openDeleteDialog = (account: SharedAccountType) => {
     setSelectedAccount(account);
     setDeleteDialogOpen(true);
   };
 
-  const handleViewAccount = (account: Account) => {
+  const handleViewAccount = (account: SharedAccountType) => {
     setCurrentAccount({
       id: account.id,
       name: account.name,
-      accountType: account.accountType || undefined,
+      accountType: account.configuration?.accountType?.name || undefined,
     });
     // Navigate to account details or dashboard
     window.location.href = `/account/${account.id}`;
@@ -309,7 +328,7 @@ const AccountManagement: React.FC = () => {
   };
 
   // Helper to get logo URL (with refresh key to force reload)
-  const getAccountLogoUrl = (account: Account | null) => {
+  const getAccountLogoUrl = (account: SharedAccountType | null) => {
     if (!account) return null;
     return account.accountLogoUrl ? `${account.accountLogoUrl}?k=${logoRefreshKey}` : null;
   };
@@ -369,16 +388,16 @@ const AccountManagement: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={account.accountType}
+                      label={getAccountTypeName(account)}
                       size="small"
                       color="primary"
                       variant="outlined"
                     />
                   </TableCell>
-                  <TableCell>{account.affiliation}</TableCell>
-                  <TableCell>{account.firstYear}</TableCell>
-                  <TableCell>{account.ownerName}</TableCell>
-                  <TableCell>{getTimezoneLabel(account.timezoneId)}</TableCell>
+                  <TableCell>{getAffiliationName(account)}</TableCell>
+                  <TableCell>{account.configuration?.firstYear ?? '—'}</TableCell>
+                  <TableCell>{getOwnerDisplayName(account)}</TableCell>
+                  <TableCell>{getTimezoneLabel(getTimezoneId(account))}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1}>
                       <Tooltip title="View Account">

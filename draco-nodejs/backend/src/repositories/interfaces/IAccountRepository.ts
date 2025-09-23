@@ -8,4 +8,5 @@ export interface IAccountRepository extends IBaseRepository<accounts> {
   searchByTerm(searchTerm: string, limit?: number): Promise<dbAccount[]>;
   findAffiliationsByIds(ids: bigint[]): Promise<dbAccountAffiliation[]>;
   findAccountByUrls(urls: string[]): Promise<dbAccount | null>;
+  findAccountsWithRelations(accountIds?: bigint[]): Promise<dbAccount[]>;
 }
