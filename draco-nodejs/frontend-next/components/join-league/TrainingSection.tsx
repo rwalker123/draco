@@ -10,9 +10,17 @@ interface TrainingSectionProps {
   workouts: WorkoutSummary[];
   accountId: string;
   token?: string;
+  showViewAllWorkoutsButton?: boolean;
+  onViewAllWorkouts?: () => void;
 }
 
-const TrainingSection: React.FC<TrainingSectionProps> = ({ workouts, accountId, token }) => {
+const TrainingSection: React.FC<TrainingSectionProps> = ({
+  workouts,
+  accountId,
+  token,
+  showViewAllWorkoutsButton = false,
+  onViewAllWorkouts,
+}) => {
   if (workouts.length === 0) {
     return null;
   }
@@ -23,6 +31,11 @@ const TrainingSection: React.FC<TrainingSectionProps> = ({ workouts, accountId, 
         icon={<FitnessCenter />}
         title="Training & Tryouts"
         description="Register for upcoming workouts and training sessions"
+        actionButton={
+          showViewAllWorkoutsButton && onViewAllWorkouts
+            ? { label: 'View All Workouts', onClick: onViewAllWorkouts }
+            : undefined
+        }
       />
       <Box
         sx={{
