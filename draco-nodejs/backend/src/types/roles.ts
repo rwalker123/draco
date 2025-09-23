@@ -59,6 +59,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'player-classified.create-players-wanted',
       'player-classified.edit-players-wanted',
       'player-classified.delete-players-wanted',
+      'account.polls.manage',
     ],
     context: 'account',
   },

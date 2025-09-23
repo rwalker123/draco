@@ -27,6 +27,7 @@ import { EmailTemplateService } from './emailTemplateService.js';
 import { AccountsService } from './accountsService.js';
 import { EmailAttachmentService } from './emailAttachmentService.js';
 import { WorkoutService } from './workoutService.js';
+import { PollService } from './pollService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -52,6 +53,7 @@ export class ServiceFactory {
   private static emailAttachmentService: EmailAttachmentService;
   private static workoutService: WorkoutService;
   private static accountsService: AccountsService;
+  private static pollService: PollService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -201,5 +203,12 @@ export class ServiceFactory {
       this.workoutService = new WorkoutService();
     }
     return this.workoutService;
+  }
+
+  static getPollService(): PollService {
+    if (!this.pollService) {
+      this.pollService = new PollService();
+    }
+    return this.pollService;
   }
 }

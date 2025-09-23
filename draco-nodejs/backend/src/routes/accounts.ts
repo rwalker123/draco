@@ -11,6 +11,7 @@ import accountsSettingsRouter from './accounts-settings.js';
 import accountsAssetsRouter from './accounts-assets.js';
 import accountsWorkoutsRouter from './accounts-workouts.js';
 import accountsPlayerClassifiedsRouter from './accounts-player-classifieds.js';
+import accountsPollsRouter from './accounts-polls.js';
 
 const router = Router({ mergeParams: true });
 
@@ -41,5 +42,8 @@ router.use('/', accountsWorkoutsRouter);
 
 // PlayerClassifieds endpoints
 router.use('/:accountId/player-classifieds', accountsPlayerClassifiedsRouter);
+
+// Poll management endpoints
+router.use('/', accountsPollsRouter);
 
 export default router;

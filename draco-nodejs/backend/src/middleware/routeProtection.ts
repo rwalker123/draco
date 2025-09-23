@@ -150,6 +150,75 @@ export class RouteProtection {
     };
   };
 
+  requirePollManagerAccess = () => {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      try {
+        if (!req.user?.id) {
+          res.status(401).json({
+            success: false,
+            message: 'Authentication required',
+          });
+          return;
+        }
+
+        const accountId = req.accountBoundary?.accountId ?? this.extractAccountId(req);
+
+        if (!accountId) {
+          res.status(400).json({
+            success: false,
+            message: 'Account ID required',
+          });
+          return;
+        }
+
+        const roleContext: RoleContextData = {
+          accountId,
+          teamId: this.extractTeamId(req),
+          leagueId: this.extractLeagueId(req),
+          seasonId: this.extractSeasonId(req),
+        };
+
+        const hasPermission = await this.roleService.hasPermission(
+          req.user.id,
+          'account.polls.manage',
+          roleContext,
+        );
+
+        if (hasPermission) {
+          if (!req.userRoles) {
+            req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+          }
+          return next();
+        }
+
+        const userRoles =
+          req.userRoles ?? (await this.roleService.getUserRoles(req.user.id, accountId));
+
+        const hasTeamAdminRole = userRoles.contactRoles.some(
+          (contactRole) => contactRole.roleId === ROLE_IDS[RoleNamesType.TEAM_ADMIN],
+        );
+
+        if (hasTeamAdminRole) {
+          req.userRoles = userRoles;
+          return next();
+        }
+
+        res.status(403).json({
+          success: false,
+          message: "Permission 'account.polls.manage' or TeamAdmin role required",
+          requiredPermission: 'account.polls.manage',
+          requiredRole: ROLE_IDS[RoleNamesType.TEAM_ADMIN],
+        });
+      } catch (error) {
+        console.error('Poll management access middleware error:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    };
+  };
+
   /**
    * Middleware to enforce account boundary (user can only access their account's data)
    */

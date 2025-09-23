@@ -30,6 +30,7 @@ import { listWorkouts } from '../../../services/workoutService';
 import { WorkoutSummary } from '../../../types/workouts';
 import { AccountType } from '@draco/shared-schemas';
 import { JoinLeagueDashboard } from '../../../components/join-league';
+import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 
 interface Season {
   id: string;
@@ -346,6 +347,8 @@ const BaseballAccountHome: React.FC = () => {
             />
           </Box>
         )}
+
+        <AccountPollsCard accountId={accountIdStr} />
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}

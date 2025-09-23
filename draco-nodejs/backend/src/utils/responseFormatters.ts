@@ -13,6 +13,7 @@ import {
   PagedContactType,
   ContactRoleType,
   AccountType,
+  AccountPollType,
 } from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
 import { getAccountLogoUrl, getContactPhotoUrl } from '../config/logo.js';
@@ -30,6 +31,8 @@ import {
   dbTeamSeasonManagerContact,
   dbAccount,
   dbAccountAffiliation,
+  dbPollQuestionWithCounts,
+  dbPollQuestionWithUserVotes,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
 import { PaginationHelper } from './pagination.js';
@@ -288,6 +291,34 @@ export class ContactResponseFormatter {
     return {
       contacts: transformedContacts,
       total: contactsWithTotalCount.total,
+    };
+  }
+}
+
+export class PollResponseFormatter {
+  static formatPoll(poll: dbPollQuestionWithCounts | dbPollQuestionWithUserVotes): AccountPollType {
+    const options = poll.voteoptions.map((option) => ({
+      id: option.id.toString(),
+      optionText: option.optiontext,
+      priority: option.priority,
+      voteCount: option._count?.voteanswers ?? 0,
+    }));
+
+    const totalVotes = options.reduce((sum, option) => sum + option.voteCount, 0);
+
+    const userVoteOptionId =
+      'voteanswers' in poll && poll.voteanswers.length > 0
+        ? poll.voteanswers[0].optionid.toString()
+        : undefined;
+
+    return {
+      id: poll.id.toString(),
+      accountId: poll.accountid.toString(),
+      question: poll.question,
+      active: poll.active,
+      options,
+      totalVotes,
+      userVoteOptionId,
     };
   }
 }

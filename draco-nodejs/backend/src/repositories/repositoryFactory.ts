@@ -7,6 +7,7 @@ import {
   ISeasonRepository,
   ILeagueRepository,
   ICleanupRepository,
+  IPollRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -17,6 +18,7 @@ import {
   PrismaSeasonRepository,
   PrismaLeagueRepository,
   PrismaCleanupRepository,
+  PrismaPollRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -34,6 +36,7 @@ export class RepositoryFactory {
   private static seasonRepository: ISeasonRepository;
   private static leagueRepository: ILeagueRepository;
   private static cleanupRepository: ICleanupRepository;
+  private static pollRepository: IPollRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -89,5 +92,12 @@ export class RepositoryFactory {
       this.cleanupRepository = new PrismaCleanupRepository(prisma);
     }
     return this.cleanupRepository;
+  }
+
+  static getPollRepository(): IPollRepository {
+    if (!this.pollRepository) {
+      this.pollRepository = new PrismaPollRepository(prisma);
+    }
+    return this.pollRepository;
   }
 }
