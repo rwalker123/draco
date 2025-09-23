@@ -28,8 +28,10 @@ import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
 import { listWorkouts } from '../../../services/workoutService';
 import { WorkoutSummary } from '../../../types/workouts';
-import { AccountType } from '@draco/shared-schemas';
+import { AccountType, SponsorType } from '@draco/shared-schemas';
 import { JoinLeagueDashboard } from '../../../components/join-league';
+import { SponsorService } from '../../../services/sponsorService';
+import SponsorCard from '../../../components/sponsors/SponsorCard';
 
 interface Season {
   id: string;
@@ -47,6 +49,8 @@ const BaseballAccountHome: React.FC = () => {
   const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
   const [hasAnyGames, setHasAnyGames] = useState(false);
   const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
+  const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
+  const [sponsorError, setSponsorError] = useState<string | null>(null);
   const { user, token } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -139,6 +143,22 @@ const BaseballAccountHome: React.FC = () => {
   useEffect(() => {
     fetchUpcomingWorkouts();
   }, [fetchUpcomingWorkouts]);
+
+  useEffect(() => {
+    if (!accountIdStr) return;
+
+    const service = new SponsorService();
+    service
+      .listAccountSponsors(accountIdStr)
+      .then((sponsors) => {
+        setAccountSponsors(sponsors);
+        setSponsorError(null);
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load account sponsors:', error);
+        setSponsorError('Sponsors are currently unavailable.');
+      });
+  }, [accountIdStr]);
 
   const handleViewTeam = (teamSeasonId: string) => {
     if (!currentSeason) return;
@@ -349,6 +369,12 @@ const BaseballAccountHome: React.FC = () => {
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}
+
+        <SponsorCard
+          sponsors={accountSponsors}
+          title="Account Sponsors"
+          emptyMessage={sponsorError ?? 'No sponsors have been added yet.'}
+        />
 
         {/* User Teams Section */}
         {user && userTeams.length > 0 && (

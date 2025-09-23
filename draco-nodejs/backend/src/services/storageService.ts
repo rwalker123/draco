@@ -175,6 +175,60 @@ export class LocalStorageService extends BaseStorageService {
     }
   }
 
+  async saveSponsorPhoto(accountId: string, sponsorId: string, buffer: Buffer): Promise<void> {
+    try {
+      const sponsorPhotoDir = path.join(this.uploadsDir, accountId, 'sponsor-photos');
+      if (!fs.existsSync(sponsorPhotoDir)) {
+        fs.mkdirSync(sponsorPhotoDir, { recursive: true });
+      }
+
+      const resizedBuffer = await this.processSponsorPhoto(buffer);
+      const filePath = path.join(sponsorPhotoDir, `${sponsorId}-photo.png`);
+      fs.writeFileSync(filePath, resizedBuffer);
+      console.log(`Sponsor photo saved to local storage: ${filePath}`);
+    } catch (error) {
+      this.handleStorageError(error, 'save sponsor photo to local storage');
+    }
+  }
+
+  async getSponsorPhoto(accountId: string, sponsorId: string): Promise<Buffer | null> {
+    try {
+      const filePath = path.join(
+        this.uploadsDir,
+        accountId,
+        'sponsor-photos',
+        `${sponsorId}-photo.png`,
+      );
+
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      return fs.readFileSync(filePath);
+    } catch (error) {
+      console.error('Error reading sponsor photo from local storage:', error);
+      return null;
+    }
+  }
+
+  async deleteSponsorPhoto(accountId: string, sponsorId: string): Promise<void> {
+    try {
+      const filePath = path.join(
+        this.uploadsDir,
+        accountId,
+        'sponsor-photos',
+        `${sponsorId}-photo.png`,
+      );
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Sponsor photo deleted from local storage: ${filePath}`);
+      }
+    } catch (error) {
+      this.handleStorageError(error, 'delete sponsor photo from local storage');
+    }
+  }
+
   async saveAttachment(
     accountId: string,
     emailId: string,
@@ -564,6 +618,90 @@ export class S3StorageService extends BaseStorageService {
 
   private getContactPhotoS3Key(accountId: string, contactId: string): string {
     return this.getContactPhotoKey(accountId, contactId);
+  }
+
+  async saveSponsorPhoto(accountId: string, sponsorId: string, buffer: Buffer): Promise<void> {
+    try {
+      const resizedBuffer = await this.processSponsorPhoto(buffer);
+      const key = this.getSponsorPhotoS3Key(accountId, sponsorId);
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: resizedBuffer,
+        ContentType: 'image/png',
+        CacheControl: 'public, max-age=3600',
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Sponsor photo saved to S3: ${key}`);
+    } catch (error: unknown) {
+      console.error('Error saving sponsor photo to S3:', error);
+
+      const awsError = error as AWSError;
+      if (awsError.name === 'NoSuchBucket') {
+        throw new Error(
+          `S3 bucket '${this.bucketName}' does not exist. Please ensure the bucket is created or check your S3 configuration.`,
+        );
+      } else if (awsError.name === 'AccessDenied') {
+        throw new Error('Access denied to S3. Please check your AWS credentials and permissions.');
+      } else {
+        throw new Error(`Failed to save sponsor photo to S3: ${awsError.message || 'Unknown error'}`);
+      }
+    }
+  }
+
+  async getSponsorPhoto(accountId: string, sponsorId: string): Promise<Buffer | null> {
+    try {
+      const key = this.getSponsorPhotoS3Key(accountId, sponsorId);
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+      const response = await this.s3Client.send(command);
+      if (!response.Body) {
+        return null;
+      }
+      const chunks: Buffer[] = [];
+      const stream = response.Body as NodeJS.ReadableStream;
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        (('name' in error && (error as { name: string }).name === 'NoSuchKey') ||
+          ('$metadata' in error &&
+            (error as { $metadata: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404))
+      ) {
+        return null;
+      }
+      console.error('Error getting sponsor photo from S3:', error);
+      throw new Error('Failed to get sponsor photo from S3');
+    }
+  }
+
+  async deleteSponsorPhoto(accountId: string, sponsorId: string): Promise<void> {
+    try {
+      const key = this.getSponsorPhotoS3Key(accountId, sponsorId);
+
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Sponsor photo deleted from S3: ${key}`);
+    } catch (error) {
+      console.error('Error deleting sponsor photo from S3:', error);
+      throw new Error('Failed to delete sponsor photo from S3');
+    }
+  }
+
+  private getSponsorPhotoS3Key(accountId: string, sponsorId: string): string {
+    return this.getSponsorPhotoKey(accountId, sponsorId);
   }
 
   async saveAttachment(

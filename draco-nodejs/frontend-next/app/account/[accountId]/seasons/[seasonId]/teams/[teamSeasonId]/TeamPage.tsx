@@ -14,6 +14,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
+import { SponsorService } from '../../../../../../../services/sponsorService';
+import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
+import { SponsorType } from '@draco/shared-schemas';
 
 interface TeamPageProps {
   accountId: string;
@@ -41,6 +44,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
   } | null>(null);
+  const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
+  const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
   const { token } = useAuth();
   const { canEditRecap } = useSchedulePermissions({
     accountId,
@@ -170,6 +175,20 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       }
     }
   };
+
+  React.useEffect(() => {
+    const service = new SponsorService(token);
+    service
+      .listTeamSponsors(accountId, seasonId, teamSeasonId)
+      .then((sponsors) => {
+        setTeamSponsors(sponsors);
+        setTeamSponsorError(null);
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load team sponsors:', error);
+        setTeamSponsorError('Team sponsors are currently unavailable.');
+      });
+  }, [accountId, seasonId, teamSeasonId, token]);
 
   const handleCloseSummaryDialog = () => {
     setSummaryDialogOpen(false);
@@ -349,29 +368,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Our Sponsors</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center items-center gap-8 flex-wrap">
-              <Image
-                src="/placeholder.png"
-                alt="Sponsor 1"
-                width={120}
-                height={60}
-                className="h-12 object-contain"
-              />
-              <Image
-                src="/placeholder.png"
-                alt="Sponsor 2"
-                width={120}
-                height={60}
-                className="h-12 object-contain"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <SponsorCard
+          sponsors={teamSponsors}
+          title="Team Sponsors"
+          emptyMessage={teamSponsorError ?? 'No team sponsors have been added yet.'}
+        />
       </div>
 
       {/* Media Section */}

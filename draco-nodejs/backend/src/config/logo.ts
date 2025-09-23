@@ -151,3 +151,48 @@ export const getContactPhotoUrl = (
     return `/${generateContactPhotoPath(accountId.toString(), contactId.toString())}`;
   }
 };
+
+export const SPONSOR_PHOTO_CONFIG = {
+  WIDTH: 300,
+  HEIGHT: 150,
+  OUTPUT_FORMAT: 'png',
+  STORAGE_PATH: 'uploads',
+  MAX_UPLOAD_SIZE: 10 * 1024 * 1024,
+  ACCEPTED_MIME_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+};
+
+export const validateSponsorPhotoFile = (file: Express.Multer.File): string | null => {
+  if (file.size > SPONSOR_PHOTO_CONFIG.MAX_UPLOAD_SIZE) {
+    return `File size must be less than ${SPONSOR_PHOTO_CONFIG.MAX_UPLOAD_SIZE / (1024 * 1024)}MB`;
+  }
+
+  if (!SPONSOR_PHOTO_CONFIG.ACCEPTED_MIME_TYPES.includes(file.mimetype)) {
+    return 'Invalid file type for sponsor photo';
+  }
+
+  return null;
+};
+
+export const generateSponsorPhotoPath = (accountId: string, sponsorId: string): string => {
+  return `${SPONSOR_PHOTO_CONFIG.STORAGE_PATH}/${accountId}/sponsor-photos/${sponsorId}-photo.${SPONSOR_PHOTO_CONFIG.OUTPUT_FORMAT}`;
+};
+
+export const getSponsorPhotoUrl = (accountId: string | number, sponsorId: string | number): string => {
+  if (process.env.STORAGE_PROVIDER === 's3') {
+    if (!process.env.S3_BUCKET) {
+      throw new Error('S3_BUCKET environment variable must be set for S3 storage');
+    }
+    const bucket = process.env.S3_BUCKET;
+    const region = process.env.S3_REGION || 'us-east-1';
+    const s3Endpoint = process.env.S3_ENDPOINT || '';
+
+    if (s3Endpoint.includes('localhost')) {
+      const endpoint = s3Endpoint.replace(/^https?:\/\//, '');
+      return `http://${endpoint}/${bucket}/${accountId}/sponsor-photos/${sponsorId}-photo.png`;
+    }
+
+    return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/sponsor-photos/${sponsorId}-photo.png`;
+  }
+
+  return `/${generateSponsorPhotoPath(accountId.toString(), sponsorId.toString())}`;
+};

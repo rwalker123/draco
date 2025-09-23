@@ -7,6 +7,7 @@ import {
   ISeasonRepository,
   ILeagueRepository,
   ICleanupRepository,
+  ISponsorRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -17,6 +18,7 @@ import {
   PrismaSeasonRepository,
   PrismaLeagueRepository,
   PrismaCleanupRepository,
+  PrismaSponsorRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -34,6 +36,7 @@ export class RepositoryFactory {
   private static seasonRepository: ISeasonRepository;
   private static leagueRepository: ILeagueRepository;
   private static cleanupRepository: ICleanupRepository;
+  private static sponsorRepository: ISponsorRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -89,5 +92,12 @@ export class RepositoryFactory {
       this.cleanupRepository = new PrismaCleanupRepository(prisma);
     }
     return this.cleanupRepository;
+  }
+
+  static getSponsorRepository(): ISponsorRepository {
+    if (!this.sponsorRepository) {
+      this.sponsorRepository = new PrismaSponsorRepository(prisma);
+    }
+    return this.sponsorRepository;
   }
 }

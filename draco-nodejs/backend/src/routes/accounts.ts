@@ -11,6 +11,7 @@ import accountsSettingsRouter from './accounts-settings.js';
 import accountsAssetsRouter from './accounts-assets.js';
 import accountsWorkoutsRouter from './accounts-workouts.js';
 import accountsPlayerClassifiedsRouter from './accounts-player-classifieds.js';
+import accountsSponsorsRouter from './accounts-sponsors.js';
 
 const router = Router({ mergeParams: true });
 
@@ -41,5 +42,8 @@ router.use('/', accountsWorkoutsRouter);
 
 // PlayerClassifieds endpoints
 router.use('/:accountId/player-classifieds', accountsPlayerClassifiedsRouter);
+
+// Sponsor management endpoints
+router.use('/', accountsSponsorsRouter);
 
 export default router;

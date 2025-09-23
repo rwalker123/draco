@@ -1,5 +1,10 @@
 import { Request } from 'express';
-import { validateContactPhotoFile, getContactPhotoUrl } from '../../config/logo.js';
+import {
+  validateContactPhotoFile,
+  getContactPhotoUrl,
+  validateSponsorPhotoFile,
+  getSponsorPhotoUrl,
+} from '../../config/logo.js';
 import { createStorageService } from '../../services/storageService.js';
 
 /**
@@ -32,4 +37,25 @@ export const handleContactPhotoUpload = async (
 
   // Generate the public photo URL for the response
   return getContactPhotoUrl(accountId.toString(), contactId.toString());
+};
+
+export const handleSponsorPhotoUpload = async (
+  req: Request,
+  accountId: bigint,
+  sponsorId: bigint,
+): Promise<string | null> => {
+  if (!req.file) {
+    return null;
+  }
+
+  const validationError = validateSponsorPhotoFile(req.file);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const storageService = createStorageService();
+
+  await storageService.saveSponsorPhoto(accountId.toString(), sponsorId.toString(), req.file.buffer);
+
+  return getSponsorPhotoUrl(accountId.toString(), sponsorId.toString());
 };
