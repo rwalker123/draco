@@ -65,6 +65,36 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizeRoleId = (roleId?: string | null) => (roleId ? roleId.toLowerCase() : undefined);
+
+  const getHierarchyForRole = (roleId?: string | null): string[] => {
+    if (!roleMetadata || !roleId) return [];
+
+    const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
+    for (const candidate of candidates) {
+      const hierarchy = roleMetadata.hierarchy[candidate];
+      if (hierarchy) {
+        return hierarchy.map((id) => id.toLowerCase());
+      }
+    }
+    return [];
+  };
+
+  const getPermissionsForRole = (
+    roleId?: string | null,
+  ): { roleId: string; permissions: string[]; context: string } | undefined => {
+    if (!roleMetadata || !roleId) return undefined;
+
+    const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
+    for (const candidate of candidates) {
+      const perms = roleMetadata.permissions[candidate];
+      if (perms) {
+        return perms;
+      }
+    }
+    return undefined;
+  };
+
   // Update loading state based on auth state
   useEffect(() => {
     if (authLoading) {
@@ -181,38 +211,55 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const hasRole = (roleId: string, context?: RoleContext): boolean => {
-    if (!userRoles || !roleMetadata) return false;
+    if (!userRoles) return false;
 
     // Convert role name to ID if needed
-    const actualRoleId = ROLE_NAME_TO_ID[roleId] || roleId;
+    const actualRoleId = normalizeRoleId(ROLE_NAME_TO_ID[roleId] || roleId);
+
+    const matchesContext = (contactRole: ContactRoleType) => {
+      if (context?.accountId && userRoles.accountId !== context.accountId) {
+        return false;
+      }
+      if (context?.teamId && contactRole.roleData !== context.teamId) {
+        return false;
+      }
+      if (context?.leagueId && contactRole.roleData !== context.leagueId) {
+        return false;
+      }
+      return true;
+    };
 
     // Check global roles first
     for (const globalRole of userRoles.globalRoles) {
-      const globalRoleId = ROLE_NAME_TO_ID[globalRole] || globalRole;
-      if (globalRoleId === actualRoleId) {
+      const globalRoleId = normalizeRoleId(ROLE_NAME_TO_ID[globalRole] || globalRole);
+      if (globalRoleId && actualRoleId && globalRoleId === actualRoleId) {
         return true;
       }
     }
 
     // Check contact roles
     for (const contactRole of userRoles.contactRoles) {
-      const contactRoleId = ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId;
-      if (contactRoleId === actualRoleId) {
-        // Validate context if provided
-        if (context?.accountId && userRoles.accountId !== context.accountId) {
-          continue;
-        }
-        if (context?.teamId && contactRole.roleData !== context.teamId) {
-          continue;
-        }
-        if (context?.leagueId && contactRole.roleData !== context.leagueId) {
-          continue;
-        }
+      const contactRoleId = normalizeRoleId(
+        ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId,
+      );
+      if (
+        contactRoleId &&
+        actualRoleId &&
+        contactRoleId === actualRoleId &&
+        matchesContext(contactRole)
+      ) {
         return true;
       }
     }
 
+    if (!roleMetadata) {
+      return false;
+    }
+
     // Check role hierarchy
+    if (!actualRoleId) {
+      return false;
+    }
     return hasRoleOrHigher(actualRoleId);
   };
 
@@ -220,12 +267,17 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     if (!userRoles || !roleMetadata) return false;
 
     // Convert required role to ID if needed
-    const requiredRoleId = ROLE_NAME_TO_ID[requiredRole] || requiredRole;
+    const requiredRoleId = normalizeRoleId(ROLE_NAME_TO_ID[requiredRole] || requiredRole);
+    if (!requiredRoleId) return false;
 
     // Check global roles
     for (const globalRole of userRoles.globalRoles) {
-      const globalRoleId = ROLE_NAME_TO_ID[globalRole] || globalRole;
-      const inheritedRoles = roleMetadata.hierarchy[globalRoleId] || [];
+      const globalRoleId = normalizeRoleId(ROLE_NAME_TO_ID[globalRole] || globalRole);
+      if (!globalRoleId) continue;
+      if (globalRoleId === requiredRoleId) {
+        return true;
+      }
+      const inheritedRoles = getHierarchyForRole(globalRoleId);
       if (inheritedRoles.includes(requiredRoleId)) {
         return true;
       }
@@ -233,8 +285,14 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
     // Check contact roles
     for (const contactRole of userRoles.contactRoles) {
-      const contactRoleId = ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId;
-      const inheritedRoles = roleMetadata.hierarchy[contactRoleId] || [];
+      const contactRoleId = normalizeRoleId(
+        ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId,
+      );
+      if (!contactRoleId) continue;
+      if (contactRoleId === requiredRoleId) {
+        return true;
+      }
+      const inheritedRoles = getHierarchyForRole(contactRoleId);
       if (inheritedRoles.includes(requiredRoleId)) {
         return true;
       }
@@ -248,8 +306,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
     // Check global roles first
     for (const globalRole of userRoles.globalRoles) {
-      const globalRoleId = ROLE_NAME_TO_ID[globalRole] || globalRole;
-      const rolePerms = roleMetadata.permissions[globalRoleId];
+      const globalRoleId = normalizeRoleId(ROLE_NAME_TO_ID[globalRole] || globalRole);
+      const rolePerms = getPermissionsForRole(globalRoleId);
       if (
         rolePerms &&
         (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
@@ -271,8 +329,10 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         continue;
       }
 
-      const contactRoleId = ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId;
-      const rolePerms = roleMetadata.permissions[contactRoleId];
+      const contactRoleId = normalizeRoleId(
+        ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId,
+      );
+      const rolePerms = getPermissionsForRole(contactRoleId);
       if (
         rolePerms &&
         (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))

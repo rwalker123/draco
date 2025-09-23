@@ -25,7 +25,14 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, token, loading: authLoading, initialized: authInitialized } = useAuth();
-  const { hasRole, hasPermission, loading: roleLoading, initialized: roleInitialized } = useRole();
+  const {
+    userRoles,
+    hasRole,
+    hasPermission,
+    loading: roleLoading,
+    initialized: roleInitialized,
+    error: roleError,
+  } = useRole();
   const { currentAccount, loading: accountLoading, initialized: accountInitialized } = useAccount();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
@@ -44,8 +51,7 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     setIsAuthorized(null);
 
     // Wait for auth, role, and account data to load
-    const shouldWaitForAccount =
-      checkAccountBoundary && (!accountInitialized || accountLoading);
+    const shouldWaitForAccount = checkAccountBoundary && (!accountInitialized || accountLoading);
     if (
       !authInitialized ||
       !roleInitialized ||
@@ -65,8 +71,33 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[ProtectedRoute] contexts ready', {
+        path: pathname,
+        rolesRequired: routeData.roles,
+        permissionsRequired: requiredPermission,
+        checkAccountBoundary,
+        currentAccountId: currentAccount?.id,
+        tokenPresent: Boolean(token),
+        userPresent: Boolean(user),
+        userRoles,
+        roleError,
+      });
+    }
+
     // Check role requirements
     if (routeData.roles.length > 0) {
+      // If role data hasn't populated yet, keep waiting
+      if (!userRoles) {
+        if (process.env.NODE_ENV === 'development' && roleError) {
+          console.debug('[ProtectedRoute] role load error', {
+            path: pathname,
+            error: roleError,
+          });
+        }
+        return;
+      }
+
       const hasRequiredRole = routeData.roles.some((role) => {
         // If checking account boundary, pass account context
         if (checkAccountBoundary && currentAccount) {
@@ -76,6 +107,14 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
       });
 
       if (!hasRequiredRole) {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[ProtectedRoute] missing role', {
+            path: pathname,
+            requiredRoles: routeData.roles,
+            userRoles,
+            roleError,
+          });
+        }
         // Redirect to unauthorized page with context
         const params = new URLSearchParams({
           from: pathname,
@@ -105,6 +144,13 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     }
 
     // User is authorized
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[ProtectedRoute] access granted', {
+        path: pathname,
+        rolesRequired: routeData.roles,
+        permissionsRequired: requiredPermission,
+      });
+    }
     setIsAuthorized(true);
     setIsChecking(false);
   }, [
@@ -121,9 +167,11 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     router,
     pathname,
     routeData,
+    userRoles,
     authInitialized,
     roleInitialized,
     accountInitialized,
+    roleError,
   ]);
 
   // Handle browser navigation (back/forward)
@@ -155,8 +203,7 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
   }, [user, authLoading]);
 
   // Show loading state while checking auth/roles/accounts
-  const shouldWaitForAccount =
-    checkAccountBoundary && (!accountInitialized || accountLoading);
+  const shouldWaitForAccount = checkAccountBoundary && (!accountInitialized || accountLoading);
   if (
     !authInitialized ||
     !roleInitialized ||
