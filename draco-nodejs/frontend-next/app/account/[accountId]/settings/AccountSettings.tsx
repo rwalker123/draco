@@ -7,6 +7,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import UrlManagement from '../../../../components/UrlManagement';
+import AccountPageHeader from '../../../../components/AccountPageHeader';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -139,84 +140,86 @@ const AccountSettings: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Account Settings
-        </Typography>
-        <Typography variant="h5" color="text.secondary" gutterBottom>
-          {account.name}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {"Manage your organization's configuration and settings"}
-        </Typography>
-      </Box>
-
-      {/* Settings Tabs */}
-      <Paper sx={{ width: '100%' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            aria-label="account settings tabs"
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab label="URLs & Domains" {...a11yProps(0)} />
-            <Tab label="General Settings" {...a11yProps(1)} />
-            <Tab label="Social Media" {...a11yProps(2)} />
-            <Tab label="Security" {...a11yProps(3)} />
-          </Tabs>
+      <AccountPageHeader accountId={accountIdStr || ''} showSeasonInfo={false}>
+        <Box textAlign="center">
+          <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+            Account Settings
+          </Typography>
+          <Typography variant="h6" sx={{ color: 'white', opacity: 0.85, mb: 1 }}>
+            {account.name}
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'white', opacity: 0.8 }}>
+            {"Manage your organization's configuration and settings."}
+          </Typography>
         </Box>
+      </AccountPageHeader>
 
-        {/* URL Management Tab */}
-        <TabPanel value={tabValue} index={0}>
-          <UrlManagement
-            accountId={accountIdStr || ''}
-            accountName={account.name}
-            onUrlsChange={(urls) => {
-              setAccount({ ...account, urls });
-            }}
-          />
-        </TabPanel>
-
-        {/* General Settings Tab */}
-        <TabPanel value={tabValue} index={1}>
-          <Typography variant="h6" gutterBottom>
-            General Account Settings
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Configure basic account information and preferences.
-          </Typography>
-
-          <Alert severity="info" sx={{ mb: 3 }}>
-            General settings management is coming soon. This will include account name, timezone,
-            and other basic configuration options.
-          </Alert>
-
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Account Name:</strong> {account.name}
-              <br />
-              <strong>Account Type:</strong> {account.accountType}
-              <br />
-              <strong>First Year:</strong> {account.firstYear}
-              <br />
-              <strong>Affiliation:</strong> {account.affiliation?.name || 'None'}
-              <br />
-              <strong>Timezone:</strong> {account.timezoneId}
-            </Typography>
+      <Box sx={{ p: 3 }}>
+        {/* Settings Tabs */}
+        <Paper sx={{ width: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              aria-label="account settings tabs"
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <Tab label="URLs & Domains" {...a11yProps(0)} />
+              <Tab label="General Settings" {...a11yProps(1)} />
+              <Tab label="Social Media" {...a11yProps(2)} />
+              <Tab label="Security" {...a11yProps(3)} />
+            </Tabs>
           </Box>
-        </TabPanel>
 
-        {/* Social Media Tab */}
-        <TabPanel value={tabValue} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Social Media Integration
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Connect your social media accounts and configure sharing options.
-          </Typography>
+          {/* URL Management Tab */}
+          <TabPanel value={tabValue} index={0}>
+            <UrlManagement
+              accountId={accountIdStr || ''}
+              accountName={account.name}
+              onUrlsChange={(urls) => {
+                setAccount({ ...account, urls });
+              }}
+            />
+          </TabPanel>
+
+          {/* General Settings Tab */}
+          <TabPanel value={tabValue} index={1}>
+            <Typography variant="h6" gutterBottom>
+              General Account Settings
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Configure basic account information and preferences.
+            </Typography>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              General settings management is coming soon. This will include account name, timezone,
+              and other basic configuration options.
+            </Alert>
+
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Account Name:</strong> {account.name}
+                <br />
+                <strong>Account Type:</strong> {account.accountType}
+                <br />
+                <strong>First Year:</strong> {account.firstYear}
+                <br />
+                <strong>Affiliation:</strong> {account.affiliation?.name || 'None'}
+                <br />
+                <strong>Timezone:</strong> {account.timezoneId}
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          {/* Social Media Tab */}
+          <TabPanel value={tabValue} index={2}>
+            <Typography variant="h6" gutterBottom>
+              Social Media Integration
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Connect your social media accounts and configure sharing options.
+            </Typography>
 
           <Alert severity="info" sx={{ mb: 3 }}>
             Social media integration is coming soon. This will include Twitter, Facebook, and
@@ -259,6 +262,7 @@ const AccountSettings: React.FC = () => {
           </Box>
         </TabPanel>
       </Paper>
+      </Box>
     </main>
   );
 };
