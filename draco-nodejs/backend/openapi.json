@@ -997,7 +997,8 @@
         },
         "required": [
           "id",
-          "name"
+          "name",
+          "accountLogoUrl"
         ]
       },
       "AccountSearchQuery": {
@@ -1277,7 +1278,8 @@
             },
             "required": [
               "id",
-              "name"
+              "name",
+              "accountLogoUrl"
             ]
           },
           "currentSeason": {
