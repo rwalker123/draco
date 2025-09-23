@@ -127,7 +127,7 @@ export interface ITeamsWantedPublicResponse {
   // phone: excluded for privacy/security
   experience: string;
   positionsPlayed: string;
-  birthDate: string | null;
+  age: number | null;
   // accessCode never included for security
   account: {
     id: string;

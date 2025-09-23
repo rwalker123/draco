@@ -71,6 +71,7 @@ export const createMockTeamsWanted = (
   experience: 'Intermediate player with 3 years experience',
   positionsPlayed: 'pitcher,outfield',
   birthDate: new Date('2000-06-15'),
+  age: 24,
   account: {
     id: '1',
     name: 'Test Baseball Club',

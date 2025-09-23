@@ -229,7 +229,7 @@ export class PlayerClassifiedService {
   async getTeamsWantedContactInfo(
     classifiedId: bigint,
     accountId: bigint,
-  ): Promise<{ email: string; phone: string }> {
+  ): Promise<{ email: string; phone: string; birthDate: string | null }> {
     // Delegate to specialized data service
     return await this.dataService.getTeamsWantedContactInfo(classifiedId, accountId);
   }

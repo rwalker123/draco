@@ -35,6 +35,7 @@ import TeamsWantedCardPublic from './TeamsWantedCardPublic';
 import CreateTeamsWantedDialog from './CreateTeamsWantedDialog';
 import { accessCodeService } from '../../services/accessCodeService';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
+import { calculateAge } from '../../utils/dateUtils';
 
 // ============================================================================
 // COMPONENT INTERFACES
@@ -135,14 +136,30 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         .split(',')
         .map((p) => p.trim())
         .filter((p) => p.length > 0),
-      birthDate: new Date(classified.birthDate),
+      birthDate:
+        classified.birthDate && !Number.isNaN(new Date(classified.birthDate).getTime())
+          ? new Date(classified.birthDate)
+          : null,
     };
+  };
+
+  const computeAge = (birthDate: Date | string | null | undefined): number | null => {
+    if (!birthDate) {
+      return null;
+    }
+
+    const parsed = new Date(birthDate);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return calculateAge(parsed);
   };
 
   // Fetch contact information for edit purposes
   const fetchContactForEdit = async (
     classifiedId: string,
-  ): Promise<{ email: string; phone: string } | null> => {
+  ): Promise<{ email: string; phone: string; birthDate: string | null } | null> => {
     if (!verifiedAccessCode) {
       setEditContactError('Access code not available');
       return null;
@@ -276,14 +293,46 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
       setEditDialogOpen(false);
 
       // Update the access code result with the new data
-      setAccessCodeResult((prev) =>
-        prev
-          ? {
-              ...prev,
-              classified: updatedClassified,
-            }
-          : null,
-      );
+      setAccessCodeResult((prev) => {
+        if (!prev) {
+          return null;
+        }
+
+        const existing = prev.classified;
+
+        if (existing) {
+          return {
+            ...prev,
+            classified: {
+              ...existing,
+              id: updatedClassified.id,
+              accountId: updatedClassified.accountId,
+              dateCreated: updatedClassified.dateCreated,
+              name: updatedClassified.name,
+              email: updatedClassified.email ?? existing.email,
+              phone: updatedClassified.phone ?? existing.phone,
+              experience: updatedClassified.experience,
+              positionsPlayed: updatedClassified.positionsPlayed,
+              birthDate: updatedClassified.birthDate ?? existing.birthDate,
+            },
+          };
+        }
+
+        return {
+          ...prev,
+          classified: {
+            id: updatedClassified.id,
+            accountId: updatedClassified.accountId,
+            dateCreated: updatedClassified.dateCreated,
+            name: updatedClassified.name,
+            email: updatedClassified.email ?? '',
+            phone: updatedClassified.phone ?? '',
+            experience: updatedClassified.experience,
+            positionsPlayed: updatedClassified.positionsPlayed,
+            birthDate: updatedClassified.birthDate ?? new Date().toISOString(),
+          },
+        };
+      });
 
       // Clear success message after delay
       setTimeout(() => {
@@ -311,15 +360,21 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     }
 
     // Transform ITeamsWantedClassified to ITeamsWantedOwnerResponse with contact info
-    const classifiedWithAccount = {
-      ...accessCodeResult.classified,
-      email: contactInfo?.email || '', // Use fetched email or empty string
-      phone: contactInfo?.phone || '', // Use fetched phone or empty string
+    const classifiedWithAccount: ITeamsWantedOwnerResponse = {
+      id: accessCodeResult.classified.id,
+      accountId: accessCodeResult.classified.accountId,
+      dateCreated: accessCodeResult.classified.dateCreated,
+      name: accessCodeResult.classified.name,
+      email: contactInfo?.email || accessCodeResult.classified.email,
+      phone: contactInfo?.phone || accessCodeResult.classified.phone,
+      experience: accessCodeResult.classified.experience,
+      positionsPlayed: accessCodeResult.classified.positionsPlayed,
+      birthDate: contactInfo?.birthDate ?? accessCodeResult.classified.birthDate ?? null,
       account: {
         id: accessCodeResult.classified.accountId,
         name: 'Your Ad', // We don't have the account name in this context
       },
-    } as ITeamsWantedOwnerResponse;
+    };
 
     setEditingClassified(classifiedWithAccount);
     setEditDialogOpen(true);
@@ -393,7 +448,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
                   name: classified.name,
                   experience: classified.experience,
                   positionsPlayed: classified.positionsPlayed,
-                  birthDate: classified.birthDate,
+                  age: classified.age ?? computeAge(classified.birthDate),
                   account: classified.account,
                 }}
                 onEdit={onEdit}
@@ -533,7 +588,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
                 name: classified.name,
                 experience: classified.experience,
                 positionsPlayed: classified.positionsPlayed,
-                birthDate: classified.birthDate,
+                age: computeAge(classified.birthDate),
                 account: {
                   id: classified.accountId,
                   name: 'Your Ad', // Since this is from access code, we don't have account name
