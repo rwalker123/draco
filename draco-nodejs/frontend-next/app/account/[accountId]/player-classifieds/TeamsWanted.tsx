@@ -140,8 +140,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const convertToFormState = (classified: ITeamsWantedResponse): ITeamsWantedFormState => {
     const formState = {
       name: classified.name,
-      email: classified.email,
-      phone: classified.phone,
+      email: classified.email ?? '',
+      phone: classified.phone ?? '',
       experience: classified.experience,
       positionsPlayed: classified.positionsPlayed
         .split(',')

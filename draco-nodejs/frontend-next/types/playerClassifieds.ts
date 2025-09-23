@@ -114,8 +114,13 @@ export interface ITeamsWantedPublicResponse
 }
 
 // Teams Wanted response (authenticated account members view)
-export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
-  // Include full PII for authenticated account members, but omit accessCode
+export interface ITeamsWantedResponse
+  extends Omit<ITeamsWantedClassified, 'accessCode' | 'birthDate' | 'email' | 'phone'> {
+  // Backend responses include an age but only return contact info when requested separately
+  age: number | null;
+  birthDate?: Date | string | null;
+  email?: string;
+  phone?: string;
   account: {
     id: string;
     name: string;
