@@ -424,9 +424,7 @@ const BaseballAccountHome: React.FC = () => {
               sx={{ mb: 0 }}
               excludeAccountId={accountIdStr}
               onOrganizationsLoaded={(organizations) => {
-                // Only show the widget if there are organizations to display (excluding current account)
-                const otherOrganizations = organizations.filter((org) => org.id !== accountIdStr);
-                setShowOrganizationsWidget(otherOrganizations.length > 0);
+                setShowOrganizationsWidget(organizations.length > 0);
               }}
             />
           </Box>

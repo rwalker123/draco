@@ -63,7 +63,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const apiClient = useApiClient();
   const router = useRouter();
 
@@ -97,14 +97,14 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       const organizations = (data as AccountType[]) || [];
       setAccounts(organizations);
       if (onOrganizationsLoaded) {
-        onOrganizationsLoaded(organizations);
+        onOrganizationsLoaded(filteredAccounts);
       }
     } catch {
       setError('Failed to load your organizations. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, token, providedOrganizations, onOrganizationsLoaded]);
+  }, [user, providedOrganizations, onOrganizationsLoaded, apiClient]);
 
   useEffect(() => {
     if (user && !providedOrganizations) {
