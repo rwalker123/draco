@@ -7,6 +7,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import UrlManagement from '../../../../components/UrlManagement';
+import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import type { AccountType } from '@draco/shared-schemas';
@@ -133,131 +134,137 @@ const AccountSettings: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Account Settings
-        </Typography>
-        <Typography variant="h5" color="text.secondary" gutterBottom>
-          {account.name}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {"Manage your organization's configuration and settings"}
-        </Typography>
-      </Box>
-
-      {/* Settings Tabs */}
-      <Paper sx={{ width: '100%' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            aria-label="account settings tabs"
-            variant="scrollable"
-            scrollButtons="auto"
+      <AccountPageHeader accountId={accountIdStr || ''} showSeasonInfo={false}>
+        <Box textAlign="center">
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
           >
-            <Tab label="URLs & Domains" {...a11yProps(0)} />
-            <Tab label="General Settings" {...a11yProps(1)} />
-            <Tab label="Social Media" {...a11yProps(2)} />
-            <Tab label="Security" {...a11yProps(3)} />
-          </Tabs>
+            Account Settings
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'white', opacity: 0.8 }}>
+            {"Manage your organization's configuration and settings."}
+          </Typography>
         </Box>
+      </AccountPageHeader>
 
-        {/* URL Management Tab */}
-        <TabPanel value={tabValue} index={0}>
-          <UrlManagement
-            accountId={accountIdStr || ''}
-            accountName={account.name}
-            onUrlsChange={(urls) => {
-              setAccount({ ...account, urls });
-            }}
-          />
-        </TabPanel>
-
-        {/* General Settings Tab */}
-        <TabPanel value={tabValue} index={1}>
-          <Typography variant="h6" gutterBottom>
-            General Account Settings
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Configure basic account information and preferences.
-          </Typography>
-
-          <Alert severity="info" sx={{ mb: 3 }}>
-            General settings management is coming soon. This will include account name, timezone,
-            and other basic configuration options.
-          </Alert>
-
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Account Name:</strong> {account.name}
-              <br />
-              <strong>Account Type:</strong> {account.configuration?.accountType?.name ?? 'Unknown'}
-              <br />
-              <strong>First Year:</strong> {account.configuration?.firstYear ?? 'N/A'}
-              <br />
-              <strong>Affiliation:</strong> {account.configuration?.affiliation?.name || 'None'}
-              <br />
-              <strong>Timezone:</strong> {account.configuration?.timezoneId || 'Not set'}
-            </Typography>
+      <Box sx={{ p: 3 }}>
+        {/* Settings Tabs */}
+        <Paper sx={{ width: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              aria-label="account settings tabs"
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <Tab label="URLs & Domains" {...a11yProps(0)} />
+              <Tab label="General Settings" {...a11yProps(1)} />
+              <Tab label="Social Media" {...a11yProps(2)} />
+              <Tab label="Security" {...a11yProps(3)} />
+            </Tabs>
           </Box>
-        </TabPanel>
 
-        {/* Social Media Tab */}
-        <TabPanel value={tabValue} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Social Media Integration
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Connect your social media accounts and configure sharing options.
-          </Typography>
+          {/* URL Management Tab */}
+          <TabPanel value={tabValue} index={0}>
+            <UrlManagement
+              accountId={accountIdStr || ''}
+              accountName={account.name}
+              onUrlsChange={(urls) => {
+                setAccount({ ...account, urls });
+              }}
+            />
+          </TabPanel>
 
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Social media integration is coming soon. This will include Twitter, Facebook, and
-            YouTube account connections.
-          </Alert>
-
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Twitter Account:</strong>{' '}
-              {account.socials?.twitterAccountName || 'Not configured'}
-              <br />
-              <strong>Facebook Fan Page:</strong>{' '}
-              {account.socials?.facebookFanPage || 'Not configured'}
-              <br />
-              <strong>YouTube User ID:</strong> {account.socials?.youtubeUserId || 'Not configured'}
+          {/* General Settings Tab */}
+          <TabPanel value={tabValue} index={1}>
+            <Typography variant="h6" gutterBottom>
+              General Account Settings
             </Typography>
-          </Box>
-        </TabPanel>
-
-        {/* Security Tab */}
-        <TabPanel value={tabValue} index={3}>
-          <Typography variant="h6" gutterBottom>
-            Security Settings
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Manage account security, user permissions, and access controls.
-          </Typography>
-
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Security settings management is coming soon. This will include user roles, permissions,
-            and access control configuration.
-          </Alert>
-
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Owner:</strong>{' '}
-              {account.accountOwner?.contact
-                ? `${account.accountOwner.contact.firstName} ${account.accountOwner.contact.lastName}`
-                : 'Not assigned'}
-              <br />
-              <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}
-              <br />
-              <strong>Administrator:</strong> {hasRole('Administrator') ? 'Yes' : 'No'}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Configure basic account information and preferences.
             </Typography>
-          </Box>
-        </TabPanel>
-      </Paper>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              General settings management is coming soon. This will include account name, timezone,
+              and other basic configuration options.
+            </Alert>
+
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Account Name:</strong> {account.name}
+                <br />
+                <strong>Account Type:</strong>{' '}
+                {account.configuration?.accountType?.name ?? 'Unknown'}
+                <br />
+                <strong>First Year:</strong> {account.configuration?.firstYear ?? 'N/A'}
+                <br />
+                <strong>Affiliation:</strong> {account.configuration?.affiliation?.name || 'None'}
+                <br />
+                <strong>Timezone:</strong> {account.configuration?.timezoneId || 'Not set'}
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          {/* Social Media Tab */}
+          <TabPanel value={tabValue} index={2}>
+            <Typography variant="h6" gutterBottom>
+              Social Media Integration
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Connect your social media accounts and configure sharing options.
+            </Typography>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Social media integration is coming soon. This will include Twitter, Facebook, and
+              YouTube account connections.
+            </Alert>
+
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Twitter Account:</strong>{' '}
+                {account.socials?.twitterAccountName || 'Not configured'}
+                <br />
+                <strong>Facebook Fan Page:</strong>{' '}
+                {account.socials?.facebookFanPage || 'Not configured'}
+                <br />
+                <strong>YouTube User ID:</strong>{' '}
+                {account.socials?.youtubeUserId || 'Not configured'}
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          {/* Security Tab */}
+          <TabPanel value={tabValue} index={3}>
+            <Typography variant="h6" gutterBottom>
+              Security Settings
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Manage account security, user permissions, and access controls.
+            </Typography>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Security settings management is coming soon. This will include user roles,
+              permissions, and access control configuration.
+            </Alert>
+
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Owner:</strong>{' '}
+                {account.accountOwner?.contact
+                  ? `${account.accountOwner.contact.firstName} ${account.accountOwner.contact.lastName}`
+                  : 'Not assigned'}
+                <br />
+                <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}
+                <br />
+                <strong>Administrator:</strong> {hasRole('Administrator') ? 'Yes' : 'No'}
+              </Typography>
+            </Box>
+          </TabPanel>
+        </Paper>
+      </Box>
     </main>
   );
 };
