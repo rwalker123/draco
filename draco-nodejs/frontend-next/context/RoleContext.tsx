@@ -22,6 +22,7 @@ interface UserRoles {
 export interface RoleContextType {
   userRoles: UserRoles | null;
   loading: boolean;
+  initialized: boolean;
   error: string | null;
   hasRole: (roleId: string, context?: RoleContext) => boolean;
   hasPermission: (permission: string, context?: RoleContext) => boolean;
@@ -61,6 +62,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize loading as true if we have auth but need to fetch roles
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Update loading state based on auth state
@@ -123,6 +125,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       if (!token) return;
 
       setLoading(true);
+      setInitialized(false);
       setError(null);
 
       try {
@@ -154,6 +157,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         setUserRoles(null);
       } finally {
         setLoading(false);
+        setInitialized(true);
       }
     },
     [token, fetchRoleMetadata],
@@ -164,6 +168,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       fetchUserRoles(accountIdStr || undefined);
     } else {
       clearRoles();
+      setInitialized(true);
     }
   }, [user, token, fetchUserRoles, accountIdStr]);
 
@@ -172,6 +177,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     setRoleMetadata(null);
     setError(null);
     setLoading(false);
+    setInitialized(true);
   };
 
   const hasRole = (roleId: string, context?: RoleContext): boolean => {
@@ -295,6 +301,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       value={{
         userRoles,
         loading,
+        initialized,
         error,
         hasRole,
         hasPermission,

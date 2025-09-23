@@ -24,9 +24,9 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, token, loading: authLoading } = useAuth();
-  const { hasRole, hasPermission, loading: roleLoading } = useRole();
-  const { currentAccount, loading: accountLoading } = useAccount();
+  const { user, token, loading: authLoading, initialized: authInitialized } = useAuth();
+  const { hasRole, hasPermission, loading: roleLoading, initialized: roleInitialized } = useRole();
+  const { currentAccount, loading: accountLoading, initialized: accountInitialized } = useAccount();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
@@ -44,8 +44,15 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     setIsAuthorized(null);
 
     // Wait for auth, role, and account data to load
-    const shouldWaitForAccount = checkAccountBoundary && accountLoading;
-    if (authLoading || roleLoading || shouldWaitForAccount) {
+    const shouldWaitForAccount =
+      checkAccountBoundary && (!accountInitialized || accountLoading);
+    if (
+      !authInitialized ||
+      !roleInitialized ||
+      authLoading ||
+      roleLoading ||
+      shouldWaitForAccount
+    ) {
       return;
     }
 
@@ -114,6 +121,9 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     router,
     pathname,
     routeData,
+    authInitialized,
+    roleInitialized,
+    accountInitialized,
   ]);
 
   // Handle browser navigation (back/forward)
@@ -145,8 +155,17 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
   }, [user, authLoading]);
 
   // Show loading state while checking auth/roles/accounts
-  const shouldWaitForAccount = checkAccountBoundary && accountLoading;
-  if (authLoading || roleLoading || shouldWaitForAccount || isChecking || isAuthorized === null) {
+  const shouldWaitForAccount =
+    checkAccountBoundary && (!accountInitialized || accountLoading);
+  if (
+    !authInitialized ||
+    !roleInitialized ||
+    authLoading ||
+    roleLoading ||
+    shouldWaitForAccount ||
+    isChecking ||
+    isAuthorized === null
+  ) {
     return (
       <Box
         sx={{
