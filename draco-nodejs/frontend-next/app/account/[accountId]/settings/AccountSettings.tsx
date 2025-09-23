@@ -142,11 +142,12 @@ const AccountSettings: React.FC = () => {
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountIdStr || ''} showSeasonInfo={false}>
         <Box textAlign="center">
-          <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
+          >
             Account Settings
-          </Typography>
-          <Typography variant="h6" sx={{ color: 'white', opacity: 0.85, mb: 1 }}>
-            {account.name}
           </Typography>
           <Typography variant="body1" sx={{ color: 'white', opacity: 0.8 }}>
             {"Manage your organization's configuration and settings."}
@@ -221,47 +222,47 @@ const AccountSettings: React.FC = () => {
               Connect your social media accounts and configure sharing options.
             </Typography>
 
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Social media integration is coming soon. This will include Twitter, Facebook, and
-            YouTube account connections.
-          </Alert>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Social media integration is coming soon. This will include Twitter, Facebook, and
+              YouTube account connections.
+            </Alert>
 
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Twitter Account:</strong> {account.twitterAccountName || 'Not configured'}
-              <br />
-              <strong>Facebook Fan Page:</strong> {account.facebookFanPage || 'Not configured'}
-              <br />
-              <strong>YouTube User ID:</strong> {account.youtubeUserId || 'Not configured'}
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Twitter Account:</strong> {account.twitterAccountName || 'Not configured'}
+                <br />
+                <strong>Facebook Fan Page:</strong> {account.facebookFanPage || 'Not configured'}
+                <br />
+                <strong>YouTube User ID:</strong> {account.youtubeUserId || 'Not configured'}
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          {/* Security Tab */}
+          <TabPanel value={tabValue} index={3}>
+            <Typography variant="h6" gutterBottom>
+              Security Settings
             </Typography>
-          </Box>
-        </TabPanel>
-
-        {/* Security Tab */}
-        <TabPanel value={tabValue} index={3}>
-          <Typography variant="h6" gutterBottom>
-            Security Settings
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Manage account security, user permissions, and access controls.
-          </Typography>
-
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Security settings management is coming soon. This will include user roles, permissions,
-            and access control configuration.
-          </Alert>
-
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Owner:</strong> {account.ownerName || 'Not assigned'}
-              <br />
-              <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}
-              <br />
-              <strong>Administrator:</strong> {hasRole('Administrator') ? 'Yes' : 'No'}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Manage account security, user permissions, and access controls.
             </Typography>
-          </Box>
-        </TabPanel>
-      </Paper>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Security settings management is coming soon. This will include user roles,
+              permissions, and access control configuration.
+            </Alert>
+
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Owner:</strong> {account.ownerName || 'Not assigned'}
+                <br />
+                <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}
+                <br />
+                <strong>Administrator:</strong> {hasRole('Administrator') ? 'Yes' : 'No'}
+              </Typography>
+            </Box>
+          </TabPanel>
+        </Paper>
       </Box>
     </main>
   );

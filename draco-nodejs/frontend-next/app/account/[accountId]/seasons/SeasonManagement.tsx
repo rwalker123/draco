@@ -34,7 +34,6 @@ import {
   ContentCopy as CopyIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
-  Refresh as RefreshIcon,
   Group as GroupIcon,
   Remove as RemoveIcon,
   Sports as SportsIcon,
@@ -735,45 +734,13 @@ const SeasonManagement: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountIdStr || ''}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems={{ xs: 'stretch', md: 'center' }}
-          sx={{ flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}
-        >
-          <Box textAlign={{ xs: 'center', md: 'left' }}>
-            <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold' }}>
-              Season Management
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: 'white', opacity: 0.8 }}>
-              Manage seasons, leagues, and current season settings for your organization.
-            </Typography>
-          </Box>
-          <Box
-            display="flex"
-            flexWrap="wrap"
-            justifyContent={{ xs: 'center', md: 'flex-end' }}
-            sx={{ gap: 1 }}
-          >
-            <Button
-              variant="outlined"
-              color="inherit"
-              startIcon={<RefreshIcon />}
-              onClick={fetchSeasons}
-              disabled={loading}
-            >
-              Refresh
-            </Button>
-            {canCreate && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={openCreateDialog}
-              >
-                Create Season
-              </Button>
-            )}
-          </Box>
+        <Box textAlign="center">
+          <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold' }}>
+            Season Management
+          </Typography>
+          <Typography variant="subtitle1" sx={{ color: 'white', opacity: 0.8 }}>
+            Manage seasons, leagues, and current season settings for your organization.
+          </Typography>
         </Box>
       </AccountPageHeader>
 
@@ -840,102 +807,101 @@ const SeasonManagement: React.FC = () => {
                         )}
                       </Box>
 
-                    <Typography variant="body2" color="textSecondary" mb={2}>
-                      {season.leagues.length} league{season.leagues.length !== 1 ? 's' : ''}
-                    </Typography>
+                      <Typography variant="body2" color="textSecondary" mb={2}>
+                        {season.leagues.length} league{season.leagues.length !== 1 ? 's' : ''}
+                      </Typography>
 
-                    {season.leagues.length > 0 && (
-                      <Box mb={2}>
-                        <Typography variant="caption" color="textSecondary">
-                          Leagues:
-                        </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                          {season.leagues.slice(0, 3).map((league) => (
-                            <Chip
-                              key={league.id}
-                              label={league.leagueName}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
-                          {season.leagues.length > 3 && (
-                            <Chip
-                              label={`+${season.leagues.length - 3} more`}
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
+                      {season.leagues.length > 0 && (
+                        <Box mb={2}>
+                          <Typography variant="caption" color="textSecondary">
+                            Leagues:
+                          </Typography>
+                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
+                            {season.leagues.slice(0, 3).map((league) => (
+                              <Chip
+                                key={league.id}
+                                label={league.leagueName}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))}
+                            {season.leagues.length > 3 && (
+                              <Chip
+                                label={`+${season.leagues.length - 3} more`}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
                         </Box>
+                      )}
+
+                      <Box display="flex" gap={1} flexWrap="wrap">
+                        {canSetCurrent && !season.isCurrent && (
+                          <Tooltip title="Set as current season">
+                            <IconButton size="small" onClick={() => handleSetCurrentSeason(season)}>
+                              <StarBorderIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {canManageLeagues && (
+                          <Tooltip title="Manage leagues">
+                            <IconButton
+                              size="small"
+                              onClick={() => openLeagueManagementDialog(season)}
+                            >
+                              <GroupIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {canManageLeagues && (
+                          <Tooltip title="League Season Management">
+                            <IconButton
+                              size="small"
+                              onClick={() => navigateToLeagueSeasonManagement(season)}
+                            >
+                              <SportsIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {canEdit && (
+                          <Tooltip title="Edit season">
+                            <IconButton size="small" onClick={() => openEditDialog(season)}>
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {canEdit && (
+                          <Tooltip title="Copy season">
+                            <IconButton size="small" onClick={() => openCopyDialog(season)}>
+                              <CopyIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {canDelete && !season.isCurrent && (
+                          <Tooltip title="Delete season">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => openDeleteDialog(season)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </Box>
-                    )}
-
-                    <Box display="flex" gap={1} flexWrap="wrap">
-                      {canSetCurrent && !season.isCurrent && (
-                        <Tooltip title="Set as current season">
-                          <IconButton size="small" onClick={() => handleSetCurrentSeason(season)}>
-                            <StarBorderIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-
-                      {canManageLeagues && (
-                        <Tooltip title="Manage leagues">
-                          <IconButton
-                            size="small"
-                            onClick={() => openLeagueManagementDialog(season)}
-                          >
-                            <GroupIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-
-                      {canManageLeagues && (
-                        <Tooltip title="League Season Management">
-                          <IconButton
-                            size="small"
-                            onClick={() => navigateToLeagueSeasonManagement(season)}
-                          >
-                            <SportsIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-
-                      {canEdit && (
-                        <Tooltip title="Edit season">
-                          <IconButton size="small" onClick={() => openEditDialog(season)}>
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-
-                      {canEdit && (
-                        <Tooltip title="Copy season">
-                          <IconButton size="small" onClick={() => openCopyDialog(season)}>
-                            <CopyIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-
-                      {canDelete && !season.isCurrent && (
-                        <Tooltip title="Delete season">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => openDeleteDialog(season)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-          )}
-        </Box>
-      )}
-
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
       </Box>
 
       {/* League Management Dialog */}

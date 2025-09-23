@@ -24,6 +24,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Fab,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -270,17 +271,10 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
   }
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5" component="h2">
-          URL Management
-        </Typography>
-        {canManageUrls && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
-            Add URL
-          </Button>
-        )}
-      </Stack>
+    <Box sx={{ position: 'relative', minHeight: '400px' }}>
+      <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+        URL Management
+      </Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -495,6 +489,23 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
       <Typography variant="body2" color="text.secondary">
         You can use &quot;URL Management&quot; to update your URLs.
       </Typography>
+
+      {/* Floating Action Button for Add URL */}
+      {canManageUrls && (
+        <Fab
+          color="primary"
+          aria-label="add URL"
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+            zIndex: 1000,
+          }}
+          onClick={handleAddClick}
+        >
+          <AddIcon />
+        </Fab>
+      )}
     </Box>
   );
 };
