@@ -1,14 +1,19 @@
 import { getAccountBranding } from '../../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../../lib/seoMetadata';
 import HistoryClientWrapper from './HistoryClientWrapper';
 
 // Dynamically set the page title to "{Account Name} Email History"
 export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
   const { accountId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  return {
+  const description = `Review delivery results, engagement metrics, and archived messages for ${accountName}.`;
+  return buildSeoMetadata({
     title: `${accountName} Email History`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+    description,
+    path: `/account/${accountId}/communications/history`,
+    icon: iconUrl,
+    index: false,
+  });
 }
 
 export default function Page() {

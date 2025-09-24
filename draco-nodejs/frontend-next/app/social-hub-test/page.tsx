@@ -1,5 +1,35 @@
 'use client';
+
+import type { Metadata } from 'next';
 import React, { useState } from 'react';
+import { DEFAULT_SITE_NAME } from '../../lib/seoMetadata';
+
+export const metadata: Metadata = {
+  title: `Social Hub Experience Preview | ${DEFAULT_SITE_NAME}`,
+  description:
+    'Internal preview surface for validating the Draco Sports Manager social hub experience and content feed layouts.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: '/social-hub-test',
+  },
+  openGraph: {
+    title: `Social Hub Experience Preview | ${DEFAULT_SITE_NAME}`,
+    description:
+      'Prototype view showcasing social hub modules, featured content, and engagement widgets for Draco Sports Manager.',
+    url: '/social-hub-test',
+    siteName: DEFAULT_SITE_NAME,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Social Hub Experience Preview | ${DEFAULT_SITE_NAME}`,
+    description:
+      'Prototype view showcasing social hub modules, featured content, and engagement widgets for Draco Sports Manager.',
+  },
+};
 import {
   Box,
   Typography,

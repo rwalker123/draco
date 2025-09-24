@@ -1,4 +1,5 @@
 import { getAccountBranding } from '../../../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../../../lib/seoMetadata';
 import StandingsClientWrapper from './StandingsClientWrapper';
 
 export async function generateMetadata({
@@ -8,10 +9,13 @@ export async function generateMetadata({
 }) {
   const { accountId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  return {
+  const description = `Check the latest standings and league rankings for ${accountName} teams this season.`;
+  return buildSeoMetadata({
     title: `${accountName} Standings`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+    description,
+    path: `/account/${accountId}/seasons/${seasonId}/standings`,
+    icon: iconUrl,
+  });
 }
 
 export default function Page() {

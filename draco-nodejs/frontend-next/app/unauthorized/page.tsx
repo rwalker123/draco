@@ -1,5 +1,6 @@
 'use client';
 
+import type { Metadata } from 'next';
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -19,6 +20,34 @@ import {
 } from '@mui/icons-material';
 import { useAccount } from '../../context/AccountContext';
 import { useAuth } from '../../context/AuthContext';
+import { DEFAULT_SITE_NAME } from '../../lib/seoMetadata';
+
+export const metadata: Metadata = {
+  title: `Access Denied | ${DEFAULT_SITE_NAME}`,
+  description:
+    'You do not have permission to access this Draco Sports Manager page. Switch accounts or contact an administrator for additional access.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: '/unauthorized',
+  },
+  openGraph: {
+    title: `Access Denied | ${DEFAULT_SITE_NAME}`,
+    description:
+      'You do not have permission to access this Draco Sports Manager page. Switch accounts or contact an administrator for additional access.',
+    url: '/unauthorized',
+    siteName: DEFAULT_SITE_NAME,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Access Denied | ${DEFAULT_SITE_NAME}`,
+    description:
+      'You do not have permission to access this Draco Sports Manager page. Switch accounts or contact an administrator for additional access.',
+  },
+};
 
 function UnauthorizedContent() {
   const router = useRouter();

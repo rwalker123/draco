@@ -1,4 +1,5 @@
 import { getAccountBranding } from '../../../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../../../lib/seoMetadata';
 import EditWorkoutClientWrapper from './EditWorkoutClientWrapper';
 
 export async function generateMetadata({
@@ -8,11 +9,14 @@ export async function generateMetadata({
 }) {
   const { accountId, workoutId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  return {
+  const description = `Update workout ${workoutId} to refine training plans for ${accountName} athletes.`;
+  return buildSeoMetadata({
     title: `Edit Workout - ${accountName}`,
-    description: `Edit workout ${workoutId} for ${accountName}`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+    description,
+    path: `/account/${accountId}/workouts/${workoutId}/edit`,
+    icon: iconUrl,
+    index: false,
+  });
 }
 
 export default function EditWorkoutPage() {

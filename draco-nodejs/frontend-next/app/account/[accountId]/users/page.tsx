@@ -1,14 +1,18 @@
 import { getAccountBranding } from '../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../lib/seoMetadata';
 import UserManagementClientWrapper from './UserManagementClientWrapper';
 
 export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
   const { accountId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  return {
+  const description = `Manage staff access, invitations, and role assignments for ${accountName}.`;
+  return buildSeoMetadata({
     title: `User Management - ${accountName}`,
-    description: `Manage users and roles for ${accountName}`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+    description,
+    path: `/account/${accountId}/users`,
+    icon: iconUrl,
+    index: false,
+  });
 }
 
 export default function UserManagementPage() {
