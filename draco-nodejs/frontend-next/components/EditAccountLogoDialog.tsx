@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material';
 import Image from 'next/image';
 import { useAuth } from '../context/AuthContext';
+import { addCacheBuster } from '../utils/addCacheBuster';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
@@ -59,22 +60,11 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   useEffect(() => {
     if (open) {
       setLogoFile(null);
-      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, Date.now()) : null);
+      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
       setError(null);
       setLogoPreviewError(false);
     }
   }, [open, accountLogoUrl]);
-
-  useEffect(() => {}, [logoPreview]);
-
-  function addCacheBuster(url: string, buster: number) {
-    const u = new URL(
-      url,
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost',
-    );
-    u.searchParams.set('k', String(buster));
-    return u.toString();
-  }
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -114,8 +104,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
         const data = await response.json().catch(() => ({}));
         throw new Error(data.message || 'Failed to upload logo');
       }
-      const newBuster = Date.now();
-      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, newBuster) : null);
+      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
       onLogoUpdated();
       onClose();
     } catch (err) {
@@ -138,7 +127,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
         const data = await response.json().catch(() => ({}));
         throw new Error(data.message || 'Failed to delete logo');
       }
-      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, Date.now()) : null);
+      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
       onLogoUpdated();
       onClose();
     } catch (err) {

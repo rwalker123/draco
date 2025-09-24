@@ -46,8 +46,16 @@ import type {
   AccountType as SharedAccountType,
   AccountTypeReference,
   AccountAffiliationType,
+  CreateAccountType,
 } from '@draco/shared-schemas';
-import { getManagedAccounts } from '@draco/shared-api-client';
+import {
+  getManagedAccounts,
+  getAccountAffiliations,
+  getAccountTypes,
+  createAccount,
+  updateAccount,
+  deleteAccount,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 
 const AccountManagement: React.FC = () => {
@@ -68,20 +76,86 @@ const AccountManagement: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<SharedAccountType | null>(null);
 
-  // Form states
-  const [formData, setFormData] = useState({
+  type AccountFormState = {
+    name: string;
+    accountTypeId: string;
+    ownerUserId: string;
+    affiliationId: string;
+    timezoneId: string;
+    firstYear: number;
+  };
+
+  const initialFormState: AccountFormState = {
     name: '',
     accountTypeId: '',
     ownerUserId: '',
     affiliationId: '1',
     timezoneId: 'Eastern Standard Time',
     firstYear: new Date().getFullYear(),
-  });
+  };
+
+  // Form states
+  const [formData, setFormData] = useState<AccountFormState>(initialFormState);
 
   // Add state for logo dialog
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoDialogAccount, setLogoDialogAccount] = useState<SharedAccountType | null>(null);
   const [logoRefreshKey, setLogoRefreshKey] = useState(0);
+
+  const buildAccountPayload = useCallback(
+    (
+      state: AccountFormState,
+      existingAccount?: SharedAccountType | null,
+    ): Partial<CreateAccountType> => {
+      const accountType = accountTypes.find((type) => type.id === state.accountTypeId);
+      const affiliation = affiliations.find((item) => item.id === state.affiliationId);
+
+      const configuration: NonNullable<CreateAccountType['configuration']> = {};
+
+      if (accountType) {
+        configuration.accountType = {
+          id: accountType.id,
+          name: accountType.name,
+        };
+      }
+
+      if (affiliation) {
+        configuration.affiliation = {
+          id: affiliation.id,
+          name: affiliation.name,
+          url: affiliation.url ?? undefined,
+        };
+      }
+
+      if (state.timezoneId) {
+        configuration.timezoneId = state.timezoneId;
+      }
+
+      if (state.firstYear) {
+        configuration.firstYear = state.firstYear;
+      }
+
+      const payload: Partial<CreateAccountType> = {
+        name: state.name,
+        accountLogoUrl: existingAccount?.accountLogoUrl ?? '',
+      };
+
+      if (Object.keys(configuration).length > 0) {
+        payload.configuration = configuration;
+      }
+
+      if (existingAccount?.socials) {
+        payload.socials = existingAccount.socials;
+      }
+
+      if (existingAccount?.urls?.length) {
+        payload.urls = existingAccount.urls.map((url) => ({ id: url.id, url: url.url }));
+      }
+
+      return payload;
+    },
+    [accountTypes, affiliations],
+  );
 
   const isGlobalAdmin = hasRole('Administrator');
 
@@ -149,36 +223,26 @@ const AccountManagement: React.FC = () => {
       setAccounts((data as SharedAccountType[]) ?? []);
 
       // Load account types
-      const typesResponse = await fetch('/api/accounts/types', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (typesResponse.ok) {
-        const typesData = await typesResponse.json();
-        setAccountTypes(typesData.data.accountTypes);
+      const typesResult = await getAccountTypes({ client: apiClient, throwOnError: false });
+      if (typesResult.error) {
+        throw new Error(typesResult.error.message || 'Failed to load account types');
       }
+      setAccountTypes((typesResult.data as AccountTypeReference[]) ?? []);
 
-      // Load affiliations
-      const affiliationsResponse = await fetch('/api/accounts/affiliations', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const affiliationsResult = await getAccountAffiliations({
+        client: apiClient,
+        throwOnError: false,
       });
-
-      if (affiliationsResponse.ok) {
-        const affiliationsData = await affiliationsResponse.json();
-        setAffiliations(affiliationsData.data.affiliations);
+      if (affiliationsResult.error) {
+        throw new Error(affiliationsResult.error.message || 'Failed to load affiliations');
       }
+      setAffiliations((affiliationsResult.data as AccountAffiliationType[]) ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  }, [token, apiClient]);
+  }, [apiClient]);
 
   useEffect(() => {
     if (token) {
@@ -190,28 +254,27 @@ const AccountManagement: React.FC = () => {
 
   const handleCreateAccount = async () => {
     try {
-      const response = await fetch('/api/accounts', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      if (!formData.accountTypeId) {
+        setError('Account type is required');
+        return;
+      }
+
+      setError(null);
+
+      const payload = buildAccountPayload(formData);
+
+      const result = await createAccount({
+        client: apiClient,
+        body: payload as CreateAccountType,
+        throwOnError: false,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create account');
+      if (result.error || !result.data) {
+        throw new Error(result.error?.message || 'Failed to create account');
       }
 
       setCreateDialogOpen(false);
-      setFormData({
-        name: '',
-        accountTypeId: '',
-        ownerUserId: '',
-        affiliationId: '1',
-        timezoneId: 'Eastern Standard Time',
-        firstYear: new Date().getFullYear(),
-      });
+      setFormData(initialFormState);
       loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account');
@@ -222,29 +285,29 @@ const AccountManagement: React.FC = () => {
     if (!selectedAccount) return;
 
     try {
-      const response = await fetch(`/api/accounts/${selectedAccount.id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      if (!formData.accountTypeId) {
+        setError('Account type is required');
+        return;
+      }
+
+      setError(null);
+
+      const payload = buildAccountPayload(formData, selectedAccount);
+
+      const result = await updateAccount({
+        client: apiClient,
+        path: { accountId: selectedAccount.id },
+        body: payload,
+        throwOnError: false,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update account');
+      if (result.error || !result.data) {
+        throw new Error(result.error?.message || 'Failed to update account');
       }
 
       setEditDialogOpen(false);
       setSelectedAccount(null);
-      setFormData({
-        name: '',
-        accountTypeId: '',
-        ownerUserId: '',
-        affiliationId: '1',
-        timezoneId: 'Eastern Standard Time',
-        firstYear: new Date().getFullYear(),
-      });
+      setFormData(initialFormState);
       loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update account');
@@ -255,16 +318,14 @@ const AccountManagement: React.FC = () => {
     if (!selectedAccount) return;
 
     try {
-      const response = await fetch(`/api/accounts/${selectedAccount.id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const result = await deleteAccount({
+        client: apiClient,
+        path: { accountId: selectedAccount.id },
+        throwOnError: false,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete account');
+      if (result.error) {
+        throw new Error(result.error.message || 'Failed to delete account');
       }
 
       setDeleteDialogOpen(false);
@@ -304,27 +365,13 @@ const AccountManagement: React.FC = () => {
   };
 
   const handleCreateClick = () => {
-    setFormData({
-      name: '',
-      accountTypeId: '',
-      ownerUserId: '',
-      affiliationId: '1',
-      timezoneId: 'Eastern Standard Time',
-      firstYear: new Date().getFullYear(),
-    });
+    setFormData(initialFormState);
     setCreateDialogOpen(true);
   };
 
   const handleCreateDialogClose = () => {
     setCreateDialogOpen(false);
-    setFormData({
-      name: '',
-      accountTypeId: '',
-      ownerUserId: '',
-      affiliationId: '1',
-      timezoneId: 'Eastern Standard Time',
-      firstYear: new Date().getFullYear(),
-    });
+    setFormData(initialFormState);
   };
 
   // Helper to get logo URL (with refresh key to force reload)

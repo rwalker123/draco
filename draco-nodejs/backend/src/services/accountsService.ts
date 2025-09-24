@@ -1,9 +1,9 @@
 import {
   AccountHeaderType,
   AccountNameType,
-  AccountSocialsType,
   AccountType,
   AccountWithSeasonsType,
+  CreateAccountType,
 } from '@draco/shared-schemas';
 import { accounts } from '@prisma/client';
 import {
@@ -19,34 +19,10 @@ import {
   ISeasonRepository,
 } from '../repositories/index.js';
 import { AccountResponseFormatter } from '../utils/responseFormatters.js';
-import { NotFoundError } from '../utils/customErrors.js';
+import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
-
-type CreateAccountPayload = {
-  name: string;
-  accountTypeId: string;
-  ownerUserId: string;
-  affiliationId: string;
-  timezoneId: string;
-  firstYear?: number;
-  urls: string[];
-  socials?: AccountSocialsType;
-};
-
-type UpdateAccountPayload = {
-  name?: string;
-  accountTypeId?: string;
-  affiliationId?: string;
-  timezoneId?: string;
-  firstYear?: number;
-  youtubeUserId?: string | null;
-  facebookFanPage?: string | null;
-  defaultVideo?: string | null;
-  autoPlayVideo?: boolean;
-  twitterAccountName?: string | null;
-};
 
 export class AccountsService {
   private readonly accountRepository: IAccountRepository;
@@ -219,37 +195,42 @@ export class AccountsService {
     };
   }
 
-  async createAccount(payload: CreateAccountPayload): Promise<AccountType> {
-    const {
-      name,
-      accountTypeId,
-      ownerUserId,
-      affiliationId,
-      timezoneId,
-      firstYear,
-      urls,
-      socials,
-    } = payload;
+  async createAccount(
+    accountOwnerUserId: string,
+    payload: CreateAccountType,
+  ): Promise<AccountType> {
+    if (!accountOwnerUserId) {
+      throw new ValidationError('Account owner user ID is required');
+    }
+
+    const accountTypeId = payload.configuration?.accountType?.id;
+    if (!accountTypeId) {
+      throw new ValidationError('Account type is required');
+    }
+
+    const affiliationId = payload.configuration?.affiliation?.id ?? '1';
 
     const accountCreateData: Partial<accounts> = {
-      name,
+      name: payload.name,
       accounttypeid: BigInt(accountTypeId),
-      owneruserid: ownerUserId,
+      owneruserid: accountOwnerUserId,
       affiliationid: BigInt(affiliationId),
-      timezoneid: timezoneId,
-      firstyear: firstYear ?? new Date().getFullYear(),
-      twitteraccountname: socials?.twitterAccountName ?? '',
+      timezoneid: payload.configuration?.timezoneId ?? 'UTC',
+      firstyear: payload.configuration?.firstYear ?? new Date().getFullYear(),
+      twitteraccountname: payload.socials?.twitterAccountName ?? '',
       twitteroauthtoken: '',
       twitteroauthsecretkey: '',
-      defaultvideo: socials?.defaultVideo ?? '',
-      autoplayvideo: socials?.autoPlayVideo ?? false,
-      youtubeuserid: socials?.youtubeUserId ?? null,
-      facebookfanpage: socials?.facebookFanPage ?? null,
+      defaultvideo: payload.socials?.defaultVideo ?? '',
+      autoplayvideo: payload.socials?.autoPlayVideo ?? false,
+      youtubeuserid: payload.socials?.youtubeUserId ?? null,
+      facebookfanpage: payload.socials?.facebookFanPage ?? null,
     };
 
     const accountRecord = await this.accountRepository.create(accountCreateData);
 
-    const normalizedUrls = urls.filter((url) => url.trim().length > 0);
+    const normalizedUrls = payload.urls
+      .map((url) => url.url?.trim())
+      .filter((url): url is string => Boolean(url && url.length > 0));
     for (const url of normalizedUrls) {
       await this.accountRepository.createAccountUrl(accountRecord.id, url);
     }
@@ -257,7 +238,7 @@ export class AccountsService {
     return this.buildAccountResponse(accountRecord.id);
   }
 
-  async updateAccount(accountId: bigint, payload: UpdateAccountPayload): Promise<AccountType> {
+  async updateAccount(accountId: bigint, payload: CreateAccountType): Promise<AccountType> {
     const existingAccount = await this.accountRepository.findById(accountId);
 
     if (!existingAccount) {
@@ -270,40 +251,46 @@ export class AccountsService {
       updateData.name = payload.name;
     }
 
-    if (payload.accountTypeId !== undefined) {
-      updateData.accounttypeid = BigInt(payload.accountTypeId);
+    if (payload.configuration?.accountType?.id !== undefined) {
+      const accountTypeId = payload.configuration?.accountType?.id;
+      if (accountTypeId) {
+        updateData.accounttypeid = BigInt(accountTypeId);
+      }
     }
 
-    if (payload.affiliationId !== undefined) {
-      updateData.affiliationid = BigInt(payload.affiliationId);
+    if (payload.configuration?.affiliation?.id !== undefined) {
+      const affiliationId = payload.configuration?.affiliation?.id;
+      if (affiliationId) {
+        updateData.affiliationid = BigInt(affiliationId);
+      }
     }
 
-    if (payload.timezoneId !== undefined) {
-      updateData.timezoneid = payload.timezoneId;
+    if (payload.configuration?.timezoneId !== undefined) {
+      updateData.timezoneid = payload.configuration?.timezoneId ?? '';
     }
 
-    if (payload.firstYear !== undefined) {
-      updateData.firstyear = payload.firstYear;
+    if (payload.configuration?.firstYear !== undefined) {
+      updateData.firstyear = payload.configuration?.firstYear ?? new Date().getFullYear();
     }
 
-    if (payload.twitterAccountName !== undefined) {
-      updateData.twitteraccountname = payload.twitterAccountName ?? '';
+    if (payload.socials?.twitterAccountName !== undefined) {
+      updateData.twitteraccountname = payload.socials?.twitterAccountName ?? '';
     }
 
-    if (payload.youtubeUserId !== undefined) {
-      updateData.youtubeuserid = payload.youtubeUserId ?? null;
+    if (payload.socials?.youtubeUserId !== undefined) {
+      updateData.youtubeuserid = payload.socials?.youtubeUserId ?? null;
     }
 
-    if (payload.facebookFanPage !== undefined) {
-      updateData.facebookfanpage = payload.facebookFanPage ?? null;
+    if (payload.socials?.facebookFanPage !== undefined) {
+      updateData.facebookfanpage = payload.socials?.facebookFanPage ?? null;
     }
 
-    if (payload.defaultVideo !== undefined) {
-      updateData.defaultvideo = payload.defaultVideo ?? '';
+    if (payload.socials?.defaultVideo !== undefined) {
+      updateData.defaultvideo = payload.socials?.defaultVideo ?? '';
     }
 
-    if (payload.autoPlayVideo !== undefined) {
-      updateData.autoplayvideo = payload.autoPlayVideo;
+    if (payload.socials?.autoPlayVideo !== undefined) {
+      updateData.autoplayvideo = payload.socials?.autoPlayVideo ?? false;
     }
 
     if (Object.keys(updateData).length === 0) {

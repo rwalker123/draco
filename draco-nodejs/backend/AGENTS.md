@@ -14,3 +14,5 @@
 - `prisma` — Schema, migrations, and seed scripts.
 
 Use the architecture guide for deeper dives into patterns, examples, and dos & don'ts for each layer.
+
+⚠️ **Type definition rule:** never introduce new Zod schemas or shared type definitions anywhere in the backend (routes, services, helpers, etc.) without explicit approval from the maintainer. All type shape changes must go through the shared schema workflow once approved.

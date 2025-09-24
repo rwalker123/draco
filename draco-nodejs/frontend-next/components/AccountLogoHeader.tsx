@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
+import { useAccountHeader } from '../hooks/useAccountHeader';
 
 interface AccountLogoHeaderProps {
   accountId: string;
@@ -20,49 +21,12 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
   style,
 }) => {
   const theme = useTheme();
-  const [logoUrl, setLogoUrl] = useState<string | null>(accountLogoUrl || null);
-  const [error, setError] = useState(false);
-  const [accountName, setAccountName] = useState<string | null>(null);
-
-  // Helper to add or update cachebuster param
-  function addCacheBuster(url: string, buster: number) {
-    if (!url) return url;
-    const u = new URL(
-      url,
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost',
-    );
-    u.searchParams.set('k', String(buster));
-    return u.toString();
-  }
+  const { accountName, logoUrl } = useAccountHeader(accountId, accountLogoUrl);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    // Always fetch account name when accountId is provided
-    if (accountId) {
-      fetch(`/api/accounts/${accountId}/header`)
-        .then((res) => res.json())
-        .then((data) => {
-          // Set account name
-          if (data?.data?.name) {
-            setAccountName(data.data.name);
-          }
-
-          // Handle logo URL
-          if (accountLogoUrl) {
-            // Use provided logo URL
-            setLogoUrl(addCacheBuster(accountLogoUrl, Date.now()));
-          } else if (data?.data?.accountLogoUrl) {
-            // Use logo URL from API
-            setLogoUrl(addCacheBuster(data.data.accountLogoUrl, Date.now()));
-          } else {
-            setLogoUrl(null);
-          }
-        })
-        .catch(() => {
-          setLogoUrl(null);
-          setAccountName(null);
-        });
-    }
-  }, [accountId, accountLogoUrl]);
+    setImageError(false);
+  }, [logoUrl]);
 
   return (
     <Box
@@ -80,14 +44,14 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
         ...style,
       }}
     >
-      {logoUrl && !error ? (
+      {logoUrl && !imageError ? (
         <Image
           src={logoUrl}
           alt="Account Logo"
           height={LOGO_HEIGHT}
           width={512}
           style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100%' }}
-          onError={() => setError(true)}
+          onError={() => setImageError(true)}
           unoptimized
         />
       ) : (
