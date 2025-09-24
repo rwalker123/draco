@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import ProtectedRoute from '../../../../../../../../components/auth/ProtectedRoute';
+import ProtectedRoute from '../../../../../../../../../components/auth/ProtectedRoute';
 import TeamSponsorManagement from './TeamSponsorManagement';
 
 export default function TeamSponsorManagementClient() {

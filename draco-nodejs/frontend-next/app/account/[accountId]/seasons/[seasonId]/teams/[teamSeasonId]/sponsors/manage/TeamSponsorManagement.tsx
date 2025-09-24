@@ -20,9 +20,9 @@ import {
 } from '@mui/material';
 import { Add, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { SponsorType } from '@draco/shared-schemas';
-import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
-import SponsorFormDialog from '../../../../../../../../components/sponsors/SponsorFormDialog';
-import { useSponsorOperations } from '../../../../../../../../hooks/useSponsorOperations';
+import AccountPageHeader from '../../../../../../../../../components/AccountPageHeader';
+import SponsorFormDialog from '../../../../../../../../../components/sponsors/SponsorFormDialog';
+import { useSponsorOperations } from '../../../../../../../../../hooks/useSponsorOperations';
 
 interface TeamSponsorManagementProps {
   accountId: string;

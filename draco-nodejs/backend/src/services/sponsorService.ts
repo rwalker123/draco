@@ -1,6 +1,11 @@
-import { sponsors } from '@prisma/client';
+import { sponsors, teamsseason } from '@prisma/client';
 import { CreateSponsorType, SponsorType } from '@draco/shared-schemas';
-import { RepositoryFactory, ISponsorRepository, ITeamRepository, dbSponsor } from '../repositories/index.js';
+import {
+  RepositoryFactory,
+  ISponsorRepository,
+  ITeamRepository,
+  dbSponsor,
+} from '../repositories/index.js';
 import { SponsorResponseFormatter } from '../utils/responseFormatters.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { createStorageService } from './storageService.js';
@@ -151,11 +156,7 @@ export class SponsorService {
     return sponsor;
   }
 
-  private async requireTeamSeason(
-    accountId: bigint,
-    seasonId: bigint,
-    teamSeasonId: bigint,
-  ) {
+  private async requireTeamSeason(accountId: bigint, seasonId: bigint, teamSeasonId: bigint) {
     const teamSeason = await this.teamRepository.findTeamSeason(teamSeasonId, seasonId, accountId);
     if (!teamSeason) {
       throw new NotFoundError('Team not found');
@@ -168,8 +169,7 @@ export class SponsorService {
     seasonId: bigint,
     teamSeasonId: bigint,
     sponsorId: bigint,
-  ): Promise<{ sponsor: dbSponsor; teamSeason: Awaited<ReturnType<typeof this.requireTeamSeason>> }>
-  {
+  ): Promise<{ sponsor: dbSponsor; teamSeason: teamsseason }> {
     const teamSeason = await this.requireTeamSeason(accountId, seasonId, teamSeasonId);
     const sponsor = await this.requireSponsor(sponsorId, accountId);
     if (!sponsor.teamid || sponsor.teamid !== teamSeason.teamid) {

@@ -405,6 +405,104 @@ components:
         - id
         - firstName
         - lastName
+    TeamManager:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        teamSeasonId:
+          type: string
+          pattern: ^d+$
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            middleName:
+              type: string
+              maxLength: 50
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            userId:
+              type: string
+              maxLength: 50
+            photoUrl:
+              type: string
+              format: uri
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+                streetAddress:
+                  type: string
+                  nullable: true
+                  maxLength: 100
+                  default: ""
+                city:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                state:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                zip:
+                  type: string
+                  nullable: true
+                  maxLength: 10
+                  default: ""
+                dateOfBirth:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+      required:
+        - id
+        - teamSeasonId
+        - contact
+      description: Schema for a manager of a team for a given season
+    CreateTeamManager:
+      type: object
+      properties:
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+          required:
+            - id
+      required:
+        - contact
+      description: Schema for creating a manager
     CreateContact:
       type: object
       properties:
@@ -2248,6 +2346,585 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
         "404":
           description: Roster member or team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}:
+    put:
+      description: Update a roster entry for a team season
+      operationId: updateRosterMember
+      summary: Update roster entry
+      security:
+        - bearerAuth: []
+      tags:
+        - Rosters
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^d+$
+                playerNumber:
+                  type: number
+                  minimum: 0
+                  maximum: 99
+                inactive:
+                  type: boolean
+                  default: false
+                submittedWaiver:
+                  type: boolean
+                dateAdded:
+                  type: string
+                  nullable: true
+                  format: date
+                  default: null
+                player:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      pattern: ^d+$
+                    submittedDriversLicense:
+                      type: boolean
+                      default: false
+                    firstYear:
+                      type: number
+                      minimum: 1900
+                      maximum: 2025
+                    contact:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^d+$
+                        firstName:
+                          type: string
+                          minLength: 1
+                          maxLength: 50
+                        lastName:
+                          type: string
+                          minLength: 1
+                          maxLength: 50
+                        middleName:
+                          type: string
+                          maxLength: 50
+                        email:
+                          type: string
+                          maxLength: 100
+                          format: email
+                        userId:
+                          type: string
+                          maxLength: 50
+                        photoUrl:
+                          type: string
+                          format: uri
+                        contactDetails:
+                          type: object
+                          properties:
+                            phone1:
+                              type: string
+                              nullable: true
+                              default: ""
+                            phone2:
+                              type: string
+                              nullable: true
+                              default: ""
+                            phone3:
+                              type: string
+                              nullable: true
+                              default: ""
+                            streetAddress:
+                              type: string
+                              nullable: true
+                              maxLength: 100
+                              default: ""
+                            city:
+                              type: string
+                              nullable: true
+                              maxLength: 50
+                              default: ""
+                            state:
+                              type: string
+                              nullable: true
+                              maxLength: 50
+                              default: ""
+                            zip:
+                              type: string
+                              nullable: true
+                              maxLength: 10
+                              default: ""
+                            dateOfBirth:
+                              type: string
+                              nullable: true
+                              default: ""
+                      required:
+                        - id
+                        - firstName
+                        - lastName
+                  required:
+                    - id
+                    - firstYear
+                    - contact
+                  description: Schema for a player who is or was on a team roster. This contains
+                    details that only ever need to be supplied once
+      responses:
+        "200":
+          description: Roster entry updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Roster member or team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a player from the team for the given season. This is a
+        permanent action and cannot be undone. Use releasePlayer if you want to
+        keep the player stats for the given team season.
+      operationId: deletePlayer
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Player deleted
+          content:
+            application/json:
+              schema:
+                type: string
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster:
+    post:
+      description: Sign a player to the team roster
+      operationId: signPlayer
+      summary: Sing player to roster
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignRosterMember"
+      responses:
+        "201":
+          description: Player signed to roster
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}/release:
+    put:
+      description: Release a player from the team for the given season
+      operationId: releasePlayer
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Player released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}/activate:
+    put:
+      description: Activate a released player from the team for the given season
+      operationId: activatePlayer
+      security:
+        - bearerAuth: []
+      tags:
+        - Roster
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: rosterMemberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Player activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
+    post:
+      description: Add a manager to the team for the given season
+      operationId: addManager
+      security:
+        - bearerAuth: []
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamManager"
+      responses:
+        "200":
+          description: Manager added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamManager"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers/{managerId}:
+    delete:
+      description: Remove a manager from the team for the given season
+      operationId: removeManager
+      security:
+        - bearerAuth: []
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Manager removed
+          content:
+            application/json:
+              schema:
+                type: string
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Manager not found
           content:
             application/json:
               schema:
