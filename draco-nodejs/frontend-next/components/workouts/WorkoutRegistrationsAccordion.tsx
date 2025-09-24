@@ -46,7 +46,7 @@ import {
 } from '../../services/workoutService';
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
-import { formatPhoneNumber } from '../../utils/contactUtils';
+import { formatPhoneNumber } from '../../utils/phoneNumber';
 import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
 
 interface WorkoutRegistrationsAccordionProps {

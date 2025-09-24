@@ -171,4 +171,20 @@ export type dbAccountAffiliation = Prisma.affiliationsGetPayload<{
     name: true;
     url: true;
   };
+}>; 
+
+export type dbSponsor = Prisma.sponsorsGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    teamid: true;
+    name: true;
+    streetaddress: true;
+    citystatezip: true;
+    description: true;
+    email: true;
+    phone: true;
+    fax: true;
+    website: true;
+  };
 }>;

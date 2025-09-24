@@ -208,8 +208,7 @@ export class PlayerClassifiedDataService {
     account: AccountDbRecord,
   ): ITeamsWantedPublicResponse {
     const birthDateForResponse = DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate);
-    const age =
-      birthDateForResponse !== null ? DateUtils.calculateAge(birthDateForResponse) : null;
+    const age = birthDateForResponse !== null ? DateUtils.calculateAge(birthDateForResponse) : null;
 
     return {
       id: dbRecord.id.toString(),

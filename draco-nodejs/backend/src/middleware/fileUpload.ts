@@ -9,12 +9,7 @@ const upload = multer({
   },
 });
 
-// Add this named middleware function
-export const handleContactPhotoUploadMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
+const executePhotoUpload = (req: Request, res: Response, next: NextFunction): void => {
   upload.single('photo')(req, res, (err: unknown) => {
     if (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -22,11 +17,14 @@ export const handleContactPhotoUploadMiddleware = (
         success: false,
         message: message,
       });
-    } else {
-      next();
+      return;
     }
+
+    next();
   });
 };
+
+export const handlePhotoUploadMiddleware = executePhotoUpload;
 
 // Parse JSON strings back to objects for FormData requests
 export const parseFormDataJSON = (req: Request, res: Response, next: NextFunction): void => {

@@ -23,7 +23,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ITeamsWantedFormState } from '../../types/playerClassifieds';
-import { formatPhoneNumber } from '../../utils/contactUtils';
+import { formatPhoneNumber } from '../../utils/phoneNumber';
 import { isValidEmailFormat } from '../../utils/emailValidation';
 
 interface CreateTeamsWantedDialogProps {
