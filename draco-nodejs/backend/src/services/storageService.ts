@@ -646,7 +646,9 @@ export class S3StorageService extends BaseStorageService {
       } else if (awsError.name === 'AccessDenied') {
         throw new Error('Access denied to S3. Please check your AWS credentials and permissions.');
       } else {
-        throw new Error(`Failed to save sponsor photo to S3: ${awsError.message || 'Unknown error'}`);
+        throw new Error(
+          `Failed to save sponsor photo to S3: ${awsError.message || 'Unknown error'}`,
+        );
       }
     }
   }
@@ -674,7 +676,8 @@ export class S3StorageService extends BaseStorageService {
         error !== null &&
         (('name' in error && (error as { name: string }).name === 'NoSuchKey') ||
           ('$metadata' in error &&
-            (error as { $metadata: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404))
+            (error as { $metadata: { httpStatusCode?: number } }).$metadata?.httpStatusCode ===
+              404))
       ) {
         return null;
       }

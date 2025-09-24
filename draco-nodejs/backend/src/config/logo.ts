@@ -177,7 +177,10 @@ export const generateSponsorPhotoPath = (accountId: string, sponsorId: string): 
   return `${SPONSOR_PHOTO_CONFIG.STORAGE_PATH}/${accountId}/sponsor-photos/${sponsorId}-photo.${SPONSOR_PHOTO_CONFIG.OUTPUT_FORMAT}`;
 };
 
-export const getSponsorPhotoUrl = (accountId: string | number, sponsorId: string | number): string => {
+export const getSponsorPhotoUrl = (
+  accountId: string | number,
+  sponsorId: string | number,
+): string => {
   if (process.env.STORAGE_PROVIDER === 's3') {
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');

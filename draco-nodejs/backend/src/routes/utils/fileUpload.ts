@@ -55,7 +55,11 @@ export const handleSponsorPhotoUpload = async (
 
   const storageService = createStorageService();
 
-  await storageService.saveSponsorPhoto(accountId.toString(), sponsorId.toString(), req.file.buffer);
+  await storageService.saveSponsorPhoto(
+    accountId.toString(),
+    sponsorId.toString(),
+    req.file.buffer,
+  );
 
   return getSponsorPhotoUrl(accountId.toString(), sponsorId.toString());
 };
