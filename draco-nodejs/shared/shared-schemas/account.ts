@@ -56,6 +56,10 @@ export const AccountUrlSchema = z.object({
   url: z.string().min(1),
 });
 
+export const CreateAccountUrlSchema = AccountUrlSchema.extend({
+  id: z.string().optional(),
+});
+
 export const AccountAffiliationSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -110,6 +114,8 @@ export const AccountSeasonWithStatusSchema = AccountCurrentSeasonSchema.extend({
 export const CreateAccountSchema = AccountSchema.omit({
   id: true,
   accountOwner: true,
+}).extend({
+  urls: z.array(CreateAccountUrlSchema).default([]),
 });
 
 export const AccountWithSeasonsSchema = z.object({
@@ -123,6 +129,7 @@ export type AccountConfigurationType = z.infer<typeof AccountConfigurationSchema
 export type AccountSocialsType = z.infer<typeof AccountSocialsSchema>;
 export type AccountAffiliationType = z.infer<typeof AccountAffiliationSchema>;
 export type AccountUrlType = z.infer<typeof AccountUrlSchema>;
+export type CreateAccountUrlType = z.infer<typeof CreateAccountUrlSchema>;
 export type AccountTypeReference = z.infer<typeof AccountTypeSchema>;
 export type AccountSearchQueryParamType = z.infer<typeof AccountSearchQueryParamSchema>;
 export type CreateAccountType = z.infer<typeof CreateAccountSchema>;

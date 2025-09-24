@@ -1,3 +1,5 @@
+import { addCacheBuster as addCacheBusterUtil } from '../utils/addCacheBuster';
+
 // Team configuration settings
 export const TEAM_CONFIG = {
   // Logo configuration
@@ -22,9 +24,7 @@ export const getLogoSize = (): number => {
 
 // Helper function to add cache-buster to a URL
 export const addCacheBuster = (url: string, timestamp?: number): string => {
-  const cacheBuster = timestamp || Date.now();
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}t=${cacheBuster}`;
+  return addCacheBusterUtil(url, timestamp) ?? url;
 };
 
 // Helper function to validate logo file

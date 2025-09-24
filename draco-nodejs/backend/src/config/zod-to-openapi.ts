@@ -17,8 +17,15 @@ import {
   AccountSchema,
   AccountSearchQuerySchema,
   AccountDomainLookupHeadersSchema,
+  SponsorSchema,
+  SponsorListSchema,
+  CreateSponsorSchema,
   AccountWithSeasonsSchema,
   AccountDetailsQuerySchema,
+  CreateAccountSchema,
+  AccountNameSchema,
+  AccountHeaderSchema,
+  AccountAffiliationSchema,
 } from '@draco/shared-schemas';
 
 const registry = new OpenAPIRegistry();
@@ -47,6 +54,16 @@ const AccountDetailsQuerySchemaRef = registry.register(
   'AccountDetailsQuery',
   AccountDetailsQuerySchema,
 );
+const CreateAccountSchemaRef = registry.register('CreateAccount', CreateAccountSchema);
+const AccountNameSchemaRef = registry.register('AccountName', AccountNameSchema);
+const AccountHeaderSchemaRef = registry.register('AccountHeader', AccountHeaderSchema);
+const AccountAffiliationSchemaRef = registry.register(
+  'AccountAffiliation',
+  AccountAffiliationSchema,
+);
+const SponsorSchemaRef = registry.register('Sponsor', SponsorSchema);
+const SponsorListSchemaRef = registry.register('SponsorList', SponsorListSchema);
+const CreateSponsorSchemaRef = registry.register('CreateSponsor', CreateSponsorSchema);
 
 // Register error schemas
 const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
@@ -201,6 +218,376 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// POST /api/accounts
+registry.registerPath({
+  method: 'post',
+  path: '/api/accounts',
+  operationId: 'createAccount',
+  summary: 'Create account',
+  description: 'Create a new account. Administrator access required.',
+  tags: ['Accounts'],
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: CreateAccountSchemaRef,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Account created',
+      content: {
+        'application/json': {
+          schema: AccountSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// PUT /api/accounts/{accountId}
+registry.registerPath({
+  method: 'put',
+  path: '/api/accounts/{accountId}',
+  operationId: 'updateAccount',
+  summary: 'Update account',
+  description: 'Update account details. Account administrators or global administrators only.',
+  tags: ['Accounts'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: CreateAccountSchemaRef.partial(),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Account updated',
+      content: {
+        'application/json': {
+          schema: AccountSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Account not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// DELETE /api/accounts/{accountId}
+registry.registerPath({
+  method: 'delete',
+  path: '/api/accounts/{accountId}',
+  operationId: 'deleteAccount',
+  summary: 'Delete account',
+  description: 'Delete an account. Administrator access required.',
+  tags: ['Accounts'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    204: {
+      description: 'Account deleted',
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Account not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/{accountId}/name
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/{accountId}/name',
+  operationId: 'getAccountName',
+  summary: 'Get account name',
+  description: 'Retrieve the display name for an account.',
+  tags: ['Accounts'],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    200: {
+      description: 'Account name',
+      content: {
+        'application/json': {
+          schema: AccountNameSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Account not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/{accountId}/header
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/{accountId}/header',
+  operationId: 'getAccountHeader',
+  summary: 'Get account header',
+  description: 'Retrieve account name and branding assets.',
+  tags: ['Accounts'],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    200: {
+      description: 'Account header information',
+      content: {
+        'application/json': {
+          schema: AccountHeaderSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Account not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/types
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/types',
+  operationId: 'getAccountTypes',
+  summary: 'List account types',
+  description: 'Retrieve the list of available account types.',
+  tags: ['Accounts'],
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Account types list',
+      content: {
+        'application/json': {
+          schema: AccountSchemaRef.array(),
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/affiliations
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/affiliations',
+  operationId: 'getAccountAffiliations',
+  summary: 'List account affiliations',
+  description: 'Retrieve the list of available account affiliations.',
+  tags: ['Accounts'],
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Account affiliations list',
+      content: {
+        'application/json': {
+          schema: AccountAffiliationSchemaRef.array(),
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
         },
       },
     },
@@ -1293,6 +1680,718 @@ registry.registerPath({
     },
     404: {
       description: 'Manager not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/{accountId}/sponsors
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/{accountId}/sponsors',
+  description: 'List sponsors configured for an account',
+  operationId: 'listAccountSponsors',
+  summary: 'List account sponsors',
+  tags: ['Sponsors'],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    200: {
+      description: 'Sponsors for the account',
+      content: {
+        'application/json': {
+          schema: SponsorListSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/{accountId}/sponsors/{sponsorId}
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/{accountId}/sponsors/{sponsorId}',
+  description: 'Retrieve a single account-level sponsor',
+  operationId: 'getAccountSponsor',
+  summary: 'Get account sponsor',
+  tags: ['Sponsors'],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'sponsorId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    200: {
+      description: 'Sponsor details',
+      content: {
+        'application/json': {
+          schema: SponsorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Sponsor not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// POST /api/accounts/{accountId}/sponsors
+registry.registerPath({
+  method: 'post',
+  path: '/api/accounts/{accountId}/sponsors',
+  description: 'Create an account sponsor',
+  operationId: 'createAccountSponsor',
+  summary: 'Create account sponsor',
+  tags: ['Sponsors'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  request: {
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: CreateSponsorSchemaRef.extend({
+            photo: z.string().optional().openapi({
+              type: 'string',
+              format: 'binary',
+              description: 'Sponsor photo file',
+            }),
+          }),
+          encoding: {
+            photo: {
+              contentType: 'image/*',
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Sponsor created',
+      content: {
+        'application/json': {
+          schema: SponsorSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Access denied - sponsor management permission required',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// PUT /api/accounts/{accountId}/sponsors/{sponsorId}
+registry.registerPath({
+  method: 'put',
+  path: '/api/accounts/{accountId}/sponsors/{sponsorId}',
+  description: 'Update an account sponsor',
+  operationId: 'updateAccountSponsor',
+  summary: 'Update account sponsor',
+  tags: ['Sponsors'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'sponsorId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  request: {
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: CreateSponsorSchemaRef.partial().extend({
+            photo: z.string().optional().openapi({
+              type: 'string',
+              format: 'binary',
+              description: 'Sponsor photo file',
+            }),
+          }),
+          encoding: {
+            photo: {
+              contentType: 'image/*',
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Sponsor updated',
+      content: {
+        'application/json': {
+          schema: SponsorSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Access denied - sponsor management permission required',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Sponsor not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// DELETE /api/accounts/{accountId}/sponsors/{sponsorId}
+registry.registerPath({
+  method: 'delete',
+  path: '/api/accounts/{accountId}/sponsors/{sponsorId}',
+  description: 'Delete an account sponsor',
+  operationId: 'deleteAccountSponsor',
+  summary: 'Delete account sponsor',
+  tags: ['Sponsors'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'sponsorId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    204: {
+      description: 'Sponsor deleted',
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Access denied - sponsor management permission required',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Sponsor not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors
+registry.registerPath({
+  method: 'get',
+  path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors',
+  description: 'List sponsors configured for a team season',
+  operationId: 'listTeamSponsors',
+  summary: 'List team sponsors',
+  tags: ['Sponsors'],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'seasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'teamSeasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    200: {
+      description: 'Sponsors for the team',
+      content: {
+        'application/json': {
+          schema: SponsorListSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// POST /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors
+registry.registerPath({
+  method: 'post',
+  path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors',
+  description: 'Create a team sponsor',
+  operationId: 'createTeamSponsor',
+  summary: 'Create team sponsor',
+  tags: ['Sponsors'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'seasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'teamSeasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  request: {
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: CreateSponsorSchemaRef.partial().extend({
+            photo: z.string().optional().openapi({
+              type: 'string',
+              format: 'binary',
+              description: 'Sponsor photo file',
+            }),
+          }),
+          encoding: {
+            photo: {
+              contentType: 'image/*',
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Sponsor created',
+      content: {
+        'application/json': {
+          schema: SponsorSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Access denied - team sponsor management permission required',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// PUT /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors/{sponsorId}
+registry.registerPath({
+  method: 'put',
+  path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors/{sponsorId}',
+  description: 'Update a team sponsor',
+  operationId: 'updateTeamSponsor',
+  summary: 'Update team sponsor',
+  tags: ['Sponsors'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'seasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'teamSeasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'sponsorId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  request: {
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: CreateSponsorSchemaRef.partial().extend({
+            photo: z.string().optional().openapi({
+              type: 'string',
+              format: 'binary',
+              description: 'Sponsor photo file',
+            }),
+          }),
+          encoding: {
+            photo: {
+              contentType: 'image/*',
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Sponsor updated',
+      content: {
+        'application/json': {
+          schema: SponsorSchemaRef,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: ValidationErrorSchemaRef,
+        },
+      },
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Access denied - team sponsor management permission required',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Sponsor not found',
+      content: {
+        'application/json': {
+          schema: NotFoundErrorSchemaRef,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: InternalServerErrorSchemaRef,
+        },
+      },
+    },
+  },
+});
+
+// DELETE /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors/{sponsorId}
+registry.registerPath({
+  method: 'delete',
+  path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors/{sponsorId}',
+  description: 'Delete a team sponsor',
+  operationId: 'deleteTeamSponsor',
+  summary: 'Delete team sponsor',
+  tags: ['Sponsors'],
+  security: [{ bearerAuth: [] }],
+  parameters: [
+    {
+      name: 'accountId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'seasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'teamSeasonId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+    {
+      name: 'sponsorId',
+      in: 'path',
+      required: true,
+      schema: {
+        type: 'string',
+        format: 'number',
+      },
+    },
+  ],
+  responses: {
+    204: {
+      description: 'Sponsor deleted',
+    },
+    401: {
+      description: 'Authentication required',
+      content: {
+        'application/json': {
+          schema: AuthenticationErrorSchemaRef,
+        },
+      },
+    },
+    403: {
+      description: 'Access denied - team sponsor management permission required',
+      content: {
+        'application/json': {
+          schema: AuthorizationErrorSchemaRef,
+        },
+      },
+    },
+    404: {
+      description: 'Sponsor not found',
       content: {
         'application/json': {
           schema: NotFoundErrorSchemaRef,

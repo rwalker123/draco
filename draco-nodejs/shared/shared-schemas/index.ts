@@ -5,3 +5,4 @@ export * from './manager.js';
 export * from './role.js';
 export * from './paging.js';
 export * from './account.js';
+export * from './sponsor.js';
