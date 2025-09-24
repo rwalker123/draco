@@ -15,7 +15,6 @@ import {
   ITeamsWantedCardPublicProps,
   ITeamsWantedContactInfo,
 } from '../../types/playerClassifieds';
-import { calculateAge } from '../../utils/dateUtils';
 import ContactInfoDialog from './ContactInfoDialog';
 import { useAuth } from '../../context/AuthContext';
 
@@ -108,7 +107,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
             <Box display="flex" alignItems="center" gap={1}>
               <PersonIcon fontSize="small" color="action" />
               <Typography variant="caption" color="text.secondary">
-                Age: {calculateAge(classified.birthDate)}
+                Age: {classified.age !== null ? classified.age : 'N/A'}
               </Typography>
             </Box>
           </Box>

@@ -140,14 +140,17 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const convertToFormState = (classified: ITeamsWantedResponse): ITeamsWantedFormState => {
     const formState = {
       name: classified.name,
-      email: classified.email,
-      phone: classified.phone,
+      email: classified.email ?? '',
+      phone: classified.phone ?? '',
       experience: classified.experience,
       positionsPlayed: classified.positionsPlayed
         .split(',')
         .map((p) => p.trim())
         .filter((p) => p.length > 0),
-      birthDate: new Date(classified.birthDate),
+      birthDate:
+        classified.birthDate && !Number.isNaN(new Date(classified.birthDate).getTime())
+          ? new Date(classified.birthDate)
+          : null,
     };
 
     return formState;
@@ -186,6 +189,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
             ...classified,
             email: contactResult.data.email,
             phone: contactResult.data.phone,
+            birthDate: contactResult.data.birthDate ?? classified.birthDate,
           };
 
           setEditingClassified(classifiedWithContact);

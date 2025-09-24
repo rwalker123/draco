@@ -21,7 +21,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { AccountType } from '@draco/shared-schemas';
-import { searchAccounts } from '@draco/shared-api-client';
+import { searchAccounts, getMyAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { getContactDisplayName } from '../utils/contactUtils';
 
@@ -63,7 +63,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const apiClient = useApiClient();
   const router = useRouter();
 
@@ -83,34 +83,30 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/accounts/my-accounts', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+      const { data, error: accountsError } = await getMyAccounts({
+        client: apiClient,
+        throwOnError: false,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAccounts(data.data?.accounts || []);
-          // Notify parent component about loaded organizations
-          if (onOrganizationsLoaded) {
-            onOrganizationsLoaded(data.data?.accounts || []);
-          }
-        } else {
-          setError(data.message || 'Failed to load your organizations');
-        }
-      } else {
-        setError('Failed to load your organizations. Please try again.');
+      if (accountsError) {
+        setError(accountsError.message || 'Failed to load your organizations. Please try again.');
+        setAccounts([]);
+        return;
+      }
+
+      const organizations = ((data as AccountType[]) || []).filter((account) =>
+        excludeAccountId ? account.id !== excludeAccountId : true,
+      );
+      setAccounts(organizations);
+      if (onOrganizationsLoaded) {
+        onOrganizationsLoaded(organizations);
       }
     } catch {
       setError('Failed to load your organizations. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, token, providedOrganizations, onOrganizationsLoaded]);
+  }, [user, providedOrganizations, onOrganizationsLoaded, apiClient, excludeAccountId]);
 
   useEffect(() => {
     if (user && !providedOrganizations) {

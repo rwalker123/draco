@@ -1,3 +1,5 @@
+import type { AccountHeaderType } from '@draco/shared-schemas';
+
 // Utility functions for fetching metadata for page titles and icons
 
 interface AccountBranding {
@@ -7,23 +9,13 @@ interface AccountBranding {
 
 const DEFAULT_ACCOUNT_FAVICON_PATH = '/branding/default-sports-favicon.svg' as const;
 
-function resolveAccountFavicon(accountHeaderData: unknown): string {
-  if (typeof accountHeaderData !== 'object' || !accountHeaderData) {
+function resolveAccountFavicon(header?: Partial<AccountHeaderType> | null): string {
+  if (!header) {
     return DEFAULT_ACCOUNT_FAVICON_PATH;
   }
 
-  const branding = (accountHeaderData as { branding?: unknown }).branding;
-  if (typeof branding === 'object' && branding) {
-    const { faviconUrl, tabIconUrl } = branding as {
-      faviconUrl?: string | null;
-      tabIconUrl?: string | null;
-    };
-    if (faviconUrl) {
-      return faviconUrl;
-    }
-    if (tabIconUrl) {
-      return tabIconUrl;
-    }
+  if (header.accountLogoUrl) {
+    return header.accountLogoUrl;
   }
 
   return DEFAULT_ACCOUNT_FAVICON_PATH;
@@ -35,9 +27,9 @@ async function fetchAccountName(apiUrl: string, accountId: string): Promise<stri
       next: { revalidate: 60 },
     });
     if (res.ok) {
-      const data = await res.json();
-      if (data?.success && data?.data?.name) {
-        return data.data.name;
+      const payload = (await res.json()) as { name?: string };
+      if (payload && typeof payload.name === 'string') {
+        return payload.name;
       }
     }
   } catch (error) {
@@ -59,11 +51,12 @@ export async function getAccountBranding(accountId: string): Promise<AccountBran
       next: { revalidate: 60 },
     });
     if (res.ok) {
-      const data = await res.json();
-      if (data?.success && data?.data?.name) {
+      const headerData = (await res.json()) as AccountHeaderType;
+
+      if (headerData && typeof headerData.name === 'string') {
         return {
-          name: data.data.name,
-          iconUrl: resolveAccountFavicon(data.data),
+          name: headerData.name,
+          iconUrl: resolveAccountFavicon(headerData),
         };
       }
     }

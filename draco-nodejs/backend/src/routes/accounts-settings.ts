@@ -43,12 +43,7 @@ router.get(
       filePath: type.filepath,
     }));
 
-    res.json({
-      success: true,
-      data: {
-        accountTypes: typesData,
-      },
-    });
+    res.json(typesData);
   }),
 );
 
@@ -82,12 +77,7 @@ router.get(
       }),
     );
 
-    res.json({
-      success: true,
-      data: {
-        affiliations: affiliationData,
-      },
-    });
+    res.json(affiliationData);
   }),
 );
 

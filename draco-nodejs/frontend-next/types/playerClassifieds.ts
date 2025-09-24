@@ -104,8 +104,9 @@ export interface IPlayersWantedResponse extends IPlayersWantedClassified {
 
 // Teams Wanted response (public view without contact info)
 export interface ITeamsWantedPublicResponse
-  extends Omit<ITeamsWantedClassified, 'accessCode' | 'email' | 'phone'> {
+  extends Omit<ITeamsWantedClassified, 'accessCode' | 'email' | 'phone' | 'birthDate'> {
   // Public view excludes PII (email, phone) and access code for security
+  age: number | null;
   account: {
     id: string;
     name: string;
@@ -113,8 +114,13 @@ export interface ITeamsWantedPublicResponse
 }
 
 // Teams Wanted response (authenticated account members view)
-export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
-  // Include full PII for authenticated account members, but omit accessCode
+export interface ITeamsWantedResponse
+  extends Omit<ITeamsWantedClassified, 'accessCode' | 'birthDate' | 'email' | 'phone'> {
+  // Backend responses include an age but only return contact info when requested separately
+  age: number | null;
+  birthDate?: Date | string | null;
+  email?: string;
+  phone?: string;
   account: {
     id: string;
     name: string;
@@ -125,10 +131,11 @@ export interface ITeamsWantedResponse extends Omit<ITeamsWantedClassified, 'acce
 export interface ITeamsWantedContactInfo {
   email: string;
   phone: string;
+  birthDate: string | null;
 }
 
-// Teams Wanted response (owner view with access code)
-export interface ITeamsWantedOwnerResponse extends ITeamsWantedClassified {
+// Teams Wanted response (owner view with verified contact info)
+export interface ITeamsWantedOwnerResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
   account: {
     id: string;
     name: string;

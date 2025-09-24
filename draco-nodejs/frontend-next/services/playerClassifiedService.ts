@@ -378,7 +378,7 @@ export const playerClassifiedService = {
     classifiedId: string,
     accessCode: string,
     token?: string,
-  ): Promise<IServiceResponse<{ email: string; phone: string }>> {
+  ): Promise<IServiceResponse<{ email: string; phone: string; birthDate: string | null }>> {
     const headers: Record<string, string> = {};
 
     // Add JWT token if provided
@@ -391,7 +391,7 @@ export const playerClassifiedService = {
       !token && accessCode ? `?accessCode=${encodeURIComponent(accessCode)}` : ''
     }`;
 
-    return apiRequest<{ email: string; phone: string }>(url, {
+    return apiRequest<{ email: string; phone: string; birthDate: string | null }>(url, {
       method: 'GET',
       headers,
     });

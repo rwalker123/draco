@@ -34,7 +34,6 @@ import {
   ContentCopy as CopyIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
-  Refresh as RefreshIcon,
   Group as GroupIcon,
   Remove as RemoveIcon,
   Sports as SportsIcon,
@@ -44,6 +43,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import axios from 'axios';
+import AccountPageHeader from '../../../../components/AccountPageHeader';
 
 interface Season {
   id: string;
@@ -733,186 +733,176 @@ const SeasonManagement: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          Season Management
-        </Typography>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchSeasons}
-            disabled={loading}
-            sx={{ mr: 2 }}
-          >
-            Refresh
-          </Button>
-          {canCreate && (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
-              Create Season
-            </Button>
-          )}
+      <AccountPageHeader accountId={accountIdStr || ''}>
+        <Box textAlign="center">
+          <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold' }}>
+            Season Management
+          </Typography>
+          <Typography variant="subtitle1" sx={{ color: 'white', opacity: 0.8 }}>
+            Manage seasons, leagues, and current season settings for your organization.
+          </Typography>
         </Box>
-      </Box>
+      </AccountPageHeader>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+      <Box sx={{ p: 3 }}>
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Success Alert */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      )}
+        {/* Success Alert */}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        )}
 
-      {/* Loading State */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        /* Seasons List */
-        <Box>
-          {seasons.length === 0 ? (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" color="textSecondary" align="center">
-                  No seasons found
-                </Typography>
-                <Typography variant="body2" color="textSecondary" align="center">
-                  {canCreate
-                    ? 'Create your first season to get started.'
-                    : 'No seasons are available.'}
-                </Typography>
-              </CardContent>
-            </Card>
-          ) : (
-            <Box
-              display="grid"
-              gridTemplateColumns={{
-                xs: '1fr',
-                md: 'repeat(2, 1fr)',
-                lg: 'repeat(3, 1fr)',
-              }}
-              gap={3}
-            >
-              {seasons.map((season) => (
-                <Card key={season.id}>
-                  <CardContent>
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      mb={2}
-                    >
-                      <Typography variant="h6" component="h2">
-                        {season.name}
-                      </Typography>
-                      {season.isCurrent && (
-                        <Chip icon={<StarIcon />} label="Current" color="primary" size="small" />
-                      )}
-                    </Box>
-
-                    <Typography variant="body2" color="textSecondary" mb={2}>
-                      {season.leagues.length} league{season.leagues.length !== 1 ? 's' : ''}
-                    </Typography>
-
-                    {season.leagues.length > 0 && (
-                      <Box mb={2}>
-                        <Typography variant="caption" color="textSecondary">
-                          Leagues:
+        {/* Loading State */}
+        {loading ? (
+          <Box display="flex" justifyContent="center" p={4}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          /* Seasons List */
+          <Box>
+            {seasons.length === 0 ? (
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" color="textSecondary" align="center">
+                    No seasons found
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" align="center">
+                    {canCreate
+                      ? 'Create your first season to get started.'
+                      : 'No seasons are available.'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            ) : (
+              <Box
+                display="grid"
+                gridTemplateColumns={{
+                  xs: '1fr',
+                  md: 'repeat(2, 1fr)',
+                  lg: 'repeat(3, 1fr)',
+                }}
+                gap={3}
+              >
+                {seasons.map((season) => (
+                  <Card key={season.id}>
+                    <CardContent>
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="flex-start"
+                        mb={2}
+                      >
+                        <Typography variant="h6" component="h2">
+                          {season.name}
                         </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                          {season.leagues.slice(0, 3).map((league) => (
-                            <Chip
-                              key={league.id}
-                              label={league.leagueName}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
-                          {season.leagues.length > 3 && (
-                            <Chip
-                              label={`+${season.leagues.length - 3} more`}
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
-                        </Box>
+                        {season.isCurrent && (
+                          <Chip icon={<StarIcon />} label="Current" color="primary" size="small" />
+                        )}
                       </Box>
-                    )}
 
-                    <Box display="flex" gap={1} flexWrap="wrap">
-                      {canSetCurrent && !season.isCurrent && (
-                        <Tooltip title="Set as current season">
-                          <IconButton size="small" onClick={() => handleSetCurrentSeason(season)}>
-                            <StarBorderIcon />
-                          </IconButton>
-                        </Tooltip>
+                      <Typography variant="body2" color="textSecondary" mb={2}>
+                        {season.leagues.length} league{season.leagues.length !== 1 ? 's' : ''}
+                      </Typography>
+
+                      {season.leagues.length > 0 && (
+                        <Box mb={2}>
+                          <Typography variant="caption" color="textSecondary">
+                            Leagues:
+                          </Typography>
+                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
+                            {season.leagues.slice(0, 3).map((league) => (
+                              <Chip
+                                key={league.id}
+                                label={league.leagueName}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))}
+                            {season.leagues.length > 3 && (
+                              <Chip
+                                label={`+${season.leagues.length - 3} more`}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                        </Box>
                       )}
 
-                      {canManageLeagues && (
-                        <Tooltip title="Manage leagues">
-                          <IconButton
-                            size="small"
-                            onClick={() => openLeagueManagementDialog(season)}
-                          >
-                            <GroupIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                      <Box display="flex" gap={1} flexWrap="wrap">
+                        {canSetCurrent && !season.isCurrent && (
+                          <Tooltip title="Set as current season">
+                            <IconButton size="small" onClick={() => handleSetCurrentSeason(season)}>
+                              <StarBorderIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                      {canManageLeagues && (
-                        <Tooltip title="League Season Management">
-                          <IconButton
-                            size="small"
-                            onClick={() => navigateToLeagueSeasonManagement(season)}
-                          >
-                            <SportsIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                        {canManageLeagues && (
+                          <Tooltip title="Manage leagues">
+                            <IconButton
+                              size="small"
+                              onClick={() => openLeagueManagementDialog(season)}
+                            >
+                              <GroupIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                      {canEdit && (
-                        <Tooltip title="Edit season">
-                          <IconButton size="small" onClick={() => openEditDialog(season)}>
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                        {canManageLeagues && (
+                          <Tooltip title="League Season Management">
+                            <IconButton
+                              size="small"
+                              onClick={() => navigateToLeagueSeasonManagement(season)}
+                            >
+                              <SportsIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                      {canEdit && (
-                        <Tooltip title="Copy season">
-                          <IconButton size="small" onClick={() => openCopyDialog(season)}>
-                            <CopyIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                        {canEdit && (
+                          <Tooltip title="Edit season">
+                            <IconButton size="small" onClick={() => openEditDialog(season)}>
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                      {canDelete && !season.isCurrent && (
-                        <Tooltip title="Delete season">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => openDeleteDialog(season)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-          )}
-        </Box>
-      )}
+                        {canEdit && (
+                          <Tooltip title="Copy season">
+                            <IconButton size="small" onClick={() => openCopyDialog(season)}>
+                              <CopyIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {canDelete && !season.isCurrent && (
+                          <Tooltip title="Delete season">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => openDeleteDialog(season)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
+      </Box>
 
       {/* League Management Dialog */}
       <Dialog

@@ -19,6 +19,7 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import { useRole } from '../../../../context/RoleContext';
 import ProtectedRoute from '../../../../components/auth/ProtectedRoute';
+import AccountPageHeader from '../../../../components/AccountPageHeader';
 
 interface QuickAction {
   title: string;
@@ -31,27 +32,28 @@ interface QuickAction {
 
 export default function Communications() {
   const { accountId } = useParams();
+  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId || '';
   const router = useRouter();
   const { hasRole } = useRole();
   const [comingSoonAlert, setComingSoonAlert] = useState(true);
 
   const canManage =
-    hasRole('ContactAdmin', { accountId: accountId as string }) ||
-    hasRole('AccountAdmin', { accountId: accountId as string });
+    hasRole('ContactAdmin', { accountId: accountIdStr }) ||
+    hasRole('AccountAdmin', { accountId: accountIdStr });
 
   const quickActions: QuickAction[] = [
     {
       title: 'Quick Email',
       description: 'Send a quick email using your default email app',
       icon: <EmailIcon sx={{ fontSize: 40 }} />,
-      action: () => router.push(`/account/${accountId}/communications/compose?mode=quick`),
+      action: () => router.push(`/account/${accountIdStr}/communications/compose?mode=quick`),
       color: 'primary',
     },
     {
       title: 'Compose Email',
       description: 'Create and send emails with templates and attachments',
       icon: <SendIcon sx={{ fontSize: 40 }} />,
-      action: () => router.push(`/account/${accountId}/communications/compose`),
+      action: () => router.push(`/account/${accountIdStr}/communications/compose`),
       color: 'secondary',
       disabled: false, // Phase 2 backend is ready!
     },
@@ -59,7 +61,7 @@ export default function Communications() {
       title: 'Email Templates',
       description: 'Manage reusable email templates',
       icon: <TemplateIcon sx={{ fontSize: 40 }} />,
-      action: () => router.push(`/account/${accountId}/communications/templates`),
+      action: () => router.push(`/account/${accountIdStr}/communications/templates`),
       color: 'info',
       disabled: !canManage, // Only ContactAdmin+ can manage templates
     },
@@ -67,7 +69,7 @@ export default function Communications() {
       title: 'Email History',
       description: 'View sent emails and delivery status',
       icon: <HistoryIcon sx={{ fontSize: 40 }} />,
-      action: () => router.push(`/account/${accountId}/communications/history`),
+      action: () => router.push(`/account/${accountIdStr}/communications/history`),
       color: 'success',
       disabled: false, // Phase 2 backend supports email tracking
     },
@@ -81,12 +83,22 @@ export default function Communications() {
   return (
     <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
       <main className="min-h-screen bg-background">
-        <Box sx={{ p: 3 }}>
-          {/* Header */}
-          <Typography variant="h4" component="h1" gutterBottom>
-            Communications
-          </Typography>
+        <AccountPageHeader accountId={accountIdStr}>
+          <Box textAlign="center">
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
+            >
+              Communications
+            </Typography>
+            <Typography variant="body1" sx={{ color: 'white', opacity: 0.85 }}>
+              Send messages, manage templates, and review delivery history for your organization.
+            </Typography>
+          </Box>
+        </AccountPageHeader>
 
+        <Box sx={{ p: 3 }}>
           <Typography variant="body1" color="text.secondary" paragraph>
             Send emails to contacts, team members, and manage communications for your organization.
           </Typography>
@@ -186,7 +198,7 @@ export default function Communications() {
                     <Button
                       variant="outlined"
                       size="small"
-                      onClick={() => router.push(`/account/${accountId}/users`)}
+                      onClick={() => router.push(`/account/${accountIdStr}/users`)}
                     >
                       View Contacts
                     </Button>
@@ -208,14 +220,16 @@ export default function Communications() {
                     <Button
                       variant="outlined"
                       size="small"
-                      onClick={() => router.push(`/account/${accountId}/communications/templates`)}
+                      onClick={() =>
+                        router.push(`/account/${accountIdStr}/communications/templates`)
+                      }
                     >
                       Templates
                     </Button>
                     <Button
                       variant="outlined"
                       size="small"
-                      onClick={() => router.push(`/account/${accountId}/communications/history`)}
+                      onClick={() => router.push(`/account/${accountIdStr}/communications/history`)}
                     >
                       Analytics
                     </Button>

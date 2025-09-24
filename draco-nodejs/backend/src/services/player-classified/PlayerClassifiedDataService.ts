@@ -207,6 +207,9 @@ export class PlayerClassifiedDataService {
     dbRecord: TeamsWantedDbRecord,
     account: AccountDbRecord,
   ): ITeamsWantedPublicResponse {
+    const birthDateForResponse = DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate);
+    const age = birthDateForResponse !== null ? DateUtils.calculateAge(birthDateForResponse) : null;
+
     return {
       id: dbRecord.id.toString(),
       accountId: dbRecord.accountid.toString(),
@@ -214,7 +217,7 @@ export class PlayerClassifiedDataService {
       name: dbRecord.name,
       experience: dbRecord.experience,
       positionsPlayed: dbRecord.positionsplayed,
-      birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
+      age,
       account: {
         id: account.id.toString(),
         name: account.name,
@@ -623,7 +626,7 @@ export class PlayerClassifiedDataService {
   async getTeamsWantedContactInfo(
     classifiedId: bigint,
     accountId: bigint,
-  ): Promise<{ email: string; phone: string }> {
+  ): Promise<{ email: string; phone: string; birthDate: string | null }> {
     const classified = await this.prisma.teamswantedclassified.findFirst({
       where: {
         id: classifiedId,
@@ -632,6 +635,7 @@ export class PlayerClassifiedDataService {
       select: {
         email: true,
         phone: true,
+        birthdate: true,
       },
     });
 
@@ -642,6 +646,7 @@ export class PlayerClassifiedDataService {
     return {
       email: classified.email,
       phone: classified.phone,
+      birthDate: DateUtils.formatDateOfBirthForResponse(classified.birthdate),
     };
   }
 

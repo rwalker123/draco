@@ -109,4 +109,28 @@ export class PrismaRoleRepository implements IRoleRepository {
       },
     });
   }
+
+  async findAccountIdsForUserRoles(userId: string, roleIds: string[]): Promise<bigint[]> {
+    if (!roleIds.length) {
+      return [];
+    }
+
+    const roles = await this.prisma.contactroles.findMany({
+      where: {
+        roleid: { in: roleIds },
+        contacts: {
+          userid: userId,
+        },
+      },
+      select: {
+        accountid: true,
+      },
+    });
+
+    const accountIds = roles
+      .map((role) => role.accountid)
+      .filter((id): id is bigint => id !== null);
+
+    return Array.from(new Set(accountIds));
+  }
 }

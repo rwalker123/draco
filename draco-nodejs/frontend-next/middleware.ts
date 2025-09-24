@@ -50,9 +50,10 @@ export async function middleware(request: NextRequest) {
     });
 
     if (response.ok) {
-      const data = await response.json();
-      if (data?.id) {
-        return NextResponse.redirect(new URL(`/account/${data.id}/home`, request.url));
+      const accountData = await response.json();
+
+      if (typeof accountData?.id === 'string') {
+        return NextResponse.redirect(new URL(`/account/${accountData.id}/home`, request.url));
       }
     }
   } catch {

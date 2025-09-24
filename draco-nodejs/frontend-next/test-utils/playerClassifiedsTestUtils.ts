@@ -71,6 +71,7 @@ export const createMockTeamsWanted = (
   experience: 'Intermediate player with 3 years experience',
   positionsPlayed: 'pitcher,outfield',
   birthDate: new Date('2000-06-15'),
+  age: 24,
   account: {
     id: '1',
     name: 'Test Baseball Club',
@@ -253,6 +254,7 @@ export const createMockAuthContext = (overrides: Partial<AuthContextType> = {}) 
     },
     token: 'mock-token',
     loading: false,
+    initialized: true,
     error: null,
     login: vi.fn(),
     logout: vi.fn(),
@@ -273,6 +275,7 @@ export const createMockAccountContext = (overrides: Partial<AccountContextType> 
     },
     userAccounts: [],
     loading: false,
+    initialized: true,
     error: null,
     setCurrentAccount: vi.fn(),
     clearAccounts: vi.fn(),
@@ -296,6 +299,7 @@ export const createMockRoleContext = (overrides: Partial<RoleContextType> = {}) 
       ],
     },
     loading: false,
+    initialized: true,
     error: null,
     hasRole: vi.fn(),
     hasPermission: vi.fn(),
@@ -306,7 +310,29 @@ export const createMockRoleContext = (overrides: Partial<RoleContextType> = {}) 
     clearRoles: vi.fn(),
   };
 
-  const context = { ...defaultContext, ...overrides };
+  let mergedUserRoles: RoleContextType['userRoles'] = defaultContext.userRoles;
+
+  if (Object.prototype.hasOwnProperty.call(overrides, 'userRoles')) {
+    const overrideUserRoles = overrides.userRoles;
+
+    if (overrideUserRoles && overrideUserRoles !== null) {
+      mergedUserRoles = {
+        accountId: overrideUserRoles.accountId ?? defaultContext.userRoles?.accountId ?? '1',
+        globalRoles: overrideUserRoles.globalRoles ?? defaultContext.userRoles?.globalRoles ?? [],
+        contactRoles:
+          overrideUserRoles.contactRoles ?? defaultContext.userRoles?.contactRoles ?? [],
+      };
+    } else {
+      // preserve explicit null/undefined override value
+      mergedUserRoles = overrideUserRoles as RoleContextType['userRoles'];
+    }
+  }
+
+  const context: RoleContextType = {
+    ...defaultContext,
+    ...overrides,
+    userRoles: mergedUserRoles,
+  };
 
   // Override hasRole to use the actual userRoles from the context
   context.hasRole = (roleId: string) => {

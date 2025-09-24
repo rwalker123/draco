@@ -131,4 +131,46 @@ export class PrismaAccountRepository implements IAccountRepository {
       },
     });
   }
+
+  async findAccountsWithRelations(accountIds?: bigint[]): Promise<dbAccount[]> {
+    const whereClause = accountIds && accountIds.length ? { id: { in: accountIds } } : undefined;
+
+    return this.prisma.accounts.findMany({
+      where: whereClause,
+      include: {
+        accounttypes: true,
+        accountsurl: {
+          orderBy: {
+            id: Prisma.SortOrder.asc,
+          },
+        },
+      },
+      orderBy: {
+        name: Prisma.SortOrder.asc,
+      },
+    });
+  }
+
+  async findAccountWithRelationsById(accountId: bigint): Promise<dbAccount | null> {
+    return this.prisma.accounts.findUnique({
+      where: { id: accountId },
+      include: {
+        accounttypes: true,
+        accountsurl: {
+          orderBy: {
+            id: Prisma.SortOrder.asc,
+          },
+        },
+      },
+    });
+  }
+
+  async createAccountUrl(accountId: bigint, url: string): Promise<void> {
+    await this.prisma.accountsurl.create({
+      data: {
+        accountid: BigInt(accountId),
+        url,
+      },
+    });
+  }
 }

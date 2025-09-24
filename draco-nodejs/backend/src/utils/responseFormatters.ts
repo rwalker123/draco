@@ -44,22 +44,40 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+type OwnerUserSummary = {
+  id: string;
+  userName: string;
+};
+
+type OwnerDetailsByAccount = {
+  ownerContacts?: Map<string, dbBaseContact>;
+  ownerUsersByAccount?: Map<string, OwnerUserSummary>;
+};
+
 export class AccountResponseFormatter {
   static formatAccounts(
     accounts: dbAccount[],
     affiliationMap: Map<string, dbAccountAffiliation>,
+    ownerDetails?: OwnerDetailsByAccount,
   ): AccountType[] {
-    return accounts.map((account) => this.formatAccount(account, affiliationMap));
+    return accounts.map((account) => {
+      const accountId = account.id.toString();
+      const ownerContact = ownerDetails?.ownerContacts?.get(accountId);
+      const ownerUser = ownerDetails?.ownerUsersByAccount?.get(accountId);
+      return this.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+    });
   }
 
   static formatAccount(
     account: dbAccount,
     affiliationMap: Map<string, dbAccountAffiliation>,
+    ownerContact?: dbBaseContact,
+    ownerUser?: OwnerUserSummary,
   ): AccountType {
     const affiliationId = account.affiliationid ? account.affiliationid.toString() : undefined;
     const affiliationRecord = affiliationId ? affiliationMap.get(affiliationId) : undefined;
 
-    return {
+    const formattedAccount: AccountType = {
       id: account.id.toString(),
       name: account.name,
       accountLogoUrl: getAccountLogoUrl(account.id.toString()),
@@ -93,6 +111,27 @@ export class AccountResponseFormatter {
         url: url.url,
       })),
     };
+
+    if (ownerContact || ownerUser) {
+      formattedAccount.accountOwner = {
+        contact: ownerContact
+          ? {
+              id: ownerContact.id.toString(),
+              firstName: ownerContact.firstname,
+              lastName: ownerContact.lastname,
+              middleName: ownerContact.middlename ?? undefined,
+            }
+          : undefined,
+        user: ownerUser
+          ? {
+              id: ownerUser.id,
+              userName: ownerUser.userName,
+            }
+          : undefined,
+      };
+    }
+
+    return formattedAccount;
   }
 }
 
