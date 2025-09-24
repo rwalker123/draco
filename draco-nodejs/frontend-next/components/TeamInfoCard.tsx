@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy } from 'lucide-react';
 import TeamAvatar from './TeamAvatar';
 import { Team } from '@/types/schedule';
+import { useApiClient } from '../hooks/useApiClient';
+import { getAccountName as apiGetAccountName } from '@draco/shared-api-client';
 
 interface TeamInfoCardProps {
   accountId?: string;
@@ -24,6 +26,7 @@ export default function TeamInfoCard({
   teamSeasonId,
   onTeamDataLoaded,
 }: TeamInfoCardProps) {
+  const apiClient = useApiClient();
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,16 +86,23 @@ export default function TeamInfoCard({
     async function fetchAccountName() {
       if (!accountId) return;
       try {
-        const res = await fetch(`/api/accounts/${accountId}/name`);
-        if (!res.ok) throw new Error('Failed to fetch account name');
-        const data = await res.json();
-        setAccountName(data.data.name);
+        const result = await apiGetAccountName({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        if (!result.data) {
+          throw new Error(result.error?.message || 'Failed to fetch account name');
+        }
+
+        setAccountName(result.data.name ?? '');
       } catch {
         setAccountName('');
       }
     }
     fetchAccountName();
-  }, [accountId]);
+  }, [accountId, apiClient]);
 
   // Call onTeamDataLoaded when all data is available
   useEffect(() => {

@@ -164,4 +164,13 @@ export class PrismaAccountRepository implements IAccountRepository {
       },
     });
   }
+
+  async createAccountUrl(accountId: bigint, url: string): Promise<void> {
+    await this.prisma.accountsurl.create({
+      data: {
+        accountid: BigInt(accountId),
+        url,
+      },
+    });
+  }
 }

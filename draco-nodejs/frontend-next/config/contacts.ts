@@ -1,3 +1,5 @@
+import { addCacheBuster as addCacheBusterUtil } from '../utils/addCacheBuster';
+
 // Contact configuration settings
 export const CONTACT_CONFIG = {
   // Photo configuration
@@ -22,9 +24,7 @@ export const getPhotoSize = (): number => {
 
 // Helper function to add cache-buster to a URL
 export const addCacheBuster = (url: string, timestamp?: number): string => {
-  const cacheBuster = timestamp || Date.now();
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}t=${cacheBuster}`;
+  return addCacheBusterUtil(url, timestamp) ?? url;
 };
 
 // Helper function to validate contact photo file

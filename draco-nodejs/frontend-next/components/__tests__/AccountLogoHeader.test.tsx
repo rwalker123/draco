@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import AccountLogoHeader from '../AccountLogoHeader';
+import { useAccountHeader } from '../../hooks/useAccountHeader';
 
-// Mock Next.js Image component
 vi.mock('next/image', () => ({
   default: function MockImage({
     src,
@@ -14,21 +14,21 @@ vi.mock('next/image', () => ({
     [key: string]: unknown;
   }) {
     return <img src={src} alt={alt} {...props} />;
-    {
-    }
   },
 }));
 
-// Mock fetch to resolve account header
-const mockFetch = vi.fn();
-global.fetch = mockFetch as unknown as typeof global.fetch;
+vi.mock('../../hooks/useAccountHeader', () => ({
+  useAccountHeader: vi.fn(),
+}));
 
 describe('AccountLogoHeader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true, data: { name: 'Test Account', accountLogoUrl: null } }),
+    vi.mocked(useAccountHeader).mockReturnValue({
+      accountName: 'Test Account',
+      logoUrl: null,
+      isLoading: false,
+      error: null,
     });
   });
 

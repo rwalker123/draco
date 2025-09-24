@@ -12,6 +12,7 @@ This document outlines the layered architecture patterns, principles, and best p
 - **No dynamic types** - Always use proper TypeScript interfaces from shared schemas
 - **Generated SDK** - OpenAPI specification generates frontend SDK automatically
 - **Approval required for schema edits** - Files under `shared/shared-schemas` are restricted; obtain explicit approval before creating or modifying any shared schema definitions.
+- **No ad-hoc Zod schemas** - Do not invent new Zod validators or ad-hoc type definitions in routes, services, or helpers. If a new shape is truly required, pause, obtain maintainer approval, and then add it via the shared schema workflow.
 
 ### 2. Layered Architecture
 - **Route Layer** - Untrusted boundary handling validation, authentication, authorization
