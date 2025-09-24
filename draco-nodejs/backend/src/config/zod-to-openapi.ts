@@ -63,10 +63,7 @@ const AccountAffiliationSchemaRef = registry.register(
 );
 const SponsorSchemaRef = registry.register('Sponsor', SponsorSchema);
 const SponsorListSchemaRef = registry.register('SponsorList', SponsorListSchema);
-const SponsorPayloadSchemaRef = registry.register(
-  'SponsorPayload',
-  CreateSponsorSchema.omit({ teamId: true, photo: true }),
-);
+const CreateSponsorSchemaRef = registry.register('CreateSponsor', CreateSponsorSchema);
 
 // Register error schemas
 const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
@@ -1819,7 +1816,7 @@ registry.registerPath({
     body: {
       content: {
         'multipart/form-data': {
-          schema: SponsorPayloadSchemaRef.extend({
+          schema: CreateSponsorSchemaRef.extend({
             photo: z.string().optional().openapi({
               type: 'string',
               format: 'binary',
@@ -1912,7 +1909,7 @@ registry.registerPath({
     body: {
       content: {
         'multipart/form-data': {
-          schema: SponsorPayloadSchemaRef.partial().extend({
+          schema: CreateSponsorSchemaRef.partial().extend({
             photo: z.string().optional().openapi({
               type: 'string',
               format: 'binary',
@@ -2147,7 +2144,7 @@ registry.registerPath({
     body: {
       content: {
         'multipart/form-data': {
-          schema: SponsorPayloadSchemaRef.extend({
+          schema: CreateSponsorSchemaRef.partial().extend({
             photo: z.string().optional().openapi({
               type: 'string',
               format: 'binary',
@@ -2258,7 +2255,7 @@ registry.registerPath({
     body: {
       content: {
         'multipart/form-data': {
-          schema: SponsorPayloadSchemaRef.partial().extend({
+          schema: CreateSponsorSchemaRef.partial().extend({
             photo: z.string().optional().openapi({
               type: 'string',
               format: 'binary',
@@ -2395,213 +2392,6 @@ registry.registerPath({
     },
     404: {
       description: 'Sponsor not found',
-      content: {
-        'application/json': {
-          schema: NotFoundErrorSchemaRef,
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: InternalServerErrorSchemaRef,
-        },
-      },
-    },
-  },
-});
-
-// PUT /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}
-registry.registerPath({
-  method: 'put',
-  path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}',
-  description: 'Update a roster entry for a team season',
-  operationId: 'updateRosterMember',
-  summary: 'Update roster entry',
-  security: [{ bearerAuth: [] }],
-  tags: ['Rosters'],
-  parameters: [
-    {
-      name: 'accountId',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string',
-        format: 'number',
-      },
-    },
-    {
-      name: 'seasonId',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string',
-        format: 'number',
-      },
-    },
-    {
-      name: 'teamSeasonId',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string',
-        format: 'number',
-      },
-    },
-    {
-      name: 'rosterMemberId',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string',
-        format: 'number',
-      },
-    },
-  ],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: RosterMemberSchemaRef.partial(),
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Roster entry updated',
-      content: {
-        'application/json': {
-          schema: RosterMemberSchemaRef,
-        },
-      },
-    },
-    400: {
-      description: 'Validation error',
-      content: {
-        'application/json': {
-          schema: ValidationErrorSchemaRef,
-        },
-      },
-    },
-    401: {
-      description: 'Authentication required',
-      content: {
-        'application/json': {
-          schema: AuthenticationErrorSchemaRef,
-        },
-      },
-    },
-    403: {
-      description: 'Access denied - Account admin required',
-      content: {
-        'application/json': {
-          schema: AuthorizationErrorSchemaRef,
-        },
-      },
-    },
-    404: {
-      description: 'Roster member or team not found',
-      content: {
-        'application/json': {
-          schema: NotFoundErrorSchemaRef,
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: InternalServerErrorSchemaRef,
-        },
-      },
-    },
-  },
-});
-
-// POST /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster
-registry.registerPath({
-  method: 'post',
-  path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster',
-  description: 'Sign a player to the team roster',
-  operationId: 'signPlayer',
-  summary: 'Sing player to roster',
-  security: [{ bearerAuth: [] }],
-  tags: ['Roster'],
-  parameters: [
-    {
-      name: 'accountId',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string',
-        format: 'number',
-      },
-    },
-    {
-      name: 'seasonId',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string',
-        format: 'number',
-      },
-    },
-    {
-      name: 'teamSeasonId',
-      in: 'path',
-      required: true,
-      schema: {
-        type: 'string',
-        format: 'number',
-      },
-    },
-  ],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: SignRosterMemberSchemaRef,
-        },
-      },
-    },
-  },
-  responses: {
-    201: {
-      description: 'Player signed to roster',
-      content: {
-        'application/json': {
-          schema: RosterMemberSchemaRef,
-        },
-      },
-    },
-    400: {
-      description: 'Validation error',
-      content: {
-        'application/json': {
-          schema: ValidationErrorSchemaRef,
-        },
-      },
-    },
-    401: {
-      description: 'Authentication required',
-      content: {
-        'application/json': {
-          schema: AuthenticationErrorSchemaRef,
-        },
-      },
-    },
-    403: {
-      description: 'Access denied - Account admin required',
-      content: {
-        'application/json': {
-          schema: AuthorizationErrorSchemaRef,
-        },
-      },
-    },
-    404: {
-      description: 'Contact not found',
       content: {
         'application/json': {
           schema: NotFoundErrorSchemaRef,

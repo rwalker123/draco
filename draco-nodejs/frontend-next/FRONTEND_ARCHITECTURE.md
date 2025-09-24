@@ -134,6 +134,50 @@ const ParentComponent = () => {
 };
 ```
 
+### Form Validation Pattern
+
+- **Rely on shared Zod schemas**: import definitions from `@draco/shared-schemas` so frontend validation always matches backend expectations.
+- **Pair schemas with React Hook Form**: initialize `useForm` with `zodResolver` to wire synchronous validation and typed form values.
+- **Extend schemas for UI-only fields** (e.g., uploads) instead of redefining validation rules inline.
+- **Reference implementations**: `components/users/EditContactDialog.tsx` and `components/sponsors/SponsorFormDialog.tsx` show the dialog pattern.
+
+```typescript
+import { z } from 'zod';
+import { SharedSchema } from '@draco/shared-schemas';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+
+const FormSchema = SharedSchema.extend({
+  photo: z.any().optional().nullable(),
+});
+
+const {
+  register,
+  handleSubmit,
+  reset,
+  formState: { errors, isSubmitting },
+} = useForm<z.infer<typeof FormSchema>>({
+  resolver: zodResolver(FormSchema),
+  defaultValues,
+});
+
+const onSubmit = handleSubmit(async (values) => {
+  const payload = transform(values);
+  await serviceOperation(payload);
+  onSuccess?.();
+});
+
+return (
+  <TextField
+    {...register('name')}
+    error={Boolean(errors.name)}
+    helperText={errors.name?.message}
+  />
+);
+```
+
+When the dialog opens for editing, call `reset` with the existing entity inside an effect. Always clear backend error state on close so reopen flows start cleanly.
+
 ### Service Hook Pattern
 
 Service hooks encapsulate API operations and provide consistent error handling across components.

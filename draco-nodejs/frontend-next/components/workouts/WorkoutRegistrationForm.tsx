@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { WorkoutRegistrationDTO, WorkoutRegistration, WorkoutSources } from '../../types/workouts';
 import { getSources } from '../../services/workoutService';
-import { formatPhoneNumber } from '../../utils/contactUtils';
+import { formatPhoneNumber } from '../../utils/phoneNumber';
 
 interface WorkoutRegistrationFormProps {
   accountId: string;

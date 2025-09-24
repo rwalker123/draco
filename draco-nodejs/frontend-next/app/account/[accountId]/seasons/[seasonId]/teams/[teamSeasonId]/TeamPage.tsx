@@ -17,6 +17,8 @@ import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import { SponsorService } from '../../../../../../../services/sponsorService';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
 import { SponsorType } from '@draco/shared-schemas';
+import { useRole } from '../../../../../../../context/RoleContext';
+import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
 
 interface TeamPageProps {
   accountId: string;
@@ -51,6 +53,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     accountId,
     teamSeasonId,
   });
+  const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
 
   React.useEffect(() => {
     setLoading(true);
@@ -240,6 +243,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     }
   };
 
+  const canManageTeamSponsors = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+      hasRoleInTeam('TeamManager', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
   return (
     <main className="min-h-screen bg-background">
       {/* Account Header with Team Information */}
@@ -254,19 +266,21 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                 <TeamAvatar
-                  name={teamData?.teamName || 'Loading...'}
+                  name={teamData?.teamName || ''}
                   logoUrl={teamData?.logoUrl || undefined}
                   size={60}
-                  alt={`${teamData?.teamName} logo`}
+                  alt={teamData?.teamName ? `${teamData.teamName} logo` : 'Team logo'}
                 />
                 {teamData?.leagueName && (
                   <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
                     {teamData.leagueName}
                   </Typography>
                 )}
-                <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-                  {teamData?.teamName || 'Loading...'}
-                </Typography>
+                {teamData?.teamName && (
+                  <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    {teamData.teamName}
+                  </Typography>
+                )}
               </Box>
               {teamData?.record && (
                 <Typography
@@ -299,6 +313,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           onTeamDataLoaded={setTeamData}
         />
       </div>
+
+      {canManageTeamSponsors && (
+        <TeamAdminPanel accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
+      )}
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}
       {loading ? (

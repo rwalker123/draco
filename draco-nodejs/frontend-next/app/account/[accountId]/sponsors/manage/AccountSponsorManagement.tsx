@@ -4,11 +4,12 @@ import React from 'react';
 import {
   Alert,
   Box,
-  Button,
+  Avatar,
   CircularProgress,
   Container,
   IconButton,
   Paper,
+  Fab,
   Stack,
   Table,
   TableBody,
@@ -115,15 +116,12 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
         </Box>
       </AccountPageHeader>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Stack spacing={3}>
+      <Container maxWidth="md" sx={{ py: 4, position: 'relative' }}>
+        <Stack spacing={3} sx={{ pb: 8 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h5" component="h1">
               Account Sponsors
             </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate}>
-              Add Sponsor
-            </Button>
           </Box>
 
           {success && (
@@ -147,6 +145,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell sx={{ width: 72 }}>Logo</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Phone</TableCell>
@@ -157,6 +156,16 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
                 <TableBody>
                   {sponsors.map((sponsor) => (
                     <TableRow key={sponsor.id} hover>
+                      <TableCell>
+                        <Avatar
+                          src={sponsor.photoUrl ?? undefined}
+                          alt={sponsor.name ? `${sponsor.name} logo` : 'Sponsor logo'}
+                          variant="rounded"
+                          sx={{ width: 40, height: 40, bgcolor: 'grey.100', color: 'text.primary' }}
+                        >
+                          {sponsor.name?.charAt(0).toUpperCase() ?? ''}
+                        </Avatar>
+                      </TableCell>
                       <TableCell>{sponsor.name}</TableCell>
                       <TableCell>{sponsor.email || '—'}</TableCell>
                       <TableCell>{sponsor.phone || '—'}</TableCell>
@@ -182,7 +191,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
                   ))}
                   {sponsors.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         No sponsors have been added yet.
                       </TableCell>
                     </TableRow>
@@ -192,6 +201,15 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
             </TableContainer>
           )}
         </Stack>
+
+        <Fab
+          color="primary"
+          aria-label="add sponsor"
+          sx={{ position: 'absolute', bottom: 24, right: 24 }}
+          onClick={handleOpenCreate}
+        >
+          <Add />
+        </Fab>
       </Container>
 
       <SponsorFormDialog

@@ -1513,7 +1513,7 @@
           },
           "description": {
             "type": "string",
-            "maxLength": 4000
+            "maxLength": 250
           },
           "email": {
             "type": "string",
@@ -1531,13 +1531,13 @@
             "type": "string",
             "maxLength": 255
           },
-          "teamId": {
-            "type": "string"
-          },
           "id": {
             "type": "string"
           },
           "accountId": {
+            "type": "string"
+          },
+          "teamId": {
             "type": "string"
           },
           "photoUrl": {
@@ -1550,7 +1550,9 @@
           "name",
           "id",
           "accountId"
-        ]
+        ],
+        "title": "CreateSponsor",
+        "description": "Payload to create or update a sponsor"
       },
       "SponsorList": {
         "type": "object",
@@ -1575,7 +1577,7 @@
                 },
                 "description": {
                   "type": "string",
-                  "maxLength": 4000
+                  "maxLength": 250
                 },
                 "email": {
                   "type": "string",
@@ -1593,13 +1595,13 @@
                   "type": "string",
                   "maxLength": 255
                 },
-                "teamId": {
-                  "type": "string"
-                },
                 "id": {
                   "type": "string"
                 },
                 "accountId": {
+                  "type": "string"
+                },
+                "teamId": {
                   "type": "string"
                 },
                 "photoUrl": {
@@ -1612,7 +1614,9 @@
                 "name",
                 "id",
                 "accountId"
-              ]
+              ],
+              "title": "CreateSponsor",
+              "description": "Payload to create or update a sponsor"
             }
           }
         },
@@ -1622,7 +1626,7 @@
         "title": "SponsorListResponse",
         "description": "List response for sponsors"
       },
-      "SponsorPayload": {
+      "CreateSponsor": {
         "type": "object",
         "properties": {
           "name": {
@@ -1640,7 +1644,7 @@
           },
           "description": {
             "type": "string",
-            "maxLength": 4000
+            "maxLength": 250
           },
           "email": {
             "type": "string",
@@ -1661,7 +1665,9 @@
         },
         "required": [
           "name"
-        ]
+        ],
+        "title": "CreateSponsor",
+        "description": "Payload to create or update a sponsor"
       },
       "ValidationError": {
         "type": "object",
@@ -4365,7 +4371,7 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/SponsorPayload"
+                    "$ref": "#/components/schemas/CreateSponsor"
                   },
                   {
                     "type": "object",
@@ -4377,7 +4383,9 @@
                       }
                     }
                   }
-                ]
+                ],
+                "title": "CreateSponsor",
+                "description": "Payload to create or update a sponsor"
               },
               "encoding": {
                 "photo": {
@@ -4555,7 +4563,7 @@
                   },
                   "description": {
                     "type": "string",
-                    "maxLength": 4000
+                    "maxLength": 250
                   },
                   "email": {
                     "type": "string",
@@ -4835,21 +4843,47 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/SponsorPayload"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
                   },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "photo": {
-                        "type": "string",
-                        "format": "binary",
-                        "description": "Sponsor photo file"
-                      }
-                    }
+                  "streetAddress": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "cityStateZip": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 250
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "phone": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "fax": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "website": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Sponsor photo file"
                   }
-                ]
+                }
               },
               "encoding": {
                 "photo": {
@@ -4985,7 +5019,7 @@
                   },
                   "description": {
                     "type": "string",
-                    "maxLength": 4000
+                    "maxLength": 250
                   },
                   "email": {
                     "type": "string",

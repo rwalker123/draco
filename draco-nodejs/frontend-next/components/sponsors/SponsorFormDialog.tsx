@@ -14,12 +14,20 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { SponsorType } from '@draco/shared-schemas';
+import {
+  SponsorType,
+  CreateSponsorSchema,
+  SPONSOR_DESCRIPTION_MAX_LENGTH,
+} from '@draco/shared-schemas';
 import {
   SponsorFormValues,
   SponsorScope,
   useSponsorOperations,
 } from '../../hooks/useSponsorOperations';
+import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { formatPhoneInput, isValidPhoneNumber } from '../../utils/phoneNumber';
 
 interface SponsorFormDialogProps {
   open: boolean;
@@ -31,7 +39,29 @@ interface SponsorFormDialogProps {
   onError?: (message: string) => void;
 }
 
-const defaultValues: SponsorFormValues = {
+const SponsorFormSchema = CreateSponsorSchema.extend({
+  photo: z.any().nullable().optional(),
+  phone: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .refine((value) => isValidPhoneNumber(value), {
+      message: 'Phone number must be a valid 10-digit US phone number',
+    }),
+  fax: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .refine((value) => isValidPhoneNumber(value), {
+      message: 'Fax number must be a valid 10-digit US phone number',
+    }),
+});
+
+type SponsorFormSchemaType = z.infer<typeof SponsorFormSchema>;
+
+const defaultValues: SponsorFormSchemaType = {
   name: '',
   streetAddress: '',
   cityStateZip: '',
@@ -52,20 +82,41 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const operations = useSponsorOperations(context);
-  const [formValues, setFormValues] = React.useState<SponsorFormValues>(defaultValues);
+  const { createSponsor, updateSponsor, clearError, loading, error } =
+    useSponsorOperations(context);
   const [localError, setLocalError] = React.useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<SponsorFormSchemaType>({
+    resolver: zodResolver(SponsorFormSchema),
+    defaultValues,
+  });
+
+  const photoValue = watch('photo') as File | null | undefined;
+  const sponsorName = watch('name');
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const handlePreviewError = React.useCallback(() => {
+    setPreviewUrl(null);
+  }, []);
 
   React.useEffect(() => {
     if (!open) {
-      setFormValues(defaultValues);
+      reset(defaultValues);
       setLocalError(null);
-      operations.clearError();
+      clearError();
+      setPreviewUrl(null);
       return;
     }
 
     if (mode === 'edit' && initialSponsor) {
-      setFormValues({
+      reset({
         name: initialSponsor.name,
         streetAddress: initialSponsor.streetAddress ?? '',
         cityStateZip: initialSponsor.cityStateZip ?? '',
@@ -77,42 +128,49 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
         photo: null,
       });
     } else {
-      setFormValues(defaultValues);
+      reset(defaultValues);
     }
     setLocalError(null);
-    operations.clearError();
-  }, [open, mode, initialSponsor, operations]);
+    clearError();
+  }, [open, mode, initialSponsor, reset, clearError]);
 
-  const handleChange =
-    (field: keyof SponsorFormValues) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (field === 'photo') {
-        setFormValues((prev) => ({
-          ...prev,
-          photo: event.target.files && event.target.files.length > 0 ? event.target.files[0] : null,
-        }));
-        return;
-      }
+  React.useEffect(() => {
+    if (photoValue instanceof File) {
+      const objectUrl = URL.createObjectURL(photoValue);
+      setPreviewUrl(objectUrl);
 
-      const { value } = event.target;
-      setFormValues((prev) => ({ ...prev, [field]: value }));
-    };
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!formValues.name.trim()) {
-      setLocalError('Sponsor name is required');
-      return;
+      return () => {
+        URL.revokeObjectURL(objectUrl);
+      };
     }
 
+    setPreviewUrl(initialSponsor?.photoUrl ?? null);
+    return undefined;
+  }, [photoValue, initialSponsor]);
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files && event.target.files.length > 0 ? event.target.files[0] : null;
+    setValue('photo', file, { shouldDirty: true, shouldValidate: false });
+    // reset value so selecting the same file again triggers change
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
+  const onSubmit = handleSubmit(async (values) => {
     try {
       setLocalError(null);
-      operations.clearError();
+      clearError();
+
+      const payload: SponsorFormValues = {
+        ...values,
+        photo: (values.photo as File | null | undefined) ?? null,
+      };
 
       const sponsor =
         mode === 'create'
-          ? await operations.createSponsor(formValues)
-          : await operations.updateSponsor(initialSponsor!.id, formValues);
+          ? await createSponsor(payload)
+          : await updateSponsor(initialSponsor!.id, payload);
 
       onSuccess?.({
         sponsor,
@@ -125,92 +183,145 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
       setLocalError(message);
       onError?.(message);
     }
-  };
+  });
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{mode === 'create' ? 'Add Sponsor' : 'Edit Sponsor'}</DialogTitle>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
+      <Box component="form" onSubmit={onSubmit} noValidate>
         <DialogContent>
           <Stack spacing={2}>
-            {(localError || operations.error) && (
-              <Alert severity="error" onClose={() => setLocalError(null)}>
-                {localError || operations.error}
+            {(localError || error) && (
+              <Alert
+                severity="error"
+                onClose={() => {
+                  setLocalError(null);
+                  clearError();
+                }}
+              >
+                {localError || error}
               </Alert>
             )}
             <TextField
               label="Name"
-              value={formValues.name}
-              onChange={handleChange('name')}
+              {...register('name')}
               required
               fullWidth
+              error={Boolean(errors.name)}
+              helperText={errors.name?.message}
             />
             <TextField
               label="Street Address"
-              value={formValues.streetAddress}
-              onChange={handleChange('streetAddress')}
+              {...register('streetAddress')}
               fullWidth
+              error={Boolean(errors.streetAddress)}
+              helperText={errors.streetAddress?.message}
             />
             <TextField
               label="City, State, ZIP"
-              value={formValues.cityStateZip}
-              onChange={handleChange('cityStateZip')}
+              {...register('cityStateZip')}
               fullWidth
+              error={Boolean(errors.cityStateZip)}
+              helperText={errors.cityStateZip?.message}
             />
             <TextField
               label="Description"
-              value={formValues.description}
-              onChange={handleChange('description')}
+              {...register('description')}
               fullWidth
               multiline
               minRows={3}
+              inputProps={{ maxLength: SPONSOR_DESCRIPTION_MAX_LENGTH }}
+              error={Boolean(errors.description)}
+              helperText={errors.description?.message}
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
                 label="Email"
-                value={formValues.email}
-                onChange={handleChange('email')}
+                {...register('email')}
                 type="email"
                 fullWidth
+                error={Boolean(errors.email)}
+                helperText={errors.email?.message}
               />
-              <TextField
-                label="Phone"
-                value={formValues.phone}
-                onChange={handleChange('phone')}
-                fullWidth
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label="Phone"
+                    fullWidth
+                    value={field.value ?? ''}
+                    onChange={(event) => field.onChange(formatPhoneInput(event.target.value))}
+                    onBlur={field.onBlur}
+                    error={Boolean(errors.phone)}
+                    helperText={errors.phone?.message}
+                  />
+                )}
               />
             </Stack>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                label="Fax"
-                value={formValues.fax}
-                onChange={handleChange('fax')}
-                fullWidth
+              <Controller
+                name="fax"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label="Fax"
+                    fullWidth
+                    value={field.value ?? ''}
+                    onChange={(event) => field.onChange(formatPhoneInput(event.target.value))}
+                    onBlur={field.onBlur}
+                    error={Boolean(errors.fax)}
+                    helperText={errors.fax?.message}
+                  />
+                )}
               />
               <TextField
                 label="Website"
-                value={formValues.website}
-                onChange={handleChange('website')}
+                {...register('website')}
                 fullWidth
+                error={Boolean(errors.website)}
+                helperText={errors.website?.message}
               />
             </Stack>
-            <Button variant="outlined" component="label">
-              {formValues.photo ? 'Change Photo' : 'Upload Photo'}
-              <input hidden type="file" accept="image/*" onChange={handleChange('photo')} />
-            </Button>
-            {mode === 'edit' && initialSponsor?.photoUrl && !formValues.photo && (
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Button variant="outlined" component="label">
+                {photoValue ? 'Change Logo' : 'Upload Logo'}
+                <input hidden type="file" accept="image/*" onChange={handlePhotoChange} />
+              </Button>
+              {previewUrl ? (
+                <Box
+                  component="img"
+                  src={previewUrl}
+                  alt={`${sponsorName || initialSponsor?.name || 'Sponsor'} logo preview`}
+                  onError={handlePreviewError}
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    objectFit: 'cover',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                />
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  No logo available
+                </Typography>
+              )}
+            </Stack>
+            {mode === 'edit' && initialSponsor?.photoUrl && !photoValue && (
               <Typography variant="caption" color="text.secondary">
-                Current photo will be retained unless a new file is uploaded.
+                Current logo will be retained unless a new file is uploaded.
               </Typography>
             )}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} disabled={operations.loading}>
+          <Button onClick={onClose} disabled={loading || isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={operations.loading}>
-            {operations.loading ? (
+          <Button type="submit" variant="contained" disabled={loading || isSubmitting}>
+            {loading || isSubmitting ? (
               <CircularProgress size={20} />
             ) : mode === 'create' ? (
               'Create Sponsor'

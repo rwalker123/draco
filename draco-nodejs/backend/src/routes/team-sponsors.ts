@@ -37,14 +37,10 @@ router.post(
   handlePhotoUploadMiddleware,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-    const payload = CreateSponsorSchema.omit({ teamId: true, photo: true }).parse(req.body) as Omit<
-      CreateSponsorType,
-      'teamId'
-    >;
+    const payload = CreateSponsorSchema.parse(req.body) as Omit<CreateSponsorType, 'teamId'>;
 
     const sponsor = await sponsorService.createTeamSponsor(accountId, seasonId, teamSeasonId, {
       ...payload,
-      teamId: undefined,
     });
 
     if (req.file) {
@@ -75,13 +71,10 @@ router.put(
     const hasBodyData = req.body && Object.keys(req.body).length > 0;
 
     if (hasBodyData) {
-      const payload = CreateSponsorSchema.omit({ teamId: true, photo: true }).parse(
-        req.body,
-      ) as Omit<CreateSponsorType, 'teamId'>;
+      const payload = CreateSponsorSchema.parse(req.body) as Omit<CreateSponsorType, 'teamId'>;
 
       await sponsorService.updateTeamSponsor(accountId, seasonId, teamSeasonId, sponsorId, {
         ...payload,
-        teamId: undefined,
       });
     } else {
       await sponsorService.getTeamSponsor(accountId, seasonId, teamSeasonId, sponsorId);

@@ -3,14 +3,17 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 
 extendZodWithOpenApi(z);
 
-const optionalString = () => z.string().trim().max(255).optional();
+export const SPONSOR_OPTIONAL_STRING_MAX_LENGTH = 255;
+export const SPONSOR_DESCRIPTION_MAX_LENGTH = 250;
+
+const optionalString = () => z.string().trim().max(SPONSOR_OPTIONAL_STRING_MAX_LENGTH).optional();
 
 export const CreateSponsorSchema = z
   .object({
     name: z.string().trim().min(1).max(50),
     streetAddress: optionalString(),
     cityStateZip: optionalString(),
-    description: z.string().trim().max(4000).optional(),
+    description: z.string().trim().max(SPONSOR_DESCRIPTION_MAX_LENGTH).optional(),
     email: z
       .string()
       .trim()
@@ -22,16 +25,6 @@ export const CreateSponsorSchema = z
     phone: optionalString(),
     fax: optionalString(),
     website: optionalString(),
-    teamId: z.string().trim().optional(),
-    photo: z
-      .string()
-      .trim()
-      .optional()
-      .openapi({
-        type: 'string',
-        format: 'binary',
-        description: 'Sponsor photo file',
-      }),
   })
   .openapi({
     title: 'CreateSponsor',
@@ -48,7 +41,7 @@ export const SponsorSchema = CreateSponsorSchema.extend({
     .url()
     .optional()
     .openapi({ description: 'Public URL for the sponsor photo' }),
-}).omit({ photo: true });
+});
 
 export const SponsorListSchema = z
   .object({

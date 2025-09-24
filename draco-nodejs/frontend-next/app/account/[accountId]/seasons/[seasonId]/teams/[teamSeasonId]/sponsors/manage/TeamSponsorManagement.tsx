@@ -4,11 +4,13 @@ import React from 'react';
 import {
   Alert,
   Box,
-  Button,
+  Avatar,
+  Breadcrumbs,
   CircularProgress,
   Container,
   IconButton,
   Paper,
+  Fab,
   Stack,
   Table,
   TableBody,
@@ -17,12 +19,16 @@ import {
   TableHead,
   TableRow,
   Typography,
+  Link as MuiLink,
 } from '@mui/material';
 import { Add, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { SponsorType } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../../../../../components/AccountPageHeader';
 import SponsorFormDialog from '../../../../../../../../../components/sponsors/SponsorFormDialog';
 import { useSponsorOperations } from '../../../../../../../../../hooks/useSponsorOperations';
+import TeamAvatar from '../../../../../../../../../components/TeamAvatar';
+import TeamInfoCard from '../../../../../../../../../components/TeamInfoCard';
+import NextLink from 'next/link';
 
 interface TeamSponsorManagementProps {
   accountId: string;
@@ -61,6 +67,29 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     mode: 'create',
     sponsor: null,
   });
+  const [teamHeaderData, setTeamHeaderData] = React.useState<{
+    teamName: string;
+    leagueName?: string;
+    logoUrl?: string;
+  } | null>(null);
+
+  const handleTeamDataLoaded = React.useCallback(
+    (data: {
+      teamName: string;
+      leagueName: string;
+      seasonName: string;
+      accountName: string;
+      logoUrl?: string;
+      record?: { wins: number; losses: number; ties: number };
+    }) => {
+      setTeamHeaderData({
+        teamName: data.teamName,
+        leagueName: data.leagueName,
+        logoUrl: data.logoUrl,
+      });
+    },
+    [],
+  );
 
   const refreshSponsors = React.useCallback(async () => {
     try {
@@ -116,22 +145,53 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box display="flex" justifyContent="center">
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-            Team Sponsor Management
-          </Typography>
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TeamAvatar
+              name={teamHeaderData?.teamName || 'Team'}
+              logoUrl={teamHeaderData?.logoUrl}
+              size={56}
+              alt={`${teamHeaderData?.teamName || 'Team'} logo`}
+            />
+            <Stack direction="row" spacing={1.5} alignItems="baseline" flexWrap="wrap">
+              {teamHeaderData?.leagueName && (
+                <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  {teamHeaderData.leagueName}
+                </Typography>
+              )}
+              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                {teamHeaderData?.teamName || 'Team Sponsor Management'}
+              </Typography>
+            </Stack>
+          </Stack>
         </Box>
       </AccountPageHeader>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Stack spacing={3}>
+      <Box sx={{ display: 'none' }}>
+        <TeamInfoCard
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeasonId={teamSeasonId}
+          onTeamDataLoaded={handleTeamDataLoaded}
+        />
+      </Box>
+
+      <Container maxWidth="md" sx={{ py: 4, position: 'relative' }}>
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>
+          <MuiLink
+            component={NextLink}
+            color="inherit"
+            href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`}
+          >
+            Team Page
+          </MuiLink>
+          <Typography color="text.primary">Sponsor Management</Typography>
+        </Breadcrumbs>
+        <Stack spacing={3} sx={{ pb: 8 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h5" component="h1">
               Team Sponsors
             </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate}>
-              Add Sponsor
-            </Button>
           </Box>
 
           {success && (
@@ -155,6 +215,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell sx={{ width: 72 }}>Logo</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Phone</TableCell>
@@ -165,6 +226,16 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
                 <TableBody>
                   {sponsors.map((sponsor) => (
                     <TableRow key={sponsor.id} hover>
+                      <TableCell>
+                        <Avatar
+                          src={sponsor.photoUrl ?? undefined}
+                          alt={sponsor.name ? `${sponsor.name} logo` : 'Sponsor logo'}
+                          variant="rounded"
+                          sx={{ width: 40, height: 40, bgcolor: 'grey.100', color: 'text.primary' }}
+                        >
+                          {sponsor.name?.charAt(0).toUpperCase() ?? ''}
+                        </Avatar>
+                      </TableCell>
                       <TableCell>{sponsor.name}</TableCell>
                       <TableCell>{sponsor.email || '—'}</TableCell>
                       <TableCell>{sponsor.phone || '—'}</TableCell>
@@ -190,7 +261,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
                   ))}
                   {sponsors.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         No sponsors have been added yet.
                       </TableCell>
                     </TableRow>
@@ -200,6 +271,15 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
             </TableContainer>
           )}
         </Stack>
+
+        <Fab
+          color="primary"
+          aria-label="add sponsor"
+          sx={{ position: 'absolute', bottom: 24, right: 24 }}
+          onClick={handleOpenCreate}
+        >
+          <Add />
+        </Fab>
       </Container>
 
       <SponsorFormDialog

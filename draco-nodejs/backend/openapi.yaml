@@ -1115,7 +1115,7 @@ components:
           maxLength: 255
         description:
           type: string
-          maxLength: 4000
+          maxLength: 250
         email:
           type: string
           maxLength: 100
@@ -1128,11 +1128,11 @@ components:
         website:
           type: string
           maxLength: 255
-        teamId:
-          type: string
         id:
           type: string
         accountId:
+          type: string
+        teamId:
           type: string
         photoUrl:
           type: string
@@ -1142,6 +1142,8 @@ components:
         - name
         - id
         - accountId
+      title: CreateSponsor
+      description: Payload to create or update a sponsor
     SponsorList:
       type: object
       properties:
@@ -1162,7 +1164,7 @@ components:
                 maxLength: 255
               description:
                 type: string
-                maxLength: 4000
+                maxLength: 250
               email:
                 type: string
                 maxLength: 100
@@ -1175,11 +1177,11 @@ components:
               website:
                 type: string
                 maxLength: 255
-              teamId:
-                type: string
               id:
                 type: string
               accountId:
+                type: string
+              teamId:
                 type: string
               photoUrl:
                 type: string
@@ -1189,11 +1191,13 @@ components:
               - name
               - id
               - accountId
+            title: CreateSponsor
+            description: Payload to create or update a sponsor
       required:
         - sponsors
       title: SponsorListResponse
       description: List response for sponsors
-    SponsorPayload:
+    CreateSponsor:
       type: object
       properties:
         name:
@@ -1208,7 +1212,7 @@ components:
           maxLength: 255
         description:
           type: string
-          maxLength: 4000
+          maxLength: 250
         email:
           type: string
           maxLength: 100
@@ -1223,6 +1227,8 @@ components:
           maxLength: 255
       required:
         - name
+      title: CreateSponsor
+      description: Payload to create or update a sponsor
     ValidationError:
       type: object
       properties:
@@ -2982,13 +2988,15 @@ paths:
           multipart/form-data:
             schema:
               allOf:
-                - $ref: "#/components/schemas/SponsorPayload"
+                - $ref: "#/components/schemas/CreateSponsor"
                 - type: object
                   properties:
                     photo:
                       type: string
                       format: binary
                       description: Sponsor photo file
+              title: CreateSponsor
+              description: Payload to create or update a sponsor
             encoding:
               photo:
                 contentType: image/*
@@ -3101,7 +3109,7 @@ paths:
                   maxLength: 255
                 description:
                   type: string
-                  maxLength: 4000
+                  maxLength: 250
                 email:
                   type: string
                   maxLength: 100
@@ -3276,14 +3284,37 @@ paths:
         content:
           multipart/form-data:
             schema:
-              allOf:
-                - $ref: "#/components/schemas/SponsorPayload"
-                - type: object
-                  properties:
-                    photo:
-                      type: string
-                      format: binary
-                      description: Sponsor photo file
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                streetAddress:
+                  type: string
+                  maxLength: 255
+                cityStateZip:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 250
+                email:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                  maxLength: 255
+                fax:
+                  type: string
+                  maxLength: 255
+                website:
+                  type: string
+                  maxLength: 255
+                photo:
+                  type: string
+                  format: binary
+                  description: Sponsor photo file
             encoding:
               photo:
                 contentType: image/*
@@ -3370,7 +3401,7 @@ paths:
                   maxLength: 255
                 description:
                   type: string
-                  maxLength: 4000
+                  maxLength: 250
                 email:
                   type: string
                   maxLength: 100

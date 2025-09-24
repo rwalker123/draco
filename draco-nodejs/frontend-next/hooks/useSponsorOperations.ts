@@ -24,17 +24,24 @@ export function useSponsorOperations(scope: SponsorScope) {
   const { token } = useAuth();
   const apiClient = useApiClient();
   const service = useMemo(() => new SponsorService(token, apiClient), [token, apiClient]);
+  const { type, accountId } = scope;
+  const seasonId = scope.type === 'team' ? scope.seasonId : null;
+  const teamSeasonId = scope.type === 'team' ? scope.teamSeasonId : null;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const listSponsors = useCallback(async (): Promise<SponsorType[]> => {
-    if (scope.type === 'account') {
-      return service.listAccountSponsors(scope.accountId);
+    if (type === 'account') {
+      return service.listAccountSponsors(accountId);
     }
 
-    return service.listTeamSponsors(scope.accountId, scope.seasonId, scope.teamSeasonId);
-  }, [scope, service]);
+    if (!seasonId || !teamSeasonId) {
+      throw new Error('Team scope identifiers are missing');
+    }
+
+    return service.listTeamSponsors(accountId, seasonId, teamSeasonId);
+  }, [type, accountId, seasonId, teamSeasonId, service]);
 
   const createSponsor = useCallback(
     async (input: SponsorFormValues): Promise<SponsorType> => {
@@ -42,16 +49,15 @@ export function useSponsorOperations(scope: SponsorScope) {
       setError(null);
 
       try {
-        if (scope.type === 'account') {
-          return await service.createAccountSponsor(scope.accountId, input);
+        if (type === 'account') {
+          return await service.createAccountSponsor(accountId, input);
         }
 
-        return await service.createTeamSponsor(
-          scope.accountId,
-          scope.seasonId,
-          scope.teamSeasonId,
-          input,
-        );
+        if (!seasonId || !teamSeasonId) {
+          throw new Error('Team scope identifiers are missing');
+        }
+
+        return await service.createTeamSponsor(accountId, seasonId, teamSeasonId, input);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to create sponsor';
         setError(message);
@@ -60,7 +66,7 @@ export function useSponsorOperations(scope: SponsorScope) {
         setLoading(false);
       }
     },
-    [scope, service],
+    [type, accountId, seasonId, teamSeasonId, service],
   );
 
   const updateSponsor = useCallback(
@@ -69,17 +75,15 @@ export function useSponsorOperations(scope: SponsorScope) {
       setError(null);
 
       try {
-        if (scope.type === 'account') {
-          return await service.updateAccountSponsor(scope.accountId, sponsorId, input);
+        if (type === 'account') {
+          return await service.updateAccountSponsor(accountId, sponsorId, input);
         }
 
-        return await service.updateTeamSponsor(
-          scope.accountId,
-          scope.seasonId,
-          scope.teamSeasonId,
-          sponsorId,
-          input,
-        );
+        if (!seasonId || !teamSeasonId) {
+          throw new Error('Team scope identifiers are missing');
+        }
+
+        return await service.updateTeamSponsor(accountId, seasonId, teamSeasonId, sponsorId, input);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to update sponsor';
         setError(message);
@@ -88,7 +92,7 @@ export function useSponsorOperations(scope: SponsorScope) {
         setLoading(false);
       }
     },
-    [scope, service],
+    [type, accountId, seasonId, teamSeasonId, service],
   );
 
   const deleteSponsor = useCallback(
@@ -97,15 +101,14 @@ export function useSponsorOperations(scope: SponsorScope) {
       setError(null);
 
       try {
-        if (scope.type === 'account') {
-          await service.deleteAccountSponsor(scope.accountId, sponsorId);
+        if (type === 'account') {
+          await service.deleteAccountSponsor(accountId, sponsorId);
         } else {
-          await service.deleteTeamSponsor(
-            scope.accountId,
-            scope.seasonId,
-            scope.teamSeasonId,
-            sponsorId,
-          );
+          if (!seasonId || !teamSeasonId) {
+            throw new Error('Team scope identifiers are missing');
+          }
+
+          await service.deleteTeamSponsor(accountId, seasonId, teamSeasonId, sponsorId);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to delete sponsor';
@@ -115,7 +118,7 @@ export function useSponsorOperations(scope: SponsorScope) {
         setLoading(false);
       }
     },
-    [scope, service],
+    [type, accountId, seasonId, teamSeasonId, service],
   );
 
   const clearError = useCallback(() => setError(null), []);

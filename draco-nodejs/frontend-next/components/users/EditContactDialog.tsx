@@ -21,7 +21,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { Autocomplete } from '@mui/material';
-import { formatPhoneNumber } from '../../utils/contactUtils';
+import { formatPhoneInput } from '../../utils/phoneNumber';
 import { US_STATES } from '../../constants/usStates';
 import ContactPhotoUpload from '../ContactPhotoUpload';
 import { validateContactPhotoFile } from '../../config/contacts';
@@ -125,7 +125,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
   const handlePhoneChange =
     (field: 'phone1' | 'phone2' | 'phone3') => (event: React.ChangeEvent<HTMLInputElement>) => {
       const value = event.target.value;
-      const formattedPhone = formatPhoneNumber(value);
+      const formattedPhone = formatPhoneInput(value);
       setValue(`contactDetails.${field}`, formattedPhone);
 
       // Clear save error when user makes changes
