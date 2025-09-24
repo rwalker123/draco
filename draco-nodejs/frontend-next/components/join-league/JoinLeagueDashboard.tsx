@@ -23,11 +23,7 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
   showViewAllWorkoutsButton,
   onViewAllWorkouts,
 }) => {
-  const hasAnyContent = workouts.length > 0;
-
-  if (!hasAnyContent) {
-    return null;
-  }
+  const shouldShowTraining = workouts.length > 0;
 
   return (
     <Paper
@@ -73,23 +69,25 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
         }}
       >
         {/* Training Section - spans full width on tablet */}
-        <Box
-          sx={{
-            gridColumn: {
-              xs: '1',
-              md: 'span 2',
-              lg: '1',
-            },
-          }}
-        >
-          <TrainingSection
-            workouts={workouts}
-            accountId={accountId}
-            token={token}
-            showViewAllWorkoutsButton={showViewAllWorkoutsButton}
-            onViewAllWorkouts={onViewAllWorkouts}
-          />
-        </Box>
+        {shouldShowTraining && (
+          <Box
+            sx={{
+              gridColumn: {
+                xs: '1',
+                md: 'span 2',
+                lg: '1',
+              },
+            }}
+          >
+            <TrainingSection
+              workouts={workouts}
+              accountId={accountId}
+              token={token}
+              showViewAllWorkoutsButton={showViewAllWorkoutsButton}
+              onViewAllWorkouts={onViewAllWorkouts}
+            />
+          </Box>
+        )}
 
         {/* Players Wanted Section */}
         <PlayersWantedPreview accountId={accountId} maxDisplay={3} />
