@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -26,23 +26,24 @@ import MyTeams, { UserTeam } from '../../../components/MyTeams';
 import AccountPageHeader from '../../../components/AccountPageHeader';
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
-import { listWorkouts } from '../../../services/workoutService';
-import { WorkoutSummary } from '../../../types/workouts';
 import { JoinLeagueDashboard } from '../../../components/join-league';
+import { SponsorService } from '../../../services/sponsorService';
+import SponsorCard from '../../../components/sponsors/SponsorCard';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
-import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas';
+import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
   const [currentSeason, setCurrentSeason] = useState<AccountSeasonWithStatusType | null>(null);
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
-  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
   const [hasAnyGames, setHasAnyGames] = useState(false);
   const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
+  const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
+  const [sponsorError, setSponsorError] = useState<string | null>(null);
   const { user, token } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -142,26 +143,21 @@ const BaseballAccountHome: React.FC = () => {
     fetchUserTeams();
   }, [accountIdStr, user, token]);
 
-  // Fetch upcoming workouts
-  const fetchUpcomingWorkouts = useCallback(async () => {
+  useEffect(() => {
     if (!accountIdStr) return;
 
-    try {
-      const allWorkouts = await listWorkouts(accountIdStr, false);
-      // Filter for upcoming workouts on the frontend
-      const upcoming = allWorkouts
-        .filter((workout) => new Date(workout.workoutDate) > new Date())
-        .sort((a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime())
-        .slice(0, 3); // Limit to 3 upcoming workouts
-      setWorkouts(upcoming);
-    } catch (error) {
-      console.error('Failed to fetch upcoming workouts:', error);
-    }
+    const service = new SponsorService();
+    service
+      .listAccountSponsors(accountIdStr)
+      .then((sponsors) => {
+        setAccountSponsors(sponsors);
+        setSponsorError(null);
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load account sponsors:', error);
+        setSponsorError('Sponsors are currently unavailable.');
+      });
   }, [accountIdStr]);
-
-  useEffect(() => {
-    fetchUpcomingWorkouts();
-  }, [fetchUpcomingWorkouts]);
 
   const handleViewTeam = (teamSeasonId: string) => {
     if (!currentSeason) return;
@@ -305,7 +301,6 @@ const BaseballAccountHome: React.FC = () => {
         <JoinLeagueDashboard
           accountId={accountIdStr}
           account={account}
-          workouts={workouts}
           token={token || undefined}
         />
 
@@ -372,6 +367,12 @@ const BaseballAccountHome: React.FC = () => {
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}
+
+        <SponsorCard
+          sponsors={accountSponsors}
+          title="Account Sponsors"
+          emptyMessage={sponsorError ?? 'No sponsors have been added yet.'}
+        />
 
         {/* User Teams Section */}
         {user && userTeams.length > 0 && (

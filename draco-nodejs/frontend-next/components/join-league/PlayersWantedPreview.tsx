@@ -97,30 +97,7 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   }
 
   if (playersWanted.length === 0) {
-    return (
-      <SectionCard>
-        <SectionHeader
-          icon={<Search />}
-          title="Teams Looking for Players"
-          description="Browse open positions on teams"
-        />
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: 1,
-            py: 4,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary" textAlign="center">
-            No teams are currently looking for players.
-            <br />
-            Check back later for new opportunities!
-          </Typography>
-        </Box>
-      </SectionCard>
-    );
+    return null;
   }
 
   return (

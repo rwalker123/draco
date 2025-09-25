@@ -12,6 +12,7 @@ export interface ImageDimensions {
   teamLogo: ImageConfig;
   accountLogo: ImageConfig;
   contactPhoto: ImageConfig;
+  sponsorPhoto: ImageConfig;
 }
 
 export class ImageProcessor {
@@ -32,6 +33,13 @@ export class ImageProcessor {
     },
     contactPhoto: {
       width: 150,
+      height: 150,
+      fit: 'cover',
+      quality: 85,
+      format: 'png',
+    },
+    sponsorPhoto: {
+      width: 300,
       height: 150,
       fit: 'cover',
       quality: 85,
@@ -70,6 +78,10 @@ export class ImageProcessor {
 
   static async processContactPhoto(buffer: Buffer): Promise<Buffer> {
     return this.processImage(buffer, this.IMAGE_DIMENSIONS.contactPhoto);
+  }
+
+  static async processSponsorPhoto(buffer: Buffer): Promise<Buffer> {
+    return this.processImage(buffer, this.IMAGE_DIMENSIONS.sponsorPhoto);
   }
 
   static getImageDimensions(): ImageDimensions {

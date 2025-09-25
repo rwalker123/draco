@@ -1100,6 +1100,135 @@ components:
       required:
         - id
         - name
+    Sponsor:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        streetAddress:
+          type: string
+          maxLength: 255
+        cityStateZip:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 250
+        email:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 255
+        fax:
+          type: string
+          maxLength: 255
+        website:
+          type: string
+          maxLength: 255
+        id:
+          type: string
+        accountId:
+          type: string
+        teamId:
+          type: string
+        photoUrl:
+          type: string
+          format: uri
+          description: Public URL for the sponsor photo
+      required:
+        - name
+        - id
+        - accountId
+      title: CreateSponsor
+      description: Payload to create or update a sponsor
+    SponsorList:
+      type: object
+      properties:
+        sponsors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                minLength: 1
+                maxLength: 50
+              streetAddress:
+                type: string
+                maxLength: 255
+              cityStateZip:
+                type: string
+                maxLength: 255
+              description:
+                type: string
+                maxLength: 250
+              email:
+                type: string
+                maxLength: 100
+              phone:
+                type: string
+                maxLength: 255
+              fax:
+                type: string
+                maxLength: 255
+              website:
+                type: string
+                maxLength: 255
+              id:
+                type: string
+              accountId:
+                type: string
+              teamId:
+                type: string
+              photoUrl:
+                type: string
+                format: uri
+                description: Public URL for the sponsor photo
+            required:
+              - name
+              - id
+              - accountId
+            title: CreateSponsor
+            description: Payload to create or update a sponsor
+      required:
+        - sponsors
+      title: SponsorListResponse
+      description: List response for sponsors
+    CreateSponsor:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        streetAddress:
+          type: string
+          maxLength: 255
+        cityStateZip:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 250
+        email:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 255
+        fax:
+          type: string
+          maxLength: 255
+        website:
+          type: string
+          maxLength: 255
+      required:
+        - name
+      title: CreateSponsor
+      description: Payload to create or update a sponsor
     PlayersWantedClassified:
       type: object
       properties:
@@ -3391,6 +3520,583 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/sponsors:
+    get:
+      description: List sponsors configured for an account
+      operationId: listAccountSponsors
+      summary: List account sponsors
+      tags:
+        - Sponsors
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Sponsors for the account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SponsorList"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Create an account sponsor
+      operationId: createAccountSponsor
+      summary: Create account sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CreateSponsor"
+                - type: object
+                  properties:
+                    photo:
+                      type: string
+                      format: binary
+                      description: Sponsor photo file
+              title: CreateSponsor
+              description: Payload to create or update a sponsor
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "201":
+          description: Sponsor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/sponsors/{sponsorId}:
+    get:
+      description: Retrieve a single account-level sponsor
+      operationId: getAccountSponsor
+      summary: Get account sponsor
+      tags:
+        - Sponsors
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Sponsor details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      description: Update an account sponsor
+      operationId: updateAccountSponsor
+      summary: Update account sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                streetAddress:
+                  type: string
+                  maxLength: 255
+                cityStateZip:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 250
+                email:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                  maxLength: 255
+                fax:
+                  type: string
+                  maxLength: 255
+                website:
+                  type: string
+                  maxLength: 255
+                photo:
+                  type: string
+                  format: binary
+                  description: Sponsor photo file
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "200":
+          description: Sponsor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete an account sponsor
+      operationId: deleteAccountSponsor
+      summary: Delete account sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Sponsor deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors:
+    get:
+      description: List sponsors configured for a team season
+      operationId: listTeamSponsors
+      summary: List team sponsors
+      tags:
+        - Sponsors
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Sponsors for the team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SponsorList"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Create a team sponsor
+      operationId: createTeamSponsor
+      summary: Create team sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                streetAddress:
+                  type: string
+                  maxLength: 255
+                cityStateZip:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 250
+                email:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                  maxLength: 255
+                fax:
+                  type: string
+                  maxLength: 255
+                website:
+                  type: string
+                  maxLength: 255
+                photo:
+                  type: string
+                  format: binary
+                  description: Sponsor photo file
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "201":
+          description: Sponsor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - team sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors/{sponsorId}:
+    put:
+      description: Update a team sponsor
+      operationId: updateTeamSponsor
+      summary: Update team sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                streetAddress:
+                  type: string
+                  maxLength: 255
+                cityStateZip:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 250
+                email:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                  maxLength: 255
+                fax:
+                  type: string
+                  maxLength: 255
+                website:
+                  type: string
+                  maxLength: 255
+                photo:
+                  type: string
+                  format: binary
+                  description: Sponsor photo file
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "200":
+          description: Sponsor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - team sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a team sponsor
+      operationId: deleteTeamSponsor
+      summary: Delete team sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Sponsor deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - team sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
           content:
             application/json:
               schema:

@@ -9,6 +9,7 @@ import {
   ICleanupRepository,
   IPlayersWantedRepository,
   ITeamsWantedRepository,
+  ISponsorRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -20,6 +21,7 @@ import {
   PrismaLeagueRepository,
   PrismaCleanupRepository,
   PrismaTeamsWantedRepository,
+  PrismaSponsorRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -40,6 +42,7 @@ export class RepositoryFactory {
   private static cleanupRepository: ICleanupRepository;
   private static playersWantedRepository: IPlayersWantedRepository;
   private static teamsWantedRepository: ITeamsWantedRepository;
+  private static sponsorRepository: ISponsorRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -109,5 +112,12 @@ export class RepositoryFactory {
       this.teamsWantedRepository = new PrismaTeamsWantedRepository(prisma);
     }
     return this.teamsWantedRepository;
+  }
+
+  static getSponsorRepository(): ISponsorRepository {
+    if (!this.sponsorRepository) {
+      this.sponsorRepository = new PrismaSponsorRepository(prisma);
+    }
+    return this.sponsorRepository;
   }
 }

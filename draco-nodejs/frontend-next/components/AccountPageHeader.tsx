@@ -96,7 +96,7 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
                 filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))',
               }}
             >
-              {accountName || 'Loading...'}
+              {accountName}
             </Typography>
           )}
         </Box>

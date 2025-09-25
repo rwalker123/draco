@@ -9,3 +9,4 @@ export * from './IRoleRepository.js';
 export * from './ILeagueRepository.js';
 export * from './IPlayersWantedRepository.js';
 export * from './ITeamsWantedRepository.js';
+export * from './ISponsorRepository.js';

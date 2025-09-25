@@ -3,6 +3,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import axios from 'axios';
 import { SignInCredentialsType } from '@draco/shared-schemas';
 
+const LOGIN_ERROR_MESSAGE =
+  'Invalid username or password. If you forgot your password, click the "Forgot your password?" link to reset it.';
+
 interface User {
   id: string;
   username: string;
@@ -75,12 +78,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return true;
       } else {
-        setError(response.data?.message || 'Sign in failed');
+        setError(LOGIN_ERROR_MESSAGE);
         setLoading(false);
         return false;
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign in failed');
+      setError(LOGIN_ERROR_MESSAGE);
       setLoading(false);
       return false;
     }

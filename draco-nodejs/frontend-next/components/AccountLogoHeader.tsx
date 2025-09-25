@@ -73,7 +73,7 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
             filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.1))',
           }}
         >
-          {accountName || 'Loading...'}
+          {accountName}
         </Typography>
       )}
     </Box>

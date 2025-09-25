@@ -74,7 +74,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   validatePhotoUpload,
-  handleContactPhotoUploadMiddleware,
+  handlePhotoUploadMiddleware,
   parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
