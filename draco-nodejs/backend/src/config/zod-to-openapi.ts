@@ -24,11 +24,10 @@ import {
   AccountHeaderSchema,
   AccountAffiliationSchema,
   PlayersWantedClassifiedSchema,
-  PlayersWantedClassifiedListSchema,
+  PlayersWantedClassifiedPagedSchema,
   CreatePlayersWantedClassifiedSchema,
   PlayerClassifiedSearchQuerySchema,
-  TeamsWantedPublicClassifiedSchema,
-  TeamsWantedPublicClassifiedListSchema,
+  TeamsWantedPublicClassifiedPagedSchema,
   TeamsWantedOwnerClassifiedSchema,
   CreateTeamsWantedClassifiedSchema,
   UpdatePlayersWantedClassifiedSchema,
@@ -78,9 +77,9 @@ const PlayersWantedClassifiedSchemaRef = registry.register(
   'PlayersWantedClassified',
   PlayersWantedClassifiedSchema,
 );
-const PlayersWantedClassifiedListSchemaRef = registry.register(
-  'PlayersWantedClassifiedList',
-  PlayersWantedClassifiedListSchema,
+const PlayersWantedClassifiedPagedSchemaRef = registry.register(
+  'PlayersWantedClassifiedPaged',
+  PlayersWantedClassifiedPagedSchema,
 );
 const CreatePlayersWantedClassifiedSchemaRef = registry.register(
   'CreatePlayersWantedClassified',
@@ -90,13 +89,9 @@ const PlayerClassifiedSearchQuerySchemaRef = registry.register(
   'PlayerClassifiedSearchQuery',
   PlayerClassifiedSearchQuerySchema,
 );
-const TeamsWantedPublicClassifiedSchemaRef = registry.register(
-  'TeamsWantedPublicClassified',
-  TeamsWantedPublicClassifiedSchema,
-);
-const TeamsWantedPublicClassifiedListSchemaRef = registry.register(
-  'TeamsWantedPublicClassifiedList',
-  TeamsWantedPublicClassifiedListSchema,
+const TeamsWantedPublicClassifiedPagedSchemaRef = registry.register(
+  'TeamsWantedPublicClassifiedPaged',
+  TeamsWantedPublicClassifiedPagedSchema,
 );
 const TeamsWantedOwnerClassifiedSchemaRef = registry.register(
   'TeamsWantedOwnerClassified',
@@ -1935,7 +1930,7 @@ registry.registerPath({
       description: 'Players Wanted classifieds',
       content: {
         'application/json': {
-          schema: PlayersWantedClassifiedListSchemaRef,
+          schema: PlayersWantedClassifiedPagedSchemaRef,
         },
       },
     },
@@ -1985,7 +1980,7 @@ registry.registerPath({
       description: 'Teams Wanted classifieds',
       content: {
         'application/json': {
-          schema: TeamsWantedPublicClassifiedListSchemaRef,
+          schema: TeamsWantedPublicClassifiedPagedSchemaRef,
         },
       },
     },
@@ -2164,7 +2159,8 @@ registry.registerPath({
   path: '/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}',
   operationId: 'updateTeamsWantedClassified',
   summary: 'Update Teams Wanted classified',
-  description: 'Update a Teams Wanted classified using either account authentication or access code.',
+  description:
+    'Update a Teams Wanted classified using either account authentication or access code.',
   tags: ['Player Classifieds'],
   security: [{ bearerAuth: [] }, {}],
   parameters: [
@@ -2478,7 +2474,8 @@ registry.registerPath({
   path: '/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/contact',
   operationId: 'getTeamsWantedContactInfo',
   summary: 'Get Teams Wanted contact info',
-  description: 'Retrieve Teams Wanted classified contact information using either account authentication or a valid access code.',
+  description:
+    'Retrieve Teams Wanted classified contact information using either account authentication or a valid access code.',
   tags: ['Player Classifieds'],
   security: [{ bearerAuth: [] }, {}],
   parameters: [

@@ -10,7 +10,10 @@ import {
   ContactValidationType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError } from '../utils/customErrors.js';
-import { ContactResponseFormatter, TeamResponseFormatter } from '../utils/responseFormatters.js';
+import {
+  ContactResponseFormatter,
+  TeamResponseFormatter,
+} from '../responseFormatters/responseFormatters.js';
 import {
   RepositoryFactory,
   IContactRepository,

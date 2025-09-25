@@ -6,15 +6,6 @@ extendZodWithOpenApi(z);
 
 const bigintToStringSchema = z.bigint().transform((value) => value.toString());
 
-const preprocessSingleValue = <T>(schema: z.ZodType<T>) =>
-  z.preprocess((value) => {
-    if (Array.isArray(value)) {
-      return value[0];
-    }
-
-    return value;
-  }, schema);
-
 const trimToUndefined = (value: unknown) => {
   if (value === undefined || value === null) {
     return undefined;
@@ -26,34 +17,21 @@ const trimToUndefined = (value: unknown) => {
 };
 
 export const PlayerClassifiedSortBySchema = z.enum(['dateCreated', 'relevance']);
-export type PlayerClassifiedSortByType = z.infer<typeof PlayerClassifiedSortBySchema>;
 
 export const PlayerClassifiedSortOrderSchema = z.enum(['asc', 'desc']);
-export type PlayerClassifiedSortOrderType = z.infer<typeof PlayerClassifiedSortOrderSchema>;
 
 export const PlayerClassifiedSearchQuerySchema = z
   .object({
-    page: preprocessSingleValue(z.coerce.number().int().min(1)).default(1),
-    limit: preprocessSingleValue(z.coerce.number().int().min(1).max(100)).default(20),
-    sortBy: preprocessSingleValue(PlayerClassifiedSortBySchema.catch('dateCreated')).default('dateCreated'),
-    sortOrder: preprocessSingleValue(PlayerClassifiedSortOrderSchema.catch('desc')).default('desc'),
-    searchQuery: preprocessSingleValue(
-      z
-        .string()
-        .transform((val) => val.trim())
-        .min(1)
-        .max(200)
-        .optional(),
-    )
-      .transform(trimToUndefined)
-      .optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    sortBy: PlayerClassifiedSortBySchema.default('dateCreated'),
+    sortOrder: PlayerClassifiedSortOrderSchema.default('desc'),
+    searchQuery: z.string().max(200).transform(trimToUndefined).optional(),
   })
   .openapi({
     title: 'PlayerClassifiedSearchQuery',
     description: 'Query parameters used to paginate and filter player classified listings',
   });
-
-export type PlayerClassifiedSearchQueryType = z.infer<typeof PlayerClassifiedSearchQuerySchema>;
 
 const ClassifiedAccountSchema = z.object({
   id: z.string(),
@@ -84,8 +62,6 @@ export const PlayersWantedClassifiedSchema = z
     description: 'Players Wanted classified listing',
   });
 
-export type PlayersWantedClassifiedType = z.infer<typeof PlayersWantedClassifiedSchema>;
-
 export const TeamsWantedPublicClassifiedSchema = z
   .object({
     id: z.string(),
@@ -101,8 +77,6 @@ export const TeamsWantedPublicClassifiedSchema = z
     title: 'TeamsWantedPublicClassified',
     description: 'Teams Wanted classified listing for public display without contact information',
   });
-
-export type TeamsWantedPublicClassifiedType = z.infer<typeof TeamsWantedPublicClassifiedSchema>;
 
 export const TeamsWantedOwnerClassifiedSchema = z
   .object({
@@ -122,15 +96,12 @@ export const TeamsWantedOwnerClassifiedSchema = z
     description: 'Teams Wanted classified listing for the owner including contact information',
   });
 
-export type TeamsWantedOwnerClassifiedType = z.infer<typeof TeamsWantedOwnerClassifiedSchema>;
-
 const PlayerClassifiedPaginationSchema = PaginationSchema.extend({
   totalPages: z.number(),
-})
-  .openapi({
-    title: 'PlayerClassifiedPagination',
-    description: 'Pagination metadata for player classified listings',
-  });
+}).openapi({
+  title: 'PlayerClassifiedPagination',
+  description: 'Pagination metadata for player classified listings',
+});
 
 const PlayerClassifiedFilterSchema = z
   .object({
@@ -148,7 +119,7 @@ const PlayerClassifiedFilterSchema = z
     description: 'Filters applied to a player classified search request',
   });
 
-export const PlayersWantedClassifiedListSchema = z
+export const PlayersWantedClassifiedPagedSchema = z
   .object({
     data: PlayersWantedClassifiedSchema.array(),
     total: z.number(),
@@ -160,9 +131,7 @@ export const PlayersWantedClassifiedListSchema = z
     description: 'Paginated Players Wanted classified listings',
   });
 
-export type PlayersWantedClassifiedListType = z.infer<typeof PlayersWantedClassifiedListSchema>;
-
-export const TeamsWantedPublicClassifiedListSchema = z
+export const TeamsWantedPublicClassifiedPagedSchema = z
   .object({
     data: TeamsWantedPublicClassifiedSchema.array(),
     total: z.number(),
@@ -170,11 +139,9 @@ export const TeamsWantedPublicClassifiedListSchema = z
     filters: PlayerClassifiedFilterSchema,
   })
   .openapi({
-    title: 'TeamsWantedPublicClassifiedList',
+    title: 'TeamsWantedPublicClassifiedPaged',
     description: 'Paginated Teams Wanted classified listings for public display',
   });
-
-export type TeamsWantedPublicClassifiedListType = z.infer<typeof TeamsWantedPublicClassifiedListSchema>;
 
 const nonEmptyString = z.string().trim().min(1);
 
@@ -189,8 +156,6 @@ export const CreatePlayersWantedClassifiedSchema = z
     description: 'Request body for creating a Players Wanted classified',
   });
 
-export type CreatePlayersWantedClassifiedType = z.infer<typeof CreatePlayersWantedClassifiedSchema>;
-
 export const UpdatePlayersWantedClassifiedSchema = z
   .object({
     teamEventName: z.string().trim().min(1).max(50).optional(),
@@ -201,8 +166,6 @@ export const UpdatePlayersWantedClassifiedSchema = z
     title: 'UpdatePlayersWantedClassifiedRequest',
     description: 'Request body for updating a Players Wanted classified',
   });
-
-export type UpdatePlayersWantedClassifiedType = z.infer<typeof UpdatePlayersWantedClassifiedSchema>;
 
 const emailSchema = z.string().trim().email().max(320);
 const phoneSchema = z.string().trim().min(1).max(50);
@@ -231,8 +194,6 @@ export const CreateTeamsWantedClassifiedSchema = z
     description: 'Request body for creating a Teams Wanted classified',
   });
 
-export type CreateTeamsWantedClassifiedType = z.infer<typeof CreateTeamsWantedClassifiedSchema>;
-
 export const UpdateTeamsWantedClassifiedSchema = z
   .object({
     accessCode: z.string().trim().min(10).max(1000).optional(),
@@ -248,29 +209,23 @@ export const UpdateTeamsWantedClassifiedSchema = z
     description: 'Request body for updating a Teams Wanted classified',
   });
 
-export type UpdateTeamsWantedClassifiedType = z.infer<typeof UpdateTeamsWantedClassifiedSchema>;
-
 export const TeamsWantedAccessCodeSchema = z
   .object({
-    accessCode: preprocessSingleValue(z.string().trim().min(10).max(1000)),
+    accessCode: z.string().trim().min(10).max(1000),
   })
   .openapi({
     title: 'TeamsWantedAccessCode',
     description: 'Access code used to authenticate Teams Wanted classified actions',
   });
 
-export type TeamsWantedAccessCodeType = z.infer<typeof TeamsWantedAccessCodeSchema>;
-
 export const TeamsWantedContactQuerySchema = z
   .object({
-    accessCode: preprocessSingleValue(z.string().trim().min(10).max(1000)).optional(),
+    accessCode: z.string().trim().min(10).max(1000).optional(),
   })
   .openapi({
     title: 'TeamsWantedContactQuery',
     description: 'Query parameters used to request Teams Wanted contact information',
   });
-
-export type TeamsWantedContactQueryType = z.infer<typeof TeamsWantedContactQuerySchema>;
 
 export const TeamsWantedContactInfoSchema = z
   .object({
@@ -283,8 +238,6 @@ export const TeamsWantedContactInfoSchema = z
     description: 'Contact information for a Teams Wanted classified',
   });
 
-export type TeamsWantedContactInfoType = z.infer<typeof TeamsWantedContactInfoSchema>;
-
 export const ContactPlayersWantedCreatorSchema = z
   .object({
     senderName: nonEmptyString.max(100),
@@ -295,8 +248,6 @@ export const ContactPlayersWantedCreatorSchema = z
     title: 'ContactPlayersWantedCreatorRequest',
     description: 'Request body for contacting a Players Wanted classified creator',
   });
-
-export type ContactPlayersWantedCreatorType = z.infer<typeof ContactPlayersWantedCreatorSchema>;
 
 export const BaseballPositionSchema = z
   .object({
@@ -309,8 +260,6 @@ export const BaseballPositionSchema = z
     title: 'BaseballPosition',
     description: 'Baseball position metadata used in player classifieds',
   });
-
-export type BaseballPositionType = z.infer<typeof BaseballPositionSchema>;
 
 export const ExperienceLevelSchema = z
   .object({
@@ -325,9 +274,7 @@ export const ExperienceLevelSchema = z
     description: 'Experience level metadata used in player classifieds',
   });
 
-export type ExperienceLevelType = z.infer<typeof ExperienceLevelSchema>;
-
-export const TeamsWantedOwnerClassifiedListSchema = z
+export const TeamsWantedOwnerClassifiedPagedSchema = z
   .object({
     data: TeamsWantedOwnerClassifiedSchema.array(),
     total: z.number(),
@@ -335,11 +282,9 @@ export const TeamsWantedOwnerClassifiedListSchema = z
     filters: PlayerClassifiedFilterSchema,
   })
   .openapi({
-    title: 'TeamsWantedOwnerClassifiedList',
-    description: 'Paginated Teams Wanted classified listings including contact information',
+    title: 'TeamsWantedOwnerClassifiedPaged',
+    description: 'Paginated Teams Wanted classified including contact information',
   });
-
-export type TeamsWantedOwnerClassifiedListType = z.infer<typeof TeamsWantedOwnerClassifiedListSchema>;
 
 export const ClassifiedIdentifierSchema = z
   .object({
@@ -351,4 +296,27 @@ export const ClassifiedIdentifierSchema = z
     description: 'Identifier payload for player classified resources',
   });
 
+export type PlayerClassifiedSortByType = z.infer<typeof PlayerClassifiedSortBySchema>;
+export type PlayerClassifiedSortOrderType = z.infer<typeof PlayerClassifiedSortOrderSchema>;
+export type PlayerClassifiedSearchQueryType = z.infer<typeof PlayerClassifiedSearchQuerySchema>;
+export type PlayersWantedClassifiedType = z.infer<typeof PlayersWantedClassifiedSchema>;
+export type TeamsWantedPublicClassifiedType = z.infer<typeof TeamsWantedPublicClassifiedSchema>;
+export type TeamsWantedOwnerClassifiedType = z.infer<typeof TeamsWantedOwnerClassifiedSchema>;
+export type PlayersWantedClassifiedPagedType = z.infer<typeof PlayersWantedClassifiedPagedSchema>;
+export type TeamsWantedPublicClassifiedPagedType = z.infer<
+  typeof TeamsWantedPublicClassifiedPagedSchema
+>;
+export type CreatePlayersWantedClassifiedType = z.infer<typeof CreatePlayersWantedClassifiedSchema>;
+export type UpdatePlayersWantedClassifiedType = z.infer<typeof UpdatePlayersWantedClassifiedSchema>;
+export type CreateTeamsWantedClassifiedType = z.infer<typeof CreateTeamsWantedClassifiedSchema>;
+export type UpdateTeamsWantedClassifiedType = z.infer<typeof UpdateTeamsWantedClassifiedSchema>;
+export type TeamsWantedAccessCodeType = z.infer<typeof TeamsWantedAccessCodeSchema>;
+export type TeamsWantedContactQueryType = z.infer<typeof TeamsWantedContactQuerySchema>;
+export type TeamsWantedContactInfoType = z.infer<typeof TeamsWantedContactInfoSchema>;
+export type ContactPlayersWantedCreatorType = z.infer<typeof ContactPlayersWantedCreatorSchema>;
+export type BaseballPositionType = z.infer<typeof BaseballPositionSchema>;
+export type ExperienceLevelType = z.infer<typeof ExperienceLevelSchema>;
+export type TeamsWantedOwnerClassifiedPagedType = z.infer<
+  typeof TeamsWantedOwnerClassifiedPagedSchema
+>;
 export type ClassifiedIdentifierType = z.infer<typeof ClassifiedIdentifierSchema>;

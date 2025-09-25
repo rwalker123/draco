@@ -81,14 +81,18 @@ const createTeamsWantedAuthMiddleware = () => {
       if (!authError) {
         routeProtection.enforceAccountBoundary()(req, res, (boundaryError?: unknown) => {
           if (!boundaryError) {
-            routeProtection.requirePermission('player-classified.manage')(req, res, (permissionError?: unknown) => {
-              if (!permissionError) {
-                next();
-                return;
-              }
+            routeProtection.requirePermission('player-classified.manage')(
+              req,
+              res,
+              (permissionError?: unknown) => {
+                if (!permissionError) {
+                  next();
+                  return;
+                }
 
-              fallbackToAccessCode();
-            });
+                fallbackToAccessCode();
+              },
+            );
             return;
           }
 
@@ -111,7 +115,11 @@ router.post(
     const contactId = req.accountBoundary!.contactId;
     const createRequest = CreatePlayersWantedClassifiedSchema.parse(req.body);
 
-    const classified = await playerClassifiedService.createPlayersWanted(accountId, contactId, createRequest);
+    const classified = await playerClassifiedService.createPlayersWanted(
+      accountId,
+      contactId,
+      createRequest,
+    );
 
     res.status(201).json(classified);
   }),
@@ -137,7 +145,6 @@ router.get(
     const searchQuery = PlayerClassifiedSearchQuerySchema.parse(req.query);
 
     const searchParams: Parameters<typeof playerClassifiedService.getPlayersWanted>[1] = {
-      accountId,
       page: searchQuery.page,
       limit: searchQuery.limit,
       sortBy: searchQuery.sortBy,
@@ -160,7 +167,6 @@ router.get(
     const searchQuery = PlayerClassifiedSearchQuerySchema.parse(req.query);
 
     const searchParams: Parameters<typeof playerClassifiedService.getTeamsWanted>[1] = {
-      accountId,
       page: searchQuery.page,
       limit: searchQuery.limit,
       sortBy: searchQuery.sortBy,
@@ -180,7 +186,11 @@ router.post(
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const { accessCode } = TeamsWantedAccessCodeSchema.parse(req.body ?? {});
 
-    const classified = await playerClassifiedService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
+    const classified = await playerClassifiedService.verifyTeamsWantedAccess(
+      classifiedId,
+      accessCode,
+      accountId,
+    );
 
     res.json(classified);
   }),
@@ -193,7 +203,10 @@ router.post(
     const { accountId } = extractAccountParams(req.params);
     const { accessCode } = TeamsWantedAccessCodeSchema.parse(req.body ?? {});
 
-    const classified = await playerClassifiedService.findTeamsWantedByAccessCode(accountId, accessCode);
+    const classified = await playerClassifiedService.findTeamsWantedByAccessCode(
+      accountId,
+      accessCode,
+    );
 
     res.json(classified);
   }),
@@ -204,13 +217,15 @@ router.put(
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const { accessCode, ...updateRequest } = UpdateTeamsWantedClassifiedSchema.parse(req.body ?? {});
+    const { accessCode, ...updateRequest } = UpdateTeamsWantedClassifiedSchema.parse(
+      req.body ?? {},
+    );
 
     if (!req.user && !accessCode) {
       throw new ValidationError('Access code is required for unauthenticated requests');
     }
 
-    const effectiveAccessCode = req.user ? '' : accessCode ?? '';
+    const effectiveAccessCode = req.user ? '' : (accessCode ?? '');
 
     const classified = await playerClassifiedService.updateTeamsWanted(
       classifiedId,
@@ -232,7 +247,11 @@ router.put(
     const contactId = req.accountBoundary!.contactId;
     const updateRequest = UpdatePlayersWantedClassifiedSchema.parse(req.body ?? {});
 
-    const canEdit = await playerClassifiedService.canEditPlayersWanted(classifiedId, contactId, accountId);
+    const canEdit = await playerClassifiedService.canEditPlayersWanted(
+      classifiedId,
+      contactId,
+      accountId,
+    );
 
     if (!canEdit) {
       throw new AuthorizationError('Insufficient permissions to edit this classified');
@@ -260,7 +279,7 @@ router.delete(
       throw new ValidationError('Access code is required for unauthenticated requests');
     }
 
-    const effectiveAccessCode = req.user ? '' : accessCode ?? '';
+    const effectiveAccessCode = req.user ? '' : (accessCode ?? '');
 
     await playerClassifiedService.deleteTeamsWanted(classifiedId, effectiveAccessCode, accountId);
 
@@ -276,7 +295,11 @@ router.delete(
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const contactId = req.accountBoundary!.contactId;
 
-    const canDelete = await playerClassifiedService.canDeletePlayersWanted(classifiedId, contactId, accountId);
+    const canDelete = await playerClassifiedService.canDeletePlayersWanted(
+      classifiedId,
+      contactId,
+      accountId,
+    );
 
     if (!canDelete) {
       throw new AuthorizationError('Insufficient permissions to delete this classified');
@@ -304,7 +327,10 @@ router.get(
     const { accessCode } = TeamsWantedContactQuerySchema.parse(req.query);
 
     if (req.user) {
-      const contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(classifiedId, accountId);
+      const contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
+        classifiedId,
+        accountId,
+      );
       res.json(contactInfo);
       return;
     }
@@ -314,7 +340,10 @@ router.get(
     }
 
     await playerClassifiedService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
-    const contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(classifiedId, accountId);
+    const contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
+      classifiedId,
+      accountId,
+    );
 
     res.json(contactInfo);
   }),
@@ -327,7 +356,11 @@ router.post(
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const contactRequest = ContactPlayersWantedCreatorSchema.parse(req.body ?? {});
 
-    await playerClassifiedService.contactPlayersWantedCreator(accountId, classifiedId, contactRequest);
+    await playerClassifiedService.contactPlayersWantedCreator(
+      accountId,
+      classifiedId,
+      contactRequest,
+    );
 
     res.status(204).send();
   }),
