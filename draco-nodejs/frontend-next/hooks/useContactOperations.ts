@@ -8,6 +8,7 @@ import { ContactType, CreateContactType } from '@draco/shared-schemas';
 import { updateContact as apiUpdateContact } from '@draco/shared-api-client';
 import { addCacheBuster } from '../config/contacts';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
+import { unwrapApiResult } from '../utils/apiResult';
 
 export interface ContactOperationData {
   contactData: CreateContactType;
@@ -87,42 +88,35 @@ export function useContactOperations(accountId: string) {
               body: { ...data.contactData, photo: undefined },
             });
 
-        if (result.data) {
-          const updatedContact = result.data;
+        const updatedContact = unwrapApiResult(result, 'Failed to update contact');
 
-          // Apply cache busting to photo URL if present
-          const updatedPhotoUrl = updatedContact.photoUrl
-            ? addCacheBuster(updatedContact.photoUrl, Date.now())
-            : undefined;
+        // Apply cache busting to photo URL if present
+        const updatedPhotoUrl = updatedContact.photoUrl
+          ? addCacheBuster(updatedContact.photoUrl, Date.now())
+          : undefined;
 
-          const contactWithCacheBustedPhoto: ContactType = {
-            ...updatedContact,
-            photoUrl: updatedPhotoUrl,
-            contactDetails: updatedContact.contactDetails
-              ? {
-                  phone1: updatedContact.contactDetails.phone1 || null,
-                  phone2: updatedContact.contactDetails.phone2 || null,
-                  phone3: updatedContact.contactDetails.phone3 || null,
-                  streetAddress: updatedContact.contactDetails.streetAddress || null,
-                  city: updatedContact.contactDetails.city || null,
-                  state: updatedContact.contactDetails.state || null,
-                  zip: updatedContact.contactDetails.zip || null,
-                  dateOfBirth: updatedContact.contactDetails.dateOfBirth || null,
-                }
-              : undefined,
-          };
+        const contactWithCacheBustedPhoto: ContactType = {
+          ...updatedContact,
+          photoUrl: updatedPhotoUrl,
+          contactDetails: updatedContact.contactDetails
+            ? {
+                phone1: updatedContact.contactDetails.phone1 || null,
+                phone2: updatedContact.contactDetails.phone2 || null,
+                phone3: updatedContact.contactDetails.phone3 || null,
+                streetAddress: updatedContact.contactDetails.streetAddress || null,
+                city: updatedContact.contactDetails.city || null,
+                state: updatedContact.contactDetails.state || null,
+                zip: updatedContact.contactDetails.zip || null,
+                dateOfBirth: updatedContact.contactDetails.dateOfBirth || null,
+              }
+            : undefined,
+        };
 
-          return {
-            success: true,
-            message: 'Contact updated successfully',
-            contact: contactWithCacheBustedPhoto,
-          };
-        } else {
-          return {
-            success: false,
-            error: result.error?.message || 'Failed to update contact',
-          };
-        }
+        return {
+          success: true,
+          message: 'Contact updated successfully',
+          contact: contactWithCacheBustedPhoto,
+        };
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to update contact';
         return { success: false, error: errorMessage };

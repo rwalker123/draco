@@ -24,6 +24,7 @@ import { AccountType } from '@draco/shared-schemas';
 import { searchAccounts, getMyAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { getContactDisplayName } from '../utils/contactUtils';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface OrganizationsWidgetProps {
   title?: string;
@@ -83,20 +84,17 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const { data, error: accountsError } = await getMyAccounts({
+      const result = await getMyAccounts({
         client: apiClient,
         throwOnError: false,
       });
 
-      if (accountsError) {
-        setError(accountsError.message || 'Failed to load your organizations. Please try again.');
-        setAccounts([]);
-        return;
-      }
-
-      const organizations = ((data as AccountType[]) || []).filter((account) =>
-        excludeAccountId ? account.id !== excludeAccountId : true,
-      );
+      const organizations =
+        (
+          unwrapApiResult(result, 'Failed to load your organizations. Please try again.') as
+            | AccountType[]
+            | undefined
+        )?.filter((account) => (excludeAccountId ? account.id !== excludeAccountId : true)) ?? [];
       setAccounts(organizations);
       if (onOrganizationsLoaded) {
         onOrganizationsLoaded(organizations);
@@ -130,16 +128,17 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
           query: { q: displaySearchTerm.trim() },
         });
 
-        if (result.error) {
-          setAccounts([]);
-          setError(result.error.message || 'Search failed');
-          return;
-        }
+        const accountsData = unwrapApiResult(
+          result,
+          'Failed to search accounts. Please try again.',
+        ) as AccountType[] | undefined;
 
-        setAccounts(result.data as AccountType[]);
+        setAccounts(accountsData ?? []);
       } catch (error) {
         console.error('Account search failed:', error);
-        setError('Failed to search accounts. Please try again.');
+        setError(
+          error instanceof Error ? error.message : 'Failed to search accounts. Please try again.',
+        );
       } finally {
         setLoading(false);
       }

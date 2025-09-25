@@ -10,10 +10,10 @@ import {
   IPlayersWantedRepository,
   ITeamsWantedRepository,
   RepositoryFactory,
-} from '@/repositories/index.js';
+} from '../../repositories/index.js';
 import { ServiceFactory } from '../serviceFactory.js';
 import { AccountsService } from '../accountsService.js';
-import { TeamsWantedResponseFormatter } from '@/responseFormatters/teamsWantedResponseFormattter.js';
+import { TeamsWantedResponseFormatter } from '../../responseFormatters/teamsWantedResponseFormattter.js';
 
 /**
  * PlayerClassifiedAccessService

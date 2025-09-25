@@ -31,6 +31,7 @@ import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
 
 const BaseballAccountHome: React.FC = () => {
@@ -78,18 +79,15 @@ const BaseballAccountHome: React.FC = () => {
           return;
         }
 
-        if (!result.data) {
-          setError('Account not found or not publicly accessible');
-          setAccount(null);
-          setCurrentSeason(null);
-          return;
-        }
-
-        const accountData = result.data.account;
+        const {
+          account: accountData,
+          seasons,
+          currentSeason: responseCurrentSeason,
+        } = unwrapApiResult(result, 'Account not found or not publicly accessible');
         setAccount(accountData as AccountType);
 
-        const currentSeasonCandidate = result.data.seasons?.find((season) => season.isCurrent) ?? {
-          ...result.data.currentSeason,
+        const currentSeasonCandidate = seasons?.find((season) => season.isCurrent) ?? {
+          ...responseCurrentSeason,
           isCurrent: true,
         };
         setCurrentSeason(currentSeasonCandidate as AccountSeasonWithStatusType);

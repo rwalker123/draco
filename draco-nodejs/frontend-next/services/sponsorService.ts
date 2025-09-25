@@ -12,6 +12,7 @@ import {
 import type { Client } from '@draco/shared-api-client/generated/client';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { createApiClient } from '../lib/apiClientFactory';
+import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 
 export interface SponsorInput {
   name: string;
@@ -56,7 +57,7 @@ export class SponsorService {
       throwOnError: false,
     });
 
-    const data = this.ensureSuccess(result, 'Failed to load sponsors');
+    const data = unwrapApiResult(result, 'Failed to load sponsors');
     return data.sponsors ?? [];
   }
 
@@ -71,7 +72,7 @@ export class SponsorService {
       throwOnError: false,
     });
 
-    const data = this.ensureSuccess(result, 'Failed to load team sponsors');
+    const data = unwrapApiResult(result, 'Failed to load team sponsors');
     return data.sponsors ?? [];
   }
 
@@ -94,7 +95,7 @@ export class SponsorService {
       throwOnError: false,
     });
 
-    this.ensureNoError(result, 'Failed to delete sponsor');
+    assertNoApiError(result, 'Failed to delete sponsor');
   }
 
   async createTeamSponsor(
@@ -128,7 +129,7 @@ export class SponsorService {
       throwOnError: false,
     });
 
-    this.ensureNoError(result, 'Failed to delete sponsor');
+    assertNoApiError(result, 'Failed to delete sponsor');
   }
 
   private async createSponsor(
@@ -141,7 +142,7 @@ export class SponsorService {
       ? await this.createSponsorWithPhoto(context, payload, input.photo)
       : await this.createSponsorWithoutPhoto(context, payload);
 
-    return this.ensureSuccess(result, 'Failed to create sponsor');
+    return unwrapApiResult(result, 'Failed to create sponsor');
   }
 
   private async updateSponsor(
@@ -155,7 +156,7 @@ export class SponsorService {
       ? await this.updateSponsorWithPhoto(context, sponsorId, payload, input.photo)
       : await this.updateSponsorWithoutPhoto(context, sponsorId, payload);
 
-    return this.ensureSuccess(result, 'Failed to update sponsor');
+    return unwrapApiResult(result, 'Failed to update sponsor');
   }
 
   private async createSponsorWithPhoto(
@@ -280,29 +281,5 @@ export class SponsorService {
       fax: input.fax ?? '',
       website: input.website ?? '',
     };
-  }
-
-  private ensureSuccess<T>(
-    result: { data?: T; error?: { message?: string } | null },
-    fallbackMessage: string,
-  ): T {
-    if (result.error) {
-      throw new Error(result.error.message || fallbackMessage);
-    }
-
-    if (result.data === undefined) {
-      throw new Error(fallbackMessage);
-    }
-
-    return result.data;
-  }
-
-  private ensureNoError(
-    result: { error?: { message?: string } | null },
-    fallbackMessage: string,
-  ): void {
-    if (result.error) {
-      throw new Error(result.error.message || fallbackMessage);
-    }
   }
 }

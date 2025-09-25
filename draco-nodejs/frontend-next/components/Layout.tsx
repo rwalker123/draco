@@ -36,6 +36,7 @@ import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
+import { unwrapApiResult } from '../utils/apiResult';
 import type { AccountType } from '@draco/shared-schemas';
 
 interface LayoutProps {
@@ -115,13 +116,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           return;
         }
 
-        if (!result.data) {
-          setAccountType(null);
-          setCurrentAccount(null);
-          return;
-        }
-
-        const account = result.data.account;
+        const data = unwrapApiResult(result, 'Failed to fetch account');
+        const account = data.account;
         setAccountType(account.configuration?.accountType?.name ?? null);
         setCurrentAccount(account as AccountType);
       } catch {

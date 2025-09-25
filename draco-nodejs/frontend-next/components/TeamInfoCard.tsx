@@ -5,6 +5,7 @@ import TeamAvatar from './TeamAvatar';
 import { Team } from '@/types/schedule';
 import { useApiClient } from '../hooks/useApiClient';
 import { getAccountName as apiGetAccountName } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface TeamInfoCardProps {
   accountId?: string;
@@ -92,11 +93,8 @@ export default function TeamInfoCard({
           throwOnError: false,
         });
 
-        if (!result.data) {
-          throw new Error(result.error?.message || 'Failed to fetch account name');
-        }
-
-        setAccountName(result.data.name ?? '');
+        const data = unwrapApiResult(result, 'Failed to fetch account name');
+        setAccountName(data.name ?? '');
       } catch {
         setAccountName('');
       }

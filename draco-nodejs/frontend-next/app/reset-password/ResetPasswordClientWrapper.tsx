@@ -5,6 +5,7 @@ import { getAccountById } from '@draco/shared-api-client';
 import { useAccount } from '../../context/AccountContext';
 import PasswordReset from './PasswordReset';
 import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 export default function ResetPasswordClientWrapper() {
   const searchParams = useSearchParams();
@@ -29,11 +30,12 @@ export default function ResetPasswordClientWrapper() {
           throwOnError: false,
         });
 
-        if (!isMounted || !result.data) {
+        if (!isMounted) {
           return;
         }
 
-        setCurrentAccount(result.data.account);
+        const data = unwrapApiResult(result, 'Failed to fetch account');
+        setCurrentAccount(data.account);
       } catch (error) {
         console.error('Failed to fetch account:', error);
       }

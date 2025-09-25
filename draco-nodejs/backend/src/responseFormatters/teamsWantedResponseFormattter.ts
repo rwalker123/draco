@@ -4,8 +4,8 @@ import {
   dbContactInfo,
   dbTeamsWanted,
   dbTeamsWantedPublic,
-} from '@/repositories/index.js';
-import { DateUtils } from '@/utils/dateUtils.js';
+} from '../repositories/index.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import {
   AccountNameType,
   TeamsWantedOwnerClassifiedType,

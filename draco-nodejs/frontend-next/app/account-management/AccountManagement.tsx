@@ -57,6 +57,7 @@ import {
   deleteAccount,
 } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
+import { assertNoApiError, unwrapApiResult } from '../../utils/apiResult';
 
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
@@ -211,32 +212,31 @@ const AccountManagement: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: managedError } = await getManagedAccounts({
+      const managedAccountsResult = await getManagedAccounts({
         client: apiClient,
         throwOnError: false,
       });
+      const managedAccounts = unwrapApiResult(managedAccountsResult, 'Failed to load accounts') as
+        | SharedAccountType[]
+        | undefined;
 
-      if (managedError) {
-        throw new Error(managedError.message || 'Failed to load accounts');
-      }
+      setAccounts(managedAccounts ?? []);
 
-      setAccounts((data as SharedAccountType[]) ?? []);
-
-      // Load account types
       const typesResult = await getAccountTypes({ client: apiClient, throwOnError: false });
-      if (typesResult.error) {
-        throw new Error(typesResult.error.message || 'Failed to load account types');
-      }
-      setAccountTypes((typesResult.data as AccountTypeReference[]) ?? []);
+      const types = unwrapApiResult(typesResult, 'Failed to load account types') as
+        | AccountTypeReference[]
+        | undefined;
+      setAccountTypes(types ?? []);
 
       const affiliationsResult = await getAccountAffiliations({
         client: apiClient,
         throwOnError: false,
       });
-      if (affiliationsResult.error) {
-        throw new Error(affiliationsResult.error.message || 'Failed to load affiliations');
-      }
-      setAffiliations((affiliationsResult.data as AccountAffiliationType[]) ?? []);
+      const affiliationsData = unwrapApiResult(
+        affiliationsResult,
+        'Failed to load affiliations',
+      ) as AccountAffiliationType[] | undefined;
+      setAffiliations(affiliationsData ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -269,9 +269,7 @@ const AccountManagement: React.FC = () => {
         throwOnError: false,
       });
 
-      if (result.error || !result.data) {
-        throw new Error(result.error?.message || 'Failed to create account');
-      }
+      unwrapApiResult(result, 'Failed to create account');
 
       setCreateDialogOpen(false);
       setFormData(initialFormState);
@@ -301,9 +299,7 @@ const AccountManagement: React.FC = () => {
         throwOnError: false,
       });
 
-      if (result.error || !result.data) {
-        throw new Error(result.error?.message || 'Failed to update account');
-      }
+      unwrapApiResult(result, 'Failed to update account');
 
       setEditDialogOpen(false);
       setSelectedAccount(null);
@@ -324,9 +320,7 @@ const AccountManagement: React.FC = () => {
         throwOnError: false,
       });
 
-      if (result.error) {
-        throw new Error(result.error.message || 'Failed to delete account');
-      }
+      assertNoApiError(result, 'Failed to delete account');
 
       setDeleteDialogOpen(false);
       setSelectedAccount(null);

@@ -242,9 +242,19 @@ const result = await apiGetContactRoster({
   client: apiClient,
   throwOnError: false,
 });
+const roster = unwrapApiResult(result, 'Failed to load contact roster');
 ```
 
 Leaving out the `client` parameter causes the generated helper to throw because it has no transport configuration. Keep the `client: apiClient` field in every OpenAPI call (for example `apiUpdateRosterMember({...})` in `useRosterDataManager`) so requests inherit the authenticated base configuration.
+
+Wrap responses with the shared helpers in `utils/apiResult.ts` to centralize error handling:
+
+```typescript
+import { unwrapApiResult, assertNoApiError } from '@/utils/apiResult';
+
+const data = unwrapApiResult(result, 'Failed to load');
+assertNoApiError(deleteResult, 'Failed to delete record');
+```
 
 ### Account & Team Page Layout Pattern
 
