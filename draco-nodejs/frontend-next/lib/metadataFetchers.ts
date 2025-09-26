@@ -7,7 +7,7 @@ interface AccountBranding {
   iconUrl: string | null;
 }
 
-const DEFAULT_ACCOUNT_FAVICON_PATH = '/branding/default-sports-favicon.svg' as const;
+export const DEFAULT_ACCOUNT_FAVICON_PATH = '/branding/default-sports-favicon.svg' as const;
 
 function resolveAccountFavicon(header?: Partial<AccountHeaderType> | null): string {
   if (!header) {
