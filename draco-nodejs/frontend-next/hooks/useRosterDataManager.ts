@@ -21,6 +21,7 @@ import {
 } from '@draco/shared-schemas';
 import axios from 'axios';
 import { addCacheBuster } from '@/config/contacts';
+import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 
 interface Season {
   id: string;
@@ -315,33 +316,44 @@ export const useRosterDataManager = (
     async (rosterMemberId: string, updates: RosterMemberUpdates) => {
       if (!rosterData) return;
 
-      const result = await apiUpdateRosterMember({
-        path: { accountId, seasonId, teamSeasonId, rosterMemberId },
-        body: updates,
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiUpdateRosterMember({
+          path: { accountId, seasonId, teamSeasonId, rosterMemberId },
+          body: updates,
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
-        // Update the specific roster member in the rosterMembers array
-        // while preserving the TeamRosterData structure
+        const updatedMember = unwrapApiResult(
+          result,
+          'Failed to update roster information',
+        ) as RosterMemberType;
+
         const updatedRosterData: TeamRosterMembersType = {
           ...dataCacheRef.current.rosterData!,
           rosterMembers: dataCacheRef.current.rosterData!.rosterMembers.map((member) =>
-            member.id === rosterMemberId ? (result.data as RosterMemberType) : member,
+            member.id === rosterMemberId ? updatedMember : member,
           ),
         };
 
-        // Update cache and state
         dataCacheRef.current.rosterData = updatedRosterData;
         setRosterData(updatedRosterData);
         setSuccessMessage('Roster information updated successfully');
         setError(null);
-      } else {
-        setError(result?.error.message || 'Failed to update roster information');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to update roster information');
       }
     },
-    [accountId, seasonId, teamSeasonId, rosterData, setRosterData, setSuccessMessage, setError],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterData,
+      setRosterData,
+      setSuccessMessage,
+      setError,
+      apiClient,
+    ],
   );
 
   const getContactRoster = useCallback(
@@ -354,13 +366,9 @@ export const useRosterDataManager = (
         throwOnError: false,
       });
 
-      if (result.data) {
-        return result.data as RosterPlayerType;
-      } else {
-        throw result.error;
-      }
+      return unwrapApiResult(result, 'Failed to fetch contact roster') as RosterPlayerType;
     },
-    [accountId],
+    [accountId, apiClient],
   );
 
   // Sign player with server response updates
@@ -368,33 +376,39 @@ export const useRosterDataManager = (
     async (contactId: string, rosterData: SignRosterMemberType) => {
       if (!rosterData) return;
 
-      const result = await apiSignPlayer({
-        path: { accountId, seasonId, teamSeasonId },
-        body: { ...rosterData, player: { ...rosterData.player, contact: { id: contactId } } },
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiSignPlayer({
+          path: { accountId, seasonId, teamSeasonId },
+          body: { ...rosterData, player: { ...rosterData.player, contact: { id: contactId } } },
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
-        // Update the specific roster member in the rosterMembers array
-        // while preserving the TeamRosterData structure
+        const newMember = unwrapApiResult(result, 'Failed to sign player') as RosterMemberType;
+
         const updatedRosterData: TeamRosterMembersType = {
           ...dataCacheRef.current.rosterData!,
-          rosterMembers: [
-            ...dataCacheRef.current.rosterData!.rosterMembers,
-            result.data as RosterMemberType,
-          ],
+          rosterMembers: [...dataCacheRef.current.rosterData!.rosterMembers, newMember],
         };
 
         dataCacheRef.current.rosterData = updatedRosterData;
         setRosterData(updatedRosterData);
         setSuccessMessage('Player signed successfully');
         setError(null);
-      } else {
-        setError(result.error?.message || 'Failed to sign player');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to sign player');
       }
     },
-    [accountId, seasonId, teamSeasonId, rosterData, setRosterData, setSuccessMessage, setError],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterData,
+      setRosterData,
+      setSuccessMessage,
+      setError,
+      apiClient,
+    ],
   );
 
   // Release player with optimistic updates
@@ -402,15 +416,15 @@ export const useRosterDataManager = (
     async (rosterMemberId: string) => {
       if (!rosterData) return;
 
-      const result = await apiReleasePlayer({
-        path: { accountId, seasonId, teamSeasonId, rosterMemberId },
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiReleasePlayer({
+          path: { accountId, seasonId, teamSeasonId, rosterMemberId },
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
-        // Update the specific roster member in the rosterMembers array
-        // while preserving the TeamRosterData structure
+        assertNoApiError(result, 'Failed to release player');
+
         const updatedRosterData: TeamRosterMembersType = {
           ...dataCacheRef.current.rosterData!,
           rosterMembers: dataCacheRef.current.rosterData!.rosterMembers.map((member) =>
@@ -422,11 +436,20 @@ export const useRosterDataManager = (
         setRosterData(updatedRosterData);
         setSuccessMessage('Player released successfully');
         setError(null);
-      } else {
-        setError(result.error?.message || 'Failed to release player');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to release player');
       }
     },
-    [accountId, seasonId, teamSeasonId, rosterData, setRosterData, setSuccessMessage, setError],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterData,
+      setRosterData,
+      setSuccessMessage,
+      setError,
+      apiClient,
+    ],
   );
 
   // Activate player with optimistic updates
@@ -434,15 +457,15 @@ export const useRosterDataManager = (
     async (rosterMemberId: string) => {
       if (!rosterData) return;
 
-      const result = await apiActivatePlayer({
-        path: { accountId, seasonId, teamSeasonId, rosterMemberId },
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiActivatePlayer({
+          path: { accountId, seasonId, teamSeasonId, rosterMemberId },
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
-        // Update the specific roster member in the rosterMembers array
-        // while preserving the TeamRosterData structure
+        assertNoApiError(result, 'Failed to activate player');
+
         const updatedRosterData: TeamRosterMembersType = {
           ...dataCacheRef.current.rosterData!,
           rosterMembers: dataCacheRef.current.rosterData!.rosterMembers.map((member) =>
@@ -454,11 +477,20 @@ export const useRosterDataManager = (
         setRosterData(updatedRosterData);
         setSuccessMessage('Player activated successfully');
         setError(null);
-      } else {
-        setError(result.error?.message || 'Failed to activate player');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to activate player');
       }
     },
-    [accountId, seasonId, teamSeasonId, rosterData, setRosterData, setSuccessMessage, setError],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterData,
+      setRosterData,
+      setSuccessMessage,
+      setError,
+      apiClient,
+    ],
   );
 
   // Delete player with optimistic updates
@@ -466,15 +498,15 @@ export const useRosterDataManager = (
     async (rosterMemberId: string) => {
       if (!rosterData) return;
 
-      const result = await apiDeletePlayer({
-        path: { accountId, seasonId, teamSeasonId, rosterMemberId },
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiDeletePlayer({
+          path: { accountId, seasonId, teamSeasonId, rosterMemberId },
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
-        // Update the specific roster member in the rosterMembers array
-        // while preserving the TeamRosterData structure
+        assertNoApiError(result, 'Failed to delete player');
+
         const updatedRosterData: TeamRosterMembersType = {
           ...dataCacheRef.current.rosterData!,
           rosterMembers: dataCacheRef.current.rosterData!.rosterMembers.filter(
@@ -486,50 +518,69 @@ export const useRosterDataManager = (
         setRosterData(updatedRosterData);
         setSuccessMessage('Player deleted successfully');
         setError(null);
-      } else {
-        setError(result.error?.message || 'Failed to delete player');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to delete player');
       }
     },
-    [accountId, seasonId, teamSeasonId, rosterData, setRosterData, setSuccessMessage, setError],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      rosterData,
+      setRosterData,
+      setSuccessMessage,
+      setError,
+      apiClient,
+    ],
   );
 
   // Add manager with optimistic updates
   const addManager = useCallback(
     async (contactId: string) => {
-      const result = await apiAddManager({
-        path: { accountId, seasonId, teamSeasonId },
-        body: { contact: { id: contactId } },
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiAddManager({
+          path: { accountId, seasonId, teamSeasonId },
+          body: { contact: { id: contactId } },
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
-        //const newManager: ManagerType = result.data;
+        const newManager = unwrapApiResult(result, 'Failed to add manager') as TeamManagerType;
 
-        // Update managers list with the new manager
-        const updatedManagers = [...managers, result.data] as TeamManagerType[];
+        const updatedManagers = [...managers, newManager];
 
         dataCacheRef.current.managers = updatedManagers;
         setManagers(updatedManagers);
         setSuccessMessage('Manager added successfully');
         setError(null);
-      } else {
-        setError(result.error?.message || 'Failed to add manager');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to add manager');
       }
     },
-    [accountId, seasonId, teamSeasonId, managers, setManagers, setSuccessMessage, setError],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      managers,
+      setManagers,
+      setSuccessMessage,
+      setError,
+      apiClient,
+    ],
   );
 
   // Remove manager with optimistic updates
   const removeManager = useCallback(
     async (managerId: string) => {
-      const result = await apiRemoveManager({
-        path: { accountId, seasonId, teamSeasonId, managerId },
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiRemoveManager({
+          path: { accountId, seasonId, teamSeasonId, managerId },
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
+        assertNoApiError(result, 'Failed to remove manager');
+
         const updatedManagers = dataCacheRef.current.managers.filter(
           (manager) => manager.id !== managerId,
         );
@@ -538,8 +589,8 @@ export const useRosterDataManager = (
         setManagers(updatedManagers);
         setSuccessMessage('Manager removed successfully');
         setError(null);
-      } else {
-        setError(result.error?.message || 'Failed to remove manager');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to remove manager');
       }
     },
     [
@@ -550,6 +601,7 @@ export const useRosterDataManager = (
       setManagers,
       setSuccessMessage,
       setError,
+      apiClient,
     ],
   );
 
@@ -558,13 +610,15 @@ export const useRosterDataManager = (
     async (contactId: string) => {
       if (!rosterData) return;
 
-      const result = await apiDeleteContactPhoto({
-        path: { accountId, contactId },
-        client: apiClient,
-        throwOnError: false,
-      });
+      try {
+        const result = await apiDeleteContactPhoto({
+          path: { accountId, contactId },
+          client: apiClient,
+          throwOnError: false,
+        });
 
-      if (result.data) {
+        assertNoApiError(result, 'Failed to delete photo');
+
         const updatedRosterData: TeamRosterMembersType = {
           ...rosterData,
           rosterMembers: rosterData.rosterMembers.map((member) =>
@@ -584,11 +638,11 @@ export const useRosterDataManager = (
         setRosterData(updatedRosterData);
         setSuccessMessage('Photo deleted successfully');
         setError(null);
-      } else {
-        setError(result.error?.message || 'Failed to delete photo');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to delete photo');
       }
     },
-    [accountId, rosterData, setRosterData, setSuccessMessage, setError],
+    [accountId, rosterData, setRosterData, setSuccessMessage, setError, apiClient],
   );
 
   // State management helpers

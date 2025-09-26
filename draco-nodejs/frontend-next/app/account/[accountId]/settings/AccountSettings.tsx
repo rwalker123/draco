@@ -10,6 +10,7 @@ import UrlManagement from '../../../../components/UrlManagement';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../utils/apiResult';
 import type { AccountType } from '@draco/shared-schemas';
 
 interface TabPanelProps {
@@ -72,15 +73,11 @@ const AccountSettings: React.FC = () => {
         throwOnError: false,
       });
 
-      if (result.error || !result.data) {
-        setError(result.error?.message || 'Failed to load account data');
-        setAccount(null);
-        return;
-      }
-
-      setAccount(result.data.account as AccountType);
+      const data = unwrapApiResult(result, 'Failed to load account data');
+      setAccount(data.account as AccountType);
     } catch (err) {
       console.error('Failed to load account data', err);
+      setAccount(null);
       setError('Failed to load account data');
     } finally {
       setLoading(false);

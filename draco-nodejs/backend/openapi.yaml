@@ -1229,6 +1229,564 @@ components:
         - name
       title: CreateSponsor
       description: Payload to create or update a sponsor
+    PlayersWantedClassified:
+      type: object
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        dateCreated:
+          type: string
+          nullable: true
+        createdByContactId:
+          type: string
+        teamEventName:
+          type: string
+        description:
+          type: string
+        positionsNeeded:
+          type: string
+        creator:
+          type: object
+          properties:
+            id:
+              type: string
+            firstName:
+              type: string
+            lastName:
+              type: string
+            photoUrl:
+              type: string
+          required:
+            - id
+            - firstName
+            - lastName
+            - photoUrl
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+          required:
+            - id
+            - name
+      required:
+        - id
+        - accountId
+        - dateCreated
+        - createdByContactId
+        - teamEventName
+        - description
+        - positionsNeeded
+        - creator
+        - account
+      title: PlayersWantedClassified
+      description: Players Wanted classified listing
+    PlayersWantedClassifiedPaged:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              accountId:
+                type: string
+              dateCreated:
+                type: string
+                nullable: true
+              createdByContactId:
+                type: string
+              teamEventName:
+                type: string
+              description:
+                type: string
+              positionsNeeded:
+                type: string
+              creator:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+                  photoUrl:
+                    type: string
+                required:
+                  - id
+                  - firstName
+                  - lastName
+                  - photoUrl
+              account:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+            required:
+              - id
+              - accountId
+              - dateCreated
+              - createdByContactId
+              - teamEventName
+              - description
+              - positionsNeeded
+              - creator
+              - account
+            title: PlayersWantedClassified
+            description: Players Wanted classified listing
+        total:
+          type: number
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+            totalPages:
+              type: number
+          required:
+            - page
+            - limit
+            - hasNext
+            - hasPrev
+            - totalPages
+          title: PlayerClassifiedPagination
+          description: Pagination metadata for player classified listings
+        filters:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - players
+                - teams
+                - all
+            positions:
+              type: array
+              items:
+                type: string
+            experience:
+              type: array
+              items:
+                type: string
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                  nullable: true
+                to:
+                  type: string
+                  nullable: true
+              required:
+                - from
+                - to
+            searchQuery:
+              type: string
+              nullable: true
+          required:
+            - type
+            - positions
+            - experience
+            - dateRange
+            - searchQuery
+          title: PlayerClassifiedFilters
+          description: Filters applied to a player classified search request
+      required:
+        - data
+        - total
+        - pagination
+        - filters
+      title: PlayersWantedClassifiedList
+      description: Paginated Players Wanted classified listings
+    UpsertPlayersWantedClassified:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        teamEventName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        positionsNeeded:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+        - teamEventName
+        - description
+        - positionsNeeded
+      title: UpsertPlayersWantedClassifiedRequest
+      description: Request body for creating or updating a Players Wanted classified
+    PlayerClassifiedSearchQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        sortBy:
+          type: string
+          enum:
+            - dateCreated
+            - relevance
+          default: dateCreated
+        sortOrder:
+          type: string
+          enum:
+            - asc
+            - desc
+          default: desc
+        searchQuery:
+          type: string
+          maxLength: 200
+      title: PlayerClassifiedSearchQuery
+      description: Query parameters used to paginate and filter player classified listings
+    TeamsWantedPublicClassifiedPaged:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              accountId:
+                type: string
+              dateCreated:
+                type: string
+                nullable: true
+              name:
+                type: string
+              experience:
+                type: string
+              positionsPlayed:
+                type: string
+              age:
+                type: number
+                nullable: true
+              account:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+            required:
+              - id
+              - accountId
+              - dateCreated
+              - name
+              - experience
+              - positionsPlayed
+              - age
+              - account
+            title: TeamsWantedPublicClassified
+            description: Teams Wanted classified listing for public display without contact
+              information
+        total:
+          type: number
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+            totalPages:
+              type: number
+          required:
+            - page
+            - limit
+            - hasNext
+            - hasPrev
+            - totalPages
+          title: PlayerClassifiedPagination
+          description: Pagination metadata for player classified listings
+        filters:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - players
+                - teams
+                - all
+            positions:
+              type: array
+              items:
+                type: string
+            experience:
+              type: array
+              items:
+                type: string
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                  nullable: true
+                to:
+                  type: string
+                  nullable: true
+              required:
+                - from
+                - to
+            searchQuery:
+              type: string
+              nullable: true
+          required:
+            - type
+            - positions
+            - experience
+            - dateRange
+            - searchQuery
+          title: PlayerClassifiedFilters
+          description: Filters applied to a player classified search request
+      required:
+        - data
+        - total
+        - pagination
+        - filters
+      title: TeamsWantedPublicClassifiedPaged
+      description: Paginated Teams Wanted classified listings for public display
+    TeamsWantedOwnerClassified:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        accountId:
+          type: string
+        dateCreated:
+          type: string
+          nullable: true
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        experience:
+          type: string
+        positionsPlayed:
+          type: string
+        birthDate:
+          type: string
+          nullable: true
+        age:
+          type: number
+          nullable: true
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+          required:
+            - id
+            - name
+      required:
+        - id
+        - accountId
+        - dateCreated
+        - name
+        - email
+        - phone
+        - experience
+        - positionsPlayed
+        - birthDate
+        - age
+        - account
+      title: TeamsWantedOwnerClassified
+      description: Teams Wanted classified listing for the owner including contact
+        information
+    UpsertTeamsWantedClassified:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 320
+          format: email
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 50
+        experience:
+          type: string
+          minLength: 1
+          maxLength: 255
+        positionsPlayed:
+          type: string
+          minLength: 1
+          maxLength: 255
+        birthDate:
+          type: string
+          nullable: true
+          default: ""
+      required:
+        - name
+        - email
+        - phone
+        - experience
+        - positionsPlayed
+      title: UpsertTeamsWantedClassifiedRequest
+      description: Request body for creating or updating a Teams Wanted classified
+    TeamsWantedAccessCode:
+      type: object
+      properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+      required:
+        - accessCode
+      title: TeamsWantedAccessCode
+      description: Access code used to authenticate Teams Wanted classified actions
+    TeamsWantedContactInfo:
+      type: object
+      properties:
+        email:
+          type: string
+        phone:
+          type: string
+        birthDate:
+          type: string
+          nullable: true
+      required:
+        - email
+        - phone
+        - birthDate
+      title: TeamsWantedContactInfo
+      description: Contact information for a Teams Wanted classified
+    TeamsWantedContactQuery:
+      type: object
+      properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+      title: TeamsWantedContactQuery
+      description: Query parameters used to request Teams Wanted contact information
+    ContactPlayersWantedCreator:
+      type: object
+      properties:
+        senderName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        senderEmail:
+          type: string
+          maxLength: 320
+          format: email
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+      required:
+        - senderName
+        - senderEmail
+        - message
+      title: ContactPlayersWantedCreatorRequest
+      description: Request body for contacting a Players Wanted classified creator
+    BaseballPosition:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum:
+            - pitching
+            - infield
+            - outfield
+            - catching
+            - utility
+        abbreviation:
+          type: string
+      required:
+        - id
+        - name
+        - category
+        - abbreviation
+      title: BaseballPosition
+      description: Baseball position metadata used in player classifieds
+    ExperienceLevel:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        yearsRequired:
+          type: number
+        skillLevel:
+          type: string
+          enum:
+            - beginner
+            - intermediate
+            - advanced
+            - expert
+      required:
+        - id
+        - name
+        - description
+        - yearsRequired
+        - skillLevel
+      title: ExperienceLevel
+      description: Experience level metadata used in player classifieds
     ValidationError:
       type: object
       properties:
@@ -3512,6 +4070,754 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/players-wanted:
+    post:
+      operationId: createPlayersWantedClassified
+      summary: Create Players Wanted classified
+      description: Create a Players Wanted classified for an authenticated account member.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertPlayersWantedClassified"
+      responses:
+        "201":
+          description: Players Wanted classified created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayersWantedClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account or contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      operationId: listPlayersWantedClassifieds
+      summary: List Players Wanted classifieds
+      description: Retrieve paginated Players Wanted classifieds for the specified account.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum:
+              - dateCreated
+              - relevance
+            default: dateCreated
+          required: false
+          name: sortBy
+          in: query
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          required: false
+          name: sortOrder
+          in: query
+        - schema:
+            type: string
+            maxLength: 200
+          required: false
+          name: searchQuery
+          in: query
+      responses:
+        "200":
+          description: Players Wanted classifieds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayersWantedClassifiedPaged"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted:
+    post:
+      operationId: createTeamsWantedClassified
+      summary: Create Teams Wanted classified
+      description: Create a Teams Wanted classified for a public user using an access
+        code workflow.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamsWantedClassified"
+      responses:
+        "201":
+          description: Teams Wanted classified created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      operationId: listTeamsWantedClassifieds
+      summary: List Teams Wanted classifieds
+      description: Retrieve paginated Teams Wanted classifieds for authenticated
+        account members.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum:
+              - dateCreated
+              - relevance
+            default: dateCreated
+          required: false
+          name: sortBy
+          in: query
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          required: false
+          name: sortOrder
+          in: query
+        - schema:
+            type: string
+            maxLength: 200
+          required: false
+          name: searchQuery
+          in: query
+      responses:
+        "200":
+          description: Teams Wanted classifieds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedPublicClassifiedPaged"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/verify:
+    post:
+      operationId: verifyTeamsWantedAccess
+      summary: Verify Teams Wanted access code
+      description: Verify an access code and return the Teams Wanted classified owner view.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamsWantedAccessCode"
+      responses:
+        "200":
+          description: Verified Teams Wanted classified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/access-code:
+    post:
+      operationId: getTeamsWantedByAccessCode
+      summary: Get Teams Wanted classified by access code
+      description: Retrieve a Teams Wanted classified owner view using an access code.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamsWantedAccessCode"
+      responses:
+        "200":
+          description: Teams Wanted classified owner view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}:
+    put:
+      operationId: updateTeamsWantedClassified
+      summary: Update Teams Wanted classified
+      description: Update a Teams Wanted classified using either account
+        authentication or access code.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamsWantedClassified"
+      responses:
+        "200":
+          description: Updated Teams Wanted classified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteTeamsWantedClassified
+      summary: Delete Teams Wanted classified
+      description: Delete a Teams Wanted classified using either authentication or
+        access code.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamsWantedAccessCode"
+      responses:
+        "204":
+          description: Teams Wanted classified deleted
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}:
+    put:
+      operationId: updatePlayersWantedClassified
+      summary: Update Players Wanted classified
+      description: Update a Players Wanted classified for an authenticated account member.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertPlayersWantedClassified"
+      responses:
+        "200":
+          description: Updated Players Wanted classified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayersWantedClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deletePlayersWantedClassified
+      summary: Delete Players Wanted classified
+      description: Delete a Players Wanted classified for an authenticated account member.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Players Wanted classified deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/contact:
+    get:
+      operationId: getTeamsWantedContactInfo
+      summary: Get Teams Wanted contact info
+      description: Retrieve Teams Wanted classified contact information using either
+        account authentication or a valid access code.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: string
+            minLength: 10
+            maxLength: 1000
+          required: false
+          name: accessCode
+          in: query
+      responses:
+        "200":
+          description: Teams Wanted contact information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedContactInfo"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}/contact:
+    post:
+      operationId: contactPlayersWantedCreator
+      summary: Contact Players Wanted creator
+      description: Send a message to the creator of a Players Wanted classified.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactPlayersWantedCreator"
+      responses:
+        "204":
+          description: Contact request sent
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/positions:
+    get:
+      operationId: listPlayerClassifiedPositions
+      summary: List baseball positions
+      description: Retrieve supported baseball positions for classifieds.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Baseball positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BaseballPosition"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/experience-levels:
+    get:
+      operationId: listPlayerClassifiedExperienceLevels
+      summary: List experience levels
+      description: Retrieve supported experience levels for classifieds.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Experience levels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExperienceLevel"
         "500":
           description: Internal server error
           content:

@@ -93,13 +93,12 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
           throw new Error(errorData.message || 'Verification failed');
         }
 
-        const result = await response.json();
-
+        const classified = await response.json();
         setState({
           loading: false,
           success: true,
           error: null,
-          classifiedData: result.data,
+          classifiedData: classified,
         });
 
         // Store verification success and access code for secure redirect
@@ -107,7 +106,7 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
           accountId,
           accessCode: validation.sanitizedValue,
           timestamp: Date.now(),
-          classifiedData: result.data,
+          classifiedData: classified,
         };
         localStorage.setItem('teamsWantedVerification', JSON.stringify(verificationData));
 

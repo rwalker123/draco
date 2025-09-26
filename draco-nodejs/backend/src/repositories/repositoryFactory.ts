@@ -7,6 +7,8 @@ import {
   ISeasonRepository,
   ILeagueRepository,
   ICleanupRepository,
+  IPlayersWantedRepository,
+  ITeamsWantedRepository,
   ISponsorRepository,
 } from './interfaces/index.js';
 import {
@@ -18,10 +20,12 @@ import {
   PrismaSeasonRepository,
   PrismaLeagueRepository,
   PrismaCleanupRepository,
+  PrismaTeamsWantedRepository,
   PrismaSponsorRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
+import { PrismaPlayersWantedRepository } from './implementations/PrismaPlayersWantedRepository.js';
 
 /**
  * Factory functions to create repository instances
@@ -36,6 +40,8 @@ export class RepositoryFactory {
   private static seasonRepository: ISeasonRepository;
   private static leagueRepository: ILeagueRepository;
   private static cleanupRepository: ICleanupRepository;
+  private static playersWantedRepository: IPlayersWantedRepository;
+  private static teamsWantedRepository: ITeamsWantedRepository;
   private static sponsorRepository: ISponsorRepository;
 
   static getLeagueRepository(): ILeagueRepository {
@@ -92,6 +98,20 @@ export class RepositoryFactory {
       this.cleanupRepository = new PrismaCleanupRepository(prisma);
     }
     return this.cleanupRepository;
+  }
+
+  static getPlayersWantedRepository(): IPlayersWantedRepository {
+    if (!this.playersWantedRepository) {
+      this.playersWantedRepository = new PrismaPlayersWantedRepository(prisma);
+    }
+    return this.playersWantedRepository;
+  }
+
+  static getTeamsWantedRepository(): ITeamsWantedRepository {
+    if (!this.teamsWantedRepository) {
+      this.teamsWantedRepository = new PrismaTeamsWantedRepository(prisma);
+    }
+    return this.teamsWantedRepository;
   }
 
   static getSponsorRepository(): ISponsorRepository {

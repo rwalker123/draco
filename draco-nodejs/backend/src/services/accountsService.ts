@@ -18,7 +18,7 @@ import {
   dbGlobalRoles,
   ISeasonRepository,
 } from '../repositories/index.js';
-import { AccountResponseFormatter } from '../utils/responseFormatters.js';
+import { AccountResponseFormatter } from '../responseFormatters/responseFormatters.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';

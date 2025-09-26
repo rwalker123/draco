@@ -13,9 +13,9 @@ import {
   Typography,
   Divider,
 } from '@mui/material';
-import { IContactCreatorFormState } from '../../types/playerClassifieds';
 import { PLAYER_CLASSIFIED_VALIDATION } from '../../utils/characterValidation';
 import CharacterCounter from '../common/CharacterCounter';
+import { ContactPlayersWantedCreatorType } from '@draco/shared-schemas';
 
 // Use shared validation constants
 const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.CONTACT;
@@ -23,7 +23,7 @@ const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.CONTACT;
 interface ContactCreatorDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: IContactCreatorFormState) => Promise<void>;
+  onSubmit: (data: ContactPlayersWantedCreatorType) => Promise<void>;
   loading?: boolean;
   teamEventName: string;
   creatorName: string;
@@ -37,7 +37,7 @@ const ContactCreatorDialog: React.FC<ContactCreatorDialogProps> = ({
   teamEventName,
   creatorName,
 }) => {
-  const [formData, setFormData] = useState<IContactCreatorFormState>({
+  const [formData, setFormData] = useState<ContactPlayersWantedCreatorType>({
     senderName: '',
     senderEmail: '',
     message: '',
@@ -107,7 +107,7 @@ const ContactCreatorDialog: React.FC<ContactCreatorDialogProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof IContactCreatorFormState, value: string) => {
+  const handleInputChange = (field: keyof ContactPlayersWantedCreatorType, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {

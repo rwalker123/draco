@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { ContactRoleSchema } from './role.js';
+import { PaginationSchema } from './paging.js';
 
 extendZodWithOpenApi(z);
 
@@ -115,14 +116,7 @@ export const PagedContactSchema = z
   .object({
     contacts: BaseContactSchema.array(),
     total: z.number(),
-    pagination: z
-      .object({
-        page: z.number(),
-        limit: z.number(),
-        hasNext: z.boolean(),
-        hasPrev: z.boolean(),
-      })
-      .optional(),
+    pagination: PaginationSchema.optional(),
   })
   .openapi({
     title: 'ContactResponse',

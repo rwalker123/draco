@@ -22,12 +22,13 @@ import {
   CalendarToday as CalendarIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
-import { IPlayersWantedCardProps, IContactCreatorFormState } from '../../types/playerClassifieds';
+import { IPlayersWantedCardProps } from '../../types/playerClassifieds';
 import { formatDate } from '../../utils/dateUtils';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
 import { useParams } from 'next/navigation';
 import { useNotifications } from '../../hooks/useNotifications';
 import ContactCreatorDialog from './ContactCreatorDialog';
+import { ContactPlayersWantedCreatorType } from '@draco/shared-schemas';
 
 const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
   classified,
@@ -48,7 +49,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
     setContactDialogOpen(true);
   };
 
-  const handleContactSubmit = async (formData: IContactCreatorFormState) => {
+  const handleContactSubmit = async (formData: ContactPlayersWantedCreatorType) => {
     setContactLoading(true);
     try {
       await playerClassifiedService.contactPlayersWantedCreator(
@@ -137,7 +138,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
         <Box display="flex" alignItems="center" gap={1}>
           <CalendarIcon fontSize="small" color="action" />
           <Typography variant="caption" color="text.secondary">
-            Posted {formatDate(classified.dateCreated)}
+            Posted {formatDate(classified.dateCreated ?? '')}
           </Typography>
         </Box>
       </CardContent>

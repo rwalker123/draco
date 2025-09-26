@@ -2,10 +2,8 @@
 // Manages pagination for Player Classifieds
 
 import { useState, useCallback } from 'react';
-import {
-  IUseClassifiedsPaginationReturn,
-  IClassifiedsPagination,
-} from '../types/playerClassifieds';
+import { IUseClassifiedsPaginationReturn } from '../types/playerClassifieds';
+import { PaginationWithTotalType } from '@draco/shared-schemas';
 
 interface UseClassifiedsPaginationProps {
   initialPage?: number;
@@ -19,7 +17,7 @@ export const useClassifiedsPagination = ({
   initialTotal = 0,
 }: UseClassifiedsPaginationProps = {}): IUseClassifiedsPaginationReturn => {
   // Pagination state
-  const [pagination, setPagination] = useState<IClassifiedsPagination>({
+  const [pagination, setPagination] = useState<PaginationWithTotalType & { totalPages: number }>({
     page: initialPage,
     limit: initialLimit,
     total: initialTotal,

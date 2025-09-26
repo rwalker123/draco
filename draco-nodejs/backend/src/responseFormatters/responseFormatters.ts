@@ -35,7 +35,7 @@ import {
   dbSponsor,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
-import { PaginationHelper } from './pagination.js';
+import { PaginationHelper } from '../utils/pagination.js';
 
 // todo: delete this once the shared api client is used more widely
 interface ApiResponse<T> {

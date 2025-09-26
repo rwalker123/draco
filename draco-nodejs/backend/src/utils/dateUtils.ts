@@ -2,6 +2,8 @@
  * Centralized date utility functions for handling dateofbirth field
  * Provides consistent transformation between database sentinel values and frontend null values
  */
+import { formatDateToUtcString } from '@draco/shared-schemas';
+
 export class DateUtils {
   /**
    * Sentinel date used in database when no birth date is provided
@@ -24,10 +26,7 @@ export class DateUtils {
     }
 
     // Return date-only (YYYY-MM-DD) to avoid timezone shifts in clients
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return formatDateToUtcString(date);
   }
 
   /**
@@ -76,10 +75,7 @@ export class DateUtils {
     if (!date) return null;
 
     // Return date-only (YYYY-MM-DD) to avoid timezone shifts in clients
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return formatDateToUtcString(date);
   }
 
   /**

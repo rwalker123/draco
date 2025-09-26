@@ -14,14 +14,14 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import PlayersWantedCard from './PlayersWantedCard';
-import { IPlayersWantedResponse } from '../../types/playerClassifieds';
+import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 
 interface PlayersWantedDetailDialogProps {
   open: boolean;
   onClose: () => void;
-  classified: IPlayersWantedResponse | null;
-  canEdit?: (classified: IPlayersWantedResponse) => boolean;
-  canDelete?: (classified: IPlayersWantedResponse) => boolean;
+  classified: PlayersWantedClassifiedType | null;
+  canEdit?: (classified: PlayersWantedClassifiedType) => boolean;
+  canDelete?: (classified: PlayersWantedClassifiedType) => boolean;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 }

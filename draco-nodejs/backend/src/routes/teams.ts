@@ -3,7 +3,7 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractSeasonParams, extractTeamParams } from '../utils/paramExtraction.js';
 import { TeamRequestValidator } from '../utils/teamValidators.js';
-import { TeamResponseFormatter } from '../utils/responseFormatters.js';
+import { TeamResponseFormatter } from '../responseFormatters/responseFormatters.js';
 import { upload, handleLogoUpload } from './team-media.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 

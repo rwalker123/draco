@@ -11,12 +11,10 @@ import {
   Person as PersonIcon,
   ContactPhone as ContactPhoneIcon,
 } from '@mui/icons-material';
-import {
-  ITeamsWantedCardPublicProps,
-  ITeamsWantedContactInfo,
-} from '../../types/playerClassifieds';
+import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
 import ContactInfoDialog from './ContactInfoDialog';
 import { useAuth } from '../../context/AuthContext';
+import { TeamsWantedContactInfoType } from '@draco/shared-schemas';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -29,7 +27,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
 }) => {
   const { token } = useAuth();
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
-  const [contactInfo, setContactInfo] = useState<ITeamsWantedContactInfo | null>(null);
+  const [contactInfo, setContactInfo] = useState<TeamsWantedContactInfoType | null>(null);
   const [contactLoading, setContactLoading] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
 

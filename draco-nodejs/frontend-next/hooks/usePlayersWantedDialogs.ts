@@ -1,13 +1,16 @@
+import {
+  PlayersWantedClassifiedType,
+  UpsertPlayersWantedClassifiedType,
+} from '@draco/shared-schemas';
 import { useState, useCallback } from 'react';
-import { IPlayersWantedResponse, IPlayersWantedFormState } from '../types/playerClassifieds';
 
 interface UsePlayersWantedDialogsReturn {
   // Dialog state
   createDialogOpen: boolean;
   editDialogOpen: boolean;
   deleteDialogOpen: boolean;
-  editingClassified: IPlayersWantedResponse | null;
-  deletingClassified: IPlayersWantedResponse | null;
+  editingClassified: UpsertPlayersWantedClassifiedType | null;
+  deletingClassified: PlayersWantedClassifiedType | null;
 
   // Success/error state
   success: string | null;
@@ -16,9 +19,9 @@ interface UsePlayersWantedDialogsReturn {
   // Dialog handlers
   openCreateDialog: () => void;
   closeCreateDialog: () => void;
-  openEditDialog: (classified: IPlayersWantedResponse) => void;
+  openEditDialog: (classified: UpsertPlayersWantedClassifiedType) => void;
   closeEditDialog: () => void;
-  openDeleteDialog: (classified: IPlayersWantedResponse) => void;
+  openDeleteDialog: (classified: PlayersWantedClassifiedType) => void;
   closeDeleteDialog: () => void;
 
   // Success/error handlers
@@ -26,9 +29,6 @@ interface UsePlayersWantedDialogsReturn {
   setLocalError: (error: string | null) => void;
   showSuccessMessage: (message: string, duration?: number) => void;
   clearSuccess: () => void;
-
-  // Utility functions
-  convertToFormState: (classified: IPlayersWantedResponse) => IPlayersWantedFormState;
 }
 
 export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
@@ -36,8 +36,11 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingClassified, setEditingClassified] = useState<IPlayersWantedResponse | null>(null);
-  const [deletingClassified, setDeletingClassified] = useState<IPlayersWantedResponse | null>(null);
+  const [editingClassified, setEditingClassified] =
+    useState<UpsertPlayersWantedClassifiedType | null>(null);
+  const [deletingClassified, setDeletingClassified] = useState<PlayersWantedClassifiedType | null>(
+    null,
+  );
 
   // Success/error notification state
   const [success, setSuccess] = useState<string | null>(null);
@@ -52,7 +55,7 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
     setCreateDialogOpen(false);
   }, []);
 
-  const openEditDialog = useCallback((classified: IPlayersWantedResponse) => {
+  const openEditDialog = useCallback((classified: UpsertPlayersWantedClassifiedType) => {
     setEditingClassified(classified);
     setEditDialogOpen(true);
   }, []);
@@ -62,7 +65,7 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
     setEditingClassified(null);
   }, []);
 
-  const openDeleteDialog = useCallback((classified: IPlayersWantedResponse) => {
+  const openDeleteDialog = useCallback((classified: PlayersWantedClassifiedType) => {
     setDeletingClassified(classified);
     setDeleteDialogOpen(true);
   }, []);
@@ -82,21 +85,6 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
   const clearSuccess = useCallback(() => {
     setSuccess(null);
   }, []);
-
-  // Utility function to convert IPlayersWantedResponse to IPlayersWantedFormState
-  const convertToFormState = useCallback(
-    (classified: IPlayersWantedResponse): IPlayersWantedFormState => {
-      return {
-        teamEventName: classified.teamEventName,
-        description: classified.description,
-        positionsNeeded: classified.positionsNeeded
-          .split(',')
-          .map((p) => p.trim())
-          .filter((p) => p.length > 0),
-      };
-    },
-    [],
-  );
 
   return {
     // Dialog state
@@ -123,8 +111,5 @@ export const usePlayersWantedDialogs = (): UsePlayersWantedDialogsReturn => {
     setLocalError,
     showSuccessMessage,
     clearSuccess,
-
-    // Utility functions
-    convertToFormState,
   };
 };

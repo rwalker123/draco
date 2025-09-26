@@ -31,6 +31,8 @@ import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
+import { useAccountMembership } from '../../../hooks/useAccountMembership';
+import { unwrapApiResult } from '../../../utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
 
 const BaseballAccountHome: React.FC = () => {
@@ -49,6 +51,8 @@ const BaseballAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
+  const { isMember } = useAccountMembership(accountIdStr);
+  const isAccountMember = isMember === true;
 
   // Fetch public account data
   useEffect(() => {
@@ -78,18 +82,15 @@ const BaseballAccountHome: React.FC = () => {
           return;
         }
 
-        if (!result.data) {
-          setError('Account not found or not publicly accessible');
-          setAccount(null);
-          setCurrentSeason(null);
-          return;
-        }
-
-        const accountData = result.data.account;
+        const {
+          account: accountData,
+          seasons,
+          currentSeason: responseCurrentSeason,
+        } = unwrapApiResult(result, 'Account not found or not publicly accessible');
         setAccount(accountData as AccountType);
 
-        const currentSeasonCandidate = result.data.seasons?.find((season) => season.isCurrent) ?? {
-          ...result.data.currentSeason,
+        const currentSeasonCandidate = seasons?.find((season) => season.isCurrent) ?? {
+          ...responseCurrentSeason,
           isCurrent: true,
         };
         setCurrentSeason(currentSeasonCandidate as AccountSeasonWithStatusType);
@@ -302,6 +303,7 @@ const BaseballAccountHome: React.FC = () => {
           accountId={accountIdStr}
           account={account}
           token={token || undefined}
+          isAccountMember={isAccountMember}
         />
 
         {/* Scoreboard Layout Toggle */}

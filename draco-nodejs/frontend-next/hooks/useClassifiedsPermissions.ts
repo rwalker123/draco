@@ -4,12 +4,12 @@
 import { useCallback, useState } from 'react';
 import { useRole } from '../context/RoleContext';
 import { useAuth } from '../context/AuthContext';
-import {
-  IUseClassifiedsPermissionsReturn,
-  IPlayersWantedResponse,
-  ITeamsWantedResponse,
-} from '../types/playerClassifieds';
+import { IUseClassifiedsPermissionsReturn } from '../types/playerClassifieds';
 import { playerClassifiedService } from '../services/playerClassifiedService';
+import {
+  PlayersWantedClassifiedType,
+  TeamsWantedPublicClassifiedType,
+} from '@draco/shared-schemas';
 
 interface UseClassifiedsPermissionsProps {
   accountId: string;
@@ -65,7 +65,7 @@ export const useClassifiedsPermissions = ({
 
   // Enhanced permission checking with ownership for Players Wanted
   const canEditPlayersWantedById = useCallback(
-    (classified: IPlayersWantedResponse): boolean => {
+    (classified: PlayersWantedClassifiedType): boolean => {
       // Admin override - AccountAdmin can edit any Players Wanted
       if (hasRole('AccountAdmin')) {
         return true;
@@ -83,7 +83,7 @@ export const useClassifiedsPermissions = ({
   );
 
   const canDeletePlayersWantedById = useCallback(
-    (classified: IPlayersWantedResponse): boolean => {
+    (classified: PlayersWantedClassifiedType): boolean => {
       // Admin override - AccountAdmin can delete any Players Wanted
       if (hasRole('AccountAdmin')) {
         return true;
@@ -102,7 +102,7 @@ export const useClassifiedsPermissions = ({
 
   // Enhanced permission checking with access codes for Teams Wanted
   const canEditTeamsWantedById = useCallback(
-    (classified: ITeamsWantedResponse): boolean => {
+    (classified: TeamsWantedPublicClassifiedType): boolean => {
       // Admin override - AccountAdmin can edit any Teams Wanted
       if (hasRole('AccountAdmin')) {
         return true;
@@ -119,7 +119,7 @@ export const useClassifiedsPermissions = ({
   );
 
   const canDeleteTeamsWantedById = useCallback(
-    (classified: ITeamsWantedResponse): boolean => {
+    (classified: TeamsWantedPublicClassifiedType): boolean => {
       // Admin override - AccountAdmin can delete any Teams Wanted
       if (hasRole('AccountAdmin')) {
         return true;
@@ -146,12 +146,9 @@ export const useClassifiedsPermissions = ({
           accessCode,
         );
 
-        if (response.success) {
-          // Add to verified set
-          setVerifiedAccessCodes((prev) => new Set(prev).add(classifiedId));
-          return true;
-        }
-        return false;
+        // Add to verified set
+        setVerifiedAccessCodes((prev) => new Set(prev).add(classifiedId));
+        return true;
       } catch (error) {
         console.error('Failed to verify access code:', error);
         return false;

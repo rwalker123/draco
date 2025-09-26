@@ -4,28 +4,22 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNotifications } from './useNotifications';
 import { playerClassifiedService } from '../services/playerClassifiedService';
+import { IUsePlayerClassifiedsReturn, IClassifiedsUIState } from '../types/playerClassifieds';
 import {
-  IUsePlayerClassifiedsReturn,
-  IClassifiedsUIState,
-  IPlayersWantedFormState,
-  ITeamsWantedFormState,
-  IPlayersWantedResponse,
-  ITeamsWantedResponse,
-  IPlayersWantedCreateRequest,
-  IPlayersWantedUpdateRequest,
-  ITeamsWantedCreateRequest,
-  ITeamsWantedUpdateRequest,
-  IClassifiedSearchResult,
-  IClassifiedSearchParams,
-} from '../types/playerClassifieds';
+  UpsertPlayersWantedClassifiedType,
+  UpsertTeamsWantedClassifiedType,
+  PlayersWantedClassifiedType,
+  TeamsWantedOwnerClassifiedType,
+  TeamsWantedPublicClassifiedType,
+} from '@draco/shared-schemas';
 
 export const usePlayerClassifieds = (
   accountId: string,
   token?: string,
 ): IUsePlayerClassifiedsReturn => {
   // Data
-  const [playersWanted, setPlayersWanted] = useState<IPlayersWantedResponse[]>([]);
-  const [teamsWanted, setTeamsWanted] = useState<ITeamsWantedResponse[]>([]);
+  const [playersWanted, setPlayersWanted] = useState<PlayersWantedClassifiedType[]>([]);
+  const [teamsWanted, setTeamsWanted] = useState<TeamsWantedPublicClassifiedType[]>([]);
 
   // Loading states
   const [loading, setLoading] = useState(false);
@@ -75,29 +69,17 @@ export const usePlayerClassifieds = (
         playerClassifiedService.getPlayersWanted(accountId),
         token
           ? playerClassifiedService.getTeamsWanted(accountId, undefined, token)
-          : Promise.resolve({ success: true, data: { data: [] } }),
+          : Promise.resolve(null),
       ]);
 
       // Handle Players Wanted response
-      if (playersResponse.success && playersResponse.data) {
-        setPlayersWanted(playersResponse.data.data);
-      } else {
-        console.warn('Failed to load Players Wanted:', playersResponse.error);
-        setPlayersWanted([]);
-      }
+      setPlayersWanted(playersResponse.data);
 
       // Handle Teams Wanted response
-      if (teamsResponse.success && teamsResponse.data) {
-        setTeamsWanted(teamsResponse.data.data);
-      } else {
-        console.warn(
-          'Failed to load Teams Wanted:',
-          'error' in teamsResponse ? teamsResponse.error : 'Unknown error',
-        );
-        setTeamsWanted([]);
+      if (teamsResponse) {
+        setTeamsWanted(teamsResponse.data);
       }
     } catch (error) {
-      console.error('Unexpected error in loadData:', error);
       const errorMessage = 'Failed to load classifieds';
       showNotification(errorMessage, 'error');
     } finally {
@@ -116,17 +98,17 @@ export const usePlayerClassifieds = (
 
   // Create Players Wanted
   const createPlayersWanted = useCallback(
-    async (data: IPlayersWantedFormState): Promise<void> => {
+    async (data: UpsertPlayersWantedClassifiedType): Promise<void> => {
       if (!token) {
         throw new Error('Authentication required to create Players Wanted');
       }
 
       setFormLoading(true);
       try {
-        const createData: IPlayersWantedCreateRequest = {
+        const createData: UpsertPlayersWantedClassifiedType = {
           teamEventName: data.teamEventName,
           description: data.description,
-          positionsNeeded: data.positionsNeeded.join(', '),
+          positionsNeeded: data.positionsNeeded,
         };
 
         const newClassified = await playerClassifiedService.createPlayersWanted(
@@ -150,23 +132,17 @@ export const usePlayerClassifieds = (
 
   // Update Players Wanted
   const updatePlayersWanted = useCallback(
-    async (id: string, data: Partial<IPlayersWantedFormState>): Promise<void> => {
+    async (id: string, data: UpsertPlayersWantedClassifiedType): Promise<void> => {
       if (!token) {
         throw new Error('Authentication required to update Players Wanted');
       }
 
       setFormLoading(true);
       try {
-        const updateData: IPlayersWantedUpdateRequest = {};
-        if (data.teamEventName !== undefined) updateData.teamEventName = data.teamEventName;
-        if (data.description !== undefined) updateData.description = data.description;
-        if (data.positionsNeeded !== undefined)
-          updateData.positionsNeeded = data.positionsNeeded.join(', ');
-
         const updatedClassified = await playerClassifiedService.updatePlayersWanted(
           accountId,
           id,
-          updateData,
+          data,
           token,
         );
         setPlayersWanted((prev) =>
@@ -212,19 +188,19 @@ export const usePlayerClassifieds = (
 
   // Create Teams Wanted
   const createTeamsWanted = useCallback(
-    async (data: ITeamsWantedFormState): Promise<void> => {
+    async (data: UpsertTeamsWantedClassifiedType): Promise<void> => {
       setFormLoading(true);
       try {
         if (!data.birthDate) {
           throw new Error('Birth date is required');
         }
 
-        const createData: ITeamsWantedCreateRequest = {
+        const createData: UpsertTeamsWantedClassifiedType = {
           name: data.name,
           email: data.email,
           phone: data.phone,
           experience: data.experience,
-          positionsPlayed: data.positionsPlayed.join(', '),
+          positionsPlayed: data.positionsPlayed,
           birthDate: data.birthDate,
         };
 
@@ -249,37 +225,25 @@ export const usePlayerClassifieds = (
   const updateTeamsWanted = useCallback(
     async (
       id: string,
-      data: Partial<ITeamsWantedFormState>,
+      data: UpsertTeamsWantedClassifiedType,
       accessCode: string,
-    ): Promise<ITeamsWantedResponse> => {
+    ): Promise<TeamsWantedOwnerClassifiedType> => {
       setFormLoading(true);
 
       try {
-        const updateData: ITeamsWantedUpdateRequest = {};
-
-        if (data.name !== undefined) updateData.name = data.name;
-        if (data.email !== undefined) updateData.email = data.email;
-        if (data.phone !== undefined) updateData.phone = data.phone;
-        if (data.experience !== undefined) updateData.experience = data.experience;
-        if (data.positionsPlayed !== undefined)
-          updateData.positionsPlayed = data.positionsPlayed.join(', ');
-        if (data.birthDate !== undefined) updateData.birthDate = data.birthDate || undefined;
-
-        // Only add accessCode for non-authenticated users
-        if (!token) {
-          updateData.accessCode = accessCode;
-        }
-
         // If we have a token (authenticated user), use token; otherwise use access code
         const updatedClassified = await playerClassifiedService.updateTeamsWanted(
           accountId,
           id,
-          updateData,
+          data,
           token || undefined,
+          accessCode,
         );
         setTeamsWanted((prev) =>
-          prev.map((item) =>
-            item && item.id && item.id.toString() === id ? updatedClassified : item,
+          prev.map((item: TeamsWantedPublicClassifiedType) =>
+            item && item.id && item.id.toString() === id
+              ? (updatedClassified as TeamsWantedPublicClassifiedType)
+              : item,
           ),
         );
         return updatedClassified;
@@ -317,58 +281,6 @@ export const usePlayerClassifieds = (
   );
 
   // ============================================================================
-  // SEARCH AND FILTERING
-  // ============================================================================
-
-  // Search classifieds
-  const searchClassifieds = useCallback(
-    async (params: IClassifiedSearchParams): Promise<void> => {
-      if (!token) {
-        throw new Error('Authentication required to search classifieds');
-      }
-
-      setLoading(true);
-      try {
-        const searchResults = await playerClassifiedService.searchClassifieds(
-          accountId,
-          params,
-          token,
-        );
-
-        // Update both lists based on search results
-        const playersResults: IPlayersWantedResponse[] = [];
-        const teamsResults: ITeamsWantedResponse[] = [];
-
-        // Handle search results - they should be an array of IClassifiedSearchResult
-        if (Array.isArray(searchResults)) {
-          searchResults.forEach((result: IClassifiedSearchResult) => {
-            if ('teamEventName' in result.classified) {
-              playersResults.push(result.classified as IPlayersWantedResponse);
-            } else {
-              teamsResults.push(result.classified as ITeamsWantedResponse);
-            }
-          });
-        }
-
-        setPlayersWanted(playersResults);
-        setTeamsWanted(teamsResults);
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to search classifieds';
-        showNotification(errorMessage, 'error');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, token, showNotification],
-  );
-
-  // Clear search and reload original data
-  const clearSearch = useCallback(async (): Promise<void> => {
-    await loadData();
-  }, [loadData]);
-
-  // ============================================================================
   // DATA REFRESH
   // ============================================================================
 
@@ -403,44 +315,26 @@ export const usePlayerClassifieds = (
             limit,
             sortBy: 'dateCreated',
             sortOrder: 'desc',
-            type: 'teams',
           },
           token,
         );
 
-        if (response.success && response.data) {
-          setTeamsWanted(response.data.data);
-          setPaginationInfo({
-            total: response.data.total || 0,
-            totalPages: response.data.pagination?.totalPages || 0,
-            hasNext: response.data.pagination?.hasNext || false,
-            hasPrev: response.data.pagination?.hasPrev || false,
-          });
-          setError(null);
-        } else {
-          // Handle error response
-          let errorMessage = response.error || 'Failed to load Teams Wanted ads';
-          if (response.errorCode === 'Unauthorized') {
-            errorMessage =
-              'You are not authorized to view Teams Wanted ads for this account. Please sign in or join the account.';
-          } else if (response.errorCode === 'Forbidden') {
-            errorMessage =
-              'Access denied. You do not have permission to view Teams Wanted ads for this account.';
-          } else if (response.statusCode === 404) {
-            errorMessage = 'Account not found or Teams Wanted feature is not available.';
-          }
-          setError(errorMessage);
-          // Don't clear existing data on error - keep showing what we have
-        }
+        setTeamsWanted(response.data);
+        setPaginationInfo({
+          total: response.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+          hasNext: response.pagination?.hasNext || false,
+          hasPrev: response.pagination?.hasPrev || false,
+        });
+        setError(null);
       } catch (error) {
-        console.error('Unexpected error in loadTeamsWantedPage:', error);
-        setError('An unexpected error occurred while loading Teams Wanted ads');
-        // Don't clear existing data on error - keep showing what we have
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load Teams Wanted';
+        showNotification(errorMessage, 'error');
       } finally {
         setPaginationLoading(false);
       }
     },
-    [accountId, token],
+    [accountId, token, showNotification],
   );
 
   // Clear Teams Wanted state (for preventing duplicate keys)
@@ -479,10 +373,6 @@ export const usePlayerClassifieds = (
     // Pagination methods
     loadTeamsWantedPage,
     clearTeamsWantedState,
-
-    // Search and filtering
-    searchClassifieds,
-    clearSearch,
 
     // Refresh data
     refreshData,

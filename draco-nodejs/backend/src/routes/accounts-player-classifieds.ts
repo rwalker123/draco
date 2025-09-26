@@ -1,134 +1,109 @@
-// PlayerClassifieds Routes for Draco Sports Manager
-// Handles all classified-related operations including CRUD, matching, and notifications
+// Player Classified Routes for Draco Sports Manager
+// Implements the layered architecture contract using shared schemas for validation
 
 import { Router, Request, Response, NextFunction } from 'express';
+import {
+  ContactPlayersWantedCreatorSchema,
+  UpsertPlayersWantedClassifiedSchema,
+  UpsertTeamsWantedClassifiedSchema,
+  PlayerClassifiedSearchQuerySchema,
+  TeamsWantedAccessCodeSchema,
+  TeamsWantedContactQuerySchema,
+} from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { teamsWantedRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { extractAccountParams } from '../utils/paramExtraction.js';
-import { ValidationError } from '../utils/customErrors.js';
-import {
-  IPlayersWantedCreateRequest,
-  ITeamsWantedCreateRequest,
-  IClassifiedSearchParams,
-  IPlayersWantedUpdateRequest,
-  IContactCreatorRequest,
-} from '../interfaces/playerClassifiedInterfaces.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { AuthorizationError, ValidationError } from '../utils/customErrors.js';
+import { BASEBALL_POSITIONS, EXPERIENCE_LEVELS } from '../interfaces/playerClassifiedConstants.js';
 
 const router = Router({ mergeParams: true });
+const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
-// Helper function to extract classifiedId from params
 const extractClassifiedParams = (params: Record<string, string | undefined>) => {
   const { accountId } = extractAccountParams(params);
-  const classifiedId = params.classifiedId;
+  const { classifiedId } = extractBigIntParams(params, 'classifiedId');
 
-  if (!classifiedId) {
-    throw new Error('Missing required parameter: classifiedId');
-  }
-
-  try {
-    return { accountId, classifiedId: BigInt(classifiedId) };
-  } catch (_error) {
-    throw new ValidationError(`Invalid classified ID format: ${classifiedId}`);
-  }
+  return { accountId, classifiedId };
 };
 
-// Helper function to validate sortBy parameter
-const validateSortBy = (sortBy: string): 'dateCreated' | 'relevance' => {
-  const validSortFields: Array<'dateCreated' | 'relevance'> = ['dateCreated', 'relevance'];
+const parseAccessCodeValue = (value: unknown): string => {
+  const parseResult = TeamsWantedAccessCodeSchema.safeParse({ accessCode: value });
 
-  if (validSortFields.includes(sortBy as 'dateCreated' | 'relevance')) {
-    return sortBy as 'dateCreated' | 'relevance';
+  if (!parseResult.success) {
+    const [firstIssue] = parseResult.error.issues;
+    throw new ValidationError(
+      firstIssue?.message ?? 'Access code is required and must be between 10 and 1000 characters',
+    );
   }
 
-  return 'dateCreated';
+  return parseResult.data.accessCode;
 };
 
-// Helper function for Teams Wanted conditional authentication middleware
+const getBodyAccessCode = (req: Request): unknown => {
+  if (req.body && typeof req.body === 'object') {
+    return (req.body as Record<string, unknown>).accessCode;
+  }
+
+  return undefined;
+};
+
+const requireAccessCodeForRequest = (req: Request): string => {
+  const candidate = (req.query?.accessCode as unknown) ?? getBodyAccessCode(req);
+
+  return parseAccessCodeValue(candidate);
+};
+
 const createTeamsWantedAuthMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
-    const hasToken = authHeader && authHeader.startsWith('Bearer ');
+    const hasToken = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
 
-    // Helper function to validate access code
-    const validateAccessCode = () => {
-      const accessCode = (req.query.accessCode || req.body.accessCode) as string;
-
-      if (
-        !accessCode ||
-        typeof accessCode !== 'string' ||
-        accessCode.trim().length < 10 ||
-        accessCode.trim().length > 1000
-      ) {
-        res.status(400).json({
-          success: false,
-          message: 'Access code is required and must be between 10 and 1000 characters',
-        });
-        return false;
+    const fallbackToAccessCode = () => {
+      try {
+        requireAccessCodeForRequest(req);
+        next();
+      } catch (error) {
+        next(error);
       }
-      return true;
     };
 
-    if (hasToken) {
-      // Try JWT authentication first
-      authenticateToken(req, res, (authErr: Error | string | undefined) => {
-        if (!authErr) {
-          // JWT authentication successful, now check permissions
-          routeProtection.enforceAccountBoundary()(
-            req,
-            res,
-            (boundaryErr: Error | string | undefined) => {
-              if (!boundaryErr) {
-                // Account boundary check passed, now check manage permissions
-                routeProtection.requirePermission('player-classified.manage')(
-                  req,
-                  res,
-                  (permissionErr: Error | string | undefined) => {
-                    if (!permissionErr) {
-                      // Full authentication successful
-                      next();
-                    } else {
-                      // Permission check failed, fall back to access code
-                      if (validateAccessCode()) {
-                        next();
-                      }
-                      // If access code validation fails, response is already sent
-                    }
-                  },
-                );
-              } else {
-                // Account boundary check failed, fall back to access code
-                if (validateAccessCode()) {
-                  next();
-                }
-                // If access code validation fails, response is already sent
-              }
-            },
-          );
-        } else {
-          // JWT authentication failed, fall back to access code
-          if (validateAccessCode()) {
-            next();
-          }
-          // If access code validation fails, response is already sent
-        }
-      });
-    } else {
-      // No token provided, validate access code
-      if (validateAccessCode()) {
-        next();
-      }
-      // If access code validation fails, response is already sent
+    if (!hasToken) {
+      fallbackToAccessCode();
+      return;
     }
+
+    authenticateToken(req, res, (authError?: unknown) => {
+      if (!authError) {
+        routeProtection.enforceAccountBoundary()(req, res, (boundaryError?: unknown) => {
+          if (!boundaryError) {
+            routeProtection.requirePermission('player-classified.manage')(
+              req,
+              res,
+              (permissionError?: unknown) => {
+                if (!permissionError) {
+                  next();
+                  return;
+                }
+
+                fallbackToAccessCode();
+              },
+            );
+            return;
+          }
+
+          fallbackToAccessCode();
+        });
+        return;
+      }
+
+      fallbackToAccessCode();
+    });
   };
 };
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/createPlayersWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L434 OpenAPI Source}
- */
 router.post(
   '/players-wanted',
   authenticateToken,
@@ -136,204 +111,134 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const contactId = req.accountBoundary!.contactId;
+    const createRequest = UpsertPlayersWantedClassifiedSchema.omit({ id: true }).parse(req.body);
 
-    const request: IPlayersWantedCreateRequest = req.body;
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+    const classified = await playerClassifiedService.createPlayersWanted(
+      accountId,
+      contactId,
+      createRequest,
+    );
 
-    const result = await playerClassifiedService.createPlayersWanted(accountId, contactId, request);
-
-    res.status(201).json({
-      success: true,
-      data: result,
-    });
+    res.status(201).json(classified);
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/createTeamsWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L560 OpenAPI Source}
- */
 router.post(
   '/teams-wanted',
-  teamsWantedRateLimit, // Add IP-based rate limiting for anonymous submissions
+  teamsWantedRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+    const createRequest = UpsertTeamsWantedClassifiedSchema.omit({
+      id: true,
+      accessCode: true,
+    }).parse(req.body);
 
-    const request: ITeamsWantedCreateRequest = req.body;
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+    const classified = await playerClassifiedService.createTeamsWanted(accountId, createRequest);
 
-    const result = await playerClassifiedService.createTeamsWanted(accountId, request);
-
-    res.status(201).json({
-      success: true,
-      data: result,
-      message:
-        'Teams Wanted classified created successfully. Check your email for access instructions.',
-    });
+    res.status(201).json(classified);
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getPlayersWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L434 OpenAPI Source}
- */
 router.get(
   '/players-wanted',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+    const searchQuery = PlayerClassifiedSearchQuerySchema.parse(req.query);
 
-    // Parse query parameters
-    const searchParams: IClassifiedSearchParams = {
-      accountId,
-      page: parseInt(req.query.page as string) || 1,
-      limit: Math.min(parseInt(req.query.limit as string) || 20, 100),
-      sortBy: validateSortBy(req.query.sortBy as string),
-      sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',
-      searchQuery: (req.query.searchQuery as string) || undefined,
+    const searchParams: Parameters<typeof playerClassifiedService.getPlayersWanted>[1] = {
+      page: searchQuery.page,
+      limit: searchQuery.limit,
+      sortBy: searchQuery.sortBy,
+      sortOrder: searchQuery.sortOrder,
+      searchQuery: searchQuery.searchQuery,
     };
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
     const result = await playerClassifiedService.getPlayersWanted(accountId, searchParams);
 
-    res.json({
-      success: true,
-      ...result,
-    });
+    res.json(result);
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getTeamsWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L434 OpenAPI Source}
- */
 router.get(
   '/teams-wanted',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+    const searchQuery = PlayerClassifiedSearchQuerySchema.parse(req.query);
 
-    // Parse query parameters
-    const searchParams: IClassifiedSearchParams = {
-      accountId,
-      page: parseInt(req.query.page as string) || 1,
-      limit: Math.min(parseInt(req.query.limit as string) || 20, 100),
-      sortBy: validateSortBy(req.query.sortBy as string),
-      sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',
-      searchQuery: (req.query.searchQuery as string) || undefined,
+    const searchParams: Parameters<typeof playerClassifiedService.getTeamsWanted>[1] = {
+      page: searchQuery.page,
+      limit: searchQuery.limit,
+      sortBy: searchQuery.sortBy,
+      sortOrder: searchQuery.sortOrder,
+      searchQuery: searchQuery.searchQuery,
     };
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
     const result = await playerClassifiedService.getTeamsWanted(accountId, searchParams);
 
-    res.json({
-      success: true,
-      ...result,
-    });
+    res.json(result);
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/verifyTeamsWantedAccess API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L701 OpenAPI Source}
- */
 router.post(
   '/teams-wanted/:classifiedId/verify',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const { accessCode } = req.body;
+    const { accessCode } = TeamsWantedAccessCodeSchema.parse(req.body ?? {});
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
-    const result = await playerClassifiedService.verifyTeamsWantedAccess(
+    const classified = await playerClassifiedService.verifyTeamsWantedAccess(
       classifiedId,
       accessCode,
       accountId,
     );
 
-    res.json({
-      success: true,
-      data: result,
-    });
+    res.json(classified);
   }),
 );
 
-/**
- * Get Teams Wanted data for users with valid access codes (unauthenticated, rate-limited)
- * This endpoint allows users to view their own Teams Wanted ad using an access code
- */
 router.post(
   '/teams-wanted/access-code',
   teamsWantedRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { accessCode } = req.body;
+    const { accessCode } = TeamsWantedAccessCodeSchema.parse(req.body ?? {});
 
-    if (!accessCode) {
-      res.status(400).json({
-        success: false,
-        message: 'Access code is required',
-      });
-      return;
-    }
+    const classified = await playerClassifiedService.findTeamsWantedByAccessCode(
+      accountId,
+      accessCode,
+    );
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
-
-    try {
-      // Find the Teams Wanted entry by access code
-      const result = await playerClassifiedService.findTeamsWantedByAccessCode(
-        accountId,
-        accessCode,
-      );
-
-      res.json({
-        success: true,
-        data: result,
-      });
-    } catch (_error) {
-      res.status(404).json({
-        success: false,
-        message: 'Invalid access code or Teams Wanted ad not found',
-      });
-    }
+    res.json(classified);
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/updateTeamsWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L748 OpenAPI Source}
- */
 router.put(
   '/teams-wanted/:classifiedId',
-  // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const { accessCode, ...updateData } = req.body;
+    const { accessCode, ...updateRequest } = UpsertTeamsWantedClassifiedSchema.parse(
+      req.body ?? {},
+    );
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+    if (!req.user && !accessCode) {
+      throw new ValidationError('Access code is required for unauthenticated requests');
+    }
 
-    // Determine access code based on authentication status
-    const isAuthenticated = !!req.user;
-    const effectiveAccessCode = isAuthenticated ? '' : accessCode || '';
+    const effectiveAccessCode = req.user ? '' : (accessCode ?? '');
 
-    const result = await playerClassifiedService.updateTeamsWanted(
+    const classified = await playerClassifiedService.updateTeamsWanted(
       classifiedId,
       effectiveAccessCode,
-      updateData,
+      updateRequest,
       accountId,
     );
 
-    res.json({
-      success: true,
-      data: result,
-    });
+    res.json(classified);
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/updatePlayersWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L863 OpenAPI Source}
- */
 router.put(
   '/players-wanted/:classifiedId',
   authenticateToken,
@@ -341,10 +246,8 @@ router.put(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const contactId = req.accountBoundary!.contactId;
+    const updateRequest = UpsertPlayersWantedClassifiedSchema.parse(req.body ?? {});
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
-
-    // Check if user can edit this classified (creator or AccountAdmin)
     const canEdit = await playerClassifiedService.canEditPlayersWanted(
       classifiedId,
       contactId,
@@ -352,59 +255,39 @@ router.put(
     );
 
     if (!canEdit) {
-      res.status(403).json({
-        success: false,
-        message: 'Forbidden - insufficient permissions to edit this classified',
-      });
-      return;
+      throw new AuthorizationError('Insufficient permissions to edit this classified');
     }
 
-    const updateData: IPlayersWantedUpdateRequest = req.body;
-    const result = await playerClassifiedService.updatePlayersWanted(
+    const classified = await playerClassifiedService.updatePlayersWanted(
       classifiedId,
       accountId,
       contactId,
-      updateData,
+      updateRequest,
     );
 
-    res.json({
-      success: true,
-      data: result,
-    });
+    res.json(classified);
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/deleteTeamsWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L748 OpenAPI Source}
- */
 router.delete(
   '/teams-wanted/:classifiedId',
-  // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const { accessCode } = req.body;
+    const { accessCode } = TeamsWantedAccessCodeSchema.partial().parse(req.body ?? {});
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+    if (!req.user && !accessCode) {
+      throw new ValidationError('Access code is required for unauthenticated requests');
+    }
 
-    // Determine access code based on authentication status
-    const isAuthenticated = !!req.user;
-    const effectiveAccessCode = isAuthenticated ? '' : accessCode || '';
+    const effectiveAccessCode = req.user ? '' : (accessCode ?? '');
 
     await playerClassifiedService.deleteTeamsWanted(classifiedId, effectiveAccessCode, accountId);
 
-    res.json({
-      success: true,
-      message: 'Teams Wanted classified deleted successfully',
-    });
+    res.status(204).send();
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/deletePlayersWanted API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L863 OpenAPI Source}
- */
 router.delete(
   '/players-wanted/:classifiedId',
   authenticateToken,
@@ -413,9 +296,6 @@ router.delete(
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const contactId = req.accountBoundary!.contactId;
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
-
-    // Check if user can delete this classified (creator or AccountAdmin)
     const canDelete = await playerClassifiedService.canDeletePlayersWanted(
       classifiedId,
       contactId,
@@ -423,155 +303,74 @@ router.delete(
     );
 
     if (!canDelete) {
-      res.status(403).json({
-        success: false,
-        message: 'Forbidden - insufficient permissions to delete this classified',
-      });
-      return;
+      throw new AuthorizationError('Insufficient permissions to delete this classified');
     }
 
     await playerClassifiedService.deletePlayersWanted(classifiedId, accountId, contactId);
 
-    res.json({
-      success: true,
-      message: 'Players Wanted classified deleted successfully',
-    });
+    res.status(204).send();
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getBaseballPositions API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-playerclassified/draco-nodejs/backend/openapi.yaml#L960 OpenAPI Source}
- */
 router.get(
   '/positions',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { BASEBALL_POSITIONS } = await import('../interfaces/playerClassifiedConstants.js');
-
-    res.json({
-      success: true,
-      data: BASEBALL_POSITIONS,
-    });
+  asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+    res.json(BASEBALL_POSITIONS);
   }),
 );
 
-/**
- * Get Teams Wanted contact information (authenticated endpoint with access code fallback)
- * Returns email and phone for a specific Teams Wanted classified
- * Supports both JWT authentication and access code authentication
- */
 router.get(
   '/teams-wanted/:classifiedId/contact',
-  // Validate path parameters for all requests
-  // Custom middleware to conditionally apply authentication or access code validation
   createTeamsWantedAuthMiddleware(),
   teamsWantedRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const accessCode = req.query.accessCode as string;
+    const { accessCode } = TeamsWantedContactQuerySchema.parse(req.query);
 
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
-
-    try {
-      // Determine access method based on authentication status
-      const isAuthenticated = !!req.user;
-
-      let contactInfo;
-      if (isAuthenticated) {
-        // Use existing authenticated method for AccountAdmins
-        contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
-          BigInt(classifiedId),
-          BigInt(accountId),
-        );
-      } else {
-        // Use access code method for anonymous users
-        if (!accessCode) {
-          res.status(400).json({
-            success: false,
-            message: 'Access code is required for unauthenticated requests',
-          });
-          return;
-        }
-
-        // First verify access using existing verification method
-        await playerClassifiedService.verifyTeamsWantedAccess(
-          BigInt(classifiedId),
-          accessCode,
-          BigInt(accountId),
-        );
-
-        // Then get contact info using existing method
-        contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
-          BigInt(classifiedId),
-          BigInt(accountId),
-        );
-      }
-
+    if (req.user) {
+      const contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
+        classifiedId,
+        accountId,
+      );
       res.json(contactInfo);
-    } catch (_error) {
-      res.status(404).json({
-        success: false,
-        message: 'Teams Wanted classified not found or access denied',
-      });
+      return;
     }
+
+    if (!accessCode) {
+      throw new ValidationError('Access code is required for unauthenticated requests');
+    }
+
+    await playerClassifiedService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
+    const contactInfo = await playerClassifiedService.getTeamsWantedContactInfo(
+      classifiedId,
+      accountId,
+    );
+
+    res.json(contactInfo);
   }),
 );
 
-/**
- * Contact Players Wanted classified creator (public endpoint)
- * Allows anonymous users to contact team creators without exposing personal information
- */
 router.post(
   '/players-wanted/:classifiedId/contact',
-  teamsWantedRateLimit, // Reuse existing rate limiting for anonymous requests
+  teamsWantedRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const classifiedId = req.params.classifiedId;
+    const { accountId, classifiedId } = extractClassifiedParams(req.params);
+    const contactRequest = ContactPlayersWantedCreatorSchema.parse(req.body ?? {});
 
-    const { senderName, senderEmail, message } = req.body as IContactCreatorRequest;
-    const playerClassifiedService = ServiceFactory.getPlayerClassifiedService();
+    await playerClassifiedService.contactPlayersWantedCreator(
+      accountId,
+      classifiedId,
+      contactRequest,
+    );
 
-    try {
-      await playerClassifiedService.contactPlayersWantedCreator(
-        BigInt(accountId),
-        BigInt(classifiedId),
-        { senderName, senderEmail, message },
-      );
-
-      res.json({
-        success: true,
-        message:
-          'Contact request sent successfully. The team creator will receive your message via email.',
-      });
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        res.status(404).json({
-          success: false,
-          message: 'Classified not found or no longer available',
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: 'Failed to send contact request. Please try again later.',
-        });
-      }
-    }
+    res.status(204).send();
   }),
 );
 
-/**
- * @see {@link https://localhost:3001/apidocs#/PlayerClassifieds/getExperienceLevels API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml#L987 OpenAPI Source}
- */
 router.get(
   '/experience-levels',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { EXPERIENCE_LEVELS } = await import('../interfaces/playerClassifiedConstants.js');
-
-    res.json({
-      success: true,
-      data: EXPERIENCE_LEVELS,
-    });
+  asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+    res.json(EXPERIENCE_LEVELS);
   }),
 );
 

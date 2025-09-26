@@ -6,7 +6,7 @@ import {
   ITeamRepository,
   dbSponsor,
 } from '../repositories/index.js';
-import { SponsorResponseFormatter } from '../utils/responseFormatters.js';
+import { SponsorResponseFormatter } from '../responseFormatters/responseFormatters.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { createStorageService } from './storageService.js';
 

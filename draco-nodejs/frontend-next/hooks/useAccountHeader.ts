@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useApiClient } from './useApiClient';
 import { getAccountHeader as apiGetAccountHeader } from '@draco/shared-api-client';
 import { addCacheBuster } from '../utils/addCacheBuster';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface UseAccountHeaderResult {
   accountName: string | null;
@@ -59,11 +60,7 @@ export const useAccountHeader = (
           return;
         }
 
-        if (!result.data) {
-          throw new Error(result.error?.message || 'Failed to fetch account header');
-        }
-
-        const { name, accountLogoUrl } = result.data;
+        const { name, accountLogoUrl } = unwrapApiResult(result, 'Failed to fetch account header');
         setAccountName(name ?? null);
 
         const chosenLogo = preferredLogoUrl ?? accountLogoUrl ?? null;
