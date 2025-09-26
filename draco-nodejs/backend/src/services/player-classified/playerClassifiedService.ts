@@ -17,14 +17,13 @@ import {
 import { PlayerClassifiedEmailService } from './PlayerClassifiedEmailService.js';
 import { PlayerClassifiedAccessService } from './PlayerClassifiedAccessService.js';
 import {
-  CreatePlayersWantedClassifiedType,
+  UpsertPlayersWantedClassifiedType,
   PlayerClassifiedSearchQueryType,
   PlayersWantedClassifiedType,
   PlayersWantedClassifiedPagedType,
   TeamsWantedPublicClassifiedPagedType,
   TeamsWantedOwnerClassifiedType,
-  CreateTeamsWantedClassifiedType,
-  UpdatePlayersWantedClassifiedType,
+  UpsertTeamsWantedClassifiedType,
   ContactPlayersWantedCreatorType,
 } from '@draco/shared-schemas';
 import { ServiceFactory } from '../serviceFactory.js';
@@ -104,7 +103,7 @@ export class PlayerClassifiedService {
   async createPlayersWanted(
     accountId: bigint,
     contactId: bigint,
-    request: CreatePlayersWantedClassifiedType,
+    request: UpsertPlayersWantedClassifiedType,
   ): Promise<PlayersWantedClassifiedType> {
     // Create the classified using data service
     const classified = await this.playersWantedRepository.createPlayersWantedRecord({
@@ -240,7 +239,7 @@ export class PlayerClassifiedService {
    */
   async createTeamsWanted(
     accountId: bigint,
-    request: CreateTeamsWantedClassifiedType,
+    request: UpsertTeamsWantedClassifiedType,
   ): Promise<TeamsWantedOwnerClassifiedType> {
     // Generate secure access code
     const accessCode = randomUUID();
@@ -250,6 +249,8 @@ export class PlayerClassifiedService {
     );
 
     // Create the classified using data service
+    const birthDateForDb = DateUtils.parseDateOfBirthForDatabase(request.birthDate);
+
     const classified = await this.teamsWantedRepository.createTeamsWantedRecord({
       accountid: accountId,
       datecreated: new Date(),
@@ -259,7 +260,7 @@ export class PlayerClassifiedService {
       experience: request.experience || '',
       positionsplayed: request.positionsPlayed || '',
       accesscode: hashedAccessCode,
-      birthdate: request.birthDate || '',
+      birthdate: birthDateForDb,
     });
 
     // Get account details for response using data service
@@ -320,7 +321,7 @@ export class PlayerClassifiedService {
   async updateTeamsWanted(
     classifiedId: bigint,
     accessCode: string,
-    updateData: Partial<CreateTeamsWantedClassifiedType>,
+    updateData: Partial<UpsertTeamsWantedClassifiedType>,
     accountId: bigint,
   ): Promise<TeamsWantedOwnerClassifiedType> {
     // Get account details for response using data service
@@ -451,7 +452,7 @@ export class PlayerClassifiedService {
     classifiedId: bigint,
     accountId: bigint,
     contactId: bigint,
-    request: UpdatePlayersWantedClassifiedType,
+    request: UpsertPlayersWantedClassifiedType,
   ): Promise<PlayersWantedClassifiedType> {
     // Check if user can edit this classified using access service
     const canEdit = await this.accessService.canEditPlayersWanted(

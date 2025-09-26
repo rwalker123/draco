@@ -28,11 +28,11 @@ export const PaginationSchema = z
 
 export type PaginationType = z.infer<typeof PaginationSchema>;
 
-export const PaginationWithTotalPagesSchema = PaginationSchema.extend({
-  totalPages: z.number(),
+export const PaginationWithTotalSchema = PaginationSchema.extend({
+  total: z.number(),
 }).openapi({
-  title: 'PaginationWithTotalPages',
-  description: 'Pagination metadata that includes the total number of pages',
+  title: 'PaginationWithTotal',
+  description: 'Pagination metadata that includes the total number of items',
 });
 
-export type PaginationWithTotalPagesType = z.infer<typeof PaginationWithTotalPagesSchema>;
+export type PaginationWithTotalType = z.infer<typeof PaginationWithTotalSchema>;

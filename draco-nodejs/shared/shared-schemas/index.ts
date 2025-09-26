@@ -7,3 +7,4 @@ export * from './paging.js';
 export * from './account.js';
 export * from './playerClassified.js';
 export * from './sponsor.js';
+export * from './date.js';

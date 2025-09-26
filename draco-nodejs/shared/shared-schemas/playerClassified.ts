@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { PaginationSchema } from './paging.js';
+import { coerceToDate, formatDateToUtcString } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -64,7 +65,7 @@ export const PlayersWantedClassifiedSchema = z
 
 export const TeamsWantedPublicClassifiedSchema = z
   .object({
-    id: z.string(),
+    id: bigintToStringSchema,
     accountId: z.string(),
     dateCreated: z.string().nullable(),
     name: z.string(),
@@ -80,7 +81,7 @@ export const TeamsWantedPublicClassifiedSchema = z
 
 export const TeamsWantedOwnerClassifiedSchema = z
   .object({
-    id: z.string(),
+    id: bigintToStringSchema,
     accountId: z.string(),
     dateCreated: z.string().nullable(),
     name: z.string(),
@@ -89,6 +90,7 @@ export const TeamsWantedOwnerClassifiedSchema = z
     experience: z.string(),
     positionsPlayed: z.string(),
     birthDate: z.string().nullable(),
+    age: z.number().nullable(),
     account: ClassifiedAccountSchema,
   })
   .openapi({
@@ -145,26 +147,16 @@ export const TeamsWantedPublicClassifiedPagedSchema = z
 
 const nonEmptyString = z.string().trim().min(1);
 
-export const CreatePlayersWantedClassifiedSchema = z
+export const UpsertPlayersWantedClassifiedSchema = z
   .object({
+    id: bigintToStringSchema.optional(),
     teamEventName: nonEmptyString.max(50),
     description: z.string().trim().min(1).max(2000),
     positionsNeeded: nonEmptyString.max(255),
   })
   .openapi({
-    title: 'CreatePlayersWantedClassifiedRequest',
-    description: 'Request body for creating a Players Wanted classified',
-  });
-
-export const UpdatePlayersWantedClassifiedSchema = z
-  .object({
-    teamEventName: z.string().trim().min(1).max(50).optional(),
-    description: z.string().trim().min(1).max(2000).optional(),
-    positionsNeeded: z.string().trim().min(1).max(255).optional(),
-  })
-  .openapi({
-    title: 'UpdatePlayersWantedClassifiedRequest',
-    description: 'Request body for updating a Players Wanted classified',
+    title: 'UpsertPlayersWantedClassifiedRequest',
+    description: 'Request body for creating or updating a Players Wanted classified',
   });
 
 const emailSchema = z.string().trim().email().max(320);
@@ -172,16 +164,39 @@ const phoneSchema = z.string().trim().min(1).max(50);
 const experienceSchema = z.string().trim().min(1).max(255);
 const positionsSchema = z.string().trim().min(1).max(255);
 
-const birthDateSchema = z
+const birthDateStringSchema = z
   .string()
   .trim()
   .refine(
-    (value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value),
+    (value: string) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value),
     'Birth date must be empty or formatted as YYYY-MM-DD',
   );
 
-export const CreateTeamsWantedClassifiedSchema = z
+const birthDateSchema = z
+  .preprocess((value) => {
+    if (value === undefined || value === null) {
+      return '';
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      const coerced = coerceToDate(trimmed);
+      return coerced ? formatDateToUtcString(coerced) : trimmed;
+    }
+
+    const coerced = coerceToDate(value);
+    return coerced ? formatDateToUtcString(coerced) : value;
+  }, z.string())
+  .pipe(birthDateStringSchema);
+
+export const UpsertTeamsWantedClassifiedSchema = z
   .object({
+    id: bigintToStringSchema.optional(),
+    accessCode: z.string().trim().min(10).max(1000).optional(),
     name: nonEmptyString.max(50),
     email: emailSchema,
     phone: phoneSchema,
@@ -190,23 +205,8 @@ export const CreateTeamsWantedClassifiedSchema = z
     birthDate: birthDateSchema.optional().default(''),
   })
   .openapi({
-    title: 'CreateTeamsWantedClassifiedRequest',
-    description: 'Request body for creating a Teams Wanted classified',
-  });
-
-export const UpdateTeamsWantedClassifiedSchema = z
-  .object({
-    accessCode: z.string().trim().min(10).max(1000).optional(),
-    name: z.string().trim().min(1).max(50).optional(),
-    email: emailSchema.optional(),
-    phone: phoneSchema.optional(),
-    experience: experienceSchema.optional(),
-    positionsPlayed: positionsSchema.optional(),
-    birthDate: birthDateSchema.optional(),
-  })
-  .openapi({
-    title: 'UpdateTeamsWantedClassifiedRequest',
-    description: 'Request body for updating a Teams Wanted classified',
+    title: 'UpsertTeamsWantedClassifiedRequest',
+    description: 'Request body for creating or updating a Teams Wanted classified',
   });
 
 export const TeamsWantedAccessCodeSchema = z
@@ -306,10 +306,8 @@ export type PlayersWantedClassifiedPagedType = z.infer<typeof PlayersWantedClass
 export type TeamsWantedPublicClassifiedPagedType = z.infer<
   typeof TeamsWantedPublicClassifiedPagedSchema
 >;
-export type CreatePlayersWantedClassifiedType = z.infer<typeof CreatePlayersWantedClassifiedSchema>;
-export type UpdatePlayersWantedClassifiedType = z.infer<typeof UpdatePlayersWantedClassifiedSchema>;
-export type CreateTeamsWantedClassifiedType = z.infer<typeof CreateTeamsWantedClassifiedSchema>;
-export type UpdateTeamsWantedClassifiedType = z.infer<typeof UpdateTeamsWantedClassifiedSchema>;
+export type UpsertPlayersWantedClassifiedType = z.infer<typeof UpsertPlayersWantedClassifiedSchema>;
+export type UpsertTeamsWantedClassifiedType = z.infer<typeof UpsertTeamsWantedClassifiedSchema>;
 export type TeamsWantedAccessCodeType = z.infer<typeof TeamsWantedAccessCodeSchema>;
 export type TeamsWantedContactQueryType = z.infer<typeof TeamsWantedContactQuerySchema>;
 export type TeamsWantedContactInfoType = z.infer<typeof TeamsWantedContactInfoSchema>;

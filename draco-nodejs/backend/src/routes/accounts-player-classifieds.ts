@@ -4,13 +4,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import {
   ContactPlayersWantedCreatorSchema,
-  CreatePlayersWantedClassifiedSchema,
-  CreateTeamsWantedClassifiedSchema,
+  UpsertPlayersWantedClassifiedSchema,
+  UpsertTeamsWantedClassifiedSchema,
   PlayerClassifiedSearchQuerySchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactQuerySchema,
-  UpdatePlayersWantedClassifiedSchema,
-  UpdateTeamsWantedClassifiedSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { teamsWantedRateLimit } from '../middleware/rateLimitMiddleware.js';
@@ -113,7 +111,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const contactId = req.accountBoundary!.contactId;
-    const createRequest = CreatePlayersWantedClassifiedSchema.parse(req.body);
+    const createRequest = UpsertPlayersWantedClassifiedSchema.omit({ id: true }).parse(req.body);
 
     const classified = await playerClassifiedService.createPlayersWanted(
       accountId,
@@ -130,7 +128,10 @@ router.post(
   teamsWantedRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const createRequest = CreateTeamsWantedClassifiedSchema.parse(req.body);
+    const createRequest = UpsertTeamsWantedClassifiedSchema.omit({
+      id: true,
+      accessCode: true,
+    }).parse(req.body);
 
     const classified = await playerClassifiedService.createTeamsWanted(accountId, createRequest);
 
@@ -217,7 +218,7 @@ router.put(
   createTeamsWantedAuthMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
-    const { accessCode, ...updateRequest } = UpdateTeamsWantedClassifiedSchema.parse(
+    const { accessCode, ...updateRequest } = UpsertTeamsWantedClassifiedSchema.parse(
       req.body ?? {},
     );
 
@@ -245,7 +246,7 @@ router.put(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
     const contactId = req.accountBoundary!.contactId;
-    const updateRequest = UpdatePlayersWantedClassifiedSchema.parse(req.body ?? {});
+    const updateRequest = UpsertPlayersWantedClassifiedSchema.parse(req.body ?? {});
 
     const canEdit = await playerClassifiedService.canEditPlayersWanted(
       classifiedId,

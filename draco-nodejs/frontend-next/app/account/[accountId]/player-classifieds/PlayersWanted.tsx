@@ -13,9 +13,9 @@ import CreatePlayersWantedDialog from '../../../../components/player-classifieds
 import DeletePlayersWantedDialog from '../../../../components/player-classifieds/DeletePlayersWantedDialog';
 import EmptyState from '../../../../components/common/EmptyState';
 import {
-  IPlayersWantedResponse,
-  IPlayersWantedFormState,
-} from '../../../../types/playerClassifieds';
+  UpsertPlayersWantedClassifiedType,
+  PlayersWantedClassifiedType,
+} from '@draco/shared-schemas';
 
 interface PlayersWantedProps {
   accountId: string;
@@ -61,12 +61,11 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     showSuccessMessage,
     setLocalError,
     clearSuccess,
-    convertToFormState,
   } = usePlayersWantedDialogs();
 
   // Handle create players wanted
   const handleCreatePlayersWanted = useCallback(
-    async (formData: IPlayersWantedFormState) => {
+    async (formData: UpsertPlayersWantedClassifiedType) => {
       try {
         await createPlayersWanted(formData);
         // Close dialog and show success message
@@ -93,11 +92,11 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
 
   // Handle edit form submission
   const handleEditSubmit = useCallback(
-    async (formData: IPlayersWantedFormState) => {
-      if (!editingClassified) return;
+    async (formData: UpsertPlayersWantedClassifiedType) => {
+      if (!editingClassified || !editingClassified.id) return;
 
       try {
-        await updatePlayersWanted(editingClassified.id.toString(), formData);
+        await updatePlayersWanted(editingClassified.id, formData);
 
         // Close the edit dialog and show success message
         closeEditDialog();
@@ -157,7 +156,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
             onSubmit={handleEditSubmit}
             loading={formLoading}
             editMode={true}
-            initialData={convertToFormState(editingClassified)}
+            initialData={editingClassified}
           />
         )}
 
@@ -180,7 +179,6 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
       editDialogOpen,
       closeEditDialog,
       handleEditSubmit,
-      convertToFormState,
       deleteDialogOpen,
       deletingClassified,
       closeDeleteDialog,
@@ -282,7 +280,7 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
           gap: 2,
         }}
       >
-        {playersWanted.map((classified: IPlayersWantedResponse) => (
+        {playersWanted.map((classified: PlayersWantedClassifiedType) => (
           <PlayersWantedCard
             key={classified.id.toString()}
             classified={classified}

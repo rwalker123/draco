@@ -1416,9 +1416,12 @@ components:
         - filters
       title: PlayersWantedClassifiedList
       description: Paginated Players Wanted classified listings
-    CreatePlayersWantedClassified:
+    UpsertPlayersWantedClassified:
       type: object
       properties:
+        id:
+          type: string
+          pattern: ^d+$
         teamEventName:
           type: string
           minLength: 1
@@ -1435,8 +1438,8 @@ components:
         - teamEventName
         - description
         - positionsNeeded
-      title: CreatePlayersWantedClassifiedRequest
-      description: Request body for creating a Players Wanted classified
+      title: UpsertPlayersWantedClassifiedRequest
+      description: Request body for creating or updating a Players Wanted classified
     PlayerClassifiedSearchQuery:
       type: object
       properties:
@@ -1476,6 +1479,7 @@ components:
             properties:
               id:
                 type: string
+                pattern: ^d+$
               accountId:
                 type: string
               dateCreated:
@@ -1587,6 +1591,7 @@ components:
       properties:
         id:
           type: string
+          pattern: ^d+$
         accountId:
           type: string
         dateCreated:
@@ -1604,6 +1609,9 @@ components:
           type: string
         birthDate:
           type: string
+          nullable: true
+        age:
+          type: number
           nullable: true
         account:
           type: object
@@ -1625,64 +1633,17 @@ components:
         - experience
         - positionsPlayed
         - birthDate
+        - age
         - account
       title: TeamsWantedOwnerClassified
       description: Teams Wanted classified listing for the owner including contact
         information
-    CreateTeamsWantedClassified:
+    UpsertTeamsWantedClassified:
       type: object
       properties:
-        name:
+        id:
           type: string
-          minLength: 1
-          maxLength: 50
-        email:
-          type: string
-          maxLength: 320
-          format: email
-        phone:
-          type: string
-          minLength: 1
-          maxLength: 50
-        experience:
-          type: string
-          minLength: 1
-          maxLength: 255
-        positionsPlayed:
-          type: string
-          minLength: 1
-          maxLength: 255
-        birthDate:
-          type: string
-          default: ""
-      required:
-        - name
-        - email
-        - phone
-        - experience
-        - positionsPlayed
-      title: CreateTeamsWantedClassifiedRequest
-      description: Request body for creating a Teams Wanted classified
-    UpdatePlayersWantedClassified:
-      type: object
-      properties:
-        teamEventName:
-          type: string
-          minLength: 1
-          maxLength: 50
-        description:
-          type: string
-          minLength: 1
-          maxLength: 2000
-        positionsNeeded:
-          type: string
-          minLength: 1
-          maxLength: 255
-      title: UpdatePlayersWantedClassifiedRequest
-      description: Request body for updating a Players Wanted classified
-    UpdateTeamsWantedClassified:
-      type: object
-      properties:
+          pattern: ^d+$
         accessCode:
           type: string
           minLength: 10
@@ -1709,8 +1670,16 @@ components:
           maxLength: 255
         birthDate:
           type: string
-      title: UpdateTeamsWantedClassifiedRequest
-      description: Request body for updating a Teams Wanted classified
+          nullable: true
+          default: ""
+      required:
+        - name
+        - email
+        - phone
+        - experience
+        - positionsPlayed
+      title: UpsertTeamsWantedClassifiedRequest
+      description: Request body for creating or updating a Teams Wanted classified
     TeamsWantedAccessCode:
       type: object
       properties:
@@ -4127,7 +4096,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePlayersWantedClassified"
+              $ref: "#/components/schemas/UpsertPlayersWantedClassified"
       responses:
         "201":
           description: Players Wanted classified created
@@ -4255,7 +4224,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateTeamsWantedClassified"
+              $ref: "#/components/schemas/UpsertTeamsWantedClassified"
       responses:
         "201":
           description: Teams Wanted classified created
@@ -4489,7 +4458,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateTeamsWantedClassified"
+              $ref: "#/components/schemas/UpsertTeamsWantedClassified"
       responses:
         "200":
           description: Updated Teams Wanted classified
@@ -4603,7 +4572,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdatePlayersWantedClassified"
+              $ref: "#/components/schemas/UpsertPlayersWantedClassified"
       responses:
         "200":
           description: Updated Players Wanted classified

@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react';
 import { HierarchicalSeason } from '../types/emails/recipients';
-import { apiRequest } from '../utils/apiClient';
 import { withRetry } from '../utils/errorHandling';
 
 // API Response Types
@@ -54,23 +53,21 @@ export function useHierarchicalData() {
       setLoading(true);
       setError(null);
 
-      const result = await withRetry(() =>
-        apiRequest<ApiResponse>(
-          `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true&includePlayerCounts=true&includeManagerCounts=true`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+      const result = await fetch(
+        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true&includePlayerCounts=true&includeManagerCounts=true`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        ),
+        },
       );
 
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to load hierarchical data');
+      if (!result.ok) {
+        throw new Error('Failed to load hierarchical data');
       }
 
-      const data = result.data;
+      const data = await result.json();
 
       if (!data.success || !data.data?.leagueSeasons) {
         throw new Error('Invalid response format');

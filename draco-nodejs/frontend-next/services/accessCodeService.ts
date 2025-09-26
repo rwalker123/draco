@@ -16,13 +16,9 @@ import {
   getAllRateLimitTracking,
 } from '../utils/accessCodeValidation';
 
-// ============================================================================
-// SERVICE CONFIGURATION
-// ============================================================================
-
-const API_ENDPOINTS = {
-  teamsWanted: '/api/accounts',
-} as const;
+import { getTeamsWantedByAccessCode as getTeamsWantedByAccessCodeApi } from '@draco/shared-api-client';
+import { createApiClient } from '../lib/apiClientFactory';
+import { getApiErrorMessage } from '../utils/apiResult';
 
 // ============================================================================
 // SECURITY LOGGING
@@ -75,20 +71,20 @@ export const accessCodeService = {
     }
 
     try {
-      // Make API call
-      const response = await fetch(
-        `${API_ENDPOINTS.teamsWanted}/${accountId}/player-classifieds/teams-wanted/access-code`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ accessCode: validation.sanitizedValue }),
-        },
-      );
+      const client = createApiClient();
+      const result = await getTeamsWantedByAccessCodeApi({
+        client,
+        path: { accountId },
+        body: { accessCode: validation.sanitizedValue ?? '' },
+        throwOnError: false,
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      if (result.error) {
+        const message = getApiErrorMessage(result.error, 'Failed to verify access code');
+        const errorCode =
+          typeof (result.error as { errorCode?: string }).errorCode === 'string'
+            ? (result.error as { errorCode?: string }).errorCode
+            : 'API_ERROR';
 
         // Record failed attempt
         recordAttempt(accountId, false);
@@ -99,17 +95,15 @@ export const accessCodeService = {
           accessCodeHash: '***', // Never log actual access codes
           operation: 'verification_failure',
           success: false,
-          errorCode: errorData.errorCode || 'API_ERROR',
+          errorCode,
         });
 
         return {
           success: false,
-          message: errorData.message || 'Failed to verify access code',
-          errorCode: errorData.errorCode || 'API_ERROR',
+          message,
+          errorCode,
         };
       }
-
-      const data = await response.json();
 
       // Record successful attempt
       recordAttempt(accountId, true);
@@ -124,7 +118,7 @@ export const accessCodeService = {
 
       return {
         success: true,
-        classified: data.data,
+        classified: result.data,
         message: 'Access code verified successfully',
       };
     } catch {

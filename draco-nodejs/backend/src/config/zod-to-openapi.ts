@@ -28,13 +28,11 @@ import {
   AccountAffiliationSchema,
   PlayersWantedClassifiedSchema,
   PlayersWantedClassifiedPagedSchema,
-  CreatePlayersWantedClassifiedSchema,
+  UpsertPlayersWantedClassifiedSchema,
   PlayerClassifiedSearchQuerySchema,
   TeamsWantedPublicClassifiedPagedSchema,
   TeamsWantedOwnerClassifiedSchema,
-  CreateTeamsWantedClassifiedSchema,
-  UpdatePlayersWantedClassifiedSchema,
-  UpdateTeamsWantedClassifiedSchema,
+  UpsertTeamsWantedClassifiedSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
   TeamsWantedContactQuerySchema,
@@ -87,9 +85,9 @@ const PlayersWantedClassifiedPagedSchemaRef = registry.register(
   'PlayersWantedClassifiedPaged',
   PlayersWantedClassifiedPagedSchema,
 );
-const CreatePlayersWantedClassifiedSchemaRef = registry.register(
-  'CreatePlayersWantedClassified',
-  CreatePlayersWantedClassifiedSchema,
+const UpsertPlayersWantedClassifiedSchemaRef = registry.register(
+  'UpsertPlayersWantedClassified',
+  UpsertPlayersWantedClassifiedSchema,
 );
 const PlayerClassifiedSearchQuerySchemaRef = registry.register(
   'PlayerClassifiedSearchQuery',
@@ -103,17 +101,9 @@ const TeamsWantedOwnerClassifiedSchemaRef = registry.register(
   'TeamsWantedOwnerClassified',
   TeamsWantedOwnerClassifiedSchema,
 );
-const CreateTeamsWantedClassifiedSchemaRef = registry.register(
-  'CreateTeamsWantedClassified',
-  CreateTeamsWantedClassifiedSchema,
-);
-const UpdatePlayersWantedClassifiedSchemaRef = registry.register(
-  'UpdatePlayersWantedClassified',
-  UpdatePlayersWantedClassifiedSchema,
-);
-const UpdateTeamsWantedClassifiedSchemaRef = registry.register(
-  'UpdateTeamsWantedClassified',
-  UpdateTeamsWantedClassifiedSchema,
+const UpsertTeamsWantedClassifiedSchemaRef = registry.register(
+  'UpsertTeamsWantedClassified',
+  UpsertTeamsWantedClassifiedSchema,
 );
 const TeamsWantedAccessCodeSchemaRef = registry.register(
   'TeamsWantedAccessCode',
@@ -2502,7 +2492,7 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: CreatePlayersWantedClassifiedSchemaRef,
+          schema: UpsertPlayersWantedClassifiedSchemaRef,
         },
       },
     },
@@ -2581,7 +2571,7 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: CreateTeamsWantedClassifiedSchemaRef,
+          schema: UpsertTeamsWantedClassifiedSchemaRef,
         },
       },
     },
@@ -2872,6 +2862,10 @@ registry.registerPath({
   },
 });
 
+// GET /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}
+
+// GET /api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}
+
 registry.registerPath({
   method: 'put',
   path: '/api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}',
@@ -2905,7 +2899,7 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: UpdateTeamsWantedClassifiedSchemaRef,
+          schema: UpsertTeamsWantedClassifiedSchemaRef,
         },
       },
     },
@@ -2986,7 +2980,7 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: UpdatePlayersWantedClassifiedSchemaRef,
+          schema: UpsertPlayersWantedClassifiedSchemaRef,
         },
       },
     },

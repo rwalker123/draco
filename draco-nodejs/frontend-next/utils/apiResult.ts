@@ -5,7 +5,7 @@ export interface ApiResult<T> {
   error?: ApiError;
 }
 
-const getErrorMessage = (error: ApiError, fallbackMessage: string): string => {
+export const getApiErrorMessage = (error: ApiError, fallbackMessage: string): string => {
   if (error === undefined || error === null) {
     return fallbackMessage;
   }
@@ -27,7 +27,7 @@ const getErrorMessage = (error: ApiError, fallbackMessage: string): string => {
 
 export const unwrapApiResult = <T>(result: ApiResult<T>, fallbackMessage: string): T => {
   if (result.error) {
-    throw new Error(getErrorMessage(result.error, fallbackMessage));
+    throw new Error(getApiErrorMessage(result.error, fallbackMessage));
   }
 
   if (result.data === undefined) {
@@ -39,6 +39,6 @@ export const unwrapApiResult = <T>(result: ApiResult<T>, fallbackMessage: string
 
 export const assertNoApiError = (result: { error?: ApiError }, fallbackMessage: string): void => {
   if (result.error) {
-    throw new Error(getErrorMessage(result.error, fallbackMessage));
+    throw new Error(getApiErrorMessage(result.error, fallbackMessage));
   }
 };

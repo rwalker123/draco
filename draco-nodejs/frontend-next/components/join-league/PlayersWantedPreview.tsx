@@ -6,7 +6,7 @@ import SectionCard from '../common/SectionCard';
 import { useRouter } from 'next/navigation';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
 import { PlayersWantedDetailDialog } from '../player-classifieds';
-import { IPlayersWantedResponse } from '../../types/playerClassifieds';
+import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 
 interface PlayersWantedPreviewProps {
   accountId: string;
@@ -17,10 +17,12 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   accountId,
   maxDisplay = 3,
 }) => {
-  const [playersWanted, setPlayersWanted] = useState<IPlayersWantedResponse[]>([]);
+  const [playersWanted, setPlayersWanted] = useState<PlayersWantedClassifiedType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedClassified, setSelectedClassified] = useState<IPlayersWantedResponse | null>(null);
+  const [selectedClassified, setSelectedClassified] = useState<PlayersWantedClassifiedType | null>(
+    null,
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const router = useRouter();
 
@@ -31,11 +33,7 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
         setError(null);
         const response = await playerClassifiedService.getPlayersWanted(accountId);
 
-        if (response.success && response.data) {
-          setPlayersWanted(response.data.data.slice(0, maxDisplay));
-        } else {
-          setError('Failed to load player opportunities');
-        }
+        setPlayersWanted(response.data.slice(0, maxDisplay));
       } catch (err) {
         console.error('Failed to fetch players wanted:', err);
         setError('Failed to load player opportunities');

@@ -48,6 +48,7 @@ export class TeamsWantedResponseFormatter {
       experience: dbRecord.experience,
       positionsPlayed: dbRecord.positionsplayed,
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
+      age: DateUtils.calculateAge(dbRecord.birthdate),
       account: {
         id: account.id.toString(),
         name: account.name,
@@ -133,6 +134,7 @@ export class TeamsWantedResponseFormatter {
       experience: dbRecord.experience,
       positionsPlayed: dbRecord.positionsplayed,
       birthDate: DateUtils.formatDateOfBirthForResponse(dbRecord.birthdate),
+      age: DateUtils.calculateAge(dbRecord.birthdate),
       account: {
         id: account.id.toString(),
         name: account.name,

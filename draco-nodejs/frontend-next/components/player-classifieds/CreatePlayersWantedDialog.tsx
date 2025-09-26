@@ -19,7 +19,7 @@ import {
   FormHelperText,
   SelectChangeEvent,
 } from '@mui/material';
-import { IPlayersWantedFormState } from '../../types/playerClassifieds';
+import { UpsertPlayersWantedClassifiedType } from '@draco/shared-schemas';
 import { useAuth } from '../../context/AuthContext';
 import { PLAYER_CLASSIFIED_VALIDATION } from '../../utils/characterValidation';
 import CharacterCounter from '../common/CharacterCounter';
@@ -30,10 +30,10 @@ const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
 interface CreatePlayersWantedDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: IPlayersWantedFormState) => Promise<void>;
+  onSubmit: (data: UpsertPlayersWantedClassifiedType) => Promise<void>;
   loading?: boolean;
   editMode?: boolean;
-  initialData?: IPlayersWantedFormState;
+  initialData?: UpsertPlayersWantedClassifiedType;
 }
 
 // Available positions for players wanted - using IDs that match backend validation
@@ -81,16 +81,18 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   const isAuthenticated = !!user;
 
   // Form state
-  const [formData, setFormData] = useState<IPlayersWantedFormState>(
+  const [formData, setFormData] = useState<UpsertPlayersWantedClassifiedType>(
     initialData || {
       teamEventName: '',
       description: '',
-      positionsNeeded: [],
+      positionsNeeded: '',
     },
   );
 
   // Form validation errors
-  const [errors, setErrors] = useState<Partial<Record<keyof IPlayersWantedFormState, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof UpsertPlayersWantedClassifiedType, string>>
+  >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Update form data when initialData changes (for edit mode)
@@ -101,7 +103,10 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   }, [initialData]);
 
   // Handle form field changes
-  const handleFieldChange = (field: keyof IPlayersWantedFormState, value: string | string[]) => {
+  const handleFieldChange = (
+    field: keyof UpsertPlayersWantedClassifiedType,
+    value: string | string[],
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     // Clear error for this field when user starts typing
@@ -111,7 +116,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   };
 
   // Handle positions selection
-  const handlePositionsChange = (event: SelectChangeEvent<string[]>) => {
+  const handlePositionsChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value;
     const selectedPositions = typeof value === 'string' ? value.split(',') : value;
 
@@ -120,7 +125,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
     setFormData((prev) => ({
       ...prev,
-      positionsNeeded: limitedPositions,
+      positionsNeeded: limitedPositions.join(','),
     }));
 
     if (errors.positionsNeeded) {
@@ -130,7 +135,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
   // Validate form data
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof IPlayersWantedFormState, string>> = {};
+    const newErrors: Partial<Record<keyof UpsertPlayersWantedClassifiedType, string>> = {};
 
     if (!formData.teamEventName.trim()) {
       newErrors.teamEventName = 'Team/Event name is required';
@@ -171,7 +176,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
     try {
       // Trim whitespace from text fields before submitting
-      const cleanedData: IPlayersWantedFormState = {
+      const cleanedData: UpsertPlayersWantedClassifiedType = {
         teamEventName: formData.teamEventName.trim(),
         description: formData.description.trim(),
         positionsNeeded: formData.positionsNeeded,
@@ -195,7 +200,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
       initialData || {
         teamEventName: '',
         description: '',
-        positionsNeeded: [],
+        positionsNeeded: '',
       },
     );
     setErrors({});
@@ -284,7 +289,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
                 input={<OutlinedInput label="Positions Needed" />}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
+                    {selected.split(',').map((value) => (
                       <Chip key={value} label={POSITION_LABELS[value] || value} size="small" />
                     ))}
                   </Box>
