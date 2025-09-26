@@ -97,15 +97,21 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     }
   }, [deletingClassified, deletePlayersWanted, closeDeleteDialog, showSuccessMessage]);
 
-  const handleCreateDialogSuccess = useCallback(async () => {
-    await refreshData();
-    showSuccessMessage('Players Wanted ad created successfully!');
-  }, [refreshData, showSuccessMessage]);
+  const handleCreateDialogSuccess = useCallback(
+    async (_classified: PlayersWantedClassifiedType) => {
+      await refreshData();
+      showSuccessMessage('Players Wanted ad created successfully!');
+    },
+    [refreshData, showSuccessMessage],
+  );
 
-  const handleEditDialogSuccess = useCallback(async () => {
-    await refreshData();
-    showSuccessMessage('Players Wanted ad updated successfully!');
-  }, [refreshData, showSuccessMessage]);
+  const handleEditDialogSuccess = useCallback(
+    async (_classified: PlayersWantedClassifiedType) => {
+      await refreshData();
+      showSuccessMessage('Players Wanted ad updated successfully!');
+    },
+    [refreshData, showSuccessMessage],
+  );
 
   const handleDialogError = useCallback(
     (message: string) => {

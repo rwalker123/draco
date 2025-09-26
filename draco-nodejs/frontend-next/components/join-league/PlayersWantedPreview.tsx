@@ -17,6 +17,7 @@ import { playerClassifiedService } from '../../services/playerClassifiedService'
 import { PlayersWantedDetailDialog } from '../player-classifieds';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 import CreatePlayersWantedDialog from '../player-classifieds/CreatePlayersWantedDialog';
+import { useAuth } from '../../context/AuthContext';
 
 interface PlayersWantedPreviewProps {
   accountId: string;
@@ -40,6 +41,7 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   const [createError, setCreateError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
+  const { token } = useAuth();
 
   const loadPlayersWanted = useCallback(async () => {
     try {
@@ -77,16 +79,24 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   };
 
   const handleCreateClick = () => {
+    if (!token) {
+      setCreateError('You must be signed in to create a Players Wanted ad.');
+      return;
+    }
+
     setCreateError(null);
     setCreateDialogOpen(true);
   };
 
-  const handleCreateSuccess = useCallback(async () => {
-    setCreateDialogOpen(false);
-    setCreateError(null);
-    setSuccessMessage('Players Wanted ad created successfully!');
-    await loadPlayersWanted();
-  }, [loadPlayersWanted]);
+  const handleCreateSuccess = useCallback(
+    async (_classified: PlayersWantedClassifiedType) => {
+      setCreateDialogOpen(false);
+      setCreateError(null);
+      setSuccessMessage('Players Wanted ad created successfully!');
+      await loadPlayersWanted();
+    },
+    [loadPlayersWanted],
+  );
 
   const handleCreateError = useCallback((message: string) => {
     setCreateError(message);
