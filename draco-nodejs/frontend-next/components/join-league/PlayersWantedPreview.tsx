@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
 import { PlayersWantedDetailDialog } from '../player-classifieds';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
+import CreatePlayersWantedDialog from '../player-classifieds/CreatePlayersWantedDialog';
 
 interface PlayersWantedPreviewProps {
   accountId: string;
@@ -35,26 +36,28 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
     null,
   );
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchPlayersWanted = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await playerClassifiedService.getPlayersWanted(accountId);
-
-        setPlayersWanted(response.data.slice(0, maxDisplay));
-      } catch (err) {
-        console.error('Failed to fetch players wanted:', err);
-        setError('Failed to load player opportunities');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlayersWanted();
+  const loadPlayersWanted = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await playerClassifiedService.getPlayersWanted(accountId);
+      setPlayersWanted(response.data.slice(0, maxDisplay));
+    } catch (err) {
+      console.error('Failed to fetch players wanted:', err);
+      setError('Failed to load player opportunities');
+    } finally {
+      setLoading(false);
+    }
   }, [accountId, maxDisplay]);
+
+  useEffect(() => {
+    loadPlayersWanted();
+  }, [loadPlayersWanted]);
 
   const handleViewAll = () => {
     router.push(`/account/${accountId}/player-classifieds`);
@@ -71,6 +74,26 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedClassified(null);
+  };
+
+  const handleCreateClick = () => {
+    setCreateError(null);
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateSuccess = useCallback(async () => {
+    setCreateDialogOpen(false);
+    setCreateError(null);
+    setSuccessMessage('Players Wanted ad created successfully!');
+    await loadPlayersWanted();
+  }, [loadPlayersWanted]);
+
+  const handleCreateError = useCallback((message: string) => {
+    setCreateError(message);
+  }, []);
+
+  const handleCreateDialogClose = () => {
+    setCreateDialogOpen(false);
   };
 
   if (loading) {
@@ -116,6 +139,16 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
           onClick: handleViewAll,
         }}
       />
+      {successMessage && (
+        <Alert severity="success" onClose={() => setSuccessMessage(null)} sx={{ mb: 2 }}>
+          {successMessage}
+        </Alert>
+      )}
+      {createError && (
+        <Alert severity="error" onClose={() => setCreateError(null)} sx={{ mb: 2 }}>
+          {createError}
+        </Alert>
+      )}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
         {playersWanted.length > 0 ? (
           playersWanted.map((team) => (
@@ -167,15 +200,15 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
             Looking for players?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Create or update a Teams Wanted ad to let other players know you&apos;re recruiting.
+            Post a Players Wanted ad so local athletes can reach out and join your roster.
           </Typography>
           <Button
             variant="contained"
             color="primary"
-            onClick={() => router.push(`/account/${accountId}/player-classifieds?tab=teams-wanted`)}
+            onClick={handleCreateClick}
             sx={{ textTransform: 'none' }}
           >
-            Manage Teams Wanted Ads
+            Create Players Wanted Ad
           </Button>
         </Box>
       )}
@@ -187,6 +220,14 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
         classified={selectedClassified}
         canEdit={() => false}
         canDelete={() => false}
+      />
+
+      <CreatePlayersWantedDialog
+        accountId={accountId}
+        open={createDialogOpen}
+        onClose={handleCreateDialogClose}
+        onSuccess={handleCreateSuccess}
+        onError={handleCreateError}
       />
     </SectionCard>
   );

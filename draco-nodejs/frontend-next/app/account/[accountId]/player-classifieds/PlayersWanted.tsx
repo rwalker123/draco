@@ -12,10 +12,7 @@ import { PlayersWantedCard } from '../../../../components/player-classifieds';
 import CreatePlayersWantedDialog from '../../../../components/player-classifieds/CreatePlayersWantedDialog';
 import DeletePlayersWantedDialog from '../../../../components/player-classifieds/DeletePlayersWantedDialog';
 import EmptyState from '../../../../components/common/EmptyState';
-import {
-  UpsertPlayersWantedClassifiedType,
-  PlayersWantedClassifiedType,
-} from '@draco/shared-schemas';
+import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 
 interface PlayersWantedProps {
   accountId: string;
@@ -32,10 +29,9 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     loading,
     error,
     clearError,
-    createPlayersWanted,
-    updatePlayersWanted,
     deletePlayersWanted,
     formLoading,
+    refreshData,
   } = usePlayerClassifieds(accountId, token || undefined);
 
   // Get permission functions for edit/delete controls
@@ -63,22 +59,6 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     clearSuccess,
   } = usePlayersWantedDialogs();
 
-  // Handle create players wanted
-  const handleCreatePlayersWanted = useCallback(
-    async (formData: UpsertPlayersWantedClassifiedType) => {
-      try {
-        await createPlayersWanted(formData);
-        // Close dialog and show success message
-        closeCreateDialog();
-        showSuccessMessage('Players Wanted ad created successfully!');
-      } catch (error) {
-        // Error is already handled by the hook, but re-throw so dialog can handle it
-        throw error;
-      }
-    },
-    [createPlayersWanted, closeCreateDialog, showSuccessMessage],
-  );
-
   // Handle edit
   const handleEdit = useCallback(
     (id: string) => {
@@ -88,25 +68,6 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
       openEditDialog(classified);
     },
     [playersWanted, openEditDialog],
-  );
-
-  // Handle edit form submission
-  const handleEditSubmit = useCallback(
-    async (formData: UpsertPlayersWantedClassifiedType) => {
-      if (!editingClassified || !editingClassified.id) return;
-
-      try {
-        await updatePlayersWanted(editingClassified.id, formData);
-
-        // Close the edit dialog and show success message
-        closeEditDialog();
-        showSuccessMessage('Players Wanted ad updated successfully!');
-      } catch (error) {
-        // Let the hook handle error notifications, but re-throw so dialog can handle it
-        throw error;
-      }
-    },
-    [editingClassified, updatePlayersWanted, closeEditDialog, showSuccessMessage],
   );
 
   // Handle delete
@@ -136,27 +97,46 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     }
   }, [deletingClassified, deletePlayersWanted, closeDeleteDialog, showSuccessMessage]);
 
+  const handleCreateDialogSuccess = useCallback(async () => {
+    await refreshData();
+    showSuccessMessage('Players Wanted ad created successfully!');
+  }, [refreshData, showSuccessMessage]);
+
+  const handleEditDialogSuccess = useCallback(async () => {
+    await refreshData();
+    showSuccessMessage('Players Wanted ad updated successfully!');
+  }, [refreshData, showSuccessMessage]);
+
+  const handleDialogError = useCallback(
+    (message: string) => {
+      setLocalError(message);
+    },
+    [setLocalError],
+  );
+
   // Memoized function to render dialogs (DRY principle)
   const renderDialogs = useMemo(
     () => (
       <>
         {/* Create Players Wanted Dialog */}
         <CreatePlayersWantedDialog
+          accountId={accountId}
           open={createDialogOpen}
           onClose={closeCreateDialog}
-          onSubmit={handleCreatePlayersWanted}
-          loading={formLoading}
+          onSuccess={handleCreateDialogSuccess}
+          onError={handleDialogError}
         />
 
         {/* Edit Players Wanted Dialog */}
         {editingClassified && (
           <CreatePlayersWantedDialog
+            accountId={accountId}
             open={editDialogOpen}
             onClose={closeEditDialog}
-            onSubmit={handleEditSubmit}
-            loading={formLoading}
             editMode={true}
             initialData={editingClassified}
+            onSuccess={handleEditDialogSuccess}
+            onError={handleDialogError}
           />
         )}
 
@@ -171,18 +151,20 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
       </>
     ),
     [
+      accountId,
       createDialogOpen,
       closeCreateDialog,
-      handleCreatePlayersWanted,
-      formLoading,
       editingClassified,
       editDialogOpen,
       closeEditDialog,
-      handleEditSubmit,
       deleteDialogOpen,
       deletingClassified,
       closeDeleteDialog,
       handleDeleteConfirm,
+      handleCreateDialogSuccess,
+      handleEditDialogSuccess,
+      handleDialogError,
+      formLoading,
     ],
   );
 
