@@ -51,6 +51,20 @@ const AVAILABLE_POSITIONS = [
   'designated-hitter',
 ];
 
+const POSITION_LABELS: Record<string, string> = {
+  pitcher: 'Pitcher',
+  catcher: 'Catcher',
+  'first-base': 'First Base',
+  'second-base': 'Second Base',
+  'third-base': 'Third Base',
+  shortstop: 'Shortstop',
+  'left-field': 'Left Field',
+  'center-field': 'Center Field',
+  'right-field': 'Right Field',
+  utility: 'Utility',
+  'designated-hitter': 'Designated Hitter',
+};
+
 // Experience level is now a free-form text input
 
 const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
@@ -73,6 +87,15 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       birthDate: '',
     },
   );
+
+  const selectedPositions = React.useMemo(() => {
+    return formData.positionsPlayed
+      ? formData.positionsPlayed
+          .split(',')
+          .map((position) => position.trim())
+          .filter((position) => position.length > 0)
+      : [];
+  }, [formData.positionsPlayed]);
 
   // Form validation errors
   const [errors, setErrors] = useState<
@@ -103,16 +126,11 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   // Handle positions selection
   const handlePositionsChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
-    const selectedPositions = typeof value === 'string' ? value.split(',') : value;
-
-    // Limit to maximum 3 positions
-    if (selectedPositions.length > 3) {
-      return; // Don't update if trying to select more than 3
-    }
+    const nextSelected = (typeof value === 'string' ? value.split(',') : value).slice(0, 3);
 
     setFormData((prev) => ({
       ...prev,
-      positionsPlayed: selectedPositions.join(','),
+      positionsPlayed: nextSelected.join(','),
     }));
 
     if (errors.positionsPlayed) {
@@ -146,9 +164,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       newErrors.experience = 'Experience level must be 255 characters or less';
     }
 
-    if (formData.positionsPlayed.split(',').length === 0) {
+    if (selectedPositions.length === 0) {
       newErrors.positionsPlayed = 'Please select at least one position';
-    } else if (formData.positionsPlayed.split(',').length > 3) {
+    } else if (selectedPositions.length > 3) {
       newErrors.positionsPlayed = 'Please select no more than 3 positions';
     }
 
@@ -336,37 +354,34 @@ Examples:
                   labelId="positions-played-label"
                   id="positions-played-select"
                   multiple
-                  value={formData.positionsPlayed ? formData.positionsPlayed.split(',') : []}
+                  value={selectedPositions}
                   onChange={handlePositionsChange}
                   input={<OutlinedInput label="Positions Played" />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
+                      {(Array.isArray(selected) ? selected : [])
+                        .map((value) => value as string)
+                        .map((value) => (
+                          <Chip key={value} label={POSITION_LABELS[value] || value} size="small" />
+                        ))}
                     </Box>
                   )}
                   required
                 >
                   {AVAILABLE_POSITIONS.map((position) => (
-                    <MenuItem key={position} value={position}>
-                      {position === 'pitcher' && 'Pitcher'}
-                      {position === 'catcher' && 'Catcher'}
-                      {position === 'first-base' && 'First Base'}
-                      {position === 'second-base' && 'Second Base'}
-                      {position === 'third-base' && 'Third Base'}
-                      {position === 'shortstop' && 'Shortstop'}
-                      {position === 'left-field' && 'Left Field'}
-                      {position === 'center-field' && 'Center Field'}
-                      {position === 'right-field' && 'Right Field'}
-                      {position === 'utility' && 'Utility'}
-                      {position === 'designated-hitter' && 'Designated Hitter'}
+                    <MenuItem
+                      key={position}
+                      value={position}
+                      disabled={
+                        selectedPositions.length >= 3 && !selectedPositions.includes(position)
+                      }
+                    >
+                      {POSITION_LABELS[position] || position}
                     </MenuItem>
                   ))}
                 </Select>
                 <FormHelperText error={!!errors.positionsPlayed}>
-                  {errors.positionsPlayed ||
-                    `${formData.positionsPlayed.split(',').length}/3 positions selected`}
+                  {errors.positionsPlayed || `${selectedPositions.length}/3 positions selected`}
                 </FormHelperText>
               </FormControl>
               <Box sx={{ width: { xs: '100%', md: 220 } }}>

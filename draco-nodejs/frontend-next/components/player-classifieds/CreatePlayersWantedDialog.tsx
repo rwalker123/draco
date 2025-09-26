@@ -89,6 +89,15 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     },
   );
 
+  const selectedPositions = React.useMemo(() => {
+    return formData.positionsNeeded
+      ? formData.positionsNeeded
+          .split(',')
+          .map((position) => position.trim())
+          .filter((position) => position.length > 0)
+      : [];
+  }, [formData.positionsNeeded]);
+
   // Form validation errors
   const [errors, setErrors] = useState<
     Partial<Record<keyof UpsertPlayersWantedClassifiedType, string>>
@@ -116,12 +125,9 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   };
 
   // Handle positions selection
-  const handlePositionsChange = (event: SelectChangeEvent<string>) => {
-    const value = event.target.value;
-    const selectedPositions = typeof value === 'string' ? value.split(',') : value;
-
-    // Limit to maximum of 3 positions
-    const limitedPositions = selectedPositions.slice(0, 3);
+  const handlePositionsChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value as string[];
+    const limitedPositions = value.slice(0, 3);
 
     setFormData((prev) => ({
       ...prev,
@@ -284,14 +290,16 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
               <InputLabel>Positions Needed</InputLabel>
               <Select
                 multiple
-                value={formData.positionsNeeded}
+                value={selectedPositions}
                 onChange={handlePositionsChange}
                 input={<OutlinedInput label="Positions Needed" />}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.split(',').map((value) => (
-                      <Chip key={value} label={POSITION_LABELS[value] || value} size="small" />
-                    ))}
+                    {(Array.isArray(selected) ? selected : [])
+                      .map((value) => value as string)
+                      .map((value) => (
+                        <Chip key={value} label={POSITION_LABELS[value] || value} size="small" />
+                      ))}
                   </Box>
                 )}
               >
@@ -300,8 +308,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
                     key={position}
                     value={position}
                     disabled={
-                      formData.positionsNeeded.length >= 3 &&
-                      !formData.positionsNeeded.includes(position)
+                      selectedPositions.length >= 3 && !selectedPositions.includes(position)
                     }
                   >
                     {POSITION_LABELS[position]}

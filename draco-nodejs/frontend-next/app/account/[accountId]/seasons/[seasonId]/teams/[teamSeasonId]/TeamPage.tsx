@@ -19,6 +19,7 @@ import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
 import { SponsorType } from '@draco/shared-schemas';
 import { useRole } from '../../../../../../../context/RoleContext';
 import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
+import { useAccountMembership } from '../../../../../../../hooks/useAccountMembership';
 
 interface TeamPageProps {
   accountId: string;
@@ -54,6 +55,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     teamSeasonId,
   });
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
+  const { isMember } = useAccountMembership(accountId);
+  const isAccountMember = isMember === true;
 
   React.useEffect(() => {
     setLoading(true);
@@ -314,8 +317,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         />
       </div>
 
-      {canManageTeamSponsors && (
-        <TeamAdminPanel accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
+      {(canManageTeamSponsors || isAccountMember) && (
+        <TeamAdminPanel
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeasonId={teamSeasonId}
+          canManageSponsors={canManageTeamSponsors}
+          showPlayerClassifiedsLink={isAccountMember}
+          playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=teams-wanted`}
+        />
       )}
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}

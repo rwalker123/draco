@@ -31,6 +31,7 @@ import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
+import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
 
@@ -50,6 +51,8 @@ const BaseballAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
+  const { isMember } = useAccountMembership(accountIdStr);
+  const isAccountMember = isMember === true;
 
   // Fetch public account data
   useEffect(() => {
@@ -300,6 +303,7 @@ const BaseballAccountHome: React.FC = () => {
           accountId={accountIdStr}
           account={account}
           token={token || undefined}
+          isAccountMember={isAccountMember}
         />
 
         {/* Scoreboard Layout Toggle */}

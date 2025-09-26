@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, Button, Skeleton, Alert } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Skeleton,
+  Alert,
+  Divider,
+} from '@mui/material';
 import { Search } from '@mui/icons-material';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
@@ -11,11 +20,13 @@ import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 interface PlayersWantedPreviewProps {
   accountId: string;
   maxDisplay?: number;
+  isAccountMember?: boolean;
 }
 
 const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   accountId,
   maxDisplay = 3,
+  isAccountMember = false,
 }) => {
   const [playersWanted, setPlayersWanted] = useState<PlayersWantedClassifiedType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,10 +105,6 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
     );
   }
 
-  if (playersWanted.length === 0) {
-    return null;
-  }
-
   return (
     <SectionCard>
       <SectionHeader
@@ -110,42 +117,68 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
         }}
       />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-        {playersWanted.map((team) => (
-          <Card
-            key={team.id}
-            sx={{
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              '&:hover': {
-                borderColor: 'primary.main',
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                {team.teamEventName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Positions: {team.positionsNeeded}
-              </Typography>
-              <Button
-                size="small"
-                variant="contained"
-                fullWidth
-                onClick={() => handleViewDetails(team.id)}
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 1,
-                }}
-              >
-                View Details
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {playersWanted.length > 0 ? (
+          playersWanted.map((team) => (
+            <Card
+              key={team.id}
+              sx={{
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  {team.teamEventName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Positions: {team.positionsNeeded}
+                </Typography>
+                <Button
+                  size="small"
+                  variant="contained"
+                  fullWidth
+                  onClick={() => handleViewDetails(team.id)}
+                  sx={{
+                    textTransform: 'none',
+                    borderRadius: 1,
+                  }}
+                >
+                  View Details
+                </Button>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No teams are currently recruiting new players.
+          </Typography>
+        )}
       </Box>
+
+      {isAccountMember && (
+        <Box sx={{ mt: playersWanted.length > 0 ? 3 : 2 }}>
+          <Divider sx={{ mb: 2 }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+            Looking for players?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Create or update a Teams Wanted ad to let other players know you&apos;re recruiting.
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => router.push(`/account/${accountId}/player-classifieds?tab=teams-wanted`)}
+            sx={{ textTransform: 'none' }}
+          >
+            Manage Teams Wanted Ads
+          </Button>
+        </Box>
+      )}
 
       {/* Detail Dialog */}
       <PlayersWantedDetailDialog

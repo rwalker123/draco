@@ -11,6 +11,7 @@ interface JoinLeagueDashboardProps {
   token?: string;
   showViewAllWorkoutsButton?: boolean;
   onViewAllWorkouts?: () => void;
+  isAccountMember?: boolean;
 }
 
 const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
@@ -19,6 +20,7 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
   token,
   showViewAllWorkoutsButton,
   onViewAllWorkouts,
+  isAccountMember = false,
 }) => {
   return (
     <Paper
@@ -72,7 +74,11 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
         />
 
         {/* Players Wanted Section */}
-        <PlayersWantedPreview accountId={accountId} maxDisplay={3} />
+        <PlayersWantedPreview
+          accountId={accountId}
+          maxDisplay={3}
+          isAccountMember={isAccountMember}
+        />
 
         {/* Contact Section */}
         <ContactLeagueSection account={account} />

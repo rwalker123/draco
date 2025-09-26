@@ -3,15 +3,28 @@
 import React from 'react';
 import { Button, Paper, Stack, Typography } from '@mui/material';
 import HandshakeIcon from '@mui/icons-material/Handshake';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import Link from 'next/link';
 
 interface TeamAdminPanelProps {
   accountId: string;
   seasonId: string;
   teamSeasonId: string;
+  canManageSponsors?: boolean;
+  showPlayerClassifiedsLink?: boolean;
+  playerClassifiedsHref?: string;
 }
 
-const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({ accountId, seasonId, teamSeasonId }) => {
+const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
+  accountId,
+  seasonId,
+  teamSeasonId,
+  canManageSponsors = true,
+  showPlayerClassifiedsLink = false,
+  playerClassifiedsHref,
+}) => {
+  const shouldShowClassifiedsLink = showPlayerClassifiedsLink && !!playerClassifiedsHref;
+
   return (
     <Paper
       sx={{
@@ -35,18 +48,42 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({ accountId, seasonId, te
           Team Admin Tools
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Manage sponsors for this team to keep partner information up to date.
+          Manage the resources that keep your roster thriving.
         </Typography>
+        {shouldShowClassifiedsLink && (
+          <Typography variant="body2" color="text.secondary">
+            Need reinforcements? Easily post a Teams Wanted ad to recruit new players.
+          </Typography>
+        )}
       </Stack>
-      <Button
-        variant="contained"
-        color="primary"
-        startIcon={<HandshakeIcon />}
-        component={Link}
-        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1}
+        sx={{ width: { xs: '100%', sm: 'auto' } }}
       >
-        Manage Team Sponsors
-      </Button>
+        {canManageSponsors && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<HandshakeIcon />}
+            component={Link}
+            href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
+          >
+            Manage Team Sponsors
+          </Button>
+        )}
+        {shouldShowClassifiedsLink && (
+          <Button
+            variant={canManageSponsors ? 'outlined' : 'contained'}
+            color={canManageSponsors ? 'primary' : 'secondary'}
+            startIcon={<PersonSearchIcon />}
+            component={Link}
+            href={playerClassifiedsHref!}
+          >
+            Post Teams Wanted Ad
+          </Button>
+        )}
+      </Stack>
     </Paper>
   );
 };
