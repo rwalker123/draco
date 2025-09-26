@@ -1,6 +1,5 @@
 import {
   dbPollCreateData,
-  dbPollOptionUpsertData,
   dbPollQuestionWithCounts,
   dbPollQuestionWithUserVotes,
   dbPollUpdateData,

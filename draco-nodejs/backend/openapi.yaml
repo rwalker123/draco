@@ -806,6 +806,8 @@ components:
               - voteCount
         userVoteOptionId:
           type: string
+          description: Identifier of the option selected by the authenticated contact when
+            retrieving polls scoped to a contact.
       required:
         - id
         - accountId
@@ -834,7 +836,6 @@ components:
                 maxLength: 255
               priority:
                 type: integer
-                minimum: 0
             required:
               - optionText
           minItems: 2
@@ -850,6 +851,7 @@ components:
           maxLength: 255
         active:
           type: boolean
+          default: true
         options:
           type: array
           items:
@@ -863,7 +865,6 @@ components:
                 maxLength: 255
               priority:
                 type: integer
-                minimum: 0
             required:
               - optionText
         deletedOptionIds:

@@ -10,35 +10,38 @@ import {
 export class PrismaPollRepository implements IPollRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  private buildInclude(contactId?: bigint): Prisma.votequestionInclude {
-    const include: Prisma.votequestionInclude = {
-      voteoptions: {
-        orderBy: {
-          priority: 'asc',
-        },
-        include: {
-          _count: {
-            select: {
-              voteanswers: true,
-            },
+  private buildInclude(contactId?: bigint) {
+    const voteoptions = {
+      orderBy: {
+        priority: 'asc',
+      },
+      include: {
+        _count: {
+          select: {
+            voteanswers: true,
           },
         },
       },
-    };
+    } satisfies Prisma.votequestion$voteoptionsArgs;
 
     if (contactId !== undefined) {
-      include.voteanswers = {
-        where: {
-          contactid: contactId,
+      return {
+        voteoptions,
+        voteanswers: {
+          where: {
+            contactid: contactId,
+          },
+          select: {
+            optionid: true,
+            contactid: true,
+          },
         },
-        select: {
-          optionid: true,
-          contactid: true,
-        },
-      };
+      } satisfies Prisma.votequestionInclude;
     }
 
-    return include;
+    return {
+      voteoptions,
+    } satisfies Prisma.votequestionInclude;
   }
 
   private async getQuestionWithCounts(

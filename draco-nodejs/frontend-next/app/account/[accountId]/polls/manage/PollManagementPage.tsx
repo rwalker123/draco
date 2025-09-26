@@ -25,11 +25,11 @@ import {
 } from '@mui/icons-material';
 import { AccountPollType } from '@draco/shared-schemas';
 import { listAccountPolls } from '@draco/shared-api-client';
-import AccountPageHeader from '../../../../components/AccountPageHeader';
-import PollEditorDialog from '../../../../components/polls/PollEditorDialog';
-import PollDeleteDialog from '../../../../components/polls/PollDeleteDialog';
-import { useApiClient } from '../../../../hooks/useApiClient';
-import { useAuth } from '../../../../context/AuthContext';
+import AccountPageHeader from '../../../../../components/AccountPageHeader';
+import PollEditorDialog from '../../../../../components/polls/PollEditorDialog';
+import PollDeleteDialog from '../../../../../components/polls/PollDeleteDialog';
+import { useApiClient } from '../../../../../hooks/useApiClient';
+import { useAuth } from '../../../../../context/AuthContext';
 
 interface PollManagementPageProps {
   accountId: string;
@@ -62,7 +62,7 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
     try {
       const result = await listAccountPolls({
         client: apiClient,
-        params: { accountId },
+        path: { accountId },
         throwOnError: false,
       });
 
@@ -109,9 +109,7 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
     ({ message, poll }: { message: string; poll: AccountPollType }) => {
       setPolls((prev) => {
         const exists = prev.some((item) => item.id === poll.id);
-        return exists
-          ? prev.map((item) => (item.id === poll.id ? poll : item))
-          : [...prev, poll];
+        return exists ? prev.map((item) => (item.id === poll.id ? poll : item)) : [...prev, poll];
       });
       setSuccess(message);
       setError(null);
