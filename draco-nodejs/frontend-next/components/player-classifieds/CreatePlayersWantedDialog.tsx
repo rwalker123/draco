@@ -18,6 +18,8 @@ import {
   OutlinedInput,
   FormHelperText,
   SelectChangeEvent,
+  Autocomplete,
+  CircularProgress,
 } from '@mui/material';
 import {
   UpsertPlayersWantedClassifiedType,
@@ -99,6 +101,8 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [teamOptions, setTeamOptions] = useState<string[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
 
   useEffect(() => {
     setFormData(initialData ?? EMPTY_FORM);
@@ -249,6 +253,61 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     onClose();
   };
 
+  useEffect(() => {
+    const shouldFetchTeams = open && isAuthenticated;
+    if (!shouldFetchTeams) {
+      return;
+    }
+
+    let ignore = false;
+    const fetchTeams = async () => {
+      try {
+        setTeamsLoading(true);
+        const response = await fetch(`/api/accounts/${accountId}/user-teams`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load teams');
+        }
+
+        const data = await response.json();
+        const teamsResponse: string[] =
+          data?.data?.teams
+            ?.map((team: { name?: string; leagueName?: string }) => {
+              const parts = [team.leagueName, team.name].filter(
+                (part) => !!part && part.trim().length,
+              );
+              return parts.join(' ').trim();
+            })
+            .filter((teamName: string) => teamName.length > 0) ?? [];
+        const teams = Array.from(new Set(teamsResponse));
+        if (!ignore) {
+          setTeamOptions(teams);
+        }
+      } catch (error) {
+        if (!ignore) {
+          console.error('Failed to load user teams:', error);
+          setTeamOptions([]);
+        }
+      } finally {
+        if (!ignore) {
+          setTeamsLoading(false);
+        }
+      }
+    };
+
+    fetchTeams();
+
+    return () => {
+      ignore = true;
+    };
+  }, [open, accountId, isAuthenticated, token]);
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editMode ? 'Edit Players Wanted' : 'Post Players Wanted'}</DialogTitle>
@@ -268,19 +327,38 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
             )}
 
             <Box>
-              <TextField
-                label="Team/Event Name"
-                value={formData.teamEventName}
-                onChange={(e) => handleFieldChange('teamEventName', e.target.value)}
-                error={!!errors.teamEventName}
-                helperText={errors.teamEventName || 'Name of your team or event'}
-                required
-                fullWidth
+              <Autocomplete
+                freeSolo
+                options={teamOptions}
+                value={formData.teamEventName || null}
+                inputValue={formData.teamEventName}
+                onChange={(_, newValue) =>
+                  handleFieldChange('teamEventName', (newValue as string) ?? '')
+                }
+                onInputChange={(_, value) => handleFieldChange('teamEventName', value)}
                 disabled={submitting || !isAuthenticated}
-                slotProps={{
-                  htmlInput: {
-                    maxLength: VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MAX_LENGTH,
-                  },
+                renderInput={(params) => {
+                  params.InputProps.endAdornment = (
+                    <>
+                      {teamsLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  );
+
+                  return (
+                    <TextField
+                      {...params}
+                      label="Team/Event Name"
+                      error={!!errors.teamEventName}
+                      helperText={errors.teamEventName || 'Name of your team or event'}
+                      required
+                      fullWidth
+                      inputProps={{
+                        ...params.inputProps,
+                        maxLength: VALIDATION_CONSTANTS.TEAM_EVENT_NAME.MAX_LENGTH,
+                      }}
+                    />
+                  );
                 }}
               />
               <CharacterCounter
