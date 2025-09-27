@@ -299,3 +299,66 @@ export type dbSponsor = Prisma.sponsorsGetPayload<{
     website: true;
   };
 }>;
+
+export type dbPollOptionWithCount = Prisma.voteoptionsGetPayload<{
+  include: {
+    _count: {
+      select: {
+        voteanswers: true;
+      };
+    };
+  };
+}>;
+
+export type dbPollQuestionWithCounts = Prisma.votequestionGetPayload<{
+  include: {
+    voteoptions: {
+      include: {
+        _count: {
+          select: {
+            voteanswers: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbPollQuestionWithUserVotes = Prisma.votequestionGetPayload<{
+  include: {
+    voteoptions: {
+      include: {
+        _count: {
+          select: {
+            voteanswers: true;
+          };
+        };
+      };
+    };
+    voteanswers: {
+      select: {
+        optionid: true;
+        contactid: true;
+      };
+    };
+  };
+}>;
+
+export type dbPollOptionUpsertData = {
+  id?: bigint;
+  optiontext: string;
+  priority?: number;
+};
+
+export type dbPollCreateData = {
+  question: string;
+  active: boolean;
+  options: Array<Omit<dbPollOptionUpsertData, 'id'>>;
+};
+
+export type dbPollUpdateData = {
+  question?: string;
+  active?: boolean;
+  options?: dbPollOptionUpsertData[];
+  deletedOptionIds?: bigint[];
+};

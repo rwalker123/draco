@@ -27,6 +27,7 @@ import AccountPageHeader from '../../../components/AccountPageHeader';
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
 import { JoinLeagueDashboard } from '../../../components/join-league';
+import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
 import { getAccountById } from '@draco/shared-api-client';
@@ -366,6 +367,8 @@ const BaseballAccountHome: React.FC = () => {
             />
           </Box>
         )}
+
+        <AccountPollsCard accountId={accountIdStr} />
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}

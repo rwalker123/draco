@@ -7,6 +7,7 @@ import {
   ISeasonRepository,
   ILeagueRepository,
   ICleanupRepository,
+  IPollRepository,
   IPlayersWantedRepository,
   ITeamsWantedRepository,
   ISponsorRepository,
@@ -20,6 +21,7 @@ import {
   PrismaSeasonRepository,
   PrismaLeagueRepository,
   PrismaCleanupRepository,
+  PrismaPollRepository,
   PrismaTeamsWantedRepository,
   PrismaSponsorRepository,
 } from './implementations/index.js';
@@ -40,6 +42,7 @@ export class RepositoryFactory {
   private static seasonRepository: ISeasonRepository;
   private static leagueRepository: ILeagueRepository;
   private static cleanupRepository: ICleanupRepository;
+  private static pollRepository: IPollRepository;
   private static playersWantedRepository: IPlayersWantedRepository;
   private static teamsWantedRepository: ITeamsWantedRepository;
   private static sponsorRepository: ISponsorRepository;
@@ -100,6 +103,12 @@ export class RepositoryFactory {
     return this.cleanupRepository;
   }
 
+  static getPollRepository(): IPollRepository {
+    if (!this.pollRepository) {
+      this.pollRepository = new PrismaPollRepository(prisma);
+    }
+    return this.pollRepository;
+  }
   static getPlayersWantedRepository(): IPlayersWantedRepository {
     if (!this.playersWantedRepository) {
       this.playersWantedRepository = new PrismaPlayersWantedRepository(prisma);

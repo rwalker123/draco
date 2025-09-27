@@ -72,6 +72,11 @@ export const routePermissions: Record<string, RoutePermission> = {
     checkAccountBoundary: true,
   },
 
+  '/account/[accountId]/polls/manage': {
+    roles: ['AccountAdmin', 'TeamAdmin'],
+    checkAccountBoundary: true,
+  },
+
   // Public routes - no authentication required
   '/': {
     public: true,

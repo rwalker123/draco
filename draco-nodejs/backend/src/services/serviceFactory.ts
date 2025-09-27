@@ -30,6 +30,7 @@ import { WorkoutService } from './workoutService.js';
 import { PlayerClassifiedAccessService } from './player-classified/PlayerClassifiedAccessService.js';
 import { PlayerClassifiedEmailService } from './player-classified/PlayerClassifiedEmailService.js';
 import { SponsorService } from './sponsorService.js';
+import { PollService } from './pollService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -58,6 +59,7 @@ export class ServiceFactory {
   private static workoutService: WorkoutService;
   private static accountsService: AccountsService;
   private static sponsorService: SponsorService;
+  private static pollService: PollService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -226,5 +228,12 @@ export class ServiceFactory {
       this.accessService = new PlayerClassifiedAccessService();
     }
     return this.accessService;
+  }
+
+  static getPollService(): PollService {
+    if (!this.pollService) {
+      this.pollService = new PollService();
+    }
+    return this.pollService;
   }
 }
