@@ -1,4 +1,5 @@
 import { getAccountBranding } from '../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../lib/seoMetadata';
 import StatisticsClientWrapper from './StatisticsClientWrapper';
 
 export async function generateMetadata({
@@ -8,11 +9,13 @@ export async function generateMetadata({
 }) {
   const { accountId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  return {
+  const description = `Dive into advanced stats, leaderboards, and performance trends for ${accountName} on Draco Sports Manager.`;
+  return buildSeoMetadata({
     title: `${accountName} Statistics`,
-    description: `View detailed baseball statistics for ${accountName}`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+    description,
+    path: `/account/${accountId}/statistics`,
+    icon: iconUrl,
+  });
 }
 
 export default function StatisticsPage() {

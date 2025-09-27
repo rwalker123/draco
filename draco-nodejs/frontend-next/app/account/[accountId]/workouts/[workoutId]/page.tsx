@@ -1,4 +1,5 @@
 import { getAccountBranding } from '../../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../../lib/seoMetadata';
 import WorkoutDetailsClientWrapper from './WorkoutDetailsClientWrapper';
 
 export async function generateMetadata({
@@ -6,13 +7,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ accountId: string; workoutId: string }>;
 }) {
-  const { accountId } = await params;
+  const { accountId, workoutId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  return {
+  const description = `Preview how this workout will appear on the ${accountName} home page before publishing.`;
+  return buildSeoMetadata({
     title: `Preview Workout - ${accountName}`,
-    description: `Preview how this workout will appear on the home page for ${accountName}`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+    description,
+    path: `/account/${accountId}/workouts/${workoutId}`,
+    icon: iconUrl,
+    index: false,
+  });
 }
 
 export default function WorkoutDetailsPage() {

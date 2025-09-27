@@ -1,12 +1,14 @@
-import type { Metadata } from 'next';
 import AccountManagementClientWrapper from './AccountManagementClientWrapper';
-import { DEFAULT_ACCOUNT_FAVICON_PATH } from '../../lib/metadataFetchers';
+import { buildSeoMetadata, DEFAULT_SITE_NAME } from '../../lib/seoMetadata';
 
-export function generateMetadata(): Metadata {
-  return {
-    title: 'Account Management - Draco Sports Manager',
-    icons: { icon: DEFAULT_ACCOUNT_FAVICON_PATH },
-  };
+export async function generateMetadata() {
+  return buildSeoMetadata({
+    title: `Account Management | ${DEFAULT_SITE_NAME}`,
+    description:
+      'Administrative workspace for provisioning organizations, managing billing, and configuring platform-wide settings in Draco Sports Manager.',
+    path: '/account-management',
+    index: false,
+  });
 }
 
 export default function Page() {

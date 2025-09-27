@@ -1,4 +1,5 @@
 import { getAccountBranding } from '../../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../../lib/seoMetadata';
 import VerifyClassifiedClientWrapper from './VerifyClassifiedClientWrapper';
 
 export async function generateMetadata({
@@ -6,13 +7,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ accountId: string; id: string }>;
 }) {
-  const { accountId } = await params;
+  const { accountId, id } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  return {
+  const description = `Verify your Teams Wanted classified submission for ${accountName} to ensure the listing appears to coaches and recruiters.`;
+  return buildSeoMetadata({
     title: `${accountName} - Verify Teams Wanted Classified`,
-    description: `Verify access to your Teams Wanted classified ad for ${accountName}`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+    description,
+    path: `/account/${accountId}/verify-classified/${id}`,
+    icon: iconUrl,
+    index: false,
+  });
 }
 
 export default function VerifyClassifiedPage() {

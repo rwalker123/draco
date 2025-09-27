@@ -1,12 +1,14 @@
-import type { Metadata } from 'next';
 import AdminDashboardClientWrapper from './AdminDashboardClientWrapper';
-import { DEFAULT_ACCOUNT_FAVICON_PATH } from '../../lib/metadataFetchers';
+import { buildSeoMetadata, DEFAULT_SITE_NAME } from '../../lib/seoMetadata';
 
-export function generateMetadata(): Metadata {
-  return {
-    title: 'Administrator Dashboard - Draco Sports Manager',
-    icons: { icon: DEFAULT_ACCOUNT_FAVICON_PATH },
-  };
+export async function generateMetadata() {
+  return buildSeoMetadata({
+    title: `Administrator Tools | ${DEFAULT_SITE_NAME}`,
+    description:
+      'Administrative console for managing Draco Sports Manager platform configuration, accounts, and feature flags.',
+    path: '/admin',
+    index: false,
+  });
 }
 
 export default function Page() {

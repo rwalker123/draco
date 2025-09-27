@@ -1,12 +1,13 @@
-import type { Metadata } from 'next';
 import AccountsClientWrapper from './AccountsClientWrapper';
-import { DEFAULT_ACCOUNT_FAVICON_PATH } from '../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../lib/seoMetadata';
 
-export function generateMetadata(): Metadata {
-  return {
+export async function generateMetadata() {
+  return buildSeoMetadata({
     title: 'Accounts - Draco Sports Manager',
-    icons: { icon: DEFAULT_ACCOUNT_FAVICON_PATH },
-  };
+    description:
+      'Explore leagues, clubs, and programs powered by Draco Sports Manager to discover schedules, rosters, and team information.',
+    path: '/accounts',
+  });
 }
 
 export default function Page() {
