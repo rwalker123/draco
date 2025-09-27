@@ -16,6 +16,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     ValidationErrorSchemaRef,
+    AutomaticRoleHoldersSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/search
@@ -601,6 +602,235 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         content: {
           'application/json': {
             schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/automatic-role-holders
+   * Get automatic role holders (Account Owner and Team Managers) for the current season
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/automatic-role-holders',
+    description:
+      'Get automatic role holders (Account Owner and Team Managers) for the current season',
+    operationId: 'getAutomaticRoleHolders',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of automatic role holders',
+        content: {
+          'application/json': {
+            schema: AutomaticRoleHoldersSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * POST /api/accounts/:accountId/logo
+   *
+   * Account logo upload endpoint
+   * Accepts a multipart/form-data request with a 'logo' file field.
+   * Requires 'account.manage' permission.
+   */
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/logo',
+    operationId: 'uploadAccountLogo',
+    summary: 'Upload account logo',
+    description: 'Uploads a logo for the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          schema: {
+            type: 'object',
+            properties: {
+              logo: {
+                type: 'string',
+                format: 'binary',
+              },
+            },
+            required: ['logo'],
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Logo uploaded successfully',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'string',
+              format: 'uri',
+            },
+          },
+        },
+      },
+      400: {
+        description: 'Invalid request',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Permission denied',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/logo
+   *
+   * Account logo retrieval endpoint
+   * Requires 'account.manage' permission.
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/logo',
+    operationId: 'getAccountLogo',
+    summary: 'Get account logo',
+    description: 'Retrieves the logo for the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Logo retrieved successfully',
+        content: {
+          'image/png': {
+            schema: {
+              type: 'string',
+              format: 'binary',
+            },
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * DELETE /api/accounts/:accountId/logo
+   *
+   * Account logo deletion endpoint
+   * Requires 'account.manage' permission.
+   * Note: This action is irreversible. Ensure the user understands the implications of this action.
+   */
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/logo',
+    operationId: 'deleteAccountLogo',
+    summary: 'Delete account logo',
+    description: 'Deletes the logo for the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'Logo deleted successfully',
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
           },
         },
       },

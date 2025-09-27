@@ -18,7 +18,13 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-// Account logo upload endpoint
+/**
+ * POST /api/accounts/:accountId/logo
+ *
+ * Account logo upload endpoint
+ * Accepts a multipart/form-data request with a 'logo' file field.
+ * Requires 'account.manage' permission.
+ */
 router.post(
   '/:accountId/logo',
   authenticateToken,
@@ -48,7 +54,12 @@ router.post(
   }),
 );
 
-// Account logo get endpoint
+/**
+ * GET /api/accounts/:accountId/logo
+ *
+ * Account logo retrieval endpoint
+ * Requires 'account.manage' permission.
+ */
 router.get(
   '/:accountId/logo',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -64,7 +75,13 @@ router.get(
   }),
 );
 
-// Account logo delete endpoint
+/**
+ * DELETE /api/accounts/:accountId/logo
+ *
+ * Account logo deletion endpoint
+ * Requires 'account.manage' permission.
+ * Note: This action is irreversible. Ensure the user understands the implications of this action.
+ */
 router.delete(
   '/:accountId/logo',
   authenticateToken,

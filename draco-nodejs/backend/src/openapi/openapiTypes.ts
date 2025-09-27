@@ -11,12 +11,18 @@ import {
   AccountWithSeasonsSchema,
   AuthenticationErrorSchema,
   AuthorizationErrorSchema,
+  AutomaticRoleHoldersSchema,
   BaseballPositionSchema,
   ConflictErrorSchema,
   ContactPlayersWantedCreatorSchema,
   ContactSchema,
+  ContactRoleSchema,
+  BaseContactSchema,
+  ContactValidationWithSignInSchema,
+  RegisteredUserSchema,
   CreateAccountSchema,
   CreateContactSchema,
+  CreateContactRoleSchema,
   CreatePollSchema,
   CreateSponsorSchema,
   CreateTeamManagerSchema,
@@ -42,6 +48,7 @@ import {
   UpsertPlayersWantedClassifiedSchema,
   UpsertTeamsWantedClassifiedSchema,
   ValidationErrorSchema,
+  PagedContactSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -49,12 +56,24 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const RosterPlayerSchemaRef = registry.register('RosterPlayer', RosterPlayerSchema);
   const SignRosterMemberSchemaRef = registry.register('SignRosterMember', SignRosterMemberSchema);
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
+  const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
+  const ContactValidationWithSignInSchemaRef = registry.register(
+    'ContactValidationWithSignIn',
+    ContactValidationWithSignInSchema,
+  );
+  const RegisteredUserSchemaRef = registry.register('RegisteredUser', RegisteredUserSchema);
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
   const CreateTeamManagerSchemaRef = registry.register(
     'CreateTeamManager',
     CreateTeamManagerSchema,
   );
   const CreateContactSchemaRef = registry.register('CreateContact', CreateContactSchema);
+  const CreateContactRoleSchemaRef = registry.register(
+    'CreateContactRole',
+    CreateContactRoleSchema,
+  );
+  const PagedContactSchemaRef = registry.register('PagedContact', PagedContactSchema);
+  const ContactRoleSchemaRef = registry.register('ContactRole', ContactRoleSchema);
   const AccountSchemaRef = registry.register('Account', AccountSchema);
   const AccountSearchQuerySchemaRef = registry.register(
     'AccountSearchQuery',
@@ -71,6 +90,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const AccountDetailsQuerySchemaRef = registry.register(
     'AccountDetailsQuery',
     AccountDetailsQuerySchema,
+  );
+  const AutomaticRoleHoldersSchemaRef = registry.register(
+    'AutomaticRoleHolders',
+    AutomaticRoleHoldersSchema,
   );
   const CreateAccountSchemaRef = registry.register('CreateAccount', CreateAccountSchema);
   const AccountNameSchemaRef = registry.register('AccountName', AccountNameSchema);
@@ -154,9 +177,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RosterPlayerSchemaRef,
     SignRosterMemberSchemaRef,
     ContactSchemaRef,
+    BaseContactSchemaRef,
     TeamManagerSchemaRef,
     CreateTeamManagerSchemaRef,
     CreateContactSchemaRef,
+    CreateContactRoleSchemaRef,
+    ContactRoleSchemaRef,
+    RegisteredUserSchemaRef,
+    ContactValidationWithSignInSchemaRef,
+    PagedContactSchemaRef,
     AccountSchemaRef,
     AccountSearchQuerySchemaRef,
     AccountDomainLookupHeadersSchemaRef,
@@ -166,6 +195,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountNameSchemaRef,
     AccountHeaderSchemaRef,
     AccountAffiliationSchemaRef,
+    AutomaticRoleHoldersSchemaRef,
     SponsorSchemaRef,
     SponsorListSchemaRef,
     CreateSponsorSchemaRef,

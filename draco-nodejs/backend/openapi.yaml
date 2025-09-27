@@ -405,6 +405,240 @@ components:
         - id
         - firstName
         - lastName
+    BaseContact:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        userId:
+          type: string
+          maxLength: 50
+        photoUrl:
+          type: string
+          format: uri
+        contactDetails:
+          type: object
+          properties:
+            phone1:
+              type: string
+              nullable: true
+              default: ""
+            phone2:
+              type: string
+              nullable: true
+              default: ""
+            phone3:
+              type: string
+              nullable: true
+              default: ""
+            streetAddress:
+              type: string
+              nullable: true
+              maxLength: 100
+              default: ""
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            zip:
+              type: string
+              nullable: true
+              maxLength: 10
+              default: ""
+            dateOfBirth:
+              type: string
+              nullable: true
+              default: ""
+      required:
+        - id
+        - firstName
+        - lastName
+    ContactValidationWithSignIn:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        contactDetails:
+          type: object
+          properties:
+            phone1:
+              type: string
+              nullable: true
+              default: ""
+            phone2:
+              type: string
+              nullable: true
+              default: ""
+            phone3:
+              type: string
+              nullable: true
+              default: ""
+            streetAddress:
+              type: string
+              nullable: true
+              maxLength: 100
+              default: ""
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            zip:
+              type: string
+              nullable: true
+              maxLength: 10
+              default: ""
+            dateOfBirth:
+              type: string
+              nullable: true
+              default: ""
+        photo:
+          type: string
+          format: binary
+          description: Contact photo file
+        validationType:
+          type: string
+          enum:
+            - streetAddress
+            - dateOfBirth
+        userName:
+          type: string
+          maxLength: 100
+          format: email
+        password:
+          type: string
+          minLength: 6
+          maxLength: 100
+      required:
+        - firstName
+        - lastName
+        - validationType
+        - userName
+        - password
+    RegisteredUser:
+      type: object
+      properties:
+        id:
+          type: string
+        userName:
+          type: string
+          maxLength: 100
+          format: email
+        token:
+          type: string
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            middleName:
+              type: string
+              maxLength: 50
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            userId:
+              type: string
+              maxLength: 50
+            photoUrl:
+              type: string
+              format: uri
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+                streetAddress:
+                  type: string
+                  nullable: true
+                  maxLength: 100
+                  default: ""
+                city:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                state:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                zip:
+                  type: string
+                  nullable: true
+                  maxLength: 10
+                  default: ""
+                dateOfBirth:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+      required:
+        - id
+        - userName
     TeamManager:
       type: object
       properties:
@@ -567,6 +801,142 @@ components:
       required:
         - firstName
         - lastName
+    CreateContactRole:
+      type: object
+      properties:
+        roleId:
+          type: string
+          maxLength: 50
+        roleData:
+          type: string
+        contextName:
+          type: string
+          maxLength: 50
+      required:
+        - roleId
+        - roleData
+    PagedContact:
+      type: object
+      properties:
+        contacts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              firstName:
+                type: string
+                minLength: 1
+                maxLength: 50
+              lastName:
+                type: string
+                minLength: 1
+                maxLength: 50
+              middleName:
+                type: string
+                maxLength: 50
+              email:
+                type: string
+                maxLength: 100
+                format: email
+              userId:
+                type: string
+                maxLength: 50
+              photoUrl:
+                type: string
+                format: uri
+              contactDetails:
+                type: object
+                properties:
+                  phone1:
+                    type: string
+                    nullable: true
+                    default: ""
+                  phone2:
+                    type: string
+                    nullable: true
+                    default: ""
+                  phone3:
+                    type: string
+                    nullable: true
+                    default: ""
+                  streetAddress:
+                    type: string
+                    nullable: true
+                    maxLength: 100
+                    default: ""
+                  city:
+                    type: string
+                    nullable: true
+                    maxLength: 50
+                    default: ""
+                  state:
+                    type: string
+                    nullable: true
+                    maxLength: 50
+                    default: ""
+                  zip:
+                    type: string
+                    nullable: true
+                    maxLength: 10
+                    default: ""
+                  dateOfBirth:
+                    type: string
+                    nullable: true
+                    default: ""
+            required:
+              - id
+              - firstName
+              - lastName
+        total:
+          type: number
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+          required:
+            - page
+            - limit
+            - hasNext
+            - hasPrev
+          title: Pagination
+          description: Pagination metadata included with paged API responses
+      required:
+        - contacts
+        - total
+      title: ContactResponse
+      description: Response for contact search
+    ContactRole:
+      type: object
+      properties:
+        roleId:
+          type: string
+          maxLength: 50
+        roleName:
+          type: string
+          maxLength: 50
+        roleData:
+          type: string
+          pattern: ^d+$
+        contextName:
+          type: string
+          maxLength: 50
+        id:
+          type: string
+          pattern: ^d+$
+      required:
+        - roleId
+        - roleData
+        - id
     Account:
       type: object
       properties:
@@ -992,6 +1362,169 @@ components:
           type: boolean
           nullable: true
           default: false
+    AutomaticRoleHolders:
+      type: object
+      properties:
+        accountOwner:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 50
+            middleName:
+              type: string
+              maxLength: 50
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            userId:
+              type: string
+              maxLength: 50
+            photoUrl:
+              type: string
+              format: uri
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+                streetAddress:
+                  type: string
+                  nullable: true
+                  maxLength: 100
+                  default: ""
+                city:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                state:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                zip:
+                  type: string
+                  nullable: true
+                  maxLength: 10
+                  default: ""
+                dateOfBirth:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+        teamManagers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              firstName:
+                type: string
+                minLength: 1
+                maxLength: 50
+              lastName:
+                type: string
+                minLength: 1
+                maxLength: 50
+              middleName:
+                type: string
+                maxLength: 50
+              email:
+                type: string
+                maxLength: 100
+                format: email
+              userId:
+                type: string
+                maxLength: 50
+              photoUrl:
+                type: string
+                format: uri
+              contactDetails:
+                type: object
+                properties:
+                  phone1:
+                    type: string
+                    nullable: true
+                    default: ""
+                  phone2:
+                    type: string
+                    nullable: true
+                    default: ""
+                  phone3:
+                    type: string
+                    nullable: true
+                    default: ""
+                  streetAddress:
+                    type: string
+                    nullable: true
+                    maxLength: 100
+                    default: ""
+                  city:
+                    type: string
+                    nullable: true
+                    maxLength: 50
+                    default: ""
+                  state:
+                    type: string
+                    nullable: true
+                    maxLength: 50
+                    default: ""
+                  zip:
+                    type: string
+                    nullable: true
+                    maxLength: 10
+                    default: ""
+                  dateOfBirth:
+                    type: string
+                    nullable: true
+                    default: ""
+              teams:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    teamSeasonId:
+                      type: string
+                    teamName:
+                      type: string
+                  required:
+                    - teamSeasonId
+                    - teamName
+            required:
+              - id
+              - firstName
+              - lastName
+              - teams
+      required:
+        - accountOwner
+        - teamManagers
+      title: AutomaticRoleHolders
+      description: Automatic role holders
     CreateAccount:
       type: object
       properties:
@@ -2556,7 +3089,380 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/automatic-role-holders:
+    get:
+      description: Get automatic role holders (Account Owner and Team Managers) for
+        the current season
+      operationId: getAutomaticRoleHolders
+      security:
+        - bearerAuth: []
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: List of automatic role holders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomaticRoleHolders"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+  /api/accounts/{accountId}/logo:
+    post:
+      operationId: uploadAccountLogo
+      summary: Upload account logo
+      description: Uploads a logo for the specified account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                logo:
+                  type: string
+                  format: binary
+              required:
+                - logo
+      responses:
+        "200":
+          description: Logo uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uri
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      operationId: getAccountLogo
+      summary: Get account logo
+      description: Retrieves the logo for the specified account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Logo retrieved successfully
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+    delete:
+      operationId: deleteAccountLogo
+      summary: Delete account logo
+      description: Deletes the logo for the specified account.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Logo deleted successfully
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+  /api/accounts/{accountId}/contacts/me:
+    get:
+      description: Get current user's contact
+      operationId: getCurrentUserContact
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Current user's contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseContact"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+    post:
+      description: Self-register a contact
+      operationId: selfRegisterContact
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactValidationWithSignIn"
+      responses:
+        "200":
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredUser"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Conflict error - e.g. duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/contacts/{contactId}/registration:
+    delete:
+      description: Unlink a contact from a user
+      operationId: unlinkContactFromUser
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Contact unlinked successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseContact"
+        "404":
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+  /api/accounts/{accountId}/contacts/search:
+    get:
+      description: Search contacts by name for autocomplete
+      operationId: searchContacts
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: roles
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: seasonId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+        - name: contactDetails
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: onlyWithRoles
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of matching contacts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedContact"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
   /api/accounts/{accountId}/contacts:
+    get:
+      description: Get users in account
+      operationId: getAccountContacts
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: roles
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: seasonId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+        - name: onlyWithRoles
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: contactDetails
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of contacts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedContact"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
     post:
       description: Create a new contact
       operationId: createContact
@@ -5235,6 +6141,114 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/users/{userId}/roles:
+    post:
+      description: Assign role to user in account
+      operationId: assignRoleToUser
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContactRole"
+      responses:
+        "200":
+          description: Role assigned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/users/{userId}/roles/{roleId}:
+    delete:
+      description: Remove role from user in account
+      operationId: removeRoleFromUser
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Role removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactRole"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: User not found
           content:
             application/json:
               schema:

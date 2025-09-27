@@ -104,6 +104,11 @@ const createTeamsWantedAuthMiddleware = () => {
   };
 };
 
+/**
+ * POST /api/accounts/:accountId/player-classifieds/players-wanted
+ * Create a new players wanted classified
+ * Requires authentication and 'player-classified.create-players-wanted' permission
+ */
 router.post(
   '/players-wanted',
   authenticateToken,
@@ -123,6 +128,11 @@ router.post(
   }),
 );
 
+/**
+ * POST /api/accounts/:accountId/player-classifieds/teams-wanted
+ * Create a new teams wanted classified
+ * Requires authentication and 'player-classified.create-teams-wanted' permission
+ */
 router.post(
   '/teams-wanted',
   teamsWantedRateLimit,
@@ -139,6 +149,12 @@ router.post(
   }),
 );
 
+/**
+ *
+ * GET /api/accounts/:accountId/player-classifieds/players-wanted
+ * Search for players wanted classifieds within the account
+ * Publicly accessible
+ */
 router.get(
   '/players-wanted',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -159,6 +175,12 @@ router.get(
   }),
 );
 
+/**
+ *
+ * GET /api/accounts/:accountId/player-classifieds/teams-wanted
+ * Search for teams wanted classifieds within the account
+ * Publicly accessible
+ */
 router.get(
   '/teams-wanted',
   authenticateToken,
@@ -181,6 +203,12 @@ router.get(
   }),
 );
 
+/**
+ *
+ * POST /api/accounts/:accountId/player-classifieds/teams-wanted/:classifiedId/verify
+ * Verify access code for a teams wanted classified
+ * Publicly accessible, rate limited
+ */
 router.post(
   '/teams-wanted/:classifiedId/verify',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -197,6 +225,12 @@ router.post(
   }),
 );
 
+/**
+ *
+ * POST /api/accounts/:accountId/player-classifieds/teams-wanted/access-code
+ * Lookup a teams wanted classified by access code
+ * Publicly accessible, rate limited
+ */
 router.post(
   '/teams-wanted/access-code',
   teamsWantedRateLimit,
@@ -213,6 +247,13 @@ router.post(
   }),
 );
 
+/**
+ *
+ * PUT /api/accounts/:accountId/player-classifieds/teams-wanted/:classifiedId
+ * Update an existing teams wanted classified
+ * Requires either authentication with 'player-classified.manage' permission
+ * or a valid access code for the classified
+ */
 router.put(
   '/teams-wanted/:classifiedId',
   createTeamsWantedAuthMiddleware(),
@@ -239,6 +280,13 @@ router.put(
   }),
 );
 
+/**
+ *
+ * PUT /api/accounts/:accountId/player-classifieds/players-wanted/:classifiedId
+ * Update an existing players wanted classified
+ * Requires authentication and either ownership of the classified or
+ * 'player-classified.manage' permission within the account boundary
+ */
 router.put(
   '/players-wanted/:classifiedId',
   authenticateToken,
@@ -269,6 +317,12 @@ router.put(
   }),
 );
 
+/**
+ * DELETE /api/accounts/:accountId/player-classifieds/teams-wanted/:classifiedId
+ * Delete an existing teams wanted classified
+ * Requires either authentication with 'player-classified.manage' permission
+ * or a valid access code for the classified
+ */
 router.delete(
   '/teams-wanted/:classifiedId',
   createTeamsWantedAuthMiddleware(),
@@ -288,6 +342,13 @@ router.delete(
   }),
 );
 
+/**
+ *
+ *  DELETE /api/accounts/:accountId/player-classifieds/players-wanted/:classifiedId
+ * Delete an existing players wanted classified
+ * Requires authentication and either ownership of the classified or
+ * 'player-classified.manage' permission within the account boundary
+ */
 router.delete(
   '/players-wanted/:classifiedId',
   authenticateToken,
@@ -312,6 +373,12 @@ router.delete(
   }),
 );
 
+/**
+ *
+ * GET /api/accounts/:accountId/player-classifieds/positions
+ * Returns the list of standard baseball positions
+ * Publicly accessible
+ */
 router.get(
   '/positions',
   asyncHandler(async (_req: Request, res: Response): Promise<void> => {
@@ -319,6 +386,13 @@ router.get(
   }),
 );
 
+/**
+ *
+ * GET /api/accounts/:accountId/player-classifieds/teams-wanted/:classifiedId/contact
+ * Retrieve the contact information for a teams wanted classified
+ * Requires either authentication with 'player-classified.manage' permission
+ * or a valid access code for the classified
+ */
 router.get(
   '/teams-wanted/:classifiedId/contact',
   createTeamsWantedAuthMiddleware(),
@@ -350,6 +424,12 @@ router.get(
   }),
 );
 
+/**
+ *
+ * POST /api/accounts/:accountId/player-classifieds/players-wanted/:classifiedId/contact
+ * Contact the creator of a players wanted classified
+ * Publicly accessible, rate limited
+ */
 router.post(
   '/players-wanted/:classifiedId/contact',
   teamsWantedRateLimit,
@@ -367,6 +447,12 @@ router.post(
   }),
 );
 
+/**
+ *
+ * GET /api/accounts/:accountId/player-classifieds/experience-levels
+ * Returns the list of standard experience levels
+ * Publicly accessible
+ */
 router.get(
   '/experience-levels',
   asyncHandler(async (_req: Request, res: Response): Promise<void> => {
