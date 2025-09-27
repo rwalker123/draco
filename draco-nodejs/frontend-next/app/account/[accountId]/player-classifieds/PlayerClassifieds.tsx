@@ -6,8 +6,8 @@ import { Box, Typography, Tabs, Tab } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import PlayersWanted from './PlayersWanted';
 import TeamsWanted from './TeamsWanted';
-import { ITeamsWantedOwnerResponse } from '../../../../types/playerClassifieds';
 import { VERIFICATION_TIMEOUTS } from '../../../../constants/timeoutConstants';
+import { TeamsWantedOwnerClassifiedType } from '@draco/shared-schemas';
 
 interface PlayerClassifiedsProps {
   accountId: string;
@@ -40,7 +40,7 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
   const [tabValue, setTabValue] = useState(0);
   const [verificationData, setVerificationData] = useState<{
     accessCode: string;
-    classifiedData: ITeamsWantedOwnerResponse;
+    classifiedData: TeamsWantedOwnerClassifiedType;
   } | null>(null);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {

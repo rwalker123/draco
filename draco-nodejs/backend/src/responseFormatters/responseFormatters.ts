@@ -13,9 +13,12 @@ import {
   PagedContactType,
   ContactRoleType,
   AccountType,
+  AccountPollType,
+  SponsorType,
 } from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
 import { getAccountLogoUrl, getContactPhotoUrl } from '../config/logo.js';
+import { getSponsorPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
   dbBaseContact,
@@ -30,9 +33,12 @@ import {
   dbTeamSeasonManagerContact,
   dbAccount,
   dbAccountAffiliation,
+  dbPollQuestionWithCounts,
+  dbPollQuestionWithUserVotes,
+  dbSponsor,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
-import { PaginationHelper } from './pagination.js';
+import { PaginationHelper } from '../utils/pagination.js';
 
 // todo: delete this once the shared api client is used more widely
 interface ApiResponse<T> {
@@ -328,6 +334,56 @@ export class ContactResponseFormatter {
       contacts: transformedContacts,
       total: contactsWithTotalCount.total,
     };
+  }
+}
+
+export class PollResponseFormatter {
+  static formatPoll(poll: dbPollQuestionWithCounts | dbPollQuestionWithUserVotes): AccountPollType {
+    const options = poll.voteoptions.map((option) => ({
+      id: option.id.toString(),
+      optionText: option.optiontext,
+      priority: option.priority,
+      voteCount: option._count?.voteanswers ?? 0,
+    }));
+
+    const totalVotes = options.reduce((sum, option) => sum + option.voteCount, 0);
+
+    const userVoteOptionId =
+      'voteanswers' in poll && poll.voteanswers.length > 0
+        ? poll.voteanswers[0].optionid.toString()
+        : undefined;
+
+    return {
+      id: poll.id.toString(),
+      accountId: poll.accountid.toString(),
+      question: poll.question,
+      active: poll.active,
+      options,
+      totalVotes,
+      userVoteOptionId,
+    };
+  }
+}
+export class SponsorResponseFormatter {
+  static formatSponsor(sponsor: dbSponsor): SponsorType {
+    return {
+      id: sponsor.id.toString(),
+      accountId: sponsor.accountid.toString(),
+      teamId: sponsor.teamid ? sponsor.teamid.toString() : undefined,
+      name: sponsor.name,
+      streetAddress: sponsor.streetaddress || '',
+      cityStateZip: sponsor.citystatezip || '',
+      description: sponsor.description || '',
+      email: sponsor.email || undefined,
+      phone: sponsor.phone || undefined,
+      fax: sponsor.fax || undefined,
+      website: sponsor.website || undefined,
+      photoUrl: getSponsorPhotoUrl(sponsor.accountid.toString(), sponsor.id.toString()),
+    };
+  }
+
+  static formatSponsors(sponsors: dbSponsor[]): SponsorType[] {
+    return sponsors.map((sponsor) => this.formatSponsor(sponsor));
   }
 }
 

@@ -1,36 +1,18 @@
 // Access Code Types and Interfaces
 // Centralized types for access code management and validation
 
+import { TeamsWantedOwnerClassifiedType } from '@draco/shared-schemas';
+
 // ============================================================================
 // ACCESS CODE VERIFICATION INTERFACES
 // ============================================================================
 
-// Request to verify an access code for Teams Wanted
-export interface IAccessCodeVerificationRequest {
-  accountId: string;
-  accessCode: string;
-}
-
 // Response from access code verification
 export interface IAccessCodeVerificationResponse {
   success: boolean;
-  classified?: ITeamsWantedClassified;
+  classified?: TeamsWantedOwnerClassifiedType;
   message?: string;
   errorCode?: string;
-}
-
-// Teams Wanted classified data returned for access code verification
-export interface ITeamsWantedClassified {
-  id: string;
-  accountId: string;
-  dateCreated: Date | string;
-  name: string;
-  email: string;
-  phone: string;
-  experience: string;
-  positionsPlayed: string;
-  birthDate: Date | string;
-  // Note: accessCode is never included in responses for security
 }
 
 // ============================================================================

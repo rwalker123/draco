@@ -1,5 +1,4 @@
-'use client';
-import Accounts from './accounts/Accounts';
+import HomeClientWrapper from './HomeClientWrapper';
 import { DEFAULT_DESCRIPTION, buildSeoMetadata } from '../lib/seoMetadata';
 
 export async function generateMetadata() {
@@ -11,5 +10,5 @@ export async function generateMetadata() {
 }
 
 export default function Page() {
-  return <Accounts />;
+  return <HomeClientWrapper />;
 }

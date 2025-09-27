@@ -1,211 +1,14 @@
 // Player Classifieds Frontend Types
 // These types extend the backend interfaces for frontend-specific needs
-
-// ============================================================================
-// CORE DATA INTERFACES
-// ============================================================================
-
-// Base interface for Players Wanted classifieds (frontend version)
-export interface IPlayersWantedClassified {
-  id: string; // Frontend uses string IDs, not bigint
-  accountId: string;
-  dateCreated: Date | string;
-  createdByContactId: string;
-  teamEventName: string;
-  description: string;
-  positionsNeeded: string;
-}
-
-// Base interface for Teams Wanted classifieds (frontend version)
-export interface ITeamsWantedClassified {
-  id: string;
-  accountId: string;
-  dateCreated: Date | string;
-  name: string;
-  email: string;
-  phone: string;
-  experience: string;
-  positionsPlayed: string;
-  accessCode: string; // UUID for editing
-  birthDate: Date | string;
-}
-
-// ============================================================================
-// INPUT VALIDATION INTERFACES
-// ============================================================================
-
-// Players Wanted creation request
-export interface IPlayersWantedCreateRequest {
-  teamEventName: string;
-  description: string;
-  positionsNeeded: string;
-}
-
-// Teams Wanted creation request (anonymous/public)
-export interface ITeamsWantedCreateRequest {
-  name: string;
-  email: string;
-  phone: string;
-  experience: string;
-  positionsPlayed: string;
-  birthDate: Date | string;
-}
-
-// Update request for Players Wanted
-export interface IPlayersWantedUpdateRequest {
-  teamEventName?: string;
-  description?: string;
-  positionsNeeded?: string;
-}
-
-// Update request for Teams Wanted (access code required for non-authenticated users)
-export interface ITeamsWantedUpdateRequest {
-  name?: string;
-  email?: string;
-  phone?: string;
-  experience?: string;
-  positionsPlayed?: string;
-  birthDate?: Date | string;
-  // Access code for security (optional for authenticated users)
-  accessCode?: string;
-}
-
-// ============================================================================
-// API RESPONSE INTERFACES
-// ============================================================================
-
-// Base response for classified listings
-export interface IClassifiedListResponse<T> {
-  data: T[];
-  total: number;
-  pagination: {
-    page: number;
-    limit: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-    totalPages: number;
-  };
-  filters: IClassifiedSearchFilters;
-}
-
-// Players Wanted response with creator details
-export interface IPlayersWantedResponse extends IPlayersWantedClassified {
-  creator: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    photoUrl: string;
-  };
-  account: {
-    id: string;
-    name: string;
-  };
-}
-
-// Teams Wanted response (public view without contact info)
-export interface ITeamsWantedPublicResponse
-  extends Omit<ITeamsWantedClassified, 'accessCode' | 'email' | 'phone' | 'birthDate'> {
-  // Public view excludes PII (email, phone) and access code for security
-  age: number | null;
-  account: {
-    id: string;
-    name: string;
-  };
-}
-
-// Teams Wanted response (authenticated account members view)
-export interface ITeamsWantedResponse
-  extends Omit<ITeamsWantedClassified, 'accessCode' | 'birthDate' | 'email' | 'phone'> {
-  // Backend responses include an age but only return contact info when requested separately
-  age: number | null;
-  birthDate?: Date | string | null;
-  email?: string;
-  phone?: string;
-  account: {
-    id: string;
-    name: string;
-  };
-}
-
-// Teams Wanted contact information (on-demand)
-export interface ITeamsWantedContactInfo {
-  email: string;
-  phone: string;
-  birthDate: string | null;
-}
-
-// Teams Wanted response (owner view with verified contact info)
-export interface ITeamsWantedOwnerResponse extends Omit<ITeamsWantedClassified, 'accessCode'> {
-  account: {
-    id: string;
-    name: string;
-  };
-}
-
-// ============================================================================
-// SEARCH AND FILTERING INTERFACES
-// ============================================================================
-
-// Search parameters for classifieds
-export interface IClassifiedSearchParams {
-  // Pagination
-  page?: number;
-  limit?: number;
-
-  // Sorting
-  sortBy?: 'dateCreated' | 'relevance';
-  sortOrder?: 'asc' | 'desc';
-
-  // Type filtering
-  type?: 'players' | 'teams' | 'all';
-
-  // Content filtering
-  searchQuery?: string;
-  positions?: string[];
-  experience?: string[];
-
-  // Date filtering
-  dateFrom?: Date;
-  dateTo?: Date;
-
-  // Account context
-  accountId: string;
-}
-
-// Search filters applied to results
-export interface IClassifiedSearchFilters {
-  type: 'players' | 'teams' | 'all';
-  positions: string[];
-  experience: string[];
-  dateRange: {
-    from: Date | null;
-    to: Date | null;
-  };
-  searchQuery: string | null;
-}
-
-// Search result with relevance scoring
-export interface IClassifiedSearchResult {
-  classified: IPlayersWantedResponse | ITeamsWantedResponse;
-  relevanceScore: number;
-  matchReasons: string[];
-}
-
-// ============================================================================
-// MATCHING ALGORITHM INTERFACES
-// ============================================================================
-
-// Match suggestion between Players Wanted and Teams Wanted
-export interface IClassifiedMatch {
-  playersWantedId: string;
-  teamsWantedId: string;
-  matchScore: number; // 0.0 to 1.0
-  matchReasons: string[];
-  positionMatch: boolean;
-  experienceMatch: boolean;
-  availabilityMatch: boolean;
-  proximityMatch: boolean;
-}
+import { PlayerClassifiedSearchQuery } from '@draco/shared-api-client';
+import {
+  UpsertPlayersWantedClassifiedType,
+  UpsertTeamsWantedClassifiedType,
+  PaginationWithTotalType,
+  PlayersWantedClassifiedType,
+  TeamsWantedOwnerClassifiedType,
+  TeamsWantedPublicClassifiedType,
+} from '@draco/shared-schemas';
 
 // ============================================================================
 // EMAIL NOTIFICATION INTERFACES
@@ -227,66 +30,6 @@ export interface IEmailVerificationResult {
 }
 
 // ============================================================================
-// ADMIN AND MODERATION INTERFACES
-// ============================================================================
-
-// Admin view of all classifieds
-export interface IAdminClassifiedsResponse {
-  playersWanted: Array<IPlayersWantedResponse & { isFlagged: boolean; flagReason?: string }>;
-  teamsWanted: Array<ITeamsWantedResponse & { isFlagged: boolean; flagReason?: string }>;
-  total: number;
-  flagged: number;
-}
-
-// ============================================================================
-// ANALYTICS AND REPORTING INTERFACES
-// ============================================================================
-
-// Usage analytics for an account
-export interface IClassifiedAnalytics {
-  totalClassifieds: number;
-  totalViews: number;
-  popularPositions: Array<{
-    position: string;
-    count: number;
-    percentage: number;
-  }>;
-  postingTrends: Array<{
-    date: Date;
-    newClassifieds: number;
-  }>;
-  matchSuccessRate: number;
-}
-
-// ============================================================================
-// FORM STATE INTERFACES
-// ============================================================================
-
-// Form state for Players Wanted creation/editing
-export interface IPlayersWantedFormState {
-  teamEventName: string;
-  description: string;
-  positionsNeeded: string[];
-}
-
-// Form state for Teams Wanted creation/editing
-export interface ITeamsWantedFormState {
-  name: string;
-  email: string;
-  phone: string;
-  experience: string;
-  positionsPlayed: string[];
-  birthDate: Date | null;
-}
-
-// Contact Creator form state for sending messages to classified creators
-export interface IContactCreatorFormState {
-  senderName: string;
-  senderEmail: string;
-  message: string;
-}
-
-// ============================================================================
 // UI STATE INTERFACES
 // ============================================================================
 
@@ -300,27 +43,6 @@ export interface IClassifiedsUIState {
   selectedExperience: string;
   sortBy: 'dateCreated' | 'relevance';
   viewMode: 'grid' | 'list';
-}
-
-// Filter state for search and filtering
-export interface IClassifiedsFilters {
-  positions: string[];
-  experience: string[];
-  dateRange: {
-    from: Date | null;
-    to: Date | null;
-  };
-  searchQuery: string;
-}
-
-// Pagination state
-export interface IClassifiedsPagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
 }
 
 // Search state
@@ -347,27 +69,27 @@ export interface ITeamsWantedProps {
 
 // Props for Players Wanted card component
 export interface IPlayersWantedCardProps {
-  classified: IPlayersWantedResponse;
+  classified: PlayersWantedClassifiedType;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  canEdit: (classified: IPlayersWantedResponse) => boolean;
-  canDelete: (classified: IPlayersWantedResponse) => boolean;
+  canEdit: (classified: PlayersWantedClassifiedType) => boolean;
+  canDelete: (classified: PlayersWantedClassifiedType) => boolean;
 }
 
 // Props for Teams Wanted card component
 export interface ITeamsWantedCardProps {
-  classified: ITeamsWantedOwnerResponse;
+  classified: TeamsWantedOwnerClassifiedType;
   onEdit: (id: string, accessCode: string) => void;
   onDelete: (id: string, accessCode: string) => void;
 }
 
 // Props for Teams Wanted card component (public view)
 export interface ITeamsWantedCardPublicProps {
-  classified: ITeamsWantedPublicResponse;
+  classified: TeamsWantedPublicClassifiedType;
   onEdit: (id: string, accessCodeRequired: string) => void;
   onDelete: (id: string, accessCodeRequired: string) => void;
-  canEdit: (classified: ITeamsWantedPublicResponse) => boolean;
-  canDelete: (classified: ITeamsWantedPublicResponse) => boolean;
+  canEdit: (classified: TeamsWantedPublicClassifiedType) => boolean;
+  canDelete: (classified: TeamsWantedPublicClassifiedType) => boolean;
   isAuthenticated: boolean;
   accessCode?: string; // Optional access code for contact info authentication
 }
@@ -389,17 +111,20 @@ export interface IClassifiedsHeaderProps {
 
 // Props for Create Players Wanted dialog
 export interface ICreatePlayersWantedDialogProps {
+  accountId: string;
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: IPlayersWantedFormState) => void;
-  loading: boolean;
+  editMode?: boolean;
+  initialData?: UpsertPlayersWantedClassifiedType;
+  onSuccess?: (classified: PlayersWantedClassifiedType) => void;
+  onError?: (message: string) => void;
 }
 
 // Props for Create Teams Wanted dialog
 export interface ICreateTeamsWantedDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: ITeamsWantedFormState) => void;
+  onSubmit: (data: UpsertTeamsWantedClassifiedType) => void;
   loading: boolean;
 }
 
@@ -407,18 +132,22 @@ export interface ICreateTeamsWantedDialogProps {
 export interface IEditPlayersWantedDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (id: string, data: Partial<IPlayersWantedFormState>) => void;
+  onSubmit: (id: string, data: Partial<UpsertPlayersWantedClassifiedType>) => void;
   loading: boolean;
-  classified: IPlayersWantedResponse;
+  classified: PlayersWantedClassifiedType;
 }
 
 // Props for Edit Teams Wanted dialog
 export interface IEditTeamsWantedDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (id: string, data: Partial<ITeamsWantedFormState>, accessCode: string) => void;
+  onSubmit: (
+    id: string,
+    data: Partial<UpsertTeamsWantedClassifiedType>,
+    accessCode: string,
+  ) => void;
   loading: boolean;
-  classified: ITeamsWantedOwnerResponse;
+  classified: TeamsWantedOwnerClassifiedType;
 }
 
 // Props for Delete confirmation dialog
@@ -463,14 +192,6 @@ export interface ITeamsWantedHandlers {
   onContact: (id: string) => void;
 }
 
-// Search and filter handlers
-export interface ISearchFilterHandlers {
-  onSearch: (term: string) => void;
-  onFilterChange: (filters: IClassifiedsFilters) => void;
-  onSortChange: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
-  onClearFilters: () => void;
-}
-
 // ============================================================================
 // HOOK RETURN INTERFACES
 // ============================================================================
@@ -478,8 +199,8 @@ export interface ISearchFilterHandlers {
 // Return type for usePlayerClassifieds hook
 export interface IUsePlayerClassifiedsReturn {
   // Data
-  playersWanted: IPlayersWantedResponse[];
-  teamsWanted: ITeamsWantedResponse[];
+  playersWanted: PlayersWantedClassifiedType[];
+  teamsWanted: TeamsWantedPublicClassifiedType[];
 
   // Loading states
   loading: boolean;
@@ -501,15 +222,15 @@ export interface IUsePlayerClassifiedsReturn {
   };
 
   // Actions
-  createPlayersWanted: (data: IPlayersWantedFormState) => Promise<void>;
-  updatePlayersWanted: (id: string, data: Partial<IPlayersWantedFormState>) => Promise<void>;
+  createPlayersWanted: (data: UpsertPlayersWantedClassifiedType) => Promise<void>;
+  updatePlayersWanted: (id: string, data: UpsertPlayersWantedClassifiedType) => Promise<void>;
   deletePlayersWanted: (id: string) => Promise<void>;
-  createTeamsWanted: (data: ITeamsWantedFormState) => Promise<void>;
+  createTeamsWanted: (data: UpsertTeamsWantedClassifiedType) => Promise<void>;
   updateTeamsWanted: (
     id: string,
-    data: Partial<ITeamsWantedFormState>,
+    data: UpsertTeamsWantedClassifiedType,
     accessCode: string,
-  ) => Promise<ITeamsWantedResponse>;
+  ) => Promise<TeamsWantedOwnerClassifiedType>;
   deleteTeamsWanted: (
     id: string,
     accessCode: string,
@@ -518,10 +239,6 @@ export interface IUsePlayerClassifiedsReturn {
   // Pagination methods
   loadTeamsWantedPage: (page: number, limit: number) => Promise<void>;
   clearTeamsWantedState: () => void;
-
-  // Search and filtering
-  searchClassifieds: (params: IClassifiedSearchParams) => Promise<void>;
-  clearSearch: () => void;
 
   // Refresh data
   refreshData: () => Promise<void>;
@@ -532,7 +249,7 @@ export interface IUsePlayerClassifiedsReturn {
 
 // Return type for useClassifiedsPagination hook
 export interface IUseClassifiedsPaginationReturn {
-  pagination: IClassifiedsPagination;
+  pagination: PaginationWithTotalType & { totalPages: number };
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
   goToNextPage: () => void;
@@ -563,10 +280,10 @@ export interface IUseClassifiedsPermissionsReturn {
   canModerateClassifieds: boolean;
 
   // Enhanced permission checking with ownership
-  canEditPlayersWantedById: (classified: IPlayersWantedResponse) => boolean;
-  canDeletePlayersWantedById: (classified: IPlayersWantedResponse) => boolean;
-  canEditTeamsWantedById: (classified: ITeamsWantedResponse) => boolean;
-  canDeleteTeamsWantedById: (classified: ITeamsWantedResponse) => boolean;
+  canEditPlayersWantedById: (classified: PlayersWantedClassifiedType) => boolean;
+  canDeletePlayersWantedById: (classified: PlayersWantedClassifiedType) => boolean;
+  canEditTeamsWantedById: (classified: TeamsWantedPublicClassifiedType) => boolean;
+  canDeleteTeamsWantedById: (classified: TeamsWantedPublicClassifiedType) => boolean;
 
   // Access code verification state
   verifiedAccessCodes: Set<string>;
@@ -574,65 +291,3 @@ export interface IUseClassifiedsPermissionsReturn {
   clearVerifiedAccessCode: (classifiedId: string) => void;
   clearAllVerifiedAccessCodes: () => void;
 }
-
-// ============================================================================
-// UTILITY INTERFACES
-// ============================================================================
-
-// Position and experience options for forms
-export interface IPositionOption {
-  value: string;
-  label: string;
-  category: string;
-}
-
-export interface IExperienceOption {
-  value: string;
-  label: string;
-  description: string;
-}
-
-// Form validation errors
-export interface IFormValidationErrors {
-  [key: string]: string;
-}
-
-// API response wrapper
-export interface IApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-// Verify access code response
-export interface IVerifyAccessResponse {
-  success: boolean;
-  data?: {
-    accessCode: string;
-    classifiedId: string;
-    verifiedAt: string;
-  };
-  message?: string;
-}
-
-// ============================================================================
-// SERVICE RESPONSE INTERFACES
-// ============================================================================
-
-// Generic service response wrapper
-export interface IServiceResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  errorCode?: string;
-  statusCode?: number;
-}
-
-// Teams Wanted service response
-export type ITeamsWantedServiceResponse = IServiceResponse<
-  IClassifiedListResponse<ITeamsWantedResponse>
->;
-
-// Players Wanted service response
-export type IPlayersWantedServiceResponse = IServiceResponse<IPlayersWantedResponse>;

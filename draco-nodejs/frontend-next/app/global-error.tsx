@@ -1,30 +1,26 @@
+'use client';
+
+import React from 'react';
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import {
-  DEFAULT_SITE_NAME,
-  buildCanonicalUrl,
-  resolveCurrentPath,
-} from '../lib/seoMetadata';
+import { DEFAULT_SITE_NAME, buildCanonicalUrl, resolveCurrentPath } from '../lib/seoMetadata';
 
-const CRAWLER_USER_AGENT_REGEX = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|facebot|ia_archiver/i;
+const CRAWLER_USER_AGENT_REGEX =
+  /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|facebot|ia_archiver/i;
 
-function getHeaderSafe(key: string): string | undefined {
+async function getHeaderSafe(key: string): Promise<string | undefined> {
   try {
-    return headers().get(key) ?? undefined;
+    return (await headers()).get(key) ?? undefined;
   } catch {
     return undefined;
   }
 }
 
-function getUserAgent(): string {
-  return getHeaderSafe('user-agent') ?? '';
+async function getUserAgent(): Promise<string> {
+  return (await getHeaderSafe('user-agent')) ?? '';
 }
 
-export default function GlobalError({
-  error,
-}: {
-  error: Error & { digest?: string };
-}) {
+export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   console.error('Global application error captured by Next.js boundary', {
     message: error.message,
     digest: error.digest,
@@ -60,12 +56,12 @@ export default function GlobalError({
           <main>
             <h1>We&rsquo;ll be right back</h1>
             <p>
-              Draco Sports Manager is temporarily unable to load this content. Rankings and structured data
-              will be restored shortly.
+              Draco Sports Manager is temporarily unable to load this content. Rankings and
+              structured data will be restored shortly.
             </p>
             <p>
-              Please retry this request soon to keep indexes synchronized with the latest sports schedules and
-              updates.
+              Please retry this request soon to keep indexes synchronized with the latest sports
+              schedules and updates.
             </p>
           </main>
         </body>
@@ -90,8 +86,8 @@ export default function GlobalError({
         <main>
           <h1>Something went wrong</h1>
           <p>
-            We couldn&rsquo;t finish loading this page. Try refreshing the page or return to your home dashboard to
-            continue working.
+            We couldn&rsquo;t finish loading this page. Try refreshing the page or return to your
+            home dashboard to continue working.
           </p>
           <p>
             <Link href="/">Return to home</Link>

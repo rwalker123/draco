@@ -85,7 +85,11 @@ export default function Communications() {
       <main className="min-h-screen bg-background">
         <AccountPageHeader accountId={accountIdStr}>
           <Box textAlign="center">
-            <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
+            >
               Communications
             </Typography>
             <Typography variant="body1" sx={{ color: 'white', opacity: 0.85 }}>
@@ -216,7 +220,9 @@ export default function Communications() {
                     <Button
                       variant="outlined"
                       size="small"
-                      onClick={() => router.push(`/account/${accountIdStr}/communications/templates`)}
+                      onClick={() =>
+                        router.push(`/account/${accountIdStr}/communications/templates`)
+                      }
                     >
                       Templates
                     </Button>

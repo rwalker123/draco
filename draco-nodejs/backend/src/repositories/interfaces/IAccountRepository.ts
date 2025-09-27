@@ -10,4 +10,5 @@ export interface IAccountRepository extends IBaseRepository<accounts> {
   findAccountByUrls(urls: string[]): Promise<dbAccount | null>;
   findAccountsWithRelations(accountIds?: bigint[]): Promise<dbAccount[]>;
   findAccountWithRelationsById(accountId: bigint): Promise<dbAccount | null>;
+  createAccountUrl(accountId: bigint, url: string): Promise<void>;
 }

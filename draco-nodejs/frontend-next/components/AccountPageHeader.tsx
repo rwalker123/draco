@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
+import { useAccountHeader } from '../hooks/useAccountHeader';
 
 interface AccountPageHeaderProps {
   accountId: string;
@@ -30,53 +31,16 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
   showSeasonInfo = false,
 }) => {
   const theme = useTheme();
-  const [logoUrl, setLogoUrl] = useState<string | null>(accountLogoUrl || null);
-  const [error, setError] = useState(false);
-  const [accountName, setAccountName] = useState<string | null>(null);
+  const { accountName, logoUrl } = useAccountHeader(accountId, accountLogoUrl);
+  const [imageError, setImageError] = useState(false);
 
   // Use theme colors for default background if none provided
   const defaultBackground = `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`;
   const headerBackground = background || defaultBackground;
 
-  // Helper to add or update cachebuster param
-  function addCacheBuster(url: string, buster: number) {
-    if (!url) return url;
-    const u = new URL(
-      url,
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost',
-    );
-    u.searchParams.set('k', String(buster));
-    return u.toString();
-  }
-
   useEffect(() => {
-    // Always fetch account name when accountId is provided
-    if (accountId) {
-      fetch(`/api/accounts/${accountId}/header`)
-        .then((res) => res.json())
-        .then((data) => {
-          // Set account name
-          if (data?.data?.name) {
-            setAccountName(data.data.name);
-          }
-
-          // Handle logo URL
-          if (accountLogoUrl) {
-            // Use provided logo URL
-            setLogoUrl(addCacheBuster(accountLogoUrl, Date.now()));
-          } else if (data?.data?.accountLogoUrl) {
-            // Use logo URL from API
-            setLogoUrl(addCacheBuster(data.data.accountLogoUrl, Date.now()));
-          } else {
-            setLogoUrl(null);
-          }
-        })
-        .catch(() => {
-          setLogoUrl(null);
-          setAccountName(null);
-        });
-    }
-  }, [accountId, accountLogoUrl]);
+    setImageError(false);
+  }, [logoUrl]);
 
   return (
     <Box
@@ -104,14 +68,14 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
             p: 2,
           }}
         >
-          {logoUrl && !error ? (
+          {logoUrl && !imageError ? (
             <Image
               src={logoUrl}
               alt="Account Logo"
               height={LOGO_HEIGHT}
               width={512}
               style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100%' }}
-              onError={() => setError(true)}
+              onError={() => setImageError(true)}
               unoptimized
             />
           ) : (
@@ -132,7 +96,7 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
                 filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))',
               }}
             >
-              {accountName || 'Loading...'}
+              {accountName}
             </Typography>
           )}
         </Box>

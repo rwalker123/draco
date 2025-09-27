@@ -11,6 +11,9 @@ export interface StorageService {
   saveContactPhoto(accountId: string, contactId: string, buffer: Buffer): Promise<void>;
   getContactPhoto(accountId: string, contactId: string): Promise<Buffer | null>;
   deleteContactPhoto(accountId: string, contactId: string): Promise<void>;
+  saveSponsorPhoto(accountId: string, sponsorId: string, buffer: Buffer): Promise<void>;
+  getSponsorPhoto(accountId: string, sponsorId: string): Promise<Buffer | null>;
+  deleteSponsorPhoto(accountId: string, sponsorId: string): Promise<void>;
   saveAttachment(
     accountId: string,
     emailId: string,
@@ -38,6 +41,11 @@ export abstract class BaseStorageService implements StorageService {
     return ImageProcessor.processContactPhoto(buffer);
   }
 
+  protected async processSponsorPhoto(buffer: Buffer): Promise<Buffer> {
+    ImageProcessor.validateImageBuffer(buffer);
+    return ImageProcessor.processSponsorPhoto(buffer);
+  }
+
   protected getTeamLogoKey(accountId: string, teamId: string): string {
     return `${accountId}/team-logos/${teamId}-logo.png`;
   }
@@ -48,6 +56,10 @@ export abstract class BaseStorageService implements StorageService {
 
   protected getContactPhotoKey(accountId: string, contactId: string): string {
     return `${accountId}/contact-photos/${contactId}-photo.png`;
+  }
+
+  protected getSponsorPhotoKey(accountId: string, sponsorId: string): string {
+    return `${accountId}/sponsor-photos/${sponsorId}-photo.png`;
   }
 
   protected getAttachmentKey(accountId: string, emailId: string, filename: string): string {
@@ -73,6 +85,9 @@ export abstract class BaseStorageService implements StorageService {
   abstract saveContactPhoto(accountId: string, contactId: string, buffer: Buffer): Promise<void>;
   abstract getContactPhoto(accountId: string, contactId: string): Promise<Buffer | null>;
   abstract deleteContactPhoto(accountId: string, contactId: string): Promise<void>;
+  abstract saveSponsorPhoto(accountId: string, sponsorId: string, buffer: Buffer): Promise<void>;
+  abstract getSponsorPhoto(accountId: string, sponsorId: string): Promise<Buffer | null>;
+  abstract deleteSponsorPhoto(accountId: string, sponsorId: string): Promise<void>;
   abstract saveAttachment(
     accountId: string,
     emailId: string,

@@ -4,17 +4,15 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { Prisma } from '@prisma/client';
 import {
-  AccountSearchQuerySchema,
   AccountDomainLookupHeadersSchema,
   AccountDetailsQuerySchema,
+  AccountSearchQuerySchema,
+  CreateAccountSchema,
 } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { ValidationError, NotFoundError } from '../utils/customErrors.js';
+import { ValidationError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
-import { getAccountLogoUrl } from '../config/logo.js';
-import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const accountsService = ServiceFactory.getAccountsService();
@@ -108,62 +106,11 @@ router.post(
   authenticateToken,
   routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const {
-      name,
-      accountTypeId,
-      ownerUserId,
-      affiliationId = 1,
-      timezoneId = 'UTC',
-      firstYear,
-      urls = [],
-    } = req.body;
+    const createRequest = CreateAccountSchema.parse(req.body);
 
-    if (!name || !accountTypeId || !ownerUserId) {
-      throw new ValidationError('Name, account type ID, and owner user ID are required');
-    }
+    const createdAccount = await accountsService.createAccount(req!.user!.id, createRequest);
 
-    const account = await prisma.accounts.create({
-      data: {
-        name,
-        accounttypeid: BigInt(accountTypeId),
-        owneruserid: ownerUserId,
-        firstyear: firstYear || new Date().getFullYear(),
-        affiliationid: BigInt(affiliationId),
-        timezoneid: timezoneId,
-        twitteraccountname: '',
-        twitteroauthtoken: '',
-        twitteroauthsecretkey: '',
-        defaultvideo: '',
-        autoplayvideo: false,
-      },
-    });
-
-    // Create URLs if provided
-    if (urls.length > 0) {
-      for (const url of urls) {
-        await prisma.accountsurl.create({
-          data: {
-            accountid: account.id,
-            url,
-          },
-        });
-      }
-    }
-
-    res.status(201).json({
-      success: true,
-      data: {
-        account: {
-          id: account.id.toString(),
-          name: account.name,
-          accountTypeId: account.accounttypeid.toString(),
-          ownerUserId: account.owneruserid,
-          firstYear: account.firstyear,
-          affiliationId: account.affiliationid.toString(),
-          timezoneId: account.timezoneid,
-        },
-      },
-    });
+    res.status(201).json(createdAccount);
   }),
 );
 
@@ -178,79 +125,17 @@ router.put(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const {
-      name,
-      accountTypeId,
-      affiliationId,
-      timezoneId,
-      firstYear,
-      youtubeUserId,
-      facebookFanPage,
-      defaultVideo,
-      autoPlayVideo,
-    } = req.body;
+    const updateRequest = CreateAccountSchema.parse(req.body);
 
-    if (
-      !name &&
-      !accountTypeId &&
-      !affiliationId &&
-      !timezoneId &&
-      firstYear === undefined &&
-      !youtubeUserId &&
-      !facebookFanPage &&
-      defaultVideo === undefined &&
-      autoPlayVideo === undefined
-    ) {
+    const hasUpdates = Object.values(updateRequest).some((value) => value !== undefined);
+
+    if (!hasUpdates) {
       throw new ValidationError('At least one field to update is required');
     }
 
-    const updateData: Partial<Prisma.accountsUpdateInput> = {};
-    if (name) updateData.name = name;
-    if (accountTypeId) updateData.accounttypes = { connect: { id: BigInt(accountTypeId) } };
-    if (affiliationId) updateData.affiliationid = BigInt(affiliationId);
-    if (timezoneId) updateData.timezoneid = timezoneId;
-    if (firstYear !== undefined) updateData.firstyear = firstYear;
-    if (youtubeUserId !== undefined) updateData.youtubeuserid = youtubeUserId;
-    if (facebookFanPage !== undefined) updateData.facebookfanpage = facebookFanPage;
-    if (defaultVideo !== undefined) updateData.defaultvideo = defaultVideo;
-    if (autoPlayVideo !== undefined) updateData.autoplayvideo = autoPlayVideo;
+    const updatedAccount = await accountsService.updateAccount(accountId, updateRequest);
 
-    const accountSelect = {
-      id: true,
-      name: true,
-      accounttypeid: true,
-      owneruserid: true,
-      firstyear: true,
-      affiliationid: true,
-      timezoneid: true,
-      youtubeuserid: true,
-      facebookfanpage: true,
-      defaultvideo: true,
-      autoplayvideo: true,
-    } as const;
-    const account = await prisma.accounts.update({
-      where: { id: accountId },
-      data: updateData,
-      select: accountSelect,
-    });
-    res.json({
-      success: true,
-      data: {
-        account: {
-          id: account.id.toString(),
-          name: account.name,
-          accountTypeId: account.accounttypeid.toString(),
-          ownerUserId: account.owneruserid,
-          firstYear: account.firstyear,
-          affiliationId: account.affiliationid.toString(),
-          timezoneId: account.timezoneid,
-          youtubeUserId: account.youtubeuserid,
-          facebookFanPage: account.facebookfanpage,
-          defaultVideo: account.defaultvideo,
-          autoPlayVideo: account.autoplayvideo,
-        },
-      },
-    });
+    res.json(updatedAccount);
   }),
 );
 
@@ -265,25 +150,9 @@ router.delete(
   routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+    await accountsService.deleteAccount(accountId);
 
-    // Check if account exists
-    const existingAccount = await prisma.accounts.findUnique({
-      where: { id: accountId },
-    });
-
-    if (!existingAccount) {
-      throw new NotFoundError('Account not found');
-    }
-
-    // Delete account (this will cascade to related records)
-    await prisma.accounts.delete({
-      where: { id: accountId },
-    });
-
-    res.json({
-      success: true,
-      message: 'Account deleted successfully',
-    });
+    res.status(204).send();
   }),
 );
 
@@ -296,14 +165,9 @@ router.get(
   '/:accountId/name',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const account = await prisma.accounts.findUnique({
-      where: { id: accountId },
-      select: { id: true, name: true },
-    });
-    if (!account) {
-      throw new NotFoundError('Account not found');
-    }
-    res.json({ success: true, data: { id: accountId.toString(), name: account.name } });
+    const accountName = await accountsService.getAccountName(accountId);
+
+    res.json(accountName);
   }),
 );
 
@@ -315,20 +179,9 @@ router.get(
   '/:accountId/header',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const account = await prisma.accounts.findUnique({
-      where: { id: accountId },
-      select: { name: true },
-    });
-    if (!account) {
-      throw new NotFoundError('Account not found');
-    }
-    res.json({
-      success: true,
-      data: {
-        name: account.name,
-        accountLogoUrl: getAccountLogoUrl(accountId.toString()),
-      },
-    });
+    const accountHeader = await accountsService.getAccountHeader(accountId);
+
+    res.json(accountHeader);
   }),
 );
 

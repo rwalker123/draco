@@ -5,3 +5,7 @@ export * from './manager.js';
 export * from './role.js';
 export * from './paging.js';
 export * from './account.js';
+export * from './poll.js';
+export * from './playerClassified.js';
+export * from './sponsor.js';
+export * from './date.js';

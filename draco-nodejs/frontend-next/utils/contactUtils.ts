@@ -1,24 +1,5 @@
 import { ContactDetailsType, NamedContactType } from '@draco/shared-schemas';
-
-/**
- * Format phone number for display
- */
-export const formatPhoneNumber = (phone: string | null): string => {
-  if (!phone) return '';
-
-  // Remove all non-digit characters
-  const cleaned = phone.replace(/\D/g, '');
-
-  // Format based on length
-  if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  } else if (cleaned.length === 11 && cleaned.startsWith('1')) {
-    return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-  }
-
-  // Return original if can't format
-  return phone;
-};
+import { formatPhoneNumber } from './phoneNumber';
 
 /**
  * Format address for display

@@ -13,3 +13,26 @@ export const PagingSchema = z.object({
 });
 
 export type PagingType = z.infer<typeof PagingSchema>;
+
+export const PaginationSchema = z
+  .object({
+    page: z.number(),
+    limit: z.number(),
+    hasNext: z.boolean(),
+    hasPrev: z.boolean(),
+  })
+  .openapi({
+    title: 'Pagination',
+    description: 'Pagination metadata included with paged API responses',
+  });
+
+export type PaginationType = z.infer<typeof PaginationSchema>;
+
+export const PaginationWithTotalSchema = PaginationSchema.extend({
+  total: z.number(),
+}).openapi({
+  title: 'PaginationWithTotal',
+  description: 'Pagination metadata that includes the total number of items',
+});
+
+export type PaginationWithTotalType = z.infer<typeof PaginationWithTotalSchema>;

@@ -21,7 +21,7 @@ import {
   ITeamRepository,
   ILeagueRepository,
 } from '../repositories/index.js';
-import { RoleResponseFormatter } from '../utils/responseFormatters.js';
+import { RoleResponseFormatter } from '../responseFormatters/responseFormatters.js';
 import { RoleContextData } from '../interfaces/roleInterfaces.js';
 import { ValidationError } from '../utils/customErrors.js';
 
@@ -51,6 +51,31 @@ export class RoleService implements IRoleService {
     const contactRoles: RoleWithContactType[] = accountId
       ? await this.getContactRoles(userId, accountId)
       : [];
+
+    return {
+      globalRoles,
+      contactRoles,
+    };
+  }
+
+  async getUserRolesByContactId(contactId: bigint, accountId: bigint): Promise<UserRolesType> {
+    // Get global roles from aspnetuserroles
+    const dbContact = await this.contactRepository.findContactInAccount(contactId, accountId);
+    if (!dbContact) {
+      throw new ValidationError('Contact not found');
+    }
+
+    if (!dbContact.userid) {
+      return { globalRoles: [], contactRoles: [] };
+    }
+
+    const globalRoles: string[] = await this.getGlobalRoles(dbContact.userid);
+
+    // Get contact roles
+    const contactRoles: RoleWithContactType[] = await this.getContactRoles(
+      dbContact.userid,
+      accountId,
+    );
 
     return {
       globalRoles,

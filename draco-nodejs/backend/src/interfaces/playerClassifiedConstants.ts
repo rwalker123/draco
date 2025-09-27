@@ -1,13 +1,13 @@
 // PlayerClassifieds Constants for Draco Sports Manager
 // Baseball positions and experience levels used throughout the system
 
-import { IBaseballPosition, IExperienceLevel } from './playerClassifiedInterfaces.js';
+import { BaseballPositionType, ExperienceLevelType } from '@draco/shared-schemas';
 
 // ============================================================================
 // BASEBALL POSITIONS
 // ============================================================================
 
-export const BASEBALL_POSITIONS: IBaseballPosition[] = [
+export const BASEBALL_POSITIONS: BaseballPositionType[] = [
   // Special positions
   {
     id: 'any',
@@ -127,7 +127,7 @@ export const BASEBALL_POSITIONS: IBaseballPosition[] = [
 // EXPERIENCE LEVELS
 // ============================================================================
 
-export const EXPERIENCE_LEVELS: IExperienceLevel[] = [
+export const EXPERIENCE_LEVELS: ExperienceLevelType[] = [
   {
     id: 'beginner',
     name: 'Beginner',
@@ -204,28 +204,28 @@ export const SKILL_LEVELS = {
 /**
  * Get positions by category
  */
-export function getPositionsByCategory(category: string): IBaseballPosition[] {
+export function getPositionsByCategory(category: string): BaseballPositionType[] {
   return BASEBALL_POSITIONS.filter((pos) => pos.category === category);
 }
 
 /**
  * Get experience level by ID
  */
-export function getExperienceLevelById(id: string): IExperienceLevel | undefined {
+export function getExperienceLevelById(id: string): ExperienceLevelType | undefined {
   return EXPERIENCE_LEVELS.find((level) => level.id === id);
 }
 
 /**
  * Get position by ID
  */
-export function getPositionById(id: string): IBaseballPosition | undefined {
+export function getPositionById(id: string): BaseballPositionType | undefined {
   return BASEBALL_POSITIONS.find((pos) => pos.id === id);
 }
 
 /**
  * Get positions by abbreviation
  */
-export function getPositionByAbbreviation(abbr: string): IBaseballPosition | undefined {
+export function getPositionByAbbreviation(abbr: string): BaseballPositionType | undefined {
   return BASEBALL_POSITIONS.find((pos) => pos.abbreviation === abbr);
 }
 

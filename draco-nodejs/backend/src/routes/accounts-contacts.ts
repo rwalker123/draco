@@ -20,7 +20,7 @@ import {
   PagingSchema,
 } from '@draco/shared-schemas';
 import {
-  handleContactPhotoUploadMiddleware,
+  handlePhotoUploadMiddleware,
   parseFormDataJSON,
   validatePhotoUpload,
 } from '../middleware/fileUpload.js';
@@ -267,7 +267,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   validatePhotoUpload,
-  handleContactPhotoUploadMiddleware,
+  handlePhotoUploadMiddleware,
   parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
@@ -310,7 +310,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   validatePhotoUpload,
-  handleContactPhotoUploadMiddleware,
+  handlePhotoUploadMiddleware,
   parseFormDataJSON,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);

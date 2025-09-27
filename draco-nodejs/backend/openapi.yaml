@@ -992,6 +992,915 @@ components:
           type: boolean
           nullable: true
           default: false
+    CreateAccount:
+      type: object
+      properties:
+        name:
+          type: string
+        accountLogoUrl:
+          type: string
+        configuration:
+          type: object
+          properties:
+            accountType:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+              required:
+                - id
+                - name
+            firstYear:
+              type: integer
+              nullable: true
+            timezoneId:
+              type: string
+              nullable: true
+            affiliation:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                url:
+                  type: string
+                  nullable: true
+              required:
+                - id
+                - name
+        urls:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              url:
+                type: string
+                minLength: 1
+            required:
+              - url
+          default: []
+        socials:
+          type: object
+          properties:
+            twitterAccountName:
+              type: string
+            facebookFanPage:
+              type: string
+            youtubeUserId:
+              type: string
+              nullable: true
+            defaultVideo:
+              type: string
+              nullable: true
+            autoPlayVideo:
+              type: boolean
+              default: false
+      required:
+        - name
+        - accountLogoUrl
+    AccountName:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+    AccountHeader:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        accountLogoUrl:
+          type: string
+      required:
+        - id
+        - name
+        - accountLogoUrl
+    AccountAffiliation:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+    Sponsor:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        streetAddress:
+          type: string
+          maxLength: 255
+        cityStateZip:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 250
+        email:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 255
+        fax:
+          type: string
+          maxLength: 255
+        website:
+          type: string
+          maxLength: 255
+        id:
+          type: string
+        accountId:
+          type: string
+        teamId:
+          type: string
+        photoUrl:
+          type: string
+          format: uri
+          description: Public URL for the sponsor photo
+      required:
+        - name
+        - id
+        - accountId
+      title: CreateSponsor
+      description: Payload to create or update a sponsor
+    SponsorList:
+      type: object
+      properties:
+        sponsors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                minLength: 1
+                maxLength: 50
+              streetAddress:
+                type: string
+                maxLength: 255
+              cityStateZip:
+                type: string
+                maxLength: 255
+              description:
+                type: string
+                maxLength: 250
+              email:
+                type: string
+                maxLength: 100
+              phone:
+                type: string
+                maxLength: 255
+              fax:
+                type: string
+                maxLength: 255
+              website:
+                type: string
+                maxLength: 255
+              id:
+                type: string
+              accountId:
+                type: string
+              teamId:
+                type: string
+              photoUrl:
+                type: string
+                format: uri
+                description: Public URL for the sponsor photo
+            required:
+              - name
+              - id
+              - accountId
+            title: CreateSponsor
+            description: Payload to create or update a sponsor
+      required:
+        - sponsors
+      title: SponsorListResponse
+      description: List response for sponsors
+    CreateSponsor:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        streetAddress:
+          type: string
+          maxLength: 255
+        cityStateZip:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 250
+        email:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 255
+        fax:
+          type: string
+          maxLength: 255
+        website:
+          type: string
+          maxLength: 255
+      required:
+        - name
+      title: CreateSponsor
+      description: Payload to create or update a sponsor
+    PlayersWantedClassified:
+      type: object
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        dateCreated:
+          type: string
+          nullable: true
+        createdByContactId:
+          type: string
+        teamEventName:
+          type: string
+        description:
+          type: string
+        positionsNeeded:
+          type: string
+        creator:
+          type: object
+          properties:
+            id:
+              type: string
+            firstName:
+              type: string
+            lastName:
+              type: string
+            photoUrl:
+              type: string
+          required:
+            - id
+            - firstName
+            - lastName
+            - photoUrl
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+          required:
+            - id
+            - name
+      required:
+        - id
+        - accountId
+        - dateCreated
+        - createdByContactId
+        - teamEventName
+        - description
+        - positionsNeeded
+        - creator
+        - account
+      title: PlayersWantedClassified
+      description: Players Wanted classified listing
+    PlayersWantedClassifiedPaged:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              accountId:
+                type: string
+              dateCreated:
+                type: string
+                nullable: true
+              createdByContactId:
+                type: string
+              teamEventName:
+                type: string
+              description:
+                type: string
+              positionsNeeded:
+                type: string
+              creator:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+                  photoUrl:
+                    type: string
+                required:
+                  - id
+                  - firstName
+                  - lastName
+                  - photoUrl
+              account:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+            required:
+              - id
+              - accountId
+              - dateCreated
+              - createdByContactId
+              - teamEventName
+              - description
+              - positionsNeeded
+              - creator
+              - account
+            title: PlayersWantedClassified
+            description: Players Wanted classified listing
+        total:
+          type: number
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+            totalPages:
+              type: number
+          required:
+            - page
+            - limit
+            - hasNext
+            - hasPrev
+            - totalPages
+          title: PlayerClassifiedPagination
+          description: Pagination metadata for player classified listings
+        filters:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - players
+                - teams
+                - all
+            positions:
+              type: array
+              items:
+                type: string
+            experience:
+              type: array
+              items:
+                type: string
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                  nullable: true
+                to:
+                  type: string
+                  nullable: true
+              required:
+                - from
+                - to
+            searchQuery:
+              type: string
+              nullable: true
+          required:
+            - type
+            - positions
+            - experience
+            - dateRange
+            - searchQuery
+          title: PlayerClassifiedFilters
+          description: Filters applied to a player classified search request
+      required:
+        - data
+        - total
+        - pagination
+        - filters
+      title: PlayersWantedClassifiedList
+      description: Paginated Players Wanted classified listings
+    UpsertPlayersWantedClassified:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        teamEventName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        positionsNeeded:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+        - teamEventName
+        - description
+        - positionsNeeded
+      title: UpsertPlayersWantedClassifiedRequest
+      description: Request body for creating or updating a Players Wanted classified
+    PlayerClassifiedSearchQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        sortBy:
+          type: string
+          enum:
+            - dateCreated
+            - relevance
+          default: dateCreated
+        sortOrder:
+          type: string
+          enum:
+            - asc
+            - desc
+          default: desc
+        searchQuery:
+          type: string
+          maxLength: 200
+      title: PlayerClassifiedSearchQuery
+      description: Query parameters used to paginate and filter player classified listings
+    TeamsWantedPublicClassifiedPaged:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              accountId:
+                type: string
+              dateCreated:
+                type: string
+                nullable: true
+              name:
+                type: string
+              experience:
+                type: string
+              positionsPlayed:
+                type: string
+              age:
+                type: number
+                nullable: true
+              account:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+            required:
+              - id
+              - accountId
+              - dateCreated
+              - name
+              - experience
+              - positionsPlayed
+              - age
+              - account
+            title: TeamsWantedPublicClassified
+            description: Teams Wanted classified listing for public display without contact
+              information
+        total:
+          type: number
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+            totalPages:
+              type: number
+          required:
+            - page
+            - limit
+            - hasNext
+            - hasPrev
+            - totalPages
+          title: PlayerClassifiedPagination
+          description: Pagination metadata for player classified listings
+        filters:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - players
+                - teams
+                - all
+            positions:
+              type: array
+              items:
+                type: string
+            experience:
+              type: array
+              items:
+                type: string
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                  nullable: true
+                to:
+                  type: string
+                  nullable: true
+              required:
+                - from
+                - to
+            searchQuery:
+              type: string
+              nullable: true
+          required:
+            - type
+            - positions
+            - experience
+            - dateRange
+            - searchQuery
+          title: PlayerClassifiedFilters
+          description: Filters applied to a player classified search request
+      required:
+        - data
+        - total
+        - pagination
+        - filters
+      title: TeamsWantedPublicClassifiedPaged
+      description: Paginated Teams Wanted classified listings for public display
+    TeamsWantedOwnerClassified:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        accountId:
+          type: string
+        dateCreated:
+          type: string
+          nullable: true
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        experience:
+          type: string
+        positionsPlayed:
+          type: string
+        birthDate:
+          type: string
+          nullable: true
+        age:
+          type: number
+          nullable: true
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+          required:
+            - id
+            - name
+      required:
+        - id
+        - accountId
+        - dateCreated
+        - name
+        - email
+        - phone
+        - experience
+        - positionsPlayed
+        - birthDate
+        - age
+        - account
+      title: TeamsWantedOwnerClassified
+      description: Teams Wanted classified listing for the owner including contact
+        information
+    UpsertTeamsWantedClassified:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 320
+          format: email
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 50
+        experience:
+          type: string
+          minLength: 1
+          maxLength: 255
+        positionsPlayed:
+          type: string
+          minLength: 1
+          maxLength: 255
+        birthDate:
+          type: string
+          nullable: true
+          default: ""
+      required:
+        - name
+        - email
+        - phone
+        - experience
+        - positionsPlayed
+      title: UpsertTeamsWantedClassifiedRequest
+      description: Request body for creating or updating a Teams Wanted classified
+    TeamsWantedAccessCode:
+      type: object
+      properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+      required:
+        - accessCode
+      title: TeamsWantedAccessCode
+      description: Access code used to authenticate Teams Wanted classified actions
+    TeamsWantedContactInfo:
+      type: object
+      properties:
+        email:
+          type: string
+        phone:
+          type: string
+        birthDate:
+          type: string
+          nullable: true
+      required:
+        - email
+        - phone
+        - birthDate
+      title: TeamsWantedContactInfo
+      description: Contact information for a Teams Wanted classified
+    TeamsWantedContactQuery:
+      type: object
+      properties:
+        accessCode:
+          type: string
+          minLength: 10
+          maxLength: 1000
+      title: TeamsWantedContactQuery
+      description: Query parameters used to request Teams Wanted contact information
+    ContactPlayersWantedCreator:
+      type: object
+      properties:
+        senderName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        senderEmail:
+          type: string
+          maxLength: 320
+          format: email
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+      required:
+        - senderName
+        - senderEmail
+        - message
+      title: ContactPlayersWantedCreatorRequest
+      description: Request body for contacting a Players Wanted classified creator
+    BaseballPosition:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum:
+            - pitching
+            - infield
+            - outfield
+            - catching
+            - utility
+        abbreviation:
+          type: string
+      required:
+        - id
+        - name
+        - category
+        - abbreviation
+      title: BaseballPosition
+      description: Baseball position metadata used in player classifieds
+    ExperienceLevel:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        yearsRequired:
+          type: number
+        skillLevel:
+          type: string
+          enum:
+            - beginner
+            - intermediate
+            - advanced
+            - expert
+      required:
+        - id
+        - name
+        - description
+        - yearsRequired
+        - skillLevel
+      title: ExperienceLevel
+      description: Experience level metadata used in player classifieds
+    AccountPoll:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        accountId:
+          type: string
+        question:
+          type: string
+          minLength: 1
+          maxLength: 255
+        active:
+          type: boolean
+        totalVotes:
+          type: integer
+          minimum: 0
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              optionText:
+                type: string
+                minLength: 1
+                maxLength: 255
+              priority:
+                type: integer
+              voteCount:
+                type: integer
+                minimum: 0
+            required:
+              - id
+              - optionText
+              - priority
+              - voteCount
+        userVoteOptionId:
+          type: string
+          description: Identifier of the option selected by the authenticated contact when
+            retrieving polls scoped to a contact.
+      required:
+        - id
+        - accountId
+        - question
+        - active
+        - totalVotes
+        - options
+    CreatePoll:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 255
+        active:
+          type: boolean
+          default: true
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              optionText:
+                type: string
+                minLength: 1
+                maxLength: 255
+              priority:
+                type: integer
+            required:
+              - optionText
+          minItems: 2
+      required:
+        - question
+        - options
+    UpdatePoll:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 255
+        active:
+          type: boolean
+          default: true
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              optionText:
+                type: string
+                minLength: 1
+                maxLength: 255
+              priority:
+                type: integer
+            required:
+              - optionText
+        deletedOptionIds:
+          type: array
+          items:
+            type: string
+    PollVoteRequest:
+      type: object
+      properties:
+        optionId:
+          type: string
+      required:
+        - optionId
     ValidationError:
       type: object
       properties:
@@ -1241,6 +2150,344 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      operationId: updateAccount
+      summary: Update account
+      description: Update account details. Account administrators or global
+        administrators only.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                accountLogoUrl:
+                  type: string
+                configuration:
+                  type: object
+                  properties:
+                    accountType:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                        - id
+                        - name
+                    firstYear:
+                      type: integer
+                      nullable: true
+                    timezoneId:
+                      type: string
+                      nullable: true
+                    affiliation:
+                      type: object
+                      nullable: true
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        url:
+                          type: string
+                          nullable: true
+                      required:
+                        - id
+                        - name
+                urls:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      url:
+                        type: string
+                        minLength: 1
+                    required:
+                      - url
+                  default: []
+                socials:
+                  type: object
+                  properties:
+                    twitterAccountName:
+                      type: string
+                    facebookFanPage:
+                      type: string
+                    youtubeUserId:
+                      type: string
+                      nullable: true
+                    defaultVideo:
+                      type: string
+                      nullable: true
+                    autoPlayVideo:
+                      type: boolean
+                      default: false
+      responses:
+        "200":
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteAccount
+      summary: Delete account
+      description: Delete an account. Administrator access required.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Account deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts:
+    post:
+      operationId: createAccount
+      summary: Create account
+      description: Create a new account. Administrator access required.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccount"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/name:
+    get:
+      operationId: getAccountName
+      summary: Get account name
+      description: Retrieve the display name for an account.
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Account name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountName"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/header:
+    get:
+      operationId: getAccountHeader
+      summary: Get account header
+      description: Retrieve account name and branding assets.
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Account header information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountHeader"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/types:
+    get:
+      operationId: getAccountTypes
+      summary: List account types
+      description: Retrieve the list of available account types.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Account types list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Account"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/affiliations:
+    get:
+      operationId: getAccountAffiliations
+      summary: List account affiliations
+      description: Retrieve the list of available account affiliations.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Account affiliations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountAffiliation"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
         "500":
           description: Internal server error
           content:
@@ -2356,6 +3603,1638 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/sponsors:
+    get:
+      description: List sponsors configured for an account
+      operationId: listAccountSponsors
+      summary: List account sponsors
+      tags:
+        - Sponsors
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Sponsors for the account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SponsorList"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Create an account sponsor
+      operationId: createAccountSponsor
+      summary: Create account sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CreateSponsor"
+                - type: object
+                  properties:
+                    photo:
+                      type: string
+                      format: binary
+                      description: Sponsor photo file
+              title: CreateSponsor
+              description: Payload to create or update a sponsor
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "201":
+          description: Sponsor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/sponsors/{sponsorId}:
+    get:
+      description: Retrieve a single account-level sponsor
+      operationId: getAccountSponsor
+      summary: Get account sponsor
+      tags:
+        - Sponsors
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Sponsor details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      description: Update an account sponsor
+      operationId: updateAccountSponsor
+      summary: Update account sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                streetAddress:
+                  type: string
+                  maxLength: 255
+                cityStateZip:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 250
+                email:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                  maxLength: 255
+                fax:
+                  type: string
+                  maxLength: 255
+                website:
+                  type: string
+                  maxLength: 255
+                photo:
+                  type: string
+                  format: binary
+                  description: Sponsor photo file
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "200":
+          description: Sponsor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete an account sponsor
+      operationId: deleteAccountSponsor
+      summary: Delete account sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Sponsor deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors:
+    get:
+      description: List sponsors configured for a team season
+      operationId: listTeamSponsors
+      summary: List team sponsors
+      tags:
+        - Sponsors
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Sponsors for the team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SponsorList"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Create a team sponsor
+      operationId: createTeamSponsor
+      summary: Create team sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                streetAddress:
+                  type: string
+                  maxLength: 255
+                cityStateZip:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 250
+                email:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                  maxLength: 255
+                fax:
+                  type: string
+                  maxLength: 255
+                website:
+                  type: string
+                  maxLength: 255
+                photo:
+                  type: string
+                  format: binary
+                  description: Sponsor photo file
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "201":
+          description: Sponsor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - team sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/sponsors/{sponsorId}:
+    put:
+      description: Update a team sponsor
+      operationId: updateTeamSponsor
+      summary: Update team sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                streetAddress:
+                  type: string
+                  maxLength: 255
+                cityStateZip:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 250
+                email:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                  maxLength: 255
+                fax:
+                  type: string
+                  maxLength: 255
+                website:
+                  type: string
+                  maxLength: 255
+                photo:
+                  type: string
+                  format: binary
+                  description: Sponsor photo file
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "200":
+          description: Sponsor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sponsor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - team sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a team sponsor
+      operationId: deleteTeamSponsor
+      summary: Delete team sponsor
+      tags:
+        - Sponsors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: sponsorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Sponsor deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - team sponsor management permission required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Sponsor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/players-wanted:
+    post:
+      operationId: createPlayersWantedClassified
+      summary: Create Players Wanted classified
+      description: Create a Players Wanted classified for an authenticated account member.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertPlayersWantedClassified"
+      responses:
+        "201":
+          description: Players Wanted classified created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayersWantedClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account or contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      operationId: listPlayersWantedClassifieds
+      summary: List Players Wanted classifieds
+      description: Retrieve paginated Players Wanted classifieds for the specified account.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum:
+              - dateCreated
+              - relevance
+            default: dateCreated
+          required: false
+          name: sortBy
+          in: query
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          required: false
+          name: sortOrder
+          in: query
+        - schema:
+            type: string
+            maxLength: 200
+          required: false
+          name: searchQuery
+          in: query
+      responses:
+        "200":
+          description: Players Wanted classifieds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayersWantedClassifiedPaged"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted:
+    post:
+      operationId: createTeamsWantedClassified
+      summary: Create Teams Wanted classified
+      description: Create a Teams Wanted classified for a public user using an access
+        code workflow.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamsWantedClassified"
+      responses:
+        "201":
+          description: Teams Wanted classified created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      operationId: listTeamsWantedClassifieds
+      summary: List Teams Wanted classifieds
+      description: Retrieve paginated Teams Wanted classifieds for authenticated
+        account members.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum:
+              - dateCreated
+              - relevance
+            default: dateCreated
+          required: false
+          name: sortBy
+          in: query
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          required: false
+          name: sortOrder
+          in: query
+        - schema:
+            type: string
+            maxLength: 200
+          required: false
+          name: searchQuery
+          in: query
+      responses:
+        "200":
+          description: Teams Wanted classifieds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedPublicClassifiedPaged"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/verify:
+    post:
+      operationId: verifyTeamsWantedAccess
+      summary: Verify Teams Wanted access code
+      description: Verify an access code and return the Teams Wanted classified owner view.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamsWantedAccessCode"
+      responses:
+        "200":
+          description: Verified Teams Wanted classified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/access-code:
+    post:
+      operationId: getTeamsWantedByAccessCode
+      summary: Get Teams Wanted classified by access code
+      description: Retrieve a Teams Wanted classified owner view using an access code.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamsWantedAccessCode"
+      responses:
+        "200":
+          description: Teams Wanted classified owner view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}:
+    put:
+      operationId: updateTeamsWantedClassified
+      summary: Update Teams Wanted classified
+      description: Update a Teams Wanted classified using either account
+        authentication or access code.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamsWantedClassified"
+      responses:
+        "200":
+          description: Updated Teams Wanted classified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedOwnerClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteTeamsWantedClassified
+      summary: Delete Teams Wanted classified
+      description: Delete a Teams Wanted classified using either authentication or
+        access code.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamsWantedAccessCode"
+      responses:
+        "204":
+          description: Teams Wanted classified deleted
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}:
+    put:
+      operationId: updatePlayersWantedClassified
+      summary: Update Players Wanted classified
+      description: Update a Players Wanted classified for an authenticated account member.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertPlayersWantedClassified"
+      responses:
+        "200":
+          description: Updated Players Wanted classified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayersWantedClassified"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deletePlayersWantedClassified
+      summary: Delete Players Wanted classified
+      description: Delete a Players Wanted classified for an authenticated account member.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Players Wanted classified deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/teams-wanted/{classifiedId}/contact:
+    get:
+      operationId: getTeamsWantedContactInfo
+      summary: Get Teams Wanted contact info
+      description: Retrieve Teams Wanted classified contact information using either
+        account authentication or a valid access code.
+      tags:
+        - Player Classifieds
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: string
+            minLength: 10
+            maxLength: 1000
+          required: false
+          name: accessCode
+          in: query
+      responses:
+        "200":
+          description: Teams Wanted contact information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamsWantedContactInfo"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/players-wanted/{classifiedId}/contact:
+    post:
+      operationId: contactPlayersWantedCreator
+      summary: Contact Players Wanted creator
+      description: Send a message to the creator of a Players Wanted classified.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: classifiedId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactPlayersWantedCreator"
+      responses:
+        "204":
+          description: Contact request sent
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Classified not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/positions:
+    get:
+      operationId: listPlayerClassifiedPositions
+      summary: List baseball positions
+      description: Retrieve supported baseball positions for classifieds.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Baseball positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BaseballPosition"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/player-classifieds/experience-levels:
+    get:
+      operationId: listPlayerClassifiedExperienceLevels
+      summary: List experience levels
+      description: Retrieve supported experience levels for classifieds.
+      tags:
+        - Player Classifieds
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Experience levels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExperienceLevel"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/polls:
+    get:
+      operationId: listAccountPolls
+      summary: List polls for an account
+      tags:
+        - Polls
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Polls available for the account
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountPoll"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: createAccountPoll
+      summary: Create a poll for an account
+      tags:
+        - Polls
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePoll"
+      responses:
+        "201":
+          description: Poll created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountPoll"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/polls/{pollId}:
+    put:
+      operationId: updateAccountPoll
+      summary: Update an existing poll
+      tags:
+        - Polls
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: pollId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePoll"
+      responses:
+        "200":
+          description: Poll updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountPoll"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteAccountPoll
+      summary: Delete a poll
+      tags:
+        - Polls
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: pollId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Poll deleted successfully
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/polls/active:
+    get:
+      operationId: listActiveAccountPolls
+      summary: List active polls for an account
+      tags:
+        - Polls
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Active polls for the account
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountPoll"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/polls/{pollId}/vote:
+    post:
+      operationId: voteOnAccountPoll
+      summary: Submit a vote for a poll
+      tags:
+        - Polls
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: pollId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollVoteRequest"
+      responses:
+        "200":
+          description: Vote recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountPoll"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Poll not found
           content:
             application/json:
               schema:

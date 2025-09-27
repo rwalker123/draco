@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -26,28 +26,34 @@ import MyTeams, { UserTeam } from '../../../components/MyTeams';
 import AccountPageHeader from '../../../components/AccountPageHeader';
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
-import { listWorkouts } from '../../../services/workoutService';
-import { WorkoutSummary } from '../../../types/workouts';
 import { JoinLeagueDashboard } from '../../../components/join-league';
+import AccountPollsCard from '../../../components/polls/AccountPollsCard';
+import { SponsorService } from '../../../services/sponsorService';
+import SponsorCard from '../../../components/sponsors/SponsorCard';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
-import { AccountSeasonWithStatusType, AccountType } from '@draco/shared-schemas';
+import { useAccountMembership } from '../../../hooks/useAccountMembership';
+import { unwrapApiResult } from '../../../utils/apiResult';
+import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
   const [currentSeason, setCurrentSeason] = useState<AccountSeasonWithStatusType | null>(null);
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
-  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
   const [hasAnyGames, setHasAnyGames] = useState(false);
   const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
+  const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
+  const [sponsorError, setSponsorError] = useState<string | null>(null);
   const { user, token } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
+  const { isMember } = useAccountMembership(accountIdStr);
+  const isAccountMember = isMember === true;
 
   // Fetch public account data
   useEffect(() => {
@@ -77,18 +83,15 @@ const BaseballAccountHome: React.FC = () => {
           return;
         }
 
-        if (!result.data) {
-          setError('Account not found or not publicly accessible');
-          setAccount(null);
-          setCurrentSeason(null);
-          return;
-        }
-
-        const accountData = result.data.account;
+        const {
+          account: accountData,
+          seasons,
+          currentSeason: responseCurrentSeason,
+        } = unwrapApiResult(result, 'Account not found or not publicly accessible');
         setAccount(accountData as AccountType);
 
-        const currentSeasonCandidate = result.data.seasons?.find((season) => season.isCurrent) ?? {
-          ...result.data.currentSeason,
+        const currentSeasonCandidate = seasons?.find((season) => season.isCurrent) ?? {
+          ...responseCurrentSeason,
           isCurrent: true,
         };
         setCurrentSeason(currentSeasonCandidate as AccountSeasonWithStatusType);
@@ -142,26 +145,21 @@ const BaseballAccountHome: React.FC = () => {
     fetchUserTeams();
   }, [accountIdStr, user, token]);
 
-  // Fetch upcoming workouts
-  const fetchUpcomingWorkouts = useCallback(async () => {
+  useEffect(() => {
     if (!accountIdStr) return;
 
-    try {
-      const allWorkouts = await listWorkouts(accountIdStr, false);
-      // Filter for upcoming workouts on the frontend
-      const upcoming = allWorkouts
-        .filter((workout) => new Date(workout.workoutDate) > new Date())
-        .sort((a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime())
-        .slice(0, 3); // Limit to 3 upcoming workouts
-      setWorkouts(upcoming);
-    } catch (error) {
-      console.error('Failed to fetch upcoming workouts:', error);
-    }
+    const service = new SponsorService();
+    service
+      .listAccountSponsors(accountIdStr)
+      .then((sponsors) => {
+        setAccountSponsors(sponsors);
+        setSponsorError(null);
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load account sponsors:', error);
+        setSponsorError('Sponsors are currently unavailable.');
+      });
   }, [accountIdStr]);
-
-  useEffect(() => {
-    fetchUpcomingWorkouts();
-  }, [fetchUpcomingWorkouts]);
 
   const handleViewTeam = (teamSeasonId: string) => {
     if (!currentSeason) return;
@@ -305,8 +303,8 @@ const BaseballAccountHome: React.FC = () => {
         <JoinLeagueDashboard
           accountId={accountIdStr}
           account={account}
-          workouts={workouts}
           token={token || undefined}
+          isAccountMember={isAccountMember}
         />
 
         {/* Scoreboard Layout Toggle */}
@@ -370,8 +368,16 @@ const BaseballAccountHome: React.FC = () => {
           </Box>
         )}
 
+        <AccountPollsCard accountId={accountIdStr} />
+
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}
+
+        <SponsorCard
+          sponsors={accountSponsors}
+          title="Account Sponsors"
+          emptyMessage={sponsorError ?? 'No sponsors have been added yet.'}
+        />
 
         {/* User Teams Section */}
         {user && userTeams.length > 0 && (

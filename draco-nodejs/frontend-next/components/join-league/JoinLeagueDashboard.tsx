@@ -1,34 +1,27 @@
 import React from 'react';
 import { Box, Paper, Typography } from '@mui/material';
-import TrainingSection from './TrainingSection';
+import WorkoutPreview from './WorkoutPreview';
 import PlayersWantedPreview from './PlayersWantedPreview';
 import ContactLeagueSection from './ContactLeagueSection';
-import { WorkoutSummary } from '../../types/workouts';
 import { AccountType } from '@draco/shared-schemas';
 
 interface JoinLeagueDashboardProps {
   accountId: string;
   account: AccountType;
-  workouts: WorkoutSummary[];
   token?: string;
   showViewAllWorkoutsButton?: boolean;
   onViewAllWorkouts?: () => void;
+  isAccountMember?: boolean;
 }
 
 const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
   accountId,
   account,
-  workouts,
   token,
   showViewAllWorkoutsButton,
   onViewAllWorkouts,
+  isAccountMember = false,
 }) => {
-  const hasAnyContent = workouts.length > 0;
-
-  if (!hasAnyContent) {
-    return null;
-  }
-
   return (
     <Paper
       sx={{
@@ -73,26 +66,19 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
         }}
       >
         {/* Training Section - spans full width on tablet */}
-        <Box
-          sx={{
-            gridColumn: {
-              xs: '1',
-              md: 'span 2',
-              lg: '1',
-            },
-          }}
-        >
-          <TrainingSection
-            workouts={workouts}
-            accountId={accountId}
-            token={token}
-            showViewAllWorkoutsButton={showViewAllWorkoutsButton}
-            onViewAllWorkouts={onViewAllWorkouts}
-          />
-        </Box>
+        <WorkoutPreview
+          accountId={accountId}
+          token={token}
+          showViewAllWorkoutsButton={showViewAllWorkoutsButton}
+          onViewAllWorkouts={onViewAllWorkouts}
+        />
 
         {/* Players Wanted Section */}
-        <PlayersWantedPreview accountId={accountId} maxDisplay={3} />
+        <PlayersWantedPreview
+          accountId={accountId}
+          maxDisplay={3}
+          isAccountMember={isAccountMember}
+        />
 
         {/* Contact Section */}
         <ContactLeagueSection account={account} />

@@ -50,6 +50,8 @@ export interface IRoleQuery {
    * Get role ID by name
    */
   getRoleId(roleName: string): Promise<string | null>;
+
+  getUserRolesByContactId(contactId: bigint, accountId: bigint): Promise<UserRolesType>;
 }
 
 /**

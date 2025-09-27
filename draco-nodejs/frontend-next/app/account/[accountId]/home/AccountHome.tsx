@@ -24,6 +24,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import BaseballAccountHome from '../BaseballAccountHome';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../utils/apiResult';
 
 interface Account {
   id: string;
@@ -82,14 +83,10 @@ const AccountHome: React.FC = () => {
           return;
         }
 
-        if (!result.data) {
-          setError('Account not found or not publicly accessible');
-          setAccount(null);
-          setSeasons([]);
-          return;
-        }
-
-        const { account: accountData, seasons: seasonList } = result.data;
+        const { account: accountData, seasons: seasonList } = unwrapApiResult(
+          result,
+          'Account not found or not publicly accessible',
+        );
 
         setAccount({
           id: accountData.id,

@@ -1,4 +1,11 @@
-import { AccountType, AccountWithSeasonsType } from '@draco/shared-schemas';
+import {
+  AccountHeaderType,
+  AccountNameType,
+  AccountType,
+  AccountWithSeasonsType,
+  CreateAccountType,
+} from '@draco/shared-schemas';
+import { accounts } from '@prisma/client';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -11,10 +18,11 @@ import {
   dbGlobalRoles,
   ISeasonRepository,
 } from '../repositories/index.js';
-import { AccountResponseFormatter } from '../utils/responseFormatters.js';
-import { NotFoundError } from '../utils/customErrors.js';
+import { AccountResponseFormatter } from '../responseFormatters/responseFormatters.js';
+import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';
+import { getAccountLogoUrl } from '../config/logo.js';
 
 export class AccountsService {
   private readonly accountRepository: IAccountRepository;
@@ -185,6 +193,202 @@ export class AccountsService {
       currentSeason,
       seasons,
     };
+  }
+
+  async createAccount(
+    accountOwnerUserId: string,
+    payload: CreateAccountType,
+  ): Promise<AccountType> {
+    if (!accountOwnerUserId) {
+      throw new ValidationError('Account owner user ID is required');
+    }
+
+    const accountTypeId = payload.configuration?.accountType?.id;
+    if (!accountTypeId) {
+      throw new ValidationError('Account type is required');
+    }
+
+    const affiliationId = payload.configuration?.affiliation?.id ?? '1';
+
+    const accountCreateData: Partial<accounts> = {
+      name: payload.name,
+      accounttypeid: BigInt(accountTypeId),
+      owneruserid: accountOwnerUserId,
+      affiliationid: BigInt(affiliationId),
+      timezoneid: payload.configuration?.timezoneId ?? 'UTC',
+      firstyear: payload.configuration?.firstYear ?? new Date().getFullYear(),
+      twitteraccountname: payload.socials?.twitterAccountName ?? '',
+      twitteroauthtoken: '',
+      twitteroauthsecretkey: '',
+      defaultvideo: payload.socials?.defaultVideo ?? '',
+      autoplayvideo: payload.socials?.autoPlayVideo ?? false,
+      youtubeuserid: payload.socials?.youtubeUserId ?? null,
+      facebookfanpage: payload.socials?.facebookFanPage ?? null,
+    };
+
+    const accountRecord = await this.accountRepository.create(accountCreateData);
+
+    const normalizedUrls = payload.urls
+      .map((url) => url.url?.trim())
+      .filter((url): url is string => Boolean(url && url.length > 0));
+    for (const url of normalizedUrls) {
+      await this.accountRepository.createAccountUrl(accountRecord.id, url);
+    }
+
+    return this.buildAccountResponse(accountRecord.id);
+  }
+
+  async updateAccount(accountId: bigint, payload: CreateAccountType): Promise<AccountType> {
+    const existingAccount = await this.accountRepository.findById(accountId);
+
+    if (!existingAccount) {
+      throw new NotFoundError('Account not found');
+    }
+
+    const updateData: Partial<accounts> = {};
+
+    if (payload.name !== undefined) {
+      updateData.name = payload.name;
+    }
+
+    if (payload.configuration?.accountType?.id !== undefined) {
+      const accountTypeId = payload.configuration?.accountType?.id;
+      if (accountTypeId) {
+        updateData.accounttypeid = BigInt(accountTypeId);
+      }
+    }
+
+    if (payload.configuration?.affiliation?.id !== undefined) {
+      const affiliationId = payload.configuration?.affiliation?.id;
+      if (affiliationId) {
+        updateData.affiliationid = BigInt(affiliationId);
+      }
+    }
+
+    if (payload.configuration?.timezoneId !== undefined) {
+      updateData.timezoneid = payload.configuration?.timezoneId ?? '';
+    }
+
+    if (payload.configuration?.firstYear !== undefined) {
+      updateData.firstyear = payload.configuration?.firstYear ?? new Date().getFullYear();
+    }
+
+    if (payload.socials?.twitterAccountName !== undefined) {
+      updateData.twitteraccountname = payload.socials?.twitterAccountName ?? '';
+    }
+
+    if (payload.socials?.youtubeUserId !== undefined) {
+      updateData.youtubeuserid = payload.socials?.youtubeUserId ?? null;
+    }
+
+    if (payload.socials?.facebookFanPage !== undefined) {
+      updateData.facebookfanpage = payload.socials?.facebookFanPage ?? null;
+    }
+
+    if (payload.socials?.defaultVideo !== undefined) {
+      updateData.defaultvideo = payload.socials?.defaultVideo ?? '';
+    }
+
+    if (payload.socials?.autoPlayVideo !== undefined) {
+      updateData.autoplayvideo = payload.socials?.autoPlayVideo ?? false;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return this.buildAccountResponse(accountId);
+    }
+
+    await this.accountRepository.update(accountId, updateData);
+
+    return this.buildAccountResponse(accountId);
+  }
+
+  async deleteAccount(accountId: bigint): Promise<void> {
+    const existingAccount = await this.accountRepository.findById(accountId);
+
+    if (!existingAccount) {
+      throw new NotFoundError('Account not found');
+    }
+
+    await this.accountRepository.delete(accountId);
+  }
+
+  async getAccountName(accountId: bigint): Promise<AccountNameType> {
+    const account = await this.accountRepository.findById(accountId);
+
+    if (!account) {
+      throw new NotFoundError('Account not found');
+    }
+
+    return {
+      id: account.id.toString(),
+      name: account.name,
+    };
+  }
+
+  async getAccountHeader(accountId: bigint): Promise<AccountHeaderType> {
+    const account = await this.accountRepository.findById(accountId);
+
+    if (!account) {
+      throw new NotFoundError('Account not found');
+    }
+
+    return {
+      id: account.id.toString(),
+      name: account.name,
+      accountLogoUrl: getAccountLogoUrl(account.id.toString()),
+    };
+  }
+
+  private async buildAccountResponse(accountId: bigint): Promise<AccountType> {
+    const account = await this.accountRepository.findAccountWithRelationsById(accountId);
+
+    if (!account) {
+      throw new NotFoundError('Account not found');
+    }
+
+    const affiliationIds = account.affiliationid ? [account.affiliationid] : [];
+    const affiliations = affiliationIds.length
+      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
+      : [];
+
+    const affiliationMap = new Map<string, dbAccountAffiliation>(
+      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
+    );
+
+    const ownerUserId = account.owneruserid ?? null;
+
+    let ownerContact: dbBaseContact | undefined;
+    let ownerUser:
+      | {
+          id: string;
+          userName: string;
+        }
+      | undefined;
+
+    if (ownerUserId) {
+      const [contact, user] = await Promise.all([
+        this.contactRepository.findByUserId(ownerUserId, accountId),
+        this.userRepository.findByUserId(ownerUserId),
+      ]);
+
+      if (contact) {
+        ownerContact = contact;
+      }
+
+      if (user) {
+        ownerUser = {
+          id: user.id,
+          userName: user.username ?? ownerUserId,
+        };
+      } else {
+        ownerUser = {
+          id: ownerUserId,
+          userName: ownerUserId,
+        };
+      }
+    }
+
+    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
   }
 
   private async formatAccounts(accounts: dbAccount[]): Promise<AccountType[]> {

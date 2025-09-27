@@ -27,6 +27,10 @@ import { EmailTemplateService } from './emailTemplateService.js';
 import { AccountsService } from './accountsService.js';
 import { EmailAttachmentService } from './emailAttachmentService.js';
 import { WorkoutService } from './workoutService.js';
+import { PlayerClassifiedAccessService } from './player-classified/PlayerClassifiedAccessService.js';
+import { PlayerClassifiedEmailService } from './player-classified/PlayerClassifiedEmailService.js';
+import { SponsorService } from './sponsorService.js';
+import { PollService } from './pollService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -36,6 +40,8 @@ export class ServiceFactory {
   private static roleService: RoleService;
   private static teamService: TeamService;
   private static playerClassifiedService: PlayerClassifiedService;
+  private static emailService: PlayerClassifiedEmailService;
+  private static accessService: PlayerClassifiedAccessService;
   private static cleanupService: ICleanupService;
   private static routeProtection: RouteProtection;
   private static rosterService: RosterService;
@@ -52,6 +58,8 @@ export class ServiceFactory {
   private static emailAttachmentService: EmailAttachmentService;
   private static workoutService: WorkoutService;
   private static accountsService: AccountsService;
+  private static sponsorService: SponsorService;
+  private static pollService: PollService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -85,7 +93,7 @@ export class ServiceFactory {
 
   static getPlayerClassifiedService(): PlayerClassifiedService {
     if (!this.playerClassifiedService) {
-      this.playerClassifiedService = new PlayerClassifiedService(prisma);
+      this.playerClassifiedService = new PlayerClassifiedService();
     }
     return this.playerClassifiedService;
   }
@@ -175,6 +183,13 @@ export class ServiceFactory {
     return this.accountsService;
   }
 
+  static getSponsorService(): SponsorService {
+    if (!this.sponsorService) {
+      this.sponsorService = new SponsorService();
+    }
+    return this.sponsorService;
+  }
+
   static getTeamManagerService(): TeamManagerService {
     if (!this.teamManagerService) {
       this.teamManagerService = new TeamManagerService(prisma);
@@ -201,5 +216,24 @@ export class ServiceFactory {
       this.workoutService = new WorkoutService();
     }
     return this.workoutService;
+  }
+  static getPlayerClassifiedEmailService(): PlayerClassifiedEmailService {
+    if (!this.emailService) {
+      this.emailService = new PlayerClassifiedEmailService();
+    }
+    return this.emailService;
+  }
+  static getPlayerClassifiedAccessService(): PlayerClassifiedAccessService {
+    if (!this.accessService) {
+      this.accessService = new PlayerClassifiedAccessService();
+    }
+    return this.accessService;
+  }
+
+  static getPollService(): PollService {
+    if (!this.pollService) {
+      this.pollService = new PollService();
+    }
+    return this.pollService;
   }
 }

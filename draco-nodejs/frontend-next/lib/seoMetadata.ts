@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
 import type { Metadata } from 'next';
 
+import { DEFAULT_ACCOUNT_FAVICON_PATH } from './metadataFetchers';
+
 export const DEFAULT_SITE_NAME = 'Draco Sports Manager';
 export const DEFAULT_DESCRIPTION =
   'Draco Sports Manager powers schedules, rosters, workouts, and communications for competitive sports organizations.';
@@ -117,6 +119,7 @@ export function buildSeoMetadata({
   const resolvedKeywords = resolveKeywords(keywords);
   const openGraphImages = image ? [image] : undefined;
   const twitterImages = image ? [image] : undefined;
+  const resolvedIcon = icon ?? DEFAULT_ACCOUNT_FAVICON_PATH;
 
   return {
     title,
@@ -140,7 +143,9 @@ export function buildSeoMetadata({
       description,
       ...(twitterImages ? { images: twitterImages } : {}),
     },
-    ...(icon ? { icons: { icon } } : {}),
+    icons: {
+      icon: resolvedIcon,
+    },
   } satisfies Metadata;
 }
 

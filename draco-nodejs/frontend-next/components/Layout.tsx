@@ -24,6 +24,7 @@ import {
   Person as PersonIcon,
   Email as EmailIcon,
   FitnessCenter as FitnessCenterIcon,
+  Handshake as HandshakeIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -35,6 +36,7 @@ import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
+import { unwrapApiResult } from '../utils/apiResult';
 import type { AccountType } from '@draco/shared-schemas';
 
 interface LayoutProps {
@@ -114,13 +116,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           return;
         }
 
-        if (!result.data) {
-          setAccountType(null);
-          setCurrentAccount(null);
-          return;
-        }
-
-        const account = result.data.account;
+        const data = unwrapApiResult(result, 'Failed to fetch account');
+        const account = data.account;
         setAccountType(account.configuration?.accountType?.name ?? null);
         setCurrentAccount(account as AccountType);
       } catch {
@@ -350,6 +347,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Account Settings</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/sponsors/manage`)
+                }
+                key="account-sponsors"
+              >
+                <ListItemIcon>
+                  <HandshakeIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Account Sponsors</ListItemText>
               </MenuItem>
             );
           }
