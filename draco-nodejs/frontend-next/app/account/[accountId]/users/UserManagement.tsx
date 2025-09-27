@@ -263,8 +263,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         // Enhanced features
         enableViewSwitching={true}
         enableAdvancedFilters={true}
-        enableVirtualization={true} // Auto-disabled when paginated data detected
-        virtualizationThreshold={100}
         initialViewMode="table"
         onModernFeaturesChange={(_enabled) => {
           // Modern features notification

@@ -15,7 +15,6 @@ export { useTableLoadingState } from './useTableLoadingState';
 export { useUserApiOperations } from './useUserApiOperations';
 export { useUserDataManager } from './useUserDataManager';
 export { useUserManagement } from './useUserManagement';
-export { useVirtualScroll } from './useVirtualScroll';
 export { useSmoothTransition } from './useSmoothTransition';
 export { useSchedulePermissions } from './useSchedulePermissions';
 
