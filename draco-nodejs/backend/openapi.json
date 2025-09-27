@@ -2425,7 +2425,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^d+$"
           },
           "accountId": {
             "type": "string"
@@ -2448,7 +2449,8 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^d+$"
                 },
                 "optionText": {
                   "type": "string",
@@ -2541,7 +2543,8 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^d+$"
                 },
                 "optionText": {
                   "type": "string",
