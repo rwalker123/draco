@@ -34,6 +34,14 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
   const [submittingPollId, setSubmittingPollId] = useState<string | null>(null);
 
   const canViewPolls = useMemo(() => Boolean(token), [token]);
+  const cardSx = useMemo(
+    () => ({
+      alignSelf: 'flex-start',
+      width: '100%',
+      maxWidth: { xs: '100%', sm: 420 },
+    }),
+    [],
+  );
 
   const fetchPolls = useCallback(async () => {
     if (!canViewPolls) {
@@ -95,7 +103,7 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
 
   if (!canViewPolls) {
     return (
-      <Card elevation={3}>
+      <Card elevation={3} sx={cardSx}>
         <CardHeader title="Polls" />
         <CardContent>
           <Typography color="text.secondary">
@@ -107,7 +115,7 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
   }
 
   return (
-    <Card elevation={3}>
+    <Card elevation={3} sx={cardSx}>
       <CardHeader title="Polls" subheader="Share your voice with the organization" />
       <CardContent>
         {loading ? (
