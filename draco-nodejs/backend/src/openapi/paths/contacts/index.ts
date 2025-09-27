@@ -6,6 +6,10 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     AuthorizationErrorSchemaRef,
     ConflictErrorSchemaRef,
     ContactSchemaRef,
+    BaseContactSchemaRef,
+    ContactValidationWithSignInSchemaRef,
+    PagedContactSchemaRef,
+    RegisteredUserSchemaRef,
     CreateContactSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
@@ -13,6 +17,363 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     ValidationErrorSchemaRef,
   } = schemaRefs;
 
+  /**
+   * GET /api/accounts/:accountId/contacts/me
+   * Get current user's contact
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/me',
+    description: "Get current user's contact",
+    operationId: 'getCurrentUserContact',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: "Current user's contact",
+        content: {
+          'application/json': {
+            schema: BaseContactSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * POST /api/accounts/:accountId/contacts/me
+   * Self-register a contact
+   */
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/contacts/me',
+    description: 'Self-register a contact',
+    operationId: 'selfRegisterContact',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: ContactValidationWithSignInSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Contact created',
+        content: {
+          'application/json': {
+            schema: RegisteredUserSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - Account admin required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'Conflict error - e.g. duplicate email',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * DELETE /api/accounts/:accountId/contacts/:contactId/registration
+   * Unlink a contact from a user (clear userid) within an account
+   */
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/contacts/{contactId}/registration',
+    description: 'Unlink a contact from a user',
+    operationId: 'unlinkContactFromUser',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'Contact unlinked successfully',
+        content: {
+          'application/json': {
+            schema: BaseContactSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/contacts/search
+   * Search contacts by name for autocomplete
+   * Required query parameter: q=searchTerm
+   * Optional query parameters:
+   *   - roles=true to include contactroles data with role context
+   *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
+   *   - contactDetails=true to include detailed contact information (phone, address, etc.)
+   *   - onlyWithRoles=true to filter users who have at least one role
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/search',
+    description: 'Search contacts by name for autocomplete',
+    operationId: 'searchContacts',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'q',
+        in: 'query',
+        required: true,
+        schema: {
+          type: 'string',
+        },
+      },
+      {
+        name: 'roles',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactDetails',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+        },
+      },
+      {
+        name: 'onlyWithRoles',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of matching contacts',
+        content: {
+          'application/json': {
+            schema: PagedContactSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/contacts
+   * Get users in account (requires account access) - with pagination
+   * Optional query parameters:
+   *   - roles=true to include contactroles data with role context (team/league names for season-specific roles)
+   *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
+   *   - onlyWithRoles=true to filter users who have at least one role
+   *   - contactDetails=true to include detailed contact information (phone, address, etc.)
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts',
+    description: 'Get users in account',
+    operationId: 'getAccountContacts',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'roles',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'onlyWithRoles',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+        },
+      },
+      {
+        name: 'contactDetails',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'List of contacts',
+        content: {
+          'application/json': {
+            schema: PagedContactSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * POST /api/accounts/:accountId/contacts
+   * Create a new contact
+   */
   registry.registerPath({
     method: 'post',
     path: '/api/accounts/{accountId}/contacts',
