@@ -7,7 +7,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ accountId: string; workoutId: string }>;
 }) {
-  const { accountId } = await params;
+  const { accountId, workoutId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `Preview how this workout will appear on the ${accountName} home page before publishing.`;
   return buildSeoMetadata({

@@ -7,7 +7,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ accountId: string; seasonId: string }>;
 }) {
-  const { accountId } = await params;
+  const { accountId, seasonId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `Check the latest standings and league rankings for ${accountName} teams this season.`;
   return buildSeoMetadata({

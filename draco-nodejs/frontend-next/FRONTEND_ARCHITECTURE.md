@@ -274,24 +274,31 @@ return (
 
 ### Metadata Generation Pattern
 
-Every account or team page must export `generateMetadata` so tab titles and favicons stay in sync with the active organization. Use helpers from `lib/metadataFetchers` to gather the branded name/icon and compose titles and descriptions.
+Every account or team page must export `generateMetadata` so tab titles, favicons, canonical URLs, and crawler directives stay in sync with the active organization. Always delegate to `buildSeoMetadata` from `lib/seoMetadata`—it normalizes canonical paths, merges default keywords, and falls back to the house favicon when an account icon is missing.
 
 ```tsx
 import { getTeamInfo } from '../../../../lib/metadataFetchers';
+import { buildSeoMetadata } from '../../../../lib/seoMetadata';
 
-export async function generateMetadata({ params }: { params: Promise<{ accountId: string; seasonId: string; teamSeasonId: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ accountId: string; seasonId: string; teamSeasonId: string }>;
+}) {
   const { accountId, seasonId, teamSeasonId } = await params;
   const { account, league, team, iconUrl } = await getTeamInfo(accountId, seasonId, teamSeasonId);
 
-  return {
-    title: `Sponsor Management - ${team}`,
-    description: `Manage sponsors for ${team} (${league}) within ${account}.`,
-    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
-  };
+  return buildSeoMetadata({
+    title: `${team} Sponsors | ${account}`,
+    description: `Manage sponsor placements for ${team} in the ${league} league under ${account}.`,
+    path: `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`,
+    icon: iconUrl,
+    index: false,
+  });
 }
 ```
 
-For account-level pages, call `getAccountBranding(accountId)` instead. Include descriptive copy so Next.js surfaces helpful previews when links are shared.
+For account-level pages, call `getAccountBranding(accountId)` instead. When you pass `icon: iconUrl`, the helper will automatically substitute the default favicon if the account branding omits one. Always craft human-readable descriptions so shared links get meaningful previews.
 
 ### Dialog Implementation Reference
 

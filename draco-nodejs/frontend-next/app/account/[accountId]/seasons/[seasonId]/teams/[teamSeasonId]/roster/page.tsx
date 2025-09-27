@@ -5,9 +5,9 @@ import TeamRosterManagementClientWrapper from './TeamRosterManagementClientWrapp
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ accountId: string; seasonId: string }>;
+  params: Promise<{ accountId: string; seasonId: string; teamSeasonId: string }>;
 }) {
-  const { accountId } = await params;
+  const { accountId, seasonId, teamSeasonId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `Manage roster assignments, jersey numbers, and player details for ${accountName} inside Draco Sports Manager.`;
   return buildSeoMetadata({

@@ -1,23 +1,27 @@
 'use client';
 
-import React from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { headers } from 'next/headers';
-import { DEFAULT_SITE_NAME, buildCanonicalUrl, resolveCurrentPath } from '../lib/seoMetadata';
+import { DEFAULT_SITE_NAME } from '../lib/seoConstants';
 
 const CRAWLER_USER_AGENT_REGEX =
   /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|facebot|ia_archiver/i;
 
-async function getHeaderSafe(key: string): Promise<string | undefined> {
-  try {
-    return (await headers()).get(key) ?? undefined;
-  } catch {
-    return undefined;
-  }
-}
+const FALLBACK_ORIGIN =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.NEXT_PUBLIC_APP_URL ??
+  process.env.NEXT_PUBLIC_FALLBACK_URL ??
+  'http://localhost:3000';
 
-async function getUserAgent(): Promise<string> {
-  return (await getHeaderSafe('user-agent')) ?? '';
+function buildCanonical(pathname?: string, originOverride?: string): string {
+  const origin = (originOverride ?? FALLBACK_ORIGIN).replace(/\/$/, '');
+  const normalizedPath =
+    !pathname || pathname === '/' ? '/' : pathname.startsWith('/') ? pathname : `/${pathname}`;
+  try {
+    return new URL(normalizedPath, origin).toString();
+  } catch {
+    return `${origin}${normalizedPath}`;
+  }
 }
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
@@ -26,10 +30,20 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     digest: error.digest,
   });
 
-  const userAgent = getUserAgent();
-  const requestPath = resolveCurrentPath() ?? '/';
-  const canonical = buildCanonicalUrl(requestPath);
-  const isCrawler = CRAWLER_USER_AGENT_REGEX.test(userAgent);
+  const [isCrawler, setIsCrawler] = useState(true);
+  const [canonical, setCanonical] = useState(() => buildCanonical('/'));
+
+  useEffect(() => {
+    const detectedUserAgent = typeof navigator === 'object' ? (navigator.userAgent ?? '') : '';
+    const crawlerMatch = CRAWLER_USER_AGENT_REGEX.test(detectedUserAgent);
+    setIsCrawler(crawlerMatch);
+
+    if (typeof window === 'object') {
+      const { pathname, search } = window.location;
+      const requestPath = `${pathname}${search}`;
+      setCanonical(buildCanonical(requestPath, window.location.origin));
+    }
+  }, []);
 
   if (isCrawler) {
     return (

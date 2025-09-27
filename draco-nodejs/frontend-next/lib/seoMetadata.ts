@@ -1,21 +1,8 @@
-import { headers } from 'next/headers';
 import type { Metadata } from 'next';
 
 import { DEFAULT_ACCOUNT_FAVICON_PATH } from './metadataFetchers';
-
-export const DEFAULT_SITE_NAME = 'Draco Sports Manager';
-export const DEFAULT_DESCRIPTION =
-  'Draco Sports Manager powers schedules, rosters, workouts, and communications for competitive sports organizations.';
-export const DEFAULT_KEYWORDS = [
-  'sports management software',
-  'league scheduling platform',
-  'team roster tools',
-  'youth sports communications',
-  'sports statistics dashboards',
-  'player classifieds',
-  'sports workouts planner',
-  'Draco Sports Manager',
-];
+import { DEFAULT_KEYWORDS, DEFAULT_SITE_NAME } from './seoConstants';
+export { DEFAULT_DESCRIPTION, DEFAULT_KEYWORDS, DEFAULT_SITE_NAME } from './seoConstants';
 
 const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
 const FALLBACK_ORIGIN = process.env.NEXT_PUBLIC_FALLBACK_URL ?? 'http://localhost:3000';
@@ -27,14 +14,6 @@ function normalizePath(path?: string): string {
   return path.startsWith('/') ? path : `/${path}`;
 }
 
-function getHeaderValue(list: Headers | undefined, key: string): string | undefined {
-  if (!list) {
-    return undefined;
-  }
-  const value = list.get(key);
-  return value ?? undefined;
-}
-
 function resolveOrigin(): string {
   if (PUBLIC_SITE_URL) {
     try {
@@ -42,26 +21,11 @@ function resolveOrigin(): string {
       url.pathname = '/';
       return url.toString().replace(/\/$/, '');
     } catch {
-      // Fall back to header-based resolution
+      // Fall back to environment-based resolution
     }
   }
 
-  let headerList: Headers | undefined;
-  try {
-    headerList = headers();
-  } catch {
-    return FALLBACK_ORIGIN.replace(/\/$/, '');
-  }
-
-  const forwardedHost = getHeaderValue(headerList, 'x-forwarded-host');
-  const host = forwardedHost ?? getHeaderValue(headerList, 'host');
-  if (!host) {
-    return FALLBACK_ORIGIN.replace(/\/$/, '');
-  }
-
-  const proto = getHeaderValue(headerList, 'x-forwarded-proto');
-  const protocol = proto ? proto.split(',')[0] : host.includes('localhost') ? 'http' : 'https';
-  return `${protocol}://${host}`.replace(/\/$/, '');
+  return FALLBACK_ORIGIN.replace(/\/$/, '');
 }
 
 export function buildCanonicalUrl(path?: string): string {
@@ -147,19 +111,4 @@ export function buildSeoMetadata({
       icon: resolvedIcon,
     },
   } satisfies Metadata;
-}
-
-export function resolveCurrentPath(): string | undefined {
-  let headerList: Headers | undefined;
-  try {
-    headerList = headers();
-  } catch {
-    return undefined;
-  }
-  return (
-    getHeaderValue(headerList, 'x-invoke-path') ??
-    getHeaderValue(headerList, 'next-url') ??
-    getHeaderValue(headerList, 'x-matched-path') ??
-    getHeaderValue(headerList, 'referer')
-  );
 }

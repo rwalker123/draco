@@ -7,7 +7,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ accountId: string; id: string }>;
 }) {
-  const { accountId } = await params;
+  const { accountId, id } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `Verify your Teams Wanted classified submission for ${accountName} to ensure the listing appears to coaches and recruiters.`;
   return buildSeoMetadata({
