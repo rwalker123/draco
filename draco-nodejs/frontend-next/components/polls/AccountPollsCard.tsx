@@ -88,8 +88,7 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
           body: { optionId },
           throwOnError: false,
         });
-        const poll = unwrapApiResult(result, 'Failed to submit vote');
-        const updatedPoll = poll;
+        const updatedPoll = unwrapApiResult(result, 'Failed to submit vote');
         setPolls((prev) => prev.map((poll) => (poll.id === updatedPoll.id ? updatedPoll : poll)));
       } catch (err) {
         console.error('Failed to submit vote:', err);
