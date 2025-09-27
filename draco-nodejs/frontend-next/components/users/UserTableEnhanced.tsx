@@ -8,8 +8,6 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   // Feature toggles
   enableViewSwitching = false,
   enableAdvancedFilters = false,
-  enableVirtualization = false,
-  virtualizationThreshold = 100,
   initialViewMode = 'table',
   onModernFeaturesChange,
 
@@ -61,8 +59,6 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
       {...originalProps}
       // Enhanced features
       enableAdvancedFilters={enableAdvancedFilters}
-      enableVirtualization={enableVirtualization}
-      virtualizationThreshold={virtualizationThreshold}
       viewMode={initialViewMode}
       selectionMode={stableSelectionMode}
       viewConfig={stableViewConfig}

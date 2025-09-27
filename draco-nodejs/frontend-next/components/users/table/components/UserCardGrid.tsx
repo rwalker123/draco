@@ -6,10 +6,6 @@ import { KeyboardArrowUp as ScrollTopIcon } from '@mui/icons-material';
 import { EnhancedUser, CardSize, UserViewConfig } from '../../../../types/userTable';
 import UserDisplayCard from './UserDisplayCard';
 import UserEmptyState from '../../UserEmptyState';
-import VirtualScrollContainer, {
-  createVirtualScrollConfig,
-} from '../../../common/VirtualScrollContainer';
-import { VirtualUserRendererFactory, shouldVirtualize } from '../renderers/VirtualUserRenderers';
 import { ContactRoleType, BaseContactType } from '@draco/shared-schemas';
 
 interface UserCardGridProps {
@@ -28,8 +24,6 @@ interface UserCardGridProps {
       | string
       | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
   ) => string;
-  enableVirtualization?: boolean;
-  virtualizationThreshold?: number;
   searchTerm?: string;
   hasFilters?: boolean;
 }
@@ -46,8 +40,6 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
   onRevokeRegistration,
   canManageUsers,
   getRoleDisplayName,
-  enableVirtualization = false,
-  virtualizationThreshold = 100,
   searchTerm,
   hasFilters = false,
 }) => {
@@ -72,43 +64,6 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
     });
   };
 
-  // Determine if virtual scrolling should be enabled
-  const useVirtualScrolling =
-    enableVirtualization && shouldVirtualize(users.length, virtualizationThreshold);
-
-  // Create virtual scroll renderer (always call hooks before any early returns)
-  const virtualRenderer = React.useMemo(() => {
-    if (!useVirtualScrolling) return null;
-
-    return VirtualUserRendererFactory.createCardRenderer({
-      onAssignRole,
-      onRemoveRole,
-      canManageUsers,
-      getRoleDisplayName,
-      cardSize,
-    });
-  }, [
-    useVirtualScrolling,
-    onAssignRole,
-    onRemoveRole,
-    canManageUsers,
-    getRoleDisplayName,
-    cardSize,
-  ]);
-
-  // Create virtual scroll config (always call hooks before any early returns)
-  const virtualScrollConfig = React.useMemo(() => {
-    if (!useVirtualScrolling) return null;
-
-    return createVirtualScrollConfig('USER_CARDS', {
-      itemHeight: cardSize === 'compact' ? 280 : cardSize === 'comfortable' ? 360 : 420,
-      containerHeight: 600,
-      threshold: virtualizationThreshold,
-    });
-  }, [useVirtualScrolling, cardSize, virtualizationThreshold]);
-
-  // Render empty state inline instead of returning early
-
   // Spacing configuration based on card size
   const spacing = {
     compact: 1.5,
@@ -118,56 +73,38 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
 
   return (
     <Box sx={{ position: 'relative' }}>
-      {useVirtualScrolling && virtualRenderer && virtualScrollConfig ? (
-        // Virtual Scrolling Mode
-        <Box sx={{ p: 2 }}>
-          {users.length === 0 ? (
-            // Empty state within the virtual scroll structure
-            <UserEmptyState searchTerm={searchTerm} hasFilters={hasFilters} />
-          ) : (
-            <VirtualScrollContainer
-              items={users}
-              config={virtualScrollConfig}
-              renderer={virtualRenderer}
-            />
-          )}
-        </Box>
-      ) : (
-        // Traditional Flexbox Mode
-        <Box sx={{ p: 2 }}>
-          {users.length === 0 ? (
-            // Empty state within the card structure
-            <UserEmptyState searchTerm={searchTerm} hasFilters={hasFilters} />
-          ) : (
-            <Box
-              sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: spacing,
-                justifyContent: 'flex-start',
-                alignItems: 'flex-start',
-              }}
-            >
-              {users.map((user) => (
-                <UserDisplayCard
-                  key={user.id}
-                  user={user}
-                  cardSize={cardSize}
-                  onAssignRole={onAssignRole}
-                  onRemoveRole={onRemoveRole}
-                  onEditContact={onEditContact}
-                  onDeleteContact={onDeleteContact}
-                  onDeleteContactPhoto={onDeleteContactPhoto}
-                  canManageUsers={canManageUsers}
-                  getRoleDisplayName={getRoleDisplayName}
-                  showActions={true}
-                  onRevokeRegistration={onRevokeRegistration}
-                />
-              ))}
-            </Box>
-          )}
-        </Box>
-      )}
+      <Box sx={{ p: 2 }}>
+        {users.length === 0 ? (
+          <UserEmptyState searchTerm={searchTerm} hasFilters={hasFilters} />
+        ) : (
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: spacing,
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+            }}
+          >
+            {users.map((user) => (
+              <UserDisplayCard
+                key={user.id}
+                user={user}
+                cardSize={cardSize}
+                onAssignRole={onAssignRole}
+                onRemoveRole={onRemoveRole}
+                onEditContact={onEditContact}
+                onDeleteContact={onDeleteContact}
+                onDeleteContactPhoto={onDeleteContactPhoto}
+                canManageUsers={canManageUsers}
+                getRoleDisplayName={getRoleDisplayName}
+                showActions={true}
+                onRevokeRegistration={onRevokeRegistration}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
 
       {/* Scroll to Top Button */}
       <Zoom in={showScrollTop}>
@@ -195,7 +132,6 @@ export default React.memo(UserCardGrid, (prevProps, nextProps) => {
   return (
     prevProps.users === nextProps.users &&
     prevProps.cardSize === nextProps.cardSize &&
-    prevProps.enableVirtualization === nextProps.enableVirtualization &&
     prevProps.canManageUsers === nextProps.canManageUsers
   );
 });

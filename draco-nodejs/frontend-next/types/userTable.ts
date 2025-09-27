@@ -139,8 +139,6 @@ export interface ModernUserTableProps extends UserTableProps {
   enableAdvancedFilters?: boolean;
 
   // Performance options
-  enableVirtualization?: boolean;
-  virtualizationThreshold?: number;
   lazyLoadImages?: boolean;
 
   // Enhanced callbacks
@@ -376,8 +374,6 @@ export interface UserTableEnhancedProps extends UserTableProps {
   // Optional modern features that can be enabled
   enableViewSwitching?: boolean;
   enableAdvancedFilters?: boolean;
-  enableVirtualization?: boolean;
-  virtualizationThreshold?: number;
   initialViewMode?: ViewMode;
   onModernFeaturesChange?: (enabled: boolean) => void;
 
