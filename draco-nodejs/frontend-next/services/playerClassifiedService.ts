@@ -277,7 +277,7 @@ export const playerClassifiedService = {
 
   async verifyEmail(request: IEmailVerificationRequest): Promise<IEmailVerificationResult> {
     const client = createClient();
-    const result = await client.post<any, unknown, false>({
+    const result = await client.post<unknown, unknown, false>({
       url: '/api/accounts/verify-email',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),

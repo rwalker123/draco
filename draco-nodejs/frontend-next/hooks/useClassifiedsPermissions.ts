@@ -140,11 +140,7 @@ export const useClassifiedsPermissions = ({
     async (classifiedId: string, accessCode: string): Promise<boolean> => {
       try {
         // Call the verification endpoint
-        const response = await playerClassifiedService.verifyTeamsWantedAccess(
-          accountId,
-          classifiedId,
-          accessCode,
-        );
+        await playerClassifiedService.verifyTeamsWantedAccess(accountId, classifiedId, accessCode);
 
         // Add to verified set
         setVerifiedAccessCodes((prev) => new Set(prev).add(classifiedId));

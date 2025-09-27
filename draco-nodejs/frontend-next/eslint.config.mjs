@@ -9,22 +9,19 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  {
-    rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    },
+const eslintConfig = [{
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"]
+}, ...compat.extends('next/core-web-vitals', 'next/typescript'), {
+  rules: {
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
   },
-  {
-    files: ['**/__tests__/**/*'],
-    rules: {
-      '@next/next/no-img-element': 'off',
-    },
+}, {
+  files: ['**/__tests__/**/*'],
+  rules: {
+    '@next/next/no-img-element': 'off',
   },
-  {
-    ignores: ['app/social-hub-test/**/*'],
-  },
-];
+}, {
+  ignores: ['app/social-hub-test/**/*'],
+}];
 
 export default eslintConfig;

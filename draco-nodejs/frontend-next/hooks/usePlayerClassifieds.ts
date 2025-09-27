@@ -79,7 +79,7 @@ export const usePlayerClassifieds = (
       if (teamsResponse) {
         setTeamsWanted(teamsResponse.data);
       }
-    } catch (error) {
+    } catch {
       const errorMessage = 'Failed to load classifieds';
       showNotification(errorMessage, 'error');
     } finally {

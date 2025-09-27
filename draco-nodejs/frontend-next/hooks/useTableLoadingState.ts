@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface LoadingState {
   isInitialLoad: boolean;
@@ -21,7 +21,7 @@ export const useTableLoadingState = ({
   loadingDelay = 500,
 }: UseTableLoadingStateProps): LoadingState => {
   const [shouldShowSkeleton, setShouldShowSkeleton] = useState(false);
-  const [loadingTimer, setLoadingTimer] = useState<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Determine loading types
   const isPaginating = loading && !isInitialLoad;
@@ -31,29 +31,27 @@ export const useTableLoadingState = ({
   useEffect(() => {
     if (loading) {
       // Clear any existing timer
-      if (loadingTimer) {
-        clearTimeout(loadingTimer);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
 
       // Set a new timer to show skeleton after delay
-      const timer = setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         setShouldShowSkeleton(true);
       }, loadingDelay);
-
-      setLoadingTimer(timer);
     } else {
       // Clear timer and hide skeleton immediately when loading stops
-      if (loadingTimer) {
-        clearTimeout(loadingTimer);
-        setLoadingTimer(null);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
       setShouldShowSkeleton(false);
     }
 
     // Cleanup on unmount
     return () => {
-      if (loadingTimer) {
-        clearTimeout(loadingTimer);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
   }, [loading, loadingDelay]);

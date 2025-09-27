@@ -1,6 +1,6 @@
 // Player Classifieds Frontend Types
 // These types extend the backend interfaces for frontend-specific needs
-import { PlayerClassifiedSearchQuery } from '@draco/shared-api-client';
+
 import {
   UpsertPlayersWantedClassifiedType,
   UpsertTeamsWantedClassifiedType,

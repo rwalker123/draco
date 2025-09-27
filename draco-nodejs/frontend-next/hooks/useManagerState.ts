@@ -592,7 +592,7 @@ export const useManagerState = (options: UseManagerStateOptions): UseManagerStat
     actionsRef.current = newActions;
     return newActions;
   }, [
-    // fetchManagers removed - now stable with empty dependencies
+    fetchManagers,
     fetchManagersByLeague,
     fetchManagersByTeam,
     searchManagers,
