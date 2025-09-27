@@ -7,7 +7,7 @@ This is the backend API for Draco Sports Manager, built with Node.js, Express.js
 📚 **[Backend Architecture Documentation](./BACKEND_ARCHITECTURE.md)** - Comprehensive guide to our layered backend architecture including:
 
 - **Layered Architecture Pattern** - Route → Service → Repository → Response Formatter
-- **OpenAPI-First Development** - All endpoints defined in `zod-to-openapi.ts`
+- **OpenAPI-First Development** - All endpoints defined in `src/openapi/zod-to-openapi.ts`
 - **Type Safety with Shared Schemas** - Using `@draco/shared-schemas` for all API contracts
 - **Security-First Design** - Untrusted route layer with account boundary enforcement
 - **Global Exception Handling** - Consistent error responses across all endpoints

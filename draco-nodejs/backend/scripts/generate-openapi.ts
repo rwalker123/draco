@@ -2,7 +2,7 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import yaml from 'yaml';
-import { openApiDoc } from '../src/config/zod-to-openapi.js';
+import { openApiDoc } from '../src/openapi/zod-to-openapi.js';
 
 const yamlDoc = yaml.stringify(openApiDoc);
 

@@ -7,7 +7,7 @@ This document outlines the layered architecture patterns, principles, and best p
 ## Core Architectural Principles
 
 ### 1. Type Safety with Shared Schemas
-- **All API contracts defined in OpenAPI** - Use `zod-to-openapi.ts` to define all route endpoints
+- **All API contracts defined in OpenAPI** - Use `src/openapi/zod-to-openapi.ts` to define all route endpoints
 - **Shared type system** - All request/response types come from `@draco/shared-schemas`
 - **No dynamic types** - Always use proper TypeScript interfaces from shared schemas
 - **Generated SDK** - OpenAPI specification generates frontend SDK automatically
@@ -40,7 +40,7 @@ graph TD
     B -->|JSON Response| A
 
     G[OpenAPI Spec] -->|Generates| A
-    H[zod-to-openapi.ts] -->|Defines| G
+    H[src/openapi/zod-to-openapi.ts] -->|Defines| G
     I[shared-schemas] -->|Types| H
     I -->|Types| F
     I -->|Validation| B
@@ -228,13 +228,13 @@ export class ContactResponseFormatter {
 
 ### API Contract Definition
 
-All API endpoints are defined in `zod-to-openapi.ts` using shared schema types:
+All API endpoints are defined in `src/openapi/zod-to-openapi.ts` using shared schema types:
 
 ```mermaid
 sequenceDiagram
     participant Dev as Developer
     participant Schema as shared-schemas
-    participant OpenAPI as zod-to-openapi.ts
+    participant OpenAPI as src/openapi/zod-to-openapi.ts
     participant Spec as openapi.yaml
     participant SDK as Frontend SDK
     participant Route as Route Handler
@@ -250,7 +250,7 @@ sequenceDiagram
 ### Implementation Pattern:
 
 ```typescript
-// In zod-to-openapi.ts
+// In src/openapi/zod-to-openapi.ts
 const ContactSchemaRef = registry.register('Contact', ContactSchema);
 const CreateContactSchemaRef = registry.register('CreateContact', CreateContactSchema);
 
@@ -402,7 +402,7 @@ sequenceDiagram
     participant Test as Test Integration
 
     Dev->>Schema: Create/update shared schema types
-    Dev->>API: Define endpoint in zod-to-openapi.ts
+    Dev->>API: Define endpoint in src/openapi/zod-to-openapi.ts
     Dev->>Route: Implement route with validation & middleware
     Dev->>Service: Implement business logic
     Dev->>Repo: Implement database operations
@@ -415,7 +415,7 @@ sequenceDiagram
 **For each new endpoint:**
 
 1. ✅ **Define Schema Types** - Add to `@draco/shared-schemas`
-2. ✅ **Register in OpenAPI** - Add to `zod-to-openapi.ts`
+2. ✅ **Register in OpenAPI** - Add to `src/openapi/zod-to-openapi.ts`
 3. ✅ **Implement Route** - Use proper middleware stack
 4. ✅ **Create Service Method** - Business logic orchestration
 5. ✅ **Create Repository Method** - Database operations
@@ -658,7 +658,7 @@ When refactoring existing code to follow this architecture:
 1. **Extract Response Formatters** - Move type conversion logic to dedicated formatters
 2. **Create Repository Layer** - Move database calls from services to repositories
 3. **Clean Route Handlers** - Remove business logic, add proper validation
-4. **Define OpenAPI Contracts** - Add endpoint definitions to zod-to-openapi.ts
+4. **Define OpenAPI Contracts** - Add endpoint definitions to src/openapi/zod-to-openapi.ts
 5. **Update Service Layer** - Focus on business logic orchestration only
 6. **Add Proper Error Handling** - Use custom error types and asyncHandler
 7. **Test Integration** - Verify end-to-end data flow works correctly

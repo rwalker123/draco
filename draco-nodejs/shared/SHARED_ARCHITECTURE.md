@@ -29,7 +29,7 @@ Example: `shared-schemas/contact.ts` centralizes every contact-related structure
 ## Generation Workflow
 1. Author or update schemas in `shared-schemas` and ensure they compile locally.
 2. Run `npm run sync:api` from the repo root.
-   - Regenerates the backend OpenAPI specification via `backend/src/config/zod-to-openapi.ts`.
+   - Regenerates the backend OpenAPI specification via `backend/src/openapi/zod-to-openapi.ts`.
    - Emits updated schema bundles in `shared-schemas/dist` for publication.
    - Rebuilds the TypeScript SDK inside `shared-api-client/generated` using the latest OpenAPI spec.
 3. Run `npm run build` if you need to confirm workspace packaging or produce production bundles.
