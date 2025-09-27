@@ -8,7 +8,8 @@
     "migrate-files:check": "./migrate-files.sh --check-only",
     "migrate-files:dry-run": "./migrate-files.sh --dry-run",
     "lint": "prettier --check \"**/*.{ts,js}\" --config ../.prettierrc --ignore-path ../.prettierignore",
-    "lint:fix": "prettier --write \"**/*.{ts,js}\" --config ../.prettierrc --ignore-path ../.prettierignore"
+    "lint:fix": "prettier --write \"**/*.{ts,js}\" --config ../.prettierrc --ignore-path ../.prettierignore",
+    "test": "echo \"No tests for dbMigration\""
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
