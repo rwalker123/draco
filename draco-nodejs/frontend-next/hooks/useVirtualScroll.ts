@@ -46,6 +46,15 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
     [config],
   );
 
+  const {
+    itemHeight: configuredItemHeight,
+    enableDynamicHeight,
+    containerHeight,
+    overscan,
+    debounceMs,
+    enableScrollRestoration,
+  } = finalConfig;
+
   // Refs for DOM elements
   const scrollElementRef = useRef<HTMLElement>(null);
 
@@ -57,11 +66,11 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
   // Calculate item height (supports both fixed and dynamic)
   const getItemHeight = useCallback(
     (index: number): number => {
-      if (typeof finalConfig.itemHeight === 'function') {
-        return finalConfig.itemHeight(index);
+      if (typeof configuredItemHeight === 'function') {
+        return configuredItemHeight(index);
       }
 
-      if (finalConfig.enableDynamicHeight && itemHeights.has(index)) {
+      if (enableDynamicHeight && itemHeights.has(index)) {
         return itemHeights.get(index)!;
       }
 
@@ -69,11 +78,11 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
         return renderer.getItemHeight(items[index], index);
       }
 
-      return typeof finalConfig.itemHeight === 'number'
-        ? finalConfig.itemHeight
+      return typeof configuredItemHeight === 'number'
+        ? configuredItemHeight
         : (DEFAULT_VIRTUAL_SCROLL_CONFIG.itemHeight as number);
     },
-    [finalConfig.itemHeight, finalConfig.enableDynamicHeight, itemHeights, renderer, items],
+    [configuredItemHeight, enableDynamicHeight, itemHeights, renderer, items],
   );
 
   // Calculate total height
@@ -99,7 +108,7 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
     for (let i = 0; i < items.length; i++) {
       const itemHeight = getItemHeight(i);
       if (currentHeight + itemHeight >= scrollTop) {
-        start = Math.max(0, i - finalConfig.overscan);
+        start = Math.max(0, i - overscan);
         break;
       }
       currentHeight += itemHeight;
@@ -111,11 +120,8 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
       if (i >= start) {
         const itemHeight = getItemHeight(i);
         currentHeight += itemHeight;
-        if (
-          currentHeight >=
-          finalConfig.containerHeight + finalConfig.overscan * getItemHeight(i)
-        ) {
-          end = Math.min(items.length - 1, i + finalConfig.overscan);
+        if (currentHeight >= containerHeight + overscan * getItemHeight(i)) {
+          end = Math.min(items.length - 1, i + overscan);
           break;
         }
       }
@@ -130,7 +136,7 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
       endIndex: end,
       visibleItemCount: end - start + 1,
     };
-  }, [items.length, scrollTop, finalConfig.containerHeight, finalConfig.overscan, getItemHeight]);
+  }, [items.length, scrollTop, containerHeight, overscan, getItemHeight]);
 
   // Create virtual scroll state
   const state: VirtualScrollState = useMemo(
@@ -157,12 +163,12 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
         }
 
         if (align === 'center') {
-          targetScrollTop -= finalConfig.containerHeight / 2 - getItemHeight(index) / 2;
+          targetScrollTop -= containerHeight / 2 - getItemHeight(index) / 2;
         } else if (align === 'end') {
-          targetScrollTop -= finalConfig.containerHeight - getItemHeight(index);
+          targetScrollTop -= containerHeight - getItemHeight(index);
         }
 
-        targetScrollTop = clamp(targetScrollTop, 0, totalHeight - finalConfig.containerHeight);
+        targetScrollTop = clamp(targetScrollTop, 0, totalHeight - containerHeight);
         scrollElementRef.current.scrollTop = targetScrollTop;
       },
 
@@ -174,7 +180,7 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
 
       scrollToBottom: () => {
         if (scrollElementRef.current) {
-          scrollElementRef.current.scrollTop = totalHeight - finalConfig.containerHeight;
+          scrollElementRef.current.scrollTop = totalHeight - containerHeight;
         }
       },
 
@@ -188,18 +194,12 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
       },
 
       updateItemHeight: (index: number, height: number) => {
-        if (finalConfig.enableDynamicHeight) {
+        if (enableDynamicHeight) {
           setItemHeights((prev) => new Map(prev).set(index, height));
         }
       },
     }),
-    [
-      items.length,
-      getItemHeight,
-      finalConfig.containerHeight,
-      totalHeight,
-      finalConfig.enableDynamicHeight,
-    ],
+    [items.length, getItemHeight, containerHeight, totalHeight, enableDynamicHeight],
   );
 
   // Calculate visible items with positioning
@@ -242,8 +242,8 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
       debounce((scrollTop: unknown) => {
         setScrollTop(scrollTop as number);
         setIsScrolling(false);
-      }, finalConfig.debounceMs || 16),
-    [finalConfig.debounceMs],
+      }, debounceMs || 16),
+    [debounceMs],
   );
 
   // Scroll event handler
@@ -256,21 +256,21 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
       setScrollTop(newScrollTop);
       debouncedScrollHandler(newScrollTop);
     },
-    [debouncedScrollHandler, state],
+    [debouncedScrollHandler],
   );
 
   // Container props
   const containerProps = useMemo(
     () => ({
       style: {
-        height: finalConfig.containerHeight,
+        height: containerHeight,
         overflow: 'auto',
         position: 'relative' as const,
       },
       onScroll: handleScroll,
       ref: scrollElementRef,
     }),
-    [finalConfig.containerHeight, handleScroll],
+    [containerHeight, handleScroll],
   );
 
   // Wrapper props for absolute positioning
@@ -287,7 +287,7 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
 
   // Keyboard navigation support
   useEffect(() => {
-    if (!finalConfig.enableScrollRestoration) return;
+    if (!enableScrollRestoration) return;
 
     const element = scrollElementRef.current;
     if (!element) return;
@@ -325,7 +325,7 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
 
     element.addEventListener('keydown', handleKeyDown);
     return () => element.removeEventListener('keydown', handleKeyDown);
-  }, [actions, startIndex, items.length, visibleItemCount, finalConfig.enableScrollRestoration]);
+  }, [actions, startIndex, items.length, visibleItemCount, enableScrollRestoration]);
 
   return {
     state,

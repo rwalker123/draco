@@ -25,7 +25,7 @@ export function useAccountMembership(accountId?: string | null) {
         const contact = await AccountRegistrationService.fetchMyContact(accountId, token);
         if (!mounted) return;
         setIsMember(!!contact);
-      } catch (e) {
+      } catch {
         if (!mounted) return;
         setError('Failed to check membership');
         setIsMember(null);

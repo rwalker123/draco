@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react';
 import { HierarchicalSeason } from '../types/emails/recipients';
-import { withRetry } from '../utils/errorHandling';
 
 // API Response Types
 interface ApiTeamResponse {
@@ -24,21 +23,6 @@ interface ApiLeagueSeasonResponse {
   leagueName: string;
   divisions?: ApiDivisionResponse[];
   unassignedTeams?: ApiTeamResponse[];
-}
-
-interface ApiSeasonResponse {
-  id: string;
-  name: string;
-}
-
-interface ApiDataResponse {
-  leagueSeasons: ApiLeagueSeasonResponse[];
-  season?: ApiSeasonResponse;
-}
-
-interface ApiResponse {
-  success: boolean;
-  data: ApiDataResponse;
 }
 
 export function useHierarchicalData() {

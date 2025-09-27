@@ -18,7 +18,7 @@ export type SponsorScope =
       teamSeasonId: string;
     };
 
-export interface SponsorFormValues extends SponsorInput {}
+export type SponsorFormValues = SponsorInput;
 
 export function useSponsorOperations(scope: SponsorScope) {
   const { token } = useAuth();

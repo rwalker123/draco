@@ -194,7 +194,6 @@ export interface UseUserManagementReturn {
   deleteContactDialogOpen: boolean;
   selectedUser: ContactType | null;
   selectedContactForDelete: ContactType | null;
-  formLoading: boolean;
 
   // Context data states
   leagues: League[];

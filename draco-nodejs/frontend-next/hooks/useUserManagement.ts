@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo, useReducer } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useApiClient } from './useApiClient';
 import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
 import {
@@ -10,17 +9,10 @@ import {
   LeagueSeason,
 } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
-import { addCacheBuster } from '../config/contacts';
 import { Role, UseUserManagementReturn } from '../types/users';
-import { extractErrorMessage } from '../types/userManagementTypeGuards';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
-import {
-  ContactRoleType,
-  ContactType,
-  CreateContactType,
-  RoleWithContactType,
-} from '@draco/shared-schemas';
+import { ContactRoleType, ContactType, RoleWithContactType } from '@draco/shared-schemas';
 
 // Pagination state for atomic updates
 interface PaginationState {
@@ -89,7 +81,6 @@ const paginationReducer = (state: PaginationState, action: PaginationAction): Pa
  */
 export const useUserManagement = (accountId: string): UseUserManagementReturn => {
   const { token } = useAuth();
-  const apiClient = useApiClient();
   const { currentSeasonId, fetchCurrentSeason } = useCurrentSeason(accountId);
 
   // Pagination state using reducer for atomic updates
@@ -130,9 +121,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [selectedContactForDelete, setSelectedContactForDelete] = useState<ContactType | null>(
     null,
   );
-
-  // Form states
-  const [formLoading, setFormLoading] = useState(false);
 
   // Context data states
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -863,7 +851,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     deleteContactDialogOpen,
     selectedUser,
     selectedContactForDelete,
-    formLoading,
 
     // Context data states
     leagues,

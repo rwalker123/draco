@@ -20,7 +20,6 @@ import {
   SignRosterMemberType,
 } from '@draco/shared-schemas';
 import axios from 'axios';
-import { addCacheBuster } from '@/config/contacts';
 import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 
 interface Season {
@@ -210,17 +209,7 @@ export const useRosterDataManager = (
       setError(errorMessage);
       setLoading(false);
     }
-  }, [
-    accountId,
-    seasonId,
-    teamSeasonId,
-    token,
-    setRosterData,
-    setLoading,
-    setError,
-    transformBackendData,
-    getErrorMessage,
-  ]);
+  }, [accountId, seasonId, teamSeasonId, token, setLoading, setError, getErrorMessage]);
 
   // Fetch available players - returns data directly instead of storing in state
   const fetchAvailablePlayers = useCallback(
@@ -399,16 +388,7 @@ export const useRosterDataManager = (
         setError(error instanceof Error ? error.message : 'Failed to sign player');
       }
     },
-    [
-      accountId,
-      seasonId,
-      teamSeasonId,
-      rosterData,
-      setRosterData,
-      setSuccessMessage,
-      setError,
-      apiClient,
-    ],
+    [accountId, seasonId, teamSeasonId, setRosterData, setSuccessMessage, setError, apiClient],
   );
 
   // Release player with optimistic updates
@@ -593,16 +573,7 @@ export const useRosterDataManager = (
         setError(error instanceof Error ? error.message : 'Failed to remove manager');
       }
     },
-    [
-      accountId,
-      seasonId,
-      teamSeasonId,
-      dataCacheRef.current.managers,
-      setManagers,
-      setSuccessMessage,
-      setError,
-      apiClient,
-    ],
+    [accountId, seasonId, teamSeasonId, setManagers, setSuccessMessage, setError, apiClient],
   );
 
   // Delete contact photo with optimistic updates

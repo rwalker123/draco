@@ -106,7 +106,7 @@ export function useRoleAssignment(accountId: string) {
         setLoading(false);
       }
     },
-    [userService, currentSeasonId],
+    [accountId, currentSeasonId, userService],
   );
 
   const removeRole = useCallback(

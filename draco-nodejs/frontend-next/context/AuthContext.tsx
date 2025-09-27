@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return false;
       }
-    } catch (err: unknown) {
+    } catch {
       setError(LOGIN_ERROR_MESSAGE);
       setLoading(false);
       return false;

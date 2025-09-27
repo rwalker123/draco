@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { EmailService } from '../services/emailService';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -31,7 +31,7 @@ export function useEmailTemplates(accountId: string): UseEmailTemplatesResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const emailService = new EmailService(token || '');
+  const emailService = useMemo(() => new EmailService(token || ''), [token]);
 
   // Load templates
   const loadTemplates = useCallback(async () => {
