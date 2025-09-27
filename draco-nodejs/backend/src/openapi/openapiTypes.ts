@@ -1,0 +1,204 @@
+import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
+import {
+  AccountAffiliationSchema,
+  AccountDetailsQuerySchema,
+  AccountDomainLookupHeadersSchema,
+  AccountHeaderSchema,
+  AccountNameSchema,
+  AccountPollSchema,
+  AccountSchema,
+  AccountSearchQuerySchema,
+  AccountWithSeasonsSchema,
+  AuthenticationErrorSchema,
+  AuthorizationErrorSchema,
+  BaseballPositionSchema,
+  ConflictErrorSchema,
+  ContactPlayersWantedCreatorSchema,
+  ContactSchema,
+  CreateAccountSchema,
+  CreateContactSchema,
+  CreatePollSchema,
+  CreateSponsorSchema,
+  CreateTeamManagerSchema,
+  UpdatePollSchema,
+  ExperienceLevelSchema,
+  InternalServerErrorSchema,
+  NotFoundErrorSchema,
+  PlayerClassifiedSearchQuerySchema,
+  PlayersWantedClassifiedPagedSchema,
+  PlayersWantedClassifiedSchema,
+  PollVoteRequestSchema,
+  RosterMemberSchema,
+  RosterPlayerSchema,
+  SignRosterMemberSchema,
+  SponsorListSchema,
+  SponsorSchema,
+  TeamManagerSchema,
+  TeamsWantedAccessCodeSchema,
+  TeamsWantedContactInfoSchema,
+  TeamsWantedContactQuerySchema,
+  TeamsWantedOwnerClassifiedSchema,
+  TeamsWantedPublicClassifiedPagedSchema,
+  UpsertPlayersWantedClassifiedSchema,
+  UpsertTeamsWantedClassifiedSchema,
+  ValidationErrorSchema,
+} from '@draco/shared-schemas';
+
+export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
+  const RosterMemberSchemaRef = registry.register('RosterMember', RosterMemberSchema);
+  const RosterPlayerSchemaRef = registry.register('RosterPlayer', RosterPlayerSchema);
+  const SignRosterMemberSchemaRef = registry.register('SignRosterMember', SignRosterMemberSchema);
+  const ContactSchemaRef = registry.register('Contact', ContactSchema);
+  const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
+  const CreateTeamManagerSchemaRef = registry.register(
+    'CreateTeamManager',
+    CreateTeamManagerSchema,
+  );
+  const CreateContactSchemaRef = registry.register('CreateContact', CreateContactSchema);
+  const AccountSchemaRef = registry.register('Account', AccountSchema);
+  const AccountSearchQuerySchemaRef = registry.register(
+    'AccountSearchQuery',
+    AccountSearchQuerySchema,
+  );
+  const AccountDomainLookupHeadersSchemaRef = registry.register(
+    'AccountDomainLookupHeaders',
+    AccountDomainLookupHeadersSchema,
+  );
+  const AccountWithSeasonsSchemaRef = registry.register(
+    'AccountWithSeasons',
+    AccountWithSeasonsSchema,
+  );
+  const AccountDetailsQuerySchemaRef = registry.register(
+    'AccountDetailsQuery',
+    AccountDetailsQuerySchema,
+  );
+  const CreateAccountSchemaRef = registry.register('CreateAccount', CreateAccountSchema);
+  const AccountNameSchemaRef = registry.register('AccountName', AccountNameSchema);
+  const AccountHeaderSchemaRef = registry.register('AccountHeader', AccountHeaderSchema);
+  const AccountAffiliationSchemaRef = registry.register(
+    'AccountAffiliation',
+    AccountAffiliationSchema,
+  );
+  const SponsorSchemaRef = registry.register('Sponsor', SponsorSchema);
+  const SponsorListSchemaRef = registry.register('SponsorList', SponsorListSchema);
+  const CreateSponsorSchemaRef = registry.register('CreateSponsor', CreateSponsorSchema);
+  const PlayersWantedClassifiedSchemaRef = registry.register(
+    'PlayersWantedClassified',
+    PlayersWantedClassifiedSchema,
+  );
+  const PlayersWantedClassifiedPagedSchemaRef = registry.register(
+    'PlayersWantedClassifiedPaged',
+    PlayersWantedClassifiedPagedSchema,
+  );
+  const UpsertPlayersWantedClassifiedSchemaRef = registry.register(
+    'UpsertPlayersWantedClassified',
+    UpsertPlayersWantedClassifiedSchema,
+  );
+  const PlayerClassifiedSearchQuerySchemaRef = registry.register(
+    'PlayerClassifiedSearchQuery',
+    PlayerClassifiedSearchQuerySchema,
+  );
+  const TeamsWantedPublicClassifiedPagedSchemaRef = registry.register(
+    'TeamsWantedPublicClassifiedPaged',
+    TeamsWantedPublicClassifiedPagedSchema,
+  );
+  const TeamsWantedOwnerClassifiedSchemaRef = registry.register(
+    'TeamsWantedOwnerClassified',
+    TeamsWantedOwnerClassifiedSchema,
+  );
+  const UpsertTeamsWantedClassifiedSchemaRef = registry.register(
+    'UpsertTeamsWantedClassified',
+    UpsertTeamsWantedClassifiedSchema,
+  );
+  const TeamsWantedAccessCodeSchemaRef = registry.register(
+    'TeamsWantedAccessCode',
+    TeamsWantedAccessCodeSchema,
+  );
+  const TeamsWantedContactInfoSchemaRef = registry.register(
+    'TeamsWantedContactInfo',
+    TeamsWantedContactInfoSchema,
+  );
+  const TeamsWantedContactQuerySchemaRef = registry.register(
+    'TeamsWantedContactQuery',
+    TeamsWantedContactQuerySchema,
+  );
+  const ContactPlayersWantedCreatorSchemaRef = registry.register(
+    'ContactPlayersWantedCreator',
+    ContactPlayersWantedCreatorSchema,
+  );
+  const BaseballPositionSchemaRef = registry.register('BaseballPosition', BaseballPositionSchema);
+  const ExperienceLevelSchemaRef = registry.register('ExperienceLevel', ExperienceLevelSchema);
+  const AccountPollSchemaRef = registry.register('AccountPoll', AccountPollSchema);
+  const CreatePollSchemaRef = registry.register('CreatePoll', CreatePollSchema);
+  const UpdatePollSchemaRef = registry.register('UpdatePoll', UpdatePollSchema);
+  const PollVoteRequestSchemaRef = registry.register('PollVoteRequest', PollVoteRequestSchema);
+
+  const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
+  const AuthenticationErrorSchemaRef = registry.register(
+    'AuthenticationError',
+    AuthenticationErrorSchema,
+  );
+  const AuthorizationErrorSchemaRef = registry.register(
+    'AuthorizationError',
+    AuthorizationErrorSchema,
+  );
+  const NotFoundErrorSchemaRef = registry.register('NotFoundError', NotFoundErrorSchema);
+  const ConflictErrorSchemaRef = registry.register('ConflictError', ConflictErrorSchema);
+  const InternalServerErrorSchemaRef = registry.register(
+    'InternalServerError',
+    InternalServerErrorSchema,
+  );
+
+  return {
+    RosterMemberSchemaRef,
+    RosterPlayerSchemaRef,
+    SignRosterMemberSchemaRef,
+    ContactSchemaRef,
+    TeamManagerSchemaRef,
+    CreateTeamManagerSchemaRef,
+    CreateContactSchemaRef,
+    AccountSchemaRef,
+    AccountSearchQuerySchemaRef,
+    AccountDomainLookupHeadersSchemaRef,
+    AccountWithSeasonsSchemaRef,
+    AccountDetailsQuerySchemaRef,
+    CreateAccountSchemaRef,
+    AccountNameSchemaRef,
+    AccountHeaderSchemaRef,
+    AccountAffiliationSchemaRef,
+    SponsorSchemaRef,
+    SponsorListSchemaRef,
+    CreateSponsorSchemaRef,
+    PlayersWantedClassifiedSchemaRef,
+    PlayersWantedClassifiedPagedSchemaRef,
+    UpsertPlayersWantedClassifiedSchemaRef,
+    PlayerClassifiedSearchQuerySchemaRef,
+    TeamsWantedPublicClassifiedPagedSchemaRef,
+    TeamsWantedOwnerClassifiedSchemaRef,
+    UpsertTeamsWantedClassifiedSchemaRef,
+    TeamsWantedAccessCodeSchemaRef,
+    TeamsWantedContactInfoSchemaRef,
+    TeamsWantedContactQuerySchemaRef,
+    ContactPlayersWantedCreatorSchemaRef,
+    BaseballPositionSchemaRef,
+    ExperienceLevelSchemaRef,
+    AccountPollSchemaRef,
+    CreatePollSchemaRef,
+    UpdatePollSchemaRef,
+    PollVoteRequestSchemaRef,
+    ValidationErrorSchemaRef,
+    AuthenticationErrorSchemaRef,
+    AuthorizationErrorSchemaRef,
+    NotFoundErrorSchemaRef,
+    ConflictErrorSchemaRef,
+    InternalServerErrorSchemaRef,
+  };
+};
+
+export type SchemaRefs = ReturnType<typeof registerSchemaRefs>;
+
+export type RegisterContext = {
+  registry: OpenAPIRegistry;
+  schemaRefs: SchemaRefs;
+  z: (typeof import('zod'))['z'];
+};
