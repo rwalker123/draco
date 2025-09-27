@@ -216,10 +216,11 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { q, roles, seasonId, contactDetails } = req.query; // search query, roles flag, and optional seasonId
+    const { q, roles, seasonId, contactDetails, onlyWithRoles } = req.query; // search query, roles flag, and optional seasonId
     const { accountId } = extractAccountParams(req.params);
     const includeRoles = roles === 'true';
     const includeContactDetails = contactDetails === 'true';
+    const filterOnlyWithRoles = onlyWithRoles === 'true';
 
     // Parse season ID if provided
     const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
@@ -230,6 +231,7 @@ router.get(
     // Use ContactService to get contacts with roles
     const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
+      onlyWithRoles: filterOnlyWithRoles,
       includeContactDetails,
       searchQuery: q ? q.toString() : undefined,
       pagination: paginationParams,
