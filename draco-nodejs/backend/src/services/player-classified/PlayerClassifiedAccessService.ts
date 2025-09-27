@@ -1,27 +1,19 @@
 // PlayerClassifiedAccessService for Draco Sports Manager
 // Single responsibility: Handles access control, permissions, and security for player classifieds
-
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
-import { ITeamsWantedOwnerResponse } from '../../interfaces/playerClassifiedInterfaces.js';
 import { NotFoundError, ValidationError, InternalServerError } from '../../utils/customErrors.js';
 import { logSecurely } from '../../utils/auditLogger.js';
-import type { PlayerClassifiedDataService } from './PlayerClassifiedDataService.js';
-
-// Database record types for access control operations
-interface TeamsWantedDbRecord {
-  id: bigint;
-  accountid: bigint;
-  datecreated: Date;
-  name: string;
-  email: string;
-  phone: string;
-  experience: string;
-  positionsplayed: string;
-  accesscode: string;
-  birthdate: Date;
-}
+import { TeamsWantedOwnerClassifiedType } from '@draco/shared-schemas';
+import {
+  dbTeamsWanted,
+  IPlayersWantedRepository,
+  ITeamsWantedRepository,
+  RepositoryFactory,
+} from '../../repositories/index.js';
+import { ServiceFactory } from '../serviceFactory.js';
+import { AccountsService } from '../accountsService.js';
+import { TeamsWantedResponseFormatter } from '../../responseFormatters/teamsWantedResponseFormattter.js';
 
 /**
  * PlayerClassifiedAccessService
@@ -36,38 +28,16 @@ interface TeamsWantedDbRecord {
  * This service follows Single Responsibility Principle by focusing solely on access control
  * and security. It doesn't handle data transformation, validation, or email operations.
  *
- * @example
- * ```typescript
- * const accessService = new PlayerClassifiedAccessService(prismaClient, dataService);
- * const canEdit = await accessService.canEditPlayersWanted(456n, 789n, 123n);
- * const verified = await accessService.verifyTeamsWantedAccess(456n, 'uuid-code', 123n);
- * ```
  */
 export class PlayerClassifiedAccessService {
-  private prisma: PrismaClient;
-  private dataService: PlayerClassifiedDataService | undefined; // Will be injected to avoid circular dependencies
+  private teamsWantedRepository: ITeamsWantedRepository;
+  private playersWantedRepository: IPlayersWantedRepository;
+  private accountService: AccountsService;
 
-  constructor(prisma: PrismaClient, dataService?: PlayerClassifiedDataService) {
-    this.prisma = prisma;
-    this.dataService = dataService;
-  }
-
-  /**
-   * Set data service reference to avoid circular dependencies
-   *
-   * Sets the data service reference after construction to avoid circular
-   * dependency issues between services. This allows access service to use
-   * data transformation methods when needed.
-   *
-   * @param dataService - The PlayerClassifiedDataService instance
-   *
-   * @example
-   * ```typescript
-   * accessService.setDataService(dataService);
-   * ```
-   */
-  setDataService(dataService: PlayerClassifiedDataService): void {
-    this.dataService = dataService;
+  constructor() {
+    this.teamsWantedRepository = RepositoryFactory.getTeamsWantedRepository();
+    this.playersWantedRepository = RepositoryFactory.getPlayersWantedRepository();
+    this.accountService = ServiceFactory.getAccountsService();
   }
 
   /**
@@ -103,15 +73,11 @@ export class PlayerClassifiedAccessService {
     classifiedId: bigint,
     accessCode: string,
     accountId: bigint,
-  ): Promise<ITeamsWantedOwnerResponse> {
-    if (!this.dataService) {
-      throw new InternalServerError('Data service not initialized');
-    }
-
+  ): Promise<TeamsWantedOwnerClassifiedType> {
     // Find the classified with account boundary enforcement
-    const classified = await this.dataService.findTeamsWantedById(classifiedId, accountId);
+    const classified = await this.teamsWantedRepository.findById(classifiedId);
 
-    if (!classified) {
+    if (!classified || classified.accountid !== accountId) {
       throw new NotFoundError('Classified not found');
     }
 
@@ -122,13 +88,13 @@ export class PlayerClassifiedAccessService {
     }
 
     // Get account details for response
-    const account = await this.dataService.getAccountById(accountId);
+    const account = await this.accountService.getAccountName(accountId);
     if (!account) {
       throw new InternalServerError('Failed to retrieve account information');
     }
 
     // Transform database record to owner response format
-    return this.dataService.transformTeamsWantedToOwnerResponse(classified, account);
+    return TeamsWantedResponseFormatter.transformTeamsWantedToOwnerResponse(classified, account);
   }
 
   /**
@@ -152,28 +118,18 @@ export class PlayerClassifiedAccessService {
    * @performance Requires iteration through all account classifieds to compare
    * hashed access codes. Consider adding indexed lookup if volume becomes high.
    *
-   * @example
-   * ```typescript
-   * const classified = await accessService.findTeamsWantedByAccessCode(
-   *   123n,
-   *   'uuid-from-email'
-   * );
-   * console.log(classified.email); // PII exposed for valid access code
-   * ```
    */
   async findTeamsWantedByAccessCode(
     accountId: bigint,
     accessCode: string,
-  ): Promise<ITeamsWantedOwnerResponse> {
-    if (!this.dataService) {
-      throw new InternalServerError('Data service not initialized');
-    }
-
+  ): Promise<TeamsWantedOwnerClassifiedType> {
     // Find all classifieds for the account (we need to verify access code with bcrypt)
-    const classifieds = await this.dataService.findAllTeamsWantedByAccount(accountId);
+    const classifieds = await this.teamsWantedRepository.findMany({
+      accountid: accountId,
+    });
 
     // Find the classified by comparing the access code with each hashed version
-    let matchedClassified: TeamsWantedDbRecord | null = null;
+    let matchedClassified: dbTeamsWanted | null = null;
     for (const classified of classifieds) {
       const isValid = await bcrypt.compare(accessCode, classified.accesscode);
       if (isValid) {
@@ -187,14 +143,17 @@ export class PlayerClassifiedAccessService {
     }
 
     // Get account details for response
-    const account = await this.dataService.getAccountById(accountId);
+    const account = await this.accountService.getAccountName(accountId);
     if (!account) {
       throw new InternalServerError('Failed to retrieve account information');
     }
 
     // Transform database record to response format
     // Note: This returns full PII (email, phone, birthDate) but never the accessCode
-    return this.dataService.transformTeamsWantedToOwnerResponse(matchedClassified, account);
+    return TeamsWantedResponseFormatter.transformTeamsWantedToOwnerResponse(
+      matchedClassified,
+      account,
+    );
   }
 
   /**
@@ -214,32 +173,20 @@ export class PlayerClassifiedAccessService {
    * - Ownership: Creator can always edit their own classified
    * - Role-based: AccountAdmin and Administrator can edit any
    *
-   * @example
-   * ```typescript
-   * const canEdit = await accessService.canEditPlayersWanted(456n, 789n, 123n);
-   * if (canEdit) {
-   *   // Proceed with edit operation
-   * }
-   * ```
    */
   async canEditPlayersWanted(
     classifiedId: bigint,
     contactId: bigint,
     accountId: bigint,
   ): Promise<boolean> {
-    if (!this.dataService) {
-      throw new InternalServerError('Data service not initialized');
-    }
-
     // Get the classified to check ownership and account boundary
-    const classified = await this.dataService.findPlayersWantedById(classifiedId, accountId);
+    const classified = await this.playersWantedRepository.findPlayersWantedById(
+      classifiedId,
+      accountId,
+    );
 
-    if (!classified) {
-      return false;
-    }
-
-    if (classified.accountid !== accountId) {
-      return false;
+    if (!classified || classified.accountid !== accountId) {
+      throw new NotFoundError('Players Wanted classified not found');
     }
 
     // Creator can always edit their own classified
@@ -247,11 +194,16 @@ export class PlayerClassifiedAccessService {
       return true;
     }
 
-    // Check if user has AccountAdmin or Administrator role
-    const userRoles = await this.getUserRoles(contactId, accountId);
-    return userRoles.some(
-      (role) => role.roleId === 'AccountAdmin' || role.roleId === 'Administrator',
+    const userRoleService = ServiceFactory.getRoleService();
+    const userRoles = await userRoleService.getUserRolesByContactId(contactId, accountId);
+
+    // Check if user has AccountAdmin role
+    const hasAccountAdminRole = userRoles.contactRoles.some(
+      (role) => role.roleId === 'AccountAdmin',
     );
+    const hasGlobalAdminRole = userRoles.globalRoles.includes('Administrator');
+
+    return hasAccountAdminRole || hasGlobalAdminRole;
   }
 
   /**
@@ -270,12 +222,6 @@ export class PlayerClassifiedAccessService {
    * - Creator can delete their own classified
    * - AccountAdmin and Administrator can delete any classified in their account
    *
-   * @example
-   * ```typescript
-   * const canDelete = await accessService.canDeletePlayersWanted(456n, 789n, 123n);
-   * if (canDelete) {
-   *   await dataService.deletePlayersWanted(456n);
-   * }
    * ```
    */
   async canDeletePlayersWanted(
@@ -285,52 +231,6 @@ export class PlayerClassifiedAccessService {
   ): Promise<boolean> {
     // Same logic as canEdit - delete and edit permissions are equivalent
     return this.canEditPlayersWanted(classifiedId, contactId, accountId);
-  }
-
-  /**
-   * Get user roles for permission checking
-   *
-   * Retrieves the roles assigned to a contact within a specific account for
-   * permission checking. This is a simplified implementation that directly
-   * queries the contactroles table. In production, integrate with the role service.
-   *
-   * @param contactId - ID of the contact to get roles for
-   * @param accountId - Account ID to scope role lookup to specific account
-   * @returns Array of role objects with role IDs
-   *
-   * @security Implements proper error handling and logging to prevent
-   * information leakage while maintaining security audit trails.
-   *
-   * @example
-   * ```typescript
-   * const roles = await accessService.getUserRoles(789n, 123n);
-   * const hasAdminRole = roles.some(r => r.roleId === 'AccountAdmin');
-   * ```
-   *
-   * @todo Integrate with centralized role service for production use
-   */
-  private async getUserRoles(
-    contactId: bigint,
-    accountId: bigint,
-  ): Promise<Array<{ roleId: string }>> {
-    try {
-      const roles = await this.prisma.contactroles.findMany({
-        where: {
-          contactid: contactId,
-          accountid: accountId,
-        },
-        select: { roleid: true },
-      });
-
-      return roles.map((role) => ({ roleId: role.roleid }));
-    } catch (error) {
-      logSecurely('error', 'Error fetching user roles', {
-        error: error instanceof Error ? error.message : String(error),
-        contactId: String(contactId),
-        accountId: String(accountId),
-      });
-      return [];
-    }
   }
 
   /**

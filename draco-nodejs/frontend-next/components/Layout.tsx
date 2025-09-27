@@ -24,6 +24,7 @@ import {
   Person as PersonIcon,
   Email as EmailIcon,
   FitnessCenter as FitnessCenterIcon,
+  Handshake as HandshakeIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -33,6 +34,10 @@ import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
+import { getAccountById } from '@draco/shared-api-client';
+import { useApiClient } from '../hooks/useApiClient';
+import { unwrapApiResult } from '../utils/apiResult';
+import type { AccountType } from '@draco/shared-schemas';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -52,9 +57,10 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const logout = useLogout();
+  const apiClient = useApiClient();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [accountType, setAccountType] = React.useState<string | null>(null);
-  const [currentAccount, setCurrentAccount] = React.useState<Record<string, unknown> | null>(null);
+  const [currentAccount, setCurrentAccount] = React.useState<AccountType | null>(null);
   const [registrationOpen, setRegistrationOpen] = React.useState(false);
 
   // Check if user has admin role
@@ -90,31 +96,45 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
   // Fetch account type and current account info
   React.useEffect(() => {
+    let isMounted = true;
+
     const fetchAccount = async () => {
-      if (accountId) {
-        try {
-          const response = await fetch(`/api/accounts/${accountId}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              setAccountType(data.data.account.accountType);
-              setCurrentAccount(data.data.account);
-            }
-          }
-        } catch {
-          setAccountType(null);
-          setCurrentAccount(null);
+      if (!accountId) {
+        setAccountType(null);
+        setCurrentAccount(null);
+        return;
+      }
+
+      try {
+        const result = await getAccountById({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        if (!isMounted) {
+          return;
         }
-      } else {
+
+        const data = unwrapApiResult(result, 'Failed to fetch account');
+        const account = data.account;
+        setAccountType(account.configuration?.accountType?.name ?? null);
+        setCurrentAccount(account as AccountType);
+      } catch {
+        if (!isMounted) {
+          return;
+        }
         setAccountType(null);
         setCurrentAccount(null);
       }
     };
+
     fetchAccount();
-  }, [accountId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId, apiClient]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -207,7 +227,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </Box>
 
           {/* Center - Baseball menu (only for baseball accounts) */}
-          {accountType === 'Baseball' && accountId && (
+          {accountType?.toLowerCase() === 'baseball' && accountId && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <BaseballMenu accountId={accountId} />
             </Box>
@@ -327,6 +347,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Account Settings</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/sponsors/manage`)
+                }
+                key="account-sponsors"
+              >
+                <ListItemIcon>
+                  <HandshakeIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Account Sponsors</ListItemText>
               </MenuItem>
             );
           }

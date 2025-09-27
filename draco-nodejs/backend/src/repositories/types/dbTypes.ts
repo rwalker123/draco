@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { playerswantedclassified, Prisma, teamswantedclassified } from '@prisma/client';
 
 // db types used to map to the response schemas
 export type dbBaseContact = Prisma.contactsGetPayload<{
@@ -170,6 +170,133 @@ export type dbAccountAffiliation = Prisma.affiliationsGetPayload<{
     id: true;
     name: true;
     url: true;
+  };
+}>;
+
+export type dbTeamsWanted = Prisma.teamswantedclassifiedGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    datecreated: true;
+    name: true;
+    email: true;
+    phone: true;
+    experience: true;
+    positionsplayed: true;
+    birthdate: true;
+  };
+}>;
+
+export type dbTeamsWantedPublic = Prisma.teamswantedclassifiedGetPayload<{
+  select: {
+    id: true;
+    datecreated: true;
+    name: true;
+    experience: true;
+    positionsplayed: true;
+    birthdate: true;
+    accounts: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+  };
+}>;
+
+export type dbPlayersWanted = Prisma.playerswantedclassifiedGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    datecreated: true;
+    createdbycontactid: true;
+    teameventname: true;
+    description: true;
+    positionsneeded: true;
+  };
+}>;
+
+export type dbPlayersWantedWithRelations = Prisma.playerswantedclassifiedGetPayload<{
+  include: {
+    contacts: { select: { id: true; firstname: true; lastname: true } };
+    accounts: { select: { id: true; name: true } };
+  };
+}>;
+
+// Search parameters for classifieds
+export type dbClassifiedSearchParams = {
+  // Pagination
+  page?: number;
+  limit?: number;
+
+  // Sorting
+  sortBy?: 'dateCreated' | 'relevance';
+  sortOrder?: 'asc' | 'desc';
+
+  // Type filtering
+  type?: 'players' | 'teams' | 'all';
+
+  // Content filtering
+  searchQuery?: string;
+  positions?: string[];
+  experience?: string[];
+
+  // Date filtering
+  dateFrom?: Date;
+  dateTo?: Date;
+};
+
+// Search filters applied to results
+export type dbClassifiedSearchFilters = {
+  type: 'players' | 'teams' | 'all';
+  positions: string[];
+  experience: string[];
+  dateRange: {
+    from: Date | null;
+    to: Date | null;
+  };
+  searchQuery: string | null;
+};
+
+// Search result with relevance scoring
+export type dbClassifiedSearchResult = {
+  classified: playerswantedclassified | teamswantedclassified;
+  relevanceScore: number;
+  matchReasons: string[];
+};
+
+// Base response for classified listings
+export type dbClassifiedPageResponse<T> = {
+  data: T[];
+  total: number;
+  pagination: {
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+    totalPages: number;
+  };
+  filters: dbClassifiedSearchFilters;
+};
+
+export type dbContactInfo = {
+  email: string | null;
+  phone: string | null;
+  birthDate: string | null;
+};
+export type dbSponsor = Prisma.sponsorsGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    teamid: true;
+    name: true;
+    streetaddress: true;
+    citystatezip: true;
+    description: true;
+    email: true;
+    phone: true;
+    fax: true;
+    website: true;
   };
 }>;
 

@@ -1,10 +1,18 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 import { AccountPollType } from '@draco/shared-schemas';
 import { deleteAccountPoll } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
+import { assertNoApiError } from '@/utils/apiResult';
 
 export interface PollDeleteDialogProps {
   accountId: string;
@@ -42,16 +50,11 @@ const PollDeleteDialog: React.FC<PollDeleteDialogProps> = ({
     try {
       const result = await deleteAccountPoll({
         client: apiClient,
-        params: { accountId, pollId: poll.id },
+        path: { accountId, pollId: poll.id },
         throwOnError: false,
       });
 
-      if (result.error) {
-        const message = result.error.message ?? 'Failed to delete poll.';
-        onError?.(message);
-        setDeleting(false);
-        return;
-      }
+      assertNoApiError(result, 'Failed to delete poll');
 
       onSuccess?.({ message: 'Poll deleted successfully.', pollId: poll.id });
       onClose();
@@ -69,7 +72,8 @@ const PollDeleteDialog: React.FC<PollDeleteDialogProps> = ({
       <DialogTitle>Delete Poll</DialogTitle>
       <DialogContent>
         <Typography>
-          Are you sure you want to delete the poll &quot;{poll?.question}&quot;? This action cannot be undone.
+          Are you sure you want to delete the poll &quot;{poll?.question}&quot;? This action cannot
+          be undone.
         </Typography>
       </DialogContent>
       <DialogActions>

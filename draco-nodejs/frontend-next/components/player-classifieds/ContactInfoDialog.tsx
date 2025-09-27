@@ -15,12 +15,12 @@ import {
   IconButton,
 } from '@mui/material';
 import { Email as EmailIcon, Phone as PhoneIcon, Close as CloseIcon } from '@mui/icons-material';
-import { ITeamsWantedContactInfo } from '../../types/playerClassifieds';
+import { TeamsWantedContactInfoType } from '@draco/shared-schemas';
 
 interface ContactInfoDialogProps {
   open: boolean;
   onClose: () => void;
-  contactInfo: ITeamsWantedContactInfo | null;
+  contactInfo: TeamsWantedContactInfoType | null;
   loading: boolean;
   error: string | null;
   playerName: string;

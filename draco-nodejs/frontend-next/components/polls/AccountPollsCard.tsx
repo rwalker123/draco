@@ -19,6 +19,7 @@ import { AccountPollType } from '@draco/shared-schemas';
 import { listActiveAccountPolls, voteOnAccountPoll } from '@draco/shared-api-client';
 import { useAuth } from '../../context/AuthContext';
 import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '@/utils/apiResult';
 
 interface AccountPollsCardProps {
   accountId: string;
@@ -46,23 +47,12 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
     try {
       const result = await listActiveAccountPolls({
         client: apiClient,
-        params: { accountId },
+        path: { accountId },
         throwOnError: false,
       });
 
-      if (result.error) {
-        if (result.error.status === 403) {
-          setError('You do not have permission to view polls for this account.');
-        } else if (result.error.status === 401) {
-          setError('Authentication required to view polls.');
-        } else {
-          setError('Failed to load polls.');
-        }
-        setPolls([]);
-        return;
-      }
-
-      setPolls((result.data as AccountPollType[]) ?? []);
+      const polls = unwrapApiResult(result, 'Failed to load poll list');
+      setPolls(polls ?? []);
     } catch (err) {
       console.error('Failed to load polls:', err);
       setError('Failed to load polls.');
@@ -86,23 +76,12 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
       try {
         const result = await voteOnAccountPoll({
           client: apiClient,
-          params: { accountId, pollId },
+          path: { accountId, pollId },
           body: { optionId },
           throwOnError: false,
         });
-
-        if (result.error) {
-          if (result.error.status === 404) {
-            setError('The poll is no longer available.');
-          } else if (result.error.status === 403) {
-            setError('You are not allowed to vote on this poll.');
-          } else {
-            setError('Failed to submit vote.');
-          }
-          return;
-        }
-
-        const updatedPoll = result.data as AccountPollType;
+        const poll = unwrapApiResult(result, 'Failed to submit vote');
+        const updatedPoll = poll;
         setPolls((prev) => prev.map((poll) => (poll.id === updatedPoll.id ? updatedPoll : poll)));
       } catch (err) {
         console.error('Failed to submit vote:', err);

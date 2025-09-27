@@ -12,11 +12,11 @@ import {
   Chip,
 } from '@mui/material';
 import { format } from 'date-fns';
-import { IPlayersWantedResponse } from '../../types/playerClassifieds';
+import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 
 interface DeletePlayersWantedDialogProps {
   open: boolean;
-  classified: IPlayersWantedResponse | null;
+  classified: PlayersWantedClassifiedType | null;
   onClose: () => void;
   onConfirm: () => void;
   loading?: boolean;

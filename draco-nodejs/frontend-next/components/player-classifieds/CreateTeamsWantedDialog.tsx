@@ -22,17 +22,17 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ITeamsWantedFormState } from '../../types/playerClassifieds';
-import { formatPhoneNumber } from '../../utils/contactUtils';
+import { formatPhoneNumber } from '../../utils/phoneNumber';
 import { isValidEmailFormat } from '../../utils/emailValidation';
+import { UpsertTeamsWantedClassifiedType } from '@draco/shared-schemas';
 
 interface CreateTeamsWantedDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: ITeamsWantedFormState) => Promise<void>;
+  onSubmit: (data: UpsertTeamsWantedClassifiedType) => Promise<void>;
   loading?: boolean;
   editMode?: boolean;
-  initialData?: ITeamsWantedFormState;
+  initialData?: UpsertTeamsWantedClassifiedType | null;
   _classifiedId?: string;
 }
 
@@ -51,6 +51,20 @@ const AVAILABLE_POSITIONS = [
   'designated-hitter',
 ];
 
+const POSITION_LABELS: Record<string, string> = {
+  pitcher: 'Pitcher',
+  catcher: 'Catcher',
+  'first-base': 'First Base',
+  'second-base': 'Second Base',
+  'third-base': 'Third Base',
+  shortstop: 'Shortstop',
+  'left-field': 'Left Field',
+  'center-field': 'Center Field',
+  'right-field': 'Right Field',
+  utility: 'Utility',
+  'designated-hitter': 'Designated Hitter',
+};
+
 // Experience level is now a free-form text input
 
 const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
@@ -63,19 +77,30 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   _classifiedId,
 }) => {
   // Form state
-  const [formData, setFormData] = useState<ITeamsWantedFormState>(
+  const [formData, setFormData] = useState<UpsertTeamsWantedClassifiedType>(
     initialData || {
       name: '',
       email: '',
       phone: '',
       experience: '',
-      positionsPlayed: [],
-      birthDate: null,
+      positionsPlayed: '',
+      birthDate: '',
     },
   );
 
+  const selectedPositions = React.useMemo(() => {
+    return formData.positionsPlayed
+      ? formData.positionsPlayed
+          .split(',')
+          .map((position) => position.trim())
+          .filter((position) => position.length > 0)
+      : [];
+  }, [formData.positionsPlayed]);
+
   // Form validation errors
-  const [errors, setErrors] = useState<Partial<Record<keyof ITeamsWantedFormState, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof UpsertTeamsWantedClassifiedType, string>>
+  >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Update form data when initialData changes (for edit mode)
@@ -87,7 +112,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
   // Handle form field changes
   const handleFieldChange = (
-    field: keyof ITeamsWantedFormState,
+    field: keyof UpsertTeamsWantedClassifiedType,
     value: string | Date | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -101,16 +126,11 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   // Handle positions selection
   const handlePositionsChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
-    const selectedPositions = typeof value === 'string' ? value.split(',') : value;
-
-    // Limit to maximum 3 positions
-    if (selectedPositions.length > 3) {
-      return; // Don't update if trying to select more than 3
-    }
+    const nextSelected = (typeof value === 'string' ? value.split(',') : value).slice(0, 3);
 
     setFormData((prev) => ({
       ...prev,
-      positionsPlayed: selectedPositions,
+      positionsPlayed: nextSelected.join(','),
     }));
 
     if (errors.positionsPlayed) {
@@ -120,7 +140,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
   // Validate form data
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof ITeamsWantedFormState, string>> = {};
+    const newErrors: Partial<Record<keyof UpsertTeamsWantedClassifiedType, string>> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -144,9 +164,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
       newErrors.experience = 'Experience level must be 255 characters or less';
     }
 
-    if (formData.positionsPlayed.length === 0) {
+    if (selectedPositions.length === 0) {
       newErrors.positionsPlayed = 'Please select at least one position';
-    } else if (formData.positionsPlayed.length > 3) {
+    } else if (selectedPositions.length > 3) {
       newErrors.positionsPlayed = 'Please select no more than 3 positions';
     }
 
@@ -199,8 +219,8 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
         email: '',
         phone: '',
         experience: '',
-        positionsPlayed: [],
-        birthDate: null,
+        positionsPlayed: '',
+        birthDate: '',
       },
     );
     setErrors({});
@@ -212,167 +232,188 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editMode ? 'Edit Teams Wanted' : 'Post Teams Wanted'}</DialogTitle>
       <form onSubmit={handleSubmit}>
-        <DialogContent>
-          {/* Error Alert */}
-          {submitError && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
-              {submitError}
-            </Alert>
-          )}
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DialogContent>
+            {/* Error Alert */}
+            {submitError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
+                {submitError}
+              </Alert>
+            )}
 
-          {/* Name Field */}
-          <TextField
-            fullWidth
-            margin="dense"
-            label="Full Name"
-            value={formData.name}
-            onChange={(e) => {
-              // Sanitize input: remove potentially dangerous characters
-              const sanitizedValue = e.target.value
-                .replace(/[<>]/g, '') // Remove < and > to prevent HTML injection
-                .replace(/javascript:/gi, '') // Remove javascript: protocol
-                .replace(/on\w+=/gi, ''); // Remove event handlers
-              handleFieldChange('name', sanitizedValue);
-            }}
-            error={!!errors.name}
-            helperText={errors.name}
-            required
-            sx={{ mb: 2 }}
-          />
+            {/* Name Field */}
+            <TextField
+              fullWidth
+              margin="dense"
+              label="Full Name"
+              value={formData.name}
+              onChange={(e) => {
+                // Sanitize input: remove potentially dangerous characters
+                const sanitizedValue = e.target.value
+                  .replace(/[<>]/g, '') // Remove < and > to prevent HTML injection
+                  .replace(/javascript:/gi, '') // Remove javascript: protocol
+                  .replace(/on\w+=/gi, ''); // Remove event handlers
+                handleFieldChange('name', sanitizedValue);
+              }}
+              error={!!errors.name}
+              helperText={errors.name}
+              required
+              sx={{ mb: 2 }}
+            />
 
-          {/* Email Field */}
-          <TextField
-            fullWidth
-            margin="dense"
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleFieldChange('email', e.target.value)}
-            error={!!errors.email}
-            helperText={errors.email}
-            required
-            sx={{ mb: 2 }}
-          />
+            {/* Contact Fields */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              <Box sx={{ flexGrow: 1 }}>
+                <TextField
+                  fullWidth
+                  margin="dense"
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleFieldChange('email', e.target.value)}
+                  error={!!errors.email}
+                  helperText={errors.email}
+                  required
+                />
+              </Box>
+              <Box sx={{ width: { xs: '100%', md: 220 } }}>
+                <TextField
+                  fullWidth
+                  margin="dense"
+                  label="Phone Number"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const rawValue = e.target.value;
+                    const digitsOnly = rawValue.replace(/\D/g, '');
 
-          {/* Phone Field */}
-          <TextField
-            fullWidth
-            margin="dense"
-            label="Phone Number"
-            value={formData.phone}
-            onChange={(e) => {
-              const rawValue = e.target.value;
-              const digitsOnly = rawValue.replace(/\D/g, '');
+                    // Limit to 10 digits maximum
+                    if (digitsOnly.length > 10) {
+                      return;
+                    }
 
-              // Limit to 10 digits maximum
-              if (digitsOnly.length > 10) {
-                return;
+                    // Only format if it looks like a complete phone number (10 digits)
+                    const formattedValue =
+                      digitsOnly.length === 10 ? formatPhoneNumber(digitsOnly) : digitsOnly;
+                    handleFieldChange('phone', formattedValue);
+                  }}
+                  error={!!errors.phone}
+                  helperText={errors.phone}
+                  required
+                />
+              </Box>
+            </Box>
+
+            {/* Experience Level */}
+            <TextField
+              fullWidth
+              margin="dense"
+              label="Experience Level"
+              multiline
+              rows={4}
+              value={formData.experience}
+              onChange={(e) => handleFieldChange('experience', e.target.value)}
+              error={!!errors.experience}
+              helperText={
+                errors.experience || `${255 - formData.experience.length} characters remaining`
               }
-
-              // Only format if it looks like a complete phone number (10 digits)
-              const formattedValue =
-                digitsOnly.length === 10 ? formatPhoneNumber(digitsOnly) : digitsOnly;
-              handleFieldChange('phone', formattedValue);
-            }}
-            error={!!errors.phone}
-            helperText={errors.phone}
-            required
-            sx={{ mb: 2 }}
-          />
-
-          {/* Experience Level */}
-          <TextField
-            fullWidth
-            margin="dense"
-            label="Experience Level"
-            multiline
-            rows={4}
-            value={formData.experience}
-            onChange={(e) => handleFieldChange('experience', e.target.value)}
-            error={!!errors.experience}
-            helperText={
-              errors.experience || `${255 - formData.experience.length} characters remaining`
-            }
-            placeholder="Describe your baseball experience in detail...
+              placeholder="Describe your baseball experience in detail...
 Examples: 
 • 5 years playing recreational softball in local league
 • 2 years competitive baseball, primarily shortstop and second base  
 • High school varsity team experience, all-state recognition
 • Coached youth teams for 3 years"
-            required
-            inputProps={{ maxLength: 255 }}
-            sx={{ mb: 2 }}
-          />
-
-          {/* Positions Played */}
-          <FormControl fullWidth margin="dense" error={!!errors.positionsPlayed} sx={{ mb: 2 }}>
-            <InputLabel id="positions-played-label">Positions Played</InputLabel>
-            <Select
-              labelId="positions-played-label"
-              id="positions-played-select"
-              multiple
-              value={formData.positionsPlayed}
-              onChange={handlePositionsChange}
-              input={<OutlinedInput label="Positions Played" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} size="small" />
-                  ))}
-                </Box>
-              )}
               required
-            >
-              {AVAILABLE_POSITIONS.map((position) => (
-                <MenuItem key={position} value={position}>
-                  {position === 'pitcher' && 'Pitcher'}
-                  {position === 'catcher' && 'Catcher'}
-                  {position === 'first-base' && 'First Base'}
-                  {position === 'second-base' && 'Second Base'}
-                  {position === 'third-base' && 'Third Base'}
-                  {position === 'shortstop' && 'Shortstop'}
-                  {position === 'left-field' && 'Left Field'}
-                  {position === 'center-field' && 'Center Field'}
-                  {position === 'right-field' && 'Right Field'}
-                  {position === 'utility' && 'Utility'}
-                  {position === 'designated-hitter' && 'Designated Hitter'}
-                </MenuItem>
-              ))}
-            </Select>
-            <FormHelperText error={!!errors.positionsPlayed}>
-              {errors.positionsPlayed || `${formData.positionsPlayed.length}/3 positions selected`}
-            </FormHelperText>
-          </FormControl>
-
-          {/* Birth Date */}
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker
-              label="Birth Date"
-              value={formData.birthDate}
-              onChange={(date) => handleFieldChange('birthDate', date || null)}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  margin: 'dense',
-                  error: !!errors.birthDate,
-                  helperText: errors.birthDate,
-                  required: true,
-                  sx: { mb: 2 },
-                },
-              }}
+              inputProps={{ maxLength: 255 }}
+              sx={{ mb: 2 }}
             />
-          </LocalizationProvider>
 
-          {/* Help Text */}
-          {!editMode && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
-              <Alert severity="info" icon={false}>
-                <strong>Important:</strong> After submitting, you&apos;ll receive an access code via
-                email. Keep this code safe - you&apos;ll need it to edit or delete your ad later.
-              </Alert>
+            {/* Positions Played */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              <FormControl
+                fullWidth
+                margin="dense"
+                error={!!errors.positionsPlayed}
+                sx={{ flexGrow: 1 }}
+              >
+                <InputLabel id="positions-played-label">Positions Played</InputLabel>
+                <Select
+                  labelId="positions-played-label"
+                  id="positions-played-select"
+                  multiple
+                  value={selectedPositions}
+                  onChange={handlePositionsChange}
+                  input={<OutlinedInput label="Positions Played" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(Array.isArray(selected) ? selected : [])
+                        .map((value) => value as string)
+                        .map((value) => (
+                          <Chip key={value} label={POSITION_LABELS[value] || value} size="small" />
+                        ))}
+                    </Box>
+                  )}
+                  required
+                >
+                  {AVAILABLE_POSITIONS.map((position) => (
+                    <MenuItem
+                      key={position}
+                      value={position}
+                      disabled={
+                        selectedPositions.length >= 3 && !selectedPositions.includes(position)
+                      }
+                    >
+                      {POSITION_LABELS[position] || position}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText error={!!errors.positionsPlayed}>
+                  {errors.positionsPlayed || `${selectedPositions.length}/3 positions selected`}
+                </FormHelperText>
+              </FormControl>
+              <Box sx={{ width: { xs: '100%', md: 220 } }}>
+                <DatePicker
+                  label="Birth Date"
+                  value={formData.birthDate ? new Date(formData.birthDate) : null}
+                  onChange={(date) => handleFieldChange('birthDate', date || null)}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      margin: 'dense',
+                      error: !!errors.birthDate,
+                      helperText: errors.birthDate,
+                      required: true,
+                    },
+                  }}
+                />
+              </Box>
             </Box>
-          )}
-        </DialogContent>
+
+            {/* Help Text */}
+            {!editMode && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
+                <Alert severity="info" icon={false}>
+                  <strong>Important:</strong> After submitting, you&apos;ll receive an access code
+                  via email. Keep this code safe - you&apos;ll need it to edit or delete your ad
+                  later.
+                </Alert>
+              </Box>
+            )}
+          </DialogContent>
+        </LocalizationProvider>
 
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>

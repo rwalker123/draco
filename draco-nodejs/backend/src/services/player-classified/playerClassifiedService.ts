@@ -1,29 +1,36 @@
 // PlayerClassified Service for Draco Sports Manager
 // Orchestrator service that coordinates between specialized services following SOLID principles
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
-import {
-  IPlayersWantedCreateRequest,
-  ITeamsWantedCreateRequest,
-  IClassifiedListResponse,
-  IPlayersWantedResponse,
-  ITeamsWantedPublicResponse,
-  ITeamsWantedOwnerResponse,
-  IClassifiedSearchParams,
-  IPlayersWantedUpdateRequest,
-  IContactCreatorRequest,
-} from '../../interfaces/playerClassifiedInterfaces.js';
 import { NotFoundError, ValidationError, InternalServerError } from '../../utils/customErrors.js';
 import { DateUtils } from '../../utils/dateUtils.js';
-import { BCRYPT_CONSTANTS } from '../../config/playerClassifiedConstants.js';
+import { BCRYPT_CONSTANTS, DEFAULT_VALUES } from '../../config/playerClassifiedConstants.js';
 
 // Import specialized services
-import { PlayerClassifiedValidationService } from './PlayerClassifiedValidationService.js';
-import { PlayerClassifiedDataService } from './PlayerClassifiedDataService.js';
+import {
+  ITeamsWantedRepository,
+  IPlayersWantedRepository,
+  RepositoryFactory,
+} from '../../repositories/index.js';
 import { PlayerClassifiedEmailService } from './PlayerClassifiedEmailService.js';
 import { PlayerClassifiedAccessService } from './PlayerClassifiedAccessService.js';
+import {
+  UpsertPlayersWantedClassifiedType,
+  PlayerClassifiedSearchQueryType,
+  PlayersWantedClassifiedType,
+  PlayersWantedClassifiedPagedType,
+  TeamsWantedPublicClassifiedPagedType,
+  TeamsWantedOwnerClassifiedType,
+  UpsertTeamsWantedClassifiedType,
+  ContactPlayersWantedCreatorType,
+} from '@draco/shared-schemas';
+import { ServiceFactory } from '../serviceFactory.js';
+import { ContactService } from '../contactService.js';
+import { AccountsService } from '../accountsService.js';
+import { PlayersWantedResponseFormatter } from '../../responseFormatters/playersWantedResponseFormatter.js';
+import { TeamsWantedResponseFormatter } from '../../responseFormatters/teamsWantedResponseFormattter.js';
 
 // Database record types for type safety (kept for backward compatibility)
 // These types are also defined in the specialized services
@@ -47,16 +54,12 @@ import { PlayerClassifiedAccessService } from './PlayerClassifiedAccessService.j
  * - Maintains existing API for backward compatibility
  * - Follows SOLID principles (especially Single Responsibility and Dependency Inversion)
  *
- * @example
- * ```typescript
- * const service = new PlayerClassifiedService(prismaClient);
- * const classified = await service.createPlayersWanted(accountId, contactId, request);
- * ```
  */
 export class PlayerClassifiedService {
-  private prisma: PrismaClient;
-  public validationService: PlayerClassifiedValidationService;
-  private dataService: PlayerClassifiedDataService;
+  private teamsWantedRepository: ITeamsWantedRepository;
+  private playersWantedRepository: IPlayersWantedRepository;
+  private contactService: ContactService;
+  private accountService: AccountsService;
   public emailService: PlayerClassifiedEmailService;
   private accessService: PlayerClassifiedAccessService;
 
@@ -71,26 +74,15 @@ export class PlayerClassifiedService {
     teamsWanted: 120,
   };
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
-
+  constructor() {
     // Initialize specialized services with dependency injection
-    this.validationService = new PlayerClassifiedValidationService();
-    this.dataService = new PlayerClassifiedDataService(prisma);
-    this.emailService = new PlayerClassifiedEmailService();
-    this.accessService = new PlayerClassifiedAccessService(prisma);
-
-    // Set up service dependencies to avoid circular references
-    this.accessService.setDataService(this.dataService);
+    this.teamsWantedRepository = RepositoryFactory.getTeamsWantedRepository();
+    this.playersWantedRepository = RepositoryFactory.getPlayersWantedRepository();
+    this.emailService = ServiceFactory.getPlayerClassifiedEmailService();
+    this.accessService = ServiceFactory.getPlayerClassifiedAccessService();
+    this.contactService = ServiceFactory.getContactService();
+    this.accountService = ServiceFactory.getAccountsService();
   }
-
-  // ============================================================================
-  // PUBLIC API METHODS - Orchestrate calls to specialized services
-  // ============================================================================
-
-  // ============================================================================
-  // PLAYERS WANTED OPERATIONS - Orchestrated through specialized services
-  // ============================================================================
 
   /**
    * Create a new Players Wanted classified
@@ -107,41 +99,26 @@ export class PlayerClassifiedService {
    * @throws {ValidationError} When request validation fails
    * @throws {InternalServerError} When database operation fails or creator/account not found
    *
-   * @example
-   * ```typescript
-   * const classified = await service.createPlayersWanted(
-   *   123n, 789n,
-   *   { teamEventName: 'Spring Tournament', description: 'Need pitcher', positionsNeeded: 'P,1B' }
-   * );
-   * ```
    */
   async createPlayersWanted(
     accountId: bigint,
     contactId: bigint,
-    request: IPlayersWantedCreateRequest,
-  ): Promise<IPlayersWantedResponse> {
-    // Validate input data using specialized validation service
-    const validation = this.validationService.validatePlayersWantedCreateRequest(request);
-    if (!validation.isValid) {
-      throw new ValidationError(
-        `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
-      );
-    }
-
-    // Transform request to database format using data service
-    const dbData = this.dataService.transformPlayersWantedCreateRequest(
-      request,
-      accountId,
-      contactId,
-    );
-
+    request: UpsertPlayersWantedClassifiedType,
+  ): Promise<PlayersWantedClassifiedType> {
     // Create the classified using data service
-    const classified = await this.dataService.createPlayersWantedRecord(dbData);
+    const classified = await this.playersWantedRepository.createPlayersWantedRecord({
+      accountid: accountId,
+      datecreated: new Date(),
+      createdbycontactid: contactId,
+      teameventname: request.teamEventName,
+      description: request.description,
+      positionsneeded: request.positionsNeeded,
+    });
 
     // Get creator and account details for response using data service
     const [creator, account] = await Promise.all([
-      this.dataService.getContactById(contactId),
-      this.dataService.getAccountById(accountId),
+      this.contactService.getContact(accountId, contactId),
+      this.accountService.getAccountName(accountId),
     ]);
 
     if (!creator || !account) {
@@ -149,7 +126,11 @@ export class PlayerClassifiedService {
     }
 
     // Transform database record to response format using data service
-    return this.dataService.transformPlayersWantedToResponse(classified, creator, account);
+    return PlayersWantedResponseFormatter.transformPlayersWantedToResponse(
+      classified,
+      creator,
+      account,
+    );
   }
 
   /**
@@ -161,20 +142,20 @@ export class PlayerClassifiedService {
    * @param accountId - Account ID for multi-tenant boundary enforcement
    * @param params - Search parameters including pagination, sorting, and filtering options
    * @returns Paginated response with classified data, total count, pagination metadata, and applied filters
-   *
-   * @example
-   * ```typescript
-   * const results = await service.getPlayersWanted(123n, {
-   *   page: 1, limit: 10, sortBy: 'dateCreated', sortOrder: 'desc'
-   * });
-   * ```
    */
   async getPlayersWanted(
     accountId: bigint,
-    params: IClassifiedSearchParams,
-  ): Promise<IClassifiedListResponse<IPlayersWantedResponse>> {
+    params: PlayerClassifiedSearchQueryType,
+  ): Promise<PlayersWantedClassifiedPagedType> {
     // Delegate to specialized data service
-    return await this.dataService.getPlayersWanted(accountId, params);
+    const dbResult = await this.playersWantedRepository.getPlayersWanted(accountId, {
+      page: params.page || DEFAULT_VALUES.DEFAULT_PAGE,
+      limit: params.limit || DEFAULT_VALUES.DEFAULT_LIMIT,
+      sortBy: params.sortBy || DEFAULT_VALUES.DEFAULT_SORT_BY,
+      sortOrder: params.sortOrder || DEFAULT_VALUES.DEFAULT_SORT_ORDER,
+    });
+
+    return PlayersWantedResponseFormatter.transformPagedPlayersWanted(dbResult);
   }
 
   /**
@@ -188,18 +169,15 @@ export class PlayerClassifiedService {
    * @returns Paginated response with classified data including PII for account members
    *
    * @security Data service ensures PII is only exposed to authorized account members
-   *
-   * @example
-   * ```typescript
-   * const results = await service.getTeamsWanted(123n, { page: 2, limit: 20 });
-   * ```
    */
   async getTeamsWanted(
     accountId: bigint,
-    params: IClassifiedSearchParams,
-  ): Promise<IClassifiedListResponse<ITeamsWantedPublicResponse>> {
+    params: PlayerClassifiedSearchQueryType,
+  ): Promise<TeamsWantedPublicClassifiedPagedType> {
     // Delegate to specialized data service
-    return await this.dataService.getTeamsWanted(accountId, params);
+    const dbResult = await this.teamsWantedRepository.getTeamsWanted(accountId, params);
+
+    return TeamsWantedResponseFormatter.transformPagedTeamsWantedPublic(dbResult);
   }
 
   /**
@@ -218,20 +196,21 @@ export class PlayerClassifiedService {
    *
    * @security This method only exposes contact information to authenticated users
    * within the same account boundary as the classified.
-   *
-   * @example
-   * ```typescript
-   * const contactInfo = await service.getTeamsWantedContactInfo(123n, 456n);
-   * console.log(contactInfo.email); // 'player@example.com'
-   * console.log(contactInfo.phone); // '+1234567890'
-   * ```
    */
   async getTeamsWantedContactInfo(
     classifiedId: bigint,
     accountId: bigint,
-  ): Promise<{ email: string; phone: string }> {
+  ): Promise<{ email: string | null; phone: string | null; birthDate: string | null }> {
     // Delegate to specialized data service
-    return await this.dataService.getTeamsWantedContactInfo(classifiedId, accountId);
+    const dbResult = await this.teamsWantedRepository.getTeamsWantedContactInfo(
+      classifiedId,
+      accountId,
+    );
+    if (!dbResult) {
+      throw new NotFoundError('Teams Wanted classified not found');
+    }
+
+    return TeamsWantedResponseFormatter.transformContactInfo(dbResult);
   }
 
   // ============================================================================
@@ -260,16 +239,8 @@ export class PlayerClassifiedService {
    */
   async createTeamsWanted(
     accountId: bigint,
-    request: ITeamsWantedCreateRequest,
-  ): Promise<ITeamsWantedOwnerResponse> {
-    // Validate input data using validation service
-    const validation = this.validationService.validateTeamsWantedCreateRequest(request);
-    if (!validation.isValid) {
-      throw new ValidationError(
-        `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
-      );
-    }
-
+    request: UpsertTeamsWantedClassifiedType,
+  ): Promise<TeamsWantedOwnerClassifiedType> {
     // Generate secure access code
     const accessCode = randomUUID();
     const hashedAccessCode = await bcrypt.hash(
@@ -277,18 +248,23 @@ export class PlayerClassifiedService {
       BCRYPT_CONSTANTS.ACCESS_CODE_SALT_ROUNDS,
     );
 
-    // Transform request to database format using data service
-    const dbData = this.dataService.transformTeamsWantedCreateRequest(
-      request,
-      accountId,
-      hashedAccessCode,
-    );
-
     // Create the classified using data service
-    const classified = await this.dataService.createTeamsWantedRecord(dbData);
+    const birthDateForDb = DateUtils.parseDateOfBirthForDatabase(request.birthDate);
+
+    const classified = await this.teamsWantedRepository.createTeamsWantedRecord({
+      accountid: accountId,
+      datecreated: new Date(),
+      name: request.name,
+      email: request.email,
+      phone: request.phone || '',
+      experience: request.experience || '',
+      positionsplayed: request.positionsPlayed || '',
+      accesscode: hashedAccessCode,
+      birthdate: birthDateForDb,
+    });
 
     // Get account details for response using data service
-    const account = await this.dataService.getAccountById(accountId);
+    const account = await this.accountService.getAccountName(accountId);
     if (!account) {
       throw new InternalServerError('Failed to retrieve account information');
     }
@@ -298,12 +274,15 @@ export class PlayerClassifiedService {
       classified.id,
       request.email,
       accessCode,
-      account,
+      {
+        id: BigInt(account.id),
+        name: account.name,
+      },
       request,
     );
 
     // Transform database record to response format using data service
-    return this.dataService.transformTeamsWantedToOwnerResponse(classified, account);
+    return TeamsWantedResponseFormatter.transformTeamsWantedToOwnerResponse(classified, account);
   }
 
   /**
@@ -316,17 +295,12 @@ export class PlayerClassifiedService {
    * @param accessCode - Plain-text access code provided by user (from email)
    * @param accountId - Account ID for boundary enforcement
    * @returns Owner response with full classified details if access code is valid
-   *
-   * @example
-   * ```typescript
-   * const classified = await service.verifyTeamsWantedAccess(456n, 'uuid-code', 123n);
-   * ```
    */
   async verifyTeamsWantedAccess(
     classifiedId: bigint,
     accessCode: string,
     accountId: bigint,
-  ): Promise<ITeamsWantedOwnerResponse> {
+  ): Promise<TeamsWantedOwnerClassifiedType> {
     // Delegate to specialized access service for security verification
     return await this.accessService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
   }
@@ -343,37 +317,30 @@ export class PlayerClassifiedService {
    * @param accountId - Account ID for boundary enforcement
    * @returns Updated classified with owner response format
    *
-   * @example
-   * ```typescript
-   * const updated = await service.updateTeamsWanted(
-   *   456n, 'uuid-code', { phone: '555-9999' }, 123n
-   * );
-   * ```
    */
   async updateTeamsWanted(
     classifiedId: bigint,
     accessCode: string,
-    updateData: Partial<ITeamsWantedCreateRequest>,
+    updateData: Partial<UpsertTeamsWantedClassifiedType>,
     accountId: bigint,
-  ): Promise<ITeamsWantedOwnerResponse> {
+  ): Promise<TeamsWantedOwnerClassifiedType> {
+    // Get account details for response using data service
+    const account = await this.accountService.getAccountName(accountId);
+    if (!account) {
+      throw new InternalServerError('Failed to retrieve account information');
+    }
+
     // If access code is provided and not empty, verify it (anonymous user path)
     if (accessCode && accessCode.trim() !== '') {
       await this.accessService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
     } else {
       // For admin users (empty access code), just verify the classified exists and belongs to account
-      const classified = await this.dataService.findTeamsWantedById(classifiedId, accountId);
+      const classified = await this.teamsWantedRepository.findTeamsWantedById(
+        classifiedId,
+        accountId,
+      );
       if (!classified) {
         throw new NotFoundError('Teams Wanted classified not found');
-      }
-    }
-
-    // Validate update data using validation service for each provided field
-    for (const [field, value] of Object.entries(updateData)) {
-      if (value !== undefined) {
-        const error = this.validationService.validateTeamsWantedField(field, value);
-        if (error) {
-          throw new ValidationError(error);
-        }
       }
     }
 
@@ -393,16 +360,16 @@ export class PlayerClassifiedService {
     }
 
     // Update the classified using data service
-    const updatedClassified = await this.dataService.updateTeamsWanted(classifiedId, dbUpdateData);
-
-    // Get account details for response using data service
-    const account = await this.dataService.getAccountById(accountId);
-    if (!account) {
-      throw new InternalServerError('Failed to retrieve account information');
-    }
+    const updatedClassified = await this.teamsWantedRepository.updateTeamsWanted(
+      classifiedId,
+      dbUpdateData,
+    );
 
     // Transform database record to response format using data service
-    return this.dataService.transformTeamsWantedToOwnerResponse(updatedClassified, account);
+    return TeamsWantedResponseFormatter.transformTeamsWantedToOwnerResponse(
+      updatedClassified,
+      account,
+    );
   }
 
   /**
@@ -415,14 +382,6 @@ export class PlayerClassifiedService {
    * @param accessCode - Plain-text access code for authentication (empty string for admin users)
    * @param accountId - Account ID for boundary enforcement
    *
-   * @example
-   * ```typescript
-   * // Anonymous user with access code
-   * await service.deleteTeamsWanted(456n, 'uuid-access-code', 123n);
-   *
-   * // Admin user without access code
-   * await service.deleteTeamsWanted(456n, '', 123n);
-   * ```
    */
   async deleteTeamsWanted(
     classifiedId: bigint,
@@ -434,14 +393,17 @@ export class PlayerClassifiedService {
       await this.accessService.verifyTeamsWantedAccess(classifiedId, accessCode, accountId);
     } else {
       // For admin users (empty access code), just verify the classified exists and belongs to account
-      const classified = await this.dataService.findTeamsWantedById(classifiedId, accountId);
+      const classified = await this.teamsWantedRepository.findTeamsWantedById(
+        classifiedId,
+        accountId,
+      );
       if (!classified) {
         throw new NotFoundError('Teams Wanted classified not found');
       }
     }
 
     // Delete the classified using data service
-    await this.dataService.deleteTeamsWanted(classifiedId);
+    await this.teamsWantedRepository.deleteTeamsWanted(classifiedId);
   }
 
   /**
@@ -454,10 +416,6 @@ export class PlayerClassifiedService {
    * @param accountId - Account ID for boundary enforcement
    * @param contactId - Contact ID for permission checking
    *
-   * @example
-   * ```typescript
-   * await service.deletePlayersWanted(456n, 123n, 789n);
-   * ```
    */
   async deletePlayersWanted(
     classifiedId: bigint,
@@ -465,13 +423,16 @@ export class PlayerClassifiedService {
     _contactId: bigint,
   ): Promise<void> {
     // Verify the classified exists and belongs to account using data service
-    const classified = await this.dataService.findPlayersWantedById(classifiedId, accountId);
+    const classified = await this.playersWantedRepository.findPlayersWantedById(
+      classifiedId,
+      accountId,
+    );
     if (!classified) {
       throw new NotFoundError('Classified not found');
     }
 
     // Delete the classified using data service
-    await this.dataService.deletePlayersWanted(classifiedId);
+    await this.playersWantedRepository.deletePlayersWanted(classifiedId);
   }
 
   /**
@@ -486,28 +447,13 @@ export class PlayerClassifiedService {
    * @param request - Validated update request with new field values
    * @returns Updated classified with creator and account information
    *
-   * @example
-   * ```typescript
-   * const updated = await service.updatePlayersWanted(
-   *   456n, 123n, 789n,
-   *   { description: 'Updated description', positionsNeeded: 'P,1B' }
-   * );
-   * ```
    */
   async updatePlayersWanted(
     classifiedId: bigint,
     accountId: bigint,
     contactId: bigint,
-    request: IPlayersWantedUpdateRequest,
-  ): Promise<IPlayersWantedResponse> {
-    // Validate input data using validation service
-    const validation = this.validationService.validatePlayersWantedUpdateRequest(request);
-    if (!validation.isValid) {
-      throw new ValidationError(
-        `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
-      );
-    }
-
+    request: UpsertPlayersWantedClassifiedType,
+  ): Promise<PlayersWantedClassifiedType> {
     // Check if user can edit this classified using access service
     const canEdit = await this.accessService.canEditPlayersWanted(
       classifiedId,
@@ -519,7 +465,7 @@ export class PlayerClassifiedService {
     }
 
     // Verify classified exists and belongs to account using data service
-    const existingClassified = await this.dataService.findPlayersWantedById(
+    const existingClassified = await this.playersWantedRepository.findPlayersWantedById(
       classifiedId,
       accountId,
     );
@@ -540,13 +486,26 @@ export class PlayerClassifiedService {
     }
 
     // Update the classified using data service
-    const updatedClassified = await this.dataService.updatePlayersWanted(classifiedId, updateData);
+    const updatedClassified = await this.playersWantedRepository.updatePlayersWanted(
+      classifiedId,
+      updateData,
+    );
+    if (!updatedClassified) {
+      throw new InternalServerError('Failed to update Players Wanted classified');
+    }
 
     // Transform database record to response format using data service
-    return this.dataService.transformPlayersWantedToResponse(
+    return PlayersWantedResponseFormatter.transformPlayersWantedToResponse(
       updatedClassified,
-      updatedClassified.contacts,
-      updatedClassified.accounts,
+      {
+        id: contactId.toString(),
+        firstName: updatedClassified.contacts.firstname,
+        lastName: updatedClassified.contacts.lastname,
+      },
+      {
+        id: accountId.toString(),
+        name: updatedClassified.accounts.name,
+      },
     );
   }
 
@@ -560,11 +519,6 @@ export class PlayerClassifiedService {
    * @param contactId - ID of the contact requesting edit access
    * @param accountId - Account ID for boundary enforcement
    * @returns True if user can edit, false otherwise
-   *
-   * @example
-   * ```typescript
-   * const canEdit = await service.canEditPlayersWanted(456n, 789n, 123n);
-   * ```
    */
   async canEditPlayersWanted(
     classifiedId: bigint,
@@ -585,10 +539,6 @@ export class PlayerClassifiedService {
    * @param accountId - Account ID for boundary enforcement
    * @returns True if user can delete, false otherwise
    *
-   * @example
-   * ```typescript
-   * const canDelete = await service.canDeletePlayersWanted(456n, 789n, 123n);
-   * ```
    */
   async canDeletePlayersWanted(
     classifiedId: bigint,
@@ -608,15 +558,11 @@ export class PlayerClassifiedService {
    * @param accessCode - Plain-text access code from user (originally from email)
    * @returns Owner response with full PII data if access code matches
    *
-   * @example
-   * ```typescript
-   * const classified = await service.findTeamsWantedByAccessCode(123n, 'uuid-from-email');
-   * ```
    */
   async findTeamsWantedByAccessCode(
     accountId: bigint,
     accessCode: string,
-  ): Promise<ITeamsWantedOwnerResponse> {
+  ): Promise<TeamsWantedOwnerClassifiedType> {
     // Delegate to specialized access service for secure verification
     return await this.accessService.findTeamsWantedByAccessCode(accountId, accessCode);
   }
@@ -635,61 +581,37 @@ export class PlayerClassifiedService {
    * @throws {ValidationError} When contact request validation fails
    * @throws {InternalServerError} When email sending fails
    *
-   * @example
-   * ```typescript
-   * await service.contactPlayersWantedCreator(123n, 456n, {
-   *   senderName: 'John Doe',
-   *   senderEmail: 'john@example.com',
-   *   message: 'I am interested in joining your team...',
-   *   subject: 'Interested in your team'
-   * });
-   * ```
    */
   async contactPlayersWantedCreator(
     accountId: bigint,
     classifiedId: bigint,
-    contactRequest: IContactCreatorRequest,
+    contactRequest: ContactPlayersWantedCreatorType,
   ): Promise<void> {
-    // Validate the contact request using validation service
-    const validation = this.validationService.validateContactCreatorRequest(contactRequest);
-    if (!validation.isValid) {
-      throw new ValidationError(
-        `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
-      );
-    }
-
     // Get the classified with creator details using data service
-    const classified = await this.dataService.findPlayersWantedById(classifiedId, accountId);
+    const classified = await this.playersWantedRepository.findPlayersWantedById(
+      classifiedId,
+      accountId,
+    );
     if (!classified) {
       throw new NotFoundError('Players Wanted classified not found');
     }
 
     // Get creator contact details (including email for internal use)
-    const creator = await this.dataService.getContactById(classified.createdbycontactid);
-    if (!creator) {
+    const creator = await this.contactService.getContact(accountId, classified.createdbycontactid);
+    if (!creator || !creator.email) {
       throw new InternalServerError('Creator contact information not found');
     }
 
-    // Get creator email separately (for internal use only - maintains privacy protection)
-    const creatorEmail = await this.prisma.contacts.findUnique({
-      where: { id: classified.createdbycontactid },
-      select: { email: true },
-    });
-
-    if (!creatorEmail?.email) {
-      throw new InternalServerError('Creator email address not found');
-    }
-
     // Get account details for email branding
-    const account = await this.dataService.getAccountById(accountId);
+    const account = await this.accountService.getAccountName(accountId);
     if (!account) {
       throw new InternalServerError('Account information not found');
     }
 
     // Send contact email using a simple direct approach
     const success = await this.sendContactEmail(
-      creatorEmail.email,
-      creator.firstname,
+      creator.email,
+      creator.firstName,
       classified.teameventname,
       contactRequest,
       account.name,
@@ -710,42 +632,37 @@ export class PlayerClassifiedService {
     creatorEmail: string,
     creatorName: string,
     teamEventName: string,
-    contactRequest: IContactCreatorRequest,
+    contactRequest: ContactPlayersWantedCreatorType,
     accountName: string,
   ): Promise<boolean> {
-    try {
-      // Import EmailProviderFactory for direct email sending
-      const { EmailProviderFactory } = await import('../email/EmailProviderFactory.js');
-      const { EmailConfigFactory } = await import('../../config/email.js');
+    // Import EmailProviderFactory for direct email sending
+    const { EmailProviderFactory } = await import('../email/EmailProviderFactory.js');
+    const { EmailConfigFactory } = await import('../../config/email.js');
 
-      const settings = EmailConfigFactory.getEmailSettings();
+    const settings = EmailConfigFactory.getEmailSettings();
 
-      // Generate subject from team event name
-      const subject = `${teamEventName} Players Wanted Ad Inquiry`;
-      const { html: htmlBody, text: textBody } = this.generateContactEmailContent(
-        creatorName,
-        teamEventName,
-        contactRequest,
-        accountName,
-      );
+    // Generate subject from team event name
+    const subject = `${teamEventName} Players Wanted Ad Inquiry`;
+    const { html: htmlBody, text: textBody } = this.generateContactEmailContent(
+      creatorName,
+      teamEventName,
+      contactRequest,
+      accountName,
+    );
 
-      // Send email using EmailProviderFactory directly
-      const provider = await EmailProviderFactory.getProvider();
-      const result = await provider.sendEmail({
-        to: creatorEmail,
-        subject,
-        html: htmlBody,
-        text: textBody,
-        from: settings.fromEmail,
-        fromName: settings.fromName,
-        replyTo: contactRequest.senderEmail, // Allow direct reply to sender
-      });
+    // Send email using EmailProviderFactory directly
+    const provider = await EmailProviderFactory.getProvider();
+    const result = await provider.sendEmail({
+      to: creatorEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
+      from: settings.fromEmail,
+      fromName: settings.fromName,
+      replyTo: contactRequest.senderEmail, // Allow direct reply to sender
+    });
 
-      return result.success;
-    } catch (error) {
-      console.error('Error sending contact email:', error);
-      return false;
-    }
+    return result.success;
   }
 
   /**
@@ -755,7 +672,7 @@ export class PlayerClassifiedService {
   private generateContactEmailContent(
     creatorName: string,
     teamEventName: string,
-    contactRequest: IContactCreatorRequest,
+    contactRequest: ContactPlayersWantedCreatorType,
     accountName: string,
   ): { html: string; text: string } {
     // Sanitize common content once for reuse

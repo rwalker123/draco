@@ -22,18 +22,18 @@ import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { StreamPaginationControl } from '../../../../components/pagination';
 import TeamsWantedStateManager from '../../../../components/player-classifieds/TeamsWantedStateManager';
 import CreateTeamsWantedDialog from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
-import {
-  ITeamsWantedResponse,
-  ITeamsWantedOwnerResponse,
-} from '../../../../types/playerClassifieds';
-import { ITeamsWantedFormState } from '../../../../types/playerClassifieds';
 import { playerClassifiedService } from '../../../../services/playerClassifiedService';
+import {
+  UpsertTeamsWantedClassifiedType,
+  TeamsWantedOwnerClassifiedType,
+  TeamsWantedPublicClassifiedType,
+} from '@draco/shared-schemas';
 
 interface TeamsWantedProps {
   accountId: string;
   autoVerificationData?: {
     accessCode: string;
-    classifiedData: ITeamsWantedOwnerResponse;
+    classifiedData: TeamsWantedOwnerClassifiedType;
   } | null;
   onVerificationProcessed?: () => void;
 }
@@ -68,14 +68,12 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const [formLoading, setFormLoading] = React.useState(false);
 
   // State for delete operation
-  const [selectedClassified, setSelectedClassified] = React.useState<ITeamsWantedResponse | null>(
-    null,
-  );
+  const [selectedClassified, setSelectedClassified] =
+    React.useState<TeamsWantedPublicClassifiedType | null>(null);
 
   // State for edit operation
-  const [editingClassified, setEditingClassified] = React.useState<ITeamsWantedResponse | null>(
-    null,
-  );
+  const [editingClassified, setEditingClassified] =
+    React.useState<UpsertTeamsWantedClassifiedType | null>(null);
 
   // State for contact fetching during edit
   const [editContactLoading, setEditContactLoading] = React.useState(false);
@@ -132,29 +130,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     loadTeamsWantedPage(prevPage, pagination.limit);
   };
 
-  // Removed loadPageData - now using hook's loadTeamsWantedPage
-
-  // Removed loadInitialData useEffect - now handled in initial load effect above
-
-  // Utility function to convert ITeamsWantedResponse to ITeamsWantedFormState
-  const convertToFormState = (classified: ITeamsWantedResponse): ITeamsWantedFormState => {
-    const formState = {
-      name: classified.name,
-      email: classified.email,
-      phone: classified.phone,
-      experience: classified.experience,
-      positionsPlayed: classified.positionsPlayed
-        .split(',')
-        .map((p) => p.trim())
-        .filter((p) => p.length > 0),
-      birthDate: new Date(classified.birthDate),
-    };
-
-    return formState;
-  };
-
   // Check if user can perform operation without access code
-  const canOperateWithoutAccessCode = (classified: ITeamsWantedResponse) => {
+  const canOperateWithoutAccessCode = (classified: TeamsWantedPublicClassifiedType) => {
     // AccountAdmins and owners can operate without access code
     return (
       isAccountMember &&
@@ -173,26 +150,23 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
       setEditContactError(null);
 
       try {
-        const contactResult = await playerClassifiedService.getTeamsWantedContactForEdit(
+        const contact = await playerClassifiedService.getTeamsWantedContactForEdit(
           accountId,
           classified.id.toString(),
           '', // Empty access code for AccountAdmins
           token || undefined, // JWT token for authentication
         );
 
-        if (contactResult.success && contactResult.data) {
-          // Merge contact info with classified data
-          const classifiedWithContact = {
-            ...classified,
-            email: contactResult.data.email,
-            phone: contactResult.data.phone,
-          };
+        // Merge contact info with classified data
+        const classifiedWithContact = {
+          ...classified,
+          email: contact.email,
+          phone: contact.phone,
+          birthDate: contact.birthDate ?? '',
+        };
 
-          setEditingClassified(classifiedWithContact);
-          setEditDialogOpen(true);
-        } else {
-          setEditContactError(contactResult.error || 'Failed to fetch contact information');
-        }
+        setEditingClassified(classifiedWithContact);
+        setEditDialogOpen(true);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to fetch contact information';
@@ -212,12 +186,12 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   };
 
   // Handle edit form submission
-  const handleEditSubmit = async (formData: ITeamsWantedFormState) => {
-    if (!editingClassified) return;
+  const handleEditSubmit = async (formData: UpsertTeamsWantedClassifiedType) => {
+    if (!editingClassified || !editingClassified.id) return;
 
     try {
       // For AccountAdmins, no access code is needed - use empty string
-      await updateTeamsWanted(editingClassified.id.toString(), formData, '');
+      await updateTeamsWanted(editingClassified.id, formData, '');
 
       // The hook state is automatically updated by the updateTeamsWanted call
       // No need to manually update state
@@ -283,7 +257,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   };
 
   // Handle create teams wanted
-  const handleCreateTeamsWanted = async (formData: ITeamsWantedFormState) => {
+  const handleCreateTeamsWanted = async (formData: UpsertTeamsWantedClassifiedType) => {
     setFormLoading(true);
     try {
       await createTeamsWanted(formData);
@@ -430,7 +404,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
           onClose={closeEditDialog}
           onSubmit={handleEditSubmit}
           loading={formLoading || editContactLoading}
-          initialData={convertToFormState(editingClassified)}
+          initialData={editingClassified}
           editMode={true}
         />
       )}

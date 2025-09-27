@@ -30,6 +30,7 @@ import PollEditorDialog from '../../../../../components/polls/PollEditorDialog';
 import PollDeleteDialog from '../../../../../components/polls/PollDeleteDialog';
 import { useApiClient } from '../../../../../hooks/useApiClient';
 import { useAuth } from '../../../../../context/AuthContext';
+import { unwrapApiResult } from '@/utils/apiResult';
 
 interface PollManagementPageProps {
   accountId: string;
@@ -66,17 +67,9 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
         throwOnError: false,
       });
 
-      if (result.error) {
-        if (result.error.status === 403) {
-          setError('You do not have permission to manage polls for this account.');
-        } else {
-          setError('Failed to load polls.');
-        }
-        setPolls([]);
-        return;
-      }
+      const polls = unwrapApiResult(result, 'Failed to load poll list');
 
-      setPolls((result.data as AccountPollType[]) ?? []);
+      setPolls(polls ?? []);
     } catch (err) {
       console.error('Failed to load polls:', err);
       setError('Failed to load polls.');

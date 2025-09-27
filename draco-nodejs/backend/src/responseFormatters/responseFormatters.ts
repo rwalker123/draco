@@ -14,9 +14,11 @@ import {
   ContactRoleType,
   AccountType,
   AccountPollType,
+  SponsorType,
 } from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
 import { getAccountLogoUrl, getContactPhotoUrl } from '../config/logo.js';
+import { getSponsorPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
   dbBaseContact,
@@ -33,9 +35,10 @@ import {
   dbAccountAffiliation,
   dbPollQuestionWithCounts,
   dbPollQuestionWithUserVotes,
+  dbSponsor,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
-import { PaginationHelper } from './pagination.js';
+import { PaginationHelper } from '../utils/pagination.js';
 
 // todo: delete this once the shared api client is used more widely
 interface ApiResponse<T> {
@@ -44,22 +47,40 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+type OwnerUserSummary = {
+  id: string;
+  userName: string;
+};
+
+type OwnerDetailsByAccount = {
+  ownerContacts?: Map<string, dbBaseContact>;
+  ownerUsersByAccount?: Map<string, OwnerUserSummary>;
+};
+
 export class AccountResponseFormatter {
   static formatAccounts(
     accounts: dbAccount[],
     affiliationMap: Map<string, dbAccountAffiliation>,
+    ownerDetails?: OwnerDetailsByAccount,
   ): AccountType[] {
-    return accounts.map((account) => this.formatAccount(account, affiliationMap));
+    return accounts.map((account) => {
+      const accountId = account.id.toString();
+      const ownerContact = ownerDetails?.ownerContacts?.get(accountId);
+      const ownerUser = ownerDetails?.ownerUsersByAccount?.get(accountId);
+      return this.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+    });
   }
 
   static formatAccount(
     account: dbAccount,
     affiliationMap: Map<string, dbAccountAffiliation>,
+    ownerContact?: dbBaseContact,
+    ownerUser?: OwnerUserSummary,
   ): AccountType {
     const affiliationId = account.affiliationid ? account.affiliationid.toString() : undefined;
     const affiliationRecord = affiliationId ? affiliationMap.get(affiliationId) : undefined;
 
-    return {
+    const formattedAccount: AccountType = {
       id: account.id.toString(),
       name: account.name,
       accountLogoUrl: getAccountLogoUrl(account.id.toString()),
@@ -93,6 +114,27 @@ export class AccountResponseFormatter {
         url: url.url,
       })),
     };
+
+    if (ownerContact || ownerUser) {
+      formattedAccount.accountOwner = {
+        contact: ownerContact
+          ? {
+              id: ownerContact.id.toString(),
+              firstName: ownerContact.firstname,
+              lastName: ownerContact.lastname,
+              middleName: ownerContact.middlename ?? undefined,
+            }
+          : undefined,
+        user: ownerUser
+          ? {
+              id: ownerUser.id,
+              userName: ownerUser.userName,
+            }
+          : undefined,
+      };
+    }
+
+    return formattedAccount;
   }
 }
 
@@ -320,6 +362,28 @@ export class PollResponseFormatter {
       totalVotes,
       userVoteOptionId,
     };
+  }
+}
+export class SponsorResponseFormatter {
+  static formatSponsor(sponsor: dbSponsor): SponsorType {
+    return {
+      id: sponsor.id.toString(),
+      accountId: sponsor.accountid.toString(),
+      teamId: sponsor.teamid ? sponsor.teamid.toString() : undefined,
+      name: sponsor.name,
+      streetAddress: sponsor.streetaddress || '',
+      cityStateZip: sponsor.citystatezip || '',
+      description: sponsor.description || '',
+      email: sponsor.email || undefined,
+      phone: sponsor.phone || undefined,
+      fax: sponsor.fax || undefined,
+      website: sponsor.website || undefined,
+      photoUrl: getSponsorPhotoUrl(sponsor.accountid.toString(), sponsor.id.toString()),
+    };
+  }
+
+  static formatSponsors(sponsors: dbSponsor[]): SponsorType[] {
+    return sponsors.map((sponsor) => this.formatSponsor(sponsor));
   }
 }
 

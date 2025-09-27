@@ -69,7 +69,9 @@ To ensure secure communication between the frontend and backend during local dev
 ## Additional Notes
 - Only use these certificates for local development. Never use self-signed or mkcert-generated certs in production.
 - If you encounter certificate errors, ensure mkcert's CA is installed and the cert paths are correct.
+- Teams Wanted public classifieds now expose an `age` field instead of the raw `birthDate`. Editing flows should call the
+  `/contact` endpoint to retrieve the original birth date together with email and phone.
 
 ---
 
-For more details, see the mkcert [GitHub page](https://github.com/FiloSottile/mkcert). 
+For more details, see the mkcert [GitHub page](https://github.com/FiloSottile/mkcert).

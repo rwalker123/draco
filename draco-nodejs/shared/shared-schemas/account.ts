@@ -26,6 +26,26 @@ export const AccountDomainLookupHeadersSchema = z.object({
 
 export type AccountDomainLookupHeadersType = z.infer<typeof AccountDomainLookupHeadersSchema>;
 
+const includeCurrentSeasonPreprocessor = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true';
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  return undefined;
+}, z.boolean().optional());
+
+export const AccountDetailsQuerySchema = z.object({
+  includeCurrentSeason: includeCurrentSeasonPreprocessor.optional().default(false),
+});
+
 export const AccountTypeSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -34,6 +54,10 @@ export const AccountTypeSchema = z.object({
 export const AccountUrlSchema = z.object({
   id: z.string(),
   url: z.string().min(1),
+});
+
+export const CreateAccountUrlSchema = AccountUrlSchema.extend({
+  id: z.string().optional(),
 });
 
 export const AccountAffiliationSchema = z.object({
@@ -57,10 +81,16 @@ export const AccountConfigurationSchema = z.object({
   affiliation: AccountAffiliationSchema.nullable().optional(),
 });
 
-export const AccountSchema = z.object({
+export const AccountNameSchema = z.object({
   id: z.string(),
   name: z.string(),
-  accountLogoUrl: z.string().optional(),
+});
+
+export const AccountHeaderSchema = AccountNameSchema.extend({
+  accountLogoUrl: z.string(),
+});
+
+export const AccountSchema = AccountHeaderSchema.extend({
   configuration: AccountConfigurationSchema.optional(),
   urls: z.array(AccountUrlSchema).default([]),
   accountOwner: z
@@ -77,11 +107,21 @@ export const AccountCurrentSeasonSchema = z.object({
   name: z.string(),
 });
 
-export type AccountCurrentSeasonType = z.infer<typeof AccountCurrentSeasonSchema>;
+export const AccountSeasonWithStatusSchema = AccountCurrentSeasonSchema.extend({
+  isCurrent: z.boolean(),
+});
 
 export const CreateAccountSchema = AccountSchema.omit({
   id: true,
   accountOwner: true,
+}).extend({
+  urls: z.array(CreateAccountUrlSchema).default([]),
+});
+
+export const AccountWithSeasonsSchema = z.object({
+  account: AccountSchema,
+  currentSeason: AccountCurrentSeasonSchema.nullable(),
+  seasons: z.array(AccountSeasonWithStatusSchema),
 });
 
 export type AccountType = z.infer<typeof AccountSchema>;
@@ -89,7 +129,13 @@ export type AccountConfigurationType = z.infer<typeof AccountConfigurationSchema
 export type AccountSocialsType = z.infer<typeof AccountSocialsSchema>;
 export type AccountAffiliationType = z.infer<typeof AccountAffiliationSchema>;
 export type AccountUrlType = z.infer<typeof AccountUrlSchema>;
+export type CreateAccountUrlType = z.infer<typeof CreateAccountUrlSchema>;
 export type AccountTypeReference = z.infer<typeof AccountTypeSchema>;
 export type AccountSearchQueryParamType = z.infer<typeof AccountSearchQueryParamSchema>;
-
 export type CreateAccountType = z.infer<typeof CreateAccountSchema>;
+export type AccountWithSeasonsType = z.infer<typeof AccountWithSeasonsSchema>;
+export type AccountSeasonWithStatusType = z.infer<typeof AccountSeasonWithStatusSchema>;
+export type AccountCurrentSeasonType = z.infer<typeof AccountCurrentSeasonSchema>;
+export type AccountDetailsQueryType = z.infer<typeof AccountDetailsQuerySchema>;
+export type AccountNameType = z.infer<typeof AccountNameSchema>;
+export type AccountHeaderType = z.infer<typeof AccountHeaderSchema>;

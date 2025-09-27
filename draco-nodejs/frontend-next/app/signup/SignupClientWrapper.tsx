@@ -1,41 +1,51 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { getAccountById } from '@draco/shared-api-client';
 import { useAccount } from '../../context/AccountContext';
 import Signup from './Signup';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 export default function SignupClientWrapper() {
   const searchParams = useSearchParams();
   const accountId = searchParams.get('accountId') || undefined;
   const next = searchParams.get('next') || undefined;
   const { setCurrentAccount } = useAccount();
+  const apiClient = useApiClient();
 
   // Set the account in context when accountId is present in query string
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAndSetAccount = async () => {
-      if (accountId) {
-        try {
-          const response = await fetch(`/api/accounts/${accountId}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              setCurrentAccount({
-                id: data.data.account.id,
-                name: data.data.account.name,
-                accountType: data.data.account.accountType,
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Failed to fetch account:', error);
+      if (!accountId) {
+        return;
+      }
+
+      try {
+        const result = await getAccountById({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        if (!isMounted) {
+          return;
         }
+
+        const data = unwrapApiResult(result, 'Failed to fetch account');
+        setCurrentAccount(data.account);
+      } catch (error) {
+        console.error('Failed to fetch account:', error);
       }
     };
     fetchAndSetAccount();
-  }, [accountId, setCurrentAccount]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId, apiClient, setCurrentAccount]);
 
   return <Signup accountId={accountId} next={next} />;
 }

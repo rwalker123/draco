@@ -10,7 +10,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import prisma from '../lib/prisma.js';
-import { AccountType, AccountAffiliation, AccountUrl } from '../interfaces/accountInterfaces.js';
+import { AccountUrl } from '../interfaces/accountInterfaces.js';
+import { AccountType, AccountAffiliationType } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -37,18 +38,13 @@ router.get(
 
     type AccountTypeQuery = Prisma.accounttypesGetPayload<{ select: typeof accountTypeSelect }>;
 
-    const typesData: AccountType[] = accountTypes.map((type: AccountTypeQuery) => ({
+    const typesData: Partial<AccountType>[] = accountTypes.map((type: AccountTypeQuery) => ({
       id: type.id.toString(),
       name: type.name,
       filePath: type.filepath,
     }));
 
-    res.json({
-      success: true,
-      data: {
-        accountTypes: typesData,
-      },
-    });
+    res.json(typesData);
   }),
 );
 
@@ -74,20 +70,15 @@ router.get(
 
     type AffiliationQuery = Prisma.affiliationsGetPayload<{ select: typeof affiliationSelect }>;
 
-    const affiliationData: AccountAffiliation[] = affiliations.map(
+    const affiliationData: AccountAffiliationType[] = affiliations.map(
       (affiliation: AffiliationQuery) => ({
-        id: affiliation.id,
+        id: affiliation.id.toString(),
         name: affiliation.name,
         url: affiliation.url,
       }),
     );
 
-    res.json({
-      success: true,
-      data: {
-        affiliations: affiliationData,
-      },
-    });
+    res.json(affiliationData);
   }),
 );
 

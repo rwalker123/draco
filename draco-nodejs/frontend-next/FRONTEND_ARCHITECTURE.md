@@ -134,6 +134,50 @@ const ParentComponent = () => {
 };
 ```
 
+### Form Validation Pattern
+
+- **Rely on shared Zod schemas**: import definitions from `@draco/shared-schemas` so frontend validation always matches backend expectations.
+- **Pair schemas with React Hook Form**: initialize `useForm` with `zodResolver` to wire synchronous validation and typed form values.
+- **Extend schemas for UI-only fields** (e.g., uploads) instead of redefining validation rules inline.
+- **Reference implementations**: `components/users/EditContactDialog.tsx` and `components/sponsors/SponsorFormDialog.tsx` show the dialog pattern.
+
+```typescript
+import { z } from 'zod';
+import { SharedSchema } from '@draco/shared-schemas';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+
+const FormSchema = SharedSchema.extend({
+  photo: z.any().optional().nullable(),
+});
+
+const {
+  register,
+  handleSubmit,
+  reset,
+  formState: { errors, isSubmitting },
+} = useForm<z.infer<typeof FormSchema>>({
+  resolver: zodResolver(FormSchema),
+  defaultValues,
+});
+
+const onSubmit = handleSubmit(async (values) => {
+  const payload = transform(values);
+  await serviceOperation(payload);
+  onSuccess?.();
+});
+
+return (
+  <TextField
+    {...register('name')}
+    error={Boolean(errors.name)}
+    helperText={errors.name?.message}
+  />
+);
+```
+
+When the dialog opens for editing, call `reset` with the existing entity inside an effect. Always clear backend error state on close so reopen flows start cleanly.
+
 ### Service Hook Pattern
 
 Service hooks encapsulate API operations and provide consistent error handling across components.
@@ -198,9 +242,60 @@ const result = await apiGetContactRoster({
   client: apiClient,
   throwOnError: false,
 });
+const roster = unwrapApiResult(result, 'Failed to load contact roster');
 ```
 
 Leaving out the `client` parameter causes the generated helper to throw because it has no transport configuration. Keep the `client: apiClient` field in every OpenAPI call (for example `apiUpdateRosterMember({...})` in `useRosterDataManager`) so requests inherit the authenticated base configuration.
+
+Wrap responses with the shared helpers in `utils/apiResult.ts` to centralize error handling:
+
+```typescript
+import { unwrapApiResult, assertNoApiError } from '@/utils/apiResult';
+
+const data = unwrapApiResult(result, 'Failed to load');
+assertNoApiError(deleteResult, 'Failed to delete record');
+```
+
+### Account & Team Page Layout Pattern
+
+Account-scoped and team-scoped management pages must wrap their content with a semantic `<main>` element immediately followed by `AccountPageHeader`. The header renders the shared hero gradient and ensures consistent breadcrumb spacing for downstream sections.
+
+```tsx
+return (
+  <main className="min-h-screen bg-background">
+    <AccountPageHeader accountId={accountId}>
+      {/* Header content */}
+    </AccountPageHeader>
+
+    <Container>{/* Page body */}</Container>
+  </main>
+);
+```
+
+### Metadata Generation Pattern
+
+Every account or team page must export `generateMetadata` so tab titles and favicons stay in sync with the active organization. Use helpers from `lib/metadataFetchers` to gather the branded name/icon and compose titles and descriptions.
+
+```tsx
+import { getTeamInfo } from '../../../../lib/metadataFetchers';
+
+export async function generateMetadata({ params }: { params: Promise<{ accountId: string; seasonId: string; teamSeasonId: string }> }) {
+  const { accountId, seasonId, teamSeasonId } = await params;
+  const { account, league, team, iconUrl } = await getTeamInfo(accountId, seasonId, teamSeasonId);
+
+  return {
+    title: `Sponsor Management - ${team}`,
+    description: `Manage sponsors for ${team} (${league}) within ${account}.`,
+    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
+  };
+}
+```
+
+For account-level pages, call `getAccountBranding(accountId)` instead. Include descriptive copy so Next.js surfaces helpful previews when links are shared.
+
+### Dialog Implementation Reference
+
+Reusable dialogs such as `SponsorFormDialog` live in `components/` and embed the service-hook pattern described above. They accept `onSuccess`/`onError` callbacks, manage internal form state, and reset their local state when closed. Parent pages open the dialog, handle callbacks, and refresh their local caches.
 
 ### State Management Pattern
 

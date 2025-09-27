@@ -1,7 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
-import { ContactResponseFormatter, RosterResponseFormatter } from '../utils/responseFormatters.js';
+import {
+  ContactResponseFormatter,
+  RosterResponseFormatter,
+} from '../responseFormatters/responseFormatters.js';
 import {
   CreateRosterMemberType,
   RosterMemberType,

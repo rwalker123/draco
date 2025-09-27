@@ -21,9 +21,10 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { AccountType } from '@draco/shared-schemas';
-import { searchAccounts } from '@draco/shared-api-client';
+import { searchAccounts, getMyAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { getContactDisplayName } from '../utils/contactUtils';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface OrganizationsWidgetProps {
   title?: string;
@@ -63,7 +64,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const apiClient = useApiClient();
   const router = useRouter();
 
@@ -83,34 +84,27 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/accounts/my-accounts', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+      const result = await getMyAccounts({
+        client: apiClient,
+        throwOnError: false,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAccounts(data.data?.accounts || []);
-          // Notify parent component about loaded organizations
-          if (onOrganizationsLoaded) {
-            onOrganizationsLoaded(data.data?.accounts || []);
-          }
-        } else {
-          setError(data.message || 'Failed to load your organizations');
-        }
-      } else {
-        setError('Failed to load your organizations. Please try again.');
+      const organizations =
+        (
+          unwrapApiResult(result, 'Failed to load your organizations. Please try again.') as
+            | AccountType[]
+            | undefined
+        )?.filter((account) => (excludeAccountId ? account.id !== excludeAccountId : true)) ?? [];
+      setAccounts(organizations);
+      if (onOrganizationsLoaded) {
+        onOrganizationsLoaded(organizations);
       }
     } catch {
       setError('Failed to load your organizations. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, token, providedOrganizations, onOrganizationsLoaded]);
+  }, [user, providedOrganizations, onOrganizationsLoaded, apiClient, excludeAccountId]);
 
   useEffect(() => {
     if (user && !providedOrganizations) {
@@ -134,16 +128,17 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
           query: { q: displaySearchTerm.trim() },
         });
 
-        if (result.error) {
-          setAccounts([]);
-          setError(result.error.message || 'Search failed');
-          return;
-        }
+        const accountsData = unwrapApiResult(
+          result,
+          'Failed to search accounts. Please try again.',
+        ) as AccountType[] | undefined;
 
-        setAccounts(result.data as AccountType[]);
+        setAccounts(accountsData ?? []);
       } catch (error) {
         console.error('Account search failed:', error);
-        setError('Failed to search accounts. Please try again.');
+        setError(
+          error instanceof Error ? error.message : 'Failed to search accounts. Please try again.',
+        );
       } finally {
         setLoading(false);
       }

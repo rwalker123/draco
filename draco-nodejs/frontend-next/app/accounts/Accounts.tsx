@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
@@ -6,6 +8,7 @@ import OrganizationsWidget from '../../components/OrganizationsWidget';
 import { searchAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { AccountType } from '@draco/shared-schemas';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 const Accounts: React.FC = () => {
   const [showSignup, setShowSignup] = useState(false);
@@ -38,12 +41,8 @@ const Accounts: React.FC = () => {
           query: { q: trimmedTerm },
         });
 
-        if (result.error) {
-          setSearchResults([]);
-          return;
-        }
-
-        setSearchResults((result.data as AccountType[]) ?? []);
+        const data = unwrapApiResult(result, 'Failed to search accounts');
+        setSearchResults((data as AccountType[]) ?? []);
       } catch (error) {
         console.error('Account search failed:', error);
         setSearchResults([]);

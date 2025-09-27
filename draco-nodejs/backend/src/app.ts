@@ -21,6 +21,7 @@ import teamsRouter from './routes/teams.js';
 import teamRosterRouter from './routes/team-roster.js';
 import teamStatsRouter from './routes/team-stats.js';
 import teamMediaRouter from './routes/team-media.js';
+import teamSponsorsRouter from './routes/team-sponsors.js';
 import gamesRouter from './routes/games.js';
 import teamManagersRouter from './routes/teamManagers.js';
 import seasonManagersRouter from './routes/seasonManagers.js';
@@ -158,6 +159,7 @@ app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamRosterRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamStatsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamMediaRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamSponsorsRouter);
 app.use(
   '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
   teamManagersRouter,

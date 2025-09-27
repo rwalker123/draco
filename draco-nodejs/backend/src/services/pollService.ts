@@ -6,7 +6,7 @@ import {
   dbPollOptionUpsertData,
   dbPollUpdateData,
 } from '../repositories/index.js';
-import { PollResponseFormatter } from '../utils/responseFormatters.js';
+import { PollResponseFormatter } from '../responseFormatters/responseFormatters.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 
 export class PollService {

@@ -17,6 +17,7 @@ import {
 import { AccountPollType } from '@draco/shared-schemas';
 import { createAccountPoll, updateAccountPoll } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '@/utils/apiResult';
 
 interface PollOptionForm {
   id?: string;
@@ -136,8 +137,9 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
         return prev;
       }
 
-      if (option.id) {
-        setRemovedOptionIds((ids) => [...ids, option.id]);
+      const optionId = option.id ?? '';
+      if (optionId) {
+        setRemovedOptionIds((ids) => [...ids, optionId]);
       }
 
       return {
@@ -189,7 +191,7 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
       if (isEditMode && poll) {
         const result = await updateAccountPoll({
           client: apiClient,
-          params: { accountId, pollId: poll.id },
+          path: { accountId, pollId: poll.id },
           body: {
             ...basePayload,
             deletedOptionIds: removedOptionIds.length > 0 ? removedOptionIds : undefined,
@@ -197,31 +199,17 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
           throwOnError: false,
         });
 
-        if (result.error) {
-          const message = result.error.message ?? 'Failed to update poll.';
-          setFormError(message);
-          onError?.(message);
-          return;
-        }
-
-        const updated = result.data as AccountPollType;
+        const updated = unwrapApiResult(result, 'Failed to update poll');
         onSuccess?.({ message: 'Poll updated successfully.', poll: updated });
       } else {
         const result = await createAccountPoll({
           client: apiClient,
-          params: { accountId },
+          path: { accountId },
           body: basePayload,
           throwOnError: false,
         });
 
-        if (result.error) {
-          const message = result.error.message ?? 'Failed to create poll.';
-          setFormError(message);
-          onError?.(message);
-          return;
-        }
-
-        const created = result.data as AccountPollType;
+        const created = unwrapApiResult(result, 'Failed to create poll');
         onSuccess?.({ message: 'Poll created successfully.', poll: created });
       }
 
@@ -255,9 +243,7 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
         <TextField
           label="Question"
           value={formState.question}
-          onChange={(event) =>
-            setFormState((prev) => ({ ...prev, question: event.target.value }))
-          }
+          onChange={(event) => setFormState((prev) => ({ ...prev, question: event.target.value }))}
           fullWidth
           required
         />
@@ -290,7 +276,9 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
                   label="Priority"
                   type="number"
                   value={option.priority}
-                  onChange={(event) => handleOptionPriorityChange(option.tempId, event.target.value)}
+                  onChange={(event) =>
+                    handleOptionPriorityChange(option.tempId, event.target.value)
+                  }
                   fullWidth
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

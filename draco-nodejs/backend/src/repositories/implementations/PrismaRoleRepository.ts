@@ -109,4 +109,56 @@ export class PrismaRoleRepository implements IRoleRepository {
       },
     });
   }
+
+  /**
+   * Get user roles for permission checking
+   *
+   * Retrieves the roles assigned to a contact within a specific account for
+   * permission checking. This is a simplified implementation that directly
+   * queries the contactroles table. In production, integrate with the role service.
+   *
+   * @param contactId - ID of the contact to get roles for
+   * @param accountId - Account ID to scope role lookup to specific account
+   * @returns Array of role objects with role IDs
+   *
+   * @security Implements proper error handling and logging to prevent
+   * information leakage while maintaining security audit trails.
+   *
+   * @todo Integrate with centralized role service for production use
+   */
+  async getContactRoles(contactId: bigint, accountId: bigint): Promise<Array<{ roleId: string }>> {
+    const roles = await this.prisma.contactroles.findMany({
+      where: {
+        contactid: contactId,
+        accountid: accountId,
+      },
+      select: { roleid: true },
+    });
+
+    return roles.map((role) => ({ roleId: role.roleid }));
+  }
+
+  async findAccountIdsForUserRoles(userId: string, roleIds: string[]): Promise<bigint[]> {
+    if (!roleIds.length) {
+      return [];
+    }
+
+    const roles = await this.prisma.contactroles.findMany({
+      where: {
+        roleid: { in: roleIds },
+        contacts: {
+          userid: userId,
+        },
+      },
+      select: {
+        accountid: true,
+      },
+    });
+
+    const accountIds = roles
+      .map((role) => role.accountid)
+      .filter((id): id is bigint => id !== null);
+
+    return Array.from(new Set(accountIds));
+  }
 }

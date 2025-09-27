@@ -9,6 +9,7 @@ For domain-specific workflows, start with these focused references:
 
 ## Restricted Modifications
 - Never create or edit files beneath `draco-nodejs/shared/shared-schemas` without first pausing to obtain explicit approval; stop work and request confirmation before making any change in that directory.
+- Avoid the anti-pattern of casting values to `unknown` before re-casting them to another type (e.g., `value as unknown as SomeType`). If a type assertion is absolutely required, cast directly to the final type and consider refining the upstream typings instead.
 - Don't make up data model hacks and workarounds because this is restricted, never do that. For example, never force cast like .. as unknown as some other type.
 
 ## Project Structure & Module Organization
