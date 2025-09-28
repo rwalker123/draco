@@ -77,6 +77,21 @@ export type dbAspnetRoleName = Prisma.aspnetrolesGetPayload<{
   };
 }>;
 
+export type dbTeamSeasonLeague = Prisma.teamsseasonGetPayload<{
+  include: {
+    leagueseason: {
+      include: {
+        league: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
 export type dbTeamSeasonWithLeague = Prisma.teamsseasonGetPayload<{
   select: {
     id: true;
@@ -85,6 +100,18 @@ export type dbTeamSeasonWithLeague = Prisma.teamsseasonGetPayload<{
       include: {
         league: true;
         divisionseason: true;
+      };
+    };
+  };
+}>;
+
+export type dbTeamSeasonWithLeaguesAndTeams = Prisma.teamsseasonGetPayload<{
+  include: {
+    teams: true;
+    leagueseason: {
+      include: {
+        league: true;
+        season: true;
       };
     };
   };
@@ -362,3 +389,85 @@ export type dbPollUpdateData = {
   options?: dbPollOptionUpsertData[];
   deletedOptionIds?: bigint[];
 };
+
+export type dbUserTeams = Prisma.rosterseasonGetPayload<{
+  include: {
+    teamsseason: {
+      include: {
+        leagueseason: {
+          include: {
+            league: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+        teams: {
+          select: {
+            id: true;
+            accountid: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbUserManagerTeams = Prisma.teamseasonmanagerGetPayload<{
+  include: {
+    teamsseason: {
+      include: {
+        leagueseason: {
+          include: {
+            league: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+        teams: {
+          select: {
+            id: true;
+            accountid: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbTeamsWithLeaguesAndDivisions = Prisma.teamsseasonGetPayload<{
+  include: {
+    teams: {
+      select: {
+        id: true;
+        webaddress: true;
+        youtubeuserid: true;
+        defaultvideo: true;
+        autoplayvideo: true;
+      };
+    };
+    leagueseason: {
+      include: {
+        league: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+    divisionseason: {
+      include: {
+        divisiondefs: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+  };
+}>;

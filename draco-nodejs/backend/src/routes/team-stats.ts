@@ -1,10 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { TeamRequestValidator } from '../utils/teamValidators.js';
-import {
-  StatsResponseFormatter,
-  TeamResponseFormatter,
-} from '../responseFormatters/responseFormatters.js';
+import { StatsResponseFormatter } from '../responseFormatters/responseFormatters.js';
+import { TeamResponseFormatter } from '@/responseFormatters/teamResponseFormatter.js';
 import { validateTeamSeasonBasic } from '../utils/teamValidation.js';
 import prisma from '../lib/prisma.js';
 import { ServiceFactory } from '../services/serviceFactory.js';

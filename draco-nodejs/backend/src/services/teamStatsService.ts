@@ -4,12 +4,7 @@ import { getTeamRecord } from '../utils/teamRecord.js';
 import { StatisticsService } from './statisticsService.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { NotFoundError } from '../utils/customErrors.js';
-
-export interface TeamRecord {
-  wins: number;
-  losses: number;
-  ties: number;
-}
+import { TeamRecordType } from '@draco/shared-schemas';
 
 export interface GameInfo {
   id: string;
