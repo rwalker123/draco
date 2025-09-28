@@ -5526,11 +5526,11 @@ paths:
     post:
       description: Sign a player to the team roster
       operationId: signPlayer
-      summary: Sing player to roster
+      summary: Sign player to roster
       security:
         - bearerAuth: []
       tags:
-        - Roster
+        - Rosters
       parameters:
         - name: accountId
           in: path
@@ -5599,7 +5599,7 @@ paths:
       security:
         - bearerAuth: []
       tags:
-        - Roster
+        - Rosters
       parameters:
         - name: accountId
           in: path
@@ -5663,7 +5663,7 @@ paths:
       security:
         - bearerAuth: []
       tags:
-        - Roster
+        - Rosters
       parameters:
         - name: accountId
           in: path
@@ -5729,7 +5729,7 @@ paths:
       security:
         - bearerAuth: []
       tags:
-        - Roster
+        - Rosters
       parameters:
         - name: accountId
           in: path
