@@ -16,7 +16,6 @@ import {
   CreateContactRoleType,
   RoleWithContactType,
   ContactValidationWithSignInSchema,
-  PagingType,
   PagingSchema,
 } from '@draco/shared-schemas';
 import {
@@ -110,45 +109,6 @@ router.delete(
 );
 
 /**
- * GET /api/accounts/:accountId/contacts
- * Get users in account (requires account access) - with pagination
- * Optional query parameters:
- *   - roles=true to include contactroles data with role context (team/league names for season-specific roles)
- *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
- *   - onlyWithRoles=true to filter users who have at least one role
- *   - contactDetails=true to include detailed contact information (phone, address, etc.)
- */
-router.get(
-  '/:accountId/contacts',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.contacts.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const { roles, seasonId, onlyWithRoles, contactDetails } = req.query;
-    const includeRoles = roles === 'true';
-    const filterOnlyWithRoles = onlyWithRoles === 'true';
-    const includeContactDetails = contactDetails === 'true';
-
-    // Parse season ID if provided
-    const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
-
-    // Parse pagination parameters
-    const paginationParams: PagingType = PagingSchema.parse(req.query);
-
-    // Use ContactService to get contacts with roles
-    const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
-      includeRoles,
-      onlyWithRoles: filterOnlyWithRoles,
-      includeContactDetails,
-      pagination: paginationParams,
-    });
-
-    res.json(result);
-  }),
-);
-
-/**
  * POST /api/accounts/:accountId/users/:contactId/roles
  * Assign role to user in account (Account Admin or Administrator)
  */
@@ -202,7 +162,7 @@ router.delete(
 );
 
 /**
- * GET /api/accounts/:accountId/contacts/search
+ * GET /api/accounts/:accountId/contacts
  * Search contacts by name for autocomplete
  * Required query parameter: q=searchTerm
  * Optional query parameters:
@@ -211,7 +171,7 @@ router.delete(
  *   - contactDetails=true to include detailed contact information (phone, address, etc.)
  */
 router.get(
-  '/:accountId/contacts/search',
+  '/:accountId/contacts',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
