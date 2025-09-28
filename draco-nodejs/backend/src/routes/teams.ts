@@ -2,14 +2,14 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractSeasonParams, extractTeamParams } from '../utils/paramExtraction.js';
-import { TeamRequestValidator } from '../utils/teamValidators.js';
-import { TeamResponseFormatter } from '@/responseFormatters/teamResponseFormatter.js';
 import { upload, handleLogoUpload } from './team-media.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import { UpsertTeamSeasonSchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 
 const routeProtection = ServiceFactory.getRouteProtection();
+const teamService = ServiceFactory.getTeamService();
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams
@@ -19,12 +19,10 @@ router.get(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
-    const teamService = ServiceFactory.getTeamService();
 
-    const teams = await teamService.getTeamsBySeasonId(seasonId, accountId);
-    const response = TeamResponseFormatter.formatTeamsListResponse(teams);
-
-    res.json(response);
+    teamService.getTeamsBySeasonId(seasonId, accountId).then((teams) => {
+      res.json(teams);
+    });
   }),
 );
 
@@ -36,20 +34,13 @@ router.get(
   '/:teamSeasonId/league',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-      const teamService = ServiceFactory.getTeamService();
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-      const leagueInfo = await teamService.getLeagueInfo(teamSeasonId, seasonId, accountId);
-      const response = TeamResponseFormatter.formatLeagueInfoResponse(leagueInfo);
-
-      res.json(response);
-    } catch (error) {
-      console.error('League route error:', error);
-      next(error);
-    }
-  },
+    teamService.getLeagueInfo(teamSeasonId, seasonId, accountId).then((leagueInfo) => {
+      res.json(leagueInfo);
+    });
+  }),
 );
 
 /**
@@ -58,23 +49,15 @@ router.get(
  */
 router.get(
   '/:teamSeasonId',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-      const teamService = ServiceFactory.getTeamService();
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-      const teamSeasonDetails = await teamService.getTeamSeasonDetails(
-        teamSeasonId,
-        seasonId,
-        accountId,
-      );
-      const response = TeamResponseFormatter.formatTeamDetailsResponse(teamSeasonDetails);
-
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  },
+    teamService
+      .getTeamSeasonDetails(teamSeasonId, seasonId, accountId)
+      .then((teamSeasonDetails) => {
+        res.json(teamSeasonDetails);
+      });
+  }),
 );
 
 /**
@@ -99,38 +82,27 @@ router.put(
       }
     });
   },
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-      const updateData = TeamRequestValidator.validateTeamUpdateRequest(req);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+    const updateData = UpsertTeamSeasonSchema.parse(req.body);
 
-      // Update team season
-      const teamService = ServiceFactory.getTeamService();
-      const updatedTeam = await teamService.updateTeamSeason(
-        teamSeasonId,
-        seasonId,
-        accountId,
-        updateData,
-      );
+    // Update team season
+    const updatedTeam = await teamService.updateTeamSeason(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      updateData,
+    );
 
-      // Handle logo upload if provided
-      let logoUrl = null;
-      if (req.file) {
-        // Get the teamId from the updated team
-        const teamId = BigInt(updatedTeam.teamId);
-        logoUrl = await handleLogoUpload(req, accountId, teamId);
-      }
-
-      const response = TeamResponseFormatter.formatTeamUpdateResponse(updatedTeam, logoUrl);
-      res.json(response);
-    } catch (error) {
-      console.error('Error updating team:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+    // Handle logo upload if provided
+    if (req.file) {
+      // Get the teamId from the updated team
+      const teamId = BigInt(updatedTeam.teamId);
+      await handleLogoUpload(req, accountId, teamId);
     }
-  },
+
+    res.json(updatedTeam);
+  }),
 );
 
 export default router;

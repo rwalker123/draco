@@ -29,12 +29,34 @@ export type dbRosterMember = Prisma.rosterseasonGetPayload<{
   include: { roster: { include: { contacts: true } } };
 }>;
 
+export type dbAvailableField = Prisma.availablefieldsGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    address: true;
+    accountid: true;
+  };
+}>;
+
 export type dbRosterSeason = Prisma.rosterseasonGetPayload<{
   include: { roster: { include: { contacts: true } } };
 }>;
 
 export type dbTeamManagerWithContact = Prisma.teamseasonmanagerGetPayload<{
   include: { contacts: true };
+}>;
+
+export type dbLeagueUmpireWithContact = Prisma.leagueumpiresGetPayload<{
+  include: {
+    contacts: {
+      select: {
+        id: true;
+        firstname: true;
+        lastname: true;
+        email: true;
+      };
+    };
+  };
 }>;
 
 export type dbRosterPlayer = Prisma.rosterGetPayload<{
@@ -467,6 +489,17 @@ export type dbTeamsWithLeaguesAndDivisions = Prisma.teamsseasonGetPayload<{
             name: true;
           };
         };
+      };
+    };
+  };
+}>;
+
+export type dbTeam = Prisma.teamsseasonGetPayload<{
+  include: {
+    teams: true;
+    leagueseason: {
+      include: {
+        league: true;
       };
     };
   };

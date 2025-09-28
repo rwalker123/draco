@@ -1,6 +1,7 @@
 import { PrismaClient, teamsseason, teams, teamseasonmanager } from '@prisma/client';
 import { ITeamRepository } from '../interfaces/ITeamRepository.js';
 import {
+  dbTeam,
   dbTeamSeasonLeague,
   dbTeamSeasonManagerContact,
   dbTeamSeasonWithLeague,
@@ -365,6 +366,77 @@ export class PrismaTeamRepository implements ITeamRepository {
           },
         },
       },
+    });
+  }
+
+  async updateTeamSeason(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    updateData?: Partial<teamsseason>,
+    teamUpdateData?: Partial<teams>,
+  ): Promise<dbTeam> {
+    // Verify the team season exists and belongs to this account and season
+    const teamSeason = await this.prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: {
+            accountid: accountId,
+          },
+        },
+      },
+    });
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      if (teamUpdateData && Object.keys(teamUpdateData).length > 0) {
+        await tx.teams.update({
+          where: { id: teamSeason.teamid },
+          data: teamUpdateData,
+        });
+      }
+
+      if (updateData && Object.keys(updateData).length > 0) {
+        return tx.teamsseason.update({
+          where: {
+            id: teamSeasonId,
+          },
+          data: updateData,
+          include: {
+            teams: true,
+            leagueseason: {
+              include: {
+                league: true,
+              },
+            },
+          },
+        });
+      }
+
+      const refreshedTeamSeason = await tx.teamsseason.findUnique({
+        where: {
+          id: teamSeasonId,
+        },
+        include: {
+          teams: true,
+          leagueseason: {
+            include: {
+              league: true,
+            },
+          },
+        },
+      });
+
+      if (!refreshedTeamSeason) {
+        throw new NotFoundError('Team season not found');
+      }
+
+      return refreshedTeamSeason;
     });
   }
 

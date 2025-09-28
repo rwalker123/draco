@@ -4,6 +4,14 @@ import { SeasonSchema } from './season.js';
 
 extendZodWithOpenApi(z);
 
+const LeagueIdOnlySchema = z.object({
+  id: z.string().trim().min(1),
+});
+
+const DivisionIdOnlySchema = z.object({
+  id: z.string().trim().min(1),
+});
+
 export const LeagueSchema = z.object({
   id: z.bigint().transform((val) => val.toString()),
   name: z.string(),
@@ -43,9 +51,21 @@ export const TeamSeasonDetailsSchema = TeamSeasonSummarySchema.extend({
   record: TeamSeasonRecordSchema,
 });
 
+export const UpsertTeamSeasonSchema = TeamSeasonSummarySchema.omit({
+  id: true,
+  league: true,
+  division: true,
+  logoUrl: true,
+}).extend({
+  id: z.string().trim().min(1).optional(),
+  league: LeagueIdOnlySchema,
+  division: DivisionIdOnlySchema.nullable().optional(),
+});
+
 export type LeagueType = z.infer<typeof LeagueSchema>;
 export type DivisionType = z.infer<typeof DivisionSchema>;
 export type TeamSeasonNameType = z.infer<typeof TeamSeasonNameSchema>;
 export type TeamSeasonRecordType = z.infer<typeof TeamSeasonRecordSchema>;
 export type TeamSeasonSummaryType = z.infer<typeof TeamSeasonSummarySchema>;
 export type TeamSeasonDetailsType = z.infer<typeof TeamSeasonDetailsSchema>;
+export type UpsertTeamSeasonType = z.infer<typeof UpsertTeamSeasonSchema>;

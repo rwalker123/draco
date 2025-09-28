@@ -1,6 +1,7 @@
 import { teamsseason } from '@prisma/client';
 import { getContactPhotoUrl, getLogoUrl } from '../config/logo.js';
 import {
+  dbTeam,
   dbTeamSeasonManagerContact,
   dbTeamSeasonWithLeaguesAndTeams,
   dbTeamsWithLeaguesAndDivisions,
@@ -138,6 +139,23 @@ export class TeamResponseFormatter {
     return {
       id: teamSeason.id.toString(),
       name: teamSeason.name,
+    };
+  }
+  static formatTeamSeasonSummary(accountId: bigint, team: dbTeam): TeamSeasonSummaryType {
+    return {
+      id: team.id.toString(),
+      name: team.name,
+      teamId: team.teamid.toString(),
+      division: null, // Not included in summary
+      webAddress: team.teams?.webaddress || null,
+      youtubeUserId: team.teams?.youtubeuserid || null,
+      defaultVideo: team.teams?.defaultvideo || null,
+      autoPlayVideo: team.teams?.autoplayvideo || false,
+      league: {
+        id: team.leagueseason.league.id.toString(),
+        name: team.leagueseason.league.name,
+      },
+      logoUrl: getLogoUrl(accountId.toString(), team.teamid.toString()),
     };
   }
 }

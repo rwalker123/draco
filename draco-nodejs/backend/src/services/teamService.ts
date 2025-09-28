@@ -5,11 +5,12 @@ import { ServiceFactory } from './serviceFactory.js';
 import {
   TeamSeasonDetailsType,
   TeamSeasonSummaryType,
-  TeamSeasonRecordType,
   LeagueType,
   TeamSeasonNameType,
+  UpsertTeamSeasonType,
 } from '@draco/shared-schemas';
-import { TeamResponseFormatter } from '../responseFormatters/TeamResponseFormatter.js';
+import { TeamResponseFormatter } from '../responseFormatters/index.js';
+import { teamsseason, teams } from '@prisma/client';
 
 export class TeamService {
   private readonly teamRepository: ITeamRepository;
@@ -96,6 +97,65 @@ export class TeamService {
     const record = await this.teamRepository.getTeamRecord(teamSeasonId);
 
     return TeamResponseFormatter.formatTeamSeasonWithRecord(accountId, teamSeason, record);
+  }
+
+  async updateTeamSeason(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    updateData: UpsertTeamSeasonType,
+  ): Promise<TeamSeasonSummaryType> {
+    // Ensure the team season exists
+    const teamSeason = await this.teamRepository.findById(teamSeasonId);
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const teamSeasonUpdate: Partial<teamsseason> = {};
+    const teamUpdate: Partial<teams> = {};
+
+    teamSeasonUpdate.name = updateData.name;
+    teamSeasonUpdate.teamid = BigInt(updateData.teamId);
+
+    if (updateData.league?.id) {
+      teamSeasonUpdate.leagueseasonid = BigInt(updateData.league.id);
+    }
+
+    if (updateData.division !== undefined) {
+      teamSeasonUpdate.divisionseasonid = updateData.division
+        ? BigInt(updateData.division.id)
+        : null;
+    }
+
+    if (updateData.webAddress !== undefined) {
+      teamUpdate.webaddress = updateData.webAddress ?? '';
+    }
+
+    if (updateData.youtubeUserId !== undefined) {
+      teamUpdate.youtubeuserid = updateData.youtubeUserId ?? null;
+    }
+
+    if (updateData.defaultVideo !== undefined) {
+      teamUpdate.defaultvideo = updateData.defaultVideo ?? '';
+    }
+
+    if (updateData.autoPlayVideo !== undefined) {
+      teamUpdate.autoplayvideo = updateData.autoPlayVideo ?? false;
+    }
+
+    const teamsSeasonPayload =
+      Object.keys(teamSeasonUpdate).length > 0 ? teamSeasonUpdate : undefined;
+    const teamPayload = Object.keys(teamUpdate).length > 0 ? teamUpdate : undefined;
+
+    const updatedTeam = await this.teamRepository.updateTeamSeason(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      teamsSeasonPayload,
+      teamPayload,
+    );
+
+    return TeamResponseFormatter.formatTeamSeasonSummary(accountId, updatedTeam);
   }
 
   async updateTeamSeasonName(

@@ -11,6 +11,8 @@ import {
   IPlayersWantedRepository,
   ITeamsWantedRepository,
   ISponsorRepository,
+  IFieldRepository,
+  IUmpireRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -24,6 +26,8 @@ import {
   PrismaPollRepository,
   PrismaTeamsWantedRepository,
   PrismaSponsorRepository,
+  PrismaFieldRepository,
+  PrismaUmpireRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -46,6 +50,8 @@ export class RepositoryFactory {
   private static playersWantedRepository: IPlayersWantedRepository;
   private static teamsWantedRepository: ITeamsWantedRepository;
   private static sponsorRepository: ISponsorRepository;
+  private static fieldRepository: IFieldRepository;
+  private static umpireRepository: IUmpireRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -128,5 +134,19 @@ export class RepositoryFactory {
       this.sponsorRepository = new PrismaSponsorRepository(prisma);
     }
     return this.sponsorRepository;
+  }
+
+  static getFieldRepository(): IFieldRepository {
+    if (!this.fieldRepository) {
+      this.fieldRepository = new PrismaFieldRepository(prisma);
+    }
+    return this.fieldRepository;
+  }
+
+  static getUmpireRepository(): IUmpireRepository {
+    if (!this.umpireRepository) {
+      this.umpireRepository = new PrismaUmpireRepository(prisma);
+    }
+    return this.umpireRepository;
   }
 }

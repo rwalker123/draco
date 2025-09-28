@@ -31,6 +31,8 @@ import { PlayerClassifiedAccessService } from './player-classified/PlayerClassif
 import { PlayerClassifiedEmailService } from './player-classified/PlayerClassifiedEmailService.js';
 import { SponsorService } from './sponsorService.js';
 import { PollService } from './pollService.js';
+import { FieldService } from './fieldService.js';
+import { UmpireService } from './umpireService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -60,6 +62,8 @@ export class ServiceFactory {
   private static accountsService: AccountsService;
   private static sponsorService: SponsorService;
   private static pollService: PollService;
+  private static fieldService: FieldService;
+  private static umpireService: UmpireService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -86,7 +90,7 @@ export class ServiceFactory {
 
   static getTeamService(): TeamService {
     if (!this.teamService) {
-      this.teamService = new TeamService(prisma);
+      this.teamService = new TeamService();
     }
     return this.teamService;
   }
@@ -235,5 +239,19 @@ export class ServiceFactory {
       this.pollService = new PollService();
     }
     return this.pollService;
+  }
+
+  static getFieldService(): FieldService {
+    if (!this.fieldService) {
+      this.fieldService = new FieldService();
+    }
+    return this.fieldService;
+  }
+
+  static getUmpireService(): UmpireService {
+    if (!this.umpireService) {
+      this.umpireService = new UmpireService();
+    }
+    return this.umpireService;
   }
 }

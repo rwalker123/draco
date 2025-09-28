@@ -1,10 +1,11 @@
 import { PrismaClient, leagueschedule, availablefields } from '@prisma/client';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.js';
-import { getTeamRecord } from '../utils/teamRecord.js';
 import { StatisticsService } from './statisticsService.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { TeamRecordType } from '@draco/shared-schemas';
+import { TeamSeasonRecordType } from '@draco/shared-schemas';
+import { RepositoryFactory } from '@/repositories/repositoryFactory.js';
+import { ITeamRepository } from '@/repositories/interfaces/index.js';
 
 export interface GameInfo {
   id: string;
@@ -62,13 +63,15 @@ export interface PitchingStat {
 
 export class TeamStatsService {
   private statisticsService: StatisticsService;
+  private teamRepository: ITeamRepository;
 
   constructor(private prisma: PrismaClient) {
     this.statisticsService = new StatisticsService(prisma);
+    this.teamRepository = RepositoryFactory.getTeamRepository();
   }
 
-  async getTeamRecord(teamSeasonId: bigint): Promise<TeamRecord> {
-    return await getTeamRecord(this.prisma, teamSeasonId);
+  async getTeamRecord(teamSeasonId: bigint): Promise<TeamSeasonRecordType> {
+    return await this.teamRepository.getTeamRecord(teamSeasonId);
   }
 
   async getTeamGames(

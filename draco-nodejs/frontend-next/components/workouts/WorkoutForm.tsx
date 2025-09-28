@@ -85,7 +85,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
     try {
       const response = await fetch(`/api/accounts/${accountId}/fields`);
       const data = await response.json();
-      setFields(data.data.fields);
+      setFields(data.fields);
     } catch (err) {
       console.error('Error fetching fields:', err);
       setError('Failed to load fields');

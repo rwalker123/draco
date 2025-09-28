@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { ManagerResponseFormatter } from '../responseFormatters/responseFormatters.js';
+import { ManagerResponseFormatter } from '../responseFormatters/index.js';
 import { dbTeamManagerWithContact } from '../repositories/index.js';
 import { ConflictError } from '../utils/customErrors.js';
 import { TeamManagerType } from '@draco/shared-schemas';

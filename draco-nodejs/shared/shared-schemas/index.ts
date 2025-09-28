@@ -10,3 +10,5 @@ export * from './playerClassified.js';
 export * from './sponsor.js';
 export * from './date.js';
 export * from './team.js';
+export * from './field.js';
+export * from './umpire.js';

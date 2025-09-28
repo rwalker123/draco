@@ -213,14 +213,14 @@ export const useScheduleData = ({
       // Process fields (should work for all users)
       if (fieldsResponse.ok) {
         const fieldsData = await fieldsResponse.json();
-        setFields(fieldsData.data.fields);
+        setFields(fieldsData.fields);
       }
 
       // Process umpires (requires authentication)
       if (umpiresResponse) {
         if (umpiresResponse.ok) {
           const umpiresData = await umpiresResponse.json();
-          setUmpires(umpiresData.data.umpires);
+          setUmpires(umpiresData.umpires);
         } else if (umpiresResponse.status === 401) {
           // For unauthenticated users, set empty umpires array
           setUmpires([]);

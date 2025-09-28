@@ -29,8 +29,10 @@ import {
 import { ServiceFactory } from '../serviceFactory.js';
 import { ContactService } from '../contactService.js';
 import { AccountsService } from '../accountsService.js';
-import { PlayersWantedResponseFormatter } from '../../responseFormatters/playersWantedResponseFormatter.js';
-import { TeamsWantedResponseFormatter } from '../../responseFormatters/teamsWantedResponseFormattter.js';
+import {
+  PlayersWantedResponseFormatter,
+  TeamsWantedResponseFormatter,
+} from '../../responseFormatters/index.js';
 
 // Database record types for type safety (kept for backward compatibility)
 // These types are also defined in the specialized services

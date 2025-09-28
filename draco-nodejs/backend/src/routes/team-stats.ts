@@ -1,14 +1,15 @@
+import prisma from '../lib/prisma.js';
 import { Router, Request, Response, NextFunction } from 'express';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { TeamRequestValidator } from '../utils/teamValidators.js';
-import { StatsResponseFormatter } from '../responseFormatters/responseFormatters.js';
-import { TeamResponseFormatter } from '@/responseFormatters/teamResponseFormatter.js';
+import { StatsResponseFormatter } from '../responseFormatters/index.js';
 import { validateTeamSeasonBasic } from '../utils/teamValidation.js';
-import prisma from '../lib/prisma.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import { asyncHandler } from '@/utils/asyncHandler.js';
 
 const router = Router({ mergeParams: true });
 const teamStatsService = ServiceFactory.getTeamStatsService();
+const teamService = ServiceFactory.getTeamService();
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/record
@@ -16,21 +17,18 @@ const teamStatsService = ServiceFactory.getTeamStatsService();
  */
 router.get(
   '/:teamSeasonId/record',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId } = extractTeamParams(req.params);
+    const { seasonId, teamSeasonId } = extractBigIntParams(req.params, 'seasonId', 'teamSeasonId');
 
-      const record = await teamStatsService.getTeamRecord(teamSeasonId);
-      const response = TeamResponseFormatter.formatTeamRecordResponse(
-        teamSeasonId.toString(),
-        record,
-      );
+    const team = await teamService.getTeamSeasonDetails(teamSeasonId, seasonId, accountId);
+    const record = await teamStatsService.getTeamRecord(teamSeasonId);
 
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  },
+    res.json({
+      ...team,
+      record,
+    });
+  }),
 );
 
 /**
@@ -39,28 +37,23 @@ router.get(
  */
 router.get(
   '/:teamSeasonId/games',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-      const { limitNum, includeUpcoming, includeRecent } =
-        TeamRequestValidator.validateGameQueryParams(req);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+    const { limitNum, includeUpcoming, includeRecent } =
+      TeamRequestValidator.validateGameQueryParams(req);
 
-      // Validate team/season/account relationship first
-      await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
+    // Validate team/season/account relationship first
+    await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
-      const gamesData = await teamStatsService.getTeamGames(teamSeasonId, seasonId, accountId, {
-        includeUpcoming,
-        includeRecent,
-        limit: limitNum,
-      });
+    const gamesData = await teamStatsService.getTeamGames(teamSeasonId, seasonId, accountId, {
+      includeUpcoming,
+      includeRecent,
+      limit: limitNum,
+    });
 
-      const response = StatsResponseFormatter.formatTeamGamesResponse(gamesData);
-      res.json(response);
-    } catch (error) {
-      console.error('Team games route error:', error);
-      next(error);
-    }
-  },
+    const response = StatsResponseFormatter.formatTeamGamesResponse(gamesData);
+    res.json(response);
+  }),
 );
 
 /**
@@ -69,22 +62,17 @@ router.get(
  */
 router.get(
   '/:teamSeasonId/batting-stats',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-      // Verify the team season exists and belongs to this account and season
-      await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
+    // Verify the team season exists and belongs to this account and season
+    await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
-      const battingStats = await teamStatsService.getTeamBattingStats(teamSeasonId, accountId);
-      const response = StatsResponseFormatter.formatBattingStatsResponse(battingStats);
+    const battingStats = await teamStatsService.getTeamBattingStats(teamSeasonId, accountId);
+    const response = StatsResponseFormatter.formatBattingStatsResponse(battingStats);
 
-      res.json(response);
-    } catch (error) {
-      console.error('Team batting stats route error:', error);
-      next(error);
-    }
-  },
+    res.json(response);
+  }),
 );
 
 /**
@@ -93,26 +81,21 @@ router.get(
  */
 router.get(
   '/:teamSeasonId/pitching-stats',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-      // Verify the team season exists and belongs to this account and season
-      await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
+    // Verify the team season exists and belongs to this account and season
+    await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
-      const pitchingStats = await teamStatsService.getTeamPitchingStats(
-        teamSeasonId,
-        seasonId,
-        accountId,
-      );
-      const response = StatsResponseFormatter.formatPitchingStatsResponse(pitchingStats);
+    const pitchingStats = await teamStatsService.getTeamPitchingStats(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+    const response = StatsResponseFormatter.formatPitchingStatsResponse(pitchingStats);
 
-      res.json(response);
-    } catch (error) {
-      console.error('Team pitching stats route error:', error);
-      next(error);
-    }
-  },
+    res.json(response);
+  }),
 );
 
 export default router;
