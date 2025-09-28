@@ -15,7 +15,7 @@ import {
   ConflictError,
 } from '../utils/customErrors.js';
 import { extractGameOnlyParams, extractRecapParams } from '../utils/paramExtraction.js';
-import { BatchQueryHelper } from '../utils/batchQueries.js';
+import { BatchQueryHelper } from '../repositories/implementations/batchQueries.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';

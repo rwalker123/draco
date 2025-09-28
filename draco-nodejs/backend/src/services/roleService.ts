@@ -21,7 +21,7 @@ import {
   ITeamRepository,
   ILeagueRepository,
 } from '../repositories/index.js';
-import { RoleResponseFormatter } from '../responseFormatters/responseFormatters.js';
+import { RoleResponseFormatter } from '../responseFormatters/index.js';
 import { RoleContextData } from '../interfaces/roleInterfaces.js';
 import { ValidationError } from '../utils/customErrors.js';
 

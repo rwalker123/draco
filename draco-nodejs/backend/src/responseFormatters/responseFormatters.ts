@@ -1,4 +1,3 @@
-import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService.js';
 import {
   BaseContactType,
   RosterMemberType,
@@ -9,7 +8,6 @@ import {
   RoleWithContactType,
   RoleCheckResultType,
   ContactType,
-  TeamManagerWithTeamsType,
   PagedContactType,
   ContactRoleType,
   AccountType,
@@ -30,7 +28,6 @@ import {
   dbGlobalRoles,
   dbContactRoles,
   dbContactWithRoleAndDetails,
-  dbTeamSeasonManagerContact,
   dbAccount,
   dbAccountAffiliation,
   dbPollQuestionWithCounts,
@@ -41,7 +38,7 @@ import { ROLE_NAMES } from '../config/roles.js';
 import { PaginationHelper } from '../utils/pagination.js';
 
 // todo: delete this once the shared api client is used more widely
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
@@ -384,109 +381,6 @@ export class SponsorResponseFormatter {
 
   static formatSponsors(sponsors: dbSponsor[]): SponsorType[] {
     return sponsors.map((sponsor) => this.formatSponsor(sponsor));
-  }
-}
-
-export class TeamResponseFormatter {
-  static formatTeamsListResponse(
-    teams: TeamSeasonSummary[],
-  ): ApiResponse<{ teams: TeamSeasonSummary[] }> {
-    return {
-      success: true,
-      data: {
-        teams,
-      },
-    };
-  }
-
-  static formatTeamDetailsResponse(teamSeason: TeamSeasonDetails): ApiResponse<{
-    teamSeason: TeamSeasonDetails;
-    season: { id: string; name: string } | null;
-    record: { wins: number; losses: number; ties: number };
-  }> {
-    return {
-      success: true,
-      data: {
-        teamSeason: teamSeason,
-        season: teamSeason.season,
-        record: teamSeason.record,
-      },
-    };
-  }
-
-  static formatTeamUpdateResponse(
-    team: TeamSeasonSummary,
-    logoUrl?: string | null,
-  ): ApiResponse<{ team: TeamSeasonSummary & { logoUrl?: string | null } }> {
-    return {
-      success: true,
-      data: {
-        team: {
-          ...team,
-          logoUrl,
-        },
-      },
-      message: `Team "${team.name}" has been updated successfully`,
-    };
-  }
-
-  static formatLeagueInfoResponse(leagueInfo: {
-    id: bigint;
-    name: string;
-  }): ApiResponse<{ id: string; name: string }> {
-    return {
-      success: true,
-      data: {
-        id: leagueInfo.id.toString(),
-        name: leagueInfo.name,
-      },
-    };
-  }
-
-  static formatTeamRecordResponse(
-    teamSeasonId: string,
-    record: { wins: number; losses: number; ties: number },
-  ): ApiResponse<{ teamSeasonId: string; record: { wins: number; losses: number; ties: number } }> {
-    return {
-      success: true,
-      data: {
-        teamSeasonId,
-        record,
-      },
-    };
-  }
-
-  static formatTeamManagerWithTeams(
-    accountId: bigint,
-    teamManagersResult: dbTeamSeasonManagerContact[],
-  ): TeamManagerWithTeamsType[] {
-    // Group team managers by contact
-    const teamManagersMap = new Map<string, TeamManagerWithTeamsType>();
-
-    for (const row of teamManagersResult) {
-      const contactId = row.contacts.id.toString();
-
-      if (!teamManagersMap.has(contactId)) {
-        teamManagersMap.set(contactId, {
-          id: contactId,
-          firstName: row.contacts.firstname,
-          lastName: row.contacts.lastname,
-          middleName: '', // Team manager queries don't include middle name
-          email: row.contacts.email || undefined,
-          photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
-          teams: [],
-        });
-      }
-
-      const manager = teamManagersMap.get(contactId)!;
-      manager.teams.push({
-        teamSeasonId: row.teamsseason.id.toString(),
-        teamName: row.teamsseason.name,
-      });
-    }
-
-    const teamManagers = Array.from(teamManagersMap.values());
-    return teamManagers;
   }
 }
 

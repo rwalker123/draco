@@ -11,3 +11,5 @@ export * from './IPollRepository.js';
 export * from './IPlayersWantedRepository.js';
 export * from './ITeamsWantedRepository.js';
 export * from './ISponsorRepository.js';
+export * from './IFieldRepository.js';
+export * from './IUmpireRepository.js';

@@ -60,7 +60,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
     try {
       const response = await fetch(`/api/accounts/${accountId}/fields`);
       const data = await response.json();
-      setFields(data.data.fields);
+      setFields(data.fields);
     } catch (err) {
       console.error('Error fetching fields:', err);
       // Don't set error for fields - it's not critical
