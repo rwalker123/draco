@@ -1,5 +1,5 @@
 import { PrismaClient, teamsseason, teams, teamseasonmanager } from '@prisma/client';
-import { ITeamRepository } from '../interfaces/ITeamRepository.js';
+import { ITeamRepository } from '../interfaces/index.js';
 import {
   dbTeam,
   dbTeamSeasonLeague,
@@ -10,7 +10,7 @@ import {
   dbUserManagerTeams,
   dbUserTeams,
 } from '../types/dbTypes.js';
-import { ConflictError, NotFoundError } from '@/utils/customErrors.js';
+import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
 import { TeamSeasonRecordType } from '@draco/shared-schemas';
 import { BatchQueryHelper } from './batchQueries.js';
 

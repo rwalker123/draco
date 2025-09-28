@@ -5,7 +5,7 @@ import { TeamRequestValidator } from '../utils/teamValidators.js';
 import { StatsResponseFormatter } from '../responseFormatters/index.js';
 import { validateTeamSeasonBasic } from '../utils/teamValidation.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { asyncHandler } from '@/utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router({ mergeParams: true });
 const teamStatsService = ServiceFactory.getTeamStatsService();
