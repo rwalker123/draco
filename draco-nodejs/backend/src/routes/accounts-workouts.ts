@@ -33,7 +33,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const filters = WorkoutListQuerySchema.parse(req.query);
-    service.listWorkouts(accountId, filters).then((workouts) => {
+    return service.listWorkouts(accountId, filters).then((workouts) => {
       res.json(workouts);
     });
   }),
@@ -44,7 +44,7 @@ router.get(
   optionalAuth,
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
-    service.getSources(accountId.toString()).then((sources) => {
+    return service.getSources(accountId.toString()).then((sources) => {
       res.json(sources);
     });
   }),
@@ -58,7 +58,7 @@ router.put(
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     const payload = WorkoutSourcesSchema.parse(req.body);
-    service.putSources(accountId.toString(), payload).then((updated) => {
+    return service.putSources(accountId.toString(), payload).then((updated) => {
       res.json(updated);
     });
   }),
@@ -72,7 +72,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     const payload = WorkoutSourceOptionPayloadSchema.parse(req.body);
-    service.appendSourceOption(accountId.toString(), payload.option).then((updated) => {
+    return service.appendSourceOption(accountId.toString(), payload.option).then((updated) => {
       res.json(updated);
     });
   }),
@@ -84,7 +84,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    service.getWorkout(accountId, workoutId).then((workout) => {
+    return service.getWorkout(accountId, workoutId).then((workout) => {
       res.json(workout);
     });
   }),
@@ -97,7 +97,7 @@ router.post(
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
     const payload = UpsertWorkoutRegistrationSchema.parse(req.body);
-    service.createRegistration(accountId, workoutId, payload).then((registration) => {
+    return service.createRegistration(accountId, workoutId, payload).then((registration) => {
       res.status(201).json(registration);
     });
   }),
@@ -116,7 +116,7 @@ router.put(
       'registrationId',
     );
     const payload = UpsertWorkoutRegistrationSchema.parse(req.body);
-    service
+    return service
       .updateRegistration(accountId, workoutId, registrationId, payload)
       .then((registration) => {
         res.json(registration);
@@ -150,7 +150,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     const payload = UpsertWorkoutSchema.parse(req.body);
-    service.createWorkout(accountId, payload).then((workout) => {
+    return service.createWorkout(accountId, payload).then((workout) => {
       res.status(201).json(workout);
     });
   }),
@@ -165,7 +165,7 @@ router.put(
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
     const payload = UpsertWorkoutSchema.parse(req.body);
-    service.updateWorkout(accountId, workoutId, payload).then((workout) => {
+    return service.updateWorkout(accountId, workoutId, payload).then((workout) => {
       res.json(workout);
     });
   }),
@@ -194,7 +194,7 @@ router.get(
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
     const query = WorkoutRegistrationsQuerySchema.parse(req.query);
-    service.listRegistrations(accountId, workoutId, query.limit).then((registrations) => {
+    return service.listRegistrations(accountId, workoutId, query.limit).then((registrations) => {
       res.json(registrations);
     });
   }),

@@ -51,9 +51,19 @@ import {
   TeamsWantedPublicClassifiedPagedSchema,
   UpsertPlayersWantedClassifiedSchema,
   UpsertTeamsWantedClassifiedSchema,
+  UpsertWorkoutRegistrationSchema,
+  UpsertWorkoutSchema,
   ValidationErrorSchema,
   PagedContactSchema,
   PagingSchema,
+  WorkoutListQuerySchema,
+  WorkoutRegistrationSchema,
+  WorkoutRegistrationsQuerySchema,
+  WorkoutRegistrationsSchema,
+  WorkoutSchema,
+  WorkoutSourceOptionPayloadSchema,
+  WorkoutSourcesSchema,
+  WorkoutSummarySchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -167,6 +177,31 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const CreatePollSchemaRef = registry.register('CreatePoll', CreatePollSchema);
   const UpdatePollSchemaRef = registry.register('UpdatePoll', UpdatePollSchema);
   const PollVoteRequestSchemaRef = registry.register('PollVoteRequest', PollVoteRequestSchema);
+  const WorkoutSummarySchemaRef = registry.register('WorkoutSummary', WorkoutSummarySchema);
+  const WorkoutSchemaRef = registry.register('Workout', WorkoutSchema);
+  const UpsertWorkoutSchemaRef = registry.register('UpsertWorkout', UpsertWorkoutSchema);
+  const WorkoutRegistrationSchemaRef = registry.register(
+    'WorkoutRegistration',
+    WorkoutRegistrationSchema,
+  );
+  const WorkoutRegistrationsSchemaRef = registry.register(
+    'WorkoutRegistrations',
+    WorkoutRegistrationsSchema,
+  );
+  const UpsertWorkoutRegistrationSchemaRef = registry.register(
+    'WorkoutRegistrationUpsert',
+    UpsertWorkoutRegistrationSchema,
+  );
+  const WorkoutSourcesSchemaRef = registry.register('WorkoutSources', WorkoutSourcesSchema);
+  const WorkoutSourceOptionPayloadSchemaRef = registry.register(
+    'WorkoutSourceOptionPayload',
+    WorkoutSourceOptionPayloadSchema,
+  );
+  const WorkoutListQuerySchemaRef = registry.register('WorkoutListQuery', WorkoutListQuerySchema);
+  const WorkoutRegistrationsQuerySchemaRef = registry.register(
+    'WorkoutRegistrationsQuery',
+    WorkoutRegistrationsQuerySchema,
+  );
 
   const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
   const AuthenticationErrorSchemaRef = registry.register(
@@ -232,6 +267,16 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreatePollSchemaRef,
     UpdatePollSchemaRef,
     PollVoteRequestSchemaRef,
+    WorkoutSummarySchemaRef,
+    WorkoutSchemaRef,
+    UpsertWorkoutSchemaRef,
+    WorkoutRegistrationSchemaRef,
+    WorkoutRegistrationsSchemaRef,
+    UpsertWorkoutRegistrationSchemaRef,
+    WorkoutSourcesSchemaRef,
+    WorkoutSourceOptionPayloadSchemaRef,
+    WorkoutListQuerySchemaRef,
+    WorkoutRegistrationsQuerySchemaRef,
     ValidationErrorSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,

@@ -2476,6 +2476,328 @@ components:
           type: string
       required:
         - optionId
+    WorkoutSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        workoutDesc:
+          type: string
+        workoutDate:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+        field:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            accountId:
+              type: string
+            name:
+              type: string
+              minLength: 1
+            address:
+              type: string
+              nullable: true
+          required:
+            - id
+            - name
+        registrationCount:
+          type: integer
+          minimum: 0
+      required:
+        - id
+        - workoutDesc
+        - workoutDate
+      title: WorkoutSummary
+      description: Public summary of a workout announcement
+    Workout:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        workoutDesc:
+          type: string
+        workoutDate:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+        field:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            accountId:
+              type: string
+            name:
+              type: string
+              minLength: 1
+            address:
+              type: string
+              nullable: true
+          required:
+            - id
+            - name
+        registrationCount:
+          type: integer
+          minimum: 0
+        accountId:
+          type: string
+          pattern: ^d+$
+        comments:
+          type: string
+      required:
+        - id
+        - workoutDesc
+        - workoutDate
+        - accountId
+        - comments
+      title: Workout
+      description: Workout announcement with account context and comments
+    UpsertWorkout:
+      type: object
+      properties:
+        workoutDesc:
+          type: string
+          minLength: 1
+          maxLength: 255
+        workoutDate:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+        fieldId:
+          type: string
+          nullable: true
+          pattern: ^d+$
+        comments:
+          type: string
+          maxLength: 2000
+      required:
+        - workoutDesc
+        - workoutDate
+      title: UpsertWorkout
+      description: Payload required to create or update a workout announcement
+    WorkoutRegistration:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        workoutId:
+          type: string
+          pattern: ^d+$
+        name:
+          type: string
+        email:
+          type: string
+        age:
+          type: integer
+          minimum: 0
+        phone1:
+          type: string
+        phone2:
+          type: string
+        phone3:
+          type: string
+        phone4:
+          type: string
+        positions:
+          type: string
+        isManager:
+          type: boolean
+        whereHeard:
+          type: string
+        dateRegistered:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+      required:
+        - id
+        - workoutId
+        - name
+        - email
+        - age
+        - positions
+        - isManager
+        - whereHeard
+        - dateRegistered
+      title: WorkoutRegistration
+      description: Registration record for a workout announcement
+    WorkoutRegistrations:
+      type: object
+      properties:
+        registrations:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              workoutId:
+                type: string
+                pattern: ^d+$
+              name:
+                type: string
+              email:
+                type: string
+              age:
+                type: integer
+                minimum: 0
+              phone1:
+                type: string
+              phone2:
+                type: string
+              phone3:
+                type: string
+              phone4:
+                type: string
+              positions:
+                type: string
+              isManager:
+                type: boolean
+              whereHeard:
+                type: string
+              dateRegistered:
+                type: string
+                format: date-time
+                description: ISO 8601 date-time string
+            required:
+              - id
+              - workoutId
+              - name
+              - email
+              - age
+              - positions
+              - isManager
+              - whereHeard
+              - dateRegistered
+            title: WorkoutRegistration
+            description: Registration record for a workout announcement
+        nextCursor:
+          type: string
+      required:
+        - registrations
+      title: WorkoutRegistrations
+      description: Collection of workout registrations with optional pagination cursor
+    WorkoutRegistrationUpsert:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        age:
+          type: integer
+          nullable: true
+          minimum: 0
+        phone1:
+          type: string
+          maxLength: 14
+        phone2:
+          type: string
+          maxLength: 14
+        phone3:
+          type: string
+          maxLength: 14
+        phone4:
+          type: string
+          maxLength: 14
+        positions:
+          type: string
+          minLength: 1
+          maxLength: 50
+        isManager:
+          type: boolean
+          nullable: true
+        whereHeard:
+          type: string
+          minLength: 1
+          maxLength: 25
+      required:
+        - name
+        - email
+        - age
+        - positions
+        - whereHeard
+      title: WorkoutRegistrationUpsert
+      description: Payload to create or update a workout registration
+    WorkoutSources:
+      type: object
+      properties:
+        options:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 25
+            title: WorkoutSourceOption
+            description: Allowed where-heard option for workout registrations
+      required:
+        - options
+      title: WorkoutSources
+      description: Configured where-heard options for an account's workouts
+    WorkoutSourceOptionPayload:
+      type: object
+      properties:
+        option:
+          type: string
+          minLength: 1
+          maxLength: 25
+          title: WorkoutSourceOption
+          description: Allowed where-heard option for workout registrations
+      required:
+        - option
+      title: WorkoutSourceOptionPayload
+      description: Payload containing a single where-heard option to append
+    WorkoutListQuery:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - upcoming
+            - past
+            - all
+          description: Filter workouts by upcoming, past, or all statuses
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
+        after:
+          type: string
+          format: date-time
+        before:
+          type: string
+          format: date-time
+        includeRegistrationCounts:
+          type: boolean
+          nullable: true
+          default: false
+      title: WorkoutListQuery
+      description: Query parameters to filter and paginate workout announcements
+    WorkoutRegistrationsQuery:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 10000
+      title: WorkoutRegistrationsQuery
+      description: Query parameters to paginate workout registrations
     ValidationError:
       type: object
       properties:
@@ -6643,6 +6965,645 @@ paths:
                 $ref: "#/components/schemas/AuthenticationError"
         "404":
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/workouts:
+    get:
+      operationId: listAccountWorkouts
+      summary: List account workouts
+      description: Retrieve workout announcements for the specified account.
+      tags:
+        - Workouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: string
+            enum:
+              - upcoming
+              - past
+              - all
+            description: Filter workouts by upcoming, past, or all statuses
+          required: false
+          description: Filter workouts by upcoming, past, or all statuses
+          name: status
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: date-time
+          required: false
+          name: after
+          in: query
+        - schema:
+            type: string
+            format: date-time
+          required: false
+          name: before
+          in: query
+        - schema:
+            type: boolean
+            nullable: true
+            default: false
+          required: false
+          name: includeRegistrationCounts
+          in: query
+      responses:
+        "200":
+          description: Workouts retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutSummary"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: createAccountWorkout
+      summary: Create workout
+      description: Create a workout announcement for an account.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertWorkout"
+      responses:
+        "201":
+          description: Workout created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workout"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/workouts/sources:
+    get:
+      operationId: getWorkoutSources
+      summary: Get workout registration sources
+      description: Fetch configured where-heard options for workout registrations.
+      tags:
+        - Workouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Workout sources retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSources"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      operationId: updateWorkoutSources
+      summary: Replace workout registration sources
+      description: Replace the full set of allowed where-heard options for workout
+        registrations.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSources"
+      responses:
+        "200":
+          description: Workout sources updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSources"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: appendWorkoutSourceOption
+      summary: Add workout registration source option
+      description: Append an allowed where-heard option for workout registrations.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSourceOptionPayload"
+      responses:
+        "200":
+          description: Workout sources updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSources"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/workouts/{workoutId}:
+    get:
+      operationId: getAccountWorkout
+      summary: Get workout details
+      description: Retrieve a workout announcement for the specified account.
+      tags:
+        - Workouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Workout retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workout"
+        "404":
+          description: Workout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      operationId: updateAccountWorkout
+      summary: Update workout
+      description: Update a workout announcement for an account.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertWorkout"
+      responses:
+        "200":
+          description: Workout updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workout"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Workout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteAccountWorkout
+      summary: Delete workout
+      description: Delete a workout announcement for an account.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Workout deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Workout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/workouts/{workoutId}/registrations:
+    post:
+      operationId: createWorkoutRegistration
+      summary: Register for a workout
+      description: Create a public registration for a workout announcement.
+      tags:
+        - Workouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutRegistrationUpsert"
+      responses:
+        "201":
+          description: Registration created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutRegistration"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Workout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      operationId: listWorkoutRegistrations
+      summary: List workout registrations
+      description: List registrations for a workout announcement for authorized
+        account members.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 10000
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Workout registrations retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutRegistrations"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/workouts/{workoutId}/registrations/{registrationId}:
+    put:
+      operationId: updateWorkoutRegistration
+      summary: Update workout registration
+      description: Update a workout registration for an authenticated account member.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: registrationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutRegistrationUpsert"
+      responses:
+        "200":
+          description: Registration updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutRegistration"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteWorkoutRegistration
+      summary: Delete workout registration
+      description: Delete a workout registration for an authenticated account member.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: registrationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Registration deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Registration not found
           content:
             application/json:
               schema:

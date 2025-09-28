@@ -20,7 +20,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
 
-    teamService.getTeamsBySeasonId(seasonId, accountId).then((teams) => {
+    return teamService.getTeamsBySeasonId(seasonId, accountId).then((teams) => {
       res.json(teams);
     });
   }),
@@ -37,7 +37,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-    teamService.getLeagueInfo(teamSeasonId, seasonId, accountId).then((leagueInfo) => {
+    return teamService.getLeagueInfo(teamSeasonId, seasonId, accountId).then((leagueInfo) => {
       res.json(leagueInfo);
     });
   }),
@@ -52,7 +52,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-    teamService
+    return teamService
       .getTeamSeasonDetails(teamSeasonId, seasonId, accountId)
       .then((teamSeasonDetails) => {
         res.json(teamSeasonDetails);
