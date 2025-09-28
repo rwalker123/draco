@@ -10,12 +10,11 @@ import {
   ContactType,
   PagedContactType,
   ContactRoleType,
-  AccountType,
   AccountPollType,
   SponsorType,
 } from '@draco/shared-schemas';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
-import { getAccountLogoUrl, getContactPhotoUrl } from '../config/logo.js';
+import { getContactPhotoUrl } from '../config/logo.js';
 import { getSponsorPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
@@ -28,8 +27,6 @@ import {
   dbGlobalRoles,
   dbContactRoles,
   dbContactWithRoleAndDetails,
-  dbAccount,
-  dbAccountAffiliation,
   dbPollQuestionWithCounts,
   dbPollQuestionWithUserVotes,
   dbSponsor,
@@ -42,97 +39,6 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
-}
-
-type OwnerUserSummary = {
-  id: string;
-  userName: string;
-};
-
-type OwnerDetailsByAccount = {
-  ownerContacts?: Map<string, dbBaseContact>;
-  ownerUsersByAccount?: Map<string, OwnerUserSummary>;
-};
-
-export class AccountResponseFormatter {
-  static formatAccounts(
-    accounts: dbAccount[],
-    affiliationMap: Map<string, dbAccountAffiliation>,
-    ownerDetails?: OwnerDetailsByAccount,
-  ): AccountType[] {
-    return accounts.map((account) => {
-      const accountId = account.id.toString();
-      const ownerContact = ownerDetails?.ownerContacts?.get(accountId);
-      const ownerUser = ownerDetails?.ownerUsersByAccount?.get(accountId);
-      return this.formatAccount(account, affiliationMap, ownerContact, ownerUser);
-    });
-  }
-
-  static formatAccount(
-    account: dbAccount,
-    affiliationMap: Map<string, dbAccountAffiliation>,
-    ownerContact?: dbBaseContact,
-    ownerUser?: OwnerUserSummary,
-  ): AccountType {
-    const affiliationId = account.affiliationid ? account.affiliationid.toString() : undefined;
-    const affiliationRecord = affiliationId ? affiliationMap.get(affiliationId) : undefined;
-
-    const formattedAccount: AccountType = {
-      id: account.id.toString(),
-      name: account.name,
-      accountLogoUrl: getAccountLogoUrl(account.id.toString()),
-      configuration: {
-        accountType: account.accounttypes
-          ? {
-              id: account.accounttypes.id.toString(),
-              name: account.accounttypes.name,
-            }
-          : undefined,
-        affiliation: affiliationRecord
-          ? {
-              id: affiliationRecord.id.toString(),
-              name: affiliationRecord.name,
-              url: affiliationRecord.url,
-            }
-          : undefined,
-
-        firstYear: account.firstyear,
-        timezoneId: account.timezoneid,
-      },
-      socials: {
-        autoPlayVideo: account.autoplayvideo,
-        twitterAccountName: account.twitteraccountname,
-        facebookFanPage: account.facebookfanpage ?? undefined,
-        youtubeUserId: account.youtubeuserid,
-        defaultVideo: account.defaultvideo,
-      },
-      urls: account.accountsurl.map((url) => ({
-        id: url.id.toString(),
-        url: url.url,
-      })),
-    };
-
-    if (ownerContact || ownerUser) {
-      formattedAccount.accountOwner = {
-        contact: ownerContact
-          ? {
-              id: ownerContact.id.toString(),
-              firstName: ownerContact.firstname,
-              lastName: ownerContact.lastname,
-              middleName: ownerContact.middlename ?? undefined,
-            }
-          : undefined,
-        user: ownerUser
-          ? {
-              id: ownerUser.id,
-              userName: ownerUser.userName,
-            }
-          : undefined,
-      };
-    }
-
-    return formattedAccount;
-  }
 }
 
 export class ContactResponseFormatter {

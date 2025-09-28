@@ -207,6 +207,22 @@ export type dbAuthResponse = {
   };
 };
 
+export type dbAccountUrl = Prisma.accountsurlGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    url: true;
+  };
+}>;
+
+export type dbAccountTypeRecord = Prisma.accounttypesGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    filepath: true;
+  };
+}>;
+
 export type dbAccount = Prisma.accountsGetPayload<{
   include: {
     accounttypes: true;

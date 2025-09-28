@@ -1,6 +1,11 @@
 import { Prisma, PrismaClient, accounts } from '@prisma/client';
 import { IAccountRepository } from '../interfaces/index.js';
-import { dbAccountAffiliation, dbAccount } from '../types/index.js';
+import {
+  dbAccountAffiliation,
+  dbAccount,
+  dbAccountTypeRecord,
+  dbAccountUrl,
+} from '../types/index.js';
 
 export class PrismaAccountRepository implements IAccountRepository {
   constructor(private prisma: PrismaClient) {}
@@ -165,12 +170,116 @@ export class PrismaAccountRepository implements IAccountRepository {
     });
   }
 
-  async createAccountUrl(accountId: bigint, url: string): Promise<void> {
-    await this.prisma.accountsurl.create({
+  async findAllAffiliations(): Promise<dbAccountAffiliation[]> {
+    return this.prisma.affiliations.findMany({
+      select: {
+        id: true,
+        name: true,
+        url: true,
+      },
+      orderBy: {
+        name: Prisma.SortOrder.asc,
+      },
+    });
+  }
+
+  async findAllAccountTypes(): Promise<dbAccountTypeRecord[]> {
+    return this.prisma.accounttypes.findMany({
+      select: {
+        id: true,
+        name: true,
+        filepath: true,
+      },
+      orderBy: {
+        name: Prisma.SortOrder.asc,
+      },
+    });
+  }
+
+  async findAccountUrls(accountId: bigint): Promise<dbAccountUrl[]> {
+    return this.prisma.accountsurl.findMany({
+      where: {
+        accountid: BigInt(accountId),
+      },
+      select: {
+        id: true,
+        accountid: true,
+        url: true,
+      },
+      orderBy: {
+        id: Prisma.SortOrder.asc,
+      },
+    });
+  }
+
+  async findAccountUrlById(accountId: bigint, urlId: bigint): Promise<dbAccountUrl | null> {
+    return this.prisma.accountsurl.findFirst({
+      where: {
+        id: BigInt(urlId),
+        accountid: BigInt(accountId),
+      },
+      select: {
+        id: true,
+        accountid: true,
+        url: true,
+      },
+    });
+  }
+
+  async findAccountUrlByValue(
+    accountId: bigint,
+    url: string,
+    excludeUrlId?: bigint,
+  ): Promise<dbAccountUrl | null> {
+    return this.prisma.accountsurl.findFirst({
+      where: {
+        accountid: BigInt(accountId),
+        url,
+        ...(excludeUrlId
+          ? {
+              id: {
+                not: BigInt(excludeUrlId),
+              },
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        accountid: true,
+        url: true,
+      },
+    });
+  }
+
+  async createAccountUrl(accountId: bigint, url: string): Promise<dbAccountUrl> {
+    return this.prisma.accountsurl.create({
       data: {
         accountid: BigInt(accountId),
         url,
       },
+      select: {
+        id: true,
+        accountid: true,
+        url: true,
+      },
+    });
+  }
+
+  async updateAccountUrl(urlId: bigint, url: string): Promise<dbAccountUrl> {
+    return this.prisma.accountsurl.update({
+      where: { id: BigInt(urlId) },
+      data: { url },
+      select: {
+        id: true,
+        accountid: true,
+        url: true,
+      },
+    });
+  }
+
+  async deleteAccountUrl(urlId: bigint): Promise<void> {
+    await this.prisma.accountsurl.delete({
+      where: { id: BigInt(urlId) },
     });
   }
 }
