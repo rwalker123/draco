@@ -8,6 +8,10 @@ import {
   AccountPollSchema,
   AccountSchema,
   AccountSearchQuerySchema,
+  AccountTypeSchema,
+  AccountUrlSchema,
+  CreateAccountUrlSchema,
+  AccountTwitterSettingsSchema,
   AccountWithSeasonsSchema,
   AuthenticationErrorSchema,
   AuthorizationErrorSchema,
@@ -103,6 +107,13 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'AccountAffiliation',
     AccountAffiliationSchema,
   );
+  const AccountTypeSchemaRef = registry.register('AccountType', AccountTypeSchema);
+  const AccountUrlSchemaRef = registry.register('AccountUrl', AccountUrlSchema);
+  const CreateAccountUrlSchemaRef = registry.register('CreateAccountUrl', CreateAccountUrlSchema);
+  const AccountTwitterSettingsSchemaRef = registry.register(
+    'AccountTwitterSettings',
+    AccountTwitterSettingsSchema,
+  );
   const SponsorSchemaRef = registry.register('Sponsor', SponsorSchema);
   const SponsorListSchemaRef = registry.register('SponsorList', SponsorListSchema);
   const CreateSponsorSchemaRef = registry.register('CreateSponsor', CreateSponsorSchema);
@@ -196,6 +207,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountNameSchemaRef,
     AccountHeaderSchemaRef,
     AccountAffiliationSchemaRef,
+    AccountTypeSchemaRef,
+    AccountUrlSchemaRef,
+    CreateAccountUrlSchemaRef,
+    AccountTwitterSettingsSchemaRef,
     AutomaticRoleHoldersSchemaRef,
     SponsorSchemaRef,
     SponsorListSchemaRef,

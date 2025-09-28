@@ -9,13 +9,18 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     AccountNameSchemaRef,
     AccountSchemaRef,
     AccountSearchQuerySchemaRef,
+    AccountTypeSchemaRef,
+    AccountUrlSchemaRef,
     AccountWithSeasonsSchemaRef,
+    AccountTwitterSettingsSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     CreateAccountSchemaRef,
+    CreateAccountUrlSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     ValidationErrorSchemaRef,
+    ConflictErrorSchemaRef,
     AutomaticRoleHoldersSchemaRef,
   } = schemaRefs;
 
@@ -35,7 +40,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         description: 'Accounts matching the search query',
         content: {
           'application/json': {
-            schema: AccountSchemaRef.array(),
+            schema: AccountTypeSchemaRef.array(),
           },
         },
       },
@@ -519,6 +524,406 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         content: {
           'application/json': {
             schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // PUT /api/accounts/{accountId}/twitter
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/twitter',
+    operationId: 'updateAccountTwitterSettings',
+    summary: 'Update account Twitter settings',
+    description: 'Update the Twitter integration settings for an account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: AccountTwitterSettingsSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated account details',
+        content: {
+          'application/json': {
+            schema: AccountSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/urls
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/urls',
+    operationId: 'getAccountUrls',
+    summary: 'List account URLs',
+    description: 'Retrieve all configured URLs for the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Account URLs',
+        content: {
+          'application/json': {
+            schema: AccountUrlSchemaRef.array(),
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/urls
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/urls',
+    operationId: 'createAccountUrl',
+    summary: 'Create account URL',
+    description: 'Add a new URL to the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateAccountUrlSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'URL created',
+        content: {
+          'application/json': {
+            schema: AccountUrlSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'URL already exists for this account',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // PUT /api/accounts/{accountId}/urls/{urlId}
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/urls/{urlId}',
+    operationId: 'updateAccountUrl',
+    summary: 'Update account URL',
+    description: 'Update an existing account URL.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'urlId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateAccountUrlSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated account URL',
+        content: {
+          'application/json': {
+            schema: AccountUrlSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account or URL not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'URL already exists for this account',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // DELETE /api/accounts/{accountId}/urls/{urlId}
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/urls/{urlId}',
+    operationId: 'deleteAccountUrl',
+    summary: 'Delete account URL',
+    description: 'Remove a URL from the specified account.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'urlId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'URL deleted',
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account or URL not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
           },
         },
       },
