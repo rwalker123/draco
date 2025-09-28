@@ -12,3 +12,4 @@ export * from './date.js';
 export * from './team.js';
 export * from './field.js';
 export * from './umpire.js';
+export * from './workout.js';

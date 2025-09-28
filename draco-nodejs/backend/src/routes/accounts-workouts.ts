@@ -1,81 +1,55 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import {
+  WorkoutListQuerySchema,
+  WorkoutRegistrationsQuerySchema,
+  UpsertWorkoutSchema,
+  UpsertWorkoutRegistrationSchema,
+  WorkoutSourcesSchema,
+  WorkoutSourceOptionPayloadSchema,
+} from '@draco/shared-schemas';
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { WORKOUT_CONSTANTS } from '../utils/workoutMappers.js';
-import { ListWorkoutsFilter } from '../interfaces/workoutInterfaces.js';
-
-// Type for query parameters
-interface WorkoutQueryParams {
-  status?: 'upcoming' | 'past' | 'all';
-  limit?: string;
-  after?: string;
-  before?: string;
-  includeRegistrationCounts?: string;
-}
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const service = ServiceFactory.getWorkoutService();
 
-// Rate limiting for public registration endpoint
 const registrationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 registration attempts per window
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: {
-    success: false,
-    error: 'Too many registration attempts. Please try again later.',
+    message: 'Too many registration attempts. Please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-/**
- * Workouts API routes for account-specific workout management and registrations.
- */
-
-/**
- * GET /api/accounts/:accountId/workouts
- * Public endpoint that lists workouts with optional status and pagination filters.
- */
 router.get(
   '/:accountId/workouts',
   optionalAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
-    const includeRegistrationCounts = req.query.includeRegistrationCounts === 'true';
-    const queryParams = req.query as WorkoutQueryParams;
-    const filter: ListWorkoutsFilter = {
-      status: queryParams.status,
-      limit: queryParams.limit ? parseInt(queryParams.limit) : undefined,
-      after: queryParams.after,
-      before: queryParams.before,
-    };
-    const items = await service.listWorkouts(accountId, filter, includeRegistrationCounts);
-    res.json({ success: true, data: { workouts: items } });
+    const filters = WorkoutListQuerySchema.parse(req.query);
+    service.listWorkouts(accountId, filters).then((workouts) => {
+      res.json(workouts);
+    });
   }),
 );
 
-/**
- * GET /api/accounts/{accountId}/workouts/sources
- * Get the allowed where-heard options for a workout
- */
 router.get(
   '/:accountId/workouts/sources',
   optionalAuth,
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
-    const data = await service.getSources(accountId.toString());
-    res.json({ success: true, data });
+    service.getSources(accountId.toString()).then((sources) => {
+      res.json(sources);
+    });
   }),
 );
 
-/**
- * PUT /api/accounts/{accountId}/workouts/sources
- * Update the allowed where-heard options for a workout
- */
 router.put(
   '/:accountId/workouts/sources',
   authenticateToken,
@@ -83,15 +57,13 @@ router.put(
   routeProtection.requirePermission('workout.manage'),
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
-    await service.putSources(accountId.toString(), req.body);
-    res.json({ success: true });
+    const payload = WorkoutSourcesSchema.parse(req.body);
+    service.putSources(accountId.toString(), payload).then((updated) => {
+      res.json(updated);
+    });
   }),
 );
 
-/**
- * POST /api/accounts/{accountId}/workouts/sources
- * Add a single where-heard option to the allowed options
- */
 router.post(
   '/:accountId/workouts/sources',
   authenticateToken,
@@ -99,54 +71,38 @@ router.post(
   routeProtection.requirePermission('workout.manage'),
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
-    const { option } = req.body;
-    if (!option || typeof option !== 'string' || option.trim().length === 0 || option.length > 25) {
-      res.status(400).json({ success: false, message: 'Invalid option' });
-      return;
-    }
-    const updated = await service.appendSourceOption(accountId.toString(), option);
-    res.json({ success: true, data: updated });
+    const payload = WorkoutSourceOptionPayloadSchema.parse(req.body);
+    service.appendSourceOption(accountId.toString(), payload.option).then((updated) => {
+      res.json(updated);
+    });
   }),
 );
 
-/**
- * GET /api/accounts/:accountId/workouts/:workoutId
- * Retrieves a single workout for public consumption, returning 404 when absent.
- */
 router.get(
   '/:accountId/workouts/:workoutId',
   optionalAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    const w = await service.getWorkout(accountId, workoutId);
-    if (!w) {
-      res.status(404).json({ success: false, message: 'Workout not found' });
-      return;
-    }
-    res.json({ success: true, data: { workout: w } });
+    service.getWorkout(accountId, workoutId).then((workout) => {
+      res.json(workout);
+    });
   }),
 );
 
-/**
- * POST /api/accounts/{accountId}/workouts/:workoutId/registrations
- * Create a registration for a workout
- */
 router.post(
   '/:accountId/workouts/:workoutId/registrations',
   registrationLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    const r = await service.createRegistration(accountId, workoutId, req.body);
-    res.status(201).json({ success: true, data: { registration: r } });
+    const payload = UpsertWorkoutRegistrationSchema.parse(req.body);
+    service.createRegistration(accountId, workoutId, payload).then((registration) => {
+      res.status(201).json(registration);
+    });
   }),
 );
 
-/**
- * PUT /api/accounts/{accountId}/workouts/:workoutId/registrations/:registrationId
- * Update a registration for a workout
- */
 router.put(
   '/:accountId/workouts/:workoutId/registrations/:registrationId',
   authenticateToken,
@@ -154,35 +110,38 @@ router.put(
   routeProtection.requirePermission('workout.manage'),
   asyncHandler(async (req: Request, res: Response) => {
     const { accountId } = extractAccountParams(req.params);
-    const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    const { registrationId } = extractBigIntParams(req.params, 'registrationId');
-    const r = await service.updateRegistration(accountId, workoutId, registrationId, req.body);
-    res.json({ success: true, data: { registration: r } });
+    const { workoutId, registrationId } = extractBigIntParams(
+      req.params,
+      'workoutId',
+      'registrationId',
+    );
+    const payload = UpsertWorkoutRegistrationSchema.parse(req.body);
+    service
+      .updateRegistration(accountId, workoutId, registrationId, payload)
+      .then((registration) => {
+        res.json(registration);
+      });
   }),
 );
 
-/**
- * DELETE /api/accounts/{accountId}/workouts/:workoutId/registrations/:registrationId
- * Delete a registration for a workout
- */
 router.delete(
   '/:accountId/workouts/:workoutId/registrations/:registrationId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('workout.manage'),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
-    const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    const { registrationId } = extractBigIntParams(req.params, 'registrationId');
+    const { workoutId, registrationId } = extractBigIntParams(
+      req.params,
+      'workoutId',
+      'registrationId',
+    );
     await service.deleteRegistration(accountId, workoutId, registrationId);
-    res.json({ success: true });
+
+    res.status(204).send();
   }),
 );
 
-/**
- * POST /api/accounts/{accountId}/workouts
- * Create a workout
- */
 router.post(
   '/:accountId/workouts',
   authenticateToken,
@@ -190,15 +149,13 @@ router.post(
   routeProtection.requirePermission('workout.manage'),
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
-    const w = await service.createWorkout(accountId, req.body);
-    res.status(201).json({ success: true, data: { workout: w } });
+    const payload = UpsertWorkoutSchema.parse(req.body);
+    service.createWorkout(accountId, payload).then((workout) => {
+      res.status(201).json(workout);
+    });
   }),
 );
 
-/**
- * PUT /api/accounts/{accountId}/workouts/:workoutId
- * Update a workout
- */
 router.put(
   '/:accountId/workouts/:workoutId',
   authenticateToken,
@@ -207,15 +164,13 @@ router.put(
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    const w = await service.updateWorkout(accountId, workoutId, req.body);
-    res.json({ success: true, data: { workout: w } });
+    const payload = UpsertWorkoutSchema.parse(req.body);
+    service.updateWorkout(accountId, workoutId, payload).then((workout) => {
+      res.json(workout);
+    });
   }),
 );
 
-/**
- * DELETE /api/accounts/:accountId/workouts/:workoutId
- * Deletes a workout when the caller has the workout.manage permission.
- */
 router.delete(
   '/:accountId/workouts/:workoutId',
   authenticateToken,
@@ -225,14 +180,11 @@ router.delete(
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
     await service.deleteWorkout(accountId, workoutId);
-    res.json({ success: true });
+
+    res.status(204).send();
   }),
 );
 
-/**
- * GET /api/accounts/:accountId/workouts/:workoutId/registrations
- * Lists registrations for a workout (requires workout.manage permission).
- */
 router.get(
   '/:accountId/workouts/:workoutId/registrations',
   authenticateToken,
@@ -241,13 +193,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
     const { workoutId } = extractBigIntParams(req.params, 'workoutId');
-    // Pass a high limit to get all registrations, or add pagination support later
-    const list = await service.listRegistrations(
-      accountId,
-      workoutId,
-      WORKOUT_CONSTANTS.MAX_REGISTRATIONS_EXPORT,
-    );
-    res.json({ success: true, data: list });
+    const query = WorkoutRegistrationsQuerySchema.parse(req.query);
+    service.listRegistrations(accountId, workoutId, query.limit).then((registrations) => {
+      res.json(registrations);
+    });
   }),
 );
 
