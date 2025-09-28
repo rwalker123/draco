@@ -13,3 +13,4 @@ export * from './ITeamsWantedRepository.js';
 export * from './ISponsorRepository.js';
 export * from './IFieldRepository.js';
 export * from './IUmpireRepository.js';
+export * from './IWorkoutRepository.js';

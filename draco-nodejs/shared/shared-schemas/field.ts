@@ -9,7 +9,7 @@ const FieldAddressSchema = z.string().trim().nullish();
 
 export const FieldSchema = z.object({
   id: z.bigint().transform((val) => val.toString()),
-  accountId: z.string(),
+  accountId: z.string().optional(),
   name: FieldNameSchema,
   address: FieldAddressSchema,
 });

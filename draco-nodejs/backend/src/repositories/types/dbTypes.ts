@@ -199,6 +199,77 @@ export type dbTeamSeasonManagerContact = Prisma.teamseasonmanagerGetPayload<{
   };
 }>;
 
+export type dbWorkoutWithField = Prisma.workoutannouncementGetPayload<{
+  include: {
+    availablefields: {
+      select: {
+        id: true;
+        name: true;
+        address: true;
+      };
+    };
+  };
+}>;
+
+export type dbWorkoutWithRegistrationCount = Prisma.workoutannouncementGetPayload<{
+  include: {
+    availablefields: {
+      select: {
+        id: true;
+        name: true;
+        address: true;
+      };
+    };
+    _count: {
+      select: {
+        workoutregistration: true;
+      };
+    };
+  };
+}>;
+
+export type dbWorkoutRegistration = Prisma.workoutregistrationGetPayload<{
+  select: {
+    id: true;
+    workoutid: true;
+    name: true;
+    email: true;
+    age: true;
+    phone1: true;
+    phone2: true;
+    phone3: true;
+    phone4: true;
+    positions: true;
+    ismanager: true;
+    whereheard: true;
+    dateregistered: true;
+  };
+}>;
+
+export type dbWorkoutCreateData = Pick<
+  Prisma.workoutannouncementUncheckedCreateInput,
+  'workoutdesc' | 'workoutdate' | 'fieldid' | 'comments'
+>;
+
+export type dbWorkoutUpdateData = Pick<
+  Prisma.workoutannouncementUncheckedUpdateInput,
+  'workoutdesc' | 'workoutdate' | 'fieldid' | 'comments'
+>;
+
+export type dbWorkoutRegistrationUpsertData = Pick<
+  Prisma.workoutregistrationUncheckedCreateInput,
+  | 'name'
+  | 'email'
+  | 'age'
+  | 'phone1'
+  | 'phone2'
+  | 'phone3'
+  | 'phone4'
+  | 'positions'
+  | 'ismanager'
+  | 'whereheard'
+>;
+
 export type dbAuthResponse = {
   token?: string;
   user?: {

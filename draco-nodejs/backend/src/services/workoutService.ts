@@ -1,251 +1,150 @@
-import { Prisma } from '@prisma/client';
-import prisma from '../lib/prisma.js';
 import {
-  Workout,
-  WorkoutCreateDTO,
-  WorkoutUpdateDTO,
-  WorkoutSummary,
-  WorkoutRegistrationDTO,
-  WorkoutRegistration,
-  ListWorkoutsFilter,
-  Paginated,
-  WorkoutSources,
-  PrismaWorkoutWithField,
-  PrismaWorkoutWithCount,
-  PrismaWorkoutRegistration,
-} from '../interfaces/workoutInterfaces.js';
+  UpsertWorkoutType,
+  WorkoutType,
+  WorkoutListQueryType,
+  UpsertWorkoutRegistrationType,
+  WorkoutRegistrationType,
+  WorkoutRegistrationsType,
+  WorkoutSourcesType,
+  WorkoutSourceOptionType,
+  WORKOUT_DEFAULT_LIST_LIMIT,
+  WORKOUT_REGISTRATIONS_DEFAULT_LIMIT,
+  WORKOUT_REGISTRATIONS_MAX_EXPORT,
+  WORKOUT_SOURCE_OPTION_MAX_LENGTH,
+  WorkoutSummaryType,
+} from '@draco/shared-schemas';
+import { RepositoryFactory } from '../repositories/repositoryFactory.js';
+import { WorkoutListOptions } from '../repositories/interfaces/IWorkoutRepository.js';
+import { WorkoutResponseFormatter } from '../responseFormatters/WorkoutResponseFormatter.js';
 import { createStorageService } from './storageService.js';
-import { mapWorkoutField, FIELD_INCLUDE, WORKOUT_CONSTANTS } from '../utils/workoutMappers.js';
-import { DateUtils } from '../utils/dateUtils.js';
 import {
+  WorkoutNotFoundError,
   WorkoutRegistrationNotFoundError,
   WorkoutUnauthorizedError,
 } from '../utils/customErrors.js';
+import {
+  dbWorkoutCreateData,
+  dbWorkoutRegistrationUpsertData,
+  dbWorkoutUpdateData,
+} from '../repositories/index.js';
 
 export class WorkoutService {
+  private readonly workoutRepository = RepositoryFactory.getWorkoutRepository();
+
   async listWorkouts(
     accountId: bigint,
-    filter: ListWorkoutsFilter = {},
-    includeRegistrationCounts = false,
-  ): Promise<WorkoutSummary[]> {
-    const where: Prisma.workoutannouncementWhereInput = { accountid: accountId };
+    query: WorkoutListQueryType,
+  ): Promise<WorkoutSummaryType[]> {
+    const limit = query.limit ?? WORKOUT_DEFAULT_LIST_LIMIT;
 
-    // Build workoutdate filter
-    const workoutdateFilter: Prisma.DateTimeFilter = {};
-    if (filter.status === 'upcoming') {
-      workoutdateFilter.gte = new Date();
-    } else if (filter.status === 'past') {
-      workoutdateFilter.lt = new Date();
-    }
-    if (filter.after) {
-      workoutdateFilter.gt = new Date(filter.after);
-    }
-    if (filter.before) {
-      workoutdateFilter.lt = new Date(filter.before);
-    }
+    const filters: WorkoutListOptions = {
+      status: query.status,
+      after: query.after ? new Date(query.after) : undefined,
+      before: query.before ? new Date(query.before) : undefined,
+      limit,
+      includeRegistrationCounts: query.includeRegistrationCounts ?? false,
+    };
 
-    // Only set workoutdate if we have filters
-    if (Object.keys(workoutdateFilter).length > 0) {
-      where.workoutdate = workoutdateFilter;
-    }
+    const workouts = await this.workoutRepository.listWorkouts(accountId, filters);
 
-    // Include registration count if requested using Prisma's _count
-    const rows = await prisma.workoutannouncement.findMany({
-      where,
-      orderBy: { workoutdate: 'asc' },
-      take: filter.limit ?? WORKOUT_CONSTANTS.DEFAULT_WORKOUTS_LIMIT,
-      select: {
-        id: true,
-        workoutdesc: true,
-        workoutdate: true,
-        fieldid: true,
-        ...FIELD_INCLUDE,
-        // Efficiently get registration count in the same query
-        ...(includeRegistrationCounts && {
-          _count: {
-            select: { workoutregistration: true },
-          },
-        }),
-      },
-    });
-
-    // Map the results with registration counts if included
-    const workoutsWithCounts = rows.map((r: PrismaWorkoutWithField | PrismaWorkoutWithCount) => {
-      const workout: WorkoutSummary = {
-        id: r.id.toString(),
-        workoutDesc: r.workoutdesc,
-        workoutDate: DateUtils.formatDateTimeForResponse(r.workoutdate) || '',
-        fieldId: r.fieldid ? r.fieldid.toString() : null,
-        field: mapWorkoutField(r.availablefields),
-      };
-
-      if (includeRegistrationCounts && '_count' in r) {
-        const workoutWithCount = r as PrismaWorkoutWithCount;
-        workout.registrationCount = workoutWithCount._count.workoutregistration;
-      }
-
-      return workout;
-    });
-
-    return workoutsWithCounts;
+    return WorkoutResponseFormatter.formatWorkouts(workouts);
   }
 
-  async getWorkout(accountId: bigint, workoutId: bigint): Promise<Workout | null> {
-    const row = await prisma.workoutannouncement.findFirst({
-      where: { id: workoutId, accountid: accountId },
-      include: FIELD_INCLUDE,
-    });
-    if (!row) return null;
+  async getWorkout(accountId: bigint, workoutId: bigint): Promise<WorkoutType> {
+    const workout = await this.workoutRepository.findWorkout(accountId, workoutId);
 
-    return this.mapPrismaWorkoutToWorkout(row);
+    if (!workout) {
+      throw new WorkoutNotFoundError(workoutId.toString());
+    }
+
+    return WorkoutResponseFormatter.formatWorkout(workout);
   }
 
-  async createWorkout(accountId: bigint, dto: WorkoutCreateDTO): Promise<Workout> {
-    const created = await prisma.workoutannouncement.create({
-      data: {
-        accountid: accountId,
-        workoutdesc: dto.workoutDesc,
-        workoutdate: new Date(dto.workoutDate),
-        fieldid: dto.fieldId ? BigInt(dto.fieldId) : null,
-        comments: dto.comments ?? '',
-      },
-      include: FIELD_INCLUDE,
-    });
+  async createWorkout(accountId: bigint, payload: UpsertWorkoutType): Promise<WorkoutType> {
+    const createData = this.mapWorkoutCreateData(payload);
+    const workout = await this.workoutRepository.createWorkout(accountId, createData);
 
-    return this.mapPrismaWorkoutToWorkout(created);
+    return WorkoutResponseFormatter.formatWorkout(workout);
   }
 
   async updateWorkout(
     accountId: bigint,
     workoutId: bigint,
-    dto: WorkoutUpdateDTO,
-  ): Promise<Workout> {
-    const updated = await prisma.workoutannouncement.update({
-      where: { id: workoutId },
-      data: {
-        ...(dto.workoutDesc !== undefined && { workoutdesc: dto.workoutDesc }),
-        ...(dto.workoutDate !== undefined && { workoutdate: new Date(dto.workoutDate) }),
-        ...(dto.fieldId !== undefined && { fieldid: dto.fieldId ? BigInt(dto.fieldId) : null }),
-        ...(dto.comments !== undefined && { comments: dto.comments ?? '' }),
-      },
-      include: FIELD_INCLUDE,
-    });
+    payload: UpsertWorkoutType,
+  ): Promise<WorkoutType> {
+    const existing = await this.workoutRepository.findWorkout(accountId, workoutId);
 
-    return this.mapPrismaWorkoutToWorkout(updated);
+    if (!existing) {
+      throw new WorkoutNotFoundError(workoutId.toString());
+    }
+
+    const updateData = this.mapWorkoutUpdateData(payload);
+
+    if (Object.keys(updateData).length === 0) {
+      return WorkoutResponseFormatter.formatWorkout(existing);
+    }
+
+    const workout = await this.workoutRepository.updateWorkout(accountId, workoutId, updateData);
+
+    return WorkoutResponseFormatter.formatWorkout(workout);
   }
 
   async deleteWorkout(accountId: bigint, workoutId: bigint): Promise<void> {
-    // Ensure account boundary is enforced
-    await prisma.workoutannouncement.delete({
-      where: {
-        id: workoutId,
-        accountid: accountId,
-      },
-    });
-  }
+    const deleted = await this.workoutRepository.deleteWorkout(accountId, workoutId);
 
-  async getWorkoutRegistrationCount(accountId: bigint, workoutId: bigint): Promise<number> {
-    const count = await prisma.workoutregistration.count({
-      where: {
-        workoutid: workoutId,
-        workoutannouncement: { accountid: accountId },
-      },
-    });
-    return count;
+    if (deleted === 0) {
+      throw new WorkoutNotFoundError(workoutId.toString());
+    }
   }
 
   async listRegistrations(
     accountId: bigint,
     workoutId: bigint,
-    limit: number = WORKOUT_CONSTANTS.DEFAULT_REGISTRATIONS_LIMIT,
-  ): Promise<Paginated<WorkoutRegistration>> {
-    const rows = await prisma.workoutregistration.findMany({
-      where: { workoutid: workoutId, workoutannouncement: { accountid: accountId } },
-      orderBy: { id: 'desc' },
-      take: limit,
-    });
+    limit = WORKOUT_REGISTRATIONS_DEFAULT_LIMIT,
+  ): Promise<WorkoutRegistrationsType> {
+    const boundedLimit = Math.min(Math.max(limit, 1), WORKOUT_REGISTRATIONS_MAX_EXPORT);
+    const registrations = await this.workoutRepository.listRegistrations(
+      accountId,
+      workoutId,
+      boundedLimit,
+    );
 
-    return {
-      items: rows.map(
-        (r: PrismaWorkoutRegistration): WorkoutRegistration => ({
-          id: r.id.toString(),
-          workoutId: r.workoutid.toString(),
-          name: r.name,
-          email: r.email,
-          age: r.age,
-          phone1: r.phone1 ?? '',
-          phone2: r.phone2 ?? '',
-          phone3: r.phone3 ?? '',
-          phone4: r.phone4 ?? '',
-          positions: r.positions,
-          isManager: r.ismanager,
-          whereHeard: r.whereheard,
-          dateRegistered: DateUtils.formatDateTimeForResponse(r.dateregistered) || '',
-        }),
-      ),
-    };
+    return WorkoutResponseFormatter.formatRegistrations(registrations);
   }
 
   async createRegistration(
     accountId: bigint,
     workoutId: bigint,
-    dto: WorkoutRegistrationDTO,
-  ): Promise<WorkoutRegistration> {
-    const created = await prisma.workoutregistration.create({
-      data: {
-        workoutid: workoutId,
-        name: dto.name,
-        email: dto.email,
-        age: dto.age,
-        phone1: dto.phone1 ?? '',
-        phone2: dto.phone2 ?? '',
-        phone3: dto.phone3 ?? '',
-        phone4: dto.phone4 ?? '',
-        positions: dto.positions,
-        ismanager: dto.isManager,
-        dateregistered: new Date(),
-        whereheard: dto.whereHeard,
-      },
-    });
+    payload: UpsertWorkoutRegistrationType,
+  ): Promise<WorkoutRegistrationType> {
+    await this.ensureWorkoutExists(accountId, workoutId);
 
-    return this.mapPrismaRegistrationToWorkoutRegistration(created);
+    const data = this.mapRegistrationData(payload);
+    const registration = await this.workoutRepository.createRegistration(workoutId, data);
+
+    return WorkoutResponseFormatter.formatRegistration(registration);
   }
 
   async updateRegistration(
     accountId: bigint,
     workoutId: bigint,
     registrationId: bigint,
-    dto: WorkoutRegistrationDTO,
-  ): Promise<WorkoutRegistration> {
-    // Verify the registration belongs to the account
-    const existing = await prisma.workoutregistration.findFirst({
-      where: {
-        id: registrationId,
-        workoutid: workoutId,
-        workoutannouncement: { accountid: accountId },
-      },
-    });
+    payload: UpsertWorkoutRegistrationType,
+  ): Promise<WorkoutRegistrationType> {
+    const existing = await this.workoutRepository.findRegistration(
+      accountId,
+      workoutId,
+      registrationId,
+    );
+
     if (!existing) {
       throw new WorkoutRegistrationNotFoundError(registrationId.toString());
     }
 
-    const updated = await prisma.workoutregistration.update({
-      where: { id: registrationId },
-      data: {
-        name: dto.name,
-        email: dto.email,
-        age: dto.age,
-        phone1: dto.phone1 ?? '',
-        phone2: dto.phone2 ?? '',
-        phone3: dto.phone3 ?? '',
-        phone4: dto.phone4 ?? '',
-        positions: dto.positions,
-        ismanager: dto.isManager,
-        whereheard: dto.whereHeard,
-      },
-    });
+    const data = this.mapRegistrationData(payload);
+    const registration = await this.workoutRepository.updateRegistration(registrationId, data);
 
-    return this.mapPrismaRegistrationToWorkoutRegistration(updated);
+    return WorkoutResponseFormatter.formatRegistration(registration);
   }
 
   async deleteRegistration(
@@ -253,102 +152,152 @@ export class WorkoutService {
     workoutId: bigint,
     registrationId: bigint,
   ): Promise<void> {
-    // Delete with account boundary check via the workout relationship
-    const deleted = await prisma.workoutregistration.deleteMany({
-      where: {
-        id: registrationId,
-        workoutid: workoutId,
-        workoutannouncement: { accountid: accountId },
-      },
-    });
+    const deleted = await this.workoutRepository.deleteRegistration(
+      accountId,
+      workoutId,
+      registrationId,
+    );
 
-    if (deleted.count === 0) {
+    if (deleted === 0) {
       throw new WorkoutUnauthorizedError('Registration not found or unauthorized access');
     }
   }
 
-  private getSourcesKey(accountId: string): string {
-    return `${accountId}/config/workout-sources.json`;
-  }
-
-  async getSources(accountId: string): Promise<WorkoutSources> {
+  async getSources(accountId: string): Promise<WorkoutSourcesType> {
     const storage = createStorageService();
-    const buf = await storage.getAttachment(accountId, 'config', 'workout-sources.json');
-    if (!buf) return { options: [] };
+    const buffer = await storage.getAttachment(accountId, 'config', 'workout-sources.json');
+
+    if (!buffer) {
+      return { options: [] };
+    }
+
     try {
-      const parsed = JSON.parse(buf.toString('utf-8')) as WorkoutSources;
-      if (!Array.isArray(parsed.options)) return { options: [] };
-      // Enforce max length constraint from DB schema
+      const parsed = JSON.parse(buffer.toString('utf-8')) as WorkoutSourcesType;
+
+      if (!Array.isArray(parsed.options)) {
+        return { options: [] };
+      }
+
       return {
         options: parsed.options
-          .filter((s) => typeof s === 'string')
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0 && s.length <= WORKOUT_CONSTANTS.MAX_SOURCE_OPTION_LENGTH),
+          .filter((option) => typeof option === 'string')
+          .map((option) => option.trim())
+          .filter(
+            (option) => option.length > 0 && option.length <= WORKOUT_SOURCE_OPTION_MAX_LENGTH,
+          ),
       };
     } catch {
       return { options: [] };
     }
   }
 
-  async putSources(accountId: string, sources: WorkoutSources): Promise<void> {
+  async putSources(accountId: string, sources: WorkoutSourcesType): Promise<WorkoutSourcesType> {
+    const sanitized = this.sanitizeSources(sources);
     const storage = createStorageService();
-    const clean = Array.from(
-      new Set(
-        (sources.options || [])
-          .map((s) => String(s).trim())
-          .filter((s) => s.length > 0 && s.length <= WORKOUT_CONSTANTS.MAX_SOURCE_OPTION_LENGTH),
-      ),
-    );
-    const payload = Buffer.from(JSON.stringify({ options: clean }, null, 2));
-    // Reuse attachment storage pathing to persist JSON deterministically under uploads
-    // Use emailId as fixed token 'config' to produce stable directory layout
+    const payload = Buffer.from(JSON.stringify(sanitized, null, 2));
+
     await storage.saveAttachment(accountId, 'config', 'workout-sources.json', payload);
+
+    return sanitized;
   }
 
-  async appendSourceOption(accountId: string, option: string): Promise<WorkoutSources> {
-    const current = await this.getSources(accountId);
+  async appendSourceOption(
+    accountId: string,
+    option: WorkoutSourceOptionType,
+  ): Promise<WorkoutSourcesType> {
     const trimmed = option.trim();
-    if (!trimmed || trimmed.length > WORKOUT_CONSTANTS.MAX_SOURCE_OPTION_LENGTH) return current; // enforce max length and non-empty
-    if (!current.options.includes(trimmed)) {
-      current.options.push(trimmed);
-      await this.putSources(accountId, current);
+
+    if (!trimmed || trimmed.length > WORKOUT_SOURCE_OPTION_MAX_LENGTH) {
+      return this.getSources(accountId);
     }
+
+    const current = await this.getSources(accountId);
+
+    if (!current.options.includes(trimmed)) {
+      const updated = [...current.options, trimmed];
+      return this.putSources(accountId, { options: updated });
+    }
+
     return current;
   }
 
-  private mapPrismaRegistrationToWorkoutRegistration(
-    prismaRegistration: PrismaWorkoutRegistration,
-  ): WorkoutRegistration {
+  private sanitizeSources(sources: WorkoutSourcesType): WorkoutSourcesType {
+    const cleaned = (sources.options ?? [])
+      .map((option) => option?.toString().trim() ?? '')
+      .filter((option) => option.length > 0 && option.length <= WORKOUT_SOURCE_OPTION_MAX_LENGTH);
+
+    return { options: Array.from(new Set(cleaned)) };
+  }
+
+  private async ensureWorkoutExists(accountId: bigint, workoutId: bigint): Promise<void> {
+    const workout = await this.workoutRepository.findWorkout(accountId, workoutId);
+
+    if (!workout) {
+      throw new WorkoutNotFoundError(workoutId.toString());
+    }
+  }
+
+  private mapWorkoutCreateData(payload: UpsertWorkoutType): dbWorkoutCreateData {
     return {
-      id: prismaRegistration.id.toString(),
-      workoutId: prismaRegistration.workoutid.toString(),
-      name: prismaRegistration.name,
-      email: prismaRegistration.email,
-      age: prismaRegistration.age,
-      phone1: prismaRegistration.phone1 ?? '',
-      phone2: prismaRegistration.phone2 ?? '',
-      phone3: prismaRegistration.phone3 ?? '',
-      phone4: prismaRegistration.phone4 ?? '',
-      positions: prismaRegistration.positions,
-      isManager: prismaRegistration.ismanager,
-      whereHeard: prismaRegistration.whereheard,
-      dateRegistered: DateUtils.formatDateTimeForResponse(prismaRegistration.dateregistered) || '',
+      workoutdesc: payload.workoutDesc.trim(),
+      workoutdate: new Date(payload.workoutDate),
+      fieldid: this.parseFieldId(payload.fieldId),
+      comments: payload.comments?.trim() ?? '',
     };
   }
 
-  private mapPrismaWorkoutToWorkout(
-    prismaWorkout: Prisma.workoutannouncementGetPayload<{
-      include: typeof FIELD_INCLUDE;
-    }>,
-  ): Workout {
+  private mapWorkoutUpdateData(payload: UpsertWorkoutType): dbWorkoutUpdateData {
+    const update: dbWorkoutUpdateData = {};
+
+    if (payload.workoutDesc !== undefined) {
+      update.workoutdesc = payload.workoutDesc.trim();
+    }
+
+    if (payload.workoutDate !== undefined) {
+      update.workoutdate = new Date(payload.workoutDate);
+    }
+
+    if (payload.fieldId !== undefined) {
+      update.fieldid = this.parseFieldId(payload.fieldId);
+    }
+
+    if (payload.comments !== undefined) {
+      update.comments = payload.comments?.trim() ?? '';
+    }
+
+    return update;
+  }
+
+  private mapRegistrationData(
+    payload: UpsertWorkoutRegistrationType,
+  ): dbWorkoutRegistrationUpsertData {
+    const normalize = (value?: string | null) => (value ? value.trim() : undefined);
+
     return {
-      id: prismaWorkout.id.toString(),
-      accountId: prismaWorkout.accountid.toString(),
-      workoutDesc: prismaWorkout.workoutdesc,
-      workoutDate: DateUtils.formatDateTimeForResponse(prismaWorkout.workoutdate) || '',
-      fieldId: prismaWorkout.fieldid ? prismaWorkout.fieldid.toString() : null,
-      field: mapWorkoutField(prismaWorkout.availablefields),
-      comments: prismaWorkout.comments,
+      name: payload.name.trim(),
+      email: payload.email.trim(),
+      age: payload.age,
+      phone1: normalize(payload.phone1) ?? '',
+      phone2: normalize(payload.phone2) ?? '',
+      phone3: normalize(payload.phone3) ?? '',
+      phone4: normalize(payload.phone4) ?? '',
+      positions: payload.positions.trim(),
+      ismanager: payload.isManager,
+      whereheard: payload.whereHeard.trim(),
     };
+  }
+
+  private parseFieldId(fieldId: string | null | undefined): bigint | null {
+    if (fieldId === undefined || fieldId === null) {
+      return null;
+    }
+
+    const trimmed = fieldId.trim();
+
+    if (!trimmed) {
+      return null;
+    }
+
+    return BigInt(trimmed);
   }
 }
