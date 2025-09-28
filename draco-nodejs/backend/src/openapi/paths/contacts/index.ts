@@ -1,4 +1,3 @@
-import { PagingSchema } from '@draco/shared-schemas';
 import { RegisterContext } from '../../openapiTypes.js';
 
 export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterContext) => {
