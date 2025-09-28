@@ -12,7 +12,7 @@ export interface SelfRegisterInput {
 }
 
 export interface CombinedNewUserPayload {
-  mode: 'newUser';
+  mode: 'newUser'; // TODO: moved to Query string
   email: string;
   password: string;
   firstName: string;
@@ -24,7 +24,7 @@ export interface CombinedNewUserPayload {
 }
 
 export interface CombinedExistingUserPayload {
-  mode: 'existingUser';
+  mode: 'existingUser'; // TODO: moved to Query string
   usernameOrEmail: string;
   password: string;
   firstName: string;
@@ -35,6 +35,7 @@ export interface CombinedExistingUserPayload {
   dateOfBirth?: string;
 }
 
+// TODO: replace with ContactValidationType
 export type CombinedRegistrationPayload = CombinedNewUserPayload | CombinedExistingUserPayload;
 
 export const AccountRegistrationService = {

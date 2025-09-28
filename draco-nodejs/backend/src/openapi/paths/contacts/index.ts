@@ -644,6 +644,83 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       },
     },
   });
+
+  /**
+   * POST /api/accounts/:accountId/registration
+   * Register a new user or existing user
+   * Query param "mode" must be 'newUser' or 'existingUser'
+   * Body must match ContactValidationWithSignInSchema
+   */
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/registration',
+    description: 'Register a new user or existing user',
+    operationId: 'registerContact',
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'mode',
+        in: 'query',
+        required: true,
+        schema: {
+          type: 'string',
+          enum: ['newUser', 'existingUser'],
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: ContactValidationWithSignInSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Contact registered successfully',
+        content: {
+          'application/json': {
+            schema: RegisteredUserSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
 };
 
 export default registerContactsEndpoints;

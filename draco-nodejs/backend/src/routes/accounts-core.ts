@@ -3,12 +3,14 @@
 
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import {
   AccountDomainLookupHeadersSchema,
   AccountDetailsQuerySchema,
   AccountSearchQuerySchema,
   CreateAccountSchema,
+  ContactValidationWithSignInSchema,
 } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
@@ -17,6 +19,7 @@ import { extractAccountParams } from '../utils/paramExtraction.js';
 const router = Router({ mergeParams: true });
 const accountsService = ServiceFactory.getAccountsService();
 const routeProtection = ServiceFactory.getRouteProtection();
+const registrationService = ServiceFactory.getRegistrationService();
 
 /**
  * GET /api/accounts/search
@@ -182,6 +185,35 @@ router.get(
     const accountHeader = await accountsService.getAccountHeader(accountId);
 
     res.json(accountHeader);
+  }),
+);
+
+/**
+ * POST /api/accounts/:accountId/registration
+ * Register a new user or existing user
+ * Query param "mode" must be 'newUser' or 'existingUser'
+ * Body must match ContactValidationWithSignInSchema
+ */
+router.post(
+  '/:accountId/registration',
+  authRateLimit,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { mode } = req.query || {};
+
+    if (mode !== 'newUser' && mode !== 'existingUser') {
+      throw new ValidationError("Mode must be 'newUser' or 'existingUser'");
+    }
+
+    const input = ContactValidationWithSignInSchema.parse(req.body);
+
+    if (mode === 'newUser') {
+      const result = await registrationService.registerAndCreateContactNewUser(accountId, input);
+      res.status(201).json(result);
+    } else {
+      const result = await registrationService.loginAndCreateContactExistingUser(accountId, input);
+      res.status(201).json(result);
+    }
   }),
 );
 

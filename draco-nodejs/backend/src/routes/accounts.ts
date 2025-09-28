@@ -4,7 +4,6 @@
 import { Router } from 'express';
 import accountsCoreRouter from './accounts-core.js';
 import accountsContactsRouter from './accounts-contacts.js';
-import accountsRegistrationRouter from './accounts-registration.js';
 import contactMediaRouter from './contact-media.js';
 import accountsResourcesRouter from './accounts-resources.js';
 import accountsSettingsRouter from './accounts-settings.js';
@@ -19,9 +18,6 @@ const router = Router({ mergeParams: true });
 // Mount sub-routers with appropriate prefixes
 // Contact and user management endpoints
 router.use('/', accountsContactsRouter);
-
-// Combined account registration endpoints
-router.use('/', accountsRegistrationRouter);
 
 // Contact media endpoints (photos)
 router.use('/:accountId/contacts', contactMediaRouter);
