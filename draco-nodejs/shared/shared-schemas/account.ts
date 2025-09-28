@@ -51,13 +51,34 @@ export const AccountTypeSchema = z.object({
   name: z.string(),
 });
 
+const accountUrlValueSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'URL is required' })
+  .refine(
+    (value) => {
+      try {
+        const parsedUrl = new URL(value);
+        return (
+          (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') &&
+          !!parsedUrl.hostname
+        );
+      } catch (_error) {
+        return false;
+      }
+    },
+    { message: 'Invalid URL format. Please use http:// or https:// followed by a valid domain.' },
+  )
+  .transform((value) => value.toLowerCase());
+
 export const AccountUrlSchema = z.object({
   id: z.string(),
-  url: z.string().min(1),
+  url: accountUrlValueSchema,
 });
 
-export const CreateAccountUrlSchema = AccountUrlSchema.extend({
+export const CreateAccountUrlSchema = z.object({
   id: z.string().optional(),
+  url: accountUrlValueSchema,
 });
 
 export const AccountAffiliationSchema = z.object({
@@ -72,6 +93,13 @@ export const AccountSocialsSchema = z.object({
   youtubeUserId: z.string().nullable().optional(),
   defaultVideo: z.string().nullable().optional(),
   autoPlayVideo: z.boolean().default(false),
+});
+
+export const AccountTwitterSettingsSchema = z.object({
+  twitterAccountName: z.string().trim().optional(),
+  twitterOauthToken: z.string().trim().optional(),
+  twitterOauthSecretKey: z.string().trim().optional(),
+  twitterWidgetScript: z.string().trim().optional(),
 });
 
 export const AccountConfigurationSchema = z.object({
@@ -130,6 +158,7 @@ export type AccountSocialsType = z.infer<typeof AccountSocialsSchema>;
 export type AccountAffiliationType = z.infer<typeof AccountAffiliationSchema>;
 export type AccountUrlType = z.infer<typeof AccountUrlSchema>;
 export type CreateAccountUrlType = z.infer<typeof CreateAccountUrlSchema>;
+export type AccountTwitterSettingsType = z.infer<typeof AccountTwitterSettingsSchema>;
 export type AccountTypeReference = z.infer<typeof AccountTypeSchema>;
 export type AccountSearchQueryParamType = z.infer<typeof AccountSearchQueryParamSchema>;
 export type CreateAccountType = z.infer<typeof CreateAccountSchema>;

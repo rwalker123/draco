@@ -4,8 +4,7 @@ import { StatisticsService } from './statisticsService.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { TeamSeasonRecordType } from '@draco/shared-schemas';
-import { RepositoryFactory } from '@/repositories/repositoryFactory.js';
-import { ITeamRepository } from '@/repositories/interfaces/index.js';
+import { RepositoryFactory, ITeamRepository } from '../repositories/index.js';
 
 export interface GameInfo {
   id: string;

@@ -37,23 +37,28 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
 import { isValidDomain, getDomainValidationError } from '../utils/validation';
-
-interface AccountUrl {
-  id: string;
-  url: string;
-}
+import { useApiClient } from '../hooks/useApiClient';
+import { unwrapApiResult } from '../utils/apiResult';
+import {
+  getAccountUrls,
+  createAccountUrl,
+  updateAccountUrl,
+  deleteAccountUrl,
+} from '@draco/shared-api-client';
+import type { AccountUrlType, CreateAccountUrlType } from '@draco/shared-schemas';
 
 interface UrlManagementProps {
   accountId: string;
   accountName: string;
-  onUrlsChange?: (urls: AccountUrl[]) => void;
+  onUrlsChange?: (urls: AccountUrlType[]) => void;
 }
 
 const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, onUrlsChange }) => {
   const { token } = useAuth();
   const { hasRole } = useRole();
+  const apiClient = useApiClient();
 
-  const [urls, setUrls] = useState<AccountUrl[]>([]);
+  const [urls, setUrls] = useState<AccountUrlType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -70,7 +75,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUrl, setSelectedUrl] = useState<AccountUrl | null>(null);
+  const [selectedUrl, setSelectedUrl] = useState<AccountUrlType | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -81,7 +86,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
   const canManageUrls = isAccountAdministrator(hasRole, accountId);
 
   const loadUrls = useCallback(async () => {
-    if (!token || !accountId) {
+    if (!accountId || !token) {
       return;
     }
 
@@ -89,37 +94,26 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountId}/urls`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const result = await getAccountUrls({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-
-        if (data.success) {
-          const urlList = data.data.urls || [];
-          setUrls(urlList);
-          onUrlsChangeRef.current?.(urlList);
-          setError(null); // Ensure error is cleared on success
-        } else {
-          setError(data.message || 'Failed to load URLs');
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setError(errorData.message || 'Failed to load URLs');
-      }
-    } catch {
+      const urlList = unwrapApiResult(result, 'Failed to load URLs') ?? [];
+      setUrls(urlList);
+      onUrlsChangeRef.current?.(urlList);
+    } catch (err) {
+      console.error('Failed to load URLs', err);
       setError('Failed to load URLs');
+      setUrls([]);
     } finally {
       setLoading(false);
     }
-  }, [accountId, token]);
+  }, [accountId, apiClient, token]);
 
   useEffect(() => {
-    loadUrls();
+    void loadUrls();
   }, [loadUrls]);
 
   const validateUrl = (domain: string): string | null => {
@@ -128,6 +122,8 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     }
     return null;
   };
+
+  const buildUrlPayload = (url: string): CreateAccountUrlType => ({ url });
 
   const handleAddUrl = async () => {
     const fullUrl = formData.protocol + formData.domain;
@@ -141,28 +137,23 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     try {
       setAddDialogError(null); // Clear any previous errors
 
-      const response = await fetch(`/api/accounts/${accountId}/urls`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: fullUrl }),
+      const result = await createAccountUrl({
+        client: apiClient,
+        path: { accountId },
+        body: buildUrlPayload(fullUrl),
+        throwOnError: false,
       });
 
-      const data = await response.json();
+      unwrapApiResult(result, 'Failed to add URL');
 
-      if (response.ok) {
-        setSuccess('URL added successfully');
-        setAddDialogOpen(false);
-        setFormData({ protocol: 'https://', domain: '' });
-        setAddDialogError(null);
-        loadUrls();
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setAddDialogError(data.message || 'Failed to add URL');
-      }
-    } catch {
+      setSuccess('URL added successfully');
+      setAddDialogOpen(false);
+      setFormData({ protocol: 'https://', domain: '' });
+      setAddDialogError(null);
+      await loadUrls();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Failed to add URL', err);
       setAddDialogError('Failed to add URL');
     }
   };
@@ -181,29 +172,24 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     try {
       setEditDialogError(null); // Clear any previous errors
 
-      const response = await fetch(`/api/accounts/${accountId}/urls/${selectedUrl.id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: fullUrl }),
+      const result = await updateAccountUrl({
+        client: apiClient,
+        path: { accountId, urlId: selectedUrl.id },
+        body: buildUrlPayload(fullUrl),
+        throwOnError: false,
       });
 
-      const data = await response.json();
+      unwrapApiResult(result, 'Failed to update URL');
 
-      if (response.ok) {
-        setSuccess('URL updated successfully');
-        setEditDialogOpen(false);
-        setSelectedUrl(null);
-        setFormData({ protocol: 'https://', domain: '' });
-        setEditDialogError(null);
-        loadUrls();
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setEditDialogError(data.message || 'Failed to update URL');
-      }
-    } catch {
+      setSuccess('URL updated successfully');
+      setEditDialogOpen(false);
+      setSelectedUrl(null);
+      setFormData({ protocol: 'https://', domain: '' });
+      setEditDialogError(null);
+      await loadUrls();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Failed to update URL', err);
       setEditDialogError('Failed to update URL');
     }
   };
@@ -212,31 +198,26 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     if (!selectedUrl) return;
 
     try {
-      const response = await fetch(`/api/accounts/${accountId}/urls/${selectedUrl.id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const result = await deleteAccountUrl({
+        client: apiClient,
+        path: { accountId, urlId: selectedUrl.id },
+        throwOnError: false,
       });
 
-      const data = await response.json();
+      unwrapApiResult(result, 'Failed to delete URL');
 
-      if (response.ok) {
-        setSuccess('URL deleted successfully');
-        setDeleteDialogOpen(false);
-        setSelectedUrl(null);
-        loadUrls();
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(data.message || 'Failed to delete URL');
-      }
-    } catch {
+      setSuccess('URL deleted successfully');
+      setDeleteDialogOpen(false);
+      setSelectedUrl(null);
+      await loadUrls();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Failed to delete URL', err);
       setError('Failed to delete URL');
     }
   };
 
-  const openEditDialog = (url: AccountUrl) => {
+  const openEditDialog = (url: AccountUrlType) => {
     setSelectedUrl(url);
     const urlObj = new URL(url.url);
     setFormData({
@@ -247,7 +228,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     setEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (url: AccountUrl) => {
+  const openDeleteDialog = (url: AccountUrlType) => {
     setSelectedUrl(url);
     setDeleteDialogOpen(true);
   };

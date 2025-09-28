@@ -2,8 +2,13 @@ import {
   AccountHeaderType,
   AccountNameType,
   AccountType,
+  AccountTypeReference,
+  AccountAffiliationType,
+  AccountUrlType,
+  AccountTwitterSettingsType,
   AccountWithSeasonsType,
   CreateAccountType,
+  CreateAccountUrlType,
 } from '@draco/shared-schemas';
 import { accounts } from '@prisma/client';
 import {
@@ -18,11 +23,19 @@ import {
   dbGlobalRoles,
   ISeasonRepository,
 } from '../repositories/index.js';
-import { AccountResponseFormatter } from '../responseFormatters/index.js';
-import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import {
+  AccountOwnerDetailsByAccount,
+  AccountOwnerSummary,
+  AccountResponseFormatter,
+} from '../responseFormatters/index.js';
+import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
+
+type OwnerSummary = AccountOwnerSummary;
+
+type OwnerDetailsByAccount = AccountOwnerDetailsByAccount;
 
 export class AccountsService {
   private readonly accountRepository: IAccountRepository;
@@ -59,7 +72,17 @@ export class AccountsService {
     }
 
     const accounts = await this.accountRepository.findAccountsWithRelations(accountIds);
-    return this.formatAccounts(accounts);
+
+    if (!accounts.length) {
+      return [];
+    }
+
+    const [affiliationMap, ownerDetails] = await Promise.all([
+      this.buildAffiliationMap(accounts),
+      this.buildOwnerDetailsByAccount(accounts),
+    ]);
+
+    return AccountResponseFormatter.formatAccounts(accounts, affiliationMap, ownerDetails);
   }
 
   async getManagedAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -67,23 +90,35 @@ export class AccountsService {
     const globalRoles: dbGlobalRoles[] = await this.roleRepository.findGlobalRoles(userId);
     const hasAdministratorRole = globalRoles.some((role) => role.roleid === adminRoleId);
 
+    let accounts: dbAccount[] = [];
+
     if (hasAdministratorRole) {
-      const accounts = await this.accountRepository.findAccountsWithRelations();
-      return this.formatAccounts(accounts);
+      accounts = await this.accountRepository.findAccountsWithRelations();
+    } else {
+      const accountAdminRoleId =
+        ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] || RoleNamesType.ACCOUNT_ADMIN;
+
+      const managedAccountIds = await this.roleRepository.findAccountIdsForUserRoles(userId, [
+        accountAdminRoleId,
+      ]);
+
+      if (managedAccountIds.length === 0) {
+        return [];
+      }
+
+      accounts = await this.accountRepository.findAccountsWithRelations(managedAccountIds);
     }
 
-    const accountAdminRoleId = ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] || RoleNamesType.ACCOUNT_ADMIN;
-
-    const managedAccountIds = await this.roleRepository.findAccountIdsForUserRoles(userId, [
-      accountAdminRoleId,
-    ]);
-
-    if (managedAccountIds.length === 0) {
+    if (!accounts.length) {
       return [];
     }
 
-    const accounts = await this.accountRepository.findAccountsWithRelations(managedAccountIds);
-    return this.formatAccounts(accounts);
+    const [affiliationMap, ownerDetails] = await Promise.all([
+      this.buildAffiliationMap(accounts),
+      this.buildOwnerDetailsByAccount(accounts),
+    ]);
+
+    return AccountResponseFormatter.formatAccounts(accounts, affiliationMap, ownerDetails);
   }
 
   async searchAccounts(searchTerm: string): Promise<AccountType[]> {
@@ -94,22 +129,7 @@ export class AccountsService {
       return [];
     }
 
-    const affiliationIds = Array.from(
-      new Set(
-        accounts
-          .map((account) => account.affiliationid)
-          .filter((affiliationId): affiliationId is bigint => affiliationId !== null),
-      ),
-    );
-
-    let affiliations: dbAccountAffiliation[] = [];
-    if (affiliationIds.length > 0) {
-      affiliations = await this.accountRepository.findAffiliationsByIds(affiliationIds);
-    }
-
-    const affiliationMap = new Map<string, dbAccountAffiliation>(
-      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
-    );
+    const affiliationMap = await this.buildAffiliationMap(accounts);
 
     return AccountResponseFormatter.formatAccounts(accounts, affiliationMap);
   }
@@ -123,7 +143,7 @@ export class AccountsService {
         `http://${normalizedHost}`,
         `https://${normalizedHost}`,
         `http://www.${withoutWww}`,
-        `https://www.${withoutWww}`,
+        `https://${withoutWww}`,
         `http://${withoutWww}`,
         `https://${withoutWww}`,
       ]),
@@ -135,14 +155,7 @@ export class AccountsService {
       throw new NotFoundError('No account found for this domain');
     }
 
-    const affiliationIds = account.affiliationid ? [account.affiliationid] : [];
-    const affiliations: dbAccountAffiliation[] = affiliationIds.length
-      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
-      : [];
-
-    const affiliationMap = new Map<string, dbAccountAffiliation>(
-      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
-    );
+    const affiliationMap = await this.buildAffiliationMap([account]);
 
     return AccountResponseFormatter.formatAccount(account, affiliationMap);
   }
@@ -151,22 +164,15 @@ export class AccountsService {
     accountId: bigint,
     options?: { includeCurrentSeason?: boolean },
   ): Promise<AccountWithSeasonsType> {
-    const account = await this.accountRepository.findAccountWithRelationsById(accountId);
+    const { account, affiliationMap, ownerContact, ownerUser } =
+      await this.loadAccountContext(accountId);
 
-    if (!account) {
-      throw new NotFoundError('Account not found');
-    }
-
-    const affiliationIds = account.affiliationid ? [account.affiliationid] : [];
-    const affiliations = affiliationIds.length
-      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
-      : [];
-
-    const affiliationMap = new Map<string, dbAccountAffiliation>(
-      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
+    const formattedAccount = AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContact,
+      ownerUser,
     );
-
-    const formattedAccount = AccountResponseFormatter.formatAccount(account, affiliationMap);
 
     const includeCurrentSeason = options?.includeCurrentSeason ?? false;
     const currentSeasonRecord = await this.seasonRepository.findCurrentSeason(accountId);
@@ -228,22 +234,28 @@ export class AccountsService {
 
     const accountRecord = await this.accountRepository.create(accountCreateData);
 
-    const normalizedUrls = payload.urls
-      .map((url) => url.url?.trim())
-      .filter((url): url is string => Boolean(url && url.length > 0));
+    const normalizedUrls = Array.from(
+      new Set(
+        payload.urls
+          .map((url) => url.url)
+          .filter((url): url is string => Boolean(url && url.length > 0))
+          .map((url) => this.normalizeAccountUrl(url)),
+      ),
+    );
+
     for (const url of normalizedUrls) {
       await this.accountRepository.createAccountUrl(accountRecord.id, url);
     }
 
-    return this.buildAccountResponse(accountRecord.id);
+    const { account, affiliationMap, ownerContact, ownerUser } = await this.loadAccountContext(
+      accountRecord.id,
+    );
+
+    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
   }
 
   async updateAccount(accountId: bigint, payload: CreateAccountType): Promise<AccountType> {
-    const existingAccount = await this.accountRepository.findById(accountId);
-
-    if (!existingAccount) {
-      throw new NotFoundError('Account not found');
-    }
+    await this.ensureAccountExists(accountId);
 
     const updateData: Partial<accounts> = {};
 
@@ -293,22 +305,18 @@ export class AccountsService {
       updateData.autoplayvideo = payload.socials?.autoPlayVideo ?? false;
     }
 
-    if (Object.keys(updateData).length === 0) {
-      return this.buildAccountResponse(accountId);
+    if (Object.keys(updateData).length > 0) {
+      await this.accountRepository.update(accountId, updateData);
     }
 
-    await this.accountRepository.update(accountId, updateData);
+    const { account, affiliationMap, ownerContact, ownerUser } =
+      await this.loadAccountContext(accountId);
 
-    return this.buildAccountResponse(accountId);
+    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
   }
 
   async deleteAccount(accountId: bigint): Promise<void> {
-    const existingAccount = await this.accountRepository.findById(accountId);
-
-    if (!existingAccount) {
-      throw new NotFoundError('Account not found');
-    }
-
+    await this.ensureAccountExists(accountId);
     await this.accountRepository.delete(accountId);
   }
 
@@ -339,61 +347,159 @@ export class AccountsService {
     };
   }
 
-  private async buildAccountResponse(accountId: bigint): Promise<AccountType> {
+  async getAccountTypes(): Promise<AccountTypeReference[]> {
+    const accountTypes = await this.accountRepository.findAllAccountTypes();
+    return AccountResponseFormatter.formatAccountTypes(accountTypes);
+  }
+
+  async getAccountAffiliations(): Promise<AccountAffiliationType[]> {
+    const affiliations = await this.accountRepository.findAllAffiliations();
+    return AccountResponseFormatter.formatAccountAffiliations(affiliations);
+  }
+
+  async getAccountUrls(accountId: bigint): Promise<AccountUrlType[]> {
+    await this.ensureAccountExists(accountId);
+    const urls = await this.accountRepository.findAccountUrls(accountId);
+    return AccountResponseFormatter.formatAccountUrls(urls);
+  }
+
+  async addAccountUrl(accountId: bigint, urlData: CreateAccountUrlType): Promise<AccountUrlType> {
+    if (!urlData.url) {
+      throw new ValidationError('URL is required');
+    }
+
+    await this.ensureAccountExists(accountId);
+
+    const normalizedUrl = this.normalizeAccountUrl(urlData.url);
+
+    const existingUrl = await this.accountRepository.findAccountUrlByValue(
+      accountId,
+      normalizedUrl,
+    );
+
+    if (existingUrl) {
+      throw new ConflictError('This URL is already associated with this account');
+    }
+
+    const createdUrl = await this.accountRepository.createAccountUrl(accountId, normalizedUrl);
+
+    return AccountResponseFormatter.formatAccountUrl(createdUrl);
+  }
+
+  async updateAccountUrl(
+    accountId: bigint,
+    urlId: bigint,
+    urlData: CreateAccountUrlType,
+  ): Promise<AccountUrlType> {
+    if (!urlData.url) {
+      throw new ValidationError('URL is required');
+    }
+
+    const existingUrl = await this.accountRepository.findAccountUrlById(accountId, urlId);
+
+    if (!existingUrl) {
+      throw new NotFoundError('URL not found or does not belong to this account');
+    }
+
+    const normalizedUrl = this.normalizeAccountUrl(urlData.url);
+
+    const duplicateUrl = await this.accountRepository.findAccountUrlByValue(
+      accountId,
+      normalizedUrl,
+      urlId,
+    );
+
+    if (duplicateUrl) {
+      throw new ConflictError('This URL is already associated with this account');
+    }
+
+    const updatedUrl = await this.accountRepository.updateAccountUrl(urlId, normalizedUrl);
+
+    return AccountResponseFormatter.formatAccountUrl(updatedUrl);
+  }
+
+  async deleteAccountUrl(accountId: bigint, urlId: bigint): Promise<void> {
+    const existingUrl = await this.accountRepository.findAccountUrlById(accountId, urlId);
+
+    if (!existingUrl) {
+      throw new NotFoundError('URL not found or does not belong to this account');
+    }
+
+    await this.accountRepository.deleteAccountUrl(urlId);
+  }
+
+  async updateAccountTwitterSettings(
+    accountId: bigint,
+    twitterSettings: AccountTwitterSettingsType,
+  ): Promise<AccountType> {
+    const hasUpdates = Object.values(twitterSettings).some(
+      (value) => value !== undefined && value !== null,
+    );
+
+    if (!hasUpdates) {
+      throw new ValidationError('At least one Twitter field to update is required');
+    }
+
+    await this.ensureAccountExists(accountId);
+
+    const updateData: Partial<accounts> = {};
+
+    if (twitterSettings.twitterAccountName !== undefined) {
+      updateData.twitteraccountname = twitterSettings.twitterAccountName;
+    }
+
+    if (twitterSettings.twitterOauthToken !== undefined) {
+      updateData.twitteroauthtoken = twitterSettings.twitterOauthToken;
+    }
+
+    if (twitterSettings.twitterOauthSecretKey !== undefined) {
+      updateData.twitteroauthsecretkey = twitterSettings.twitterOauthSecretKey;
+    }
+
+    if (twitterSettings.twitterWidgetScript !== undefined) {
+      updateData.twitterwidgetscript = twitterSettings.twitterWidgetScript;
+    }
+
+    await this.accountRepository.update(accountId, updateData);
+
+    const { account, affiliationMap, ownerContact, ownerUser } =
+      await this.loadAccountContext(accountId);
+
+    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+  }
+
+  private async loadAccountContext(accountId: bigint): Promise<{
+    account: dbAccount;
+    affiliationMap: Map<string, dbAccountAffiliation>;
+    ownerContact?: dbBaseContact;
+    ownerUser?: OwnerSummary;
+  }> {
     const account = await this.accountRepository.findAccountWithRelationsById(accountId);
 
     if (!account) {
       throw new NotFoundError('Account not found');
     }
 
-    const affiliationIds = account.affiliationid ? [account.affiliationid] : [];
-    const affiliations = affiliationIds.length
-      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
-      : [];
+    const [affiliationMap, ownerDetails] = await Promise.all([
+      this.buildAffiliationMap([account]),
+      this.buildOwnerDetailsByAccount([account]),
+    ]);
 
-    const affiliationMap = new Map<string, dbAccountAffiliation>(
-      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
-    );
+    const accountKey = account.id.toString();
 
-    const ownerUserId = account.owneruserid ?? null;
-
-    let ownerContact: dbBaseContact | undefined;
-    let ownerUser:
-      | {
-          id: string;
-          userName: string;
-        }
-      | undefined;
-
-    if (ownerUserId) {
-      const [contact, user] = await Promise.all([
-        this.contactRepository.findByUserId(ownerUserId, accountId),
-        this.userRepository.findByUserId(ownerUserId),
-      ]);
-
-      if (contact) {
-        ownerContact = contact;
-      }
-
-      if (user) {
-        ownerUser = {
-          id: user.id,
-          userName: user.username ?? ownerUserId,
-        };
-      } else {
-        ownerUser = {
-          id: ownerUserId,
-          userName: ownerUserId,
-        };
-      }
-    }
-
-    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+    return {
+      account,
+      affiliationMap,
+      ownerContact: ownerDetails.ownerContacts?.get(accountKey),
+      ownerUser: ownerDetails.ownerUsersByAccount?.get(accountKey),
+    };
   }
 
-  private async formatAccounts(accounts: dbAccount[]): Promise<AccountType[]> {
+  private async buildAffiliationMap(
+    accounts: dbAccount[],
+  ): Promise<Map<string, dbAccountAffiliation>> {
     if (accounts.length === 0) {
-      return [];
+      return new Map();
     }
 
     const affiliationIds = Array.from(
@@ -404,13 +510,19 @@ export class AccountsService {
       ),
     );
 
-    const affiliations: dbAccountAffiliation[] = affiliationIds.length
-      ? await this.accountRepository.findAffiliationsByIds(affiliationIds)
-      : [];
+    if (!affiliationIds.length) {
+      return new Map();
+    }
 
-    const affiliationMap = new Map<string, dbAccountAffiliation>(
-      affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]),
-    );
+    const affiliations = await this.accountRepository.findAffiliationsByIds(affiliationIds);
+
+    return new Map(affiliations.map((affiliation) => [affiliation.id.toString(), affiliation]));
+  }
+
+  private async buildOwnerDetailsByAccount(accounts: dbAccount[]): Promise<OwnerDetailsByAccount> {
+    if (accounts.length === 0) {
+      return {};
+    }
 
     const ownerUserIds = Array.from(
       new Set(
@@ -422,46 +534,67 @@ export class AccountsService {
       ),
     );
 
-    let ownerContactMap: Map<string, dbBaseContact> | undefined;
-
-    if (ownerUserIds.length > 0) {
-      const ownerContacts = await this.contactRepository.findContactsByUserIds(ownerUserIds);
-
-      ownerContactMap = new Map(
-        ownerContacts
-          .filter((contact) => contact.creatoraccountid !== null)
-          .map((contact) => [contact.creatoraccountid!.toString(), contact]),
-      );
+    if (ownerUserIds.length === 0) {
+      return {};
     }
 
-    let ownerUserMap: Map<string, { id: string; userName: string }> | undefined;
+    const [ownerContacts, ownerUsers] = await Promise.all([
+      this.contactRepository.findContactsByUserIds(ownerUserIds),
+      this.userRepository.findMany({ id: { in: ownerUserIds } }),
+    ]);
 
-    if (ownerUserIds.length > 0) {
-      const ownerUsers = await this.userRepository.findMany({
-        id: { in: ownerUserIds },
+    const ownerContactsByAccount = new Map<string, dbBaseContact>();
+    const ownerUsersByAccount = new Map<string, OwnerSummary>();
+
+    accounts.forEach((account) => {
+      if (!account.owneruserid) {
+        return;
+      }
+
+      const accountIdStr = account.id.toString();
+
+      const contact = ownerContacts.find(
+        (ownerContact) =>
+          ownerContact.userid === account.owneruserid &&
+          ownerContact.creatoraccountid === account.id,
+      );
+
+      if (contact) {
+        ownerContactsByAccount.set(accountIdStr, contact);
+      }
+
+      const userRecord = ownerUsers.find((user) => user.id === account.owneruserid);
+
+      ownerUsersByAccount.set(accountIdStr, {
+        id: userRecord?.id ?? account.owneruserid,
+        userName: userRecord?.username ?? account.owneruserid,
       });
+    });
 
-      ownerUserMap = new Map(
-        accounts
-          .filter((account) => account.owneruserid)
-          .map((account) => {
-            const userRecord = ownerUsers.find((user) => user.id === account.owneruserid);
-            return [
-              account.id.toString(),
-              userRecord
-                ? {
-                    id: userRecord.id,
-                    userName: userRecord.username ?? account.owneruserid!,
-                  }
-                : { id: account.owneruserid!, userName: account.owneruserid! },
-            ];
-          }),
-      );
+    const ownerDetails: OwnerDetailsByAccount = {};
+
+    if (ownerContactsByAccount.size) {
+      ownerDetails.ownerContacts = ownerContactsByAccount;
     }
 
-    return AccountResponseFormatter.formatAccounts(accounts, affiliationMap, {
-      ownerContacts: ownerContactMap,
-      ownerUsersByAccount: ownerUserMap,
-    });
+    if (ownerUsersByAccount.size) {
+      ownerDetails.ownerUsersByAccount = ownerUsersByAccount;
+    }
+
+    return ownerDetails;
+  }
+
+  private async ensureAccountExists(accountId: bigint): Promise<accounts> {
+    const account = await this.accountRepository.findById(accountId);
+
+    if (!account) {
+      throw new NotFoundError('Account not found');
+    }
+
+    return account;
+  }
+
+  private normalizeAccountUrl(url: string): string {
+    return url.trim().toLowerCase();
   }
 }
