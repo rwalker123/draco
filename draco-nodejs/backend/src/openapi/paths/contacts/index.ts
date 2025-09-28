@@ -15,6 +15,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     NotFoundErrorSchemaRef,
     RosterPlayerSchemaRef,
     ValidationErrorSchemaRef,
+    PagingSchemaRef,
   } = schemaRefs;
 
   /**
@@ -202,7 +203,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
   });
 
   /**
-   * GET /api/accounts/:accountId/contacts/search
+   * GET /api/accounts/:accountId/contacts
    * Search contacts by name for autocomplete
    * Required query parameter: q=searchTerm
    * Optional query parameters:
@@ -213,7 +214,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
    */
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/contacts/search',
+    path: '/api/accounts/{accountId}/contacts',
     description: 'Search contacts by name for autocomplete',
     operationId: 'searchContacts',
     security: [{ bearerAuth: [] }],
@@ -270,89 +271,10 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         },
       },
     ],
+    request: { query: PagingSchemaRef },
     responses: {
       200: {
         description: 'List of matching contacts',
-        content: {
-          'application/json': {
-            schema: PagedContactSchemaRef,
-          },
-        },
-      },
-      404: {
-        description: 'Account not found',
-        content: {
-          'application/json': {
-            schema: NotFoundErrorSchemaRef,
-          },
-        },
-      },
-    },
-  });
-
-  /**
-   * GET /api/accounts/:accountId/contacts
-   * Get users in account (requires account access) - with pagination
-   * Optional query parameters:
-   *   - roles=true to include contactroles data with role context (team/league names for season-specific roles)
-   *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
-   *   - onlyWithRoles=true to filter users who have at least one role
-   *   - contactDetails=true to include detailed contact information (phone, address, etc.)
-   */
-  registry.registerPath({
-    method: 'get',
-    path: '/api/accounts/{accountId}/contacts',
-    description: 'Get users in account',
-    operationId: 'getAccountContacts',
-    security: [{ bearerAuth: [] }],
-    tags: ['Contacts'],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'roles',
-        in: 'query',
-        required: false,
-        schema: {
-          type: 'boolean',
-        },
-      },
-      {
-        name: 'seasonId',
-        in: 'query',
-        required: false,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'onlyWithRoles',
-        in: 'query',
-        required: false,
-        schema: {
-          type: 'boolean',
-        },
-      },
-      {
-        name: 'contactDetails',
-        in: 'query',
-        required: false,
-        schema: {
-          type: 'boolean',
-        },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'List of contacts',
         content: {
           'application/json': {
             schema: PagedContactSchemaRef,

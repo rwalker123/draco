@@ -49,6 +49,7 @@ import {
   UpsertTeamsWantedClassifiedSchema,
   ValidationErrorSchema,
   PagedContactSchema,
+  PagingSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -171,7 +172,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'InternalServerError',
     InternalServerErrorSchema,
   );
-
+  const PagingSchemaRef = registry.register('Paging', PagingSchema);
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -222,6 +223,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     NotFoundErrorSchemaRef,
     ConflictErrorSchemaRef,
     InternalServerErrorSchemaRef,
+    PagingSchemaRef,
   };
 };
 

@@ -3461,6 +3461,39 @@
           "statusCode": 500,
           "isRetryable": true
         }
+      },
+      "Paging": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "nullable": true,
+            "default": 1
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "skip": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "default": 0
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          }
+        }
       }
     },
     "parameters": {}
@@ -4750,7 +4783,7 @@
         }
       }
     },
-    "/api/accounts/{accountId}/contacts/search": {
+    "/api/accounts/{accountId}/contacts": {
       "get": {
         "description": "Search contacts by name for autocomplete",
         "operationId": "searchContacts",
@@ -4812,91 +4845,64 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "sortBy",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "sortOrder",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
             "description": "List of matching contacts",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PagedContact"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Account not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/contacts": {
-      "get": {
-        "description": "Get users in account",
-        "operationId": "getAccountContacts",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "tags": [
-          "Contacts"
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "roles",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "seasonId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "onlyWithRoles",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "contactDetails",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of contacts",
             "content": {
               "application/json": {
                 "schema": {
