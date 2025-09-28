@@ -20,7 +20,7 @@ router.get(
   '/types',
   authenticateToken,
   asyncHandler(async (_req: Request, res: Response): Promise<void> => {
-    accountsService.getAccountTypes().then((accountTypes) => {
+    return accountsService.getAccountTypes().then((accountTypes) => {
       res.json(accountTypes);
     });
   }),
@@ -34,7 +34,7 @@ router.get(
   '/affiliations',
   authenticateToken,
   asyncHandler(async (_req: Request, res: Response): Promise<void> => {
-    accountsService.getAccountAffiliations().then((affiliations) => {
+    return accountsService.getAccountAffiliations().then((affiliations) => {
       res.json(affiliations);
     });
   }),
@@ -53,7 +53,7 @@ router.put(
     const { accountId } = extractAccountParams(req.params);
     const twitterSettings = AccountTwitterSettingsSchema.parse(req.body);
 
-    accountsService
+    return accountsService
       .updateAccountTwitterSettings(accountId, twitterSettings)
       .then((updatedAccount) => {
         res.json(updatedAccount);
@@ -72,7 +72,7 @@ router.get(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    accountsService.getAccountUrls(accountId).then((urls) => {
+    return accountsService.getAccountUrls(accountId).then((urls) => {
       res.json(urls);
     });
   }),
@@ -91,7 +91,7 @@ router.post(
     const { accountId } = extractAccountParams(req.params);
     const urlData = CreateAccountUrlSchema.parse(req.body);
 
-    accountsService.addAccountUrl(accountId, urlData).then((createdUrl) => {
+    return accountsService.addAccountUrl(accountId, urlData).then((createdUrl) => {
       res.status(201).json(createdUrl);
     });
   }),
@@ -110,7 +110,7 @@ router.put(
     const { accountId, urlId } = extractBigIntParams(req.params, 'accountId', 'urlId');
     const urlData = CreateAccountUrlSchema.parse(req.body);
 
-    accountsService.updateAccountUrl(accountId, urlId, urlData).then((updatedUrl) => {
+    return accountsService.updateAccountUrl(accountId, urlId, urlData).then((updatedUrl) => {
       res.json(updatedUrl);
     });
   }),

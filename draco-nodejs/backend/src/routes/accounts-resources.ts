@@ -31,7 +31,7 @@ router.get(
       throw new AuthenticationError('User not authenticated');
     }
 
-    teamService.getUserTeams(BigInt(accountId), userId).then((teams) => {
+    return teamService.getUserTeams(BigInt(accountId), userId).then((teams) => {
       res.json(teams);
     });
   }),
