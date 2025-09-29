@@ -5,7 +5,7 @@ import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
 import { WorkoutDisplay } from '../workouts/WorkoutDisplay';
 import { listWorkouts } from '../../services/workoutService';
-import { WorkoutSummary } from '../../types/workouts';
+import { WorkoutSummaryType } from '@draco/shared-schemas';
 
 interface WorkoutPreviewProps {
   accountId: string;
@@ -22,7 +22,7 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
   onViewAllWorkouts,
   maxDisplay = 3,
 }) => {
-  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutSummaryType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

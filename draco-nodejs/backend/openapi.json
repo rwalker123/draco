@@ -3470,7 +3470,7 @@
           "fieldId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$"
+            "pattern": "^\\d+$"
           },
           "comments": {
             "type": "string",

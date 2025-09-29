@@ -35,7 +35,11 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { WorkoutSummary, WorkoutRegistration, WorkoutRegistrationDTO } from '../../types/workouts';
+import {
+  WorkoutSummaryType,
+  WorkoutRegistrationType,
+  UpsertWorkoutRegistrationType,
+} from '@draco/shared-schemas';
 import {
   listWorkouts,
   listWorkoutRegistrations,
@@ -57,19 +61,21 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
   accountId,
 }) => {
   const { token } = useAuth();
-  const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutSummaryType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workoutToDelete, setWorkoutToDelete] = useState<WorkoutSummary | null>(null);
+  const [workoutToDelete, setWorkoutToDelete] = useState<WorkoutSummaryType | null>(null);
   const [expandedWorkout, setExpandedWorkout] = useState<string | false>(false);
   const [loadedRegistrations, setLoadedRegistrations] = useState<Set<string>>(new Set());
-  const [registrations, setRegistrations] = useState<Record<string, WorkoutRegistration[]>>({});
+  const [registrations, setRegistrations] = useState<Record<string, WorkoutRegistrationType[]>>({});
   const [loadingRegistrations, setLoadingRegistrations] = useState<Record<string, boolean>>({});
 
   // Registration management state
   const [registrationDialogOpen, setRegistrationDialogOpen] = useState(false);
-  const [editingRegistration, setEditingRegistration] = useState<WorkoutRegistration | null>(null);
+  const [editingRegistration, setEditingRegistration] = useState<WorkoutRegistrationType | null>(
+    null,
+  );
   const [currentWorkoutId, setCurrentWorkoutId] = useState<string>('');
   const [savingRegistration, setSavingRegistration] = useState(false);
   const [deleteRegistrationDialogOpen, setDeleteRegistrationDialogOpen] = useState(false);
@@ -89,7 +95,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
   const router = useRouter();
 
   // Helper function to filter registrations
-  const getFilteredRegistrations = (workoutId: string): WorkoutRegistration[] => {
+  const getFilteredRegistrations = (workoutId: string): WorkoutRegistrationType[] => {
     const workoutRegistrations = registrations[workoutId] || [];
     const search = searchTerm[workoutId] || '';
     const managerFilter = filterManager[workoutId];
@@ -190,13 +196,13 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
       }
     };
 
-  const handleAddRegistration = (workout: WorkoutSummary) => {
+  const handleAddRegistration = (workout: WorkoutSummaryType) => {
     setCurrentWorkoutId(workout.id);
     setEditingRegistration(null);
     setRegistrationDialogOpen(true);
   };
 
-  const handleEditRegistration = (workoutId: string, registration: WorkoutRegistration) => {
+  const handleEditRegistration = (workoutId: string, registration: WorkoutRegistrationType) => {
     setCurrentWorkoutId(workoutId);
     setEditingRegistration(registration);
     setRegistrationDialogOpen(true);
@@ -229,7 +235,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     }
   };
 
-  const handleSaveRegistration = async (data: WorkoutRegistrationDTO) => {
+  const handleSaveRegistration = async (data: UpsertWorkoutRegistrationType) => {
     try {
       setSavingRegistration(true);
       setOperationError(null);

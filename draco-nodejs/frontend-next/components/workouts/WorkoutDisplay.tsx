@@ -15,7 +15,7 @@ import {
   DialogContent,
 } from '@mui/material';
 import { getWorkout } from '../../services/workoutService';
-import { Workout } from '../../types/workouts';
+import { WorkoutType } from '@draco/shared-schemas';
 import { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
 import { Event } from '@mui/icons-material';
 
@@ -25,7 +25,7 @@ interface WorkoutDisplayProps {
   token?: string;
   showRegistrationButton?: boolean;
   compact?: boolean;
-  onWorkoutLoaded?: (workout: Workout) => void;
+  onWorkoutLoaded?: (workout: WorkoutType) => void;
 }
 
 export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
@@ -36,7 +36,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
   compact = false,
   onWorkoutLoaded,
 }) => {
-  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [workout, setWorkout] = useState<WorkoutType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
@@ -95,7 +95,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
     const eventTitle = workout.workoutDesc;
     const eventStart = new Date(workout.workoutDate);
     const eventEnd = new Date(workout.workoutDate); // Assuming it's a single-day event
-    const eventLocation = getFieldName(workout.fieldId || null);
+    const eventLocation = getFieldName(workout.field?.id || null);
     const eventDescription = workout.comments || '';
     const eventUrl = `/account/${accountId}/workouts/${workout.id}`;
 
@@ -218,7 +218,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
             <Typography variant="h6" gutterBottom>
               Field
             </Typography>
-            <Typography variant="body1">{getFieldName(workout.fieldId || null)}</Typography>
+            <Typography variant="body1">{getFieldName(workout.field?.id || null)}</Typography>
           </Box>
         </Box>
 

@@ -3,10 +3,10 @@
 import React from 'react';
 import { Card, CardContent, Typography, Button, Box, Chip, CardActions } from '@mui/material';
 import { CalendarToday, LocationOn } from '@mui/icons-material';
-import { WorkoutSummary } from '../../types/workouts';
+import { WorkoutSummaryType } from '@draco/shared-schemas';
 
 interface WorkoutCardProps {
-  workout: WorkoutSummary;
+  workout: WorkoutSummaryType;
   onRegister?: () => void;
   showRegisterButton?: boolean;
 }
@@ -56,11 +56,11 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
           </Typography>
         </Box>
 
-        {workout.fieldId && (
+        {workout.field?.id && (
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
-              Field {workout.fieldId}
+              Field {workout.field.name}
             </Typography>
           </Box>
         )}

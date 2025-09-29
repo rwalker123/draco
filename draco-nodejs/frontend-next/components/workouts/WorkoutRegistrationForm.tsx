@@ -13,15 +13,19 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { WorkoutRegistrationDTO, WorkoutRegistration, WorkoutSources } from '../../types/workouts';
+import {
+  UpsertWorkoutRegistrationType,
+  WorkoutRegistrationType,
+  WorkoutSourcesType,
+} from '@draco/shared-schemas';
 import { getSources } from '../../services/workoutService';
 import { formatPhoneNumber } from '../../utils/phoneNumber';
 
 interface WorkoutRegistrationFormProps {
   accountId: string;
   workoutId: string;
-  registration?: WorkoutRegistration | null;
-  onSubmit: (data: WorkoutRegistrationDTO) => Promise<void>;
+  registration?: WorkoutRegistrationType | null;
+  onSubmit: (data: UpsertWorkoutRegistrationType) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -34,7 +38,9 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   onCancel,
   isLoading = false,
 }) => {
-  const [formData, setFormData] = useState<WorkoutRegistrationDTO>({
+  const [formData, setFormData] = useState<WorkoutRegistrationType>({
+    id: '',
+    workoutId: '',
     name: '',
     email: '',
     age: 0,
@@ -45,9 +51,10 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
     positions: '',
     isManager: false,
     whereHeard: '',
+    dateRegistered: '',
   });
 
-  const [sources, setSources] = useState<WorkoutSources>({ options: [] });
+  const [sources, setSources] = useState<WorkoutSourcesType>({ options: [] });
   const [loadingSources, setLoadingSources] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +63,8 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   useEffect(() => {
     if (registration) {
       setFormData({
+        id: registration.id,
+        workoutId: registration.workoutId,
         name: registration.name,
         email: registration.email,
         age: registration.age,
@@ -66,6 +75,7 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
         positions: registration.positions,
         isManager: registration.isManager,
         whereHeard: registration.whereHeard,
+        dateRegistered: registration.dateRegistered,
       });
     }
   }, [registration]);
@@ -88,33 +98,36 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
   }, [accountId]);
 
   const handleTextChange = useCallback(
-    (field: keyof WorkoutRegistrationDTO) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: event.target.value,
-      }));
-    },
+    (field: keyof UpsertWorkoutRegistrationType) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: event.target.value,
+        }));
+      },
     [],
   );
 
   const handleNumberChange = useCallback(
-    (field: keyof WorkoutRegistrationDTO) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = parseInt(event.target.value) || 0;
-      setFormData((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    },
+    (field: keyof UpsertWorkoutRegistrationType) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(event.target.value) || 0;
+        setFormData((prev) => ({
+          ...prev,
+          [field]: value,
+        }));
+      },
     [],
   );
 
   const handleCheckboxChange = useCallback(
-    (field: keyof WorkoutRegistrationDTO) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: event.target.checked,
-      }));
-    },
+    (field: keyof UpsertWorkoutRegistrationType) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: event.target.checked,
+        }));
+      },
     [],
   );
 

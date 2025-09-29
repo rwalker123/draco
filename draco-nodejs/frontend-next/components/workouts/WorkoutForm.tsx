@@ -21,7 +21,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { createWorkout, updateWorkout, getWorkout } from '../../services/workoutService';
-import { WorkoutCreateDTO, WorkoutUpdateDTO } from '../../types/workouts';
+import { UpsertWorkoutType } from '@draco/shared-schemas';
 import RichTextEditor from '../email/RichTextEditor';
 import AccountPageHeader from '../AccountPageHeader';
 
@@ -32,7 +32,7 @@ interface WorkoutFormProps {
 
 export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propAccountId }) => {
   const { token } = useAuth();
-  const [formData, setFormData] = useState<WorkoutCreateDTO>({
+  const [formData, setFormData] = useState<UpsertWorkoutType>({
     workoutDesc: '',
     workoutDate: new Date().toISOString(),
     fieldId: null,
@@ -69,7 +69,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
         setFormData({
           workoutDesc: workout.workoutDesc,
           workoutDate: workout.workoutDate,
-          fieldId: workout.fieldId,
+          fieldId: workout.field?.id || null,
           comments: workout.comments,
         });
       } catch (err) {
@@ -113,7 +113,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
   }, [formData.workoutDesc]);
 
   const handleTextChange = useCallback(
-    (field: keyof WorkoutCreateDTO) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    (field: keyof UpsertWorkoutType) => (event: React.ChangeEvent<HTMLInputElement>) => {
       const input = event.target;
       const cursorPosition = input.selectionStart;
       const newValue = input.value;
@@ -159,7 +159,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
         await createWorkout(accountId as string, submitData, token || undefined);
         router.push(`/account/${accountId}/workouts`);
       } else {
-        const updateData: WorkoutUpdateDTO = submitData;
+        const updateData: UpsertWorkoutType = submitData;
         await updateWorkout(
           accountId as string,
           workoutId as string,

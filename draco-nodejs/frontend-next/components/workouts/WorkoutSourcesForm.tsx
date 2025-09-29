@@ -18,13 +18,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import AccountPageHeader from '../AccountPageHeader';
 import { getSources, putSources } from '../../services/workoutService';
-import { WorkoutSources } from '../../types/workouts';
+import { WorkoutSourcesType } from '@draco/shared-schemas';
 
 export const WorkoutSourcesForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [newOption, setNewOption] = useState('');
   const [success, setSuccess] = useState(false);
-  const [sources, setSources] = useState<WorkoutSources>({ options: [] });
+  const [sources, setSources] = useState<WorkoutSourcesType>({ options: [] });
   const { accountId } = useParams();
   const router = useRouter();
   const { token } = useAuth();
