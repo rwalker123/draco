@@ -32,11 +32,7 @@ router.post(
 
     const result = await cleanupService.manualCleanup(sanitizedParams);
 
-    res.status(200).json({
-      success: true,
-      message: 'Cleanup completed successfully',
-      data: result,
-    });
+    res.status(200).json(result);
   }),
 );
 
@@ -54,10 +50,7 @@ router.get(
 
     const status = cleanupService.getStatus();
 
-    res.status(200).json({
-      success: true,
-      data: status,
-    });
+    res.status(200).json(status);
   }),
 );
 
@@ -73,11 +66,7 @@ router.put(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     // For now, just return success - actual configuration update logic
     // would be implemented in the service layer
-    res.status(200).json({
-      success: true,
-      message: 'Configuration update endpoint ready for implementation',
-      data: req.body,
-    });
+    res.status(200).json(req.body);
   }),
 );
 
