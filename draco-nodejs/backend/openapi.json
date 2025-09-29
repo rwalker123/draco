@@ -3469,8 +3469,7 @@
           },
           "fieldId": {
             "type": "string",
-            "nullable": true,
-            "pattern": "^d+$"
+            "nullable": true
           },
           "comments": {
             "type": "string",

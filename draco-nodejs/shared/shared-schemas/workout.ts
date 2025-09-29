@@ -38,26 +38,17 @@ export const WorkoutSchema = WorkoutSummarySchema.extend({
   description: 'Workout announcement with account context and comments',
 });
 
-const workoutCreateBaseSchema = z
+export const UpsertWorkoutSchema = z
   .object({
     workoutDesc: z.string().trim().min(1).max(255),
     workoutDate: isoDateTimeStringSchema,
-    fieldId: z
-      .bigint()
-      .transform((val) => val.toString())
-      .optional()
-      .nullable(),
+    fieldId: z.string().nullable().optional(),
     comments: z.string().trim().max(2000).optional(),
   })
   .openapi({
-    title: 'WorkoutCreateBase',
-    description: 'Base fields used to create or update a workout announcement',
+    title: 'UpsertWorkout',
+    description: 'Payload required to create or update a workout announcement',
   });
-
-export const UpsertWorkoutSchema = workoutCreateBaseSchema.openapi({
-  title: 'UpsertWorkout',
-  description: 'Payload required to create or update a workout announcement',
-});
 
 const phoneSchema = z.string().trim().max(14).optional();
 
