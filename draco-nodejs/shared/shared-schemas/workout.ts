@@ -42,7 +42,12 @@ export const UpsertWorkoutSchema = z
   .object({
     workoutDesc: z.string().trim().min(1).max(255),
     workoutDate: isoDateTimeStringSchema,
-    fieldId: z.string().nullable().optional(),
+    fieldId: z
+      .string()
+      .trim()
+      .regex(/^\d+$/, { message: 'fieldId must be a numeric string' })
+      .nullable()
+      .optional(),
     comments: z.string().trim().max(2000).optional(),
   })
   .openapi({

@@ -2575,6 +2575,7 @@ components:
         fieldId:
           type: string
           nullable: true
+          pattern: ^\d+$
         comments:
           type: string
           maxLength: 2000
