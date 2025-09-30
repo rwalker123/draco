@@ -10,11 +10,8 @@ import {
   getMimeTypeFromFilename,
 } from '../config/attachments.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
-import {
-  AttachmentUploadResult,
-  AttachmentWithBuffer,
-  EmailAttachment,
-} from '../interfaces/emailInterfaces.js';
+import { AttachmentWithBuffer, ServerEmailAttachment } from '../interfaces/emailInterfaces.js';
+import { AttachmentUploadResultType } from '@draco/shared-schemas';
 
 export class EmailAttachmentService {
   private storageService: StorageService;
@@ -30,7 +27,7 @@ export class EmailAttachmentService {
     accountId: string,
     emailId: string,
     file: Express.Multer.File,
-  ): Promise<AttachmentUploadResult> {
+  ): Promise<AttachmentUploadResultType> {
     // Validate file
     const validationError = validateAttachmentFile({
       mimetype: file.mimetype,
@@ -108,7 +105,7 @@ export class EmailAttachmentService {
     accountId: string,
     emailId: string,
     files: Express.Multer.File[],
-  ): Promise<AttachmentUploadResult[]> {
+  ): Promise<AttachmentUploadResultType[]> {
     // Validate all files
     const validationError = validateAttachments(
       files.map((f) => ({
@@ -122,7 +119,7 @@ export class EmailAttachmentService {
     }
 
     // Upload each file
-    const results: AttachmentUploadResult[] = [];
+    const results: AttachmentUploadResultType[] = [];
     for (const file of files) {
       const result = await this.uploadAttachment(accountId, emailId, file);
       results.push(result);
@@ -177,7 +174,10 @@ export class EmailAttachmentService {
   /**
    * Get all attachments for an email
    */
-  async getEmailAttachments(accountId: string, emailId: string): Promise<AttachmentUploadResult[]> {
+  async getEmailAttachments(
+    accountId: string,
+    emailId: string,
+  ): Promise<AttachmentUploadResultType[]> {
     // Check if email exists and belongs to account
     const email = await prisma.emails.findFirst({
       where: {
@@ -270,7 +270,7 @@ export class EmailAttachmentService {
   /**
    * Get attachments for email sending
    */
-  async getAttachmentsForSending(emailId: string): Promise<EmailAttachment[]> {
+  async getAttachmentsForSending(emailId: string): Promise<ServerEmailAttachment[]> {
     // Get all attachments for the email
     const attachments = await prisma.email_attachments.findMany({
       where: { email_id: BigInt(emailId) },
@@ -295,7 +295,7 @@ export class EmailAttachmentService {
           filename: attachment.original_name,
           content: buffer,
           contentType: attachment.mime_type || 'application/octet-stream',
-        } as EmailAttachment);
+        } as ServerEmailAttachment);
       }
     }
 

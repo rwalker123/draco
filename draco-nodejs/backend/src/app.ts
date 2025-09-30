@@ -44,6 +44,9 @@ cleanupService.start();
 
 const app = express();
 
+// Enable extended query parsing so nested query parameters are supported
+app.set('query parser', 'extended');
+
 // Configure Express proxy trust based on environment
 // Development: Trust 1 proxy (Next.js dev server)
 // Production: Only trust if TRUST_PROXY env var is set

@@ -1,22 +1,18 @@
 // Account Assets Management Routes for Draco Sports Manager
 // Handles logo upload, retrieval, and deletion
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
-import multer from 'multer';
 import { validateLogoFile, getAccountLogoUrl } from '../config/logo.js';
 import { createStorageService } from '../services/storageService.js';
+import { logoUploadMiddleware } from '../middleware/logoUpload.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const storageService = createStorageService();
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-});
 
 /**
  * POST /api/accounts/:accountId/logo
@@ -30,15 +26,7 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  (req: Request, res: Response, next: NextFunction) => {
-    upload.single('logo')(req, res, (err: unknown) => {
-      if (err) {
-        res.status(400).json({ success: false, message: (err as Error).message });
-        return;
-      }
-      next();
-    });
-  },
+  logoUploadMiddleware(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = req.params.accountId;
     if (!req.file) {

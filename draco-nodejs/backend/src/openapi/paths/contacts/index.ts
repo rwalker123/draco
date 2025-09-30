@@ -15,7 +15,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     NotFoundErrorSchemaRef,
     RosterPlayerSchemaRef,
     ValidationErrorSchemaRef,
-    PagingSchemaRef,
+    ContactSearchParamsSchemaRef,
   } = schemaRefs;
 
   /**
@@ -230,22 +230,6 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         },
       },
       {
-        name: 'q',
-        in: 'query',
-        required: true,
-        schema: {
-          type: 'string',
-        },
-      },
-      {
-        name: 'roles',
-        in: 'query',
-        required: false,
-        schema: {
-          type: 'boolean',
-        },
-      },
-      {
         name: 'seasonId',
         in: 'query',
         required: false,
@@ -254,24 +238,8 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
           format: 'number',
         },
       },
-      {
-        name: 'contactDetails',
-        in: 'query',
-        required: false,
-        schema: {
-          type: 'boolean',
-        },
-      },
-      {
-        name: 'onlyWithRoles',
-        in: 'query',
-        required: false,
-        schema: {
-          type: 'boolean',
-        },
-      },
     ],
-    request: { query: PagingSchemaRef },
+    request: { query: ContactSearchParamsSchemaRef },
     responses: {
       200: {
         description: 'List of matching contacts',

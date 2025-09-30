@@ -2,7 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractSeasonParams, extractTeamParams } from '../utils/paramExtraction.js';
-import { upload, handleLogoUpload } from './team-media.js';
+import { handleLogoUpload } from './team-media.js';
+import { logoUploadMiddleware } from '../middleware/logoUpload.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { UpsertTeamSeasonSchema } from '@draco/shared-schemas';
 
@@ -69,19 +70,7 @@ router.put(
   '/:teamSeasonId',
   authenticateToken,
   routeProtection.requirePermission('account.manage'),
-  (req: Request, res: Response, next: NextFunction) => {
-    upload.single('logo')(req, res, (err: unknown) => {
-      if (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        res.status(400).json({
-          success: false,
-          message: message,
-        });
-      } else {
-        next();
-      }
-    });
-  },
+  logoUploadMiddleware(),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
     const updateData = UpsertTeamSeasonSchema.parse(req.body);

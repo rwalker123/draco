@@ -16,7 +16,7 @@ import {
   CreateContactRoleType,
   RoleWithContactType,
   ContactValidationWithSignInSchema,
-  PagingSchema,
+  ContactSearchParamsSchema,
 } from '@draco/shared-schemas';
 import {
   handlePhotoUploadMiddleware,
@@ -176,25 +176,24 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { q, roles, seasonId, contactDetails, onlyWithRoles } = req.query; // search query, roles flag, and optional seasonId
     const { accountId } = extractAccountParams(req.params);
-    const includeRoles = roles === 'true';
-    const includeContactDetails = contactDetails === 'true';
-    const filterOnlyWithRoles = onlyWithRoles === 'true';
 
     // Parse season ID if provided
-    const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
 
-    // Parse pagination parameters for search results
-    const paginationParams = PagingSchema.parse(req.query);
+    const searchParams = ContactSearchParamsSchema.parse(req.query);
+    const parsedSeasonId = searchParams.seasonId ? BigInt(searchParams.seasonId) : undefined;
+
+    const includeRoles = searchParams.includeRoles;
+    const includeContactDetails = searchParams.contactDetails;
+    const filterOnlyWithRoles = searchParams.onlyWithRoles;
 
     // Use ContactService to get contacts with roles
     const result = await contactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       onlyWithRoles: filterOnlyWithRoles,
       includeContactDetails,
-      searchQuery: q ? q.toString() : undefined,
-      pagination: paginationParams,
+      searchQuery: searchParams.q ? searchParams.q.toString() : undefined,
+      pagination: searchParams.paging,
     });
 
     res.json(result);

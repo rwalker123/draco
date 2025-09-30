@@ -4,16 +4,23 @@
 import {
   IEmailProvider,
   EmailOptions,
-  EmailComposeRequest,
   ResolvedRecipient,
   EmailSettings,
-  EmailRecipientSelection,
-  EmailAttachment,
-} from '../../interfaces/emailInterfaces.js';
-import { EmailProviderFactory } from './EmailProviderFactory.js';
-import { EmailConfigFactory } from '../../config/email.js';
-import { EmailAttachmentService } from '../emailAttachmentService.js';
-import prisma from '../../lib/prisma.js';
+  EmailQueryFilter,
+  ServerEmailAttachment,
+} from '../interfaces/emailInterfaces.js';
+import { EmailProviderFactory } from './email/EmailProviderFactory.js';
+import { EmailConfigFactory } from '../config/email.js';
+import { EmailAttachmentService } from './emailAttachmentService.js';
+import prisma from '../lib/prisma.js';
+import { PaginationHelper } from '../utils/pagination.js';
+import { NotFoundError } from '../utils/customErrors.js';
+import {
+  EmailComposeType,
+  EmailListPagedType,
+  EmailRecipientGroupsType,
+  PagingType,
+} from '@draco/shared-schemas';
 
 // Email queue management interfaces
 interface EmailQueueJob {
@@ -27,7 +34,7 @@ interface EmailQueueJob {
   retryCount: number;
   scheduledAt: Date;
   createdAt: Date;
-  attachments?: EmailAttachment[];
+  attachments?: ServerEmailAttachment[];
 }
 
 interface QueueMetrics {
@@ -194,7 +201,7 @@ export class EmailService {
   async composeAndSendEmail(
     accountId: bigint,
     createdByUserId: string,
-    request: EmailComposeRequest,
+    request: EmailComposeType,
   ): Promise<bigint> {
     // Create email record in database
     const email = await prisma.emails.create({
@@ -204,16 +211,18 @@ export class EmailService {
         subject: request.subject,
         body_html: request.body,
         body_text: this.stripHtml(request.body),
-        template_id: request.templateId,
+        template_id: request.templateId ? BigInt(request.templateId) : null,
         status: request.scheduledSend ? 'scheduled' : 'sending',
         scheduled_send_at: request.scheduledSend,
         created_at: new Date(),
       },
     });
 
-    // If scheduled for future, return email ID (will be sent later by scheduler)
-    if (request.scheduledSend && request.scheduledSend > new Date()) {
-      return email.id;
+    if (request.scheduledSend) {
+      const scheduledDate = new Date(request.scheduledSend);
+      if (!Number.isNaN(scheduledDate.getTime()) && scheduledDate > new Date()) {
+        return email.id;
+      }
     }
 
     // Send immediately
@@ -225,7 +234,7 @@ export class EmailService {
   /**
    * Send bulk email using queue processing
    */
-  async sendBulkEmail(emailId: bigint, request: EmailComposeRequest): Promise<void> {
+  async sendBulkEmail(emailId: bigint, request: EmailComposeType): Promise<void> {
     try {
       // Get email record
       const email = await prisma.emails.findUnique({
@@ -295,6 +304,145 @@ export class EmailService {
     }
   }
 
+  async getEmailDetails(accountId: bigint, emailId: bigint) {
+    const email = await prisma.emails.findFirst({
+      where: {
+        id: emailId,
+        account_id: accountId,
+      },
+      include: {
+        created_by: {
+          select: {
+            username: true,
+          },
+        },
+        template: true,
+        recipients: {
+          include: {
+            contact: {
+              select: {
+                firstname: true,
+                lastname: true,
+              },
+            },
+          },
+        },
+        attachments: true,
+      },
+    });
+
+    if (!email) {
+      throw new NotFoundError('Email not found');
+    }
+
+    return {
+      id: email.id.toString(),
+      subject: email.subject,
+      bodyHtml: email.body_html,
+      bodyText: email.body_text,
+      status: email.status,
+      createdAt: email.created_at,
+      sentAt: email.sent_at,
+      scheduledSendAt: email.scheduled_send_at,
+      totalRecipients: email.total_recipients,
+      successfulDeliveries: email.successful_deliveries,
+      failedDeliveries: email.failed_deliveries,
+      bounceCount: email.bounce_count,
+      openCount: email.open_count,
+      clickCount: email.click_count,
+      createdBy: email.created_by?.username,
+      template: email.template
+        ? {
+            id: email.template.id.toString(),
+            name: email.template.name,
+          }
+        : null,
+      recipients: email.recipients.map((recipient) => ({
+        id: recipient.id.toString(),
+        emailAddress: recipient.email_address,
+        contactName: recipient.contact_name,
+        recipientType: recipient.recipient_type,
+        status: recipient.status,
+        sentAt: recipient.sent_at,
+        deliveredAt: recipient.delivered_at,
+        openedAt: recipient.opened_at,
+        clickedAt: recipient.clicked_at,
+        bounceReason: recipient.bounce_reason,
+        errorMessage: recipient.error_message,
+      })),
+      attachments: email.attachments.map((attachment) => ({
+        id: attachment.id.toString(),
+        filename: attachment.filename,
+        originalName: attachment.original_name,
+        fileSize: attachment.file_size,
+        mimeType: attachment.mime_type,
+        uploadedAt: attachment.uploaded_at,
+      })),
+    };
+  }
+
+  async listAccountEmails(
+    accountId: bigint,
+    paginationParams: PagingType,
+    status?: string,
+  ): Promise<EmailListPagedType> {
+    const pagination = {
+      page: paginationParams.page,
+      limit: Math.min(paginationParams.limit, 100),
+      offset: paginationParams.skip,
+    };
+
+    const whereClause: EmailQueryFilter = {
+      account_id: accountId,
+    };
+
+    if (status && typeof status === 'string') {
+      whereClause.status = status;
+    }
+
+    const [emails, total] = await Promise.all([
+      prisma.emails.findMany({
+        where: whereClause,
+        include: {
+          created_by: {
+            select: {
+              username: true,
+            },
+          },
+          template: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: { created_at: 'desc' },
+        skip: pagination.offset,
+        take: pagination.limit,
+      }),
+      prisma.emails.count({ where: whereClause }),
+    ]);
+
+    const paginationInfo = PaginationHelper.createMeta(pagination.page, pagination.limit, total);
+
+    return {
+      emails: emails.map((email) => ({
+        id: email.id.toString(),
+        subject: email.subject,
+        status: email.status,
+        createdAt: email.created_at.toISOString(),
+        sentAt: email.sent_at ? email.sent_at.toISOString() : undefined,
+        totalRecipients: Number(email.total_recipients),
+        successfulDeliveries: Number(email.successful_deliveries),
+        failedDeliveries: Number(email.failed_deliveries),
+        openCount: Number(email.open_count),
+        clickCount: Number(email.click_count),
+        createdBy: email.created_by?.username ?? null,
+        templateName: email.template?.name ?? null,
+      })),
+      pagination: paginationInfo,
+    };
+  }
+
   /**
    * Queue email batches for background processing
    */
@@ -303,7 +451,7 @@ export class EmailService {
     recipients: ResolvedRecipient[],
     subject: string,
     bodyHtml: string,
-    attachments?: EmailAttachment[],
+    attachments?: ServerEmailAttachment[],
   ): Promise<void> {
     const settings = EmailConfigFactory.getEmailSettings();
     const now = new Date();
@@ -834,16 +982,16 @@ export class EmailService {
    */
   private async resolveRecipients(
     accountId: bigint,
-    selection: EmailRecipientSelection,
+    selection: EmailRecipientGroupsType,
   ): Promise<ResolvedRecipient[]> {
     // Placeholder implementation - will be enhanced
     const recipients: ResolvedRecipient[] = [];
 
     // Add individual contacts
-    if (selection.contactIds?.length > 0) {
+    if (selection.contacts && selection.contacts?.length > 0) {
       const contacts = await prisma.contacts.findMany({
         where: {
-          id: { in: selection.contactIds.map((id: string) => BigInt(id)) },
+          id: { in: selection.contacts.map((id: string) => BigInt(id)) },
           creatoraccountid: accountId,
           email: { not: null },
         },

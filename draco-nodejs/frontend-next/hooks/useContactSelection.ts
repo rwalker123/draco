@@ -199,11 +199,7 @@ export const useContactSelection = ({
           contactDetails: true,
         });
 
-        if (!result.success) {
-          throw new Error(result.error.message);
-        }
-
-        const transformedContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
+        const transformedContacts: RecipientContact[] = result.contacts.map((contact) => ({
           ...contact,
           displayName: contact.firstName + ' ' + contact.lastName,
           hasValidEmail: !!contact.email,
@@ -213,8 +209,8 @@ export const useContactSelection = ({
         dispatch({
           type: 'SET_DATA',
           contacts: transformedContacts,
-          hasNext: result.data.pagination?.hasNext ?? false,
-          hasPrev: result.data.pagination?.hasPrev ?? false,
+          hasNext: result.pagination?.hasNext ?? false,
+          hasPrev: result.pagination?.hasPrev ?? false,
           page: isPaginating ? undefined : currentPage,
         });
       } catch (err) {

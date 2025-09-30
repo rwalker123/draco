@@ -7,7 +7,9 @@ import {
   CreateContactType,
   RoleWithContactType,
   ContactRoleType,
+  ContactSearchParamsType,
 } from '@draco/shared-schemas';
+import qs from 'qs';
 
 // Pagination interface for API responses
 interface PaginationInfo {
@@ -53,48 +55,29 @@ export class UserManagementService {
       sortOrder?: 'asc' | 'desc';
     },
   ): Promise<{ users: ContactType[]; pagination: PaginationInfo }> {
-    const searchParams = new URLSearchParams();
-
-    // Only add query parameter if it's not empty
-    if (query.trim()) {
-      searchParams.set('q', query);
-    }
-
-    searchParams.set('roles', 'true');
-    searchParams.set('contactDetails', 'true');
-
-    if (seasonId) {
-      searchParams.set('seasonId', seasonId);
-    }
-    if (onlyWithRoles) {
-      searchParams.set('onlyWithRoles', 'true');
-    }
-
-    // Add pagination parameters if provided
-    if (pagination) {
-      if (pagination.page !== undefined) {
-        searchParams.set('page', pagination.page.toString());
-      }
-      if (pagination.limit !== undefined) {
-        searchParams.set('limit', pagination.limit.toString());
-      }
-      if (pagination.sortBy) {
-        searchParams.set('sortBy', pagination.sortBy);
-      }
-      if (pagination.sortOrder) {
-        searchParams.set('sortOrder', pagination.sortOrder);
-      }
-    }
-
-    const response = await fetch(
-      `/api/accounts/${accountId}/contacts/search?${searchParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
+    const searchParams: ContactSearchParamsType = {
+      q: query.trim() || undefined, // Only include 'q' if query is non-empty
+      includeRoles: true,
+      contactDetails: true,
+      seasonId: seasonId || undefined,
+      onlyWithRoles: onlyWithRoles || false,
+      includeInactive: false,
+      paging: {
+        page: pagination?.page || 1,
+        limit: pagination?.limit || 10,
+        skip: ((pagination?.page || 1) - 1) * (pagination?.limit || 10),
+        sortBy: pagination?.sortBy || 'name',
+        sortOrder: pagination?.sortOrder || 'asc',
       },
-    );
+    };
+
+    const queryString = qs.stringify(searchParams, { arrayFormat: 'indices', encode: true });
+    const response = await fetch(`/api/accounts/${accountId}/contacts?${queryString}`, {
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

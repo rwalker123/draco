@@ -4,7 +4,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractTeamParams } from '../utils/paramExtraction.js';
 import { CreateSponsorSchema, CreateSponsorType } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { validatePhotoUpload, handlePhotoUploadMiddleware } from '../middleware/fileUpload.js';
+import { logoUploadMiddleware } from '../middleware/logoUpload.js';
 import { handleSponsorPhotoUpload } from './utils/fileUpload.js';
 
 const router = Router({ mergeParams: true });
@@ -33,8 +33,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   attachTeamContext,
   routeProtection.requirePermission('team.sponsors.manage'),
-  validatePhotoUpload,
-  handlePhotoUploadMiddleware,
+  logoUploadMiddleware('photo'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
     const payload = CreateSponsorSchema.parse(req.body) as Omit<CreateSponsorType, 'teamId'>;
@@ -63,8 +62,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   attachTeamContext,
   routeProtection.requirePermission('team.sponsors.manage'),
-  validatePhotoUpload,
-  handlePhotoUploadMiddleware,
+  logoUploadMiddleware('photo'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
     const sponsorId = BigInt(req.params.sponsorId);

@@ -6,11 +6,13 @@ import { DateUtils } from '../utils/dateUtils.js';
 import {
   IEmailTemplateEngine,
   TemplateValidationResult,
-  EmailTemplate,
-  EmailTemplateCreateRequest,
-  EmailTemplateUpdateRequest,
   EmailTemplateDbRecord,
 } from '../interfaces/emailInterfaces.js';
+import {
+  EmailTemplatesListType,
+  EmailTemplateType,
+  UpsertEmailTemplateType,
+} from '@draco/shared-schemas';
 
 export class EmailTemplateService implements IEmailTemplateEngine {
   /**
@@ -81,9 +83,7 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   /**
    * Validate input fields for security and constraints
    */
-  private validateInputFields(
-    request: EmailTemplateCreateRequest | EmailTemplateUpdateRequest,
-  ): void {
+  private validateInputFields(request: UpsertEmailTemplateType): void {
     if ('name' in request && request.name !== undefined) {
       if (request.name.length > 100) {
         throw new Error('Template name must be 100 characters or less');
@@ -121,8 +121,8 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   async createTemplate(
     accountId: bigint,
     createdByUserId: string,
-    request: EmailTemplateCreateRequest,
-  ): Promise<EmailTemplate> {
+    request: UpsertEmailTemplateType,
+  ): Promise<EmailTemplateType> {
     // Validate input fields
     this.validateInputFields(request);
 
@@ -131,7 +131,7 @@ export class EmailTemplateService implements IEmailTemplateEngine {
       ? this.validateTemplate(request.subjectTemplate)
       : { isValid: true, errors: [], variables: [] };
 
-    const bodyValidation = this.validateTemplate(request.bodyTemplate);
+    const bodyValidation = this.validateTemplate(request.bodyTemplate || '');
 
     if (!subjectValidation.isValid || !bodyValidation.isValid) {
       const allErrors = [...subjectValidation.errors, ...bodyValidation.errors];
@@ -141,10 +141,10 @@ export class EmailTemplateService implements IEmailTemplateEngine {
     const template = await prisma.email_templates.create({
       data: {
         account_id: accountId,
-        name: request.name,
-        description: request.description,
-        subject_template: request.subjectTemplate,
-        body_template: request.bodyTemplate,
+        name: request.name || 'Untitled Template',
+        description: request.description || '',
+        subject_template: request.subjectTemplate || '',
+        body_template: request.bodyTemplate || '',
         created_by_user_id: createdByUserId,
         is_active: true,
       },
@@ -159,8 +159,8 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   async updateTemplate(
     templateId: bigint,
     accountId: bigint,
-    request: EmailTemplateUpdateRequest,
-  ): Promise<EmailTemplate> {
+    request: UpsertEmailTemplateType,
+  ): Promise<EmailTemplateType> {
     // Validate input fields
     this.validateInputFields(request);
 
@@ -200,7 +200,7 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   /**
    * Get template by ID (with account boundary check)
    */
-  async getTemplate(templateId: bigint, accountId: bigint): Promise<EmailTemplate | null> {
+  async getTemplate(templateId: bigint, accountId: bigint): Promise<EmailTemplateType | null> {
     const template = await prisma.email_templates.findFirst({
       where: {
         id: templateId,
@@ -214,7 +214,10 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   /**
    * List templates for account
    */
-  async listTemplates(accountId: bigint, activeOnly: boolean = false): Promise<EmailTemplate[]> {
+  async listTemplates(
+    accountId: bigint,
+    activeOnly: boolean = false,
+  ): Promise<EmailTemplatesListType> {
     const templates = await prisma.email_templates.findMany({
       where: {
         account_id: accountId,
@@ -223,7 +226,10 @@ export class EmailTemplateService implements IEmailTemplateEngine {
       orderBy: [{ name: 'asc' }],
     });
 
-    return templates.map(this.mapToEmailTemplate);
+    return {
+      templates: templates.map(this.mapToEmailTemplate),
+      commonVariables: this.getCommonVariables(),
+    };
   }
 
   /**
@@ -244,7 +250,7 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   async previewTemplate(
     templateId: bigint,
     accountId: bigint,
-    variables: Record<string, unknown>,
+    variables: Record<string, string>,
   ): Promise<{ subject: string; body: string }> {
     const template = await this.getTemplate(templateId, accountId);
 
@@ -285,7 +291,7 @@ export class EmailTemplateService implements IEmailTemplateEngine {
   /**
    * Map database record to EmailTemplate interface
    */
-  private mapToEmailTemplate(template: EmailTemplateDbRecord): EmailTemplate {
+  private mapToEmailTemplate(template: EmailTemplateDbRecord): EmailTemplateType {
     return {
       id: template.id.toString(),
       accountId: template.account_id.toString(),

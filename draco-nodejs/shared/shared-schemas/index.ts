@@ -13,3 +13,5 @@ export * from './team.js';
 export * from './field.js';
 export * from './umpire.js';
 export * from './workout.js';
+export * from './email.js';
+export * from './queryParams.js';

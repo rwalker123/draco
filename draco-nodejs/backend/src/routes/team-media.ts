@@ -1,20 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { createStorageService } from '../services/storageService.js';
 import { validateLogoFile, getLogoUrl } from '../config/logo.js';
-import multer from 'multer';
 import { validateTeamSeasonWithTeamDetails } from '../utils/teamValidation.js';
 import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
-
-// Configure multer for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-});
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/logo
@@ -136,5 +127,4 @@ export const handleLogoUpload = async (
   }
 };
 
-export { upload };
 export default router;

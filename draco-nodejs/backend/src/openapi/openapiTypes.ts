@@ -64,6 +64,7 @@ import {
   WorkoutSourceOptionPayloadSchema,
   WorkoutSourcesSchema,
   WorkoutSummarySchema,
+  ContactSearchParamsSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -170,6 +171,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const ContactPlayersWantedCreatorSchemaRef = registry.register(
     'ContactPlayersWantedCreator',
     ContactPlayersWantedCreatorSchema,
+  );
+  const ContactSearchParamsSchemaRef = registry.register(
+    'ContactSearchParams',
+    ContactSearchParamsSchema,
   );
   const BaseballPositionSchemaRef = registry.register('BaseballPosition', BaseballPositionSchema);
   const ExperienceLevelSchemaRef = registry.register('ExperienceLevel', ExperienceLevelSchema);
@@ -284,6 +289,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ConflictErrorSchemaRef,
     InternalServerErrorSchemaRef,
     PagingSchemaRef,
+    ContactSearchParamsSchemaRef,
   };
 };
 

@@ -3114,6 +3114,76 @@
         "title": "ContactPlayersWantedCreatorRequest",
         "description": "Request body for contacting a Players Wanted classified creator"
       },
+      "ContactSearchParams": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "includeRoles": {
+            "type": "boolean",
+            "default": false
+          },
+          "contactDetails": {
+            "type": "boolean",
+            "default": false
+          },
+          "seasonId": {
+            "type": "string"
+          },
+          "teamSeasonId": {
+            "type": "string"
+          },
+          "onlyWithRoles": {
+            "type": "boolean",
+            "default": false
+          },
+          "includeInactive": {
+            "type": "boolean",
+            "default": false
+          },
+          "paging": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number",
+                "nullable": true,
+                "default": 1
+              },
+              "limit": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              },
+              "skip": {
+                "type": "number",
+                "nullable": true,
+                "minimum": 0,
+                "default": 0
+              },
+              "sortBy": {
+                "type": "string"
+              },
+              "sortOrder": {
+                "type": "string",
+                "enum": [
+                  "asc",
+                  "desc"
+                ],
+                "default": "asc"
+              }
+            },
+            "default": {
+              "page": 1,
+              "limit": 50,
+              "skip": 0,
+              "sortOrder": "asc"
+            }
+          }
+        }
+      },
       "BaseballPosition": {
         "type": "object",
         "properties": {
@@ -3664,8 +3734,7 @@
             "maxLength": 50
           },
           "isManager": {
-            "type": "boolean",
-            "nullable": true
+            "type": "boolean"
           },
           "whereHeard": {
             "type": "string",
@@ -3678,6 +3747,7 @@
           "email",
           "age",
           "positions",
+          "isManager",
           "whereHeard"
         ],
         "title": "WorkoutRegistrationUpsert",
@@ -3748,7 +3818,6 @@
           },
           "includeRegistrationCounts": {
             "type": "boolean",
-            "nullable": true,
             "default": false
           }
         },
@@ -5775,22 +5844,6 @@
             }
           },
           {
-            "name": "q",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "roles",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
             "name": "seasonId",
             "in": "query",
             "required": false,
@@ -5800,51 +5853,30 @@
             }
           },
           {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "required": false,
+            "name": "includeRoles",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "required": false,
             "name": "contactDetails",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "onlyWithRoles",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "schema": {
-              "type": "number",
-              "nullable": true,
-              "default": 1
-            },
-            "required": false,
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 50
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "number",
-              "nullable": true,
-              "minimum": 0,
-              "default": 0
-            },
-            "required": false,
-            "name": "skip",
             "in": "query"
           },
           {
@@ -5852,20 +5884,77 @@
               "type": "string"
             },
             "required": false,
-            "name": "sortBy",
+            "name": "seasonId",
             "in": "query"
           },
           {
             "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "asc"
+              "type": "string"
             },
             "required": false,
-            "name": "sortOrder",
+            "name": "teamSeasonId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "required": false,
+            "name": "onlyWithRoles",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "required": false,
+            "name": "includeInactive",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "page": {
+                  "type": "number",
+                  "nullable": true,
+                  "default": 1
+                },
+                "limit": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100,
+                  "default": 50
+                },
+                "skip": {
+                  "type": "number",
+                  "nullable": true,
+                  "minimum": 0,
+                  "default": 0
+                },
+                "sortBy": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "default": "asc"
+                }
+              },
+              "default": {
+                "page": 1,
+                "limit": 50,
+                "skip": 0,
+                "sortOrder": "asc"
+              }
+            },
+            "required": false,
+            "name": "paging",
             "in": "query"
           }
         ],
@@ -10439,7 +10528,6 @@
           {
             "schema": {
               "type": "boolean",
-              "nullable": true,
               "default": false
             },
             "required": false,

@@ -362,6 +362,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
             limit,
             roles: true,
             contactDetails: true,
+            seasonId: seasonId || undefined,
           });
 
           // Check if request was aborted
@@ -369,41 +370,23 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
             return;
           }
 
-          if (result.success) {
-            const recipientContacts: RecipientContact[] = result.data.contacts.map((contact) => ({
-              ...contact,
-              displayName: contact.firstName + ' ' + contact.lastName,
-              hasValidEmail: !!contact.email,
-            }));
+          const recipientContacts: RecipientContact[] = result.contacts.map((contact) => ({
+            ...contact,
+            displayName: contact.firstName + ' ' + contact.lastName,
+            hasValidEmail: !!contact.email,
+          }));
 
-            setCurrentPageContacts(recipientContacts);
+          setCurrentPageContacts(recipientContacts);
 
-            // Note: We no longer add all contacts to cache here
-            // Only selected contacts are cached when user selects them
+          // Note: We no longer add all contacts to cache here
+          // Only selected contacts are cached when user selects them
 
-            setServerPaginationState({
-              hasNext: result.data.pagination?.hasNext || false,
-              hasPrev: result.data.pagination?.hasPrev || false,
-              totalContacts: recipientContacts.length,
-            });
-            setCurrentPage(page);
-          } else {
-            // Convert service result error to standardized error
-            const serviceError = result.error?.message || 'Failed to fetch contacts';
-            throw createEmailRecipientError(
-              EmailRecipientErrorCode.CONTACT_NOT_FOUND,
-              serviceError,
-              {
-                userMessage: 'Unable to load contacts. Please try again.',
-                retryable: true,
-                context: {
-                  operation: 'fetchContacts',
-                  accountId: accountId,
-                  additionalData: { page, limit },
-                },
-              },
-            );
-          }
+          setServerPaginationState({
+            hasNext: result.pagination?.hasNext || false,
+            hasPrev: result.pagination?.hasPrev || false,
+            totalContacts: recipientContacts.length,
+          });
+          setCurrentPage(page);
         },
         {
           operation: 'fetchContactsPage',
@@ -445,7 +428,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         fetchAbortControllerRef.current = null;
       }
     },
-    [emailRecipientService, token, accountId, showNotification],
+    [emailRecipientService, token, accountId, seasonId, showNotification],
   );
 
   // Handle search functionality with pagination support
