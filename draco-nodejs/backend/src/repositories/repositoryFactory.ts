@@ -14,6 +14,7 @@ import {
   IFieldRepository,
   IUmpireRepository,
   IWorkoutRepository,
+  IEmailRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -30,6 +31,7 @@ import {
   PrismaFieldRepository,
   PrismaUmpireRepository,
   PrismaWorkoutRepository,
+  PrismaEmailRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -55,6 +57,7 @@ export class RepositoryFactory {
   private static fieldRepository: IFieldRepository;
   private static umpireRepository: IUmpireRepository;
   private static workoutRepository: IWorkoutRepository;
+  private static emailRepository: IEmailRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -158,5 +161,12 @@ export class RepositoryFactory {
       this.workoutRepository = new PrismaWorkoutRepository(prisma);
     }
     return this.workoutRepository;
+  }
+
+  static getEmailRepository(): IEmailRepository {
+    if (!this.emailRepository) {
+      this.emailRepository = new PrismaEmailRepository(prisma);
+    }
+    return this.emailRepository;
   }
 }

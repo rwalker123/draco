@@ -6,3 +6,4 @@ export * from './umpireResponseFormatter.js';
 export * from './teamsWantedResponseFormattter.js';
 export * from './playersWantedResponseFormatter.js';
 export * from './WorkoutResponseFormatter.js';
+export * from './EmailResponseFormatter.js';
