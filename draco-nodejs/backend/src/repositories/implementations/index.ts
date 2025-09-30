@@ -14,4 +14,5 @@ export * from './PrismaUmpireRepository.js';
 export * from './PrismaWorkoutRepository.js';
 export * from './PrismaEmailRepository.js';
 export * from './PrismaEmailTemplateRepository.js';
+export * from './PrismaEmailAttachmentRepository.js';
 export * from './PrismaPlayersWantedRepository.js';

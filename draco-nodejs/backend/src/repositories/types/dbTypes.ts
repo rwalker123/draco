@@ -788,3 +788,48 @@ export type dbRecipientStatusCount = {
   status: string;
   count: number;
 };
+
+export type dbEmailAttachment = Prisma.email_attachmentsGetPayload<{
+  select: {
+    id: true;
+    email_id: true;
+    filename: true;
+    original_name: true;
+    file_size: true;
+    mime_type: true;
+    uploaded_at: true;
+    storage_path: true;
+  };
+}>;
+
+export type dbEmailAttachmentWithEmail = Prisma.email_attachmentsGetPayload<{
+  include: {
+    email: true;
+  };
+}>;
+
+export type dbAttachmentForSending = Prisma.email_attachmentsGetPayload<{
+  select: {
+    id: true;
+    email_id: true;
+    filename: true;
+    original_name: true;
+    file_size: true;
+    mime_type: true;
+    storage_path: true;
+    email: {
+      select: {
+        account_id: true;
+      };
+    };
+  };
+}>;
+
+export type dbCreateEmailAttachmentInput = {
+  email_id: bigint;
+  filename: string;
+  original_name: string;
+  file_size: bigint;
+  mime_type: string | null;
+  storage_path: string;
+};
