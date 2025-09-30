@@ -199,6 +199,144 @@ export type dbTeamSeasonManagerContact = Prisma.teamseasonmanagerGetPayload<{
   };
 }>;
 
+export type dbEmailTemplate = Prisma.email_templatesGetPayload<{
+  select: {
+    id: true;
+    account_id: true;
+    name: true;
+    description: true;
+    subject_template: true;
+    body_template: true;
+    created_by_user_id: true;
+    created_at: true;
+    updated_at: true;
+    is_active: true;
+  };
+}>;
+
+export type dbCreateEmailTemplateInput = {
+  account_id: bigint;
+  name: string;
+  description: string;
+  subject_template: string;
+  body_template: string;
+  created_by_user_id: string;
+  is_active: boolean;
+};
+
+export type dbUpdateEmailTemplateData = {
+  name?: string;
+  description?: string;
+  subject_template?: string;
+  body_template?: string;
+  is_active?: boolean;
+  updated_at?: Date;
+};
+
+export type dbEmail = Prisma.emailsGetPayload<{
+  select: {
+    id: true;
+    account_id: true;
+    created_by_user_id: true;
+    subject: true;
+    body_html: true;
+    body_text: true;
+    template_id: true;
+    status: true;
+    scheduled_send_at: true;
+    created_at: true;
+    sent_at: true;
+    total_recipients: true;
+    successful_deliveries: true;
+    failed_deliveries: true;
+    bounce_count: true;
+    open_count: true;
+    click_count: true;
+  };
+}>;
+
+export type dbEmailWithAccount = Prisma.emailsGetPayload<{
+  include: {
+    accounts: true;
+  };
+}>;
+
+export type dbEmailDetails = Prisma.emailsGetPayload<{
+  include: {
+    created_by: {
+      select: {
+        username: true;
+      };
+    };
+    template: true;
+    recipients: {
+      include: {
+        contact: {
+          select: {
+            firstname: true;
+            lastname: true;
+          };
+        };
+      };
+    };
+    attachments: true;
+  };
+}>;
+
+export type dbEmailSummary = Prisma.emailsGetPayload<{
+  select: {
+    id: true;
+    subject: true;
+    status: true;
+    created_at: true;
+    sent_at: true;
+    total_recipients: true;
+    successful_deliveries: true;
+    failed_deliveries: true;
+    open_count: true;
+    click_count: true;
+    created_by: {
+      select: {
+        username: true;
+      };
+    };
+    template: {
+      select: {
+        name: true;
+      };
+    };
+  };
+}>;
+
+export type dbEmailRecipient = Prisma.email_recipientsGetPayload<{
+  select: {
+    id: true;
+    email_id: true;
+    contact_id: true;
+    email_address: true;
+    contact_name: true;
+    recipient_type: true;
+    status: true;
+    sent_at: true;
+    delivered_at: true;
+    opened_at: true;
+    clicked_at: true;
+    bounce_reason: true;
+    error_message: true;
+  };
+}>;
+
+export type dbScheduledEmail = Prisma.emailsGetPayload<{
+  select: {
+    id: true;
+    account_id: true;
+    subject: true;
+    body_html: true;
+    status: true;
+    scheduled_send_at: true;
+  };
+}>;
+
 export type dbWorkoutWithField = Prisma.workoutannouncementGetPayload<{
   include: {
     availablefields: {
@@ -591,3 +729,107 @@ export type dbTeam = Prisma.teamsseasonGetPayload<{
     };
   };
 }>;
+
+// Email repository DTOs
+export type dbCreateEmailInput = {
+  account_id: bigint;
+  created_by_user_id: string;
+  subject: string;
+  body_html: string;
+  body_text: string;
+  template_id?: bigint | null;
+  status: string;
+  scheduled_send_at?: Date | null;
+  created_at: Date;
+};
+
+export type dbCreateEmailRecipientInput = {
+  email_id: bigint;
+  contact_id: bigint;
+  email_address: string;
+  contact_name: string;
+  recipient_type: string;
+};
+
+export type dbEmailUpdateData = {
+  status?: string;
+  total_recipients?: number;
+  sent_at?: Date | null;
+  successful_deliveries?: number;
+  failed_deliveries?: number;
+  bounce_count?: number;
+  open_count?: number;
+  click_count?: number;
+};
+
+export type dbEmailListOptions = {
+  skip: number;
+  take: number;
+  status?: string;
+};
+
+export type dbEmailRecipientUpdateData = {
+  status?: string;
+  sent_at?: Date | null;
+  delivered_at?: Date | null;
+  opened_at?: Date | null;
+  clicked_at?: Date | null;
+  bounce_reason?: string | null;
+  error_message?: string | null;
+};
+
+export type dbEmailRecipientBulkUpdateData = {
+  status: string;
+  error_message?: string | null;
+  sent_at?: Date | null;
+};
+
+export type dbRecipientStatusCount = {
+  status: string;
+  count: number;
+};
+
+export type dbEmailAttachment = Prisma.email_attachmentsGetPayload<{
+  select: {
+    id: true;
+    email_id: true;
+    filename: true;
+    original_name: true;
+    file_size: true;
+    mime_type: true;
+    uploaded_at: true;
+    storage_path: true;
+  };
+}>;
+
+export type dbEmailAttachmentWithEmail = Prisma.email_attachmentsGetPayload<{
+  include: {
+    email: true;
+  };
+}>;
+
+export type dbAttachmentForSending = Prisma.email_attachmentsGetPayload<{
+  select: {
+    id: true;
+    email_id: true;
+    filename: true;
+    original_name: true;
+    file_size: true;
+    mime_type: true;
+    storage_path: true;
+    email: {
+      select: {
+        account_id: true;
+      };
+    };
+  };
+}>;
+
+export type dbCreateEmailAttachmentInput = {
+  email_id: bigint;
+  filename: string;
+  original_name: string;
+  file_size: bigint;
+  mime_type: string | null;
+  storage_path: string;
+};

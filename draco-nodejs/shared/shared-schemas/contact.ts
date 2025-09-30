@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { ContactRoleSchema } from './role.js';
-import { PaginationSchema } from './paging.js';
+import { PaginationSchema, PagingSchema } from './paging.js';
+import { booleanQueryParam } from './queryParams.js';
 
 extendZodWithOpenApi(z);
 
@@ -190,6 +191,17 @@ export const RegisteredUserSchema = z.object({
   contact: BaseContactSchema.optional(),
 });
 
+export const ContactSearchParamsSchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  includeRoles: booleanQueryParam.optional().default(false),
+  contactDetails: booleanQueryParam.optional().default(false),
+  seasonId: z.string().trim().optional(),
+  teamSeasonId: z.string().trim().optional(),
+  onlyWithRoles: booleanQueryParam.optional().default(false),
+  includeInactive: booleanQueryParam.optional().default(false),
+  paging: PagingSchema.optional().default({ page: 1, limit: 50, skip: 0, sortOrder: 'asc' }),
+});
+
 export type NamedContactType = z.infer<typeof NamedContactSchema>;
 export type ContactDetailsType = z.infer<typeof ContactDetailsSchema>;
 export type BaseContactType = z.infer<typeof BaseContactSchema>;
@@ -208,3 +220,4 @@ export type ContactValidationWithSignInType = z.infer<typeof ContactValidationWi
 export type SignInUserNameType = z.infer<typeof SignInUserNameSchema>;
 export type SignInCredentialsType = z.infer<typeof SignInCredentialsSchema>;
 export type RegisteredUserType = z.infer<typeof RegisteredUserSchema>;
+export type ContactSearchParamsType = z.infer<typeof ContactSearchParamsSchema>;

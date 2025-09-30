@@ -14,6 +14,9 @@ import {
   IFieldRepository,
   IUmpireRepository,
   IWorkoutRepository,
+  IEmailRepository,
+  IEmailTemplateRepository,
+  IEmailAttachmentRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -30,10 +33,13 @@ import {
   PrismaFieldRepository,
   PrismaUmpireRepository,
   PrismaWorkoutRepository,
+  PrismaEmailRepository,
+  PrismaEmailTemplateRepository,
+  PrismaPlayersWantedRepository,
+  PrismaEmailAttachmentRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
-import { PrismaPlayersWantedRepository } from './implementations/PrismaPlayersWantedRepository.js';
 
 /**
  * Factory functions to create repository instances
@@ -55,6 +61,9 @@ export class RepositoryFactory {
   private static fieldRepository: IFieldRepository;
   private static umpireRepository: IUmpireRepository;
   private static workoutRepository: IWorkoutRepository;
+  private static emailRepository: IEmailRepository;
+  private static emailTemplateRepository: IEmailTemplateRepository;
+  private static emailAttachmentRepository: IEmailAttachmentRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -158,5 +167,26 @@ export class RepositoryFactory {
       this.workoutRepository = new PrismaWorkoutRepository(prisma);
     }
     return this.workoutRepository;
+  }
+
+  static getEmailRepository(): IEmailRepository {
+    if (!this.emailRepository) {
+      this.emailRepository = new PrismaEmailRepository(prisma);
+    }
+    return this.emailRepository;
+  }
+
+  static getEmailTemplateRepository(): IEmailTemplateRepository {
+    if (!this.emailTemplateRepository) {
+      this.emailTemplateRepository = new PrismaEmailTemplateRepository(prisma);
+    }
+    return this.emailTemplateRepository;
+  }
+
+  static getEmailAttachmentRepository(): IEmailAttachmentRepository {
+    if (!this.emailAttachmentRepository) {
+      this.emailAttachmentRepository = new PrismaEmailAttachmentRepository(prisma);
+    }
+    return this.emailAttachmentRepository;
   }
 }

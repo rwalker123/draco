@@ -26,6 +26,7 @@ import { TeamManagerService } from './teamManagerService.js';
 import { EmailTemplateService } from './emailTemplateService.js';
 import { AccountsService } from './accountsService.js';
 import { EmailAttachmentService } from './emailAttachmentService.js';
+import { EmailService } from './emailService.js';
 import { WorkoutService } from './workoutService.js';
 import { PlayerClassifiedAccessService } from './player-classified/PlayerClassifiedAccessService.js';
 import { PlayerClassifiedEmailService } from './player-classified/PlayerClassifiedEmailService.js';
@@ -42,7 +43,7 @@ export class ServiceFactory {
   private static roleService: RoleService;
   private static teamService: TeamService;
   private static playerClassifiedService: PlayerClassifiedService;
-  private static emailService: PlayerClassifiedEmailService;
+  private static playerClassifiedEmailService: PlayerClassifiedEmailService;
   private static accessService: PlayerClassifiedAccessService;
   private static cleanupService: ICleanupService;
   private static routeProtection: RouteProtection;
@@ -56,6 +57,7 @@ export class ServiceFactory {
   private static statisticsService: StatisticsService;
   private static teamStatsService: TeamStatsService;
   private static teamManagerService: TeamManagerService;
+  private static emailService: EmailService;
   private static emailTemplateService: EmailTemplateService;
   private static emailAttachmentService: EmailAttachmentService;
   private static workoutService: WorkoutService;
@@ -161,7 +163,7 @@ export class ServiceFactory {
 
   static getContactPhotoService(): ContactPhotoService {
     if (!this.contactPhotoService) {
-      this.contactPhotoService = new ContactPhotoService(prisma);
+      this.contactPhotoService = new ContactPhotoService();
     }
     return this.contactPhotoService;
   }
@@ -222,10 +224,10 @@ export class ServiceFactory {
     return this.workoutService;
   }
   static getPlayerClassifiedEmailService(): PlayerClassifiedEmailService {
-    if (!this.emailService) {
-      this.emailService = new PlayerClassifiedEmailService();
+    if (!this.playerClassifiedEmailService) {
+      this.playerClassifiedEmailService = new PlayerClassifiedEmailService();
     }
-    return this.emailService;
+    return this.playerClassifiedEmailService;
   }
   static getPlayerClassifiedAccessService(): PlayerClassifiedAccessService {
     if (!this.accessService) {
@@ -253,5 +255,12 @@ export class ServiceFactory {
       this.umpireService = new UmpireService();
     }
     return this.umpireService;
+  }
+
+  static getEmailService(): EmailService {
+    if (!this.emailService) {
+      this.emailService = new EmailService();
+    }
+    return this.emailService;
   }
 }

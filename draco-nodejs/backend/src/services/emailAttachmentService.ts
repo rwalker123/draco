@@ -1,7 +1,6 @@
 // Email Attachment Service for Draco Sports Manager
 // Handles attachment upload, storage, and retrieval
 
-import prisma from '../lib/prisma.js';
 import { createStorageService, StorageService } from './storageService.js';
 import {
   validateAttachmentFile,
@@ -10,17 +9,19 @@ import {
   getMimeTypeFromFilename,
 } from '../config/attachments.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
-import {
-  AttachmentUploadResult,
-  AttachmentWithBuffer,
-  EmailAttachment,
-} from '../interfaces/emailInterfaces.js';
+import { AttachmentWithBuffer, ServerEmailAttachment } from '../interfaces/emailInterfaces.js';
+import { AttachmentUploadResultType } from '@draco/shared-schemas';
+import { RepositoryFactory } from '../repositories/repositoryFactory.js';
+import { IEmailAttachmentRepository } from '../repositories/interfaces/IEmailAttachmentRepository.js';
+import { dbCreateEmailAttachmentInput } from '../repositories/types/dbTypes.js';
 
 export class EmailAttachmentService {
   private storageService: StorageService;
+  private attachmentRepository: IEmailAttachmentRepository;
 
   constructor() {
     this.storageService = createStorageService();
+    this.attachmentRepository = RepositoryFactory.getEmailAttachmentRepository();
   }
 
   /**
@@ -30,7 +31,7 @@ export class EmailAttachmentService {
     accountId: string,
     emailId: string,
     file: Express.Multer.File,
-  ): Promise<AttachmentUploadResult> {
+  ): Promise<AttachmentUploadResultType> {
     // Validate file
     const validationError = validateAttachmentFile({
       mimetype: file.mimetype,
@@ -42,12 +43,7 @@ export class EmailAttachmentService {
     }
 
     // Check if email exists and belongs to account
-    const email = await prisma.emails.findFirst({
-      where: {
-        id: BigInt(emailId),
-        account_id: BigInt(accountId),
-      },
-    });
+    const email = await this.attachmentRepository.findEmail(BigInt(accountId), BigInt(emailId));
 
     if (!email) {
       throw new NotFoundError('Email not found');
@@ -59,9 +55,9 @@ export class EmailAttachmentService {
     }
 
     // Check existing attachments count
-    const existingAttachmentsCount = await prisma.email_attachments.count({
-      where: { email_id: BigInt(emailId) },
-    });
+    const existingAttachmentsCount = await this.attachmentRepository.countAttachments(
+      BigInt(emailId),
+    );
 
     if (existingAttachmentsCount >= 10) {
       throw new ValidationError('Maximum 10 attachments allowed per email');
@@ -79,17 +75,17 @@ export class EmailAttachmentService {
     );
 
     // Create database record
-    const attachment = await prisma.email_attachments.create({
-      data: {
-        email_id: BigInt(emailId),
-        filename: safeFilename,
-        original_name: file.originalname,
-        file_size: BigInt(file.size),
-        mime_type:
-          file.mimetype || getMimeTypeFromFilename(file.originalname) || 'application/octet-stream',
-        storage_path: storagePath,
-      },
-    });
+    const createPayload: dbCreateEmailAttachmentInput = {
+      email_id: BigInt(emailId),
+      filename: safeFilename,
+      original_name: file.originalname,
+      file_size: BigInt(file.size),
+      mime_type:
+        file.mimetype || getMimeTypeFromFilename(file.originalname) || 'application/octet-stream',
+      storage_path: storagePath,
+    };
+
+    const attachment = await this.attachmentRepository.createAttachment(createPayload);
 
     return {
       id: attachment.id.toString(),
@@ -108,7 +104,7 @@ export class EmailAttachmentService {
     accountId: string,
     emailId: string,
     files: Express.Multer.File[],
-  ): Promise<AttachmentUploadResult[]> {
+  ): Promise<AttachmentUploadResultType[]> {
     // Validate all files
     const validationError = validateAttachments(
       files.map((f) => ({
@@ -122,7 +118,7 @@ export class EmailAttachmentService {
     }
 
     // Upload each file
-    const results: AttachmentUploadResult[] = [];
+    const results: AttachmentUploadResultType[] = [];
     for (const file of files) {
       const result = await this.uploadAttachment(accountId, emailId, file);
       results.push(result);
@@ -140,21 +136,16 @@ export class EmailAttachmentService {
     attachmentId: string,
   ): Promise<AttachmentWithBuffer> {
     // Get attachment record
-    const attachment = await prisma.email_attachments.findFirst({
-      where: {
-        id: BigInt(attachmentId),
-        email_id: BigInt(emailId),
-        email: {
-          account_id: BigInt(accountId),
-        },
-      },
-    });
+    const attachment = await this.attachmentRepository.findAttachment(
+      BigInt(accountId),
+      BigInt(emailId),
+      BigInt(attachmentId),
+    );
 
     if (!attachment) {
       throw new NotFoundError('Attachment not found');
     }
 
-    // Get file from storage
     const buffer = await this.storageService.getAttachment(accountId, emailId, attachment.filename);
 
     if (!buffer) {
@@ -177,24 +168,19 @@ export class EmailAttachmentService {
   /**
    * Get all attachments for an email
    */
-  async getEmailAttachments(accountId: string, emailId: string): Promise<AttachmentUploadResult[]> {
+  async getEmailAttachments(
+    accountId: string,
+    emailId: string,
+  ): Promise<AttachmentUploadResultType[]> {
     // Check if email exists and belongs to account
-    const email = await prisma.emails.findFirst({
-      where: {
-        id: BigInt(emailId),
-        account_id: BigInt(accountId),
-      },
-    });
+    const email = await this.attachmentRepository.findEmail(BigInt(accountId), BigInt(emailId));
 
     if (!email) {
       throw new NotFoundError('Email not found');
     }
 
     // Get attachments
-    const attachments = await prisma.email_attachments.findMany({
-      where: { email_id: BigInt(emailId) },
-      orderBy: { uploaded_at: 'asc' },
-    });
+    const attachments = await this.attachmentRepository.findAttachments(BigInt(emailId));
 
     return attachments.map((att) => ({
       id: att.id.toString(),
@@ -211,18 +197,11 @@ export class EmailAttachmentService {
    */
   async deleteAttachment(accountId: string, emailId: string, attachmentId: string): Promise<void> {
     // Get attachment record
-    const attachment = await prisma.email_attachments.findFirst({
-      where: {
-        id: BigInt(attachmentId),
-        email_id: BigInt(emailId),
-        email: {
-          account_id: BigInt(accountId),
-        },
-      },
-      include: {
-        email: true,
-      },
-    });
+    const attachment = await this.attachmentRepository.findAttachment(
+      BigInt(accountId),
+      BigInt(emailId),
+      BigInt(attachmentId),
+    );
 
     if (!attachment) {
       throw new NotFoundError('Attachment not found');
@@ -237,9 +216,7 @@ export class EmailAttachmentService {
     await this.storageService.deleteAttachment(accountId, emailId, attachment.filename);
 
     // Delete from database
-    await prisma.email_attachments.delete({
-      where: { id: BigInt(attachmentId) },
-    });
+    await this.attachmentRepository.deleteAttachment(BigInt(attachmentId));
   }
 
   /**
@@ -247,12 +224,7 @@ export class EmailAttachmentService {
    */
   async deleteAllEmailAttachments(accountId: string, emailId: string): Promise<void> {
     // Check if email exists and belongs to account
-    const email = await prisma.emails.findFirst({
-      where: {
-        id: BigInt(emailId),
-        account_id: BigInt(accountId),
-      },
-    });
+    const email = await this.attachmentRepository.findEmail(BigInt(accountId), BigInt(emailId));
 
     if (!email) {
       throw new NotFoundError('Email not found');
@@ -262,30 +234,20 @@ export class EmailAttachmentService {
     await this.storageService.deleteAllAttachments(accountId, emailId);
 
     // Delete from database
-    await prisma.email_attachments.deleteMany({
-      where: { email_id: BigInt(emailId) },
-    });
+    await this.attachmentRepository.deleteAttachments(BigInt(emailId));
   }
 
   /**
    * Get attachments for email sending
    */
-  async getAttachmentsForSending(emailId: string): Promise<EmailAttachment[]> {
+  async getAttachmentsForSending(emailId: string): Promise<ServerEmailAttachment[]> {
     // Get all attachments for the email
-    const attachments = await prisma.email_attachments.findMany({
-      where: { email_id: BigInt(emailId) },
-    });
+    const attachments = await this.attachmentRepository.findAttachmentsForSending(BigInt(emailId));
 
-    const results = [];
+    const results: ServerEmailAttachment[] = [];
     for (const attachment of attachments) {
-      const email = await prisma.emails.findUnique({
-        where: { id: attachment.email_id },
-      });
-
-      if (!email) continue;
-
       const buffer = await this.storageService.getAttachment(
-        email.account_id.toString(),
+        attachment.email.account_id.toString(),
         emailId,
         attachment.filename,
       );
@@ -295,7 +257,7 @@ export class EmailAttachmentService {
           filename: attachment.original_name,
           content: buffer,
           contentType: attachment.mime_type || 'application/octet-stream',
-        } as EmailAttachment);
+        });
       }
     }
 
@@ -306,14 +268,10 @@ export class EmailAttachmentService {
    * Copy attachments from one email to another (for templates)
    */
   async copyAttachments(fromEmailId: string, toEmailId: string, accountId: string): Promise<void> {
-    const sourceAttachments = await prisma.email_attachments.findMany({
-      where: {
-        email_id: BigInt(fromEmailId),
-        email: {
-          account_id: BigInt(accountId),
-        },
-      },
-    });
+    const sourceAttachments = await this.attachmentRepository.findAttachmentsForCopy(
+      BigInt(fromEmailId),
+      BigInt(accountId),
+    );
 
     for (const sourceAtt of sourceAttachments) {
       // Get the file from storage
@@ -334,15 +292,13 @@ export class EmailAttachmentService {
         );
 
         // Create new database record
-        await prisma.email_attachments.create({
-          data: {
-            email_id: BigInt(toEmailId),
-            filename: newFilename,
-            original_name: sourceAtt.original_name,
-            file_size: sourceAtt.file_size,
-            mime_type: sourceAtt.mime_type,
-            storage_path: storagePath,
-          },
+        await this.attachmentRepository.createAttachment({
+          email_id: BigInt(toEmailId),
+          filename: newFilename,
+          original_name: sourceAtt.original_name,
+          file_size: sourceAtt.file_size,
+          mime_type: sourceAtt.mime_type,
+          storage_path: storagePath,
         });
       }
     }

@@ -14,3 +14,6 @@ export * from './ISponsorRepository.js';
 export * from './IFieldRepository.js';
 export * from './IUmpireRepository.js';
 export * from './IWorkoutRepository.js';
+export * from './IEmailRepository.js';
+export * from './IEmailTemplateRepository.js';
+export * from './IEmailAttachmentRepository.js';

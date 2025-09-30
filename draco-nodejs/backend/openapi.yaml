@@ -815,6 +815,387 @@ components:
       required:
         - roleId
         - roleData
+    EmailCompose:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        recipients:
+          type: object
+          properties:
+            season:
+              type: boolean
+              description: Includes all contacts associated with the current season.
+            leagues:
+              type: array
+              items:
+                type: string
+              description: Includes all contacts associated with the specified leagues.
+            divisions:
+              type: array
+              items:
+                type: string
+              description: Includes all contacts associated with the specified divisions.
+            teams:
+              type: array
+              items:
+                type: string
+              description: Includes all contacts associated with the specified teams.
+            contacts:
+              type: array
+              items:
+                type: string
+              description: Includes the specified contact IDs.
+            teamManagers:
+              type: boolean
+              description: Includes only team managers.
+        subject:
+          type: string
+        body:
+          type: string
+        templateId:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+        scheduledSend:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - scheduled
+            - sending
+      required:
+        - id
+        - recipients
+        - subject
+        - body
+        - status
+    EmailDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        subject:
+          type: string
+        bodyHtml:
+          type: string
+          nullable: true
+        bodyText:
+          type: string
+          nullable: true
+        status:
+          type: string
+        createdAt:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+        scheduledSendAt:
+          type: string
+          format: date-time
+        totalRecipients:
+          type: number
+        successfulDeliveries:
+          type: number
+        failedDeliveries:
+          type: number
+        bounceCount:
+          type: number
+        openCount:
+          type: number
+        clickCount:
+          type: number
+        createdBy:
+          type: string
+          nullable: true
+        template:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+          required:
+            - id
+            - name
+        recipients:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              emailAddress:
+                type: string
+              contactName:
+                type: string
+              recipientType:
+                type: string
+              status:
+                type: string
+              sentAt:
+                type: string
+                format: date-time
+              deliveredAt:
+                type: string
+                format: date-time
+              openedAt:
+                type: string
+                format: date-time
+              clickedAt:
+                type: string
+                format: date-time
+              bounceReason:
+                type: string
+              errorMessage:
+                type: string
+            required:
+              - id
+              - emailAddress
+              - status
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              filename:
+                type: string
+              originalName:
+                type: string
+              fileSize:
+                type: number
+              mimeType:
+                type: string
+              uploadedAt:
+                type: string
+                format: date-time
+              storagePath:
+                type: string
+            required:
+              - id
+              - filename
+              - originalName
+              - fileSize
+              - mimeType
+      required:
+        - id
+        - subject
+        - bodyHtml
+        - bodyText
+        - status
+        - createdAt
+        - totalRecipients
+        - successfulDeliveries
+        - failedDeliveries
+        - openCount
+        - clickCount
+        - createdBy
+        - template
+        - recipients
+        - attachments
+    EmailListPaged:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              subject:
+                type: string
+              status:
+                type: string
+              createdAt:
+                type: string
+              sentAt:
+                type: string
+                format: date-time
+              totalRecipients:
+                type: number
+              successfulDeliveries:
+                type: number
+              failedDeliveries:
+                type: number
+              openCount:
+                type: number
+              clickCount:
+                type: number
+              createdBy:
+                type: string
+                nullable: true
+              templateName:
+                type: string
+                nullable: true
+            required:
+              - id
+              - subject
+              - status
+              - createdAt
+              - totalRecipients
+              - successfulDeliveries
+              - failedDeliveries
+              - openCount
+              - clickCount
+              - createdBy
+              - templateName
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+            total:
+              type: number
+          required:
+            - page
+            - limit
+            - hasNext
+            - hasPrev
+            - total
+          title: PaginationWithTotal
+          description: Pagination metadata that includes the total number of items
+      required:
+        - emails
+        - pagination
+    EmailTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        accountId:
+          type: string
+          pattern: ^d+$
+        name:
+          type: string
+        description:
+          type: string
+        subjectTemplate:
+          type: string
+        bodyTemplate:
+          type: string
+        createdByUserId:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        isActive:
+          type: boolean
+      required:
+        - id
+        - accountId
+        - name
+        - bodyTemplate
+        - createdAt
+        - updatedAt
+        - isActive
+    UpsertEmailTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          minLength: 2
+          maxLength: 500
+        subjectTemplate:
+          type: string
+          minLength: 2
+          maxLength: 100
+        bodyTemplate:
+          type: string
+          minLength: 0
+          maxLength: 10000
+        isActive:
+          type: boolean
+    EmailTemplatesList:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              accountId:
+                type: string
+                pattern: ^d+$
+              name:
+                type: string
+              description:
+                type: string
+              subjectTemplate:
+                type: string
+              bodyTemplate:
+                type: string
+              createdByUserId:
+                type: string
+              createdAt:
+                type: string
+              updatedAt:
+                type: string
+              isActive:
+                type: boolean
+            required:
+              - id
+              - accountId
+              - name
+              - bodyTemplate
+              - createdAt
+              - updatedAt
+              - isActive
+        commonVariables:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - templates
+        - commonVariables
+    AttachmentUploadResult:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        originalName:
+          type: string
+        fileSize:
+          type: number
+        mimeType:
+          type: string
+        storagePath:
+          type: string
+      required:
+        - id
+        - filename
+        - originalName
+        - fileSize
+        - mimeType
+        - storagePath
     PagedContact:
       type: object
       properties:
@@ -2312,6 +2693,58 @@ components:
         - message
       title: ContactPlayersWantedCreatorRequest
       description: Request body for contacting a Players Wanted classified creator
+    ContactSearchParams:
+      type: object
+      properties:
+        q:
+          type: string
+          maxLength: 100
+        includeRoles:
+          type: boolean
+          default: false
+        contactDetails:
+          type: boolean
+          default: false
+        seasonId:
+          type: string
+        teamSeasonId:
+          type: string
+        onlyWithRoles:
+          type: boolean
+          default: false
+        includeInactive:
+          type: boolean
+          default: false
+        paging:
+          type: object
+          properties:
+            page:
+              type: number
+              nullable: true
+              default: 1
+            limit:
+              type: number
+              minimum: 1
+              maximum: 100
+              default: 50
+            skip:
+              type: number
+              nullable: true
+              minimum: 0
+              default: 0
+            sortBy:
+              type: string
+            sortOrder:
+              type: string
+              enum:
+                - asc
+                - desc
+              default: asc
+          default:
+            page: 1
+            limit: 50
+            skip: 0
+            sortOrder: asc
     BaseballPosition:
       type: object
       properties:
@@ -2720,7 +3153,6 @@ components:
           maxLength: 50
         isManager:
           type: boolean
-          nullable: true
         whereHeard:
           type: string
           minLength: 1
@@ -2730,6 +3162,7 @@ components:
         - email
         - age
         - positions
+        - isManager
         - whereHeard
       title: WorkoutRegistrationUpsert
       description: Payload to create or update a workout registration
@@ -2784,7 +3217,6 @@ components:
           format: date-time
         includeRegistrationCounts:
           type: boolean
-          nullable: true
           default: false
       title: WorkoutListQuery
       description: Query parameters to filter and paginate workout announcements
@@ -4052,68 +4484,84 @@ paths:
           schema:
             type: string
             format: number
-        - name: q
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: roles
-          in: query
-          required: false
-          schema:
-            type: boolean
         - name: seasonId
           in: query
           required: false
           schema:
             type: string
             format: number
-        - name: contactDetails
-          in: query
+        - schema:
+            type: string
+            maxLength: 100
           required: false
-          schema:
+          name: q
+          in: query
+        - schema:
             type: boolean
-        - name: onlyWithRoles
-          in: query
+            default: false
           required: false
-          schema:
+          name: includeRoles
+          in: query
+        - schema:
             type: boolean
-        - schema:
-            type: number
-            nullable: true
-            default: 1
+            default: false
           required: false
-          name: page
-          in: query
-        - schema:
-            type: number
-            minimum: 1
-            maximum: 100
-            default: 50
-          required: false
-          name: limit
-          in: query
-        - schema:
-            type: number
-            nullable: true
-            minimum: 0
-            default: 0
-          required: false
-          name: skip
+          name: contactDetails
           in: query
         - schema:
             type: string
           required: false
-          name: sortBy
+          name: seasonId
           in: query
         - schema:
             type: string
-            enum:
-              - asc
-              - desc
-            default: asc
           required: false
-          name: sortOrder
+          name: teamSeasonId
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: onlyWithRoles
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: includeInactive
+          in: query
+        - schema:
+            type: object
+            properties:
+              page:
+                type: number
+                nullable: true
+                default: 1
+              limit:
+                type: number
+                minimum: 1
+                maximum: 100
+                default: 50
+              skip:
+                type: number
+                nullable: true
+                minimum: 0
+                default: 0
+              sortBy:
+                type: string
+              sortOrder:
+                type: string
+                enum:
+                  - asc
+                  - desc
+                default: asc
+            default:
+              page: 1
+              limit: 50
+              skip: 0
+              sortOrder: asc
+          required: false
+          name: paging
           in: query
       responses:
         "200":
@@ -4652,6 +5100,802 @@ paths:
                 $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/emails/compose:
+    post:
+      summary: Compose and send email
+      description: Creates an email for an account and queues it for immediate send or
+        scheduled delivery.
+      operationId: composeAccountEmail
+      tags:
+        - Emails
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailCompose"
+      responses:
+        "201":
+          description: Email created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  emailId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - scheduled
+                      - sending
+                required:
+                  - emailId
+                  - status
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to send email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/emails:
+    get:
+      summary: List account emails
+      description: Returns paginated email activity for an account with optional
+        status filtering.
+      operationId: listAccountEmails
+      tags:
+        - Emails
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - draft
+              - sending
+              - sent
+              - failed
+              - scheduled
+              - partial
+      responses:
+        "200":
+          description: Paginated list of emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailListPaged"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to view emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/emails/{emailId}:
+    get:
+      summary: Get email details
+      description: Returns delivery status, body content, recipients, and attachments
+        for an email.
+      operationId: getAccountEmail
+      tags:
+        - Emails
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: emailId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Email details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to view email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/email-templates:
+    post:
+      summary: Create email template
+      description: Creates an email template scoped to an account.
+      operationId: createEmailTemplate
+      tags:
+        - Email Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertEmailTemplate"
+      responses:
+        "201":
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      summary: List email templates
+      description: Returns account templates along with common merge variables.
+      operationId: listEmailTemplates
+      tags:
+        - Email Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: activeOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: List of email templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplatesList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to view templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/email-templates/{templateId}:
+    get:
+      summary: Get email template
+      description: Returns a single email template for the given account.
+      operationId: getEmailTemplate
+      tags:
+        - Email Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Email template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to view template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      summary: Update email template
+      description: Updates template metadata or content.
+      operationId: updateEmailTemplate
+      tags:
+        - Email Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertEmailTemplate"
+      responses:
+        "200":
+          description: Template updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete email template
+      description: Soft deletes the specified email template.
+      operationId: deleteEmailTemplate
+      tags:
+        - Email Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Deletion status
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/email-templates/{templateId}/preview:
+    post:
+      summary: Preview template
+      description: Previews the rendered subject and body for a template using
+        provided variables.
+      operationId: previewEmailTemplate
+      tags:
+        - Email Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                variables:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        "200":
+          description: Preview rendered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subject:
+                    type: string
+                  body:
+                    type: string
+                required:
+                  - subject
+                  - body
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to preview template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/emails/{emailId}/attachments:
+    post:
+      summary: Upload email attachments
+      description: Uploads one or more attachments for an email in draft or scheduled
+        status.
+      operationId: uploadEmailAttachments
+      tags:
+        - Email Attachments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: emailId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - attachments
+      responses:
+        "201":
+          description: Attachments uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttachmentUploadResult"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage attachments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      summary: List email attachments
+      description: Returns metadata for attachments associated with an email.
+      operationId: listEmailAttachments
+      tags:
+        - Email Attachments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: emailId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: List of attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttachmentUploadResult"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to view attachments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/emails/{emailId}/attachments/{attachmentId}:
+    get:
+      summary: Download email attachment
+      description: Streams the binary contents of an email attachment.
+      operationId: downloadEmailAttachment
+      tags:
+        - Email Attachments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: emailId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Attachment binary
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to download attachments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Attachment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete email attachment
+      description: Removes an email attachment from storage and the repository.
+      operationId: deleteEmailAttachment
+      tags:
+        - Email Attachments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: emailId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Deletion status
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage attachments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Attachment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
           content:
             application/json:
               schema:
@@ -7022,7 +8266,6 @@ paths:
           in: query
         - schema:
             type: boolean
-            nullable: true
             default: false
           required: false
           name: includeRegistrationCounts

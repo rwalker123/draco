@@ -4,7 +4,14 @@
  * Enhanced with comprehensive error handling and retry logic
  */
 
-import { ContactType } from '@draco/shared-schemas';
+import {
+  ContactType,
+  ContactSearchParamsType,
+  ContactSearchParamsSchema,
+  PagedContactType,
+  BaseContactType,
+  PaginationType,
+} from '@draco/shared-schemas';
 import { RecipientContact, League } from '../types/emails/recipients';
 import { EmailRecipientErrorCode, AsyncResult, Result } from '../types/errors';
 import {
@@ -15,6 +22,9 @@ import {
   createEmailRecipientError,
   normalizeError,
 } from '../utils/errorHandling';
+import { searchContacts as apiSearchContacts } from '@draco/shared-api-client';
+import { createApiClient } from '../lib/apiClientFactory';
+import { unwrapApiResult } from '../utils/apiResult';
 
 // Season interface matching backend response
 export interface Season {
@@ -323,62 +333,48 @@ export class EmailRecipientService {
     accountId: string,
     token: string | null,
     options: ContactFetchOptions = {},
-  ): AsyncResult<{ contacts: ContactType[]; pagination?: ContactsResponse['pagination'] }> {
+  ): Promise<{ contacts: BaseContactType[]; pagination?: PaginationType }> {
     if (!accountId || accountId.trim() === '') {
-      return {
-        success: false,
-        error: createEmailRecipientError(
-          EmailRecipientErrorCode.INVALID_DATA,
-          'Account ID is required',
-          { context: { operation: 'fetch_contacts' } },
-        ),
-      };
+      throw createEmailRecipientError(
+        EmailRecipientErrorCode.INVALID_DATA,
+        'Account ID is required',
+        { context: { operation: 'fetch_contacts' } },
+      );
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
-    }
-
-    const params = new URLSearchParams();
-    if (options.seasonId) params.append('seasonId', options.seasonId);
-    if (options.roles) params.append('roles', 'true');
-    if (options.contactDetails) params.append('contactDetails', 'true');
-    if (options.page !== undefined) params.append('page', options.page.toString());
-    if (options.limit !== undefined) params.append('limit', options.limit.toString());
-
-    const url = `/api/accounts/${accountId}/contacts${params.toString() ? `?${params.toString()}` : ''}`;
-
-    return this.executeRequest(
-      async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
-        });
-
-        const data = await this.handleResponse<ContactsResponse>(response);
-
-        // Validate response data
-        if (!data.data?.contacts || !Array.isArray(data.data.contacts)) {
-          throw createEmailRecipientError(
-            EmailRecipientErrorCode.INVALID_DATA,
-            'Invalid contacts response format',
-            {
-              details: { responseData: data },
-              context: { operation: 'fetch_contacts', accountId },
+    const params: ContactSearchParamsType = ContactSearchParamsSchema.parse({
+      seasonId: options.seasonId,
+      roles: options.roles,
+      contactDetails: options.contactDetails,
+      includeInactive: false,
+      includeRoles: false,
+      onlyWithRoles: false,
+      ...(options.page !== undefined || options.limit !== undefined
+        ? {
+            paging: {
+              ...(options.page !== undefined ? { page: options.page } : {}),
+              ...(options.limit !== undefined ? { limit: options.limit } : {}),
             },
-          );
-        }
+          }
+        : {}),
+    });
 
-        return {
-          contacts: data.data.contacts,
-          pagination: data.pagination,
-        };
-      },
-      {
-        operation: 'fetch_contacts',
-        additionalData: { endpoint: url },
-      },
-    );
+    const apiClient = createApiClient({ token: token || undefined });
+    const searchedContactsResult = await apiSearchContacts({
+      client: apiClient,
+      path: { accountId },
+      query: params,
+      throwOnError: false,
+    });
+
+    const searchedContacts = unwrapApiResult(
+      searchedContactsResult,
+      'Failed to load contacts',
+    ) as PagedContactType;
+    return {
+      contacts: searchedContacts.contacts,
+      pagination: searchedContacts.pagination,
+    };
   }
 
   /**
@@ -425,7 +421,7 @@ export class EmailRecipientService {
     if (options.page !== undefined) params.append('page', options.page.toString());
     if (options.limit !== undefined) params.append('limit', options.limit.toString());
 
-    const url = `/api/accounts/${accountId}/contacts/search?${params.toString()}`;
+    const url = `/api/accounts/${accountId}/contacts?${params.toString()}`;
 
     return this.executeRequest(
       async () => {
@@ -873,30 +869,17 @@ export class EmailRecipientService {
         const effectiveSeasonId = seasonId || currentSeason?.id;
 
         // Fetch data with proper error handling - only fetch first 50 contacts for initial load
-        const [contactsResult] = await Promise.allSettled([
-          this.fetchContacts(accountId, token, {
-            seasonId: effectiveSeasonId,
-            roles: true,
-            contactDetails: true,
-            limit: 50, // Only fetch first page for initial load
-            page: 1,
-          }),
-          //this.fetchAutomaticRoleHolders(accountId, token),
-        ]);
+        const contactsResult = await this.fetchContacts(accountId, token, {
+          seasonId: effectiveSeasonId,
+          roles: true,
+          contactDetails: true,
+          limit: 50, // Only fetch first page for initial load
+          page: 1,
+        });
 
         // Handle contacts result
-        let contacts: ContactType[] = [];
-        let contactsPagination: ContactsResponse['pagination'] | undefined;
-        if (contactsResult.status === 'fulfilled' && contactsResult.value.success) {
-          contacts = contactsResult.value.data.contacts;
-          contactsPagination = contactsResult.value.data.pagination;
-        } else if (contactsResult.status === 'rejected') {
-          const error = normalizeError(contactsResult.reason);
-          logError(error, 'Failed to fetch contacts');
-          // Continue with empty contacts rather than failing completely
-        } else if (contactsResult.status === 'fulfilled' && !contactsResult.value.success) {
-          logError(contactsResult.value.error, 'Failed to fetch contacts');
-        }
+        const contacts = contactsResult.contacts;
+        const contactsPagination = contactsResult.pagination;
 
         const recipientContacts: RecipientContact[] = contacts.map((contact) => ({
           ...contact,

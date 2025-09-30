@@ -1,6 +1,8 @@
 // Email Interfaces for Draco Sports Manager
 // Follows ISP - segregated interfaces for different concerns
 
+import { EmailComposeType, EmailRecipientGroupsType } from '@draco/shared-schemas';
+
 // Core email sending interface
 export interface IEmailProvider {
   sendEmail(options: EmailOptions): Promise<EmailResult>;
@@ -16,7 +18,7 @@ export interface EmailOptions {
   from?: string;
   fromName?: string;
   replyTo?: string;
-  attachments?: EmailAttachment[];
+  attachments?: ServerEmailAttachment[];
 }
 
 // Email sending result
@@ -28,21 +30,11 @@ export interface EmailResult {
 }
 
 // Email attachment
-export interface EmailAttachment {
+export interface ServerEmailAttachment {
   filename: string;
   content?: Buffer;
   path?: string;
   contentType?: string;
-}
-
-// Email attachment upload result
-export interface AttachmentUploadResult {
-  id: string;
-  filename: string;
-  originalName: string;
-  fileSize: number;
-  mimeType: string;
-  storagePath: string;
 }
 
 // Email attachment details
@@ -71,78 +63,6 @@ export interface TemplateValidationResult {
   isValid: boolean;
   errors: string[];
   variables: string[];
-}
-
-// Email composition request interfaces
-export interface EmailComposeRequest {
-  recipients: EmailRecipientSelection;
-  subject: string;
-  body: string;
-  templateId?: bigint;
-  attachments?: string[]; // File storage IDs
-  scheduledSend?: Date;
-}
-
-export interface EmailRecipientSelection {
-  contactIds: string[];
-  groups: EmailRecipientGroups;
-}
-
-export interface EmailRecipientGroups {
-  allContacts?: boolean;
-  teamManagers?: string[]; // Team season IDs
-  teamPlayers?: string[]; // Team season IDs
-  roles?: string[]; // Role IDs
-}
-
-// Email template interfaces
-export interface EmailTemplate {
-  id: string;
-  accountId: string;
-  name: string;
-  description?: string;
-  subjectTemplate?: string;
-  bodyTemplate: string;
-  createdByUserId?: string;
-  createdAt: string;
-  updatedAt: string;
-  isActive: boolean;
-}
-
-export interface EmailTemplateCreateRequest {
-  name: string;
-  description?: string;
-  subjectTemplate?: string;
-  bodyTemplate: string;
-}
-
-export interface EmailTemplateUpdateRequest {
-  name?: string;
-  description?: string;
-  subjectTemplate?: string;
-  bodyTemplate?: string;
-  isActive?: boolean;
-}
-
-// Email record interfaces
-export interface EmailRecord {
-  id: bigint;
-  accountId: bigint;
-  createdByUserId?: string;
-  subject: string;
-  bodyHtml: string;
-  bodyText?: string;
-  templateId?: bigint;
-  status: EmailStatus;
-  scheduledSendAt?: Date;
-  createdAt: Date;
-  sentAt?: Date;
-  totalRecipients: number;
-  successfulDeliveries: number;
-  failedDeliveries: number;
-  bounceCount: number;
-  openCount: number;
-  clickCount: number;
 }
 
 export type EmailStatus = 'draft' | 'sending' | 'sent' | 'failed' | 'scheduled' | 'partial';
@@ -182,21 +102,11 @@ export interface EmailAnalytics {
   bounceRate: number;
 }
 
-export interface EmailListResponse {
-  emails: EmailRecord[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
-
 // Email validation interface
 export interface IEmailValidator {
-  validateComposeRequest(request: EmailComposeRequest): ValidationResult;
+  validateComposeRequest(request: EmailComposeType): ValidationResult;
   validateEmailAddress(email: string): boolean;
-  validateRecipientSelection(selection: EmailRecipientSelection): ValidationResult;
+  validateRecipientSelection(selection: EmailRecipientGroupsType): ValidationResult;
 }
 
 export interface ValidationResult {
@@ -229,7 +139,7 @@ export interface ResolvedRecipient {
 export interface IRecipientResolver {
   resolveRecipients(
     accountId: bigint,
-    selection: EmailRecipientSelection,
+    selection: EmailRecipientGroupsType,
   ): Promise<ResolvedRecipient[]>;
 }
 

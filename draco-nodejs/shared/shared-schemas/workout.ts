@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { FieldSchema } from './index.js';
+import { FieldSchema, booleanQueryParam } from './index.js';
 
 extendZodWithOpenApi(z);
 
@@ -88,7 +88,7 @@ export const UpsertWorkoutRegistrationSchema = z
     phone3: phoneSchema,
     phone4: phoneSchema,
     positions: z.string().trim().min(1).max(50),
-    isManager: z.coerce.boolean(),
+    isManager: booleanQueryParam,
     whereHeard: z.string().trim().min(1).max(WORKOUT_SOURCE_OPTION_MAX_LENGTH),
   })
   .openapi({
@@ -140,7 +140,7 @@ export const WorkoutListQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).default(WORKOUT_DEFAULT_LIST_LIMIT),
     after: z.string().trim().datetime().optional(),
     before: z.string().trim().datetime().optional(),
-    includeRegistrationCounts: z.coerce.boolean().default(false),
+    includeRegistrationCounts: booleanQueryParam.default(false),
   })
   .openapi({
     title: 'WorkoutListQuery',

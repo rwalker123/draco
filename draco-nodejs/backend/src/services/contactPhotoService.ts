@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { createStorageService } from './storageService.js';
 
 /**
@@ -7,11 +6,8 @@ import { createStorageService } from './storageService.js';
  */
 export class ContactPhotoService {
   private storageService = createStorageService();
-  private prisma: PrismaClient;
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
-  }
+  constructor() {}
 
   /**
    * Delete a contact's photo from storage

@@ -4,16 +4,27 @@
 import {
   IEmailProvider,
   EmailOptions,
-  EmailComposeRequest,
   ResolvedRecipient,
   EmailSettings,
-  EmailRecipientSelection,
-  EmailAttachment,
-} from '../../interfaces/emailInterfaces.js';
-import { EmailProviderFactory } from './EmailProviderFactory.js';
-import { EmailConfigFactory } from '../../config/email.js';
-import { EmailAttachmentService } from '../emailAttachmentService.js';
-import prisma from '../../lib/prisma.js';
+  ServerEmailAttachment,
+} from '../interfaces/emailInterfaces.js';
+import { EmailProviderFactory } from './email/EmailProviderFactory.js';
+import { EmailConfigFactory } from '../config/email.js';
+import { EmailAttachmentService } from './emailAttachmentService.js';
+import { PaginationHelper } from '../utils/pagination.js';
+import { NotFoundError } from '../utils/customErrors.js';
+import {
+  EmailComposeType,
+  EmailListPagedType,
+  EmailRecipientGroupsType,
+  PagingType,
+} from '@draco/shared-schemas';
+import {
+  RepositoryFactory,
+  IEmailRepository,
+  dbCreateEmailRecipientInput,
+} from '../repositories/index.js';
+import { EmailResponseFormatter } from '../responseFormatters/index.js';
 
 // Email queue management interfaces
 interface EmailQueueJob {
@@ -27,7 +38,7 @@ interface EmailQueueJob {
   retryCount: number;
   scheduledAt: Date;
   createdAt: Date;
-  attachments?: EmailAttachment[];
+  attachments?: ServerEmailAttachment[];
 }
 
 interface QueueMetrics {
@@ -68,6 +79,7 @@ export class EmailService {
     count: 0,
   };
   private attachmentService: EmailAttachmentService;
+  private emailRepository: IEmailRepository;
 
   // Provider-specific queue configuration
   private readonly PROVIDER_CONFIGS = {
@@ -96,6 +108,7 @@ export class EmailService {
     // Legacy constructor for backward compatibility
     this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
     this.attachmentService = new EmailAttachmentService();
+    this.emailRepository = RepositoryFactory.getEmailRepository();
 
     // Start queue processor
     this.startQueueProcessor();
@@ -194,30 +207,30 @@ export class EmailService {
   async composeAndSendEmail(
     accountId: bigint,
     createdByUserId: string,
-    request: EmailComposeRequest,
+    request: EmailComposeType,
   ): Promise<bigint> {
-    // Create email record in database
-    const email = await prisma.emails.create({
-      data: {
-        account_id: accountId,
-        created_by_user_id: createdByUserId,
-        subject: request.subject,
-        body_html: request.body,
-        body_text: this.stripHtml(request.body),
-        template_id: request.templateId,
-        status: request.scheduledSend ? 'scheduled' : 'sending',
-        scheduled_send_at: request.scheduledSend,
-        created_at: new Date(),
-      },
+    const scheduledDateRaw = request.scheduledSend ? new Date(request.scheduledSend) : null;
+    const scheduledDate =
+      scheduledDateRaw && !Number.isNaN(scheduledDateRaw.getTime()) ? scheduledDateRaw : null;
+
+    const shouldDelaySend = Boolean(scheduledDate && scheduledDate > new Date());
+    const emailStatus = shouldDelaySend ? 'scheduled' : 'sending';
+
+    const email = await this.emailRepository.createEmail({
+      account_id: accountId,
+      created_by_user_id: createdByUserId,
+      subject: request.subject,
+      body_html: request.body,
+      body_text: this.stripHtml(request.body),
+      template_id: request.templateId ? BigInt(request.templateId) : null,
+      status: emailStatus,
+      scheduled_send_at: scheduledDate,
+      created_at: new Date(),
     });
 
-    // If scheduled for future, return email ID (will be sent later by scheduler)
-    if (request.scheduledSend && request.scheduledSend > new Date()) {
-      return email.id;
-    }
-
-    // Send immediately
-    await this.sendBulkEmail(email.id, request);
+    await this.sendBulkEmail(email.id, request, {
+      queueImmediately: !shouldDelaySend,
+    });
 
     return email.id;
   }
@@ -225,13 +238,14 @@ export class EmailService {
   /**
    * Send bulk email using queue processing
    */
-  async sendBulkEmail(emailId: bigint, request: EmailComposeRequest): Promise<void> {
+  async sendBulkEmail(
+    emailId: bigint,
+    request: EmailComposeType,
+    options?: { queueImmediately?: boolean },
+  ): Promise<void> {
     try {
-      // Get email record
-      const email = await prisma.emails.findUnique({
-        where: { id: emailId },
-        include: { accounts: true },
-      });
+      const { queueImmediately = true } = options ?? {};
+      const email = await this.emailRepository.findEmailWithAccount(emailId);
 
       if (!email) {
         throw new Error(`Email record not found: ${emailId}`);
@@ -244,26 +258,25 @@ export class EmailService {
         throw new Error('No valid recipients found');
       }
 
-      // Create recipient records
-      await prisma.email_recipients.createMany({
-        data: recipients.map((recipient) => ({
-          email_id: emailId,
-          contact_id: recipient.contactId,
-          email_address: recipient.emailAddress,
-          contact_name: recipient.contactName,
-          recipient_type: recipient.recipientType,
-          status: 'pending',
-        })),
+      const recipientPayload: dbCreateEmailRecipientInput[] = recipients.map((recipient) => ({
+        email_id: emailId,
+        contact_id: recipient.contactId,
+        email_address: recipient.emailAddress,
+        contact_name: recipient.contactName,
+        recipient_type: recipient.recipientType,
+      }));
+
+      await this.emailRepository.createEmailRecipients(recipientPayload);
+
+      await this.emailRepository.updateEmail(emailId, {
+        total_recipients: recipients.length,
+        ...(queueImmediately ? { status: 'sending' } : {}),
       });
 
-      // Update email with recipient count
-      await prisma.emails.update({
-        where: { id: emailId },
-        data: {
-          total_recipients: recipients.length,
-          status: 'sending',
-        },
-      });
+      if (!queueImmediately) {
+        console.log(`Stored ${recipients.length} recipients for scheduled email ${emailId}`);
+        return;
+      }
 
       // Load attachments for the email
       const attachments = await this.attachmentService.getAttachmentsForSending(emailId.toString());
@@ -284,15 +297,42 @@ export class EmailService {
       console.error(`Error queuing bulk email ${emailId}:`, error);
 
       // Update email status to failed
-      await prisma.emails.update({
-        where: { id: emailId },
-        data: {
-          status: 'failed',
-        },
-      });
+      await this.emailRepository.updateEmailStatus(emailId, 'failed');
 
       throw error;
     }
+  }
+
+  async getEmailDetails(accountId: bigint, emailId: bigint) {
+    const email = await this.emailRepository.getEmailDetails(accountId, emailId);
+
+    if (!email) {
+      throw new NotFoundError('Email not found');
+    }
+
+    return EmailResponseFormatter.formatEmailDetail(email);
+  }
+
+  async listAccountEmails(
+    accountId: bigint,
+    paginationParams: PagingType,
+    status?: string,
+  ): Promise<EmailListPagedType> {
+    const pagination = {
+      page: paginationParams.page,
+      limit: Math.min(paginationParams.limit, 100),
+      offset: paginationParams.skip,
+    };
+
+    const { emails, total } = await this.emailRepository.listAccountEmails(accountId, {
+      skip: pagination.offset,
+      take: pagination.limit,
+      status,
+    });
+
+    const paginationInfo = PaginationHelper.createMeta(pagination.page, pagination.limit, total);
+
+    return EmailResponseFormatter.formatEmailList(emails, paginationInfo);
   }
 
   /**
@@ -303,7 +343,7 @@ export class EmailService {
     recipients: ResolvedRecipient[],
     subject: string,
     bodyHtml: string,
-    attachments?: EmailAttachment[],
+    attachments?: ServerEmailAttachment[],
   ): Promise<void> {
     const settings = EmailConfigFactory.getEmailSettings();
     const now = new Date();
@@ -408,18 +448,7 @@ export class EmailService {
     try {
       const now = new Date();
 
-      // Find emails scheduled for sending that haven't been sent yet
-      const scheduledEmails = await prisma.emails.findMany({
-        where: {
-          status: 'scheduled',
-          scheduled_send_at: {
-            lte: now,
-          },
-        },
-        orderBy: {
-          scheduled_send_at: 'asc',
-        },
-      });
+      const scheduledEmails = await this.emailRepository.findScheduledEmailsReady(now);
 
       if (scheduledEmails.length === 0) {
         return; // No emails to process
@@ -430,18 +459,13 @@ export class EmailService {
       for (const email of scheduledEmails) {
         try {
           // Update status to 'sending' to prevent duplicate processing
-          await prisma.emails.update({
-            where: { id: email.id },
-            data: { status: 'sending' },
-          });
+          await this.emailRepository.updateEmailStatus(email.id, 'sending');
 
           // Note: EmailComposeRequest reconstruction could be implemented here if needed
           // for more complex recipient selection reconstruction
 
           // Check if recipients already exist (email was previously composed)
-          const existingRecipients = await prisma.email_recipients.findMany({
-            where: { email_id: email.id },
-          });
+          const existingRecipients = await this.emailRepository.getEmailRecipients(email.id);
 
           if (existingRecipients.length > 0) {
             // Recipients already exist, process the email directly
@@ -473,12 +497,9 @@ export class EmailService {
             // No existing recipients - this shouldn't happen in normal flow,
             // but handle gracefully by marking as failed
             console.warn(`⚠️ Scheduled email ${email.id} has no recipients - marking as failed`);
-            await prisma.emails.update({
-              where: { id: email.id },
-              data: {
-                status: 'failed',
-                sent_at: now,
-              },
+            await this.emailRepository.updateEmail(email.id, {
+              status: 'failed',
+              sent_at: now,
             });
           }
 
@@ -487,12 +508,9 @@ export class EmailService {
           console.error(`❌ Error processing scheduled email ${email.id}:`, error);
 
           // Mark email as failed
-          await prisma.emails.update({
-            where: { id: email.id },
-            data: {
-              status: 'failed',
-              sent_at: now,
-            },
+          await this.emailRepository.updateEmail(email.id, {
+            status: 'failed',
+            sent_at: now,
           });
         }
       }
@@ -636,17 +654,18 @@ export class EmailService {
         }
 
         // Update recipient status
-        await prisma.email_recipients.updateMany({
-          where: {
-            email_id: job.emailId,
-            contact_id: recipient.contactId,
-          },
-          data: {
-            status: result.success ? 'sent' : 'failed',
-            sent_at: result.success ? new Date() : null,
+        if (result.success) {
+          await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
+            status: 'sent',
+            sent_at: new Date(),
+            error_message: null,
+          });
+        } else {
+          await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
+            status: 'failed',
             error_message: result.error || null,
-          },
-        });
+          });
+        }
 
         if (result.success) {
           successCount++;
@@ -662,15 +681,9 @@ export class EmailService {
         console.error(`💥 Error sending email to ${recipient.emailAddress}:`, error);
 
         // Update recipient status to failed
-        await prisma.email_recipients.updateMany({
-          where: {
-            email_id: job.emailId,
-            contact_id: recipient.contactId,
-          },
-          data: {
-            status: 'failed',
-            error_message: error instanceof Error ? error.message : 'Unknown error',
-          },
+        await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
+          status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Unknown error',
         });
       }
 
@@ -707,15 +720,9 @@ export class EmailService {
 
       // Mark all recipients in this batch as failed
       for (const recipient of job.recipients) {
-        await prisma.email_recipients.updateMany({
-          where: {
-            email_id: job.emailId,
-            contact_id: recipient.contactId,
-          },
-          data: {
-            status: 'failed',
-            error_message: 'Max retries exceeded',
-          },
+        await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
+          status: 'failed',
+          error_message: 'Max retries exceeded',
         });
       }
 
@@ -752,16 +759,11 @@ export class EmailService {
       return; // Still have pending batches
     }
 
-    // Get recipient statistics
-    const recipientStats = await prisma.email_recipients.groupBy({
-      by: ['status'],
-      where: { email_id: emailId },
-      _count: { status: true },
-    });
+    const statusCounts = await this.emailRepository.getRecipientStatusCounts(emailId);
 
-    const stats = recipientStats.reduce(
+    const stats = statusCounts.reduce(
       (acc, stat) => {
-        acc[stat.status] = stat._count.status;
+        acc[stat.status] = stat.count;
         return acc;
       },
       {} as Record<string, number>,
@@ -780,14 +782,11 @@ export class EmailService {
     }
 
     // Update email record
-    await prisma.emails.update({
-      where: { id: emailId },
-      data: {
-        status: finalStatus,
-        sent_at: new Date(),
-        successful_deliveries: successfulDeliveries,
-        failed_deliveries: failedDeliveries,
-      },
+    await this.emailRepository.updateEmail(emailId, {
+      status: finalStatus,
+      sent_at: new Date(),
+      successful_deliveries: successfulDeliveries,
+      failed_deliveries: failedDeliveries,
     });
 
     console.log(
@@ -834,20 +833,15 @@ export class EmailService {
    */
   private async resolveRecipients(
     accountId: bigint,
-    selection: EmailRecipientSelection,
+    selection: EmailRecipientGroupsType,
   ): Promise<ResolvedRecipient[]> {
     // Placeholder implementation - will be enhanced
     const recipients: ResolvedRecipient[] = [];
 
     // Add individual contacts
-    if (selection.contactIds?.length > 0) {
-      const contacts = await prisma.contacts.findMany({
-        where: {
-          id: { in: selection.contactIds.map((id: string) => BigInt(id)) },
-          creatoraccountid: accountId,
-          email: { not: null },
-        },
-      });
+    if (selection.contacts && selection.contacts.length > 0) {
+      const contactIds = selection.contacts.map((id: string) => BigInt(id));
+      const contacts = await this.emailRepository.findContactsByIds(accountId, contactIds);
 
       recipients.push(
         ...contacts.map((contact) => ({
