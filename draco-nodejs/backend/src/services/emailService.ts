@@ -213,7 +213,8 @@ export class EmailService {
     const scheduledDate =
       scheduledDateRaw && !Number.isNaN(scheduledDateRaw.getTime()) ? scheduledDateRaw : null;
 
-    const emailStatus = scheduledDate ? 'scheduled' : 'sending';
+    const shouldDelaySend = Boolean(scheduledDate && scheduledDate > new Date());
+    const emailStatus = shouldDelaySend ? 'scheduled' : 'sending';
 
     const email = await this.emailRepository.createEmail({
       account_id: accountId,
@@ -227,11 +228,9 @@ export class EmailService {
       created_at: new Date(),
     });
 
-    if (scheduledDate && scheduledDate > new Date()) {
-      return email.id;
-    }
-
-    await this.sendBulkEmail(email.id, request);
+    await this.sendBulkEmail(email.id, request, {
+      queueImmediately: !shouldDelaySend,
+    });
 
     return email.id;
   }
@@ -239,8 +238,13 @@ export class EmailService {
   /**
    * Send bulk email using queue processing
    */
-  async sendBulkEmail(emailId: bigint, request: EmailComposeType): Promise<void> {
+  async sendBulkEmail(
+    emailId: bigint,
+    request: EmailComposeType,
+    options?: { queueImmediately?: boolean },
+  ): Promise<void> {
     try {
+      const { queueImmediately = true } = options ?? {};
       const email = await this.emailRepository.findEmailWithAccount(emailId);
 
       if (!email) {
@@ -266,8 +270,13 @@ export class EmailService {
 
       await this.emailRepository.updateEmail(emailId, {
         total_recipients: recipients.length,
-        status: 'sending',
+        ...(queueImmediately ? { status: 'sending' } : {}),
       });
+
+      if (!queueImmediately) {
+        console.log(`Stored ${recipients.length} recipients for scheduled email ${emailId}`);
+        return;
+      }
 
       // Load attachments for the email
       const attachments = await this.attachmentService.getAttachmentsForSending(emailId.toString());
