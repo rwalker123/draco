@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 
 import { useAuth } from '../../../context/AuthContext';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { createEmailService } from '../../../services/emailService';
 import { EmailTemplate } from '../../../types/emails/email';
 import {
@@ -82,6 +83,7 @@ export default function ComposeSidebar({
   compact = false,
 }: ComposeSidebarProps) {
   const { token } = useAuth();
+  const apiClient = useApiClient();
   const theme = useTheme();
 
   // Real-time validation for contextual error display
@@ -103,7 +105,7 @@ export default function ComposeSidebar({
         setLoadingTemplates(true);
         setTemplatesError(null);
 
-        const emailService = createEmailService(token);
+        const emailService = createEmailService(token, apiClient);
         const templateList = await emailService.listTemplates(accountId);
         setTemplates(templateList.filter((t) => t.isActive));
       },
@@ -136,7 +138,7 @@ export default function ComposeSidebar({
     }
 
     setLoadingTemplates(false);
-  }, [token, accountId]);
+  }, [token, accountId, apiClient]);
 
   // Load templates
   useEffect(() => {

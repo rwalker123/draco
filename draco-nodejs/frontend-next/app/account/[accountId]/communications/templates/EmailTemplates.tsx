@@ -19,8 +19,9 @@ import {
 } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
-import { EmailService } from '../../../../../services/emailService';
+import { createEmailService } from '../../../../../services/emailService';
 import { useAuth } from '../../../../../context/AuthContext';
+import { useApiClient } from '../../../../../hooks/useApiClient';
 import { EmailTemplate } from '../../../../../types/emails/email';
 import TemplateListView from '../../../../../components/emails/templates/TemplateListView';
 import TemplatePreviewDialog from '../../../../../components/emails/templates/TemplatePreviewDialog';
@@ -42,7 +43,8 @@ export default function EmailTemplates() {
     null,
   );
 
-  const emailService = useMemo(() => new EmailService(token || ''), [token]);
+  const apiClient = useApiClient();
+  const emailService = useMemo(() => createEmailService(token, apiClient), [token, apiClient]);
 
   // Load templates
   const loadTemplates = useCallback(async () => {

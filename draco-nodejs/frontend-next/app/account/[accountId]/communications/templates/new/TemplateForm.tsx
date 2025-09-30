@@ -23,8 +23,9 @@ import {
 } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '../../../../../../components/auth/ProtectedRoute';
-import { EmailService } from '../../../../../../services/emailService';
+import { createEmailService } from '../../../../../../services/emailService';
 import { useAuth } from '../../../../../../context/AuthContext';
+import { useApiClient } from '../../../../../../hooks/useApiClient';
 import { EmailTemplate } from '../../../../../../types/emails/email';
 import TemplateRichTextEditor from '../../../../../../components/emails/templates/TemplateRichTextEditor';
 import { sanitizeRichContent } from '../../../../../../utils/sanitization';
@@ -69,6 +70,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
   const { accountId } = useParams();
   const router = useRouter();
   const { token } = useAuth();
+  const apiClient = useApiClient();
 
   // Ref for the rich text editor
   const editorRef = useRef<TemplateRichTextEditorRef>(null);
@@ -93,7 +95,7 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const emailService = useMemo(() => new EmailService(token || ''), [token]);
+  const emailService = useMemo(() => createEmailService(token, apiClient), [token, apiClient]);
 
   // Load template data for edit mode
   useEffect(() => {

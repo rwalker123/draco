@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { EmailService } from '../services/emailService';
+import { createEmailService } from '../services/emailService';
 import { useAuth } from '../context/AuthContext';
+import { useApiClient } from './useApiClient';
 import {
   EmailTemplate,
   EmailTemplateCreateRequest,
@@ -31,7 +32,8 @@ export function useEmailTemplates(accountId: string): UseEmailTemplatesResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const emailService = useMemo(() => new EmailService(token || ''), [token]);
+  const apiClient = useApiClient();
+  const emailService = useMemo(() => createEmailService(token, apiClient), [token, apiClient]);
 
   // Load templates
   const loadTemplates = useCallback(async () => {
