@@ -163,7 +163,7 @@ export class ServiceFactory {
 
   static getContactPhotoService(): ContactPhotoService {
     if (!this.contactPhotoService) {
-      this.contactPhotoService = new ContactPhotoService(prisma);
+      this.contactPhotoService = new ContactPhotoService();
     }
     return this.contactPhotoService;
   }

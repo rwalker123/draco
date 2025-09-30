@@ -104,7 +104,7 @@ export class EmailService {
   private readonly RETRY_DELAYS = [1000, 5000, 15000]; // ms delays for retries
   private currentProviderType: 'sendgrid' | 'ethereal' | null = null;
 
-  constructor(baseUrl?: string) {
+  constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
     // Legacy constructor for backward compatibility
     this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
     this.attachmentService = new EmailAttachmentService();

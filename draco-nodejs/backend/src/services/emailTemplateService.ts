@@ -1,30 +1,36 @@
 // Email Template Service for Draco Sports Manager
 // Follows SRP - handles template processing and management only
 
-import prisma from '../lib/prisma.js';
-import { DateUtils } from '../utils/dateUtils.js';
-import {
-  IEmailTemplateEngine,
-  TemplateValidationResult,
-  EmailTemplateDbRecord,
-} from '../interfaces/emailInterfaces.js';
+import { IEmailTemplateEngine, TemplateValidationResult } from '../interfaces/emailInterfaces.js';
 import {
   EmailTemplatesListType,
   EmailTemplateType,
   UpsertEmailTemplateType,
 } from '@draco/shared-schemas';
+import { RepositoryFactory } from '../repositories/repositoryFactory.js';
+import { IEmailTemplateRepository } from '../repositories/interfaces/IEmailTemplateRepository.js';
+import {
+  dbCreateEmailTemplateInput,
+  dbUpdateEmailTemplateData,
+} from '../repositories/types/dbTypes.js';
+import { EmailTemplateResponseFormatter } from '../responseFormatters/EmailTemplateResponseFormatter.js';
 
 export class EmailTemplateService implements IEmailTemplateEngine {
+  private emailTemplateRepository: IEmailTemplateRepository;
+
+  constructor() {
+    this.emailTemplateRepository = RepositoryFactory.getEmailTemplateRepository();
+  }
+
   /**
    * Process template with variable substitution
    */
   processTemplate(template: string, variables: Record<string, unknown>): string {
     let processed = template;
 
-    // Replace variables in {{variableName}} format
     Object.keys(variables).forEach((key) => {
       const placeholder = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      const value = variables[key] || '';
+      const value = variables[key] ?? '';
       processed = processed.replace(placeholder, String(value));
     });
 
@@ -39,26 +45,20 @@ export class EmailTemplateService implements IEmailTemplateEngine {
     const variables: string[] = [];
 
     try {
-      // Find all variables in {{variable}} format
       const variableMatches = template.match(/{{[^}]*}}/g);
 
       if (variableMatches) {
         for (const match of variableMatches) {
-          // Extract variable name
           const variableName = match.replace(/[{}]/g, '').trim();
 
-          // Validate variable name (alphanumeric and underscore only)
           if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(variableName)) {
             errors.push(`Invalid variable name: ${variableName}`);
-          } else {
-            if (!variables.includes(variableName)) {
-              variables.push(variableName);
-            }
+          } else if (!variables.includes(variableName)) {
+            variables.push(variableName);
           }
         }
       }
 
-      // Check for unclosed brackets
       const openBrackets = (template.match(/{{/g) || []).length;
       const closeBrackets = (template.match(/}}/g) || []).length;
 
@@ -80,11 +80,8 @@ export class EmailTemplateService implements IEmailTemplateEngine {
     }
   }
 
-  /**
-   * Validate input fields for security and constraints
-   */
   private validateInputFields(request: UpsertEmailTemplateType): void {
-    if ('name' in request && request.name !== undefined) {
+    if (request.name !== undefined) {
       if (request.name.length > 100) {
         throw new Error('Template name must be 100 characters or less');
       }
@@ -93,19 +90,15 @@ export class EmailTemplateService implements IEmailTemplateEngine {
       }
     }
 
-    if ('description' in request && request.description !== undefined) {
-      if (request.description.length > 500) {
-        throw new Error('Template description must be 500 characters or less');
-      }
+    if (request.description !== undefined && request.description.length > 500) {
+      throw new Error('Template description must be 500 characters or less');
     }
 
-    if ('subjectTemplate' in request && request.subjectTemplate !== undefined) {
-      if (request.subjectTemplate.length > 255) {
-        throw new Error('Subject template must be 255 characters or less');
-      }
+    if (request.subjectTemplate !== undefined && request.subjectTemplate.length > 255) {
+      throw new Error('Subject template must be 255 characters or less');
     }
 
-    if ('bodyTemplate' in request && request.bodyTemplate !== undefined) {
+    if (request.bodyTemplate !== undefined) {
       if (request.bodyTemplate.length > 50000) {
         throw new Error('Body template must be 50,000 characters or less');
       }
@@ -115,18 +108,13 @@ export class EmailTemplateService implements IEmailTemplateEngine {
     }
   }
 
-  /**
-   * Create new email template
-   */
   async createTemplate(
     accountId: bigint,
     createdByUserId: string,
     request: UpsertEmailTemplateType,
   ): Promise<EmailTemplateType> {
-    // Validate input fields
     this.validateInputFields(request);
 
-    // Validate template syntax
     const subjectValidation = request.subjectTemplate
       ? this.validateTemplate(request.subjectTemplate)
       : { isValid: true, errors: [], variables: [] };
@@ -138,33 +126,27 @@ export class EmailTemplateService implements IEmailTemplateEngine {
       throw new Error(`Template validation failed: ${allErrors.join(', ')}`);
     }
 
-    const template = await prisma.email_templates.create({
-      data: {
-        account_id: accountId,
-        name: request.name || 'Untitled Template',
-        description: request.description || '',
-        subject_template: request.subjectTemplate || '',
-        body_template: request.bodyTemplate || '',
-        created_by_user_id: createdByUserId,
-        is_active: true,
-      },
-    });
+    const payload: dbCreateEmailTemplateInput = {
+      account_id: accountId,
+      name: request.name || 'Untitled Template',
+      description: request.description || '',
+      subject_template: request.subjectTemplate || '',
+      body_template: request.bodyTemplate || '',
+      created_by_user_id: createdByUserId,
+      is_active: true,
+    };
 
-    return this.mapToEmailTemplate(template);
+    const template = await this.emailTemplateRepository.createTemplate(payload);
+    return EmailTemplateResponseFormatter.formatEmailTemplate(template);
   }
 
-  /**
-   * Update existing email template
-   */
   async updateTemplate(
     templateId: bigint,
     accountId: bigint,
     request: UpsertEmailTemplateType,
   ): Promise<EmailTemplateType> {
-    // Validate input fields
     this.validateInputFields(request);
 
-    // Validate template syntax if templates are being updated
     if (request.subjectTemplate !== undefined) {
       const validation = this.validateTemplate(request.subjectTemplate);
       if (!validation.isValid) {
@@ -179,74 +161,54 @@ export class EmailTemplateService implements IEmailTemplateEngine {
       }
     }
 
-    const template = await prisma.email_templates.update({
-      where: {
-        id: templateId,
-        account_id: accountId, // Ensure account boundary
-      },
-      data: {
-        ...(request.name !== undefined && { name: request.name }),
-        ...(request.description !== undefined && { description: request.description }),
-        ...(request.subjectTemplate !== undefined && { subject_template: request.subjectTemplate }),
-        ...(request.bodyTemplate !== undefined && { body_template: request.bodyTemplate }),
-        ...(request.isActive !== undefined && { is_active: request.isActive }),
-        updated_at: new Date(),
-      },
-    });
+    const updateData: dbUpdateEmailTemplateData = { updated_at: new Date() };
 
-    return this.mapToEmailTemplate(template);
+    if (request.name !== undefined) {
+      updateData.name = request.name;
+    }
+    if (request.description !== undefined) {
+      updateData.description = request.description;
+    }
+    if (request.subjectTemplate !== undefined) {
+      updateData.subject_template = request.subjectTemplate;
+    }
+    if (request.bodyTemplate !== undefined) {
+      updateData.body_template = request.bodyTemplate;
+    }
+    if (request.isActive !== undefined) {
+      updateData.is_active = request.isActive;
+    }
+
+    const template = await this.emailTemplateRepository.updateTemplate(
+      templateId,
+      accountId,
+      updateData,
+    );
+
+    return EmailTemplateResponseFormatter.formatEmailTemplate(template);
   }
 
-  /**
-   * Get template by ID (with account boundary check)
-   */
   async getTemplate(templateId: bigint, accountId: bigint): Promise<EmailTemplateType | null> {
-    const template = await prisma.email_templates.findFirst({
-      where: {
-        id: templateId,
-        account_id: accountId,
-      },
-    });
-
-    return template ? this.mapToEmailTemplate(template) : null;
+    const template = await this.emailTemplateRepository.findTemplateById(templateId, accountId);
+    return template ? EmailTemplateResponseFormatter.formatEmailTemplate(template) : null;
   }
 
-  /**
-   * List templates for account
-   */
   async listTemplates(
     accountId: bigint,
     activeOnly: boolean = false,
   ): Promise<EmailTemplatesListType> {
-    const templates = await prisma.email_templates.findMany({
-      where: {
-        account_id: accountId,
-        ...(activeOnly && { is_active: true }),
-      },
-      orderBy: [{ name: 'asc' }],
-    });
+    const templates = await this.emailTemplateRepository.listTemplates(accountId, activeOnly);
 
     return {
-      templates: templates.map(this.mapToEmailTemplate),
+      templates: EmailTemplateResponseFormatter.formatEmailTemplates(templates),
       commonVariables: this.getCommonVariables(),
     };
   }
 
-  /**
-   * Delete template (permanent delete)
-   */
   async deleteTemplate(templateId: bigint, accountId: bigint): Promise<void> {
-    await prisma.email_templates.delete({
-      where: {
-        id: templateId,
-        account_id: accountId, // Ensure account boundary
-      },
-    });
+    await this.emailTemplateRepository.deleteTemplate(templateId, accountId);
   }
 
-  /**
-   * Preview template with sample variables
-   */
   async previewTemplate(
     templateId: bigint,
     accountId: bigint,
@@ -267,9 +229,6 @@ export class EmailTemplateService implements IEmailTemplateEngine {
     return { subject, body };
   }
 
-  /**
-   * Get common template variables for the account
-   */
   getCommonVariables(): Record<string, string> {
     return {
       firstName: 'Contact first name',
@@ -285,24 +244,6 @@ export class EmailTemplateService implements IEmailTemplateEngine {
       accountName: 'Account/organization name',
       managerName: 'Team manager name',
       coachName: 'Coach name',
-    };
-  }
-
-  /**
-   * Map database record to EmailTemplate interface
-   */
-  private mapToEmailTemplate(template: EmailTemplateDbRecord): EmailTemplateType {
-    return {
-      id: template.id.toString(),
-      accountId: template.account_id.toString(),
-      name: template.name,
-      description: template.description || undefined,
-      subjectTemplate: template.subject_template || undefined,
-      bodyTemplate: template.body_template,
-      createdByUserId: template.created_by_user_id || undefined,
-      createdAt: DateUtils.formatDateTimeForResponse(template.created_at) || '',
-      updatedAt: DateUtils.formatDateTimeForResponse(template.updated_at) || '',
-      isActive: template.is_active,
     };
   }
 }

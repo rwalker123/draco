@@ -199,6 +199,40 @@ export type dbTeamSeasonManagerContact = Prisma.teamseasonmanagerGetPayload<{
   };
 }>;
 
+export type dbEmailTemplate = Prisma.email_templatesGetPayload<{
+  select: {
+    id: true;
+    account_id: true;
+    name: true;
+    description: true;
+    subject_template: true;
+    body_template: true;
+    created_by_user_id: true;
+    created_at: true;
+    updated_at: true;
+    is_active: true;
+  };
+}>;
+
+export type dbCreateEmailTemplateInput = {
+  account_id: bigint;
+  name: string;
+  description: string;
+  subject_template: string;
+  body_template: string;
+  created_by_user_id: string;
+  is_active: boolean;
+};
+
+export type dbUpdateEmailTemplateData = {
+  name?: string;
+  description?: string;
+  subject_template?: string;
+  body_template?: string;
+  is_active?: boolean;
+  updated_at?: Date;
+};
+
 export type dbEmail = Prisma.emailsGetPayload<{
   select: {
     id: true;
