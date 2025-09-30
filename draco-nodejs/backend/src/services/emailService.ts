@@ -461,9 +461,6 @@ export class EmailService {
           // Update status to 'sending' to prevent duplicate processing
           await this.emailRepository.updateEmailStatus(email.id, 'sending');
 
-          // Note: EmailComposeRequest reconstruction could be implemented here if needed
-          // for more complex recipient selection reconstruction
-
           // Check if recipients already exist (email was previously composed)
           const existingRecipients = await this.emailRepository.getEmailRecipients(email.id);
 

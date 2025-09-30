@@ -32,6 +32,7 @@ import {
 } from '../../../types/emails/recipients';
 import { createEmailService } from '../../../services/emailService';
 import { useAuth } from '../../../context/AuthContext';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { safeAsync, logError } from '../../../utils/errorHandling';
 
 // Action types for state management
@@ -372,20 +373,23 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   editorRef,
 }) => {
   const { token } = useAuth();
+  const apiClient = useApiClient();
   const config = useMemo(() => ({ ...DEFAULT_COMPOSE_CONFIG, ...userConfig }), [userConfig]);
   const [state, dispatch] = useReducer(composeReducer, createInitialState(config, initialData));
 
   // Refs for intervals and service
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const emailServiceRef = useRef(token ? createEmailService(token) : null);
+  const emailServiceRef = useRef(token ? createEmailService(token, apiClient) : null);
   const initialTemplateLoadedRef = useRef<string | null>(null);
 
   // Update email service when token changes
   useEffect(() => {
     if (token) {
-      emailServiceRef.current = createEmailService(token);
+      emailServiceRef.current = createEmailService(token, apiClient);
+    } else {
+      emailServiceRef.current = null;
     }
-  }, [token]);
+  }, [token, apiClient]);
 
   /**
    * Load template automatically when templateId is provided in initialData

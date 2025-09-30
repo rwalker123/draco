@@ -1,7 +1,36 @@
 // Email Service for Frontend API Integration
 // Handles all communication with the email backend APIs
 
-import axios, { AxiosResponse } from 'axios';
+import {
+  composeAccountEmail as apiComposeAccountEmail,
+  listAccountEmails as apiListAccountEmails,
+  getAccountEmail as apiGetAccountEmail,
+  createEmailTemplate as apiCreateEmailTemplate,
+  listEmailTemplates as apiListEmailTemplates,
+  getEmailTemplate as apiGetEmailTemplate,
+  updateEmailTemplate as apiUpdateEmailTemplate,
+  deleteEmailTemplate as apiDeleteEmailTemplate,
+  previewEmailTemplate as apiPreviewEmailTemplate,
+  uploadEmailAttachments as apiUploadEmailAttachments,
+  listEmailAttachments as apiListEmailAttachments,
+  downloadEmailAttachment as apiDownloadEmailAttachment,
+  deleteEmailAttachment as apiDeleteEmailAttachment,
+} from '@draco/shared-api-client';
+import type { Client } from '@draco/shared-api-client/generated/client';
+import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
+import type {
+  AttachmentUploadResultType,
+  EmailAttachmentType,
+  EmailComposeType,
+  EmailDetailRecipientType,
+  EmailDetailType,
+  EmailListItemType,
+  EmailListPagedType,
+  EmailRecipientGroupsType,
+  EmailTemplateType,
+} from '@draco/shared-schemas';
+import { createApiClient } from '../lib/apiClientFactory';
+import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 import type {
   EmailComposeRequest,
   EmailTemplate,
@@ -12,65 +41,216 @@ import type {
   EmailRecipient,
   EmailListResponse,
   AttachmentDetails,
-  ApiResponse,
 } from '../types/emails/email';
+
+const DEFAULT_COMPOSE_EMAIL_ID = '0';
+
+const toOptionalIsoString = (value?: Date): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const isoValue = value.toISOString();
+  return isoValue;
+};
+
+const parseDate = (value?: string | null): Date | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  return date;
+};
+
+const mapTemplate = (template: EmailTemplateType): EmailTemplate => ({
+  id: template.id,
+  accountId: template.accountId,
+  name: template.name,
+  description: template.description ?? undefined,
+  subjectTemplate: template.subjectTemplate ?? undefined,
+  bodyTemplate: template.bodyTemplate,
+  createdByUserId: template.createdByUserId ?? undefined,
+  createdAt: parseDate(template.createdAt) ?? new Date(template.createdAt),
+  updatedAt: parseDate(template.updatedAt) ?? new Date(template.updatedAt),
+  isActive: template.isActive,
+});
+
+const mapAttachment = (
+  attachment: AttachmentUploadResultType | EmailAttachmentType,
+): AttachmentDetails => {
+  const uploadedAtValue =
+    'uploadedAt' in attachment ? (attachment.uploadedAt ?? undefined) : undefined;
+
+  return {
+    id: attachment.id,
+    filename: attachment.filename,
+    originalName: attachment.originalName,
+    fileSize: attachment.fileSize,
+    mimeType: attachment.mimeType ?? null,
+    uploadedAt: parseDate(uploadedAtValue),
+  };
+};
+
+const mapRecipient = (recipient: EmailDetailRecipientType): EmailRecipient => ({
+  id: recipient.id,
+  emailAddress: recipient.emailAddress,
+  contactName: recipient.contactName ?? undefined,
+  recipientType: recipient.recipientType ?? undefined,
+  status: recipient.status as EmailRecipient['status'],
+  sentAt: parseDate(recipient.sentAt),
+  deliveredAt: parseDate(recipient.deliveredAt),
+  openedAt: parseDate(recipient.openedAt),
+  clickedAt: parseDate(recipient.clickedAt),
+  bounceReason: recipient.bounceReason ?? undefined,
+  errorMessage: recipient.errorMessage ?? undefined,
+});
+
+const mapEmailDetail = (accountId: string, detail: EmailDetailType): EmailRecord => ({
+  id: detail.id,
+  accountId,
+  createdByUserId: detail.createdBy ?? undefined,
+  subject: detail.subject,
+  bodyHtml: detail.bodyHtml ?? '',
+  bodyText: detail.bodyText ?? undefined,
+  templateId: detail.template?.id,
+  status: detail.status as EmailStatus,
+  scheduledSendAt: parseDate(detail.scheduledSendAt),
+  createdAt: parseDate(detail.createdAt) ?? new Date(detail.createdAt),
+  sentAt: parseDate(detail.sentAt),
+  totalRecipients: detail.totalRecipients,
+  successfulDeliveries: detail.successfulDeliveries,
+  failedDeliveries: detail.failedDeliveries,
+  bounceCount: detail.bounceCount ?? 0,
+  openCount: detail.openCount,
+  clickCount: detail.clickCount,
+  recipients: detail.recipients?.map(mapRecipient) ?? [],
+  attachments: detail.attachments?.map(mapAttachment) ?? [],
+});
+
+const mapEmailSummary = (accountId: string, summary: EmailListItemType): EmailRecord => ({
+  id: summary.id,
+  accountId,
+  createdByUserId: summary.createdBy ?? undefined,
+  subject: summary.subject,
+  bodyHtml: '',
+  bodyText: undefined,
+  templateId: undefined,
+  status: summary.status as EmailStatus,
+  scheduledSendAt: undefined,
+  createdAt: parseDate(summary.createdAt) ?? new Date(summary.createdAt),
+  sentAt: parseDate(summary.sentAt),
+  totalRecipients: summary.totalRecipients,
+  successfulDeliveries: summary.successfulDeliveries,
+  failedDeliveries: summary.failedDeliveries,
+  bounceCount: 0,
+  openCount: summary.openCount,
+  clickCount: summary.clickCount,
+});
+
+const mapListResponse = (accountId: string, data: EmailListPagedType): EmailListResponse => ({
+  emails: data.emails.map((item) => mapEmailSummary(accountId, item)),
+  pagination: {
+    total: data.pagination.total,
+    page: data.pagination.page,
+    limit: data.pagination.limit,
+    totalPages:
+      data.pagination.limit > 0 ? Math.ceil(data.pagination.total / data.pagination.limit) : 0,
+  },
+});
+
+const mapRecipients = (recipients: EmailComposeRequest['recipients']): EmailRecipientGroupsType => {
+  const groups: EmailRecipientGroupsType = {};
+
+  if (recipients.contactIds.length > 0) {
+    groups.contacts = recipients.contactIds;
+  }
+
+  if (recipients.onlyManagers) {
+    groups.teamManagers = true;
+  }
+
+  const leagueIds = new Set<string>();
+  const divisionIds = new Set<string>();
+  const teamIds = new Set<string>();
+  let includeSeason = false;
+
+  recipients.groups.forEach((group) => {
+    switch (group.type) {
+      case 'season':
+        includeSeason = true;
+        break;
+      case 'league':
+        group.ids.forEach((id) => leagueIds.add(id));
+        break;
+      case 'division':
+        group.ids.forEach((id) => divisionIds.add(id));
+        break;
+      case 'teams':
+        group.ids.forEach((id) => teamIds.add(id));
+        break;
+      default:
+        break;
+    }
+  });
+
+  if (includeSeason) {
+    groups.season = true;
+  }
+
+  if (leagueIds.size > 0) {
+    groups.leagues = Array.from(leagueIds);
+  }
+
+  if (divisionIds.size > 0) {
+    groups.divisions = Array.from(divisionIds);
+  }
+
+  if (teamIds.size > 0) {
+    groups.teams = Array.from(teamIds);
+  }
+
+  return groups;
+};
+
+const buildComposePayload = (request: EmailComposeRequest): EmailComposeType => ({
+  id: DEFAULT_COMPOSE_EMAIL_ID,
+  recipients: mapRecipients(request.recipients),
+  subject: request.subject,
+  body: request.body,
+  templateId: request.templateId,
+  attachments: request.attachments?.length ? request.attachments : undefined,
+  scheduledSend: toOptionalIsoString(request.scheduledSend),
+  status: request.scheduledSend ? 'scheduled' : 'sending',
+});
 
 // Email service class
 export class EmailService {
-  private token: string;
-  private baseUrl: string;
+  private readonly client: Client;
 
-  constructor(token: string, baseUrl: string = '/api') {
-    this.token = token;
-    this.baseUrl = baseUrl;
-  }
-
-  private getHeaders() {
-    return {
-      Authorization: `Bearer ${this.token}`,
-      'Content-Type': 'application/json',
-    };
-  }
-
-  private getMultipartHeaders() {
-    return {
-      Authorization: `Bearer ${this.token}`,
-    };
-  }
-
-  private handleResponse<T>(response: AxiosResponse<ApiResponse<T>>): T {
-    if (!response.data.success) {
-      throw new Error(response.data.error || response.data.message || 'API request failed');
-    }
-    return response.data.data;
+  constructor(token?: string | null, client?: Client) {
+    this.client = client ?? createApiClient({ token: token ?? undefined });
   }
 
   // Email Composition Methods
 
   async composeEmail(accountId: string, request: EmailComposeRequest): Promise<string> {
-    try {
-      const response = await axios.post<ApiResponse<{ emailId: string }>>(
-        `${this.baseUrl}/accounts/${accountId}/emails/compose`,
-        request,
-        { headers: this.getHeaders() },
-      );
-      return this.handleResponse(response).emailId;
-    } catch (error) {
-      // Handle axios errors and extract server error messages
-      if (axios.isAxiosError(error)) {
-        if (error.response?.data) {
-          // Extract error message from server response
-          const serverError = error.response.data.error || error.response.data.message;
-          if (serverError) {
-            throw new Error(serverError);
-          }
-        }
-        // Fall back to axios error message
-        throw new Error(error.message);
-      }
-      // Re-throw non-axios errors
-      throw error;
-    }
+    const payload = buildComposePayload(request);
+
+    const result = await apiComposeAccountEmail({
+      client: this.client,
+      path: { accountId },
+      body: payload,
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to send email');
+    return data.emailId;
   }
 
   async listEmails(
@@ -79,33 +259,30 @@ export class EmailService {
     limit = 25,
     status?: EmailStatus,
   ): Promise<EmailListResponse> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      ...(status && { status }),
+    const result = await apiListAccountEmails({
+      client: this.client,
+      path: { accountId },
+      query: {
+        page,
+        limit,
+        status,
+      },
+      throwOnError: false,
     });
 
-    const response = await axios.get<ApiResponse<EmailListResponse>>(
-      `${this.baseUrl}/accounts/${accountId}/emails?${params.toString()}`,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response);
+    const data = unwrapApiResult(result, 'Failed to load emails');
+    return mapListResponse(accountId, data as EmailListPagedType);
   }
 
   async getEmail(accountId: string, emailId: string): Promise<EmailRecord> {
-    const response = await axios.get<ApiResponse<{ email: EmailRecord }>>(
-      `${this.baseUrl}/accounts/${accountId}/emails/${emailId}`,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response).email;
-  }
+    const result = await apiGetAccountEmail({
+      client: this.client,
+      path: { accountId, emailId },
+      throwOnError: false,
+    });
 
-  async getEmailRecipients(accountId: string, emailId: string): Promise<EmailRecipient[]> {
-    const response = await axios.get<ApiResponse<{ recipients: EmailRecipient[] }>>(
-      `${this.baseUrl}/accounts/${accountId}/emails/${emailId}/recipients`,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response).recipients;
+    const data = unwrapApiResult(result, 'Failed to load email details') as EmailDetailType;
+    return mapEmailDetail(accountId, data);
   }
 
   // Email Template Methods
@@ -114,28 +291,37 @@ export class EmailService {
     accountId: string,
     template: EmailTemplateCreateRequest,
   ): Promise<EmailTemplate> {
-    const response = await axios.post<ApiResponse<{ template: EmailTemplate }>>(
-      `${this.baseUrl}/accounts/${accountId}/email-templates`,
-      template,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response).template;
+    const result = await apiCreateEmailTemplate({
+      client: this.client,
+      path: { accountId },
+      body: template,
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to create template') as EmailTemplateType;
+    return mapTemplate(data);
   }
 
   async listTemplates(accountId: string): Promise<EmailTemplate[]> {
-    const response = await axios.get<ApiResponse<{ templates: EmailTemplate[] }>>(
-      `${this.baseUrl}/accounts/${accountId}/email-templates`,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response).templates;
+    const result = await apiListEmailTemplates({
+      client: this.client,
+      path: { accountId },
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to load templates');
+    return data.templates.map(mapTemplate);
   }
 
   async getTemplate(accountId: string, templateId: string): Promise<EmailTemplate> {
-    const response = await axios.get<ApiResponse<EmailTemplate>>(
-      `${this.baseUrl}/accounts/${accountId}/email-templates/${templateId}`,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response);
+    const result = await apiGetEmailTemplate({
+      client: this.client,
+      path: { accountId, templateId },
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to load template') as EmailTemplateType;
+    return mapTemplate(data);
   }
 
   async updateTemplate(
@@ -143,18 +329,25 @@ export class EmailService {
     templateId: string,
     updates: EmailTemplateUpdateRequest,
   ): Promise<EmailTemplate> {
-    const response = await axios.put<ApiResponse<EmailTemplate>>(
-      `${this.baseUrl}/accounts/${accountId}/email-templates/${templateId}`,
-      updates,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response);
+    const result = await apiUpdateEmailTemplate({
+      client: this.client,
+      path: { accountId, templateId },
+      body: updates,
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to update template') as EmailTemplateType;
+    return mapTemplate(data);
   }
 
   async deleteTemplate(accountId: string, templateId: string): Promise<void> {
-    await axios.delete(`${this.baseUrl}/accounts/${accountId}/email-templates/${templateId}`, {
-      headers: this.getHeaders(),
+    const result = await apiDeleteEmailTemplate({
+      client: this.client,
+      path: { accountId, templateId },
+      throwOnError: false,
     });
+
+    assertNoApiError(result, 'Failed to delete template');
   }
 
   async previewTemplate(
@@ -162,12 +355,14 @@ export class EmailService {
     templateId: string,
     variables: Record<string, string>,
   ): Promise<{ subject: string; body: string }> {
-    const response = await axios.post<ApiResponse<{ subject: string; body: string }>>(
-      `${this.baseUrl}/accounts/${accountId}/email-templates/${templateId}/preview`,
-      { variables },
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response);
+    const result = await apiPreviewEmailTemplate({
+      client: this.client,
+      path: { accountId, templateId },
+      body: { variables },
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to preview template');
   }
 
   // Attachment Methods
@@ -177,25 +372,31 @@ export class EmailService {
     emailId: string,
     files: File[],
   ): Promise<AttachmentDetails[]> {
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('attachments', file);
+    const result = await apiUploadEmailAttachments({
+      client: this.client,
+      path: { accountId, emailId },
+      body: { attachments: files },
+      throwOnError: false,
+      ...formDataBodySerializer,
+      headers: { 'Content-Type': null },
     });
 
-    const response = await axios.post<ApiResponse<{ attachments: AttachmentDetails[] }>>(
-      `${this.baseUrl}/accounts/${accountId}/emails/${emailId}/attachments`,
-      formData,
-      { headers: this.getMultipartHeaders() },
-    );
-    return this.handleResponse(response).attachments;
+    const data = unwrapApiResult(
+      result,
+      'Failed to upload attachments',
+    ) as AttachmentUploadResultType[];
+    return data.map(mapAttachment);
   }
 
   async listAttachments(accountId: string, emailId: string): Promise<AttachmentDetails[]> {
-    const response = await axios.get<ApiResponse<{ attachments: AttachmentDetails[] }>>(
-      `${this.baseUrl}/accounts/${accountId}/emails/${emailId}/attachments`,
-      { headers: this.getHeaders() },
-    );
-    return this.handleResponse(response).attachments;
+    const result = await apiListEmailAttachments({
+      client: this.client,
+      path: { accountId, emailId },
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to load attachments') as EmailAttachmentType[];
+    return data.map(mapAttachment);
   }
 
   async downloadAttachment(
@@ -203,25 +404,29 @@ export class EmailService {
     emailId: string,
     attachmentId: string,
   ): Promise<Blob> {
-    const response = await axios.get(
-      `${this.baseUrl}/accounts/${accountId}/emails/${emailId}/attachments/${attachmentId}`,
-      {
-        headers: this.getHeaders(),
-        responseType: 'blob',
-      },
-    );
-    return response.data;
+    const result = await apiDownloadEmailAttachment({
+      client: this.client,
+      path: { accountId, emailId, attachmentId },
+      throwOnError: false,
+      parseAs: 'blob',
+    });
+
+    const data = unwrapApiResult(result, 'Failed to download attachment');
+    return data as Blob;
   }
 
   async deleteAttachment(accountId: string, emailId: string, attachmentId: string): Promise<void> {
-    await axios.delete(
-      `${this.baseUrl}/accounts/${accountId}/emails/${emailId}/attachments/${attachmentId}`,
-      { headers: this.getHeaders() },
-    );
+    const result = await apiDeleteEmailAttachment({
+      client: this.client,
+      path: { accountId, emailId, attachmentId },
+      throwOnError: false,
+    });
+
+    assertNoApiError(result, 'Failed to delete attachment');
   }
 }
 
 // Factory function to create email service
-export const createEmailService = (token: string): EmailService => {
-  return new EmailService(token);
+export const createEmailService = (token?: string | null, client?: Client): EmailService => {
+  return new EmailService(token, client);
 };

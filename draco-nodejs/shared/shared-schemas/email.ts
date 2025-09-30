@@ -34,7 +34,7 @@ export const EmailComposeSchema = z.object({
   templateId: z.string().optional(),
   attachments: z.array(z.string()).optional(),
   scheduledSend: z.iso.datetime().optional(),
-  status: z.enum(['scheduled', 'sending']),
+  status: z.enum(['scheduled', 'sending']).optional(),
 });
 
 export const UpsertEmailTemplateSchema = z.object({

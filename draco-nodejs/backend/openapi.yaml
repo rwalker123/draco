@@ -873,7 +873,6 @@ components:
         - recipients
         - subject
         - body
-        - status
     EmailDetail:
       type: object
       properties:

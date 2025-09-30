@@ -63,14 +63,16 @@ export interface EmailRecord {
   bounceCount: number;
   openCount: number;
   clickCount: number;
+  recipients?: EmailRecipient[];
+  attachments?: AttachmentDetails[];
 }
 
 export type EmailStatus = 'draft' | 'sending' | 'sent' | 'failed' | 'scheduled' | 'partial';
 
 export interface EmailRecipient {
   id: string;
-  emailId: string;
-  contactId: string;
+  emailId?: string;
+  contactId?: string;
   emailAddress: string;
   contactName?: string;
   recipientType?: string;
@@ -108,7 +110,7 @@ export interface AttachmentDetails {
   originalName: string;
   fileSize: number;
   mimeType: string | null;
-  uploadedAt: Date;
+  uploadedAt?: Date;
 }
 
 export interface ApiResponse<T> {

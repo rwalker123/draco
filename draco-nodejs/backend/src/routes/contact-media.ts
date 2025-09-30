@@ -3,7 +3,7 @@ import { createStorageService } from '../services/storageService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { asyncHandler } from '@/utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
