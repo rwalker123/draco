@@ -28,7 +28,6 @@ import type {
   EmailListPagedType,
   EmailRecipientGroupsType,
   EmailTemplateType,
-  EmailTemplatesListType,
 } from '@draco/shared-schemas';
 import { createApiClient } from '../lib/apiClientFactory';
 import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
@@ -160,7 +159,8 @@ const mapListResponse = (accountId: string, data: EmailListPagedType): EmailList
     total: data.pagination.total,
     page: data.pagination.page,
     limit: data.pagination.limit,
-    totalPages: data.pagination.totalPages,
+    totalPages:
+      data.pagination.limit > 0 ? Math.ceil(data.pagination.total / data.pagination.limit) : 0,
   },
 });
 
@@ -310,12 +310,7 @@ export class EmailService {
     });
 
     const data = unwrapApiResult(result, 'Failed to load templates');
-
-    const templatesResponse: EmailTemplateType[] = Array.isArray(data)
-      ? (data as EmailTemplateType[])
-      : ((data as EmailTemplatesListType | undefined)?.templates ?? []);
-
-    return templatesResponse.map(mapTemplate);
+    return data.templates.map(mapTemplate);
   }
 
   async getTemplate(accountId: string, templateId: string): Promise<EmailTemplate> {

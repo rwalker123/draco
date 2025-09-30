@@ -1149,8 +1149,7 @@
           "id",
           "recipients",
           "subject",
-          "body",
-          "status"
+          "body"
         ]
       },
       "EmailDetail": {
