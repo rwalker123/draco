@@ -3,6 +3,7 @@ import { createStorageService } from '../services/storageService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { asyncHandler } from '@/utils/asyncHandler.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
@@ -15,7 +16,7 @@ const contactService = ServiceFactory.getContactService();
  */
 router.get(
   '/:contactId/photo',
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, contactId } = req.params;
 
     // Verify the contact exists and belongs to this account
@@ -39,7 +40,7 @@ router.get(
 
     // Send the image buffer
     res.send(photoBuffer);
-  },
+  }),
 );
 
 /**
@@ -51,7 +52,7 @@ router.delete(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, contactId } = req.params;
 
     // Verify the contact exists and belongs to this account
@@ -65,7 +66,7 @@ router.delete(
     await storageService.deleteContactPhoto(accountId, contactId);
 
     res.json(`Photo deleted for ${contact.firstName} ${contact.lastName}`);
-  },
+  }),
 );
 
 export default router;
