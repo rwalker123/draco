@@ -16,6 +16,7 @@ import {
   AuthenticationErrorSchema,
   AuthorizationErrorSchema,
   AutomaticRoleHoldersSchema,
+  AttachmentUploadResult,
   BaseballPositionSchema,
   ConflictErrorSchema,
   ContactPlayersWantedCreatorSchema,
@@ -32,6 +33,11 @@ import {
   CreateTeamManagerSchema,
   UpdatePollSchema,
   ExperienceLevelSchema,
+  EmailComposeSchema,
+  EmailDetailSchema,
+  EmailListPagedSchema,
+  EmailTemplateSchema,
+  EmailTemplatesListSchema,
   InternalServerErrorSchema,
   NotFoundErrorSchema,
   PlayerClassifiedSearchQuerySchema,
@@ -50,6 +56,7 @@ import {
   TeamsWantedOwnerClassifiedSchema,
   TeamsWantedPublicClassifiedPagedSchema,
   UpsertPlayersWantedClassifiedSchema,
+  UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
   UpsertWorkoutRegistrationSchema,
   UpsertWorkoutSchema,
@@ -87,6 +94,22 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const CreateContactRoleSchemaRef = registry.register(
     'CreateContactRole',
     CreateContactRoleSchema,
+  );
+  const EmailComposeSchemaRef = registry.register('EmailCompose', EmailComposeSchema);
+  const EmailDetailSchemaRef = registry.register('EmailDetail', EmailDetailSchema);
+  const EmailListPagedSchemaRef = registry.register('EmailListPaged', EmailListPagedSchema);
+  const EmailTemplateSchemaRef = registry.register('EmailTemplate', EmailTemplateSchema);
+  const UpsertEmailTemplateSchemaRef = registry.register(
+    'UpsertEmailTemplate',
+    UpsertEmailTemplateSchema,
+  );
+  const EmailTemplatesListSchemaRef = registry.register(
+    'EmailTemplatesList',
+    EmailTemplatesListSchema,
+  );
+  const AttachmentUploadResultSchemaRef = registry.register(
+    'AttachmentUploadResult',
+    AttachmentUploadResult,
   );
   const PagedContactSchemaRef = registry.register('PagedContact', PagedContactSchema);
   const ContactRoleSchemaRef = registry.register('ContactRole', ContactRoleSchema);
@@ -234,6 +257,13 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreateTeamManagerSchemaRef,
     CreateContactSchemaRef,
     CreateContactRoleSchemaRef,
+    EmailComposeSchemaRef,
+    EmailDetailSchemaRef,
+    EmailListPagedSchemaRef,
+    EmailTemplateSchemaRef,
+    UpsertEmailTemplateSchemaRef,
+    EmailTemplatesListSchemaRef,
+    AttachmentUploadResultSchemaRef,
     ContactRoleSchemaRef,
     RegisteredUserSchemaRef,
     ContactValidationWithSignInSchemaRef,
