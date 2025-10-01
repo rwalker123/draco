@@ -24,6 +24,7 @@
   "scripts": {
     "update": "node scripts/update-assets.js",
     "lint": "node -e \"console.log('skip lint for stoplight assets workspace');\"",
-    "lint:fix": "node -e \"console.log('skip lint:fix for stoplight assets workspace');\""
+    "lint:fix": "node -e \"console.log('skip lint:fix for stoplight assets workspace');\"",
+    "test": "node -e \"console.log('skip tests for stoplight assets workspace');\""
   }
 }
