@@ -39,7 +39,7 @@ export const UpsertTeamSeasonSchema = TeamSeasonSchema.omit({
   division: true,
   team: true,
 }).extend({
-  team: TeamSchema.omit({ id: true, logoUrl: true }),
+  team: TeamSchema.omit({ id: true, logoUrl: true }).partial().optional(),
   divisionId: z.string().nullable().optional(),
   leagueId: z.string().nullable().optional(),
 });

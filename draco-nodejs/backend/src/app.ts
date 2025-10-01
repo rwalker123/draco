@@ -1,10 +1,12 @@
+import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import { bigIntSerializer } from './middleware/bigint-serializer.js';
-import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/openapi.js';
 import { globalErrorHandler } from './utils/globalErrorHandler.js';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
@@ -33,14 +35,17 @@ import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhookRoutes.js';
 import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
+import { ServiceFactory } from './services/serviceFactory.js';
 
 // Load environment variables
 dotenv.config();
 
 // Start cleanup service
-import { ServiceFactory } from './services/serviceFactory.js';
 const cleanupService = ServiceFactory.getCleanupService();
 cleanupService.start();
+
+const require = createRequire(import.meta.url);
+const stoplightAssetsDir = dirname(require.resolve('@stoplight/elements/web-components.min.js'));
 
 const app = express();
 
@@ -143,9 +148,60 @@ app.get('/health', (req: express.Request, res: express.Response) => {
   }
 });
 
-// Swagger API Documentation
-app.use('/apidocs', swaggerUi.serve);
-app.get('/apidocs', swaggerUi.setup(specs));
+// Serve API documentation via Stoplight Elements
+app.use('/apidocs/assets', express.static(stoplightAssetsDir));
+
+app.get('/apidocs/init.js', (_req: express.Request, res: express.Response) => {
+  res.type('application/javascript').send(`import '/apidocs/assets/web-components.min.js';
+
+const mount = () => {
+  const apiElement = document.querySelector('elements-api');
+  if (!apiElement) {
+    requestAnimationFrame(mount);
+    return;
+  }
+
+  apiElement.apiDescriptionUrl = '/openapi.json';
+  apiElement.router = 'hash';
+  apiElement.layout = 'sidebar';
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mount, { once: true });
+} else {
+  mount();
+}
+`);
+});
+
+app.get('/openapi.json', (_req: express.Request, res: express.Response) => {
+  res.json(specs);
+});
+
+app.get('/apidocs', (_req: express.Request, res: express.Response) => {
+  res.type('html').send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Draco API Docs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/apidocs/assets/styles.min.css" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    elements-api {
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <elements-api></elements-api>
+  <script type="module" src="/apidocs/init.js"></script>
+</body>
+</html>`);
+});
 
 // API routes (will be added later)
 app.use('/api/testdatabase', testDatabaseRouter);
