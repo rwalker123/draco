@@ -1,0 +1,29 @@
+{
+  "name": "@draco/stoplight-assets",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.cjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs",
+      "default": "./index.cjs"
+    },
+    "./web-components": "./dist/web-components.min.js",
+    "./styles": "./dist/styles.min.css"
+  },
+  "types": "./index.d.ts",
+  "files": [
+    "dist",
+    "index.cjs",
+    "index.mjs",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "update": "node scripts/update-assets.js",
+    "lint": "node -e \"console.log('skip lint for stoplight assets workspace');\"",
+    "lint:fix": "node -e \"console.log('skip lint:fix for stoplight assets workspace');\""
+  }
+}
