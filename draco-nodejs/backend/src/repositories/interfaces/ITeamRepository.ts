@@ -4,13 +4,13 @@ import {
   dbTeam,
   dbTeamSeasonLeague,
   dbTeamSeasonManagerContact,
+  dbTeamSeasonRecord,
   dbTeamSeasonWithLeague,
   dbTeamSeasonWithLeaguesAndTeams,
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
 } from '../types/dbTypes.js';
-import { TeamSeasonRecordType } from '@draco/shared-schemas';
 
 export interface ITeamRepository extends IBaseRepository<teamsseason> {
   findBySeasonId(seasonId: bigint, accountId: bigint): Promise<teamsseason[]>;
@@ -71,6 +71,6 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     accountId: bigint,
   ): Promise<dbTeamSeasonLeague | null>;
 
-  getTeamRecord(teamSeasonId: bigint): Promise<TeamSeasonRecordType>;
-  getTeamRecords(teamSeasonIds: bigint[]): Promise<Map<string, TeamSeasonRecordType>>;
+  getTeamRecord(teamSeasonId: bigint): Promise<dbTeamSeasonRecord>;
+  getTeamRecords(teamSeasonIds: bigint[]): Promise<Map<string, dbTeamSeasonRecord>>;
 }

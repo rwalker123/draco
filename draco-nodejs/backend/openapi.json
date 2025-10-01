@@ -845,9 +845,22 @@
             "type": "string",
             "pattern": "^d+$"
           },
-          "teamSeasonId": {
-            "type": "string",
-            "pattern": "^d+$"
+          "team": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id"
+            ]
           },
           "contact": {
             "type": "object",
@@ -942,31 +955,21 @@
         },
         "required": [
           "id",
-          "teamSeasonId",
+          "team",
           "contact"
         ],
         "description": "Schema for a manager of a team for a given season"
       },
-      "CreateTeamManager": {
+      "UpsertTeamManager": {
         "type": "object",
         "properties": {
-          "contact": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^d+$"
-              }
-            },
-            "required": [
-              "id"
-            ]
+          "contactId": {
+            "type": "string"
           }
         },
         "required": [
-          "contact"
-        ],
-        "description": "Schema for creating a manager"
+          "contactId"
+        ]
       },
       "CreateContact": {
         "type": "object",
@@ -2962,7 +2965,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^d+$"
           },
           "accountId": {
             "type": "string"
@@ -2987,7 +2991,8 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^d+$"
               },
               "firstName": {
                 "type": "string"
@@ -3010,7 +3015,8 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^d+$"
               },
               "name": {
                 "type": "string"
@@ -3045,7 +3051,8 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^d+$"
                 },
                 "accountId": {
                   "type": "string"
@@ -3070,7 +3077,8 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "pattern": "^d+$"
                     },
                     "firstName": {
                       "type": "string"
@@ -3093,7 +3101,8 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "pattern": "^d+$"
                     },
                     "name": {
                       "type": "string"
@@ -3322,7 +3331,8 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "pattern": "^d+$"
                     },
                     "name": {
                       "type": "string"
@@ -3486,7 +3496,8 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^d+$"
               },
               "name": {
                 "type": "string"
@@ -3586,10 +3597,14 @@
         "type": "object",
         "properties": {
           "email": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 320,
+            "format": "email"
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
           },
           "birthDate": {
             "type": "string",
@@ -3598,8 +3613,7 @@
         },
         "required": [
           "email",
-          "phone",
-          "birthDate"
+          "phone"
         ],
         "title": "TeamsWantedContactInfo",
         "description": "Contact information for a Teams Wanted classified"
@@ -3717,7 +3731,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^d+$"
           },
           "name": {
             "type": "string"
@@ -3749,7 +3764,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^d+$"
           },
           "name": {
             "type": "string"
@@ -8625,7 +8641,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateTeamManager"
+                "$ref": "#/components/schemas/UpsertTeamManager"
               }
             }
           }

@@ -406,7 +406,9 @@ export class ManagerResponseFormatter {
   static formatManagersListResponse(rawManagers: dbTeamManagerWithContact[]): TeamManagerType[] {
     return rawManagers.map((manager) => ({
       id: manager.id.toString(),
-      teamSeasonId: manager.teamseasonid.toString(),
+      team: {
+        id: manager.teamseasonid.toString(),
+      },
       contact: {
         id: manager.contacts.id.toString(),
         creatoraccountid: '', // Placeholder, as creatoraccountid is not in RawManager
@@ -423,7 +425,9 @@ export class ManagerResponseFormatter {
   static formatAddManagerResponse(rawManager: dbTeamManagerWithContact): TeamManagerType {
     return {
       id: rawManager.id.toString(),
-      teamSeasonId: rawManager.teamseasonid.toString(),
+      team: {
+        id: rawManager.teamseasonid.toString(),
+      },
       contact: {
         id: rawManager.contacts.id.toString(),
         userId: rawManager.contacts.userid || undefined,

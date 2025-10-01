@@ -833,3 +833,9 @@ export type dbCreateEmailAttachmentInput = {
   mime_type: string | null;
   storage_path: string;
 };
+
+export type dbTeamSeasonRecord = {
+  wins: number;
+  losses: number;
+  ties: number;
+};

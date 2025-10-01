@@ -3,17 +3,17 @@ import { getContactPhotoUrl, getLogoUrl } from '../config/logo.js';
 import {
   dbTeam,
   dbTeamSeasonManagerContact,
+  dbTeamSeasonRecord,
   dbTeamSeasonWithLeaguesAndTeams,
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
 } from '../repositories/index.js';
 import {
-  TeamSeasonSummaryType,
   TeamManagerWithTeamsType,
-  TeamSeasonDetailsType,
-  TeamSeasonRecordType,
+  TeamSeasonType,
   TeamSeasonNameType,
+  TeamSeasonRecordType,
 } from '@draco/shared-schemas';
 
 export class TeamResponseFormatter {
@@ -21,11 +21,11 @@ export class TeamResponseFormatter {
     accountId: bigint,
     userTeams: dbUserTeams[],
     managedTeams: dbUserManagerTeams[],
-  ): TeamSeasonSummaryType[] {
+  ): TeamSeasonType[] {
     // Combine and deduplicate teams
     const allTeams = [...userTeams, ...managedTeams];
 
-    const uniqueTeams = new Map<string, TeamSeasonSummaryType>();
+    const uniqueTeams = new Map<string, TeamSeasonType>();
 
     allTeams.forEach((team) => {
       const teamSeason = team.teamsseason;
@@ -35,12 +35,14 @@ export class TeamResponseFormatter {
         uniqueTeams.set(teamId, {
           id: teamId,
           name: teamSeason.name,
-          teamId: teamSeason.teams.id.toString(),
+          team: {
+            id: teamSeason.teams.id.toString(),
+            logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
+          },
           league: {
             id: teamSeason.leagueseason.id.toString(),
             name: teamSeason.leagueseason.league.name,
           },
-          logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
         });
       }
     });
@@ -51,11 +53,18 @@ export class TeamResponseFormatter {
   static formatTeamsWithLeaguesAndDivisions(
     accountId: bigint,
     teamsWithLeaguesAndDivisions: dbTeamsWithLeaguesAndDivisions[],
-  ): TeamSeasonSummaryType[] {
+  ): TeamSeasonType[] {
     return teamsWithLeaguesAndDivisions.map((team) => ({
       id: team.id.toString(),
       name: team.name,
-      teamId: team.teamid.toString(),
+      team: {
+        id: team.teamid.toString(),
+        webAddress: team.teams.webaddress,
+        youtubeUserId: team.teams.youtubeuserid,
+        defaultVideo: team.teams.defaultvideo,
+        autoPlayVideo: team.teams.autoplayvideo,
+        logoUrl: getLogoUrl(accountId.toString(), team.teamid.toString()),
+      },
       league: {
         id: team.leagueseason.league.id.toString(),
         name: team.leagueseason.league.name,
@@ -65,40 +74,41 @@ export class TeamResponseFormatter {
             id: team.divisionseason.divisiondefs.id.toString(),
             name: team.divisionseason.divisiondefs.name,
           }
-        : null,
-      webAddress: team.teams.webaddress,
-      youtubeUserId: team.teams.youtubeuserid,
-      defaultVideo: team.teams.defaultvideo,
-      autoPlayVideo: team.teams.autoplayvideo,
+        : undefined,
     }));
   }
 
   static formatTeamSeasonWithRecord(
     accountId: bigint,
     teamSeason: dbTeamSeasonWithLeaguesAndTeams,
-    record: TeamSeasonRecordType,
-  ): TeamSeasonDetailsType {
+    record: dbTeamSeasonRecord,
+  ): TeamSeasonRecordType {
     return {
       id: teamSeason.id.toString(),
       name: teamSeason.name,
-      teamId: teamSeason.teamid.toString(),
+      team: {
+        id: teamSeason.teamid.toString(),
+        webAddress: teamSeason.teams?.webaddress || null,
+        youtubeUserId: teamSeason.teams?.youtubeuserid || null,
+        defaultVideo: teamSeason.teams?.defaultvideo || null,
+        autoPlayVideo: teamSeason.teams?.autoplayvideo || false,
+        logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
+      },
       league: {
         id: teamSeason.leagueseason.league.id.toString(),
         name: teamSeason.leagueseason.league.name,
       },
-      division: null, // Not included in details query currently
-      webAddress: teamSeason.teams?.webaddress || null,
-      youtubeUserId: teamSeason.teams?.youtubeuserid || null,
-      defaultVideo: teamSeason.teams?.defaultvideo || null,
-      autoPlayVideo: teamSeason.teams?.autoplayvideo || false,
-      logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
-      leagueName: teamSeason.leagueseason?.league?.name || 'Unknown League',
+      division: undefined, // Not included in details query currently
       season: {
         id: teamSeason.leagueseason?.season?.id?.toString() || 'unknown',
         name: teamSeason.leagueseason?.season?.name || 'Unknown Season',
         accountId: accountId.toString(),
       },
-      record,
+      record: {
+        w: record.wins,
+        l: record.losses,
+        t: record.ties,
+      },
     };
   }
 
@@ -141,21 +151,23 @@ export class TeamResponseFormatter {
       name: teamSeason.name,
     };
   }
-  static formatTeamSeasonSummary(accountId: bigint, team: dbTeam): TeamSeasonSummaryType {
+  static formatTeamSeasonSummary(accountId: bigint, team: dbTeam): TeamSeasonType {
     return {
       id: team.id.toString(),
       name: team.name,
-      teamId: team.teamid.toString(),
-      division: null, // Not included in summary
-      webAddress: team.teams?.webaddress || null,
-      youtubeUserId: team.teams?.youtubeuserid || null,
-      defaultVideo: team.teams?.defaultvideo || null,
-      autoPlayVideo: team.teams?.autoplayvideo || false,
+      team: {
+        id: team.teamid.toString(),
+        webAddress: team.teams?.webaddress || null,
+        youtubeUserId: team.teams?.youtubeuserid || null,
+        defaultVideo: team.teams?.defaultvideo || null,
+        autoPlayVideo: team.teams?.autoplayvideo || false,
+        logoUrl: getLogoUrl(accountId.toString(), team.teamid.toString()),
+      },
+      division: undefined, // Not included in summary
       league: {
         id: team.leagueseason.league.id.toString(),
         name: team.leagueseason.league.name,
       },
-      logoUrl: getLogoUrl(accountId.toString(), team.teamid.toString()),
     };
   }
 }

@@ -1,42 +1,14 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { SeasonSchema } from './season.js';
+import { bigintToStringSchema, nameSchema } from './standardSchema.js';
+import { LeagueNameSchema, LeagueSeasonSchema } from './league.js';
+import { DivisionNameSchema, DivisionSeasonSchema } from './division.js';
 
 extendZodWithOpenApi(z);
 
-const LeagueIdOnlySchema = z.object({
-  id: z.string().trim().min(1),
-});
-
-const DivisionIdOnlySchema = z.object({
-  id: z.string().trim().min(1),
-});
-
-export const LeagueSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
-  name: z.string(),
-});
-
-export const DivisionSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
-  name: z.string(),
-});
-
-export const TeamSeasonRecordSchema = z.object({
-  wins: z.number().min(0),
-  losses: z.number().min(0),
-  ties: z.number().min(0),
-});
-
-export const TeamSeasonNameSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
-  name: z.string().trim().min(1).max(100),
-});
-
-export const TeamSeasonSummarySchema = TeamSeasonNameSchema.extend({
-  teamId: z.string(),
-  league: LeagueSchema,
-  division: DivisionSchema.nullable().optional(),
+export const TeamSchema = z.object({
+  id: bigintToStringSchema,
   webAddress: z.string().nullable().optional(),
   youtubeUserId: z.string().nullable().optional(),
   defaultVideo: z.string().nullable().optional(),
@@ -44,28 +16,53 @@ export const TeamSeasonSummarySchema = TeamSeasonNameSchema.extend({
   logoUrl: z.url().optional().nullable(),
 });
 
-export const TeamSeasonDetailsSchema = TeamSeasonSummarySchema.extend({
-  logoUrl: z.string(),
-  leagueName: z.string(),
-  season: SeasonSchema.nullable(),
-  record: TeamSeasonRecordSchema,
+export const TeamSeasonNameSchema = z.object({
+  id: bigintToStringSchema,
+  name: nameSchema.optional(),
 });
 
-export const UpsertTeamSeasonSchema = TeamSeasonSummarySchema.omit({
+export const TeamSeasonSchema = TeamSeasonNameSchema.extend({
+  team: TeamSchema,
+  season: SeasonSchema.optional(),
+  league: LeagueNameSchema.optional(),
+  division: DivisionNameSchema.optional(),
+});
+
+export const TeamSeasonWithPlayerCountSchema = TeamSeasonSchema.extend({
+  playerCount: z.number().int().nonnegative().optional(),
+  managerCount: z.number().int().nonnegative().optional(),
+});
+
+export const UpsertTeamSeasonSchema = TeamSeasonSchema.omit({
   id: true,
   league: true,
   division: true,
-  logoUrl: true,
+  team: true,
 }).extend({
-  id: z.string().trim().min(1).optional(),
-  league: LeagueIdOnlySchema,
-  division: DivisionIdOnlySchema.nullable().optional(),
+  team: TeamSchema.omit({ id: true, logoUrl: true }),
+  divisionId: z.string().nullable().optional(),
+  leagueId: z.string().nullable().optional(),
 });
 
-export type LeagueType = z.infer<typeof LeagueSchema>;
-export type DivisionType = z.infer<typeof DivisionSchema>;
+export const DivisionSeasonWithTeamsSchema = DivisionSeasonSchema.extend({
+  teams: TeamSeasonSchema.array(),
+});
+
+export const LeagueSeasonWithDivisionTeamsSchema = LeagueSeasonSchema.extend({
+  divisions: DivisionSeasonWithTeamsSchema.array().optional(),
+});
+
+export const LeagueSeasonWithDivisionTeamsAndUnassignedSchema =
+  LeagueSeasonWithDivisionTeamsSchema.extend({
+    unassignedTeams: TeamSeasonSchema.array().optional(),
+  });
+
 export type TeamSeasonNameType = z.infer<typeof TeamSeasonNameSchema>;
-export type TeamSeasonRecordType = z.infer<typeof TeamSeasonRecordSchema>;
-export type TeamSeasonSummaryType = z.infer<typeof TeamSeasonSummarySchema>;
-export type TeamSeasonDetailsType = z.infer<typeof TeamSeasonDetailsSchema>;
 export type UpsertTeamSeasonType = z.infer<typeof UpsertTeamSeasonSchema>;
+export type TeamSeasonType = z.infer<typeof TeamSeasonSchema>;
+export type TeamType = z.infer<typeof TeamSchema>;
+export type DivisionSeasonWithTeamsType = z.infer<typeof DivisionSeasonWithTeamsSchema>;
+export type LeagueSeasonWithDivisionTeamsType = z.infer<typeof LeagueSeasonWithDivisionTeamsSchema>;
+export type LeagueSeasonWithDivisionTeamsAndUnassignedType = z.infer<
+  typeof LeagueSeasonWithDivisionTeamsAndUnassignedSchema
+>;

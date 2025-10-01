@@ -86,7 +86,7 @@ router.put(
     // Handle logo upload if provided
     if (req.file) {
       // Get the teamId from the updated team
-      const teamId = BigInt(updatedTeam.teamId);
+      const teamId = BigInt(updatedTeam.team.id);
       await handleLogoUpload(req, accountId, teamId);
     }
 
