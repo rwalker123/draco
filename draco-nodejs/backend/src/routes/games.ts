@@ -4,7 +4,6 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { IRoleQuery } from '../interfaces/roleInterfaces.js';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.js';
-import { GameStatus, GameType } from '../types/gameEnums.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 import {
@@ -26,6 +25,9 @@ import {
   GameStatusShortEnumType,
   GameType as GameTypeShared,
   GamesWithRecapsType,
+  UpdateGameResultsSchema,
+  UpsertGameRecapSchema,
+  UpsertGameSchema,
 } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
@@ -67,41 +69,9 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, gameId } = extractGameOnlyParams(req.params);
-    const { homeScore, awayScore, gameStatus } = req.body;
 
-    // Validate input
-    if (
-      typeof homeScore !== 'number' ||
-      typeof awayScore !== 'number' ||
-      typeof gameStatus !== 'number'
-    ) {
-      throw new ValidationError(
-        'Invalid input: homeScore, awayScore, and gameStatus must be numbers',
-      );
-    }
-
-    if (homeScore < 0 || awayScore < 0) {
-      throw new ValidationError('Scores cannot be negative');
-    }
-
-    // Validate forfeit scores
-    if (gameStatus === GameStatus.Forfeit) {
-      // Forfeit
-      if (homeScore === 0 && awayScore === 0) {
-        throw new ValidationError(
-          'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
-        );
-      }
-      if (homeScore > 0 && awayScore > 0) {
-        throw new ValidationError(
-          'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
-        );
-      }
-    }
-
-    if (gameStatus < GameStatus.Scheduled || gameStatus > GameStatus.DidNotReport) {
-      throw new ValidationError('Invalid game status');
-    }
+    const input = UpdateGameResultsSchema.parse(req.body);
+    const { homeScore, visitorScore, gameStatus } = input;
 
     // Check if game exists and belongs to the account
     const game = await prisma.leagueschedule.findFirst({
@@ -132,7 +102,7 @@ router.put(
       where: { id: gameId },
       data: {
         hscore: homeScore,
-        vscore: awayScore,
+        vscore: visitorScore,
         gamestatus: gameStatus,
       },
       include: {
@@ -146,9 +116,9 @@ router.put(
     });
 
     const result: GameResultType = {
-      gameId: updatedGame.id.toString(),
+      id: updatedGame.id.toString(),
       homeScore: updatedGame.hscore,
-      awayScore: updatedGame.vscore,
+      visitorScore: updatedGame.vscore,
       gameStatus: updatedGame.gamestatus,
     };
 
@@ -356,33 +326,24 @@ router.post(
   routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { seasonId } = req.params;
+
+    const input = UpsertGameSchema.parse(req.body);
     const {
       leagueSeasonId,
       gameDate,
-      homeTeamId,
-      visitorTeamId,
-      fieldId,
+      homeTeam,
+      visitorTeam,
+      field,
       comment,
-      gameType = GameType.RegularSeason,
+      gameType,
       umpire1,
       umpire2,
       umpire3,
       umpire4,
-    } = req.body;
-
-    // const input = UpsertGameSchema.parse(req.body);
-
-    // Validate required fields
-    if (!leagueSeasonId || !gameDate || !homeTeamId || !visitorTeamId) {
-      throw new ValidationError(
-        'League season ID, game date, home team, and visitor team are required',
-      );
-    }
-
-    // Validate that home team and visitor team are different
-    if (homeTeamId === visitorTeamId) {
-      throw new ValidationError('Home team and visitor team cannot be the same');
-    }
+    } = input;
+    const homeTeamId = homeTeam.id;
+    const visitorTeamId = visitorTeam.id;
+    const fieldId = field?.id;
 
     // Check if teams exist in the league season, ensure they are from the same
     // seasonId as well.
@@ -425,14 +386,14 @@ router.post(
         hscore: 0,
         vscore: 0,
         comment: comment || '',
-        fieldid: fieldId ? BigInt(fieldId) : null,
+        fieldid: fieldId ? BigInt(fieldId) : undefined,
         leagueid: BigInt(leagueSeasonId),
         gamestatus: 0, // Scheduled
-        gametype: gameType,
-        umpire1: umpire1 ? BigInt(umpire1) : null,
-        umpire2: umpire2 ? BigInt(umpire2) : null,
-        umpire3: umpire3 ? BigInt(umpire3) : null,
-        umpire4: umpire4 ? BigInt(umpire4) : null,
+        gametype: BigInt(gameType),
+        umpire1: umpire1?.id ? BigInt(umpire1.id) : undefined,
+        umpire2: umpire2?.id ? BigInt(umpire2.id) : undefined,
+        umpire3: umpire3?.id ? BigInt(umpire3.id) : undefined,
+        umpire4: umpire4?.id ? BigInt(umpire4.id) : undefined,
       },
       include: {
         availablefields: true,
@@ -772,10 +733,8 @@ router.put(
     if (!userId) {
       throw new AuthenticationError('User not authenticated');
     }
-    const { recap } = req.body;
-    if (typeof recap !== 'string' || recap.trim() === '') {
-      throw new ValidationError('Recap is required');
-    }
+    const input = UpsertGameRecapSchema.parse(req.body);
+    const { recap } = input;
 
     // Fetch the game and validate it belongs to the account and season
     const game = await prisma.leagueschedule.findUnique({

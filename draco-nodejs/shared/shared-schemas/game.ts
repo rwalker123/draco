@@ -10,12 +10,17 @@ import { PaginationSchema } from './index.js';
 
 extendZodWithOpenApi(z);
 
+const GAME_STATUS_SCHEDULED = 0;
+const GAME_STATUS_FORFEIT = 4;
+const GAME_STATUS_DID_NOT_REPORT = 5;
+
 export const GameStatusEnumSchema = z.enum([
   'Final',
   'Rainout',
   'Postponed',
   'Did Not Report',
   'Scheduled',
+  'Forfeit',
   'Unknown',
 ]);
 export const GameStatusShortEnumSchema = z.enum(['', 'F', 'PPD', 'R', 'DNR']);
@@ -29,8 +34,8 @@ export const GameSchema = z.object({
   visitorTeam: TeamSeasonNameSchema,
   league: LeagueNameSchema,
   season: SeasonNameSchema,
-  homeScore: z.number(),
-  visitorScore: z.number(),
+  homeScore: z.number().min(0).max(99),
+  visitorScore: z.number().min(0).max(99),
   comment: z.string().max(255).nullable(),
   field: FieldSchema.nullable(),
   gameStatus: z.number(),
@@ -43,11 +48,11 @@ export const GameSchema = z.object({
   umpire4: ContactIdSchema.optional(),
 });
 
-export const GameResultSchema = z.object({
-  gameId: bigintToStringSchema,
-  homeScore: z.number(),
-  awayScore: z.number(),
-  gameStatus: z.number(),
+export const GameResultSchema = GameSchema.pick({
+  id: true,
+  homeScore: true,
+  visitorScore: true,
+  gameStatus: true,
 });
 
 export const GamesSchema = z.object({
@@ -71,29 +76,75 @@ export const GamesWithRecapsSchema = z.object({
 
 export const UpdateGameResultsSchema = GameSchema.pick({
   homeScore: true,
-  awayScore: true,
+  visitorScore: true,
   gameStatus: true,
-  emailPlayers: true,
-  postToTwitter: true,
-  postToBluesky: true,
-  postToFacebook: true,
-});
+})
+  .extend({
+    emailPlayers: z.boolean(),
+    postToTwitter: z.boolean(),
+    postToBluesky: z.boolean(),
+    postToFacebook: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    const { homeScore, visitorScore, gameStatus } = data;
+
+    if (gameStatus === GAME_STATUS_FORFEIT) {
+      const isHomeScoreZero = homeScore === 0;
+      const isVisitorScoreZero = visitorScore === 0;
+      const homePositive = homeScore > 0;
+      const visitorPositive = visitorScore > 0;
+
+      if ((isHomeScoreZero && isVisitorScoreZero) || (homePositive && visitorPositive)) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
+          path: ['homeScore'],
+        });
+      }
+    }
+
+    if (gameStatus < GAME_STATUS_SCHEDULED || gameStatus > GAME_STATUS_DID_NOT_REPORT) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Invalid game status',
+        path: ['gameStatus'],
+      });
+    }
+  });
 
 export const UpsertGameSchema = GameSchema.pick({
   gameDate: true,
-  homeTeamId: true,
-  visitorTeamId: true,
   gameType: true,
   gameStatus: true,
-  fieldId: true,
   comment: true,
-  umpire1: true,
-  umpire2: true,
-  umpire3: true,
-  umpire4: true,
-}).extend({
-  leagueSeasonId: z.string().trim().min(1),
-});
+})
+  .extend({
+    leagueSeasonId: z.string().trim().min(1),
+    homeTeam: z.object({ id: z.string().trim().min(1) }),
+    visitorTeam: z.object({ id: z.string().trim().min(1) }),
+    field: z.object({ id: z.string().trim().min(1) }).nullable(),
+    umpire1: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
+    umpire2: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
+    umpire3: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
+    umpire4: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
+  })
+  .refine((data) => data.homeTeam.id !== data.visitorTeam.id, {
+    message: 'Home and visitor teams must be different',
+    path: ['homeTeam'],
+  });
 
 export const UpsertGameRecapSchema = GameRecapSchema.omit({
   team: true,
