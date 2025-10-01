@@ -121,20 +121,22 @@ export class TeamService {
         updateData.divisionId === null ? null : BigInt(updateData.divisionId);
     }
 
-    if (updateData.team.webAddress !== undefined) {
-      teamUpdate.webaddress = updateData.team.webAddress ?? '';
-    }
+    if (updateData.team) {
+      if (updateData.team.webAddress !== undefined) {
+        teamUpdate.webaddress = updateData.team.webAddress ?? '';
+      }
 
-    if (updateData.team.youtubeUserId !== undefined) {
-      teamUpdate.youtubeuserid = updateData.team.youtubeUserId ?? null;
-    }
+      if (updateData.team.youtubeUserId !== undefined) {
+        teamUpdate.youtubeuserid = updateData.team.youtubeUserId ?? null;
+      }
 
-    if (updateData.team.defaultVideo !== undefined) {
-      teamUpdate.defaultvideo = updateData.team.defaultVideo ?? '';
-    }
+      if (updateData.team.defaultVideo !== undefined) {
+        teamUpdate.defaultvideo = updateData.team.defaultVideo ?? '';
+      }
 
-    if (updateData.team.autoPlayVideo !== undefined) {
-      teamUpdate.autoplayvideo = updateData.team.autoPlayVideo ?? false;
+      if (updateData.team.autoPlayVideo !== undefined) {
+        teamUpdate.autoplayvideo = updateData.team.autoPlayVideo ?? false;
+      }
     }
 
     const teamsSeasonPayload =
