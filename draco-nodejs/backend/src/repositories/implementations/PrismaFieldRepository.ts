@@ -55,7 +55,10 @@ export class PrismaFieldRepository implements IFieldRepository {
         id: true,
         name: true,
         address: true,
-        accountid: true,
+        city: true,
+        state: true,
+        zipcode: true,
+        shortname: true,
       },
     });
   }

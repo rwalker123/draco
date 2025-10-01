@@ -21,9 +21,12 @@ export class FieldResponseFormatter {
   static formatField(field: dbAvailableField): FieldType {
     return {
       id: field.id.toString(),
-      accountId: field.accountid.toString(),
       name: field.name,
       address: field.address ?? null,
+      city: field.city ?? null,
+      state: field.state ?? null,
+      zip: field.zipcode ?? null,
+      shortName: field.shortname,
     };
   }
 

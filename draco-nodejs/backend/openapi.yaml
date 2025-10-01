@@ -2942,17 +2942,29 @@ components:
             id:
               type: string
               pattern: ^d+$
-            accountId:
-              type: string
             name:
               type: string
               minLength: 1
+              maxLength: 100
+            shortName:
+              type: string
+              maxLength: 5
             address:
+              type: string
+              nullable: true
+            city:
+              type: string
+              nullable: true
+            state:
+              type: string
+              nullable: true
+            zip:
               type: string
               nullable: true
           required:
             - id
             - name
+            - shortName
         registrationCount:
           type: integer
           minimum: 0
@@ -2981,17 +2993,29 @@ components:
             id:
               type: string
               pattern: ^d+$
-            accountId:
-              type: string
             name:
               type: string
               minLength: 1
+              maxLength: 100
+            shortName:
+              type: string
+              maxLength: 5
             address:
+              type: string
+              nullable: true
+            city:
+              type: string
+              nullable: true
+            state:
+              type: string
+              nullable: true
+            zip:
               type: string
               nullable: true
           required:
             - id
             - name
+            - shortName
         registrationCount:
           type: integer
           minimum: 0

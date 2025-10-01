@@ -19,7 +19,14 @@ import { BatchQueryHelper } from '../repositories/implementations/batchQueries.j
 import { PaginationHelper } from '../utils/pagination.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';
-import { ContactRoleType } from '@draco/shared-schemas';
+import {
+  ContactRoleType,
+  GameResultType,
+  GameStatusEnumType,
+  GameStatusShortEnumType,
+  GameType as GameTypeShared,
+  GamesWithRecapsType,
+} from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const roleService = ServiceFactory.getRoleQuery();
@@ -60,15 +67,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, gameId } = extractGameOnlyParams(req.params);
-    const {
-      homeScore,
-      awayScore,
-      gameStatus,
-      emailPlayers,
-      postToTwitter,
-      postToBluesky,
-      postToFacebook,
-    } = req.body;
+    const { homeScore, awayScore, gameStatus } = req.body;
 
     // Validate input
     if (
@@ -146,32 +145,14 @@ router.put(
       },
     });
 
-    // Handle notifications (placeholder for now)
-    const notifications: string[] = [];
-    if (emailPlayers) {
-      notifications.push('Email sent to players');
-    }
-    if (postToTwitter) {
-      notifications.push('Posted to Twitter');
-    }
-    if (postToBluesky) {
-      notifications.push('Posted to Bluesky');
-    }
-    if (postToFacebook) {
-      notifications.push('Posted to Facebook');
-    }
+    const result: GameResultType = {
+      gameId: updatedGame.id.toString(),
+      homeScore: updatedGame.hscore,
+      awayScore: updatedGame.vscore,
+      gameStatus: updatedGame.gamestatus,
+    };
 
-    res.json({
-      success: true,
-      message: 'Game results updated successfully',
-      data: {
-        gameId: updatedGame.id.toString(),
-        homeScore: updatedGame.hscore,
-        awayScore: updatedGame.vscore,
-        gameStatus: updatedGame.gamestatus,
-        notifications,
-      },
-    });
+    res.json(result);
   }),
 );
 
@@ -281,15 +262,18 @@ router.get(
 
       const baseGame = {
         id: game.id.toString(),
-        gameDate: DateUtils.formatDateTimeForResponse(game.gamedate),
-        homeTeamId: game.hteamid.toString(),
-        visitorTeamId: game.vteamid.toString(),
-        homeTeamName: homeTeamName,
-        visitorTeamName: visitorTeamName,
+        gameDate: DateUtils.formatDateTimeForResponse(game.gamedate) || '',
+        homeTeam: {
+          id: game.hteamid.toString(),
+          name: homeTeamName,
+        },
+        visitorTeam: {
+          id: game.vteamid.toString(),
+          name: visitorTeamName,
+        },
         homeScore: game.hscore,
         visitorScore: game.vscore,
         comment: game.comment,
-        fieldId: game.fieldid?.toString(),
         field: game.availablefields
           ? {
               id: game.availablefields.id.toString(),
@@ -301,13 +285,29 @@ router.get(
             }
           : null,
         gameStatus: game.gamestatus,
-        gameStatusText: getGameStatusText(game.gamestatus),
-        gameStatusShortText: getGameStatusShortText(game.gamestatus),
-        gameType: game.gametype,
-        umpire1: game.umpire1?.toString(),
-        umpire2: game.umpire2?.toString(),
-        umpire3: game.umpire3?.toString(),
-        umpire4: game.umpire4?.toString(),
+        gameStatusText: getGameStatusText(game.gamestatus) as GameStatusEnumType,
+        gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
+        gameType: game.gametype.toString(),
+        umpire1: game.umpire1
+          ? {
+              id: game.umpire1.toString(),
+            }
+          : undefined,
+        umpire2: game.umpire2
+          ? {
+              id: game.umpire2.toString(),
+            }
+          : undefined,
+        umpire3: game.umpire3
+          ? {
+              id: game.umpire3.toString(),
+            }
+          : undefined,
+        umpire4: game.umpire4
+          ? {
+              id: game.umpire4.toString(),
+            }
+          : undefined,
         league: {
           id: game.leagueseason.id.toString(), // leagueSeasonId
           name: game.leagueseason.league.name,
@@ -321,7 +321,7 @@ router.get(
         processedGames.push({
           ...baseGame,
           recaps: (game as GameWithRecap).gamerecap.map((recap) => ({
-            teamId: recap.teamid.toString(),
+            team: { id: recap.teamid.toString() },
             recap: recap.recap,
           })),
         });
@@ -338,13 +338,13 @@ router.get(
       totalCount,
     );
 
+    const returnResult: GamesWithRecapsType = {
+      games: response.data,
+      pagination: response.pagination,
+    };
+
     // Wrap in expected format
-    res.json({
-      ...response,
-      data: {
-        games: response.data,
-      },
-    });
+    res.json(returnResult);
   }),
 );
 
@@ -438,45 +438,61 @@ router.post(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        game: {
-          id: game.id.toString(),
-          gameDate: DateUtils.formatDateTimeForResponse(game.gamedate),
-          homeTeamId: game.hteamid.toString(),
-          visitorTeamId: game.vteamid.toString(),
-          homeScore: game.hscore,
-          visitorScore: game.vscore,
-          comment: game.comment,
-          fieldId: game.fieldid?.toString(),
-          field: game.availablefields
-            ? {
-                id: game.availablefields.id.toString(),
-                name: game.availablefields.name,
-                shortName: game.availablefields.shortname,
-                address: game.availablefields.address,
-                city: game.availablefields.city,
-                state: game.availablefields.state,
-              }
-            : null,
-          gameStatus: game.gamestatus,
-          gameType: game.gametype,
-          umpire1: game.umpire1?.toString(),
-          umpire2: game.umpire2?.toString(),
-          umpire3: game.umpire3?.toString(),
-          umpire4: game.umpire4?.toString(),
-          league: {
-            id: game.leagueseason.league.id.toString(),
-            name: game.leagueseason.league.name,
-          },
-          season: {
-            id: game.leagueseason.season.id.toString(),
-            name: game.leagueseason.season.name,
-          },
-        },
+    const result: GameTypeShared = {
+      id: game.id.toString(),
+      gameDate: DateUtils.formatDateTimeForResponse(game.gamedate) || '',
+      homeTeam: {
+        id: game.hteamid.toString(),
       },
-    });
+      visitorTeam: {
+        id: game.vteamid.toString(),
+      },
+      homeScore: game.hscore,
+      visitorScore: game.vscore,
+      comment: game.comment,
+      field: game.availablefields
+        ? {
+            id: game.availablefields.id.toString(),
+            name: game.availablefields.name,
+            shortName: game.availablefields.shortname,
+            address: game.availablefields.address,
+            city: game.availablefields.city,
+            state: game.availablefields.state,
+          }
+        : null,
+      gameStatus: game.gamestatus,
+      gameType: game.gametype.toString(),
+      umpire1: game.umpire1
+        ? {
+            id: game.umpire1.toString(),
+          }
+        : undefined,
+      umpire2: game.umpire2
+        ? {
+            id: game.umpire2.toString(),
+          }
+        : undefined,
+      umpire3: game.umpire3
+        ? {
+            id: game.umpire3.toString(),
+          }
+        : undefined,
+      umpire4: game.umpire4
+        ? {
+            id: game.umpire4.toString(),
+          }
+        : undefined,
+      league: {
+        id: game.leagueseason.league.id.toString(),
+        name: game.leagueseason.league.name,
+      },
+      season: {
+        id: game.leagueseason.season.id.toString(),
+        name: game.leagueseason.season.name,
+      },
+    };
+
+    res.json(result);
   }),
 );
 
@@ -565,46 +581,62 @@ router.put(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        game: {
-          id: updatedGame.id.toString(),
-          gameDate: DateUtils.formatDateTimeForResponse(updatedGame.gamedate),
-          homeTeamId: updatedGame.hteamid.toString(),
-          visitorTeamId: updatedGame.vteamid.toString(),
-          homeScore: updatedGame.hscore,
-          visitorScore: updatedGame.vscore,
-          comment: updatedGame.comment,
-          fieldId: updatedGame.fieldid?.toString(),
-          field: updatedGame.availablefields
-            ? {
-                id: updatedGame.availablefields.id.toString(),
-                name: updatedGame.availablefields.name,
-                shortName: updatedGame.availablefields.shortname,
-                address: updatedGame.availablefields.address,
-                city: updatedGame.availablefields.city,
-                state: updatedGame.availablefields.state,
-              }
-            : null,
-          gameStatus: updatedGame.gamestatus,
-          gameType: updatedGame.gametype,
-          umpire1: updatedGame.umpire1?.toString(),
-          umpire2: updatedGame.umpire2?.toString(),
-          umpire3: updatedGame.umpire3?.toString(),
-          umpire4: updatedGame.umpire4?.toString(),
-          league: {
-            id: updatedGame.leagueseason.league.id.toString(),
-            name: updatedGame.leagueseason.league.name,
-          },
-          season: {
-            id: updatedGame.leagueseason.season.id.toString(),
-            name: updatedGame.leagueseason.season.name,
-          },
-        },
+    const result: GameTypeShared = {
+      id: updatedGame.id.toString(),
+      gameDate: DateUtils.formatDateTimeForResponse(updatedGame.gamedate) || '',
+      homeTeam: {
+        id: updatedGame.hteamid.toString(),
       },
-      message: 'Game updated successfully',
-    });
+      visitorTeam: {
+        id: updatedGame.vteamid.toString(),
+      },
+      homeScore: updatedGame.hscore,
+      visitorScore: updatedGame.vscore,
+      comment: updatedGame.comment,
+      field: updatedGame.availablefields
+        ? {
+            id: updatedGame.availablefields.id.toString(),
+            name: updatedGame.availablefields.name,
+            shortName: updatedGame.availablefields.shortname,
+            address: updatedGame.availablefields.address,
+            city: updatedGame.availablefields.city,
+            state: updatedGame.availablefields.state,
+            zip: updatedGame.availablefields.zipcode,
+          }
+        : null,
+      gameStatus: updatedGame.gamestatus,
+      gameType: updatedGame.gametype.toString(),
+      umpire1: updatedGame.umpire1
+        ? {
+            id: updatedGame.umpire1?.toString(),
+          }
+        : undefined,
+      umpire2: updatedGame.umpire2
+        ? {
+            id: updatedGame.umpire2?.toString(),
+          }
+        : undefined,
+      umpire3: updatedGame.umpire3
+        ? {
+            id: updatedGame.umpire3?.toString(),
+          }
+        : undefined,
+      umpire4: updatedGame.umpire4
+        ? {
+            id: updatedGame.umpire4?.toString(),
+          }
+        : undefined,
+      league: {
+        id: updatedGame.leagueseason.league.id.toString(),
+        name: updatedGame.leagueseason.league.name,
+      },
+      season: {
+        id: updatedGame.leagueseason.season.id.toString(),
+        name: updatedGame.leagueseason.season.name,
+      },
+    };
+
+    res.json(result);
   }),
 );
 
@@ -630,10 +662,7 @@ router.delete(
       where: { id: BigInt(gameId) },
     });
 
-    res.json({
-      success: true,
-      message: 'Game deleted successfully',
-    });
+    res.json(true);
   }),
 );
 
@@ -716,7 +745,7 @@ router.get(
     if (!recap) {
       throw new NotFoundError('No recap found for this team');
     }
-    res.json({ success: true, data: { recap: recap.recap } });
+    res.json(recap.recap);
   }),
 );
 
@@ -797,7 +826,7 @@ router.put(
         recap,
       },
     });
-    res.json({ success: true, data: { recap: updatedRecap.recap } });
+    res.json(updatedRecap.recap);
   }),
 );
 

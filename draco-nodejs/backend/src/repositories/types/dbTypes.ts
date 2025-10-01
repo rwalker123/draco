@@ -34,7 +34,10 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
     id: true;
     name: true;
     address: true;
-    accountid: true;
+    city: true;
+    state: true;
+    zipcode: true;
+    shortname: true;
   };
 }>;
 
