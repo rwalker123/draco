@@ -3,7 +3,7 @@ import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.j
 import { StatisticsService } from './statisticsService.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { TeamSeasonRecordType } from '@draco/shared-schemas';
+import { TeamRecordType } from '@draco/shared-schemas';
 import { RepositoryFactory, ITeamRepository } from '../repositories/index.js';
 
 export interface GameInfo {
@@ -69,8 +69,13 @@ export class TeamStatsService {
     this.teamRepository = RepositoryFactory.getTeamRepository();
   }
 
-  async getTeamRecord(teamSeasonId: bigint): Promise<TeamSeasonRecordType> {
-    return await this.teamRepository.getTeamRecord(teamSeasonId);
+  async getTeamRecord(teamSeasonId: bigint): Promise<TeamRecordType> {
+    const dbRecord = await this.teamRepository.getTeamRecord(teamSeasonId);
+    return {
+      w: dbRecord.wins,
+      l: dbRecord.losses,
+      t: dbRecord.ties,
+    };
   }
 
   async getTeamGames(

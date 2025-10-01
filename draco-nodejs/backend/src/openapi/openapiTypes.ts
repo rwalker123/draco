@@ -30,7 +30,7 @@ import {
   CreateContactRoleSchema,
   CreatePollSchema,
   CreateSponsorSchema,
-  CreateTeamManagerSchema,
+  UpsertTeamManagerSchema,
   UpdatePollSchema,
   ExperienceLevelSchema,
   EmailComposeSchema,
@@ -86,9 +86,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const RegisteredUserSchemaRef = registry.register('RegisteredUser', RegisteredUserSchema);
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
-  const CreateTeamManagerSchemaRef = registry.register(
-    'CreateTeamManager',
-    CreateTeamManagerSchema,
+  const UpsertTeamManagerSchemaRef = registry.register(
+    'UpsertTeamManager',
+    UpsertTeamManagerSchema,
   );
   const CreateContactSchemaRef = registry.register('CreateContact', CreateContactSchema);
   const CreateContactRoleSchemaRef = registry.register(
@@ -254,7 +254,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ContactSchemaRef,
     BaseContactSchemaRef,
     TeamManagerSchemaRef,
-    CreateTeamManagerSchemaRef,
+    UpsertTeamManagerSchemaRef,
     CreateContactSchemaRef,
     CreateContactRoleSchemaRef,
     EmailComposeSchemaRef,

@@ -4,7 +4,7 @@ export const registerManagersEndpoints = ({ registry, schemaRefs, z }: RegisterC
   const {
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
-    CreateTeamManagerSchemaRef,
+    UpsertTeamManagerSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     TeamManagerSchemaRef,
@@ -52,7 +52,7 @@ export const registerManagersEndpoints = ({ registry, schemaRefs, z }: RegisterC
       body: {
         content: {
           'application/json': {
-            schema: CreateTeamManagerSchemaRef,
+            schema: UpsertTeamManagerSchemaRef,
           },
         },
       },

@@ -645,9 +645,18 @@ components:
         id:
           type: string
           pattern: ^d+$
-        teamSeasonId:
-          type: string
-          pattern: ^d+$
+        team:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
         contact:
           type: object
           properties:
@@ -720,23 +729,16 @@ components:
             - lastName
       required:
         - id
-        - teamSeasonId
+        - team
         - contact
       description: Schema for a manager of a team for a given season
-    CreateTeamManager:
+    UpsertTeamManager:
       type: object
       properties:
-        contact:
-          type: object
-          properties:
-            id:
-              type: string
-              pattern: ^d+$
-          required:
-            - id
+        contactId:
+          type: string
       required:
-        - contact
-      description: Schema for creating a manager
+        - contactId
     CreateContact:
       type: object
       properties:
@@ -2189,6 +2191,7 @@ components:
       properties:
         id:
           type: string
+          pattern: ^d+$
         accountId:
           type: string
         dateCreated:
@@ -2207,6 +2210,7 @@ components:
           properties:
             id:
               type: string
+              pattern: ^d+$
             firstName:
               type: string
             lastName:
@@ -2223,6 +2227,7 @@ components:
           properties:
             id:
               type: string
+              pattern: ^d+$
             name:
               type: string
           required:
@@ -2250,6 +2255,7 @@ components:
             properties:
               id:
                 type: string
+                pattern: ^d+$
               accountId:
                 type: string
               dateCreated:
@@ -2268,6 +2274,7 @@ components:
                 properties:
                   id:
                     type: string
+                    pattern: ^d+$
                   firstName:
                     type: string
                   lastName:
@@ -2284,6 +2291,7 @@ components:
                 properties:
                   id:
                     type: string
+                    pattern: ^d+$
                   name:
                     type: string
                 required:
@@ -2454,6 +2462,7 @@ components:
                 properties:
                   id:
                     type: string
+                    pattern: ^d+$
                   name:
                     type: string
                 required:
@@ -2573,6 +2582,7 @@ components:
           properties:
             id:
               type: string
+              pattern: ^d+$
             name:
               type: string
           required:
@@ -2651,15 +2661,18 @@ components:
       properties:
         email:
           type: string
+          maxLength: 320
+          format: email
         phone:
           type: string
+          minLength: 1
+          maxLength: 50
         birthDate:
           type: string
           nullable: true
       required:
         - email
         - phone
-        - birthDate
       title: TeamsWantedContactInfo
       description: Contact information for a Teams Wanted classified
     TeamsWantedContactQuery:
@@ -2749,6 +2762,7 @@ components:
       properties:
         id:
           type: string
+          pattern: ^d+$
         name:
           type: string
         category:
@@ -2773,6 +2787,7 @@ components:
       properties:
         id:
           type: string
+          pattern: ^d+$
         name:
           type: string
         description:
@@ -5930,7 +5945,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateTeamManager"
+              $ref: "#/components/schemas/UpsertTeamManager"
       responses:
         "200":
           description: Manager added

@@ -1,21 +1,9 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { PaginationSchema } from './paging.js';
-import { coerceToDate, formatDateToUtcString } from './date.js';
+import { bigintToStringSchema, trimToUndefined, birthDateSchema } from './standardSchema.js';
 
 extendZodWithOpenApi(z);
-
-const bigintToStringSchema = z.bigint().transform((value) => value.toString());
-
-const trimToUndefined = (value: unknown) => {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-
-  const stringValue = String(value).trim();
-
-  return stringValue.length === 0 ? undefined : stringValue;
-};
 
 export const PlayerClassifiedSortBySchema = z.enum(['dateCreated', 'relevance']);
 
@@ -35,12 +23,12 @@ export const PlayerClassifiedSearchQuerySchema = z
   });
 
 const ClassifiedAccountSchema = z.object({
-  id: z.string(),
+  id: bigintToStringSchema,
   name: z.string(),
 });
 
 const ClassifiedCreatorSchema = z.object({
-  id: z.string(),
+  id: bigintToStringSchema,
   firstName: z.string(),
   lastName: z.string(),
   photoUrl: z.string(),
@@ -48,7 +36,7 @@ const ClassifiedCreatorSchema = z.object({
 
 export const PlayersWantedClassifiedSchema = z
   .object({
-    id: z.string(),
+    id: bigintToStringSchema,
     accountId: z.string(),
     dateCreated: z.string().nullable(),
     createdByContactId: z.string(),
@@ -159,39 +147,10 @@ export const UpsertPlayersWantedClassifiedSchema = z
     description: 'Request body for creating or updating a Players Wanted classified',
   });
 
-const emailSchema = z.string().trim().email().max(320);
+const emailSchema = z.email().trim().max(320);
 const phoneSchema = z.string().trim().min(1).max(50);
 const experienceSchema = z.string().trim().min(1).max(255);
 const positionsSchema = z.string().trim().min(1).max(255);
-
-const birthDateStringSchema = z
-  .string()
-  .trim()
-  .refine(
-    (value: string) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value),
-    'Birth date must be empty or formatted as YYYY-MM-DD',
-  );
-
-const birthDateSchema = z
-  .preprocess((value) => {
-    if (value === undefined || value === null) {
-      return '';
-    }
-
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return '';
-      }
-
-      const coerced = coerceToDate(trimmed);
-      return coerced ? formatDateToUtcString(coerced) : trimmed;
-    }
-
-    const coerced = coerceToDate(value);
-    return coerced ? formatDateToUtcString(coerced) : value;
-  }, z.string())
-  .pipe(birthDateStringSchema);
 
 export const UpsertTeamsWantedClassifiedSchema = z
   .object({
@@ -229,9 +188,9 @@ export const TeamsWantedContactQuerySchema = z
 
 export const TeamsWantedContactInfoSchema = z
   .object({
-    email: z.string(),
-    phone: z.string(),
-    birthDate: z.string().nullable(),
+    email: z.email().trim().max(320),
+    phone: z.string().trim().min(1).max(50),
+    birthDate: birthDateSchema,
   })
   .openapi({
     title: 'TeamsWantedContactInfo',
@@ -241,7 +200,7 @@ export const TeamsWantedContactInfoSchema = z
 export const ContactPlayersWantedCreatorSchema = z
   .object({
     senderName: nonEmptyString.max(100),
-    senderEmail: z.string().trim().email().max(320),
+    senderEmail: z.email().trim().max(320),
     message: z.string().trim().min(1).max(5000),
   })
   .openapi({
@@ -251,7 +210,7 @@ export const ContactPlayersWantedCreatorSchema = z
 
 export const BaseballPositionSchema = z
   .object({
-    id: z.string(),
+    id: bigintToStringSchema,
     name: z.string(),
     category: z.enum(['pitching', 'infield', 'outfield', 'catching', 'utility']),
     abbreviation: z.string(),
@@ -263,7 +222,7 @@ export const BaseballPositionSchema = z
 
 export const ExperienceLevelSchema = z
   .object({
-    id: z.string(),
+    id: bigintToStringSchema,
     name: z.string(),
     description: z.string(),
     yearsRequired: z.number(),

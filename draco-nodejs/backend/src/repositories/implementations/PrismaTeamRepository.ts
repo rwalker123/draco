@@ -4,6 +4,7 @@ import {
   dbTeam,
   dbTeamSeasonLeague,
   dbTeamSeasonManagerContact,
+  dbTeamSeasonRecord,
   dbTeamSeasonWithLeague,
   dbTeamSeasonWithLeaguesAndTeams,
   dbTeamsWithLeaguesAndDivisions,
@@ -11,7 +12,6 @@ import {
   dbUserTeams,
 } from '../types/dbTypes.js';
 import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
-import { TeamSeasonRecordType } from '@draco/shared-schemas';
 import { BatchQueryHelper } from './batchQueries.js';
 
 export class PrismaTeamRepository implements ITeamRepository {
@@ -492,7 +492,7 @@ export class PrismaTeamRepository implements ITeamRepository {
    * @param teamSeasonId - Team season ID to calculate record for
    * @returns Promise<TeamRecord> object with wins, losses, and ties
    */
-  async getTeamRecord(teamSeasonId: bigint): Promise<TeamSeasonRecordType> {
+  async getTeamRecord(teamSeasonId: bigint): Promise<dbTeamSeasonRecord> {
     // Use batch helper for better performance when called multiple times
     const records = await BatchQueryHelper.batchTeamRecords(this.prisma, [teamSeasonId]);
     return records.get(teamSeasonId.toString()) || { wins: 0, losses: 0, ties: 0 };
@@ -504,7 +504,7 @@ export class PrismaTeamRepository implements ITeamRepository {
    * @param teamSeasonIds - Array of team season IDs to calculate records for
    * @returns Promise<Map<string, TeamRecord>> mapping team ID to record
    */
-  async getTeamRecords(teamSeasonIds: bigint[]): Promise<Map<string, TeamSeasonRecordType>> {
+  async getTeamRecords(teamSeasonIds: bigint[]): Promise<Map<string, dbTeamSeasonRecord>> {
     return BatchQueryHelper.batchTeamRecords(this.prisma, teamSeasonIds);
   }
 }

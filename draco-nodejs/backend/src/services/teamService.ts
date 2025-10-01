@@ -3,8 +3,8 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { ITeamRepository, ISeasonRepository } from '../repositories/interfaces/index.js';
 import { ServiceFactory } from './serviceFactory.js';
 import {
-  TeamSeasonDetailsType,
-  TeamSeasonSummaryType,
+  TeamSeasonRecordType,
+  TeamSeasonType,
   LeagueType,
   TeamSeasonNameType,
   UpsertTeamSeasonType,
@@ -23,7 +23,7 @@ export class TeamService {
     this.seasonRepository = RepositoryFactory.getSeasonRepository();
   }
 
-  async getUserTeams(accountId: bigint, userId: string): Promise<TeamSeasonSummaryType[]> {
+  async getUserTeams(accountId: bigint, userId: string): Promise<TeamSeasonType[]> {
     // Get the user's contact record for this account
     const userContact = await this.contactService.getContactByUserId(userId, accountId);
 
@@ -60,7 +60,7 @@ export class TeamService {
     );
   }
 
-  async getTeamsBySeasonId(seasonId: bigint, accountId: bigint): Promise<TeamSeasonSummaryType[]> {
+  async getTeamsBySeasonId(seasonId: bigint, accountId: bigint): Promise<TeamSeasonType[]> {
     const season = await this.seasonRepository.findById(seasonId);
 
     if (!season) {
@@ -82,7 +82,7 @@ export class TeamService {
     teamSeasonId: bigint,
     seasonId: bigint,
     accountId: bigint,
-  ): Promise<TeamSeasonDetailsType> {
+  ): Promise<TeamSeasonRecordType> {
     const teamSeason = await this.teamRepository.findTeamSeasonWithLeaguesAndTeams(
       teamSeasonId,
       seasonId,
@@ -104,7 +104,7 @@ export class TeamService {
     seasonId: bigint,
     accountId: bigint,
     updateData: UpsertTeamSeasonType,
-  ): Promise<TeamSeasonSummaryType> {
+  ): Promise<TeamSeasonType> {
     // Ensure the team season exists
     const teamSeason = await this.teamRepository.findById(teamSeasonId);
     if (!teamSeason) {
@@ -115,32 +115,26 @@ export class TeamService {
     const teamUpdate: Partial<teams> = {};
 
     teamSeasonUpdate.name = updateData.name;
-    teamSeasonUpdate.teamid = BigInt(updateData.teamId);
 
-    if (updateData.league?.id) {
-      teamSeasonUpdate.leagueseasonid = BigInt(updateData.league.id);
+    if (updateData.divisionId !== undefined) {
+      teamSeasonUpdate.divisionseasonid =
+        updateData.divisionId === null ? null : BigInt(updateData.divisionId);
     }
 
-    if (updateData.division !== undefined) {
-      teamSeasonUpdate.divisionseasonid = updateData.division
-        ? BigInt(updateData.division.id)
-        : null;
+    if (updateData.team.webAddress !== undefined) {
+      teamUpdate.webaddress = updateData.team.webAddress ?? '';
     }
 
-    if (updateData.webAddress !== undefined) {
-      teamUpdate.webaddress = updateData.webAddress ?? '';
+    if (updateData.team.youtubeUserId !== undefined) {
+      teamUpdate.youtubeuserid = updateData.team.youtubeUserId ?? null;
     }
 
-    if (updateData.youtubeUserId !== undefined) {
-      teamUpdate.youtubeuserid = updateData.youtubeUserId ?? null;
+    if (updateData.team.defaultVideo !== undefined) {
+      teamUpdate.defaultvideo = updateData.team.defaultVideo ?? '';
     }
 
-    if (updateData.defaultVideo !== undefined) {
-      teamUpdate.defaultvideo = updateData.defaultVideo ?? '';
-    }
-
-    if (updateData.autoPlayVideo !== undefined) {
-      teamUpdate.autoplayvideo = updateData.autoPlayVideo ?? false;
+    if (updateData.team.autoPlayVideo !== undefined) {
+      teamUpdate.autoplayvideo = updateData.team.autoPlayVideo ?? false;
     }
 
     const teamsSeasonPayload =
@@ -187,6 +181,7 @@ export class TeamService {
     return {
       id: leagueInfo.leagueseason.league.id.toString(),
       name: leagueInfo.leagueseason.league.name,
+      accountId: accountId.toString(),
     };
   }
 }

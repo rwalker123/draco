@@ -520,7 +520,7 @@ export const useRosterDataManager = (
       try {
         const result = await apiAddManager({
           path: { accountId, seasonId, teamSeasonId },
-          body: { contact: { id: contactId } },
+          body: { contactId: contactId },
           client: apiClient,
           throwOnError: false,
         });

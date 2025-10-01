@@ -241,7 +241,7 @@ export const playerClassifiedService = {
       throwOnError: false,
     });
 
-    return unwrapApiResult(result, FAILURE_MESSAGES.fetchContactInfo);
+    return unwrapApiResult(result, FAILURE_MESSAGES.fetchContactInfo) as TeamsWantedContactInfoType;
   },
 
   async verifyTeamsWantedAccessCode(
