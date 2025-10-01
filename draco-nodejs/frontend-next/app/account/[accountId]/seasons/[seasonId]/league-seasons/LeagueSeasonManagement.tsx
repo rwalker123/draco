@@ -168,7 +168,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setLoading(true);
     try {
       const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues?includeTeams=includeUnassigned`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues?includeTeams=true&includeUnassigned=true`,
       );
 
       if (response.data.success) {

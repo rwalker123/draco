@@ -45,7 +45,7 @@ export const UpsertTeamSeasonSchema = TeamSeasonSchema.omit({
 });
 
 export const DivisionSeasonWithTeamsSchema = DivisionSeasonSchema.extend({
-  teams: TeamSeasonSchema.array(),
+  teams: TeamSeasonWithPlayerCountSchema.array(),
 });
 
 export const LeagueSeasonWithDivisionTeamsSchema = LeagueSeasonSchema.extend({
@@ -54,8 +54,13 @@ export const LeagueSeasonWithDivisionTeamsSchema = LeagueSeasonSchema.extend({
 
 export const LeagueSeasonWithDivisionTeamsAndUnassignedSchema =
   LeagueSeasonWithDivisionTeamsSchema.extend({
-    unassignedTeams: TeamSeasonSchema.array().optional(),
+    unassignedTeams: TeamSeasonWithPlayerCountSchema.array().optional(),
   });
+
+export const LeagueSetupSchema = z.object({
+  season: SeasonSchema.optional(),
+  leagueSeasons: LeagueSeasonWithDivisionTeamsAndUnassignedSchema.array(),
+});
 
 export type TeamSeasonNameType = z.infer<typeof TeamSeasonNameSchema>;
 export type UpsertTeamSeasonType = z.infer<typeof UpsertTeamSeasonSchema>;
@@ -66,3 +71,4 @@ export type LeagueSeasonWithDivisionTeamsType = z.infer<typeof LeagueSeasonWithD
 export type LeagueSeasonWithDivisionTeamsAndUnassignedType = z.infer<
   typeof LeagueSeasonWithDivisionTeamsAndUnassignedSchema
 >;
+export type LeagueSetupType = z.infer<typeof LeagueSetupSchema>;
