@@ -2,13 +2,7 @@ import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { FieldResponseFormatter } from '../responseFormatters/index.js';
 import { PaginationHelper } from '../utils/pagination.js';
-import {
-  CreateFieldType,
-  FieldType,
-  FieldsType,
-  FieldUpsertType,
-  PagingType,
-} from '@draco/shared-schemas';
+import { FieldType, FieldsType, UpsertFieldType, PagingType } from '@draco/shared-schemas';
 import { Prisma } from '@prisma/client';
 
 const FIELD_SORT_FIELDS = ['name', 'address', 'id'];
@@ -34,7 +28,7 @@ export class FieldService {
     return FieldResponseFormatter.formatPagedFields(fields, paging.page, paging.limit, total);
   }
 
-  async createField(accountId: bigint, fieldData: CreateFieldType): Promise<FieldType> {
+  async createField(accountId: bigint, fieldData: UpsertFieldType): Promise<FieldType> {
     const name = fieldData.name.trim();
     const existingField = await this.fieldRepository.findByName(accountId, name);
 
@@ -64,18 +58,13 @@ export class FieldService {
       },
     });
 
-    return FieldResponseFormatter.formatField({
-      id: newField.id,
-      name: newField.name,
-      address: newField.address,
-      accountid: newField.accountid,
-    });
+    return FieldResponseFormatter.formatField(newField);
   }
 
   async updateField(
     accountId: bigint,
     fieldId: bigint,
-    fieldData: FieldUpsertType,
+    fieldData: UpsertFieldType,
   ): Promise<FieldType> {
     const field = await this.fieldRepository.findAccountField(accountId, fieldId);
 
@@ -104,12 +93,7 @@ export class FieldService {
       address: address || '',
     });
 
-    return FieldResponseFormatter.formatField({
-      id: updatedField.id,
-      name: updatedField.name,
-      address: updatedField.address,
-      accountid: updatedField.accountid,
-    });
+    return FieldResponseFormatter.formatField(updatedField);
   }
 
   async deleteField(accountId: bigint, fieldId: bigint): Promise<FieldType> {
@@ -127,11 +111,6 @@ export class FieldService {
 
     await this.fieldRepository.delete(fieldId);
 
-    return FieldResponseFormatter.formatField({
-      id: field.id,
-      name: field.name,
-      address: field.address,
-      accountid: field.accountid,
-    });
+    return FieldResponseFormatter.formatField(field);
   }
 }

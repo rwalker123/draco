@@ -8,6 +8,7 @@
       "draco-nodejs/backend",
       "draco-nodejs/frontend-next",
       "draco-nodejs/shared/*",
+      "draco-nodejs/stoplight-assets",
       "dbMigration"
     ]
   },
@@ -53,6 +54,10 @@
     "secrets:update-baseline": "node scripts/update-baseline.js",
     "sync:api": "npm -w @draco/backend run generate:openapi && npm -w @draco/backend run generate:client"
   },
+  "overrides": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
   "devDependencies": {
     "concurrently": "^9.1.0",
     "husky": "^9.1.7",
@@ -61,7 +66,9 @@
     "eslint": "^9.33.0",
     "@types/node": "^24.0.1",
     "lint-staged": "^16.1.2",
-    "vitest": "^2.0.5"
+    "vitest": "^2.0.5",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
   },
   "lint-staged": {
     "draco-nodejs/**/*.{js,jsx,ts,tsx}": [

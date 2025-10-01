@@ -1,28 +1,24 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { PaginationWithTotalSchema } from './paging.js';
+import { bigintToStringSchema, nameSchema } from './standardSchema.js';
 
 extendZodWithOpenApi(z);
 
-const FieldNameSchema = z.string().trim().min(1);
-const FieldAddressSchema = z.string().trim().nullish();
-
-export const FieldSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
-  accountId: z.string().optional(),
-  name: FieldNameSchema,
-  address: FieldAddressSchema,
+export const FieldNameSchema = z.object({
+  id: bigintToStringSchema,
+  name: nameSchema,
+  shortName: z.string().trim().max(5),
 });
 
-const FieldCoreSchema = FieldSchema.omit({ id: true, accountId: true });
-
-export const FieldUpsertSchema = FieldCoreSchema.extend({
-  id: FieldSchema.shape.id.optional(),
-  accountId: FieldSchema.shape.accountId.optional(),
-  address: FieldAddressSchema.optional(),
+export const FieldSchema = FieldNameSchema.extend({
+  address: z.string().trim().nullish(),
+  city: z.string().trim().nullish(),
+  state: z.string().trim().nullish(),
+  zip: z.string().trim().nullish(),
 });
 
-export const CreateFieldSchema = FieldUpsertSchema.omit({ id: true });
+export const UpsertFieldSchema = FieldSchema.omit({ id: true });
 
 export const FieldsSchema = z.object({
   fields: FieldSchema.array(),
@@ -30,6 +26,5 @@ export const FieldsSchema = z.object({
 });
 
 export type FieldType = z.infer<typeof FieldSchema>;
-export type FieldUpsertType = z.infer<typeof FieldUpsertSchema>;
-export type CreateFieldType = z.infer<typeof CreateFieldSchema>;
 export type FieldsType = z.infer<typeof FieldsSchema>;
+export type UpsertFieldType = z.infer<typeof UpsertFieldSchema>;

@@ -7,7 +7,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthenticationError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { PagingSchema, CreateFieldSchema, FieldUpsertSchema } from '@draco/shared-schemas';
+import { PagingSchema, UpsertFieldSchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -64,7 +64,7 @@ router.post(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const fieldData = CreateFieldSchema.parse(req.body);
+    const fieldData = UpsertFieldSchema.parse(req.body);
 
     const field = await fieldService.createField(accountId, fieldData);
 
@@ -83,7 +83,7 @@ router.put(
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
-    const fieldData = FieldUpsertSchema.parse(req.body);
+    const fieldData = UpsertFieldSchema.parse(req.body);
 
     const field = await fieldService.updateField(accountId, fieldId, fieldData);
 

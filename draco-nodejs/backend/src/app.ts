@@ -1,6 +1,3 @@
-import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -36,6 +33,7 @@ import webhookRouter from './routes/webhookRoutes.js';
 import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
 import { ServiceFactory } from './services/serviceFactory.js';
+import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
 
 // Load environment variables
 dotenv.config();
@@ -43,9 +41,6 @@ dotenv.config();
 // Start cleanup service
 const cleanupService = ServiceFactory.getCleanupService();
 cleanupService.start();
-
-const require = createRequire(import.meta.url);
-const stoplightAssetsDir = dirname(require.resolve('@stoplight/elements/web-components.min.js'));
 
 const app = express();
 

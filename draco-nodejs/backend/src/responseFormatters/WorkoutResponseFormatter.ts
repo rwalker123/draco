@@ -84,6 +84,7 @@ export class WorkoutResponseFormatter {
       id: field.id.toString(),
       name: field.name,
       address: field.address,
+      shortName: '',
     };
   }
 }
