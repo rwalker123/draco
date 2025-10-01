@@ -3,6 +3,7 @@ import { performanceMonitor, getConnectionPoolMetrics } from '../utils/performan
 import { databaseConfig } from '../config/database.js';
 import prisma from '../lib/prisma.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { asyncHandler } from '@/utils/asyncHandler.js';
 
 const router = Router();
 
@@ -10,8 +11,9 @@ const router = Router();
  * GET /api/monitoring/health
  * Provides aggregated health details covering database connectivity, performance, and uptime.
  */
-router.get('/health', async (req: Request, res: Response) => {
-  try {
+router.get(
+  '/health',
+  asyncHandler(async (req: Request, res: Response) => {
     const startTime = Date.now();
 
     // Test database connectivity
@@ -54,23 +56,16 @@ router.get('/health', async (req: Request, res: Response) => {
       healthStatus.status === 'critical' ? 503 : healthStatus.status === 'warning' ? 200 : 200;
 
     res.status(statusCode).json(response);
-  } catch (error) {
-    console.error('Health check failed:', error);
-    res.status(503).json({
-      status: 'critical',
-      timestamp: DateUtils.formatDateTimeForResponse(new Date()),
-      error: 'Database connectivity failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/monitoring/performance
  * Returns recent performance metrics, optionally scoped by a time window.
  */
-router.get('/performance', (req: Request, res: Response) => {
-  try {
+router.get(
+  '/performance',
+  asyncHandler(async (req: Request, res: Response) => {
     const windowMinutes = parseInt(req.query.window as string) || 5;
     const windowMs = windowMinutes * 60 * 1000;
 
@@ -113,21 +108,16 @@ router.get('/performance', (req: Request, res: Response) => {
         loggingEnabled: databaseConfig.enableQueryLogging,
       },
     });
-  } catch (error) {
-    console.error('Performance metrics failed:', error);
-    res.status(500).json({
-      error: 'Failed to retrieve performance metrics',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/monitoring/slow-queries
  * Lists recent slow database queries with optional limits.
  */
-router.get('/slow-queries', (req: Request, res: Response) => {
-  try {
+router.get(
+  '/slow-queries',
+  asyncHandler(async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const slowQueries = performanceMonitor.getSlowQueries(limit);
 
@@ -144,21 +134,16 @@ router.get('/slow-queries', (req: Request, res: Response) => {
         params: q.params,
       })),
     });
-  } catch (error) {
-    console.error('Slow queries retrieval failed:', error);
-    res.status(500).json({
-      error: 'Failed to retrieve slow queries',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/monitoring/connection-pool
  * Reports current database connection pool utilization and recommendations.
  */
-router.get('/connection-pool', (req: Request, res: Response) => {
-  try {
+router.get(
+  '/connection-pool',
+  asyncHandler(async (req: Request, res: Response) => {
     const metrics = getConnectionPoolMetrics();
 
     res.json({
@@ -174,14 +159,8 @@ router.get('/connection-pool', (req: Request, res: Response) => {
       },
       recommendations: getConnectionPoolRecommendations(metrics),
     });
-  } catch (error) {
-    console.error('Connection pool metrics failed:', error);
-    res.status(500).json({
-      error: 'Failed to retrieve connection pool metrics',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  }),
+);
 
 // Helper function for connection pool recommendations
 function getConnectionPoolRecommendations(metrics: {
@@ -216,29 +195,25 @@ function getConnectionPoolRecommendations(metrics: {
  * POST /api/monitoring/reset
  * Clears collected monitoring statistics.
  */
-router.post('/reset', (req: Request, res: Response) => {
-  try {
+router.post(
+  '/reset',
+  asyncHandler(async (req: Request, res: Response) => {
     performanceMonitor.reset();
 
     res.json({
       message: 'Performance monitoring data reset successfully',
       timestamp: DateUtils.formatDateTimeForResponse(new Date()),
     });
-  } catch (error) {
-    console.error('Reset monitoring data failed:', error);
-    res.status(500).json({
-      error: 'Failed to reset monitoring data',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/monitoring/config
  * Returns current monitoring configuration values and system metadata.
  */
-router.get('/config', (req: Request, res: Response) => {
-  try {
+router.get(
+  '/config',
+  asyncHandler(async (req: Request, res: Response) => {
     res.json({
       timestamp: DateUtils.formatDateTimeForResponse(new Date()),
       configuration: {
@@ -256,13 +231,7 @@ router.get('/config', (req: Request, res: Response) => {
         memoryUsage: process.memoryUsage(),
       },
     });
-  } catch (error) {
-    console.error('Get config failed:', error);
-    res.status(500).json({
-      error: 'Failed to retrieve configuration',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  }),
+);
 
 export default router;

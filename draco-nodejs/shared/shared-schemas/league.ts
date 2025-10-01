@@ -34,9 +34,17 @@ export const LeaguesInSeasonSchema = z.object({
   leagueSeasons: LeagueSeasonSchema.array(),
 });
 
+export const LeagueSeasonQueryParamsSchema = z.object({
+  includeTeams: z.enum(['true', 'false']).default('false').optional(),
+  includeUnassignedTeams: z.enum(['true', 'false']).default('false').optional(),
+  includePlayerCounts: z.enum(['true', 'false']).default('false').optional(),
+  includeManagerCounts: z.enum(['true', 'false']).default('false').optional(),
+});
+
 export type LeagueType = z.infer<typeof LeagueSchema>;
 export type LeagueNameType = z.infer<typeof LeagueNameSchema>;
 export type UpsertLeagueType = z.infer<typeof UpsertLeagueSchema>;
 export type LeagueSeasonType = z.infer<typeof LeagueSeasonSchema>;
 export type LeaguesInSeasonType = z.infer<typeof LeaguesInSeasonSchema>;
 export type UpsertLeagueSeasonDivisionType = z.infer<typeof UpsertLeagueSeasonDivisionSchema>;
+export type LeagueSeasonQueryParamsType = z.infer<typeof LeagueSeasonQueryParamsSchema>;
