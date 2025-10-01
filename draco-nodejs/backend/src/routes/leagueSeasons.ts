@@ -30,7 +30,6 @@ import {
   LeagueSeasonType,
   LeagueSeasonWithDivisionTeamsAndUnassignedType,
   LeagueSetupType,
-  SeasonType,
   UpsertDivisionSeasonSchema,
 } from '@draco/shared-schemas';
 
