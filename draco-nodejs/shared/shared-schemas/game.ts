@@ -80,10 +80,10 @@ export const UpdateGameResultsSchema = GameSchema.pick({
   gameStatus: true,
 })
   .extend({
-    emailPlayers: true,
-    postToTwitter: true,
-    postToBluesky: true,
-    postToFacebook: true,
+    emailPlayers: z.boolean(),
+    postToTwitter: z.boolean(),
+    postToBluesky: z.boolean(),
+    postToFacebook: z.boolean(),
   })
   .superRefine((data, ctx) => {
     const { homeScore, visitorScore, gameStatus } = data;
@@ -115,21 +115,33 @@ export const UpdateGameResultsSchema = GameSchema.pick({
 
 export const UpsertGameSchema = GameSchema.pick({
   gameDate: true,
-  homeTeam: true,
-  visitorTeam: true,
   gameType: true,
   gameStatus: true,
-  field: true,
   comment: true,
-  umpire1: true,
-  umpire2: true,
-  umpire3: true,
-  umpire4: true,
 })
   .extend({
     leagueSeasonId: z.string().trim().min(1),
+    homeTeam: z.object({ id: z.string().trim().min(1) }),
+    visitorTeam: z.object({ id: z.string().trim().min(1) }),
+    field: z.object({ id: z.string().trim().min(1) }).nullable(),
+    umpire1: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
+    umpire2: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
+    umpire3: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
+    umpire4: z
+      .object({ id: z.string().trim().min(1) })
+      .nullable()
+      .optional(),
   })
-  .refine((data) => data.homeTeam.id === data.visitorTeam.id, {
+  .refine((data) => data.homeTeam.id !== data.visitorTeam.id, {
     message: 'Home and visitor teams must be different',
     path: ['homeTeam'],
   });
