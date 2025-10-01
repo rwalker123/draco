@@ -355,6 +355,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { seasonId } = req.params;
     const {
       leagueSeasonId,
       gameDate,
@@ -362,12 +363,14 @@ router.post(
       visitorTeamId,
       fieldId,
       comment,
-      gameType = GameType.Playoff,
+      gameType = GameType.RegularSeason,
       umpire1,
       umpire2,
       umpire3,
       umpire4,
     } = req.body;
+
+    // const input = UpsertGameSchema.parse(req.body);
 
     // Validate required fields
     if (!leagueSeasonId || !gameDate || !homeTeamId || !visitorTeamId) {
@@ -381,10 +384,14 @@ router.post(
       throw new ValidationError('Home team and visitor team cannot be the same');
     }
 
-    // Check if teams exist in the league season
+    // Check if teams exist in the league season, ensure they are from the same
+    // seasonId as well.
     const teamsInLeague = await prisma.teamsseason.findMany({
       where: {
-        leagueseasonid: BigInt(leagueSeasonId),
+        leagueseason: {
+          id: BigInt(leagueSeasonId),
+          seasonid: BigInt(seasonId),
+        },
         id: {
           in: [BigInt(homeTeamId), BigInt(visitorTeamId)],
         },

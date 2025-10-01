@@ -18,7 +18,7 @@ export const FieldSchema = FieldNameSchema.extend({
   zip: z.string().trim().nullish(),
 });
 
-export const UpsertFieldSchema = FieldSchema.omit({ id: true, accountId: true });
+export const UpsertFieldSchema = FieldSchema.omit({ id: true });
 
 export const FieldsSchema = z.object({
   fields: FieldSchema.array(),

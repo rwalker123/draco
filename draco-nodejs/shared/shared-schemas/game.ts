@@ -69,29 +69,31 @@ export const GamesWithRecapsSchema = z.object({
   pagination: PaginationSchema,
 });
 
-export const UpdateGameResultsSchema = z.object({
-  homeScore: z.number().int().min(0),
-  awayScore: z.number().int().min(0),
-  gameStatus: GameStatusEnumSchema,
-  emailPlayers: z.boolean().optional().default(false),
-  postToTwitter: z.boolean().optional().default(false),
-  postToBluesky: z.boolean().optional().default(false),
-  postToFacebook: z.boolean().optional().default(false),
+export const UpdateGameResultsSchema = GameSchema.pick({
+  homeScore: true,
+  awayScore: true,
+  gameStatus: true,
+  emailPlayers: true,
+  postToTwitter: true,
+  postToBluesky: true,
+  postToFacebook: true,
 });
 
-export const UpsertGameSchema = {
-  gameDate: z.iso.datetime(),
-  homeTeamId: z.string(),
-  visitorTeamId: z.string(),
-  gameType: GameTypeEnumSchema,
-  gameStatus: GameStatusEnumSchema.optional(),
-  fieldId: z.string().nullish(),
-  comment: z.string().nullish(),
-  umpire1: z.string().nullish(),
-  umpire2: z.string().nullish(),
-  umpire3: z.string().nullish(),
-  umpire4: z.string().nullish(),
-};
+export const UpsertGameSchema = GameSchema.pick({
+  gameDate: true,
+  homeTeamId: true,
+  visitorTeamId: true,
+  gameType: true,
+  gameStatus: true,
+  fieldId: true,
+  comment: true,
+  umpire1: true,
+  umpire2: true,
+  umpire3: true,
+  umpire4: true,
+}).extend({
+  leagueSeasonId: z.string().trim().min(1),
+});
 
 export const UpsertGameRecapSchema = GameRecapSchema.omit({
   team: true,
