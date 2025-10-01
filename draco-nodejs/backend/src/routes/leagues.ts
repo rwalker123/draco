@@ -8,13 +8,7 @@ import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-
-// Type definitions for Prisma query results
-interface League {
-  id: bigint;
-  name: string;
-  accountid: bigint;
-}
+import { LeagueType, UpsertLeagueSchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -44,16 +38,13 @@ router.get(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        leagues: leagues.map((league: League) => ({
-          id: league.id.toString(),
-          name: league.name,
-          accountId: league.accountid.toString(),
-        })),
-      },
-    });
+    const result: LeagueType[] = leagues.map((league) => ({
+      id: league.id.toString(),
+      name: league.name,
+      accountId: league.accountid.toString(),
+    }));
+
+    res.json(result);
   }),
 );
 
@@ -83,13 +74,13 @@ router.get(
       },
     });
 
-    res.json({
-      success: true,
-      data: leaguesWithSeasons.map((league) => ({
-        id: league.id.toString(), // This is league.id for all-time queries
-        name: league.name,
-      })),
-    });
+    const result: LeagueType[] = leaguesWithSeasons.map((league) => ({
+      id: league.id.toString(), // This is league.id for all-time queries
+      name: league.name,
+      accountId: accountId.toString(),
+    }));
+
+    res.json(result);
   }),
 );
 
@@ -120,16 +111,13 @@ router.get(
       throw new NotFoundError('League not found');
     }
 
-    res.json({
-      success: true,
-      data: {
-        league: {
-          id: league.id.toString(),
-          name: league.name,
-          accountId: league.accountid.toString(),
-        },
-      },
-    });
+    const result: LeagueType = {
+      id: league.id.toString(),
+      name: league.name,
+      accountId: league.accountid.toString(),
+    };
+
+    res.json(result);
   }),
 );
 
@@ -142,12 +130,11 @@ router.post(
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { name } = req.body;
     const { accountId } = extractAccountParams(req.params);
 
-    if (!name) {
-      throw new ValidationError('League name is required');
-    }
+    const input = UpsertLeagueSchema.parse(req.body);
+
+    const { name } = input;
 
     // Check if league with this name already exists for this account
     const existingLeague = await prisma.league.findFirst({
@@ -173,16 +160,13 @@ router.post(
       },
     });
 
-    res.status(201).json({
-      success: true,
-      data: {
-        league: {
-          id: newLeague.id.toString(),
-          name: newLeague.name,
-          accountId: newLeague.accountid.toString(),
-        },
-      },
-    });
+    const result: LeagueType = {
+      id: newLeague.id.toString(),
+      name: newLeague.name,
+      accountId: newLeague.accountid.toString(),
+    };
+
+    res.status(201).json(result);
   }),
 );
 
@@ -196,11 +180,10 @@ router.put(
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
-    const { name } = req.body;
 
-    if (!name) {
-      throw new ValidationError('League name is required');
-    }
+    const input = UpsertLeagueSchema.parse(req.body);
+
+    const { name } = input;
 
     // Check if league exists and belongs to this account
     const existingLeague = await prisma.league.findFirst({
@@ -241,16 +224,13 @@ router.put(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        league: {
-          id: updatedLeague.id.toString(),
-          name: updatedLeague.name,
-          accountId: updatedLeague.accountid.toString(),
-        },
-      },
-    });
+    const result: LeagueType = {
+      id: updatedLeague.id.toString(),
+      name: updatedLeague.name,
+      accountId: updatedLeague.accountid.toString(),
+    };
+
+    res.json(result);
   }),
 );
 
@@ -298,12 +278,7 @@ router.delete(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        message: `League "${league.name}" has been deleted`,
-      },
-    });
+    res.json(true);
   }),
 );
 
