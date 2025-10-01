@@ -4,7 +4,7 @@ import { FieldSchema } from './field.js';
 import { bigintToStringSchema } from './standardSchema.js';
 import { TeamSeasonNameSchema } from './team.js';
 import { SeasonNameSchema } from './season.js';
-import { ContactIdSchema, NamedContactSchema } from './contact.js';
+import { ContactIdSchema } from './contact.js';
 import { LeagueNameSchema } from './league.js';
 import { PaginationSchema } from './index.js';
 
