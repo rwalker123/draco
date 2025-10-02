@@ -3,7 +3,7 @@ import { performanceMonitor, getConnectionPoolMetrics } from '../utils/performan
 import { databaseConfig } from '../config/database.js';
 import prisma from '../lib/prisma.js';
 import { DateUtils } from '../utils/dateUtils.js';
-import { asyncHandler } from '@/utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 

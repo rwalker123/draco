@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import { bigIntSerializer } from './middleware/bigint-serializer.js';
-import { specs } from './config/openapi.js';
+import { specs } from './openapi/openapi.js';
 import { globalErrorHandler } from './utils/globalErrorHandler.js';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
 import { DateUtils } from './utils/dateUtils.js';
