@@ -18,7 +18,6 @@ router.get(
       const groupedStandings = await statisticsService.getGroupedStandings(accountId, seasonId);
 
       const result: StandingsLeagueType[] = groupedStandings.leagues.map((league) => ({
-        id: league.leagueId.toString(),
         league: { id: league.leagueId.toString(), name: league.leagueName },
         divisions: league.divisions.map((division) => ({
           division: {
