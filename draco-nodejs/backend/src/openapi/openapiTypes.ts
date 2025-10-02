@@ -72,6 +72,8 @@ import {
   WorkoutSourcesSchema,
   WorkoutSummarySchema,
   ContactSearchParamsSchema,
+  LeagueSchema,
+  UpsertLeagueSchema,
   GameSchema,
   GameResultSchema,
   GamesWithRecapsSchema,
@@ -236,6 +238,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'WorkoutRegistrationsQuery',
     WorkoutRegistrationsQuerySchema,
   );
+  const LeagueSchemaRef = registry.register('League', LeagueSchema);
+  const UpsertLeagueSchemaRef = registry.register('UpsertLeague', UpsertLeagueSchema);
   const GameSchemaRef = registry.register('Game', GameSchema);
   const GameResultSchemaRef = registry.register('GameResult', GameResultSchema);
   const GamesWithRecapsSchemaRef = registry.register('GamesWithRecaps', GamesWithRecapsSchema);
@@ -327,6 +331,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutListQuerySchemaRef,
     WorkoutRegistrationsQuerySchemaRef,
+    LeagueSchemaRef,
+    UpsertLeagueSchemaRef,
     GameSchemaRef,
     GameResultSchemaRef,
     GamesWithRecapsSchemaRef,

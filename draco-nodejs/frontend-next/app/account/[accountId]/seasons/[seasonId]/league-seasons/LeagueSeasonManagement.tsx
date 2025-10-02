@@ -36,6 +36,9 @@ import {
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { isAxiosError } from '../../../../../../context/AccountContext';
+import { deleteLeague } from '@draco/shared-api-client';
+import { createApiClient } from '../../../../../../lib/apiClientFactory';
+import { unwrapApiResult } from '../../../../../../utils/apiResult';
 
 interface LeagueSeason {
   id: string;
@@ -96,6 +99,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const router = useRouter();
+  const apiClient = useMemo(() => createApiClient({ token: token || undefined }), [token]);
 
   // Division management state
   const [addDivisionDialogOpen, setAddDivisionDialogOpen] = useState(false);
@@ -615,12 +619,18 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       if (removeFromSeasonResponse.data.success) {
         // Now try to delete the league definition (may fail if used in other seasons)
         try {
-          const deleteLeagueResponse = await axios.delete(
-            `/api/accounts/${accountId}/leagues/${leagueToDelete.leagueId}`,
-            { headers: { Authorization: `Bearer ${token}` } },
+          const deleteLeagueResult = await deleteLeague({
+            client: apiClient,
+            path: { accountId, leagueId: leagueToDelete.leagueId },
+            throwOnError: false,
+          });
+
+          const deleteLeagueSuccess = unwrapApiResult(
+            deleteLeagueResult,
+            'Failed to delete league',
           );
 
-          if (deleteLeagueResponse.data.success) {
+          if (deleteLeagueSuccess) {
             setSuccessMessage(
               `League "${leagueToDelete.leagueName}" has been completely deleted from the system.`,
             );
@@ -630,35 +640,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             );
           }
         } catch (leagueDeleteError: unknown) {
-          // If league deletion fails because it's used in other seasons, that's expected
-          let status: number | undefined = undefined;
-          let message: string | undefined = undefined;
-          if (
-            typeof leagueDeleteError === 'object' &&
-            leagueDeleteError !== null &&
-            'response' in leagueDeleteError &&
-            typeof (leagueDeleteError as { response?: unknown }).response === 'object' &&
-            (leagueDeleteError as { response?: unknown }).response !== null
-          ) {
-            const resp = (leagueDeleteError as { response: unknown }).response;
-            if (typeof resp === 'object' && resp !== null) {
-              const respObj = resp as Record<string, unknown>;
-              if ('status' in respObj && typeof respObj.status === 'number') {
-                status = respObj.status;
-              }
-              if ('data' in respObj && typeof respObj.data === 'object' && respObj.data !== null) {
-                const dataObj = respObj.data as Record<string, unknown>;
-                if ('message' in dataObj && typeof dataObj.message === 'string') {
-                  message = dataObj.message;
-                }
-              }
-            }
-          }
-          if (
-            status === 400 &&
-            typeof message === 'string' &&
-            message.includes('associated with seasons')
-          ) {
+          const message =
+            leagueDeleteError instanceof Error ? leagueDeleteError.message : undefined;
+
+          if (typeof message === 'string' && message.includes('associated with seasons')) {
             setSuccessMessage(
               `League "${leagueToDelete.leagueName}" has been removed from this season. The league definition was kept because it's used in other seasons.`,
             );

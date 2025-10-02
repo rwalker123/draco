@@ -12,6 +12,10 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
+import { listAllTimeLeagues } from '@draco/shared-api-client';
+import { LeagueType } from '@draco/shared-schemas';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../utils/apiResult';
 
 interface Division {
   id: string;
@@ -65,6 +69,7 @@ export default function StatisticsFilters({
     leagues: false,
     divisions: false,
   });
+  const apiClient = useApiClient();
 
   // Load seasons on component mount
   useEffect(() => {
@@ -139,17 +144,21 @@ export default function StatisticsFilters({
       let formattedLeagues: League[] = [];
 
       if (filters.isHistorical) {
-        // For all-time stats, fetch leagues from the all-time endpoint
-        const response = await fetch(`/api/accounts/${accountId}/leagues/all-time`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        // For all-time stats, use the shared API client to fetch leagues
+        const result = await listAllTimeLeagues({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          formattedLeagues = data.data || [];
-        }
+        const leagues = unwrapApiResult(result, 'Failed to load leagues') as
+          | LeagueType[]
+          | undefined;
+
+        formattedLeagues = (leagues ?? []).map((league) => ({
+          id: league.id,
+          name: league.name,
+        }));
       } else {
         // For season stats, use cached season data
         const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
@@ -173,7 +182,15 @@ export default function StatisticsFilters({
     } finally {
       setLoading((prev) => ({ ...prev, leagues: false }));
     }
-  }, [accountId, seasonsData, filters.seasonId, filters.isHistorical, onChange, filters.leagueId]);
+  }, [
+    accountId,
+    apiClient,
+    seasonsData,
+    filters.seasonId,
+    filters.isHistorical,
+    onChange,
+    filters.leagueId,
+  ]);
 
   const loadDivisions = useCallback(() => {
     setLoading((prev) => ({ ...prev, divisions: true }));
