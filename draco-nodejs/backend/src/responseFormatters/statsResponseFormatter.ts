@@ -1,4 +1,4 @@
-import { BattingStat, GameInfo, PitchingStat } from '@/services/teamStatsService.js';
+import { BattingStat, GameInfo, PitchingStat } from '../services/teamStatsService.js';
 import {
   GameStatusEnumType,
   GameStatusShortEnumType,
@@ -7,8 +7,8 @@ import {
   PlayerPitchingStatsBriefType,
   RecentGamesType,
 } from '@draco/shared-schemas';
-import { dbGameInfo } from '@/repositories/index.js';
-import { DateUtils } from '@/utils/dateUtils.js';
+import { dbGameInfo } from '../repositories/index.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 export class StatsResponseFormatter {
   static formatGameInfoResponse(game: dbGameInfo): GameTypeShared {

@@ -10,7 +10,7 @@ import {
   TeamRecordType,
 } from '@draco/shared-schemas';
 import { RepositoryFactory, ITeamRepository, dbGameInfo } from '../repositories/index.js';
-import { StatsResponseFormatter } from '@/responseFormatters/statsResponseFormatter.js';
+import { StatsResponseFormatter } from '../responseFormatters/index.js';
 
 export interface GameInfo {
   id: string;

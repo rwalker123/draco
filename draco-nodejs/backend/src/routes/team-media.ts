@@ -3,7 +3,7 @@ import { createStorageService } from '../services/storageService.js';
 import { validateLogoFile, getLogoUrl } from '../config/logo.js';
 import { validateTeamSeasonWithTeamDetails } from '../utils/teamValidation.js';
 import prisma from '../lib/prisma.js';
-import { asyncHandler } from '@/utils/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
