@@ -851,7 +851,9 @@ router.post(
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
-    const { divisionId, name, priority } = req.body;
+
+    const input = UpsertDivisionSeasonSchema.parse(req.body);
+    const { divisionId, name, priority } = input;
 
     // Must provide either divisionId (existing) or name (new)
     if (!divisionId && (!name || !name.trim())) {
