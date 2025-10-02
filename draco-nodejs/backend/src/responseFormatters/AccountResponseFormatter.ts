@@ -92,7 +92,7 @@ export class AccountResponseFormatter {
           : undefined,
         user: ownerUser
           ? {
-              id: ownerUser.id,
+              userId: ownerUser.id,
               userName: ownerUser.userName,
             }
           : undefined,

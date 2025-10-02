@@ -69,16 +69,17 @@
                   "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "lastName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "middleName": {
                     "type": "string",
-                    "maxLength": 50
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
@@ -190,16 +191,17 @@
               "firstName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "lastName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "middleName": {
                 "type": "string",
-                "maxLength": 50
+                "minLength": 1,
+                "maxLength": 100
               },
               "email": {
                 "type": "string",
@@ -319,16 +321,17 @@
                       "firstName": {
                         "type": "string",
                         "minLength": 1,
-                        "maxLength": 50
+                        "maxLength": 100
                       },
                       "lastName": {
                         "type": "string",
                         "minLength": 1,
-                        "maxLength": 50
+                        "maxLength": 100
                       },
                       "middleName": {
                         "type": "string",
-                        "maxLength": 50
+                        "minLength": 1,
+                        "maxLength": 100
                       },
                       "email": {
                         "type": "string",
@@ -419,16 +422,17 @@
           "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "lastName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "middleName": {
             "type": "string",
-            "maxLength": 50
+            "minLength": 1,
+            "maxLength": 100
           },
           "email": {
             "type": "string",
@@ -503,7 +507,8 @@
                 },
                 "roleName": {
                   "type": "string",
-                  "maxLength": 50
+                  "minLength": 1,
+                  "maxLength": 100
                 },
                 "roleData": {
                   "type": "string",
@@ -546,16 +551,17 @@
           "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "lastName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "middleName": {
             "type": "string",
-            "maxLength": 50
+            "minLength": 1,
+            "maxLength": 100
           },
           "email": {
             "type": "string",
@@ -632,16 +638,17 @@
           "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "lastName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "middleName": {
             "type": "string",
-            "maxLength": 50
+            "minLength": 1,
+            "maxLength": 100
           },
           "email": {
             "type": "string",
@@ -731,7 +738,7 @@
       "RegisteredUser": {
         "type": "object",
         "properties": {
-          "id": {
+          "userId": {
             "type": "string"
           },
           "userName": {
@@ -752,16 +759,17 @@
               "firstName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "lastName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "middleName": {
                 "type": "string",
-                "maxLength": 50
+                "minLength": 1,
+                "maxLength": 100
               },
               "email": {
                 "type": "string",
@@ -834,7 +842,7 @@
           }
         },
         "required": [
-          "id",
+          "userId",
           "userName"
         ]
       },
@@ -872,16 +880,17 @@
               "firstName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "lastName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "middleName": {
                 "type": "string",
-                "maxLength": 50
+                "minLength": 1,
+                "maxLength": 100
               },
               "email": {
                 "type": "string",
@@ -977,16 +986,17 @@
           "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "lastName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 50
+            "maxLength": 100
           },
           "middleName": {
             "type": "string",
-            "maxLength": 50
+            "minLength": 1,
+            "maxLength": 100
           },
           "email": {
             "type": "string",
@@ -1065,7 +1075,8 @@
           },
           "contextName": {
             "type": "string",
-            "maxLength": 50
+            "minLength": 1,
+            "maxLength": 100
           }
         },
         "required": [
@@ -1617,16 +1628,17 @@
                 "firstName": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 50
+                  "maxLength": 100
                 },
                 "lastName": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 50
+                  "maxLength": 100
                 },
                 "middleName": {
                   "type": "string",
-                  "maxLength": 50
+                  "minLength": 1,
+                  "maxLength": 100
                 },
                 "email": {
                   "type": "string",
@@ -1743,7 +1755,8 @@
           },
           "roleName": {
             "type": "string",
-            "maxLength": 50
+            "minLength": 1,
+            "maxLength": 100
           },
           "roleData": {
             "type": "string",
@@ -1850,7 +1863,7 @@
               "user": {
                 "type": "object",
                 "properties": {
-                  "id": {
+                  "userId": {
                     "type": "string"
                   },
                   "userName": {
@@ -1871,16 +1884,17 @@
                       "firstName": {
                         "type": "string",
                         "minLength": 1,
-                        "maxLength": 50
+                        "maxLength": 100
                       },
                       "lastName": {
                         "type": "string",
                         "minLength": 1,
-                        "maxLength": 50
+                        "maxLength": 100
                       },
                       "middleName": {
                         "type": "string",
-                        "maxLength": 50
+                        "minLength": 1,
+                        "maxLength": 100
                       },
                       "email": {
                         "type": "string",
@@ -1953,7 +1967,7 @@
                   }
                 },
                 "required": [
-                  "id",
+                  "userId",
                   "userName"
                 ]
               },
@@ -1967,16 +1981,17 @@
                   "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "lastName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "middleName": {
                     "type": "string",
-                    "maxLength": 50
+                    "minLength": 1,
+                    "maxLength": 100
                   }
                 },
                 "required": [
@@ -2131,7 +2146,7 @@
                   "user": {
                     "type": "object",
                     "properties": {
-                      "id": {
+                      "userId": {
                         "type": "string"
                       },
                       "userName": {
@@ -2152,16 +2167,17 @@
                           "firstName": {
                             "type": "string",
                             "minLength": 1,
-                            "maxLength": 50
+                            "maxLength": 100
                           },
                           "lastName": {
                             "type": "string",
                             "minLength": 1,
-                            "maxLength": 50
+                            "maxLength": 100
                           },
                           "middleName": {
                             "type": "string",
-                            "maxLength": 50
+                            "minLength": 1,
+                            "maxLength": 100
                           },
                           "email": {
                             "type": "string",
@@ -2234,7 +2250,7 @@
                       }
                     },
                     "required": [
-                      "id",
+                      "userId",
                       "userName"
                     ]
                   },
@@ -2248,16 +2264,17 @@
                       "firstName": {
                         "type": "string",
                         "minLength": 1,
-                        "maxLength": 50
+                        "maxLength": 100
                       },
                       "lastName": {
                         "type": "string",
                         "minLength": 1,
-                        "maxLength": 50
+                        "maxLength": 100
                       },
                       "middleName": {
                         "type": "string",
-                        "maxLength": 50
+                        "minLength": 1,
+                        "maxLength": 100
                       }
                     },
                     "required": [
@@ -2366,16 +2383,17 @@
               "firstName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "lastName": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 50
+                "maxLength": 100
               },
               "middleName": {
                 "type": "string",
-                "maxLength": 50
+                "minLength": 1,
+                "maxLength": 100
               },
               "email": {
                 "type": "string",
@@ -2458,16 +2476,17 @@
                 "firstName": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 50
+                  "maxLength": 100
                 },
                 "lastName": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 50
+                  "maxLength": 100
                 },
                 "middleName": {
                   "type": "string",
-                  "maxLength": 50
+                  "minLength": 1,
+                  "maxLength": 100
                 },
                 "email": {
                   "type": "string",
@@ -6587,16 +6606,17 @@
                   "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "lastName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "middleName": {
                     "type": "string",
-                    "maxLength": 50
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
@@ -6667,16 +6687,17 @@
                   "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "lastName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "middleName": {
                     "type": "string",
-                    "maxLength": 50
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
@@ -6863,16 +6884,17 @@
                   "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "lastName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "middleName": {
                     "type": "string",
-                    "maxLength": 50
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
@@ -6943,16 +6965,17 @@
                   "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "lastName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "middleName": {
                     "type": "string",
-                    "maxLength": 50
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
@@ -11080,16 +11103,17 @@
                           "firstName": {
                             "type": "string",
                             "minLength": 1,
-                            "maxLength": 50
+                            "maxLength": 100
                           },
                           "lastName": {
                             "type": "string",
                             "minLength": 1,
-                            "maxLength": 50
+                            "maxLength": 100
                           },
                           "middleName": {
                             "type": "string",
-                            "maxLength": 50
+                            "minLength": 1,
+                            "maxLength": 100
                           },
                           "email": {
                             "type": "string",

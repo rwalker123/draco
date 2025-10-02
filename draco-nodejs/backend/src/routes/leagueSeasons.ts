@@ -152,17 +152,8 @@ router.get(
     const { accountId, seasonId } = extractSeasonParams(req.params);
 
     const queryParams = LeagueSeasonQueryParamsSchema.parse(req.query);
-    const {
-      includeTeams: includeTeamsRaw,
-      includeUnassignedTeams: includeUnassignedTeamsRaw,
-      includePlayerCounts: includePlayerCountsRaw,
-      includeManagerCounts: includeManagerCountsRaw,
-    } = queryParams;
-
-    const includeTeams = includeTeamsRaw === 'true';
-    const includeUnassignedTeams = includeUnassignedTeamsRaw === 'true';
-    const includePlayerCounts = includePlayerCountsRaw === 'true';
-    const includeManagerCounts = includeManagerCountsRaw === 'true';
+    const { includeTeams, includeUnassignedTeams, includePlayerCounts, includeManagerCounts } =
+      queryParams;
 
     // Base query always includes leagueseason + league data
     // we add division/team information based on qs values

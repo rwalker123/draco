@@ -1,35 +1,47 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { bigintToStringSchema, nameSchema } from './standardSchema.js';
 
 extendZodWithOpenApi(z);
 
 export const BaseRoleSchema = z.object({
   roleId: z.string().trim().max(50),
-  roleName: z.string().trim().max(50).optional(),
+  roleName: nameSchema.optional(),
 });
 
 export const RoleSchema = BaseRoleSchema.extend({
-  roleData: z.bigint().transform((val) => val.toString()),
+  roleData: bigintToStringSchema,
   contextName: z.string().trim().max(50).optional(),
 });
 
-export const RoleCheckResultSchema = z.object({
-  accountId: z.bigint().transform((val) => val.toString()),
+export const RoleCheckSchema = z.object({
   userId: z.string().trim().max(50),
   roleId: z.string().trim().max(50),
   hasRole: z.boolean(),
   roleLevel: z.string().trim().max(50).optional(),
-  context: z
-    .bigint()
-    .transform((val) => val.toString())
-    .optional(),
+  context: bigintToStringSchema.optional(),
 });
 
 // Contact roles sub-interface for reusability
 export const ContactRoleSchema = RoleSchema.extend({
-  id: z.bigint().transform((val) => val.toString()),
+  id: bigintToStringSchema,
+});
+
+export const RoleMetadataSchema = z.object({
+  version: z.string().trim().max(20),
+  timestamp: z.string().trim().max(50).nullable(),
+  hierarchy: z.record(z.string(), z.array(z.string())),
+  permissions: z.record(
+    z.string(),
+    z.object({
+      roleId: z.string(),
+      permissions: z.array(z.string().trim().max(100)),
+      context: z.string(),
+    }),
+  ),
 });
 
 export type RoleType = z.infer<typeof RoleSchema>;
 export type BaseRoleType = z.infer<typeof BaseRoleSchema>;
-export type RoleCheckResultType = z.infer<typeof RoleCheckResultSchema>;
+export type RoleCheckType = z.infer<typeof RoleCheckSchema>;
+export type RoleMetadataSchemaType = z.infer<typeof RoleMetadataSchema>;

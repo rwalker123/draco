@@ -64,7 +64,7 @@ export class AuthService {
 
     return {
       token,
-      id: user.id,
+      userId: user.id,
       userName: user.username || '',
     };
   }
@@ -107,7 +107,7 @@ export class AuthService {
 
     return {
       token,
-      id: newUser.id,
+      userId: newUser.id,
       userName: newUser.username || '',
     };
   }
@@ -125,7 +125,7 @@ export class AuthService {
     }
 
     return {
-      id: user.id,
+      userId: user.id,
       userName: user.username || '',
     };
   }
@@ -162,7 +162,7 @@ export class AuthService {
     await this.userRepository.updatePassword(userId, hashedNewPassword);
 
     return {
-      id: user.id,
+      userId: user.id,
       userName: user.username || '',
     };
   }
@@ -187,7 +187,7 @@ export class AuthService {
     const token = this.generateToken(user.id, user.username || '');
 
     return {
-      id: user.id,
+      userId: user.id,
       userName: user.username || '',
       token,
     };

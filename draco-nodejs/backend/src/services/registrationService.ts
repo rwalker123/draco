@@ -50,18 +50,18 @@ export class RegistrationService {
         password: data.password,
       });
 
-      if (!registerResult || !registerResult.token || !registerResult.id) {
+      if (!registerResult || !registerResult.token || !registerResult.userId) {
         throw new ConflictError('User registration failed');
       }
 
       // Step 3: Link existing contact to new user
       const linkedContact = await this.contactService.registerContactUser(
-        registerResult.id,
+        registerResult.userId,
         BigInt(validatedContact.id),
       );
 
       return {
-        id: registerResult.id,
+        userId: registerResult.userId,
         userName: registerResult.userName,
         token: registerResult.token,
         contact: linkedContact,
@@ -79,14 +79,14 @@ export class RegistrationService {
       password: data.password,
     });
 
-    if (!authenticatedUser || !authenticatedUser.token || !authenticatedUser.id) {
+    if (!authenticatedUser || !authenticatedUser.token || !authenticatedUser.userId) {
       throw new AuthenticationError('Invalid credentials');
     }
 
     return await this.userCreateMutex.runExclusive(async () => {
       // Step 2: Check if user is already registered in this account
       const existingContact = await this.contactService.getContactByUserId(
-        authenticatedUser.id,
+        authenticatedUser.userId,
         accountId,
       );
 
@@ -111,7 +111,7 @@ export class RegistrationService {
 
         // Names match or no validation info provided - return success with existing contact
         return {
-          id: authenticatedUser.id,
+          userId: authenticatedUser.userId,
           userName: authenticatedUser.userName,
           token: authenticatedUser.token,
           contact: existingContact,
@@ -133,7 +133,7 @@ export class RegistrationService {
       if (contact.userId === null) {
         // Contact is unlinked, link it to the authenticated user
         linkedContact = await this.contactService.registerContactUser(
-          authenticatedUser.id,
+          authenticatedUser.userId,
           BigInt(contact.id),
         );
       } else {
@@ -141,7 +141,7 @@ export class RegistrationService {
         throw new ConflictError('This contact is already registered to another user.');
       }
       return {
-        id: authenticatedUser.id,
+        userId: authenticatedUser.userId,
         userName: authenticatedUser.userName,
         token: authenticatedUser.token,
         contact: linkedContact,

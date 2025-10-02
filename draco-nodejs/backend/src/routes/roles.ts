@@ -9,7 +9,13 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { DateUtils } from '../utils/dateUtils.js';
-import { ContactRoleType, CreateContactRoleType } from '@draco/shared-schemas';
+import {
+  BaseRoleType,
+  ContactWithContactRolesType,
+  RegisteredUserWithRolesType,
+  RoleCheckType,
+  RoleMetadataSchemaType,
+} from '@draco/shared-schemas';
 import { RoleContextData } from '@/interfaces/roleInterfaces.js';
 
 const router = Router();
@@ -31,20 +37,20 @@ router.get(
     const accountId = req.query.accountId ? BigInt(req.query.accountId as string) : undefined;
     const userRoles = await roleService.getUserRoles(req.user.id, accountId);
 
-    res.json({
-      success: true,
-      data: {
-        userId: req.user.id,
-        username: req.user.username,
-        accountId: accountId?.toString(),
-        globalRoles: userRoles.globalRoles,
-        contactRoles: userRoles.contactRoles.map((cr: ContactRoleType) => ({
-          id: cr.id.toString(),
-          roleId: cr.roleId,
-          roleData: cr.roleData.toString(),
-        })),
-      },
-    });
+    const result: RegisteredUserWithRolesType = {
+      userId: req.user.id,
+      userName: req.user.username,
+      globalRoles: userRoles.globalRoles,
+      contactRoles: userRoles.contactRoles.map((cr) => ({
+        id: cr.id.toString(),
+        roleId: cr.roleId,
+        roleData: cr.roleData.toString(),
+        accountId: cr.accountId.toString(),
+        contact: cr.contact,
+      })),
+    };
+
+    res.json(result);
   }),
 );
 
@@ -75,59 +81,15 @@ router.get(
 
     const roleCheck = await roleService.hasRole(req.user.id, roleId as string, context);
 
-    res.json({
-      success: true,
-      data: {
-        userId: req.user.id,
-        roleId: roleId as string,
-        hasRole: roleCheck.hasRole,
-        roleLevel: roleCheck.roleLevel,
-        context: roleCheck.context,
-      },
-    });
-  }),
-);
-
-/**
- * GET /api/roles/check-permission
- * Check if current user has a specific permission
- */
-router.get(
-  '/check-permission',
-  authenticateToken,
-  routeProtection.requireAdministrator(),
-  asyncHandler(async (req, res): Promise<void> => {
-    if (!req.user?.id) {
-      throw new AuthenticationError('User not found');
-    }
-
-    const { permission, accountId, teamId, leagueId } = req.query;
-
-    if (!permission) {
-      throw new ValidationError('permission is required');
-    }
-
-    const context: RoleContextData = {
-      accountId: accountId ? BigInt(accountId as string) : BigInt(0),
-      teamId: teamId ? BigInt(teamId as string) : undefined,
-      leagueId: leagueId ? BigInt(leagueId as string) : undefined,
+    const result: RoleCheckType = {
+      userId: req.user.id,
+      roleId: roleId as string,
+      hasRole: roleCheck.hasRole,
+      roleLevel: roleCheck.roleLevel,
+      context: roleCheck.context,
     };
 
-    const hasPermission = await roleService.hasPermission(
-      req.user.id,
-      permission as string,
-      context,
-    );
-
-    res.json({
-      success: true,
-      data: {
-        userId: req.user.id,
-        permission: permission as string,
-        hasPermission,
-        context,
-      },
-    });
+    res.json(result);
   }),
 );
 
@@ -148,15 +110,12 @@ router.get(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        roles: roles.map((role) => ({
-          id: role.id,
-          name: role.name,
-        })),
-      },
-    });
+    const result: BaseRoleType[] = roles.map((role) => ({
+      roleId: role.id,
+      roleName: role.name,
+    }));
+
+    res.json(result);
   }),
 );
 
@@ -185,12 +144,13 @@ router.get(
       },
     });
 
-    const usersWithRoles = contacts.map((contact) => ({
-      contactId: contact.id.toString(),
+    const result: ContactWithContactRolesType[] = contacts.map((contact) => ({
+      id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
-      email: contact.email,
-      userId: contact.userid,
+      middleName: contact.middlename || undefined,
+      email: contact.email || undefined,
+      userId: contact.userid || undefined,
       roles: contact.contactroles.map((cr) => ({
         id: cr.id.toString(),
         roleId: cr.roleid,
@@ -198,53 +158,7 @@ router.get(
       })),
     }));
 
-    res.json({
-      success: true,
-      data: {
-        accountId: accountId.toString(),
-        users: usersWithRoles,
-      },
-    });
-  }),
-);
-
-/**
- * POST /api/roles/assign-role
- * Assign a role to a contact (for testing)
- */
-router.post(
-  '/assign-role',
-  authenticateToken,
-  routeProtection.requireAdministrator(),
-  asyncHandler(async (req, res): Promise<void> => {
-    const { contactId, roleId, roleData, accountId } = req.body;
-
-    if (!contactId || !roleId || !roleData || !accountId) {
-      throw new ValidationError('contactId, roleId, roleData, and accountId are required');
-    }
-
-    const contactRoleData: CreateContactRoleType = {
-      roleId,
-      roleData: BigInt(roleData),
-    };
-
-    const assignedRole = await roleService.assignRole(
-      BigInt(accountId),
-      BigInt(contactId),
-      contactRoleData,
-    );
-
-    res.json({
-      success: true,
-      data: {
-        assignedRole: {
-          id: assignedRole.id.toString(),
-          roleId: assignedRole.roleId,
-          roleData: assignedRole.roleData.toString(),
-          accountId: assignedRole.accountId.toString(),
-        },
-      },
-    });
+    res.json(result);
   }),
 );
 
@@ -263,15 +177,14 @@ router.get(
     const timestamp = DateUtils.formatDateTimeForResponse(new Date());
     const version = '1.0.0'; // Increment this when role metadata changes
 
-    res.json({
-      success: true,
-      data: {
-        version,
-        timestamp,
-        hierarchy: ROLE_INHERITANCE_BY_ID,
-        permissions: ROLE_PERMISSIONS_BY_ID,
-      },
-    });
+    const result: RoleMetadataSchemaType = {
+      version,
+      timestamp,
+      hierarchy: ROLE_INHERITANCE_BY_ID,
+      permissions: ROLE_PERMISSIONS_BY_ID,
+    };
+
+    res.json(result);
   }),
 );
 

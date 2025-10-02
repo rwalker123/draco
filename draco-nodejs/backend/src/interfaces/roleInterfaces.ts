@@ -7,7 +7,7 @@ import {
   RoleWithContactType,
   UserRolesType,
 } from '@draco/shared-schemas';
-import { RoleCheckResultType } from '@draco/shared-schemas';
+import { RoleCheckType } from '@draco/shared-schemas';
 
 export interface RoleContextData {
   accountId: bigint;
@@ -62,7 +62,7 @@ export interface IRoleVerification {
   /**
    * Check if a user has a specific role in a context
    */
-  hasRole(userId: string, roleId: string, context: RoleContextData): Promise<RoleCheckResultType>;
+  hasRole(userId: string, roleId: string, context: RoleContextData): Promise<RoleCheckType>;
 
   /**
    * Check if user has role or higher in hierarchy

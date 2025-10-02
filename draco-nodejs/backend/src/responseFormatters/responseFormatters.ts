@@ -6,7 +6,7 @@ import {
   RosterPlayerType,
   BaseRoleType,
   RoleWithContactType,
-  RoleCheckResultType,
+  RoleCheckType,
   ContactType,
   PagedContactType,
   ContactRoleType,
@@ -506,14 +506,13 @@ export class RoleResponseFormatter {
   }
 
   /**
-   * Format the database global role into the RoleCheckResultType
+   * Format the database global role into the RoleCheckType
    * @param dbGlobalRole - The database global role
-   * @returns The formatted RoleCheckResultType
+   * @returns The formatted RoleCheckType
    */
-  static formatGlobalRoleCheckResult(dbGlobalRole: string): RoleCheckResultType {
+  static formatGlobalRoleCheckResult(dbGlobalRole: string): RoleCheckType {
     return {
       roleId: dbGlobalRole,
-      accountId: '',
       userId: '',
       hasRole: true,
       roleLevel: 'global',
@@ -522,14 +521,13 @@ export class RoleResponseFormatter {
   }
 
   /**
-   * Format the database contact role into the RoleCheckResultType
+   * Format the database contact role into the RoleCheckType
    * @param dbContactRole - The database contact role
-   * @returns The formatted RoleCheckResultType
+   * @returns The formatted RoleCheckType
    */
-  static formatContactRoleCheckResult(dbContactRole: dbContactRoles): RoleCheckResultType {
+  static formatContactRoleCheckResult(dbContactRole: dbContactRoles): RoleCheckType {
     return {
       roleId: dbContactRole.roleid,
-      accountId: dbContactRole.accountid.toString(),
       userId: dbContactRole.contactid.toString(),
       hasRole: true,
       roleLevel: 'contact',
