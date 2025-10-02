@@ -3,6 +3,7 @@ import { createStorageService } from '../services/storageService.js';
 import { validateLogoFile, getLogoUrl } from '../config/logo.js';
 import { validateTeamSeasonWithTeamDetails } from '../utils/teamValidation.js';
 import prisma from '../lib/prisma.js';
+import { asyncHandler } from '@/utils/asyncHandler.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
@@ -13,48 +14,40 @@ const storageService = createStorageService();
  */
 router.get(
   '/:teamSeasonId/logo',
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const accountId = req.params.accountId;
-      const seasonId = req.params.seasonId;
-      const teamSeasonId = req.params.teamSeasonId;
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const accountId = req.params.accountId;
+    const seasonId = req.params.seasonId;
+    const teamSeasonId = req.params.teamSeasonId;
 
-      // First, get the team season to find the teamId
-      const teamSeason = await validateTeamSeasonWithTeamDetails(
-        prisma,
-        BigInt(teamSeasonId),
-        BigInt(seasonId),
-        BigInt(accountId),
-      );
+    // First, get the team season to find the teamId
+    const teamSeason = await validateTeamSeasonWithTeamDetails(
+      prisma,
+      BigInt(teamSeasonId),
+      BigInt(seasonId),
+      BigInt(accountId),
+    );
 
-      const teamId = teamSeason.teamid.toString();
+    const teamId = teamSeason.teamid.toString();
 
-      // Get the logo from storage service using teamId
-      const logoBuffer = await storageService.getLogo(accountId, teamId);
+    // Get the logo from storage service using teamId
+    const logoBuffer = await storageService.getLogo(accountId, teamId);
 
-      if (!logoBuffer) {
-        res.status(404).json({
-          success: false,
-          message: 'Logo not found',
-        });
-        return;
-      }
-
-      // Set appropriate headers
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
-      res.setHeader('Content-Length', logoBuffer.length.toString());
-
-      // Send the image buffer
-      res.send(logoBuffer);
-    } catch (error) {
-      console.error('Error serving team logo:', error);
-      res.status(500).json({
+    if (!logoBuffer) {
+      res.status(404).json({
         success: false,
-        message: 'Failed to serve logo',
+        message: 'Logo not found',
       });
+      return;
     }
-  },
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Content-Length', logoBuffer.length.toString());
+
+    // Send the image buffer
+    res.send(logoBuffer);
+  }),
 );
 
 /**
@@ -63,37 +56,29 @@ router.get(
  */
 router.get(
   '/:teamId/logo',
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const accountId = req.params.accountId;
-      const teamId = req.params.teamId;
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const accountId = req.params.accountId;
+    const teamId = req.params.teamId;
 
-      // Get the logo from storage service
-      const logoBuffer = await storageService.getLogo(accountId, teamId);
+    // Get the logo from storage service
+    const logoBuffer = await storageService.getLogo(accountId, teamId);
 
-      if (!logoBuffer) {
-        res.status(404).json({
-          success: false,
-          message: 'Logo not found',
-        });
-        return;
-      }
-
-      // Set appropriate headers
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
-      res.setHeader('Content-Length', logoBuffer.length.toString());
-
-      // Send the image buffer
-      res.send(logoBuffer);
-    } catch (error) {
-      console.error('Error serving team logo:', error);
-      res.status(500).json({
+    if (!logoBuffer) {
+      res.status(404).json({
         success: false,
-        message: 'Failed to serve logo',
+        message: 'Logo not found',
       });
+      return;
     }
-  },
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Content-Length', logoBuffer.length.toString());
+
+    // Send the image buffer
+    res.send(logoBuffer);
+  }),
 );
 
 /**
