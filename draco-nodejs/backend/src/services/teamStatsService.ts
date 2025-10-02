@@ -6,9 +6,11 @@ import { NotFoundError } from '../utils/customErrors.js';
 import {
   BattingStatisticsFiltersSchema,
   PitchingStatisticsFiltersSchema,
+  RecentGamesType,
   TeamRecordType,
 } from '@draco/shared-schemas';
-import { RepositoryFactory, ITeamRepository } from '../repositories/index.js';
+import { RepositoryFactory, ITeamRepository, dbGameInfo } from '../repositories/index.js';
+import { StatsResponseFormatter } from '@/responseFormatters/statsResponseFormatter.js';
 
 export interface GameInfo {
   id: string;
@@ -91,7 +93,7 @@ export class TeamStatsService {
       includeRecent?: boolean;
       limit?: number;
     } = {},
-  ): Promise<{ upcoming?: GameInfo[]; recent?: GameInfo[] }> {
+  ): Promise<RecentGamesType> {
     const { includeUpcoming = true, includeRecent = true, limit = 5 } = options;
 
     // Validate team/season/account relationship
@@ -167,6 +169,8 @@ export class TeamStatsService {
       };
     };
 
+    await mapGame;
+
     const now = new Date();
     let upcomingGames: (leagueschedule & { availablefields?: availablefields | null })[] = [];
     let recentGames: (leagueschedule & { availablefields?: availablefields | null })[] = [];
@@ -204,14 +208,21 @@ export class TeamStatsService {
     }
 
     // Map games with team names (async)
-    const result: { upcoming?: GameInfo[]; recent?: GameInfo[] } = {};
+    const result: RecentGamesType = {
+      upcoming: [],
+      recent: [],
+    };
 
     if (includeUpcoming) {
-      result.upcoming = await Promise.all(upcomingGames.map(mapGame));
+      result.upcoming = upcomingGames.map((game) =>
+        StatsResponseFormatter.formatGameInfoResponse(game as dbGameInfo),
+      );
     }
 
     if (includeRecent) {
-      result.recent = await Promise.all(recentGames.map(mapGame));
+      result.recent = recentGames.map((game) =>
+        StatsResponseFormatter.formatGameInfoResponse(game as dbGameInfo),
+      );
     }
 
     return result;

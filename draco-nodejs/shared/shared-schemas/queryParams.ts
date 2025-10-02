@@ -34,3 +34,21 @@ export const booleanQueryParam = z.preprocess((value) => {
 
   return value;
 }, z.boolean());
+
+const coerceQueryNumber = (schema: z.ZodNumber) =>
+  z.preprocess((value) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    return value;
+  }, schema);
+
+export const numberQueryParam = (opts?: { min?: number; max?: number }) => {
+  let schema = z.number();
+  if (opts?.min !== undefined) schema = schema.min(opts.min);
+  if (opts?.max !== undefined) schema = schema.max(opts.max);
+  return coerceQueryNumber(schema);
+};

@@ -6,7 +6,12 @@ import { TeamSeasonNameSchema } from './team.js';
 import { SeasonNameSchema } from './season.js';
 import { ContactIdSchema } from './contact.js';
 import { LeagueNameSchema } from './league.js';
-import { PaginationSchema } from './index.js';
+import {
+  booleanQueryParam,
+  numberQueryParam,
+  PaginationSchema,
+  PaginationWithTotalSchema,
+} from './index.js';
 
 extendZodWithOpenApi(z);
 
@@ -33,15 +38,16 @@ export const GameSchema = z.object({
   homeTeam: TeamSeasonNameSchema,
   visitorTeam: TeamSeasonNameSchema,
   league: LeagueNameSchema,
-  season: SeasonNameSchema,
+  season: SeasonNameSchema.optional(),
   homeScore: z.number().min(0).max(99),
   visitorScore: z.number().min(0).max(99),
-  comment: z.string().max(255).nullable(),
-  field: FieldSchema.nullable(),
+  comment: z.string().max(255).optional(),
+  field: FieldSchema.optional(),
   gameStatus: z.number(),
   gameStatusText: GameStatusEnumSchema.optional(),
   gameStatusShortText: GameStatusShortEnumSchema.optional(),
   gameType: bigintToStringSchema,
+  hasGameRecap: z.boolean().optional(),
   umpire1: ContactIdSchema.optional(),
   umpire2: ContactIdSchema.optional(),
   umpire3: ContactIdSchema.optional(),
@@ -71,7 +77,7 @@ export const GameRecapsSchema = GameSchema.extend({
 
 export const GamesWithRecapsSchema = z.object({
   games: GameRecapsSchema.array(),
-  pagination: PaginationSchema,
+  pagination: PaginationWithTotalSchema.omit({ hasNext: true, hasPrev: true }),
 });
 
 export const UpdateGameResultsSchema = GameSchema.pick({
@@ -150,6 +156,21 @@ export const UpsertGameRecapSchema = GameRecapSchema.omit({
   team: true,
 });
 
+export const RecentGamesSchema = z.object({
+  upcoming: GameSchema.array(),
+  recent: GameSchema.array(),
+});
+
+export const RecentGamesQuerySchema = z.object({
+  upcoming: booleanQueryParam.optional().default(true).describe('Include upcoming games'),
+  recent: booleanQueryParam.optional().default(true).describe('Include recent games'),
+  limit: numberQueryParam({ min: 1, max: 20 })
+    .optional()
+    .default(5)
+    .describe('Maximum number of games to return for each category'),
+});
+
+export type RecentGamesType = z.infer<typeof RecentGamesSchema>;
 export type GameRecapType = z.infer<typeof GameRecapSchema>;
 export type GameType = z.infer<typeof GameSchema>;
 export type UpdateGameResultsType = z.infer<typeof UpdateGameResultsSchema>;
@@ -161,3 +182,4 @@ export type GamesWithRecapsType = z.infer<typeof GamesWithRecapsSchema>;
 export type GameStatusEnumType = z.infer<typeof GameStatusEnumSchema>;
 export type GameStatusShortEnumType = z.infer<typeof GameStatusShortEnumSchema>;
 export type GameTypeEnumType = z.infer<typeof GameTypeEnumSchema>;
+export type RecentGamesQueryType = z.infer<typeof RecentGamesQuerySchema>;

@@ -192,14 +192,9 @@ router.delete(
       'rosterMemberId',
     );
 
-    const { playerName } = await rosterService.deleteRosterMember(
-      rosterMemberId,
-      teamSeasonId,
-      seasonId,
-      accountId,
-    );
+    await rosterService.deleteRosterMember(rosterMemberId, teamSeasonId, seasonId, accountId);
 
-    res.json(`Player "${playerName}" has been permanently deleted from the roster`);
+    res.json(true);
   },
 );
 

@@ -32,6 +32,17 @@ export const PlayerBattingStatsSchema = z.object({
   pa: z.number().min(0),
 });
 
+export const PlayerBattingStatsBriefSchema = PlayerBattingStatsSchema.omit({
+  teams: true,
+  teamName: true,
+  hbp: true,
+  sb: true,
+  sf: true,
+  sh: true,
+  tb: true,
+  pa: true,
+});
+
 export const PlayerPitchingStatsSchema = z.object({
   playerId: bigintToStringSchema,
   playerName: nameSchema,
@@ -59,6 +70,24 @@ export const PlayerPitchingStatsSchema = z.object({
   oba: z.number().min(0), // opponent batting average
   slg: z.number().min(0), // opponent slugging
   ipDecimal: z.number().min(0), // innings pitched as decimal
+});
+
+export const PlayerPitchingStatsBriefSchema = PlayerPitchingStatsSchema.omit({
+  teams: true,
+  teamName: true,
+  ip: true,
+  ip2: true,
+  hr: true,
+  ipDecimal: true,
+  bf: true,
+  wp: true,
+  hbp: true,
+  k9: true,
+  bb9: true,
+  oba: true,
+  slg: true,
+}).extend({
+  ip: z.number().min(0).describe('Innings pitched, rounded to nearest whole inning'),
 });
 
 export const StatisticsFiltersSchema = z.object({
@@ -161,3 +190,5 @@ export type LeaderCategoriesType = z.infer<typeof LeaderCategoriesSchema>;
 export type BattingStatisticsFiltersType = z.infer<typeof BattingStatisticsFiltersSchema>;
 export type PitchingStatisticsFiltersType = z.infer<typeof PitchingStatisticsFiltersSchema>;
 export type LeaderStatisticsFiltersType = z.infer<typeof LeaderStatisticsFiltersSchema>;
+export type PlayerBattingStatsBriefType = z.infer<typeof PlayerBattingStatsBriefSchema>;
+export type PlayerPitchingStatsBriefType = z.infer<typeof PlayerPitchingStatsBriefSchema>;

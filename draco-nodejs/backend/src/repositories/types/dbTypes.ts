@@ -41,6 +41,10 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
   };
 }>;
 
+export type dbGameInfo = Prisma.leaguescheduleGetPayload<{
+  include: { availablefields: true };
+}>;
+
 export type dbRosterSeason = Prisma.rosterseasonGetPayload<{
   include: { roster: { include: { contacts: true } } };
 }>;

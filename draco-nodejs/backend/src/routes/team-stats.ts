@@ -1,11 +1,17 @@
 import prisma from '../lib/prisma.js';
 import { Router, Request, Response, NextFunction } from 'express';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { TeamRequestValidator } from '../utils/teamValidators.js';
 import { StatsResponseFormatter } from '../responseFormatters/index.js';
 import { validateTeamSeasonBasic } from '../utils/teamValidation.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import {
+  PlayerBattingStatsBriefType,
+  PlayerPitchingStatsBriefType,
+  RecentGamesQuerySchema,
+  RecentGamesType,
+  TeamSeasonRecordType,
+} from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const teamStatsService = ServiceFactory.getTeamStatsService();
@@ -18,16 +24,20 @@ const teamService = ServiceFactory.getTeamService();
 router.get(
   '/:teamSeasonId/record',
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    const { accountId } = extractTeamParams(req.params);
-    const { seasonId, teamSeasonId } = extractBigIntParams(req.params, 'seasonId', 'teamSeasonId');
+    const { accountId, seasonId, teamSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+    );
 
-    const team = await teamService.getTeamSeasonDetails(teamSeasonId, seasonId, accountId);
-    const record = await teamStatsService.getTeamRecord(teamSeasonId);
+    const result: TeamSeasonRecordType = await teamService.getTeamSeasonDetails(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
 
-    res.json({
-      ...team,
-      record,
-    });
+    res.json(result);
   }),
 );
 
@@ -39,19 +49,22 @@ router.get(
   '/:teamSeasonId/games',
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
-    const { limitNum, includeUpcoming, includeRecent } =
-      TeamRequestValidator.validateGameQueryParams(req);
+    const { limit, upcoming, recent } = RecentGamesQuerySchema.parse(req.query);
 
     // Validate team/season/account relationship first
     await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
-    const gamesData = await teamStatsService.getTeamGames(teamSeasonId, seasonId, accountId, {
-      includeUpcoming,
-      includeRecent,
-      limit: limitNum,
-    });
+    const response: RecentGamesType = await teamStatsService.getTeamGames(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      {
+        includeUpcoming: upcoming,
+        includeRecent: recent,
+        limit: limit,
+      },
+    );
 
-    const response = StatsResponseFormatter.formatTeamGamesResponse(gamesData);
     res.json(response);
   }),
 );
@@ -69,7 +82,8 @@ router.get(
     await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
     const battingStats = await teamStatsService.getTeamBattingStats(teamSeasonId, accountId);
-    const response = StatsResponseFormatter.formatBattingStatsResponse(battingStats);
+    const response: PlayerBattingStatsBriefType[] =
+      StatsResponseFormatter.formatBattingStatsResponse(battingStats);
 
     res.json(response);
   }),
@@ -92,7 +106,8 @@ router.get(
       seasonId,
       accountId,
     );
-    const response = StatsResponseFormatter.formatPitchingStatsResponse(pitchingStats);
+    const response: PlayerPitchingStatsBriefType[] =
+      StatsResponseFormatter.formatPitchingStatsResponse(pitchingStats);
 
     res.json(response);
   }),

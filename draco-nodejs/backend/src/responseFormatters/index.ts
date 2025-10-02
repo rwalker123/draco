@@ -8,3 +8,4 @@ export * from './playersWantedResponseFormatter.js';
 export * from './WorkoutResponseFormatter.js';
 export * from './EmailResponseFormatter.js';
 export * from './EmailTemplateResponseFormatter.js';
+export * from './statsResponseFormatter.js';
