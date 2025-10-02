@@ -17,6 +17,9 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { AnimatePresence, motion } from 'framer-motion';
 import './GameRecapsWidget.css';
+import { listSeasonGames } from '@draco/shared-api-client';
+import { useApiClient } from '../hooks/useApiClient';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface GameRecapFlat {
   id: string; // game id
@@ -56,6 +59,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   const progressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const theme = useTheme();
+  const apiClient = useApiClient();
 
   // Reset index when recaps change
   useEffect(() => {
@@ -95,57 +99,88 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
 
   useEffect(() => {
     if (!accountId || !seasonId) return;
-    setLoading(true);
-    setError(null);
-    // Calculate two-week date range
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 14);
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 1); // inclusive of today
-    // Format as YYYY-MM-DD
-    const startStr = startDate.toISOString().slice(0, 10);
-    const endStr = endDate.toISOString().slice(0, 10);
-    let url = `/api/accounts/${accountId}/seasons/${seasonId}/games?hasRecap=true&startDate=${startStr}&endDate=${endStr}`;
-    if (teamSeasonId) {
-      url += `&teamId=${teamSeasonId}`;
-    }
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.success) throw new Error(data.message || 'Failed to load game recaps');
-        // Flatten all recaps for all games into a single array
+
+    const fetchRecaps = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - 14);
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + 1);
+
+        const result = await listSeasonGames({
+          client: apiClient,
+          path: { accountId, seasonId },
+          query: {
+            hasRecap: true,
+            startDate: startDate.toISOString().slice(0, 10),
+            endDate: endDate.toISOString().slice(0, 10),
+            teamId: teamSeasonId,
+            sortOrder: 'desc',
+          },
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to load game recaps');
+
         let flatRecaps: GameRecapFlat[] = [];
-        for (const game of data.data.games) {
-          if (game.recaps && Array.isArray(game.recaps)) {
+
+        for (const game of data.games) {
+          const homeTeamId = String(game.homeTeam?.id ?? '');
+          const visitorTeamId = String(game.visitorTeam?.id ?? '');
+          const homeTeamName = game.homeTeam?.name ?? 'Home Team';
+          const visitorTeamName = game.visitorTeam?.name ?? 'Visitor Team';
+
+          if (Array.isArray(game.recaps)) {
             for (const recap of game.recaps) {
-              // Find the team name for this recap
-              let teamName = '';
-              if (recap.teamId === game.homeTeamId) teamName = game.homeTeamName;
-              else if (recap.teamId === game.visitorTeamId) teamName = game.visitorTeamName;
-              else teamName = 'Unknown Team';
+              const recapTeamId = String(recap.team?.id ?? '');
+              let teamName = recap.team?.name ?? '';
+
+              if (!teamName) {
+                if (recapTeamId === homeTeamId) {
+                  teamName = homeTeamName;
+                } else if (recapTeamId === visitorTeamId) {
+                  teamName = visitorTeamName;
+                } else {
+                  teamName = 'Unknown Team';
+                }
+              }
+
               flatRecaps.push({
-                id: game.id,
-                gameDate: game.gameDate,
-                league: game.league,
-                homeTeamName: game.homeTeamName,
-                visitorTeamName: game.visitorTeamName,
-                homeScore: game.homeScore,
-                visitorScore: game.visitorScore,
+                id: String(game.id),
+                gameDate: game.gameDate ?? null,
+                league: {
+                  id: String(game.league?.id ?? ''),
+                  name: game.league?.name ?? 'League',
+                },
+                homeTeamName,
+                visitorTeamName,
+                homeScore: Number(game.homeScore ?? 0),
+                visitorScore: Number(game.visitorScore ?? 0),
                 teamName,
                 recap: recap.recap,
               });
             }
           }
         }
+
         if (maxRecaps > 0) {
           flatRecaps = flatRecaps.slice(0, maxRecaps);
         }
+
         setRecapList(flatRecaps);
-      })
-      .catch((err) => setError(err.message || 'Error loading game recaps'))
-      .finally(() => setLoading(false));
-  }, [accountId, seasonId, teamSeasonId, maxRecaps]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error loading game recaps');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchRecaps();
+  }, [accountId, apiClient, seasonId, teamSeasonId, maxRecaps]);
 
   if (loading) {
     return (

@@ -1,8 +1,11 @@
 import { useState, useCallback } from 'react';
-import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
-import { Game, GameFormState, GameType } from '@/types/schedule';
+import { useApiClient } from '../../../hooks/useApiClient';
+import { Game, GameFormState, GameType, GameStatus } from '@/types/schedule';
 import { formatGameDateTime } from '../../../utils/dateUtils';
+import { createGame, updateGame, deleteGame, updateGameResults } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../../../utils/apiResult';
+import type { UpsertGameType } from '@draco/shared-schemas';
 
 interface UseGameManagementProps {
   accountId: string;
@@ -89,8 +92,8 @@ export const useGameManagement = ({
   setError,
   clearLeagueTeams,
 }: UseGameManagementProps): UseGameManagementReturn => {
-  const { token } = useAuth();
   const { fetchCurrentSeason } = useCurrentSeason(accountId);
+  const apiClient = useApiClient();
 
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -146,6 +149,52 @@ export const useGameManagement = ({
     }
   }, [clearLeagueTeams]);
 
+  const buildUpsertGamePayload = useCallback(
+    ({
+      leagueSeasonId,
+      gameDate,
+      homeTeamId,
+      visitorTeamId,
+      fieldId,
+      comment,
+      gameType,
+      gameStatus,
+      umpire1,
+      umpire2,
+      umpire3,
+      umpire4,
+    }: {
+      leagueSeasonId: string;
+      gameDate: string;
+      homeTeamId: string;
+      visitorTeamId: string;
+      fieldId?: string;
+      comment?: string;
+      gameType: number | string;
+      gameStatus: number;
+      umpire1?: string;
+      umpire2?: string;
+      umpire3?: string;
+      umpire4?: string;
+    }): UpsertGameType => {
+      return {
+        leagueSeasonId,
+        gameDate,
+        homeTeam: { id: homeTeamId },
+        visitorTeam: { id: visitorTeamId },
+        field: fieldId ? { id: fieldId } : null,
+        comment: comment ?? '',
+        gameStatus,
+        gameType: String(gameType),
+        umpire1: umpire1 ? { id: umpire1 } : null,
+        umpire2: umpire2 ? { id: umpire2 } : null,
+        umpire3: umpire3 ? { id: umpire3 } : null,
+        umpire4: umpire4 ? { id: umpire4 } : null,
+      };
+    },
+    [],
+  );
+
   // Create game
   const handleCreateGame = useCallback(async () => {
     try {
@@ -172,36 +221,31 @@ export const useGameManagement = ({
 
       const currentSeasonId = await fetchCurrentSeason();
 
-      // Create ISO string without timezone manipulation
       const gameDateString = formatGameDateTime(gameDate, gameTime);
 
-      const requestData = {
+      const payload = buildUpsertGamePayload({
         leagueSeasonId: dialogLeagueSeason,
         gameDate: gameDateString,
         homeTeamId,
         visitorTeamId,
-        fieldId: fieldId || null,
+        fieldId,
         comment,
         gameType,
-        umpire1: umpire1 || null,
-        umpire2: umpire2 || null,
-        umpire3: umpire3 || null,
-        umpire4: umpire4 || null,
-      };
-
-      const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/games`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestData),
+        gameStatus: GameStatus.Scheduled,
+        umpire1,
+        umpire2,
+        umpire3,
+        umpire4,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to create game (${response.status})`);
-      }
+      const result = await createGame({
+        client: apiClient,
+        path: { accountId, seasonId: currentSeasonId },
+        body: payload,
+        throwOnError: false,
+      });
+
+      unwrapApiResult(result, 'Failed to create game');
 
       setSuccess('Game created successfully');
       if (!keepDialogOpen) {
@@ -229,11 +273,12 @@ export const useGameManagement = ({
     dialogLeagueSeason,
     keepDialogOpen,
     accountId,
-    token,
+    apiClient,
     fetchCurrentSeason,
     loadGamesData,
     setSuccess,
     resetForm,
+    buildUpsertGamePayload,
   ]);
 
   // Update game
@@ -260,36 +305,41 @@ export const useGameManagement = ({
         return;
       }
 
-      // Create ISO string without timezone manipulation
       const gameDateString = formatGameDateTime(gameDate, gameTime);
+      const leagueSeasonId = dialogLeagueSeason || selectedGame.league.id;
 
-      const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            gameDate: gameDateString,
-            homeTeamId,
-            visitorTeamId,
-            fieldId: fieldId || null,
-            comment,
-            gameType,
-            umpire1: umpire1 || null,
-            umpire2: umpire2 || null,
-            umpire3: umpire3 || null,
-            umpire4: umpire4 || null,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update game');
+      if (!leagueSeasonId) {
+        setEditDialogError('League season is required');
+        return;
       }
+
+      const payload = buildUpsertGamePayload({
+        leagueSeasonId,
+        gameDate: gameDateString,
+        homeTeamId,
+        visitorTeamId,
+        fieldId,
+        comment,
+        gameType,
+        gameStatus: selectedGame.gameStatus,
+        umpire1,
+        umpire2,
+        umpire3,
+        umpire4,
+      });
+
+      const result = await updateGame({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: selectedGame.season.id,
+          gameId: selectedGame.id,
+        },
+        body: payload,
+        throwOnError: false,
+      });
+
+      unwrapApiResult(result, 'Failed to update game');
 
       setSuccess('Game updated successfully');
       setEditDialogOpen(false);
@@ -298,33 +348,34 @@ export const useGameManagement = ({
     } catch (err) {
       setEditDialogError(err instanceof Error ? err.message : 'Failed to update game');
     }
-  }, [formState, selectedGame, accountId, token, loadGamesData, setSuccess, resetForm]);
+  }, [
+    formState,
+    selectedGame,
+    dialogLeagueSeason,
+    accountId,
+    apiClient,
+    loadGamesData,
+    setSuccess,
+    resetForm,
+    buildUpsertGamePayload,
+  ]);
 
   // Delete game
   const handleDeleteGame = useCallback(async () => {
     try {
       if (!selectedGame) return;
 
-      const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+      const result = await deleteGame({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: selectedGame.season.id,
+          gameId: selectedGame.id,
         },
-      );
+        throwOnError: false,
+      });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Authentication failed. Please log in again.');
-          setDeleteDialogOpen(false);
-          return;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete game');
-      }
+      unwrapApiResult(result, 'Failed to delete game');
 
       setSuccess('Game deleted successfully');
       setDeleteDialogOpen(false);
@@ -334,7 +385,7 @@ export const useGameManagement = ({
       setError(err instanceof Error ? err.message : 'Failed to delete game');
       setDeleteDialogOpen(false);
     }
-  }, [selectedGame, accountId, token, loadGamesData, setSuccess, setError]);
+  }, [selectedGame, accountId, apiClient, loadGamesData, setSuccess, setError]);
 
   // Save game results
   const handleSaveGameResults = useCallback(
@@ -343,39 +394,33 @@ export const useGameManagement = ({
         throw new Error('No game selected for results');
       }
 
-      const requestBody = {
-        homeScore: gameResultData.homeScore,
-        awayScore: gameResultData.awayScore,
-        gameStatus: gameResultData.gameStatus,
-        emailPlayers: gameResultData.emailPlayers,
-        postToTwitter: gameResultData.postToTwitter,
-        postToBluesky: gameResultData.postToBluesky,
-        postToFacebook: gameResultData.postToFacebook,
-      };
-
-      const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${selectedGameForResults.season.id}/games/${selectedGameForResults.id}/results`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
+      const result = await updateGameResults({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: selectedGameForResults.season.id,
+          gameId: selectedGameForResults.id,
         },
-      );
+        body: {
+          homeScore: gameResultData.homeScore,
+          visitorScore: gameResultData.awayScore,
+          gameStatus: gameResultData.gameStatus,
+          emailPlayers: gameResultData.emailPlayers,
+          postToTwitter: gameResultData.postToTwitter,
+          postToBluesky: gameResultData.postToBluesky,
+          postToFacebook: gameResultData.postToFacebook,
+        },
+        throwOnError: false,
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save game results');
-      }
+      unwrapApiResult(result, 'Failed to save game results');
 
       setSuccess('Game results saved successfully');
       setGameResultsDialogOpen(false);
       setSelectedGameForResults(null);
       loadGamesData();
     },
-    [selectedGameForResults, accountId, token, loadGamesData, setSuccess],
+    [selectedGameForResults, accountId, apiClient, loadGamesData, setSuccess],
   );
 
   // Dialog management

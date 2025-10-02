@@ -1,8 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { Game, Team, Field, Umpire, League, FilterType } from '@/types/schedule';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { listSeasonGames } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../../../utils/apiResult';
+import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
 
 interface UseScheduleDataProps {
   accountId: string;
@@ -49,6 +53,7 @@ export const useScheduleData = ({
 }: UseScheduleDataProps): UseScheduleDataReturn => {
   const { token, loading: authLoading } = useAuth();
   const { fetchCurrentSeason } = useCurrentSeason(accountId);
+  const apiClient = useApiClient();
 
   // Data states
   const [games, setGames] = useState<Game[]>([]);
@@ -254,46 +259,19 @@ export const useScheduleData = ({
       // Calculate date range for this specific call
       const { startDate: currentStartDate, endDate: currentEndDate } = getDateRange();
 
-      // Load games for the current season (across all leagues)
-      const gamesResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${currentStartDate.toISOString()}&endDate=${currentEndDate.toISOString()}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+      const gamesResult = await listSeasonGames({
+        client: apiClient,
+        path: { accountId, seasonId: currentSeasonId },
+        query: {
+          startDate: currentStartDate.toISOString(),
+          endDate: currentEndDate.toISOString(),
+          sortOrder: 'asc',
         },
-      );
+        throwOnError: false,
+      });
 
-      if (!gamesResponse.ok) {
-        throw new Error('Failed to load games');
-      }
-
-      const gamesData = await gamesResponse.json();
-
-      // Transform raw API data to match Game interface
-      const transformedGames = gamesData.data.games.map((rawGame: Record<string, unknown>) => ({
-        id: String(rawGame.id),
-        gameDate: String(rawGame.gameDate),
-        homeTeamId: String(rawGame.homeTeamId),
-        visitorTeamId: String(rawGame.visitorTeamId),
-        homeTeamName: String(rawGame.homeTeamName),
-        visitorTeamName: String(rawGame.visitorTeamName),
-        homeScore: Number(rawGame.homeScore),
-        visitorScore: Number(rawGame.visitorScore),
-        gameStatus: Number(rawGame.gameStatus),
-        gameStatusText: String(rawGame.gameStatusText),
-        gameStatusShortText: String(rawGame.gameStatusShortText),
-        gameType: Number(rawGame.gameType),
-        comment: String(rawGame.comment || ''),
-        fieldId: rawGame.fieldId ? String(rawGame.fieldId) : undefined,
-        field: rawGame.field as Game['field'],
-        umpire1: rawGame.umpire1 ? String(rawGame.umpire1) : undefined,
-        umpire2: rawGame.umpire2 ? String(rawGame.umpire2) : undefined,
-        umpire3: rawGame.umpire3 ? String(rawGame.umpire3) : undefined,
-        umpire4: rawGame.umpire4 ? String(rawGame.umpire4) : undefined,
-        league: rawGame.league as Game['league'],
-        season: rawGame.season as Game['season'],
-      }));
+      const gamesData = unwrapApiResult(gamesResult, 'Failed to load games');
+      const transformedGames = gamesData.games.map(mapGameResponseToScheduleGame);
 
       setGames(transformedGames);
 
@@ -306,7 +284,7 @@ export const useScheduleData = ({
     } finally {
       setLoadingGames(false);
     }
-  }, [accountId, fetchCurrentSeason, getDateRange, isInitialLoad]);
+  }, [accountId, apiClient, fetchCurrentSeason, getDateRange, isInitialLoad]);
 
   // Load league teams (from cache)
   const loadLeagueTeams = useCallback(

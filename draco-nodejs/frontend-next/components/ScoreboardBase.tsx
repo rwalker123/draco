@@ -2,9 +2,11 @@ import React from 'react';
 import { Box, CircularProgress, Paper } from '@mui/material';
 import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
 import EnterGameResultsDialog, { GameResultData } from './EnterGameResultsDialog';
-import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
+import { useApiClient } from '../hooks/useApiClient';
+import { updateGameResults } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface ScoreboardBaseProps {
   accountId: string;
@@ -33,9 +35,9 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     game: Game | null;
   }>({ open: false, game: null });
 
-  const { token } = useAuth();
   const { hasRole } = useRole();
   const canEditGames = isAccountAdministrator(hasRole, accountId);
+  const apiClient = useApiClient();
 
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });
@@ -46,19 +48,26 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const url = `/api/accounts/${accountId}/seasons/${currentSeasonId}/games/${gameData.gameId}/results`;
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
+      const result = await updateGameResults({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: currentSeasonId,
+          gameId: gameData.gameId,
         },
-        body: JSON.stringify(gameData),
+        body: {
+          homeScore: gameData.homeScore,
+          visitorScore: gameData.awayScore,
+          gameStatus: gameData.gameStatus,
+          emailPlayers: gameData.emailPlayers,
+          postToTwitter: gameData.postToTwitter,
+          postToBluesky: gameData.postToBluesky,
+          postToFacebook: gameData.postToFacebook,
+        },
+        throwOnError: false,
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to save game results');
-      }
+
+      unwrapApiResult(result, 'Failed to save game results');
       setEditGameDialog({ open: false, game: null });
       // Reload scoreboard data
       await loadGames().then(setGames);
