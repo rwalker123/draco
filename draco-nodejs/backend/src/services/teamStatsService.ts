@@ -220,12 +220,12 @@ export class TeamStatsService {
   async getTeamBattingStats(teamSeasonId: bigint, accountId: bigint): Promise<BattingStat[]> {
     // Use the statistics service to get batting stats for this team
     const filters = BattingStatisticsFiltersSchema.parse({
-      teamId: teamSeasonId,
+      teamId: teamSeasonId.toString(),
       sortField: 'avg',
       sortOrder: 'desc',
-      pageSize: 1000, // Get all players on the team
-      minAB: 0, // No minimum requirements for team stats
-      includeAllGameTypes: true, // Include both regular season and postseason
+      pageSize: '1000', // Get all players on the team
+      minAB: '0', // No minimum requirements for team stats
+      includeAllGameTypes: 'true', // Include both regular season and postseason
     });
 
     const battingStats = await this.statisticsService.getBattingStats(accountId, filters);
@@ -256,12 +256,12 @@ export class TeamStatsService {
   ): Promise<PitchingStat[]> {
     // Use the statistics service to get pitching stats for this team
     const filters = PitchingStatisticsFiltersSchema.parse({
-      teamId: teamSeasonId,
+      teamId: teamSeasonId.toString(),
       sortField: 'era',
       sortOrder: 'asc',
-      pageSize: 1000, // Get all players on the team
-      minIP: 0, // No minimum requirements for team stats
-      includeAllGameTypes: true, // Include both regular season and postseason
+      pageSize: '1000', // Get all players on the team
+      minIP: '0', // No minimum requirements for team stats
+      includeAllGameTypes: 'true', // Include both regular season and postseason
     });
     const pitchingStats = await this.statisticsService.getPitchingStats(accountId, filters);
 

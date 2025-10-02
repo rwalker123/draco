@@ -87,7 +87,7 @@ router.get(
 router.get(
   '/leaders/:leagueId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
     const category = req.query.category as string;
 
     if (!category) {
@@ -95,6 +95,7 @@ router.get(
     }
 
     const filters = LeaderStatisticsFiltersSchema.parse(req.query);
+    filters.leagueId = leagueId;
 
     const leaders = await statisticsService.getLeaders(accountId, category, filters);
 
