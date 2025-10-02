@@ -44,6 +44,10 @@ import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import axios from 'axios';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { listAccountLeagues, createLeague, updateLeague } from '@draco/shared-api-client';
+import { LeagueType, UpsertLeagueType } from '@draco/shared-schemas';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../utils/apiResult';
 
 interface Season {
   id: string;
@@ -73,6 +77,7 @@ const SeasonManagement: React.FC = () => {
   const router = useRouter();
   const { token } = useAuth();
   const { hasRole } = useRole();
+  const apiClient = useApiClient();
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [availableLeagues, setAvailableLeagues] = useState<League[]>([]);
@@ -138,32 +143,30 @@ const SeasonManagement: React.FC = () => {
   }, [accountId]);
 
   const fetchAvailableLeagues = useCallback(async () => {
-    if (!accountId || !token) return;
+    if (!accountIdStr || !token) return;
 
     try {
-      const response = await axios.get(`/api/accounts/${accountId}/leagues`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const result = await listAccountLeagues({
+        client: apiClient,
+        path: { accountId: accountIdStr },
+        throwOnError: false,
       });
 
-      if (response.data.success) {
-        setAvailableLeagues(response.data.data.leagues);
-      }
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setError((err as { response: { data: { message: string } } }).response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to fetch available leagues');
-      }
+      const leagues = unwrapApiResult(result, 'Failed to fetch available leagues') as
+        | LeagueType[]
+        | undefined;
+
+      setAvailableLeagues(
+        (leagues ?? []).map((league) => ({
+          id: league.id,
+          name: league.name,
+          accountId: league.accountId,
+        })),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch available leagues');
     }
-  }, [accountId, token]);
+  }, [accountIdStr, apiClient, token]);
 
   useEffect(() => {
     if (accountId) {
@@ -609,38 +612,29 @@ const SeasonManagement: React.FC = () => {
 
   // Handler to save league name
   const handleEditLeague = async () => {
-    if (!accountId || !token || !leagueToEdit || !editLeagueName.trim()) return;
+    if (!accountIdStr || !token || !leagueToEdit || !editLeagueName.trim()) return;
     setFormLoading(true);
     try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/leagues/${leagueToEdit.id}`,
-        { name: editLeagueName.trim() },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (response.data.success) {
-        setDialogSuccessMessage('League updated successfully');
-        setEditLeagueDialogOpen(false);
-        setLeagueToEdit(null);
-        updateLeagueInAvailableLeagues(response.data.data.league);
-      } else {
-        setDialogErrorMessage(response.data.message || 'Failed to update league');
-      }
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setDialogErrorMessage(
-          (err as { response: { data: { message: string } } }).response.data.message,
-        );
-      } else if (err instanceof Error) {
-        setDialogErrorMessage(err.message);
-      } else {
-        setDialogErrorMessage('Failed to update league');
-      }
+      const payload: UpsertLeagueType = { name: editLeagueName.trim() };
+      const result = await updateLeague({
+        client: apiClient,
+        path: { accountId: accountIdStr, leagueId: leagueToEdit.id },
+        body: payload,
+        throwOnError: false,
+      });
+
+      const updatedLeague = unwrapApiResult(result, 'Failed to update league') as LeagueType;
+
+      setDialogSuccessMessage('League updated successfully');
+      setEditLeagueDialogOpen(false);
+      setLeagueToEdit(null);
+      updateLeagueInAvailableLeagues({
+        id: updatedLeague.id,
+        name: updatedLeague.name,
+        accountId: updatedLeague.accountId,
+      });
+    } catch (err) {
+      setDialogErrorMessage(err instanceof Error ? err.message : 'Failed to update league');
     } finally {
       setFormLoading(false);
     }
@@ -648,76 +642,63 @@ const SeasonManagement: React.FC = () => {
 
   // Handler to create new league
   const handleCreateLeague = async () => {
-    if (!accountId || !token || !newLeagueName.trim()) return;
+    if (!accountIdStr || !token || !newLeagueName.trim()) return;
     setFormLoading(true);
     try {
-      // Create the league
-      const createResponse = await axios.post(
-        `/api/accounts/${accountId}/leagues`,
-        { name: newLeagueName.trim() },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const payload: UpsertLeagueType = { name: newLeagueName.trim() };
+      const result = await createLeague({
+        client: apiClient,
+        path: { accountId: accountIdStr },
+        body: payload,
+        throwOnError: false,
+      });
 
-      if (createResponse.data.success) {
-        const newLeague = createResponse.data.data.league;
+      const newLeague = unwrapApiResult(result, 'Failed to create league') as LeagueType;
 
-        // If checkbox is checked, add the league to the season
-        if (addToSeasonAfterCreate && selectedSeason) {
-          const addResponse = await axios.post(
-            `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
-            { leagueId: newLeague.id },
-            { headers: { Authorization: `Bearer ${token}` } },
+      // If checkbox is checked, add the league to the season
+      if (addToSeasonAfterCreate && selectedSeason) {
+        const addResponse = await axios.post(
+          `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
+          { leagueId: newLeague.id },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+
+        if (addResponse.data.success) {
+          setDialogSuccessMessage(
+            `League "${newLeague.name}" created and added to season "${selectedSeason.name}"`,
           );
 
-          if (addResponse.data.success) {
-            setDialogSuccessMessage(
-              `League "${newLeague.name}" created and added to season "${selectedSeason.name}"`,
-            );
+          // Use targeted update instead of full refresh
+          addLeagueToSeasonInState(selectedSeason.id, addResponse.data.data.leagueSeason);
 
-            // Use targeted update instead of full refresh
-            addLeagueToSeasonInState(selectedSeason.id, addResponse.data.data.leagueSeason);
-
-            // Also update selectedSeason for the dialog
-            setSelectedSeason((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    leagues: [...prev.leagues, addResponse.data.data.leagueSeason],
-                  }
-                : prev,
-            );
-          } else {
-            setDialogSuccessMessage(
-              `League "${newLeague.name}" created successfully, but failed to add to season`,
-            );
-          }
+          // Also update selectedSeason for the dialog
+          setSelectedSeason((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  leagues: [...prev.leagues, addResponse.data.data.leagueSeason],
+                }
+              : prev,
+          );
         } else {
-          setDialogSuccessMessage(`League "${newLeague.name}" created successfully`);
+          setDialogSuccessMessage(
+            `League "${newLeague.name}" created successfully, but failed to add to season`,
+          );
         }
+      } else {
+        setDialogSuccessMessage(`League "${newLeague.name}" created successfully`);
+      }
 
-        setCreateLeagueDialogOpen(false);
-        setNewLeagueName('');
-        // Use targeted update instead of full refresh
-        addLeagueToAvailableLeagues(newLeague);
-      } else {
-        setDialogErrorMessage(createResponse.data.message || 'Failed to create league');
-      }
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setDialogErrorMessage(
-          (err as { response: { data: { message: string } } }).response.data.message,
-        );
-      } else if (err instanceof Error) {
-        setDialogErrorMessage(err.message);
-      } else {
-        setDialogErrorMessage('Failed to create league');
-      }
+      setCreateLeagueDialogOpen(false);
+      setNewLeagueName('');
+      // Use targeted update instead of full refresh
+      addLeagueToAvailableLeagues({
+        id: newLeague.id,
+        name: newLeague.name,
+        accountId: newLeague.accountId,
+      });
+    } catch (err) {
+      setDialogErrorMessage(err instanceof Error ? err.message : 'Failed to create league');
     } finally {
       setFormLoading(false);
     }
