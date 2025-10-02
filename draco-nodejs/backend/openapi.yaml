@@ -3287,6 +3287,526 @@ components:
           default: 10000
       title: WorkoutRegistrationsQuery
       description: Query parameters to paginate workout registrations
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        gameDate:
+          type: string
+          format: date-time
+        homeTeam:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+        visitorTeam:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+        league:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+        season:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+        homeScore:
+          type: number
+          minimum: 0
+          maximum: 99
+        visitorScore:
+          type: number
+          minimum: 0
+          maximum: 99
+        comment:
+          type: string
+          maxLength: 255
+        field:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            shortName:
+              type: string
+              maxLength: 5
+            address:
+              type: string
+              nullable: true
+            city:
+              type: string
+              nullable: true
+            state:
+              type: string
+              nullable: true
+            zip:
+              type: string
+              nullable: true
+          required:
+            - id
+            - name
+            - shortName
+        gameStatus:
+          type: number
+        gameStatusText:
+          type: string
+          enum:
+            - Final
+            - Rainout
+            - Postponed
+            - Did Not Report
+            - Scheduled
+            - Forfeit
+            - Unknown
+        gameStatusShortText:
+          type: string
+          enum:
+            - ""
+            - F
+            - PPD
+            - R
+            - DNR
+        gameType:
+          type: string
+          pattern: ^d+$
+        hasGameRecap:
+          type: boolean
+        umpire1:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+          required:
+            - id
+        umpire2:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+          required:
+            - id
+        umpire3:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+          required:
+            - id
+        umpire4:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+          required:
+            - id
+      required:
+        - id
+        - gameDate
+        - homeTeam
+        - visitorTeam
+        - league
+        - homeScore
+        - visitorScore
+        - gameStatus
+        - gameType
+    GameResult:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        homeScore:
+          type: number
+          minimum: 0
+          maximum: 99
+        visitorScore:
+          type: number
+          minimum: 0
+          maximum: 99
+        gameStatus:
+          type: number
+      required:
+        - id
+        - homeScore
+        - visitorScore
+        - gameStatus
+    GamesWithRecaps:
+      type: object
+      properties:
+        games:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              gameDate:
+                type: string
+                format: date-time
+              homeTeam:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                required:
+                  - id
+              visitorTeam:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                required:
+                  - id
+              league:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                required:
+                  - id
+                  - name
+              season:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                required:
+                  - id
+                  - name
+              homeScore:
+                type: number
+                minimum: 0
+                maximum: 99
+              visitorScore:
+                type: number
+                minimum: 0
+                maximum: 99
+              comment:
+                type: string
+                maxLength: 255
+              field:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  shortName:
+                    type: string
+                    maxLength: 5
+                  address:
+                    type: string
+                    nullable: true
+                  city:
+                    type: string
+                    nullable: true
+                  state:
+                    type: string
+                    nullable: true
+                  zip:
+                    type: string
+                    nullable: true
+                required:
+                  - id
+                  - name
+                  - shortName
+              gameStatus:
+                type: number
+              gameStatusText:
+                type: string
+                enum:
+                  - Final
+                  - Rainout
+                  - Postponed
+                  - Did Not Report
+                  - Scheduled
+                  - Forfeit
+                  - Unknown
+              gameStatusShortText:
+                type: string
+                enum:
+                  - ""
+                  - F
+                  - PPD
+                  - R
+                  - DNR
+              gameType:
+                type: string
+                pattern: ^d+$
+              hasGameRecap:
+                type: boolean
+              umpire1:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                required:
+                  - id
+              umpire2:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                required:
+                  - id
+              umpire3:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                required:
+                  - id
+              umpire4:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                required:
+                  - id
+              recaps:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    team:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^d+$
+                        name:
+                          type: string
+                          minLength: 1
+                          maxLength: 100
+                      required:
+                        - id
+                    recap:
+                      type: string
+                      maxLength: 5000
+                  required:
+                    - team
+                    - recap
+            required:
+              - id
+              - gameDate
+              - homeTeam
+              - visitorTeam
+              - league
+              - homeScore
+              - visitorScore
+              - gameStatus
+              - gameType
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            total:
+              type: number
+          required:
+            - page
+            - limit
+            - total
+      required:
+        - games
+        - pagination
+    UpdateGameResults:
+      type: object
+      properties:
+        homeScore:
+          type: number
+          minimum: 0
+          maximum: 99
+        visitorScore:
+          type: number
+          minimum: 0
+          maximum: 99
+        gameStatus:
+          type: number
+        emailPlayers:
+          type: boolean
+        postToTwitter:
+          type: boolean
+        postToBluesky:
+          type: boolean
+        postToFacebook:
+          type: boolean
+      required:
+        - homeScore
+        - visitorScore
+        - gameStatus
+        - emailPlayers
+        - postToTwitter
+        - postToBluesky
+        - postToFacebook
+    UpsertGame:
+      type: object
+      properties:
+        gameDate:
+          type: string
+          format: date-time
+        gameType:
+          type: string
+          pattern: ^d+$
+        gameStatus:
+          type: number
+        comment:
+          type: string
+          maxLength: 255
+        leagueSeasonId:
+          type: string
+          minLength: 1
+        homeTeam:
+          type: object
+          properties:
+            id:
+              type: string
+              minLength: 1
+          required:
+            - id
+        visitorTeam:
+          type: object
+          properties:
+            id:
+              type: string
+              minLength: 1
+          required:
+            - id
+        field:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              minLength: 1
+          required:
+            - id
+        umpire1:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              minLength: 1
+          required:
+            - id
+        umpire2:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              minLength: 1
+          required:
+            - id
+        umpire3:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              minLength: 1
+          required:
+            - id
+        umpire4:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              minLength: 1
+          required:
+            - id
+      required:
+        - gameDate
+        - gameType
+        - gameStatus
+        - leagueSeasonId
+        - homeTeam
+        - visitorTeam
+        - field
+    UpsertGameRecap:
+      type: object
+      properties:
+        recap:
+          type: string
+          maxLength: 5000
+      required:
+        - recap
     ValidationError:
       type: object
       properties:
@@ -5957,6 +6477,505 @@ paths:
                 $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/results:
+    put:
+      operationId: updateGameResults
+      summary: Update game results
+      description: Update the final score and status for a specific game.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGameResults"
+      responses:
+        "200":
+          description: Game results updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to update results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Game not found within the account/season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/games:
+    get:
+      operationId: listSeasonGames
+      summary: List season games
+      description: Retrieve games for a season with optional team, date, and recap filters.
+      tags:
+        - Games
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Return games occurring on or after this ISO date.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Return games occurring on or before this ISO date.
+        - name: teamId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+          description: Filter to games where the given team season participates.
+        - name: hasRecap
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Only include games that have at least one recap when true.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+      responses:
+        "200":
+          description: List of games with pagination metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GamesWithRecaps"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: createGame
+      summary: Create game
+      description: Create a new game within the specified league season.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertGame"
+      responses:
+        "200":
+          description: Game created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage games
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: League season or teams not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Scheduling conflict for the field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}:
+    put:
+      operationId: updateGame
+      summary: Update game
+      description: Update scheduling details, officials, and metadata for an existing game.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertGame"
+      responses:
+        "200":
+          description: Game updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage games
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Scheduling conflict for the field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteGame
+      summary: Delete game
+      description: Remove a scheduled game.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Game deleted
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to delete games
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/recap/{teamSeasonId}:
+    get:
+      operationId: getGameRecap
+      summary: Get game recap for team
+      description: Return the recap text submitted for the specified team and game.
+      tags:
+        - Games
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Recap text
+          content:
+            application/json:
+              schema:
+                type: string
+        "400":
+          description: Invalid team assignment for the game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Game or recap not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      operationId: upsertGameRecap
+      summary: Upsert game recap for team
+      description: Create or update the recap text for a team participating in a game.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertGameRecap"
+      responses:
+        "200":
+          description: Recap saved
+          content:
+            application/json:
+              schema:
+                type: string
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to manage recaps
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Game not found for the provided context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
           content:
             application/json:
               schema:

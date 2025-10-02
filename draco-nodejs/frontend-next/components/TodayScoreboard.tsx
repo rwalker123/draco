@@ -2,6 +2,7 @@ import React from 'react';
 import ScoreboardBase from './ScoreboardBase';
 import { Game } from './GameListDisplay';
 import { createGamesLoader } from '../utils/gameTransformers';
+import { useApiClient } from '../hooks/useApiClient';
 
 interface TodayScoreboardProps {
   accountId: string;
@@ -18,6 +19,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
   currentSeasonId,
   onGamesLoaded,
 }) => {
+  const apiClient = useApiClient();
   const loadTodayGames = React.useCallback(async () => {
     // Calculate date range for today
     const today = new Date();
@@ -26,9 +28,9 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const gamesLoader = createGamesLoader(accountId, currentSeasonId, teamId);
+    const gamesLoader = createGamesLoader(apiClient, accountId, currentSeasonId, teamId);
     return await gamesLoader(today, tomorrow);
-  }, [accountId, teamId, currentSeasonId]);
+  }, [accountId, apiClient, teamId, currentSeasonId]);
 
   return (
     <ScoreboardBase

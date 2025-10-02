@@ -1,96 +1,162 @@
-import { Game as ScheduleGame } from '../types/schedule';
+import { listSeasonGames } from '@draco/shared-api-client';
+import type { Client } from '@draco/shared-api-client/generated/client';
+import type { GamesWithRecapsType } from '@draco/shared-schemas';
+import { Game as ScheduleGame, GameStatus } from '../types/schedule';
 import { Game } from '../components/GameListDisplay';
 import { GameCardData } from '../components/GameCard';
 import { getGameStatusText, getGameStatusShortText } from './gameUtils';
-import { GameStatus } from '../types/schedule';
+import { unwrapApiResult } from './apiResult';
 
-// Type for raw API game data
-interface APIGameData {
-  id: unknown;
-  gameDate: unknown;
-  homeTeamId: unknown;
-  visitorTeamId: unknown;
-  homeTeamName?: unknown;
-  visitorTeamName?: unknown;
-  homeScore: unknown;
-  visitorScore: unknown;
-  gameStatus: unknown;
-  gameType: unknown;
-  fieldId?: unknown;
-  comment?: unknown;
-  league?: {
-    id?: unknown;
-    name?: unknown;
-  };
-  field?: {
-    id?: unknown;
-    name?: unknown;
-    shortName?: unknown;
-    address?: unknown;
-    city?: unknown;
-    state?: unknown;
-  };
-  umpire1?: unknown;
-  umpire2?: unknown;
-  umpire3?: unknown;
-  umpire4?: unknown;
-  season?: {
-    id?: unknown;
-    name?: unknown;
-  };
-}
+type ApiGame = GamesWithRecapsType['games'][number];
 
-// Helper to safely extract string values
-const safeString = (value: unknown, fallback = ''): string => {
-  return typeof value === 'string' ? value : fallback;
+const toOptionalString = (value?: string | null): string | undefined => {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value;
+  }
+  return undefined;
 };
 
-// Helper to safely extract number values
-const safeNumber = (value: unknown, fallback = 0): number => {
-  return typeof value === 'number' ? value : fallback;
+const parseGameStatusText = (statusValue: number, statusText?: string | null): string => {
+  if (typeof statusText === 'string' && statusText.trim().length > 0) {
+    return statusText;
+  }
+  return getGameStatusText(statusValue);
 };
 
-// Helper to safely extract optional string values
-const safeOptionalString = (value: unknown): string | undefined => {
-  return typeof value === 'string' ? value : undefined;
+const parseGameStatusShortText = (statusValue: number, statusShortText?: string | null): string => {
+  if (typeof statusShortText === 'string' && statusShortText.trim().length > 0) {
+    return statusShortText;
+  }
+  return getGameStatusShortText(statusValue);
 };
 
-/**
- * Transforms raw API game data to typed Game objects (from GameListDisplay)
- */
-export const transformGamesFromAPI = (games: unknown[]): Game[] => {
-  return games
-    .filter((game): game is Record<string, unknown> => typeof game === 'object' && game !== null)
-    .map((rawGame): Game => {
-      const game = rawGame as unknown as APIGameData;
-      const gameStatus = safeNumber(game.gameStatus, GameStatus.Scheduled);
+const normalizeGameType = (value: string | number | undefined): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
 
-      return {
-        id: safeString(game.id),
-        date: safeString(game.gameDate), // Note: Game interface uses 'date' while ScheduleGame uses 'gameDate'
-        homeTeamId: safeString(game.homeTeamId),
-        awayTeamId: safeString(game.visitorTeamId), // Note: Game interface uses 'awayTeamId' while ScheduleGame uses 'visitorTeamId'
-        homeTeamName: safeString(game.homeTeamName, 'Unknown Team'),
-        awayTeamName: safeString(game.visitorTeamName, 'Unknown Team'),
-        homeScore: safeNumber(game.homeScore),
-        awayScore: safeNumber(game.visitorScore), // Note: Game interface uses 'awayScore' while ScheduleGame uses 'visitorScore'
-        gameStatus,
-        gameStatusText: getGameStatusText(gameStatus),
-        gameStatusShortText: getGameStatusShortText(gameStatus),
-        leagueName: safeString(game.league?.name, 'Unknown League'),
-        fieldId: safeOptionalString(game.fieldId) || null,
-        fieldName: game.field?.name ? safeString(game.field.name) : null,
-        fieldShortName: game.field?.shortName ? safeString(game.field.shortName) : null,
-        hasGameRecap: false, // TODO: Implement game recaps from API
-        gameRecaps: [],
-        comment: safeString(game.comment),
-        gameType: Number(game.gameType),
-        umpire1: safeOptionalString(game.umpire1),
-        umpire2: safeOptionalString(game.umpire2),
-        umpire3: safeOptionalString(game.umpire3),
-        umpire4: safeOptionalString(game.umpire4),
-      };
-    });
+  const parsedValue = typeof value === 'number' ? value : Number(value);
+  return Number.isNaN(parsedValue) ? undefined : parsedValue;
+};
+
+const mapRecaps = (game: ApiGame) => {
+  if (!Array.isArray(game.recaps)) {
+    return [] as Game['gameRecaps'];
+  }
+
+  return game.recaps.map((recap) => ({
+    teamId: String(recap.team?.id ?? ''),
+    recap: recap.recap,
+  }));
+};
+
+const mapField = (game: ApiGame) => {
+  if (!game.field) {
+    return {
+      id: null,
+      name: null,
+      shortName: null,
+    };
+  }
+
+  return {
+    id: game.field.id ?? null,
+    name: game.field.name ?? null,
+    shortName: game.field.shortName ?? null,
+  };
+};
+
+const mapUmpireId = (umpire?: { id: string } | null): string | undefined => {
+  if (!umpire?.id) {
+    return undefined;
+  }
+
+  return umpire.id;
+};
+
+const mapScheduleFieldDetails = (game: ApiGame): ScheduleGame['field'] | undefined => {
+  if (!game.field) {
+    return undefined;
+  }
+
+  return {
+    id: game.field.id ?? '',
+    name: game.field.name ?? '',
+    shortName: game.field.shortName ?? '',
+    address: game.field.address ?? '',
+    city: game.field.city ?? '',
+    state: game.field.state ?? '',
+  };
+};
+
+const mapApiGameToGameCard = (game: ApiGame): Game => {
+  const gameStatus = game.gameStatus ?? GameStatus.Scheduled;
+  const recaps = mapRecaps(game);
+  const field = mapField(game);
+  const parsedGameType = normalizeGameType(game.gameType);
+
+  return {
+    id: String(game.id),
+    date: game.gameDate,
+    homeTeamId: String(game.homeTeam?.id ?? ''),
+    awayTeamId: String(game.visitorTeam?.id ?? ''),
+    homeTeamName: game.homeTeam?.name ?? 'Unknown Team',
+    awayTeamName: game.visitorTeam?.name ?? 'Unknown Team',
+    homeScore: Number(game.homeScore ?? 0),
+    awayScore: Number(game.visitorScore ?? 0),
+    gameStatus,
+    gameStatusText: parseGameStatusText(gameStatus, game.gameStatusText),
+    gameStatusShortText: parseGameStatusShortText(gameStatus, game.gameStatusShortText),
+    leagueName: game.league?.name ?? 'Unknown League',
+    fieldId: field.id,
+    fieldName: field.name,
+    fieldShortName: field.shortName,
+    hasGameRecap: recaps.length > 0,
+    gameRecaps: recaps,
+    comment: game.comment ?? '',
+    gameType: parsedGameType ?? undefined,
+    umpire1: mapUmpireId(game.umpire1 as { id: string } | undefined),
+    umpire2: mapUmpireId(game.umpire2 as { id: string } | undefined),
+    umpire3: mapUmpireId(game.umpire3 as { id: string } | undefined),
+    umpire4: mapUmpireId(game.umpire4 as { id: string } | undefined),
+  };
+};
+
+export const transformGamesFromAPI = (games: ApiGame[]): Game[] => {
+  return games.map(mapApiGameToGameCard);
+};
+
+export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
+  const gameStatus = game.gameStatus ?? GameStatus.Scheduled;
+  const parsedGameType = normalizeGameType(game.gameType) ?? 0;
+
+  return {
+    id: String(game.id),
+    gameDate: game.gameDate,
+    homeTeamId: String(game.homeTeam?.id ?? ''),
+    visitorTeamId: String(game.visitorTeam?.id ?? ''),
+    homeScore: Number(game.homeScore ?? 0),
+    visitorScore: Number(game.visitorScore ?? 0),
+    comment: game.comment ?? '',
+    fieldId: toOptionalString(game.field?.id),
+    field: mapScheduleFieldDetails(game),
+    gameStatus,
+    gameStatusText: parseGameStatusText(gameStatus, game.gameStatusText),
+    gameStatusShortText: parseGameStatusShortText(gameStatus, game.gameStatusShortText),
+    gameType: parsedGameType,
+    umpire1: mapUmpireId(game.umpire1 as { id: string } | undefined),
+    umpire2: mapUmpireId(game.umpire2 as { id: string } | undefined),
+    umpire3: mapUmpireId(game.umpire3 as { id: string } | undefined),
+    umpire4: mapUmpireId(game.umpire4 as { id: string } | undefined),
+    league: {
+      id: String(game.league?.id ?? ''),
+      name: game.league?.name ?? '',
+    },
+    season: {
+      id: String(game.season?.id ?? ''),
+      name: game.season?.name ?? '',
+    },
+  };
 };
 
 /**
@@ -153,17 +219,26 @@ export function convertGameToGameCardData(
   }
 }
 
-export const createGamesLoader = (accountId: string, currentSeasonId: string, teamId?: string) => {
+export const createGamesLoader = (
+  client: Client,
+  accountId: string,
+  currentSeasonId: string,
+  teamId?: string,
+) => {
   return async (startDate: Date, endDate: Date): Promise<Game[]> => {
-    const response = await fetch(
-      `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`,
-    );
-    const data = await response.json();
+    const result = await listSeasonGames({
+      client,
+      path: { accountId, seasonId: currentSeasonId },
+      query: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        teamId,
+        sortOrder: 'asc',
+      },
+      throwOnError: false,
+    });
 
-    if (!data.success) {
-      throw new Error('Failed to load games data');
-    }
-
-    return transformGamesFromAPI(data.data.games);
+    const data = unwrapApiResult(result, 'Failed to load games data');
+    return transformGamesFromAPI(data.games);
   };
 };

@@ -72,6 +72,12 @@ import {
   WorkoutSourcesSchema,
   WorkoutSummarySchema,
   ContactSearchParamsSchema,
+  GameSchema,
+  GameResultSchema,
+  GamesWithRecapsSchema,
+  UpdateGameResultsSchema,
+  UpsertGameSchema,
+  UpsertGameRecapSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -230,6 +236,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'WorkoutRegistrationsQuery',
     WorkoutRegistrationsQuerySchema,
   );
+  const GameSchemaRef = registry.register('Game', GameSchema);
+  const GameResultSchemaRef = registry.register('GameResult', GameResultSchema);
+  const GamesWithRecapsSchemaRef = registry.register('GamesWithRecaps', GamesWithRecapsSchema);
+  const UpdateGameResultsSchemaRef = registry.register(
+    'UpdateGameResults',
+    UpdateGameResultsSchema,
+  );
+  const UpsertGameSchemaRef = registry.register('UpsertGame', UpsertGameSchema);
+  const UpsertGameRecapSchemaRef = registry.register('UpsertGameRecap', UpsertGameRecapSchema);
 
   const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
   const AuthenticationErrorSchemaRef = registry.register(
@@ -312,6 +327,12 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutListQuerySchemaRef,
     WorkoutRegistrationsQuerySchemaRef,
+    GameSchemaRef,
+    GameResultSchemaRef,
+    GamesWithRecapsSchemaRef,
+    UpdateGameResultsSchemaRef,
+    UpsertGameSchemaRef,
+    UpsertGameRecapSchemaRef,
     ValidationErrorSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,

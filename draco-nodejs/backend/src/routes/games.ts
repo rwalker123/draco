@@ -127,7 +127,7 @@ router.put(
 );
 
 /**
- * GET /api/accounts/:accountId/games
+ * GET /api/accounts/:accountId/seasons/:seasonId/games
  * Get games for a season
  */
 router.get(
@@ -468,11 +468,13 @@ router.put(
   routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { gameId } = req.params;
+
+    const input = UpsertGameSchema.parse(req.body);
     const {
       gameDate,
-      homeTeamId,
-      visitorTeamId,
-      fieldId,
+      homeTeam,
+      visitorTeam,
+      field,
       comment,
       gameStatus,
       gameType,
@@ -480,7 +482,7 @@ router.put(
       umpire2,
       umpire3,
       umpire4,
-    } = req.body;
+    } = input;
 
     // Check if game exists
     const existingGame = await prisma.leagueschedule.findUnique({
@@ -499,15 +501,15 @@ router.put(
     }
 
     // Validate that home team and visitor team are different (if both are provided)
-    if (homeTeamId && visitorTeamId && homeTeamId === visitorTeamId) {
+    if (homeTeam.id && visitorTeam.id && homeTeam.id === visitorTeam.id) {
       throw new ValidationError('Home team and visitor team cannot be the same');
     }
 
     // Check field availability if field is being changed
-    if (fieldId && fieldId !== existingGame.fieldid?.toString()) {
+    if (field?.id && field.id !== existingGame.fieldid?.toString()) {
       const conflictingGame = await prisma.leagueschedule.findFirst({
         where: {
-          fieldid: BigInt(fieldId),
+          fieldid: BigInt(field.id),
           gamedate: gameDate ? parseGameDate(gameDate) : existingGame.gamedate,
           leagueid: existingGame.leagueid,
           id: { not: BigInt(gameId) },
@@ -523,16 +525,17 @@ router.put(
       where: { id: BigInt(gameId) },
       data: {
         gamedate: gameDate ? parseGameDate(gameDate) : undefined,
-        hteamid: homeTeamId ? BigInt(homeTeamId) : undefined,
-        vteamid: visitorTeamId ? BigInt(visitorTeamId) : undefined,
+        hteamid: homeTeam?.id ? BigInt(homeTeam.id) : undefined,
+        vteamid: visitorTeam?.id ? BigInt(visitorTeam.id) : undefined,
         comment: comment !== undefined ? comment : undefined,
-        fieldid: fieldId ? BigInt(fieldId) : fieldId === null ? null : undefined,
+        fieldid: field?.id ? BigInt(field.id) : field === null ? null : undefined,
         gamestatus: gameStatus !== undefined ? gameStatus : undefined,
-        gametype: gameType !== undefined ? gameType : undefined,
-        umpire1: umpire1 ? BigInt(umpire1) : umpire1 === null ? null : undefined,
-        umpire2: umpire2 ? BigInt(umpire2) : umpire2 === null ? null : undefined,
-        umpire3: umpire3 ? BigInt(umpire3) : umpire3 === null ? null : undefined,
-        umpire4: umpire4 ? BigInt(umpire4) : umpire4 === null ? null : undefined,
+        gametype: BigInt(gameType),
+        // allow removing umpire by setting to null, undefined means no change
+        umpire1: umpire1 ? BigInt(umpire1.id) : umpire1 === null ? null : undefined,
+        umpire2: umpire2 ? BigInt(umpire2.id) : umpire2 === null ? null : undefined,
+        umpire3: umpire3 ? BigInt(umpire3.id) : umpire3 === null ? null : undefined,
+        umpire4: umpire4 ? BigInt(umpire4.id) : umpire4 === null ? null : undefined,
       },
       include: {
         availablefields: true,
