@@ -8,10 +8,15 @@ import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { extractAccountParams, extractSeasonParams } from '../utils/paramExtraction.js';
+import {
+  LeagueSeasonWithDivisionType,
+  SeasonParticipantCountDataType,
+  SeasonType,
+} from '@draco/shared-schemas';
 
 // Type definitions for Prisma query results
 
-interface LeagueSeasonWithLeague {
+interface dbLeagueSeasonWithLeague {
   id: bigint;
   seasonid: bigint;
   leagueid: bigint;
@@ -21,7 +26,7 @@ interface LeagueSeasonWithLeague {
   };
 }
 
-interface SeasonWithLeagues {
+interface dbSeasonWithLeagues {
   id: bigint;
   name: string;
   accountid: bigint;
@@ -107,30 +112,29 @@ router.get(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        seasons: seasons.map((season: SeasonWithLeagues) => ({
-          id: season.id.toString(),
-          name: season.name,
-          accountId: season.accountid.toString(),
-          isCurrent: currentSeason?.seasonid === season.id,
-          leagues: season.leagueseason.map((ls) => ({
-            id: ls.id.toString(),
-            leagueId: ls.leagueid.toString(),
-            leagueName: ls.league.name,
-            ...(includeDivisions &&
-              ls.divisionseason && {
-                divisions: ls.divisionseason.map((ds) => ({
-                  id: ds.id.toString(), // Use divisionSeason.id for filtering
-                  divisionId: ds.divisiondefs?.id.toString(),
-                  name: ds.divisiondefs?.name || 'Unknown Division',
-                })),
-              }),
-          })),
-        })),
-      },
-    });
+    const result: LeagueSeasonWithDivisionType[] = seasons.map((season: dbSeasonWithLeagues) => ({
+      id: season.id.toString(),
+      name: season.name,
+      accountId: season.accountid.toString(),
+      isCurrent: currentSeason?.seasonid === season.id,
+      leagues: season.leagueseason.map((ls) => ({
+        id: ls.id.toString(),
+        league: { id: ls.leagueid.toString(), name: ls.league.name },
+        ...(includeDivisions &&
+          ls.divisionseason && {
+            divisions: ls.divisionseason.map((ds) => ({
+              id: ds.id.toString(), // Use divisionSeason.id for filtering
+              division: {
+                id: ds.divisiondefs?.id.toString() || '0',
+                name: ds.divisiondefs?.name || 'Unknown Division',
+              },
+              priority: ds.priority || 0,
+            })),
+          }),
+      })),
+    }));
+
+    res.json(result);
   }),
 );
 
@@ -184,22 +188,18 @@ router.get(
       throw new NotFoundError('Current season not found');
     }
 
-    res.json({
-      success: true,
-      data: {
-        season: {
-          id: season.id.toString(),
-          name: season.name,
-          accountId: season.accountid.toString(),
-          isCurrent: true,
-          leagues: season.leagueseason.map((ls) => ({
-            id: ls.id.toString(),
-            leagueId: ls.leagueid.toString(),
-            leagueName: ls.league.name,
-          })),
-        },
-      },
-    });
+    const result: LeagueSeasonWithDivisionType = {
+      id: season.id.toString(),
+      name: season.name,
+      accountId: season.accountid.toString(),
+      isCurrent: true,
+      leagues: season.leagueseason.map((ls) => ({
+        id: ls.id.toString(),
+        league: { id: ls.leagueid.toString(), name: ls.league.name },
+      })),
+    };
+
+    res.json(result);
   }),
 );
 
@@ -211,76 +211,64 @@ router.get(
   '/:seasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId } = extractSeasonParams(req.params);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
 
-      const season = await prisma.season.findFirst({
-        where: {
-          id: seasonId,
-          accountid: accountId,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-          leagueseason: {
-            select: {
-              id: true,
-              leagueid: true,
-              league: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+    const season = await prisma.season.findFirst({
+      where: {
+        id: seasonId,
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+        leagueseason: {
+          select: {
+            id: true,
+            leagueid: true,
+            league: {
+              select: {
+                id: true,
+                name: true,
               },
             },
           },
         },
-      });
+      },
+    });
 
-      if (!season) {
-        res.status(404).json({
-          success: false,
-          message: 'Season not found',
-        });
-        return;
-      }
-
-      // Check if this is the current season
-      const currentSeason = await prisma.currentseason.findUnique({
-        where: {
-          accountid: accountId,
-        },
-        select: {
-          seasonid: true,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          season: {
-            id: season.id.toString(),
-            name: season.name,
-            accountId: season.accountid.toString(),
-            isCurrent: currentSeason?.seasonid === season.id,
-            leagues: season.leagueseason.map((ls) => ({
-              id: ls.id.toString(),
-              leagueId: ls.leagueid.toString(),
-              leagueName: ls.league.name,
-            })),
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error getting season:', error);
-      res.status(500).json({
+    if (!season) {
+      res.status(404).json({
         success: false,
-        message: 'Internal server error',
+        message: 'Season not found',
       });
+      return;
     }
-  },
+
+    // Check if this is the current season
+    const currentSeason = await prisma.currentseason.findUnique({
+      where: {
+        accountid: accountId,
+      },
+      select: {
+        seasonid: true,
+      },
+    });
+
+    const result: LeagueSeasonWithDivisionType = {
+      id: season.id.toString(),
+      name: season.name,
+      accountId: season.accountid.toString(),
+      isCurrent: currentSeason?.seasonid === season.id,
+      leagues: season.leagueseason.map((ls) => ({
+        id: ls.id.toString(),
+        league: { id: ls.leagueid.toString(), name: ls.league.name },
+      })),
+    };
+
+    res.json(result);
+  }),
 );
 
 /**
@@ -291,67 +279,56 @@ router.post(
   '/',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { name } = req.body;
-      const { accountId } = extractAccountParams(req.params);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { name } = req.body;
+    const { accountId } = extractAccountParams(req.params);
 
-      if (!name) {
-        res.status(400).json({
-          success: false,
-          message: 'Season name is required',
-        });
-        return;
-      }
-
-      // Check if season with this name already exists for this account
-      const existingSeason = await prisma.season.findFirst({
-        where: {
-          name: name,
-          accountid: accountId,
-        },
-      });
-
-      if (existingSeason) {
-        res.status(409).json({
-          success: false,
-          message: 'A season with this name already exists for this account',
-        });
-        return;
-      }
-
-      const newSeason = await prisma.season.create({
-        data: {
-          name: name,
-          accountid: accountId,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-        },
-      });
-
-      res.status(201).json({
-        success: true,
-        data: {
-          season: {
-            id: newSeason.id.toString(),
-            name: newSeason.name,
-            accountId: newSeason.accountid.toString(),
-            isCurrent: false,
-            leagues: [],
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error creating season:', error);
-      res.status(500).json({
+    if (!name) {
+      res.status(400).json({
         success: false,
-        message: 'Internal server error',
+        message: 'Season name is required',
       });
+      return;
     }
-  },
+
+    // Check if season with this name already exists for this account
+    const existingSeason = await prisma.season.findFirst({
+      where: {
+        name: name,
+        accountid: accountId,
+      },
+    });
+
+    if (existingSeason) {
+      res.status(409).json({
+        success: false,
+        message: 'A season with this name already exists for this account',
+      });
+      return;
+    }
+
+    const newSeason = await prisma.season.create({
+      data: {
+        name: name,
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+      },
+    });
+
+    const result: LeagueSeasonWithDivisionType = {
+      id: newSeason.id.toString(),
+      name: newSeason.name,
+      accountId: newSeason.accountid.toString(),
+      isCurrent: false,
+      leagues: [],
+    };
+
+    res.status(201).json(result);
+  }),
 );
 
 /**
@@ -362,84 +339,73 @@ router.put(
   '/:seasonId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId } = extractSeasonParams(req.params);
-      const { name } = req.body;
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
+    const { name } = req.body;
 
-      if (!name) {
-        res.status(400).json({
-          success: false,
-          message: 'Season name is required',
-        });
-        return;
-      }
-
-      // Check if season exists and belongs to this account
-      const existingSeason = await prisma.season.findFirst({
-        where: {
-          id: seasonId,
-          accountid: accountId,
-        },
-      });
-
-      if (!existingSeason) {
-        res.status(404).json({
-          success: false,
-          message: 'Season not found',
-        });
-        return;
-      }
-
-      // Check if another season with this name already exists for this account
-      const duplicateSeason = await prisma.season.findFirst({
-        where: {
-          name: name,
-          accountid: accountId,
-          id: { not: seasonId },
-        },
-      });
-
-      if (duplicateSeason) {
-        res.status(409).json({
-          success: false,
-          message: 'A season with this name already exists for this account',
-        });
-        return;
-      }
-
-      const updatedSeason = await prisma.season.update({
-        where: {
-          id: seasonId,
-        },
-        data: {
-          name: name,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          season: {
-            id: updatedSeason.id.toString(),
-            name: updatedSeason.name,
-            accountId: updatedSeason.accountid.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error updating season:', error);
-      res.status(500).json({
+    if (!name) {
+      res.status(400).json({
         success: false,
-        message: 'Internal server error',
+        message: 'Season name is required',
       });
+      return;
     }
-  },
+
+    // Check if season exists and belongs to this account
+    const existingSeason = await prisma.season.findFirst({
+      where: {
+        id: seasonId,
+        accountid: accountId,
+      },
+    });
+
+    if (!existingSeason) {
+      res.status(404).json({
+        success: false,
+        message: 'Season not found',
+      });
+      return;
+    }
+
+    // Check if another season with this name already exists for this account
+    const duplicateSeason = await prisma.season.findFirst({
+      where: {
+        name: name,
+        accountid: accountId,
+        id: { not: seasonId },
+      },
+    });
+
+    if (duplicateSeason) {
+      res.status(409).json({
+        success: false,
+        message: 'A season with this name already exists for this account',
+      });
+      return;
+    }
+
+    const updatedSeason = await prisma.season.update({
+      where: {
+        id: seasonId,
+      },
+      data: {
+        name: name,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+      },
+    });
+
+    const result: SeasonType = {
+      id: updatedSeason.id.toString(),
+      name: updatedSeason.name,
+      accountId: updatedSeason.accountid.toString(),
+    };
+
+    res.json(result);
+  }),
 );
 
 /**
@@ -450,113 +416,100 @@ router.post(
   '/:seasonId/copy',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId } = extractSeasonParams(req.params);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
 
-      // Get the source season
-      const sourceSeason = await prisma.season.findFirst({
-        where: {
-          id: seasonId,
-          accountid: accountId,
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: true,
-            },
+    // Get the source season
+    const sourceSeason = await prisma.season.findFirst({
+      where: {
+        id: seasonId,
+        accountid: accountId,
+      },
+      include: {
+        leagueseason: {
+          include: {
+            league: true,
           },
         },
+      },
+    });
+
+    if (!sourceSeason) {
+      res.status(404).json({
+        success: false,
+        message: 'Source season not found',
       });
+      return;
+    }
 
-      if (!sourceSeason) {
-        res.status(404).json({
-          success: false,
-          message: 'Source season not found',
-        });
-        return;
-      }
+    // Generate new season name
+    const newSeasonName = `${sourceSeason.name} Copy`;
 
-      // Generate new season name
-      const newSeasonName = `${sourceSeason.name} Copy`;
+    // Check if copy name already exists
+    const existingCopy = await prisma.season.findFirst({
+      where: {
+        name: newSeasonName,
+        accountid: accountId,
+      },
+    });
 
-      // Check if copy name already exists
-      const existingCopy = await prisma.season.findFirst({
-        where: {
-          name: newSeasonName,
-          accountid: accountId,
-        },
+    if (existingCopy) {
+      res.status(409).json({
+        success: false,
+        message: 'A season with this copy name already exists',
       });
+      return;
+    }
 
-      if (existingCopy) {
-        res.status(409).json({
-          success: false,
-          message: 'A season with this copy name already exists',
-        });
-        return;
-      }
+    // Create new season
+    const newSeason = await prisma.season.create({
+      data: {
+        name: newSeasonName,
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+      },
+    });
 
-      // Create new season
-      const newSeason = await prisma.season.create({
+    // Copy league seasons (without teams/divisions for now)
+    const copiedLeagueSeasons = [];
+    for (const leagueSeason of sourceSeason.leagueseason) {
+      const newLeagueSeason = await prisma.leagueseason.create({
         data: {
-          name: newSeasonName,
-          accountid: accountId,
+          seasonid: newSeason.id,
+          leagueid: leagueSeason.leagueid,
         },
         select: {
           id: true,
-          name: true,
-          accountid: true,
-        },
-      });
-
-      // Copy league seasons (without teams/divisions for now)
-      const copiedLeagueSeasons = [];
-      for (const leagueSeason of sourceSeason.leagueseason) {
-        const newLeagueSeason = await prisma.leagueseason.create({
-          data: {
-            seasonid: newSeason.id,
-            leagueid: leagueSeason.leagueid,
-          },
-          select: {
-            id: true,
-            seasonid: true,
-            leagueid: true,
-            league: {
-              select: {
-                id: true,
-                name: true,
-              },
+          seasonid: true,
+          leagueid: true,
+          league: {
+            select: {
+              id: true,
+              name: true,
             },
           },
-        });
-        copiedLeagueSeasons.push(newLeagueSeason);
-      }
-
-      res.status(201).json({
-        success: true,
-        data: {
-          season: {
-            id: newSeason.id.toString(),
-            name: newSeason.name,
-            accountId: newSeason.accountid.toString(),
-            isCurrent: false,
-            leagues: copiedLeagueSeasons.map((ls: LeagueSeasonWithLeague) => ({
-              id: ls.id.toString(),
-              leagueId: ls.leagueid.toString(),
-              leagueName: ls.league.name,
-            })),
-          },
-          copiedLeagues: copiedLeagueSeasons.length,
         },
       });
-    } catch (error) {
-      console.error('Error copying season:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+      copiedLeagueSeasons.push(newLeagueSeason);
     }
-  },
+
+    const result: LeagueSeasonWithDivisionType = {
+      id: newSeason.id.toString(),
+      name: newSeason.name,
+      accountId: newSeason.accountid.toString(),
+      isCurrent: false,
+      leagues: copiedLeagueSeasons.map((ls: dbLeagueSeasonWithLeague) => ({
+        id: ls.id.toString(),
+        league: { id: ls.leagueid.toString(), name: ls.league.name },
+      })),
+    };
+
+    res.status(201).json(result);
+  }),
 );
 
 /**
@@ -567,56 +520,48 @@ router.post(
   '/:seasonId/set-current',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId } = extractSeasonParams(req.params);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
 
-      // Check if season exists and belongs to this account
-      const season = await prisma.season.findFirst({
-        where: {
-          id: seasonId,
-          accountid: accountId,
-        },
-      });
+    // Check if season exists and belongs to this account
+    const season = await prisma.season.findFirst({
+      where: {
+        id: seasonId,
+        accountid: accountId,
+      },
+    });
 
-      if (!season) {
-        res.status(404).json({
-          success: false,
-          message: 'Season not found',
-        });
-        return;
-      }
-
-      // Use upsert to either create or update the current season
-      await prisma.currentseason.upsert({
-        where: {
-          accountid: accountId,
-        },
-        update: {
-          seasonid: seasonId,
-        },
-        create: {
-          accountid: accountId,
-          seasonid: seasonId,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          message: `Season "${season.name}" is now the current season`,
-          seasonId: seasonId.toString(),
-          accountId: accountId.toString(),
-        },
-      });
-    } catch (error) {
-      console.error('Error setting current season:', error);
-      res.status(500).json({
+    if (!season) {
+      res.status(404).json({
         success: false,
-        message: 'Internal server error',
+        message: 'Season not found',
       });
+      return;
     }
-  },
+
+    // Use upsert to either create or update the current season
+    await prisma.currentseason.upsert({
+      where: {
+        accountid: accountId,
+      },
+      update: {
+        seasonid: seasonId,
+      },
+      create: {
+        accountid: accountId,
+        seasonid: seasonId,
+      },
+    });
+
+    const result: SeasonType = {
+      id: seasonId.toString(),
+      accountId: accountId.toString(),
+      isCurrent: true,
+      name: season.name,
+    };
+
+    res.json(result);
+  }),
 );
 
 /**
@@ -628,78 +573,54 @@ router.delete(
   '/:seasonId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { accountId, seasonId } = extractSeasonParams(req.params);
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
 
-      // Check if season exists and belongs to this account
-      const season = await prisma.season.findFirst({
-        where: {
-          id: seasonId,
-          accountid: accountId,
-        },
-      });
+    // Check if season exists and belongs to this account
+    const season = await prisma.season.findFirst({
+      where: {
+        id: seasonId,
+        accountid: accountId,
+      },
+    });
 
-      if (!season) {
-        res.status(404).json({
-          success: false,
-          message: 'Season not found',
-        });
-        return;
-      }
-
-      // Check if this is the current season
-      const currentSeason = await prisma.currentseason.findUnique({
-        where: {
-          accountid: accountId,
-        },
-      });
-
-      if (currentSeason && currentSeason.seasonid === seasonId) {
-        res.status(400).json({
-          success: false,
-          message: 'Cannot delete the current season. Set a different season as current first.',
-        });
-        return;
-      }
-
-      // Delete the season (this will cascade to related data)
-      await prisma.season.delete({
-        where: {
-          id: seasonId,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          message: `Season "${season.name}" has been deleted`,
-        },
-      });
-    } catch (error: unknown) {
-      console.error('Error deleting season:', error);
-
-      // Check if it's a foreign key constraint error
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
-        res.status(400).json({
-          success: false,
-          message:
-            'Cannot delete season because it has related data (teams, games, etc.). Remove related data first.',
-        });
-        return;
-      }
-
-      res.status(500).json({
+    if (!season) {
+      res.status(404).json({
         success: false,
-        message: 'Internal server error',
+        message: 'Season not found',
       });
+      return;
     }
-  },
+
+    // Check if this is the current season
+    const currentSeason = await prisma.currentseason.findUnique({
+      where: {
+        accountid: accountId,
+      },
+    });
+
+    if (currentSeason && currentSeason.seasonid === seasonId) {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot delete the current season. Set a different season as current first.',
+      });
+      return;
+    }
+
+    // Delete the season (this will cascade to related data)
+    await prisma.season.delete({
+      where: {
+        id: seasonId,
+      },
+    });
+
+    res.json(true);
+  }),
 );
 
 /**
- * @see {@link https://localhost:3001/apidocs#/Seasons/getSeasonParticipantsCount API Documentation}
- * @see {@link file:///Users/raywalker/source/draco-nodejs/backend/openapi.yaml OpenAPI Source}
+ * GET /api/accounts/:accountId/seasons/:seasonId/participants/count
+ * Get the count of participants (contacts) in a season
  */
 router.get(
   '/:seasonId/participants/count',
@@ -740,13 +661,12 @@ router.get(
       },
     });
 
-    res.json({
-      success: true,
-      data: {
-        seasonId: seasonId.toString(),
-        participantCount,
-      },
-    });
+    const result: SeasonParticipantCountDataType = {
+      seasonId: seasonId.toString(),
+      participantCount,
+    };
+
+    res.json(result);
   }),
 );
 

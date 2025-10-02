@@ -3,6 +3,7 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { SeasonNameSchema, SeasonSchema } from './season.js';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
 import { booleanQueryParam } from './queryParams.js';
+import { DivisionSeasonSchema } from './division.js';
 
 extendZodWithOpenApi(z);
 
@@ -23,6 +24,20 @@ export const LeagueSeasonSchema = z.object({
   id: bigintToStringSchema,
   league: LeagueNameSchema,
   season: SeasonNameSchema.optional(),
+});
+
+export const LeagueSeasonWithDivisionSchema = SeasonSchema.extend({
+  leagues: LeagueSeasonSchema.omit({
+    season: true,
+  })
+    .extend({
+      divisions: DivisionSeasonSchema.omit({
+        season: true,
+      })
+        .array()
+        .optional(),
+    })
+    .array(),
 });
 
 export const UpsertLeagueSeasonDivisionSchema = z.object({
@@ -49,3 +64,4 @@ export type LeagueSeasonType = z.infer<typeof LeagueSeasonSchema>;
 export type LeaguesInSeasonType = z.infer<typeof LeaguesInSeasonSchema>;
 export type UpsertLeagueSeasonDivisionType = z.infer<typeof UpsertLeagueSeasonDivisionSchema>;
 export type LeagueSeasonQueryParamsType = z.infer<typeof LeagueSeasonQueryParamsSchema>;
+export type LeagueSeasonWithDivisionType = z.infer<typeof LeagueSeasonWithDivisionSchema>;
