@@ -9,7 +9,6 @@ import { globalErrorHandler } from './utils/globalErrorHandler.js';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
 import { DateUtils } from './utils/dateUtils.js';
 
-import testDatabaseRouter from './routes/testdatabase.js';
 import authRouter from './routes/auth.js';
 import passwordResetRouter from './routes/passwordReset.js';
 import accountsRouter from './routes/accounts.js';
@@ -199,7 +198,6 @@ app.get('/apidocs', (_req: express.Request, res: express.Response) => {
 });
 
 // API routes (will be added later)
-app.use('/api/testdatabase', testDatabaseRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/monitoring', monitoringRouter);
