@@ -253,7 +253,7 @@ router.get(
               city: game.availablefields.city,
               state: game.availablefields.state,
             }
-          : null,
+          : undefined,
         gameStatus: game.gamestatus,
         gameStatusText: getGameStatusText(game.gamestatus) as GameStatusEnumType,
         gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
@@ -300,21 +300,17 @@ router.get(
       }
     }
 
-    // Format paginated response
-    const response = PaginationHelper.formatResponse(
-      processedGames,
-      paginationParams.page,
-      paginationParams.limit,
-      totalCount,
-    );
-
-    const returnResult: GamesWithRecapsType = {
-      games: response.data,
-      pagination: response.pagination,
+    const response: GamesWithRecapsType = {
+      games: processedGames,
+      pagination: {
+        total: totalCount,
+        page: paginationParams.page,
+        limit: paginationParams.limit,
+      },
     };
 
     // Wrap in expected format
-    res.json(returnResult);
+    res.json(response);
   }),
 );
 
@@ -427,7 +423,7 @@ router.post(
             city: game.availablefields.city,
             state: game.availablefields.state,
           }
-        : null,
+        : undefined,
       gameStatus: game.gamestatus,
       gameType: game.gametype.toString(),
       umpire1: game.umpire1
@@ -571,7 +567,7 @@ router.put(
             state: updatedGame.availablefields.state,
             zip: updatedGame.availablefields.zipcode,
           }
-        : null,
+        : undefined,
       gameStatus: updatedGame.gamestatus,
       gameType: updatedGame.gametype.toString(),
       umpire1: updatedGame.umpire1

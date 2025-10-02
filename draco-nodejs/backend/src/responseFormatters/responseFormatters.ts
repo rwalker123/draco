@@ -13,7 +13,6 @@ import {
   AccountPollType,
   SponsorType,
 } from '@draco/shared-schemas';
-import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
 import { getContactPhotoUrl } from '../config/logo.js';
 import { getSponsorPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
@@ -372,32 +371,6 @@ export class RosterResponseFormatter {
       data: {
         message: `Player "${playerName}" has been permanently removed from the roster`,
       },
-    };
-  }
-}
-
-export class StatsResponseFormatter {
-  static formatTeamGamesResponse(gamesData: {
-    upcoming?: GameInfo[];
-    recent?: GameInfo[];
-  }): ApiResponse<{ upcoming?: GameInfo[]; recent?: GameInfo[] }> {
-    return {
-      success: true,
-      data: gamesData,
-    };
-  }
-
-  static formatBattingStatsResponse(battingStats: BattingStat[]): ApiResponse<BattingStat[]> {
-    return {
-      success: true,
-      data: battingStats,
-    };
-  }
-
-  static formatPitchingStatsResponse(pitchingStats: PitchingStat[]): ApiResponse<PitchingStat[]> {
-    return {
-      success: true,
-      data: pitchingStats,
     };
   }
 }

@@ -27,19 +27,6 @@ export class TeamRequestValidator {
       limit: req.query.limit,
     };
   }
-
-  static validateGameQueryParams(req: Request) {
-    const { upcoming, recent, limit } = req.query;
-    const limitNum = Number(limit) > 0 ? Number(limit) : 5;
-    const includeUpcoming = upcoming === 'true' || (!upcoming && !recent);
-    const includeRecent = recent === 'true' || (!upcoming && !recent);
-
-    return {
-      limitNum,
-      includeUpcoming,
-      includeRecent,
-    };
-  }
 }
 
 export class FileValidator {

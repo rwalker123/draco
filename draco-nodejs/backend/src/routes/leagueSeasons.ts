@@ -819,7 +819,7 @@ router.get(
               city: game.availablefields.city,
               state: game.availablefields.state,
             }
-          : null,
+          : undefined,
         gameStatus: game.gamestatus,
         gameType: game.gametype.toString(),
         umpire1: game.umpire1 ? { id: game.umpire1.toString() } : undefined,
