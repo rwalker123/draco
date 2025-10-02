@@ -531,10 +531,11 @@ router.put(
         fieldid: field?.id ? BigInt(field.id) : field === null ? null : undefined,
         gamestatus: gameStatus !== undefined ? gameStatus : undefined,
         gametype: BigInt(gameType),
-        umpire1: umpire1 ? BigInt(umpire1.id) : undefined,
-        umpire2: umpire2 ? BigInt(umpire2.id) : undefined,
-        umpire3: umpire3 ? BigInt(umpire3.id) : undefined,
-        umpire4: umpire4 ? BigInt(umpire4.id) : undefined,
+        // allow removing umpire by setting to null, undefined means no change
+        umpire1: umpire1 ? BigInt(umpire1.id) : umpire1 === null ? null : undefined,
+        umpire2: umpire2 ? BigInt(umpire2.id) : umpire2 === null ? null : undefined,
+        umpire3: umpire3 ? BigInt(umpire3.id) : umpire3 === null ? null : undefined,
+        umpire4: umpire4 ? BigInt(umpire4.id) : umpire4 === null ? null : undefined,
       },
       include: {
         availablefields: true,
