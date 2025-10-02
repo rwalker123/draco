@@ -3,84 +3,87 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import {
+  BattingStatisticsFiltersSchema,
+  LeaderCategoriesType,
+  LeaderRowType,
+  LeaderStatisticsFiltersSchema,
+  PitchingStatisticsFiltersSchema,
+  PlayerBattingStatsType,
+  PlayerPitchingStatsType,
+} from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const statisticsService = ServiceFactory.getStatisticsService();
 
-// Get configured leader categories for an account (public endpoint)
+/**
+ * GET /api/accounts/:accountId/statistics/leader-categories
+ * Get configured leader categories for an account (public endpoint)
+ */
 router.get(
   '/leader-categories',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
-    const categories = await statisticsService.getLeaderCategories(accountId);
+    const result: LeaderCategoriesType = await statisticsService.getLeaderCategories(accountId);
 
-    res.json({
-      success: true,
-      data: categories,
-    });
+    res.json(result);
   }),
 );
 
-// Get batting statistics for a league (public endpoint)
+/**
+ * GET /api/accounts/:accountId/statistics/batting/:leagueId
+ * Get batting statistics for a league (public endpoint)
+ */
 router.get(
   '/batting/:leagueId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
 
-    const filters = {
-      leagueId,
-      divisionId: req.query.divisionId ? BigInt(req.query.divisionId as string) : undefined,
-      isHistorical: req.query.historical === 'true',
-      sortField: (req.query.sortBy as string) || 'avg',
-      sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',
-      page: req.query.page ? parseInt(req.query.page as string) : 1,
-      pageSize: req.query.pageSize ? parseInt(req.query.pageSize as string) : 50,
-      minAB: req.query.minAB ? parseInt(req.query.minAB as string) : 10,
-    };
+    const filters = BattingStatisticsFiltersSchema.parse(req.query);
+    filters.leagueId = leagueId;
 
     const battingStats = await statisticsService.getBattingStats(accountId, filters);
 
-    res.json({
-      success: true,
-      data: battingStats.map((stat) => ({
-        ...stat,
-        playerId: stat.playerId.toString(),
-      })),
-    });
+    const result: PlayerBattingStatsType[] = battingStats.map((stat) => ({
+      ...stat,
+      playerId: stat.playerId.toString(),
+    }));
+
+    res.json(result);
   }),
 );
 
-// Get pitching statistics for a league (public endpoint)
+/**
+ * GET /api/accounts/:accountId/statistics/pitching/:leagueId
+ * Get pitching statistics for a league
+ */
 router.get(
   '/pitching/:leagueId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
 
-    const filters = {
-      leagueId,
-      divisionId: req.query.divisionId ? BigInt(req.query.divisionId as string) : undefined,
-      isHistorical: req.query.historical === 'true',
-      sortField: (req.query.sortBy as string) || 'era',
-      sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'asc',
-      page: req.query.page ? parseInt(req.query.page as string) : 1,
-      pageSize: req.query.pageSize ? parseInt(req.query.pageSize as string) : 50,
-      minIP: req.query.minIP ? parseFloat(req.query.minIP as string) : 1.0,
-    };
+    const filters = PitchingStatisticsFiltersSchema.parse(req.query);
+    filters.leagueId = leagueId;
 
     const pitchingStats = await statisticsService.getPitchingStats(accountId, filters);
+    const result: PlayerPitchingStatsType[] = pitchingStats.map((stat) => ({
+      ...stat,
+      playerId: stat.playerId.toString(),
+    }));
 
-    res.json({
-      success: true,
-      data: pitchingStats.map((stat) => ({
-        ...stat,
-        playerId: stat.playerId.toString(),
-      })),
-    });
+    res.json(result);
   }),
 );
 
-// Get statistical leaders (public endpoint)
+/**
+ * GET /api/accounts/:accountId/statistics/leaders/:leagueId
+ *
+ * Get statistical leaders for a specified category within a league.
+ * Supports optional filtering by division and historical data.
+ * The number of leaders returned can be limited via a query parameter.
+ * This is a public endpoint.
+ */
 router.get(
   '/leaders/:leagueId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -91,22 +94,16 @@ router.get(
       throw new ValidationError('Category parameter is required');
     }
 
-    const filters = {
-      leagueId: BigInt(req.params.leagueId),
-      divisionId: req.query.divisionId ? BigInt(req.query.divisionId as string) : undefined,
-      isHistorical: req.query.historical === 'true',
-    };
+    const filters = LeaderStatisticsFiltersSchema.parse(req.query);
 
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
-    const leaders = await statisticsService.getLeaders(accountId, category, filters, limit);
+    const leaders = await statisticsService.getLeaders(accountId, category, filters);
 
-    res.json({
-      success: true,
-      data: leaders.map((leader) => ({
-        ...leader,
-        playerId: leader.playerId.toString(),
-      })),
-    });
+    const result: LeaderRowType[] = leaders.map((leader) => ({
+      ...leader,
+      playerId: leader.playerId.toString(),
+    }));
+
+    res.json(result);
   }),
 );
 

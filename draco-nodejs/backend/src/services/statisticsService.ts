@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { MinimumCalculator } from './minimumCalculator.js';
 import { GameType } from '../types/gameEnums.js';
+import {
+  BattingStatisticsFiltersType,
+  LeaderCategoriesType,
+  LeaderStatisticsFiltersType,
+  PitchingStatisticsFiltersType,
+} from '@draco/shared-schemas';
 
 export interface BattingStatsRow {
   playerId: bigint;
@@ -131,7 +137,7 @@ export class StatisticsService {
   }
 
   // Get configured leader categories for an account
-  async getLeaderCategories(accountId: bigint) {
+  async getLeaderCategories(accountId: bigint): Promise<LeaderCategoriesType> {
     const categories = await this.prisma.displayleagueleaders.findMany({
       where: { accountid: accountId },
       select: {
@@ -165,7 +171,7 @@ export class StatisticsService {
   // Get batting statistics with pagination and filtering
   async getBattingStats(
     _accountId: bigint,
-    filters: StatisticsFilters,
+    filters: BattingStatisticsFiltersType,
   ): Promise<BattingStatsRow[]> {
     const {
       leagueId,
@@ -373,7 +379,7 @@ export class StatisticsService {
   // Get pitching statistics with pagination and filtering
   async getPitchingStats(
     _accountId: bigint,
-    filters: StatisticsFilters,
+    filters: PitchingStatisticsFiltersType,
   ): Promise<PitchingStatsRow[]> {
     const {
       leagueId,
@@ -495,8 +501,7 @@ export class StatisticsService {
   async getLeaders(
     accountId: bigint,
     category: string,
-    filters: StatisticsFilters,
-    limit: number = 5,
+    filters: LeaderStatisticsFiltersType,
   ): Promise<LeaderRow[]> {
     // Check the database to determine if this is a batting or pitching stat
     const categoryConfig = await this.prisma.displayleagueleaders.findFirst({
@@ -544,7 +549,7 @@ export class StatisticsService {
 
     // Apply calculated minimums to filters
     // Get more records than needed to handle ties properly
-    const queryLimit = Math.max(50, limit * 10);
+    const queryLimit = Math.max(50, filters.limit * 10);
     const updatedFilters = {
       ...filters,
       pageSize: queryLimit,
@@ -553,9 +558,9 @@ export class StatisticsService {
     };
 
     if (isBattingStat) {
-      return this.getBattingLeaders(accountId, category, updatedFilters, limit);
+      return this.getBattingLeaders(accountId, category, updatedFilters);
     } else {
-      return this.getPitchingLeaders(accountId, category, updatedFilters, limit);
+      return this.getPitchingLeaders(accountId, category, updatedFilters);
     }
   }
 
@@ -824,8 +829,7 @@ export class StatisticsService {
   private async getBattingLeaders(
     accountId: bigint,
     category: string,
-    filters: StatisticsFilters,
-    limit: number,
+    filters: LeaderStatisticsFiltersType,
   ): Promise<LeaderRow[]> {
     const sortOrder = this.getBattingSortOrder(category);
     const stats = await this.getBattingStats(accountId, {
@@ -834,7 +838,7 @@ export class StatisticsService {
       sortOrder,
     });
 
-    return this.processLeadersWithTies(stats, category, limit, (stat) =>
+    return this.processLeadersWithTies(stats, category, filters.limit, (stat) =>
       this.getStatValue(stat, category),
     );
   }
@@ -842,8 +846,7 @@ export class StatisticsService {
   private async getPitchingLeaders(
     accountId: bigint,
     category: string,
-    filters: StatisticsFilters,
-    limit: number,
+    filters: LeaderStatisticsFiltersType,
   ): Promise<LeaderRow[]> {
     const sortOrder = this.getPitchingSortOrder(category);
     const stats = await this.getPitchingStats(accountId, {
@@ -852,7 +855,7 @@ export class StatisticsService {
       sortOrder,
     });
 
-    return this.processLeadersWithTies(stats, category, limit, (stat) =>
+    return this.processLeadersWithTies(stats, category, filters.limit, (stat) =>
       this.getPitchingStatValue(stat, category),
     );
   }

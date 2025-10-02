@@ -3,7 +3,11 @@ import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.j
 import { StatisticsService } from './statisticsService.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { TeamRecordType } from '@draco/shared-schemas';
+import {
+  BattingStatisticsFiltersSchema,
+  PitchingStatisticsFiltersSchema,
+  TeamRecordType,
+} from '@draco/shared-schemas';
 import { RepositoryFactory, ITeamRepository } from '../repositories/index.js';
 
 export interface GameInfo {
@@ -215,7 +219,7 @@ export class TeamStatsService {
 
   async getTeamBattingStats(teamSeasonId: bigint, accountId: bigint): Promise<BattingStat[]> {
     // Use the statistics service to get batting stats for this team
-    const battingStats = await this.statisticsService.getBattingStats(accountId, {
+    const filters = BattingStatisticsFiltersSchema.parse({
       teamId: teamSeasonId,
       sortField: 'avg',
       sortOrder: 'desc',
@@ -223,6 +227,8 @@ export class TeamStatsService {
       minAB: 0, // No minimum requirements for team stats
       includeAllGameTypes: true, // Include both regular season and postseason
     });
+
+    const battingStats = await this.statisticsService.getBattingStats(accountId, filters);
 
     return battingStats.map((stat) => ({
       playerId: stat.playerId.toString(),
@@ -249,8 +255,7 @@ export class TeamStatsService {
     accountId: bigint,
   ): Promise<PitchingStat[]> {
     // Use the statistics service to get pitching stats for this team
-    const pitchingStats = await this.statisticsService.getPitchingStats(accountId, {
-      seasonId,
+    const filters = PitchingStatisticsFiltersSchema.parse({
       teamId: teamSeasonId,
       sortField: 'era',
       sortOrder: 'asc',
@@ -258,6 +263,7 @@ export class TeamStatsService {
       minIP: 0, // No minimum requirements for team stats
       includeAllGameTypes: true, // Include both regular season and postseason
     });
+    const pitchingStats = await this.statisticsService.getPitchingStats(accountId, filters);
 
     return pitchingStats.map((stat) => ({
       playerId: stat.playerId.toString(),
