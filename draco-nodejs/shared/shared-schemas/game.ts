@@ -6,7 +6,12 @@ import { TeamSeasonNameSchema } from './team.js';
 import { SeasonNameSchema } from './season.js';
 import { ContactIdSchema } from './contact.js';
 import { LeagueNameSchema } from './league.js';
-import { PaginationSchema, PaginationWithTotalSchema } from './index.js';
+import {
+  booleanQueryParam,
+  numberQueryParam,
+  PaginationSchema,
+  PaginationWithTotalSchema,
+} from './index.js';
 
 extendZodWithOpenApi(z);
 
@@ -157,12 +162,9 @@ export const RecentGamesSchema = z.object({
 });
 
 export const RecentGamesQuerySchema = z.object({
-  upcoming: z.boolean().optional().default(true).describe('Include upcoming games'),
-  recent: z.boolean().optional().default(true).describe('Include recent games'),
-  limit: z
-    .number()
-    .min(1)
-    .max(20)
+  upcoming: booleanQueryParam.optional().default(true).describe('Include upcoming games'),
+  recent: booleanQueryParam.optional().default(true).describe('Include recent games'),
+  limit: numberQueryParam({ min: 1, max: 20 })
     .optional()
     .default(5)
     .describe('Maximum number of games to return for each category'),
