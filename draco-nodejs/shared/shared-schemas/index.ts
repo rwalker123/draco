@@ -21,3 +21,4 @@ export * from './season.js';
 export * from './league.js';
 export * from './game.js';
 export * from './standing.js';
+export * from './statistics.js';

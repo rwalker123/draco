@@ -3,7 +3,11 @@ import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.j
 import { StatisticsService } from './statisticsService.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { TeamRecordType } from '@draco/shared-schemas';
+import {
+  BattingStatisticsFiltersSchema,
+  PitchingStatisticsFiltersSchema,
+  TeamRecordType,
+} from '@draco/shared-schemas';
 import { RepositoryFactory, ITeamRepository } from '../repositories/index.js';
 
 export interface GameInfo {
@@ -215,14 +219,16 @@ export class TeamStatsService {
 
   async getTeamBattingStats(teamSeasonId: bigint, accountId: bigint): Promise<BattingStat[]> {
     // Use the statistics service to get batting stats for this team
-    const battingStats = await this.statisticsService.getBattingStats(accountId, {
-      teamId: teamSeasonId,
+    const filters = BattingStatisticsFiltersSchema.parse({
+      teamId: teamSeasonId.toString(),
       sortField: 'avg',
       sortOrder: 'desc',
-      pageSize: 1000, // Get all players on the team
-      minAB: 0, // No minimum requirements for team stats
-      includeAllGameTypes: true, // Include both regular season and postseason
+      pageSize: '1000', // Get all players on the team
+      minAB: '0', // No minimum requirements for team stats
+      includeAllGameTypes: 'true', // Include both regular season and postseason
     });
+
+    const battingStats = await this.statisticsService.getBattingStats(accountId, filters);
 
     return battingStats.map((stat) => ({
       playerId: stat.playerId.toString(),
@@ -249,15 +255,15 @@ export class TeamStatsService {
     accountId: bigint,
   ): Promise<PitchingStat[]> {
     // Use the statistics service to get pitching stats for this team
-    const pitchingStats = await this.statisticsService.getPitchingStats(accountId, {
-      seasonId,
-      teamId: teamSeasonId,
+    const filters = PitchingStatisticsFiltersSchema.parse({
+      teamId: teamSeasonId.toString(),
       sortField: 'era',
       sortOrder: 'asc',
-      pageSize: 1000, // Get all players on the team
-      minIP: 0, // No minimum requirements for team stats
-      includeAllGameTypes: true, // Include both regular season and postseason
+      pageSize: '1000', // Get all players on the team
+      minIP: '0', // No minimum requirements for team stats
+      includeAllGameTypes: 'true', // Include both regular season and postseason
     });
+    const pitchingStats = await this.statisticsService.getPitchingStats(accountId, filters);
 
     return pitchingStats.map((stat) => ({
       playerId: stat.playerId.toString(),

@@ -12,7 +12,7 @@ export const TeamSchema = z.object({
   webAddress: z.string().nullable().optional(),
   youtubeUserId: z.string().nullable().optional(),
   defaultVideo: z.string().nullable().optional(),
-  autoPlayVideo: z.boolean().default(false).optional(),
+  autoPlayVideo: z.boolean().optional(),
   logoUrl: z.url().optional().nullable(),
 });
 

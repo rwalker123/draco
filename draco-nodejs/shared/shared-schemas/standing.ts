@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { DivisionNameSchema } from './division.js';
+import { DivisionNameSchema, DivisionSeasonSchema } from './division.js';
 import { LeagueNameSchema } from './league.js';
 import { TeamSeasonNameSchema, TeamSeasonSchema } from './team.js';
 
@@ -14,16 +14,15 @@ export const TeamRecordSchema = z.object({
 
 export const StandingsTeamSchema = TeamRecordSchema.extend({
   team: TeamSeasonNameSchema,
-  league: LeagueNameSchema,
-  division: DivisionNameSchema,
-  record: TeamRecordSchema,
+  league: LeagueNameSchema.optional(),
+  division: DivisionNameSchema.optional(),
   pct: z.number(),
   gb: z.number(),
   divisionRecord: TeamRecordSchema.optional(),
 });
 
 export const StandingsDivisionSchema = z.object({
-  division: DivisionNameSchema,
+  division: DivisionSeasonSchema.omit({ season: true }),
   teams: z.array(StandingsTeamSchema),
 });
 
