@@ -7,7 +7,7 @@ import { IRoleService } from '../interfaces/roleInterfaces.js';
 import {
   ContactRoleType,
   CreateContactRoleType,
-  RoleCheckResultType,
+  RoleCheckType,
   RoleWithContactType,
   UserRolesType,
 } from '@draco/shared-schemas';
@@ -118,11 +118,7 @@ export class RoleService implements IRoleService {
   /**
    * Check if a user has a specific role in a context
    */
-  async hasRole(
-    userId: string,
-    roleId: string,
-    context: RoleContextData,
-  ): Promise<RoleCheckResultType> {
+  async hasRole(userId: string, roleId: string, context: RoleContextData): Promise<RoleCheckType> {
     const userRoles: UserRolesType = await this.getUserRoles(userId, context.accountId);
 
     // Check global roles first
@@ -135,8 +131,7 @@ export class RoleService implements IRoleService {
     for (const contactRole of userRoles.contactRoles) {
       if (contactRole.roleId === roleId) {
         if (this.validateRoleContext(contactRole, context)) {
-          const rowCheckResult: RoleCheckResultType = {
-            accountId: context.accountId.toString(),
+          const rowCheckResult: RoleCheckType = {
             userId: userId,
             roleId: contactRole.roleId,
             hasRole: true,
@@ -151,7 +146,6 @@ export class RoleService implements IRoleService {
     // Check role hierarchy
     if (await this.hasRoleOrHigher(userId, roleId, context)) {
       return {
-        accountId: context.accountId.toString(),
         userId,
         roleId,
         hasRole: true,
@@ -159,8 +153,7 @@ export class RoleService implements IRoleService {
       };
     }
 
-    const roleCheckResult: RoleCheckResultType = {
-      accountId: context.accountId.toString(),
+    const roleCheckResult: RoleCheckType = {
       userId,
       roleId,
       hasRole: false,
@@ -271,7 +264,7 @@ export class RoleService implements IRoleService {
 
       const teamManager = await this.teamRepository.findTeamManager(
         contactId,
-        roleData.roleData,
+        BigInt(roleData.roleData),
         currentSeason.id,
       );
 
@@ -292,7 +285,7 @@ export class RoleService implements IRoleService {
       roleData.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]
     ) {
       // Account roles: roleData must be the accountId
-      if (roleData.roleData !== accountId) {
+      if (BigInt(roleData.roleData) !== accountId) {
         throw new Error('Invalid role data', { cause: roleData.roleData });
       }
     } else if (roleData.roleId === ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]) {
@@ -304,7 +297,7 @@ export class RoleService implements IRoleService {
       }
 
       const leagueSeason = await this.leagueRepository.findLeagueSeason(
-        roleData.roleData,
+        BigInt(roleData.roleData),
         currentSeason.id,
         accountId,
       );
@@ -323,7 +316,7 @@ export class RoleService implements IRoleService {
       }
 
       const teamSeason = await this.teamRepository.findTeamSeason(
-        roleData.roleData,
+        BigInt(roleData.roleData),
         currentSeason.id,
         accountId,
       );
@@ -335,7 +328,7 @@ export class RoleService implements IRoleService {
     const existingRole = await this.roleRepository.findRole(
       contactId,
       roleData.roleId,
-      roleData.roleData,
+      BigInt(roleData.roleData),
       accountId,
     );
     // Check if role already exists
@@ -346,7 +339,7 @@ export class RoleService implements IRoleService {
     const newRole = await this.roleRepository.create({
       contactid: contactId,
       roleid: roleData.roleId,
-      roledata: roleData.roleData,
+      roledata: BigInt(roleData.roleData),
       accountid: accountId,
     });
 

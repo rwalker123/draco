@@ -53,14 +53,15 @@ components:
                 firstName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 lastName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 middleName:
                   type: string
-                  maxLength: 50
+                  minLength: 1
+                  maxLength: 100
                 email:
                   type: string
                   maxLength: 100
@@ -146,14 +147,15 @@ components:
             firstName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             lastName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             middleName:
               type: string
-              maxLength: 50
+              minLength: 1
+              maxLength: 100
             email:
               type: string
               maxLength: 100
@@ -244,14 +246,15 @@ components:
                     firstName:
                       type: string
                       minLength: 1
-                      maxLength: 50
+                      maxLength: 100
                     lastName:
                       type: string
                       minLength: 1
-                      maxLength: 50
+                      maxLength: 100
                     middleName:
                       type: string
-                      maxLength: 50
+                      minLength: 1
+                      maxLength: 100
                     email:
                       type: string
                       maxLength: 100
@@ -317,14 +320,15 @@ components:
         firstName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         lastName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         middleName:
           type: string
-          maxLength: 50
+          minLength: 1
+          maxLength: 100
         email:
           type: string
           maxLength: 100
@@ -384,7 +388,8 @@ components:
                 maxLength: 50
               roleName:
                 type: string
-                maxLength: 50
+                minLength: 1
+                maxLength: 100
               roleData:
                 type: string
                 pattern: ^d+$
@@ -414,14 +419,15 @@ components:
         firstName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         lastName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         middleName:
           type: string
-          maxLength: 50
+          minLength: 1
+          maxLength: 100
         email:
           type: string
           maxLength: 100
@@ -481,14 +487,15 @@ components:
         firstName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         lastName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         middleName:
           type: string
-          maxLength: 50
+          minLength: 1
+          maxLength: 100
         email:
           type: string
           maxLength: 100
@@ -558,7 +565,7 @@ components:
     RegisteredUser:
       type: object
       properties:
-        id:
+        userId:
           type: string
         userName:
           type: string
@@ -575,14 +582,15 @@ components:
             firstName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             lastName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             middleName:
               type: string
-              maxLength: 50
+              minLength: 1
+              maxLength: 100
             email:
               type: string
               maxLength: 100
@@ -637,7 +645,7 @@ components:
             - firstName
             - lastName
       required:
-        - id
+        - userId
         - userName
     TeamManager:
       type: object
@@ -666,14 +674,15 @@ components:
             firstName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             lastName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             middleName:
               type: string
-              maxLength: 50
+              minLength: 1
+              maxLength: 100
             email:
               type: string
               maxLength: 100
@@ -745,14 +754,15 @@ components:
         firstName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         lastName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 100
         middleName:
           type: string
-          maxLength: 50
+          minLength: 1
+          maxLength: 100
         email:
           type: string
           maxLength: 100
@@ -811,9 +821,11 @@ components:
           maxLength: 50
         roleData:
           type: string
+          pattern: ^d+$
         contextName:
           type: string
-          maxLength: 50
+          minLength: 1
+          maxLength: 100
       required:
         - roleId
         - roleData
@@ -1211,14 +1223,15 @@ components:
               firstName:
                 type: string
                 minLength: 1
-                maxLength: 50
+                maxLength: 100
               lastName:
                 type: string
                 minLength: 1
-                maxLength: 50
+                maxLength: 100
               middleName:
                 type: string
-                maxLength: 50
+                minLength: 1
+                maxLength: 100
               email:
                 type: string
                 maxLength: 100
@@ -1305,7 +1318,8 @@ components:
           maxLength: 50
         roleName:
           type: string
-          maxLength: 50
+          minLength: 1
+          maxLength: 100
         roleData:
           type: string
           pattern: ^d+$
@@ -1381,7 +1395,7 @@ components:
             user:
               type: object
               properties:
-                id:
+                userId:
                   type: string
                 userName:
                   type: string
@@ -1398,14 +1412,15 @@ components:
                     firstName:
                       type: string
                       minLength: 1
-                      maxLength: 50
+                      maxLength: 100
                     lastName:
                       type: string
                       minLength: 1
-                      maxLength: 50
+                      maxLength: 100
                     middleName:
                       type: string
-                      maxLength: 50
+                      minLength: 1
+                      maxLength: 100
                     email:
                       type: string
                       maxLength: 100
@@ -1460,7 +1475,7 @@ components:
                     - firstName
                     - lastName
               required:
-                - id
+                - userId
                 - userName
             contact:
               type: object
@@ -1471,14 +1486,15 @@ components:
                 firstName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 lastName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 middleName:
                   type: string
-                  maxLength: 50
+                  minLength: 1
+                  maxLength: 100
               required:
                 - id
                 - firstName
@@ -1585,7 +1601,7 @@ components:
                 user:
                   type: object
                   properties:
-                    id:
+                    userId:
                       type: string
                     userName:
                       type: string
@@ -1602,14 +1618,15 @@ components:
                         firstName:
                           type: string
                           minLength: 1
-                          maxLength: 50
+                          maxLength: 100
                         lastName:
                           type: string
                           minLength: 1
-                          maxLength: 50
+                          maxLength: 100
                         middleName:
                           type: string
-                          maxLength: 50
+                          minLength: 1
+                          maxLength: 100
                         email:
                           type: string
                           maxLength: 100
@@ -1664,7 +1681,7 @@ components:
                         - firstName
                         - lastName
                   required:
-                    - id
+                    - userId
                     - userName
                 contact:
                   type: object
@@ -1675,14 +1692,15 @@ components:
                     firstName:
                       type: string
                       minLength: 1
-                      maxLength: 50
+                      maxLength: 100
                     lastName:
                       type: string
                       minLength: 1
-                      maxLength: 50
+                      maxLength: 100
                     middleName:
                       type: string
-                      maxLength: 50
+                      minLength: 1
+                      maxLength: 100
                   required:
                     - id
                     - firstName
@@ -1756,14 +1774,15 @@ components:
             firstName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             lastName:
               type: string
               minLength: 1
-              maxLength: 50
+              maxLength: 100
             middleName:
               type: string
-              maxLength: 50
+              minLength: 1
+              maxLength: 100
             email:
               type: string
               maxLength: 100
@@ -1828,14 +1847,15 @@ components:
               firstName:
                 type: string
                 minLength: 1
-                maxLength: 50
+                maxLength: 100
               lastName:
                 type: string
                 minLength: 1
-                maxLength: 50
+                maxLength: 100
               middleName:
                 type: string
-                maxLength: 50
+                minLength: 1
+                maxLength: 100
               email:
                 type: string
                 maxLength: 100
@@ -4637,14 +4657,15 @@ paths:
                 firstName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 lastName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 middleName:
                   type: string
-                  maxLength: 50
+                  minLength: 1
+                  maxLength: 100
                 email:
                   type: string
                   maxLength: 100
@@ -4699,14 +4720,15 @@ paths:
                 firstName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 lastName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 middleName:
                   type: string
-                  maxLength: 50
+                  minLength: 1
+                  maxLength: 100
                 email:
                   type: string
                   maxLength: 100
@@ -4831,14 +4853,15 @@ paths:
                 firstName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 lastName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 middleName:
                   type: string
-                  maxLength: 50
+                  minLength: 1
+                  maxLength: 100
                 email:
                   type: string
                   maxLength: 100
@@ -4893,14 +4916,15 @@ paths:
                 firstName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 lastName:
                   type: string
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
                 middleName:
                   type: string
-                  maxLength: 50
+                  minLength: 1
+                  maxLength: 100
                 email:
                   type: string
                   maxLength: 100
@@ -7468,14 +7492,15 @@ paths:
                         firstName:
                           type: string
                           minLength: 1
-                          maxLength: 50
+                          maxLength: 100
                         lastName:
                           type: string
                           minLength: 1
-                          maxLength: 50
+                          maxLength: 100
                         middleName:
                           type: string
-                          maxLength: 50
+                          minLength: 1
+                          maxLength: 100
                         email:
                           type: string
                           maxLength: 100

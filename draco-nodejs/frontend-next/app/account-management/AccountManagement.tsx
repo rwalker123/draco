@@ -183,7 +183,7 @@ const AccountManagement: React.FC = () => {
   }, []);
 
   const getOwnerUserId = useCallback(
-    (account: SharedAccountType) => account.accountOwner?.user?.id ?? '',
+    (account: SharedAccountType) => account.accountOwner?.user?.userId ?? '',
     [],
   );
 

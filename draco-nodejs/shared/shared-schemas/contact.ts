@@ -3,17 +3,18 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { ContactRoleSchema } from './role.js';
 import { PaginationSchema, PagingSchema } from './paging.js';
 import { booleanQueryParam } from './queryParams.js';
+import { bigintToStringSchema, nameSchema } from './standardSchema.js';
 
 extendZodWithOpenApi(z);
 
 export const ContactIdSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
+  id: bigintToStringSchema,
 });
 
 export const NamedContactSchema = ContactIdSchema.extend({
-  firstName: z.string().trim().min(1).max(50),
-  lastName: z.string().trim().min(1).max(50),
-  middleName: z.string().trim().max(50).optional(),
+  firstName: nameSchema,
+  lastName: nameSchema,
+  middleName: nameSchema.optional(),
 });
 
 export const PhoneNumberSchema = z
@@ -74,25 +75,26 @@ export const BaseContactSchema = NamedContactSchema.extend({
 // Interface for contact entry used in internal processing (extends base)
 export const ContactSchema = BaseContactSchema.extend({
   contactroles: z.array(ContactRoleSchema).optional(),
-  creatoraccountid: z
-    .bigint()
-    .transform((val) => val.toString())
-    .optional(),
+  creatoraccountid: bigintToStringSchema.optional(),
 });
 
 export const RoleWithContactSchema = ContactRoleSchema.extend({
-  accountId: z.bigint().transform((val) => val.toString()),
+  accountId: bigintToStringSchema,
   contact: ContactIdSchema,
 });
 
 export const RoleWithContactsSchema = ContactRoleSchema.extend({
-  accountId: z.bigint().transform((val) => val.toString()),
+  accountId: bigintToStringSchema,
   contacts: ContactIdSchema.array(),
 });
 
 export const UserRolesSchema = z.object({
   globalRoles: z.string().array(),
   contactRoles: RoleWithContactSchema.array(),
+});
+
+export const ContactWithContactRolesSchema = BaseContactSchema.extend({
+  roles: ContactRoleSchema.array(),
 });
 
 export const CreateContactSchema = BaseContactSchema.omit({
@@ -109,8 +111,8 @@ export const CreateContactSchema = BaseContactSchema.omit({
 
 export const CreateContactRoleSchema = z.object({
   roleId: z.string().trim().max(50),
-  roleData: z.string().transform((val) => BigInt(val)),
-  contextName: z.string().trim().max(50).optional(),
+  roleData: bigintToStringSchema,
+  contextName: nameSchema.optional(),
 });
 
 export const PagedContactSchema = z
@@ -185,11 +187,13 @@ export const ContactValidationWithSignInSchema = ContactValidationSchema.safeExt
 );
 
 export const RegisteredUserSchema = z.object({
-  id: z.string(),
+  userId: z.string(),
   userName: SignInUserNameSchema,
   token: z.string().optional(),
   contact: BaseContactSchema.optional(),
 });
+
+export const RegisteredUserWithRolesSchema = RegisteredUserSchema.extend(UserRolesSchema.shape);
 
 export const ContactSearchParamsSchema = z.object({
   q: z.string().trim().max(100).optional(),
@@ -221,3 +225,5 @@ export type SignInUserNameType = z.infer<typeof SignInUserNameSchema>;
 export type SignInCredentialsType = z.infer<typeof SignInCredentialsSchema>;
 export type RegisteredUserType = z.infer<typeof RegisteredUserSchema>;
 export type ContactSearchParamsType = z.infer<typeof ContactSearchParamsSchema>;
+export type RegisteredUserWithRolesType = z.infer<typeof RegisteredUserWithRolesSchema>;
+export type ContactWithContactRolesType = z.infer<typeof ContactWithContactRolesSchema>;

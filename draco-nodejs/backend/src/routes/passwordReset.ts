@@ -61,14 +61,11 @@ router.post(
     if (testMode) {
       // Test mode: return the token directly instead of sending email
       res.status(200).json({
-        success: true,
-        message: 'Password reset token generated (test mode)',
-        testData: {
-          token: resetToken,
-          userId: user.id,
-          email: user.username,
-        },
+        token: resetToken,
+        userId: user.id,
+        email: user.username,
       });
+
       return;
     }
 
@@ -83,10 +80,7 @@ router.post(
       throw new InternalServerError('Failed to send password reset email. Please try again later.');
     }
 
-    res.status(200).json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.',
-    });
+    res.status(200).json(true);
   }),
 );
 
@@ -106,11 +100,7 @@ router.post(
     const tokenData = await PasswordResetModel.findValidToken(token);
     const isValid = !!tokenData;
 
-    res.status(200).json({
-      success: true,
-      valid: isValid,
-      message: isValid ? 'Token is valid' : 'Token is invalid or expired',
-    });
+    res.status(200).json({ valid: isValid });
   }),
 );
 
@@ -150,10 +140,7 @@ router.post(
     // Mark token as used
     await PasswordResetModel.markTokenAsUsed(tokenData.id);
 
-    res.status(200).json({
-      success: true,
-      message: 'Password has been reset successfully',
-    });
+    res.status(200).json(true);
   }),
 );
 
@@ -166,11 +153,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const deletedCount = await PasswordResetModel.cleanupExpiredTokens();
 
-    res.status(200).json({
-      success: true,
-      message: `Cleaned up ${deletedCount} expired tokens`,
-      deletedCount,
-    });
+    res.status(200).json(deletedCount);
   }),
 );
 

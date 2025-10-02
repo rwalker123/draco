@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { SeasonNameSchema, SeasonSchema } from './season.js';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
+import { booleanQueryParam } from './queryParams.js';
 
 extendZodWithOpenApi(z);
 
@@ -35,10 +36,10 @@ export const LeaguesInSeasonSchema = z.object({
 });
 
 export const LeagueSeasonQueryParamsSchema = z.object({
-  includeTeams: z.enum(['true', 'false']).default('false').optional(),
-  includeUnassignedTeams: z.enum(['true', 'false']).default('false').optional(),
-  includePlayerCounts: z.enum(['true', 'false']).default('false').optional(),
-  includeManagerCounts: z.enum(['true', 'false']).default('false').optional(),
+  includeTeams: booleanQueryParam.optional(),
+  includeUnassignedTeams: booleanQueryParam.optional().default(false),
+  includePlayerCounts: booleanQueryParam.optional().default(false),
+  includeManagerCounts: booleanQueryParam.optional().default(false),
 });
 
 export type LeagueType = z.infer<typeof LeagueSchema>;
