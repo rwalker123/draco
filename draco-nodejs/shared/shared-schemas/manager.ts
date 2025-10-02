@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { BaseContactSchema } from './contact.js';
+import { BaseContactSchema, ContactDetailsSchema } from './contact.js';
 import { bigintToStringSchema } from './standardSchema.js';
-import { TeamSeasonNameSchema } from './team.js';
+import { TeamSeasonNameSchema, TeamSeasonSchema } from './team.js';
 import { LeagueNameSchema, LeagueSeasonSchema } from './league.js';
 
 extendZodWithOpenApi(z);
@@ -29,9 +29,24 @@ export const SeasonManagerWithLeagueSchema = TeamManagerSchema.extend({
 
 export const SeasonManagerSchema = z
   .object({
-    contact: BaseContactSchema,
+    contact: BaseContactSchema.pick({
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    }).extend({
+      contactDetails: ContactDetailsSchema.pick({
+        phone1: true,
+        phone2: true,
+        phone3: true,
+      }).optional(),
+    }),
     hasValidEmail: z.boolean(),
-    allTeams: TeamSeasonNameSchema.array(),
+    allTeams: TeamSeasonSchema.pick({
+      league: true,
+      id: true,
+      name: true,
+    }).array(),
   })
   .openapi({
     description: 'Aggregated view of a season manager and the teams they manage',

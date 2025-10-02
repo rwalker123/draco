@@ -821,7 +821,6 @@ components:
           maxLength: 50
         roleData:
           type: string
-          pattern: ^d+$
         contextName:
           type: string
           minLength: 1

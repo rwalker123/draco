@@ -111,7 +111,7 @@ export const CreateContactSchema = BaseContactSchema.omit({
 
 export const CreateContactRoleSchema = z.object({
   roleId: z.string().trim().max(50),
-  roleData: bigintToStringSchema,
+  roleData: z.string().transform((val) => BigInt(val)),
   contextName: nameSchema.optional(),
 });
 
