@@ -18,60 +18,52 @@ const router = Router();
 router.post(
   '/sendgrid',
   asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const signature = req.get('X-Twilio-Email-Event-Webhook-Signature');
-      const timestamp = req.get('X-Twilio-Email-Event-Webhook-Timestamp');
+    const signature = req.get('X-Twilio-Email-Event-Webhook-Signature');
+    const timestamp = req.get('X-Twilio-Email-Event-Webhook-Timestamp');
 
-      if (process.env.NODE_ENV === 'production' && signature && timestamp) {
-        const payload = JSON.stringify(req.body);
-        const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY || '';
+    if (process.env.NODE_ENV === 'production' && signature && timestamp) {
+      const payload = JSON.stringify(req.body);
+      const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY || '';
 
-        if (!SendGridProvider.verifyWebhookSignature(payload, signature, publicKey)) {
-          console.warn('Invalid SendGrid webhook signature');
-          res.status(401).json({ error: 'Invalid webhook signature' });
-          return;
-        }
-      }
-
-      const events: SendGridWebhookEvent[] = Array.isArray(req.body) ? req.body : [req.body];
-
-      if (events.length === 0) {
-        console.warn('Empty SendGrid webhook payload received');
-        res.status(400).json({ error: 'Empty webhook payload' });
+      if (!SendGridProvider.verifyWebhookSignature(payload, signature, publicKey)) {
+        console.warn('Invalid SendGrid webhook signature');
+        res.status(401).json({ error: 'Invalid webhook signature' });
         return;
       }
-
-      console.log(`📨 Received ${events.length} SendGrid webhook events`);
-
-      const provider = await EmailProviderFactory.getProvider();
-
-      if (!(provider instanceof SendGridProvider)) {
-        console.error('SendGrid webhook received but current provider is not SendGrid');
-        res.status(500).json({ error: 'Provider mismatch' });
-        return;
-      }
-
-      const result = await provider.processWebhookEvents(events);
-
-      console.log(`✅ Processed ${result.processed}/${events.length} SendGrid webhook events`);
-
-      if (result.errors.length > 0) {
-        console.warn('SendGrid webhook processing errors:', result.errors);
-      }
-
-      res.status(200).json({
-        message: 'Webhook processed successfully',
-        processed: result.processed,
-        total: events.length,
-        errors: result.errors.length,
-      });
-    } catch (error) {
-      console.error('Error processing SendGrid webhook:', error);
-      res.status(500).json({
-        error: 'Internal server error processing webhook',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
+
+    const events: SendGridWebhookEvent[] = Array.isArray(req.body) ? req.body : [req.body];
+
+    if (events.length === 0) {
+      console.warn('Empty SendGrid webhook payload received');
+      res.status(400).json({ error: 'Empty webhook payload' });
+      return;
+    }
+
+    console.log(`📨 Received ${events.length} SendGrid webhook events`);
+
+    const provider = await EmailProviderFactory.getProvider();
+
+    if (!(provider instanceof SendGridProvider)) {
+      console.error('SendGrid webhook received but current provider is not SendGrid');
+      res.status(500).json({ error: 'Provider mismatch' });
+      return;
+    }
+
+    const result = await provider.processWebhookEvents(events);
+
+    console.log(`✅ Processed ${result.processed}/${events.length} SendGrid webhook events`);
+
+    if (result.errors.length > 0) {
+      console.warn('SendGrid webhook processing errors:', result.errors);
+    }
+
+    res.status(200).json({
+      message: 'Webhook processed successfully',
+      processed: result.processed,
+      total: events.length,
+      errors: result.errors.length,
+    });
   }),
 );
 
@@ -103,23 +95,15 @@ router.get(
 router.get(
   '/stats',
   asyncHandler(async (_req: Request, res: Response) => {
-    try {
-      const stats = {
-        total_events_processed: 0,
-        last_event_timestamp: null,
-        provider_status: {
-          sendgrid: process.env.EMAIL_PROVIDER === 'sendgrid',
-        },
-      };
+    const stats = {
+      total_events_processed: 0,
+      last_event_timestamp: null,
+      provider_status: {
+        sendgrid: process.env.EMAIL_PROVIDER === 'sendgrid',
+      },
+    };
 
-      res.status(200).json(stats);
-    } catch (error) {
-      console.error('Error getting webhook stats:', error);
-      res.status(500).json({
-        error: 'Failed to get webhook statistics',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    res.status(200).json(stats);
   }),
 );
 
