@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractSeasonParams } from '../utils/paramExtraction.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import { StandingsLeagueType, StandingsTeamType } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const statisticsService = ServiceFactory.getStatisticsService();
@@ -16,37 +17,61 @@ router.get(
     if (grouped) {
       const groupedStandings = await statisticsService.getGroupedStandings(accountId, seasonId);
 
-      res.json({
-        success: true,
-        data: {
-          leagues: groupedStandings.leagues.map((league) => ({
-            ...league,
-            leagueId: league.leagueId.toString(),
-            divisions: league.divisions.map((division) => ({
-              ...division,
-              divisionId: division.divisionId?.toString() || null,
-              teams: division.teams.map((team) => ({
-                ...team,
-                teamId: team.teamId.toString(),
-                leagueId: team.leagueId.toString(),
-                divisionId: team.divisionId?.toString() || null,
-              })),
-            })),
+      const result: StandingsLeagueType[] = groupedStandings.leagues.map((league) => ({
+        id: league.leagueId.toString(),
+        league: { id: league.leagueId.toString(), name: league.leagueName },
+        divisions: league.divisions.map((division) => ({
+          division: {
+            id: division.divisionId?.toString() || '',
+            division: {
+              id: division.divisionId?.toString() || '',
+              name: division.divisionName || '',
+            },
+            priority: division.divisionPriority || 0,
+          },
+          teams: division.teams.map((team) => ({
+            team: { id: team.teamId.toString(), name: team.teamName },
+            w: team.w,
+            l: team.l,
+            t: team.t,
+            pct: team.pct,
+            gb: team.gb,
+            divisionRecord: team.divisionRecord
+              ? {
+                  w: team.divisionRecord.w,
+                  l: team.divisionRecord.l,
+                  t: team.divisionRecord.t,
+                }
+              : undefined,
           })),
-        },
-      });
+        })),
+      }));
+
+      res.json(result);
     } else {
       const standings = await statisticsService.getStandings(accountId, seasonId);
 
-      res.json({
-        success: true,
-        data: standings.map((team) => ({
-          ...team,
-          teamId: team.teamId.toString(),
-          leagueId: team.leagueId.toString(),
-          divisionId: team.divisionId?.toString() || null,
-        })),
-      });
+      const result: StandingsTeamType[] = standings.map((team) => ({
+        team: { id: team.teamId.toString(), name: team.teamName },
+        w: team.w,
+        l: team.l,
+        t: team.t,
+        pct: team.pct,
+        gb: team.gb,
+        league: team.leagueId ? { id: team.leagueId.toString(), name: team.leagueName } : undefined,
+        division: team.divisionId
+          ? { id: team.divisionId.toString(), name: team.divisionName || '' }
+          : undefined,
+        divisionRecord: team.divisionRecord
+          ? {
+              w: team.divisionRecord.w,
+              l: team.divisionRecord.l,
+              t: team.divisionRecord.t,
+            }
+          : undefined,
+      }));
+
+      res.json(result);
     }
   }),
 );
