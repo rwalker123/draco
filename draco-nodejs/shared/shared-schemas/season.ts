@@ -20,30 +20,23 @@ export const UpsertSeasonSchema = SeasonNameSchema.omit({
   description: 'Schema for creating a season',
 });
 
-export const CopySeasonResponseDataSchema = z.object({
+export const CopySeasonDataSchema = z.object({
   season: SeasonSchema,
   copiedLeagues: z.number().int().nonnegative(),
 });
 
-export const SetCurrentSeasonResponseDataSchema = z.object({
+export const SetCurrentSeasonDataSchema = z.object({
   seasonId: z.bigint().transform((val) => val.toString()),
   accountId: z.bigint().transform((val) => val.toString()),
 });
 
-export const DeleteSeasonResponseDataSchema = z.object({
-  message: z.string().trim().min(1),
-});
-
-export const SeasonParticipantCountResponseDataSchema = z.object({
+export const SeasonParticipantCountDataSchema = z.object({
   seasonId: z.bigint().transform((val) => val.toString()),
   participantCount: z.number().int().nonnegative(),
 });
 
 export type SeasonType = z.infer<typeof SeasonSchema>;
-export type CopySeasonResponseData = z.infer<typeof CopySeasonResponseDataSchema>;
-export type SetCurrentSeasonResponseData = z.infer<typeof SetCurrentSeasonResponseDataSchema>;
-export type DeleteSeasonResponseData = z.infer<typeof DeleteSeasonResponseDataSchema>;
-export type SeasonParticipantCountResponseData = z.infer<
-  typeof SeasonParticipantCountResponseDataSchema
->;
+export type CopySeasonDataType = z.infer<typeof CopySeasonDataSchema>;
+export type SetCurrentSeasonDataType = z.infer<typeof SetCurrentSeasonDataSchema>;
+export type SeasonParticipantCountDataType = z.infer<typeof SeasonParticipantCountDataSchema>;
 export type UpsertSeasonType = z.infer<typeof UpsertSeasonSchema>;
