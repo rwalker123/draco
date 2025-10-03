@@ -133,7 +133,7 @@ router.post(
 );
 
 /**
- * DELETE /api/accounts/:accountId/users/:contactId/roles/:roleId
+ * DELETE /api/accounts/:accountId/contacts/:contactId/roles/:roleId
  * Remove role from user in account (Account Admin or Administrator)
  */
 router.delete(

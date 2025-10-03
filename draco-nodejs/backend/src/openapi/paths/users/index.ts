@@ -14,6 +14,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     RegisteredUserWithRolesSchemaRef,
     RoleCheckSchemaRef,
     RoleMetadataSchemaRef,
+    RoleWithContactSchemaRef,
   } = schemaRefs;
 
   /**`
@@ -22,7 +23,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
    */
   registry.registerPath({
     method: 'post',
-    path: '/api/accounts/{accountId}/users/{userId}/roles',
+    path: '/api/accounts/{accountId}/users/{contactId}/roles',
     description: 'Assign role to user in account',
     operationId: 'assignRoleToUser',
     security: [{ bearerAuth: [] }],
@@ -38,7 +39,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         },
       },
       {
-        name: 'userId',
+        name: 'contactId',
         in: 'path',
         required: true,
         schema: {
@@ -57,13 +58,11 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Role assigned successfully',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-            }),
+            schema: RoleWithContactSchemaRef,
           },
         },
       },
@@ -95,12 +94,12 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
   });
 
   /**
-   * DELETE /api/accounts/:accountId/users/:contactId/roles/:roleId
+   * DELETE /api/accounts/:accountId/contacts/:contactId/roles/:roleId
    * Remove role from user in account (Account Admin or Administrator)
    */
   registry.registerPath({
     method: 'delete',
-    path: '/api/accounts/{accountId}/users/{userId}/roles/{roleId}',
+    path: '/api/accounts/{accountId}/contacts/{contactId}/roles/{roleId}',
     description: 'Remove role from user in account',
     operationId: 'removeRoleFromUser',
     security: [{ bearerAuth: [] }],
@@ -134,6 +133,21 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         },
       },
     ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              roleData: z.string().openapi({
+                format: 'number',
+                description:
+                  'Context identifier for the role (for example, the team id when removing a TeamAdmin role).',
+              }),
+            }),
+          },
+        },
+      },
+    },
     responses: {
       204: {
         description: 'Role removed successfully',

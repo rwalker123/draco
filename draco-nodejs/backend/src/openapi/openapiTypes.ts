@@ -92,6 +92,7 @@ import {
   UpdateGameResultsSchema,
   UpsertGameSchema,
   UpsertGameRecapSchema,
+  RoleWithContactSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -308,6 +309,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     InternalServerErrorSchema,
   );
   const PagingSchemaRef = registry.register('Paging', PagingSchema);
+  const RoleWithContactSchemaRef = registry.register('RoleWithContact', RoleWithContactSchema);
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -401,6 +403,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     InternalServerErrorSchemaRef,
     PagingSchemaRef,
     ContactSearchParamsSchemaRef,
+    RoleWithContactSchemaRef,
   };
 };
 

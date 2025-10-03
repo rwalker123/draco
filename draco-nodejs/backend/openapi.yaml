@@ -5050,6 +5050,42 @@ components:
             - asc
             - desc
           default: asc
+    RoleWithContact:
+      type: object
+      properties:
+        roleId:
+          type: string
+          maxLength: 50
+        roleName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        roleData:
+          type: string
+          pattern: ^d+$
+        contextName:
+          type: string
+          maxLength: 50
+        id:
+          type: string
+          pattern: ^d+$
+        accountId:
+          type: string
+          pattern: ^d+$
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+          required:
+            - id
+      required:
+        - roleId
+        - roleData
+        - id
+        - accountId
+        - contact
   parameters: {}
 paths:
   /api/accounts/search:
@@ -11611,7 +11647,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/users/{userId}/roles:
+  /api/accounts/{accountId}/users/{contactId}/roles:
     post:
       description: Assign role to user in account
       operationId: assignRoleToUser
@@ -11626,7 +11662,7 @@ paths:
           schema:
             type: string
             format: number
-        - name: userId
+        - name: contactId
           in: path
           required: true
           schema:
@@ -11638,17 +11674,12 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateContactRole"
       responses:
-        "200":
+        "201":
           description: Role assigned successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                required:
-                  - success
+                $ref: "#/components/schemas/RoleWithContact"
         "400":
           description: Validation error
           content:
@@ -11667,7 +11698,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/users/{userId}/roles/{roleId}:
+  /api/accounts/{accountId}/contacts/{contactId}/roles/{roleId}:
     delete:
       description: Remove role from user in account
       operationId: removeRoleFromUser
@@ -11694,6 +11725,19 @@ paths:
           schema:
             type: string
             format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roleData:
+                  type: string
+                  format: number
+                  description: Context identifier for the role (for example, the team id when
+                    removing a TeamAdmin role).
+              required:
+                - roleData
       responses:
         "204":
           description: Role removed successfully
