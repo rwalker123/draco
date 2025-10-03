@@ -14,9 +14,15 @@ import {
   StepLabel,
   Link,
 } from '@mui/material';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import {
+  requestPasswordReset,
+  verifyPasswordResetToken,
+  resetPasswordWithToken,
+} from '@draco/shared-api-client';
 import AccountPageHeader from '../../components/AccountPageHeader';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 interface PasswordResetProps {
   onResetSuccess?: () => void;
@@ -26,6 +32,7 @@ interface PasswordResetProps {
 
 const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId, next }) => {
   const router = useRouter();
+  const apiClient = useApiClient();
   const [activeStep, setActiveStep] = useState(0);
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
@@ -38,83 +45,103 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
   const steps = ['Request Reset', 'Verify Token', 'Set New Password'];
 
   const handleRequestReset = async () => {
-    if (!email) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
       setError('Please enter your email address');
       return;
     }
 
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await axios.post(`/api/passwordReset/request`, {
-        email,
-        testMode: true,
+      const result = await requestPasswordReset({
+        client: apiClient,
+        body: {
+          email: trimmedEmail,
+          testMode: true,
+        },
+        throwOnError: false,
       });
 
-      if (response.data.success) {
-        if (response.data.testData) {
-          setSuccess(`Password reset token generated (TEST MODE): ${response.data.testData.token}`);
-          setToken(response.data.testData.token);
+      const data = unwrapApiResult(result, 'Failed to request password reset. Please try again.');
+
+      if (data === true) {
+        setSuccess('If an account with that email exists, a password reset link has been sent.');
+        setActiveStep(1);
+        return;
+      }
+
+      if (typeof data === 'object' && data !== null && 'token' in data) {
+        const tokenData = data as { token: string; userId?: string; email?: string };
+        setSuccess(`Password reset token generated (TEST MODE): ${tokenData.token}`);
+        setToken(tokenData.token);
+        setActiveStep(1);
+        return;
+      }
+
+      if (typeof data === 'object' && data !== null && 'success' in data) {
+        const { success: succeeded, message } = data as { success: boolean; message?: string };
+        if (succeeded) {
+          setSuccess(
+            message ?? 'If an account with that email exists, a password reset link has been sent.',
+          );
           setActiveStep(1);
         } else {
-          setSuccess(response.data.message);
-          setActiveStep(1);
+          setError(message ?? 'Failed to request password reset.');
         }
-      } else {
-        setError(response.data.message || 'Failed to request password reset');
+        return;
       }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('An error occurred');
-      }
+
+      setSuccess('Password reset request processed. Check your email for further instructions.');
+      setActiveStep(1);
+    } catch (caughtError) {
+      console.error('Password reset request failed:', caughtError);
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'An error occurred while requesting a password reset.',
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerifyToken = async () => {
-    if (!token) {
+    const trimmedToken = token.trim();
+    if (!trimmedToken) {
       setError('Please enter the reset token');
       return;
     }
 
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await axios.get(`/api/passwordReset/verify/${token}`);
+      const result = await verifyPasswordResetToken({
+        client: apiClient,
+        body: { token: trimmedToken },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
+      const data = unwrapApiResult(result, 'Failed to verify the reset token. Please try again.');
+
+      if (data.valid) {
+        setToken(trimmedToken);
         setSuccess('Token verified successfully');
         setActiveStep(2);
       } else {
-        setError(response.data.message || 'Invalid token');
+        setError('Invalid or expired reset token');
       }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('An error occurred');
-      }
+    } catch (caughtError) {
+      console.error('Password reset token verification failed:', caughtError);
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'An error occurred while verifying the token.',
+      );
     } finally {
       setLoading(false);
     }
@@ -136,43 +163,50 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
       return;
     }
 
+    const trimmedToken = token.trim();
+    if (!trimmedToken) {
+      setError('Reset token is missing or invalid. Please request a new token.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await axios.post(`/api/passwordReset/reset`, {
-        token,
-        newPassword,
+      const result = await resetPasswordWithToken({
+        client: apiClient,
+        body: {
+          token: trimmedToken,
+          newPassword,
+        },
+        throwOnError: false,
       });
 
-      if (response.data.success) {
+      const data = unwrapApiResult(result, 'Failed to reset password. Please try again.');
+
+      if (data) {
         setSuccess('Password reset successfully! You can now log in with your new password.');
         if (onResetSuccess) {
           onResetSuccess();
         }
-        // Redirect to login after 2 seconds
         setTimeout(() => {
           router.push(
-            `/login${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`,
+            `/login${accountId ? `?accountId=${accountId}` : ''}${
+              next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''
+            }`,
           );
         }, 2000);
       } else {
-        setError(response.data.message || 'Failed to reset password');
+        setError('Failed to reset password. Please try again.');
       }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('An error occurred');
-      }
+    } catch (caughtError) {
+      console.error('Password reset failed:', caughtError);
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'An error occurred while resetting the password.',
+      );
     } finally {
       setLoading(false);
     }
@@ -334,7 +368,9 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
             <Typography variant="body2" color="text.secondary">
               Remember your password?{' '}
               <Link
-                href={`/login${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`}
+                href={`/login${accountId ? `?accountId=${accountId}` : ''}${
+                  next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''
+                }`}
                 sx={{ cursor: 'pointer' }}
               >
                 Back to Sign In
