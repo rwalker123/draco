@@ -1,6 +1,6 @@
 import { RegisterContext } from '../../openapiTypes.js';
 
-export const registerAuthEndpoints = ({ registry, schemaRefs, z }: RegisterContext) => {
+export const registerAuthEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
     AuthenticationErrorSchemaRef,
     InternalServerErrorSchemaRef,

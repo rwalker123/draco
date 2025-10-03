@@ -4,8 +4,7 @@ import { authRateLimit, passwordRateLimit } from '../middleware/rateLimitMiddlew
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
-import prisma from '../lib/prisma.js';
-import { RegisteredUserType, SignInCredentialsSchema } from '@draco/shared-schemas';
+import { SignInCredentialsSchema } from '@draco/shared-schemas';
 
 const router = Router();
 const authService = ServiceFactory.getAuthService();
