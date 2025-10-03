@@ -54,6 +54,9 @@ import {
   SignRosterMemberSchema,
   SponsorListSchema,
   SponsorSchema,
+  SeasonManagerListSchema,
+  SeasonManagerSchema,
+  SeasonManagerWithLeagueSchema,
   TeamManagerSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
@@ -114,6 +117,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RegisteredUserWithRolesSchema,
   );
   const RegisteredUserSchemaRef = registry.register('RegisteredUser', RegisteredUserSchema);
+  const SeasonManagerSchemaRef = registry.register('SeasonManager', SeasonManagerSchema);
+  const SeasonManagerListSchemaRef = registry.register(
+    'SeasonManagerList',
+    SeasonManagerListSchema,
+  );
+  const SeasonManagerWithLeagueSchemaRef = registry.register(
+    'SeasonManagerWithLeague',
+    SeasonManagerWithLeagueSchema,
+  );
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
   const UpsertTeamManagerSchemaRef = registry.register(
     'UpsertTeamManager',
@@ -317,6 +329,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ContactSchemaRef,
     BaseContactSchemaRef,
     ContactWithContactRolesSchemaRef,
+    SeasonManagerSchemaRef,
+    SeasonManagerListSchemaRef,
+    SeasonManagerWithLeagueSchemaRef,
     TeamManagerSchemaRef,
     UpsertTeamManagerSchemaRef,
     CreateContactSchemaRef,
