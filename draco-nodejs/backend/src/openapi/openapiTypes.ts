@@ -256,6 +256,26 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const StandingsLeagueSchemaRef = registry.register('StandingsLeague', StandingsLeagueSchema);
   const StandingsTeamSchemaRef = registry.register('StandingsTeam', StandingsTeamSchema);
+  const SeasonStandingsResponseSchemaRef = registry.registerComponent(
+    'schemas',
+    'SeasonStandingsResponse',
+    {
+      oneOf: [
+        {
+          type: 'array',
+          items: {
+            $ref: '#/components/schemas/StandingsLeague',
+          },
+        },
+        {
+          type: 'array',
+          items: {
+            $ref: '#/components/schemas/StandingsTeam',
+          },
+        },
+      ],
+    },
+  ).ref;
   const ContactPlayersWantedCreatorSchemaRef = registry.register(
     'ContactPlayersWantedCreator',
     ContactPlayersWantedCreatorSchema,
@@ -421,6 +441,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     TeamsWantedContactQuerySchemaRef,
     StandingsLeagueSchemaRef,
     StandingsTeamSchemaRef,
+    SeasonStandingsResponseSchemaRef,
     ContactPlayersWantedCreatorSchemaRef,
     BaseballPositionSchemaRef,
     ExperienceLevelSchemaRef,

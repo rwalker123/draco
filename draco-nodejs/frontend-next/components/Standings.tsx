@@ -15,6 +15,7 @@ import {
   Chip,
 } from '@mui/material';
 import { getSeasonStandings } from '@draco/shared-api-client';
+import type { SeasonStandingsResponse } from '@draco/shared-api-client';
 import { StandingsLeagueType, StandingsTeamType } from '@draco/shared-schemas';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -47,89 +48,6 @@ const formatTies = (value: number): string => {
   return value.toString();
 };
 
-const isStandingsLeagueArray = (payload: unknown): payload is StandingsLeagueType[] => {
-  return (
-    Array.isArray(payload) &&
-    payload.every(
-      (item) =>
-        item &&
-        typeof item === 'object' &&
-        'league' in item &&
-        'divisions' in item &&
-        Array.isArray((item as StandingsLeagueType).divisions),
-    )
-  );
-};
-
-const isStandingsTeamArray = (payload: unknown): payload is StandingsTeamType[] => {
-  return (
-    Array.isArray(payload) &&
-    payload.every((item) => item && typeof item === 'object' && 'team' in item)
-  );
-};
-
-const normalizeStandingsResponse = (payload: unknown): StandingsLeagueType[] => {
-  if (!Array.isArray(payload) || payload.length === 0) {
-    return [];
-  }
-
-  if (isStandingsLeagueArray(payload)) {
-    return payload;
-  }
-
-  if (isStandingsTeamArray(payload)) {
-    const leagueMap = new Map<
-      string,
-      {
-        info: StandingsLeagueType['league'];
-        divisions: Map<string, StandingsLeagueType['divisions'][number]>;
-      }
-    >();
-
-    payload.forEach((team) => {
-      const leagueId = team.league?.id ?? 'unassigned-league';
-      const leagueName = team.league?.name ?? 'Unassigned League';
-
-      let leagueEntry = leagueMap.get(leagueId);
-      if (!leagueEntry) {
-        leagueEntry = {
-          info: { id: leagueId, name: leagueName },
-          divisions: new Map(),
-        };
-        leagueMap.set(leagueId, leagueEntry);
-      }
-
-      const divisionId = team.division?.id ?? 'unassigned-division';
-      const divisionName = team.division?.name ?? 'Unassigned Division';
-
-      let divisionEntry = leagueEntry.divisions.get(divisionId);
-      if (!divisionEntry) {
-        divisionEntry = {
-          division: {
-            id: divisionId,
-            division: {
-              id: divisionId,
-              name: divisionName,
-            },
-            priority: 0,
-          },
-          teams: [],
-        };
-        leagueEntry.divisions.set(divisionId, divisionEntry);
-      }
-
-      divisionEntry.teams.push(team);
-    });
-
-    return Array.from(leagueMap.values()).map((entry) => ({
-      league: entry.info,
-      divisions: Array.from(entry.divisions.values()),
-    }));
-  }
-
-  return [];
-};
-
 export default function Standings({ accountId, seasonId, showHeader = true }: StandingsProps) {
   const apiClient = useApiClient();
   const [groupedStandings, setGroupedStandings] = useState<StandingsLeagueType[] | null>(null);
@@ -150,9 +68,9 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
         query: { grouped: true },
       });
 
-      const data = unwrapApiResult(result, 'Failed to load standings');
-      const normalized = normalizeStandingsResponse(data);
-      setGroupedStandings(normalized);
+      const data = unwrapApiResult<SeasonStandingsResponse>(result, 'Failed to load standings');
+
+      setGroupedStandings((data as StandingsLeagueType[]) ?? []);
     } catch (error) {
       console.error('Error loading standings:', error);
       setError('Failed to load standings');

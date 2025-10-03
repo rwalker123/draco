@@ -14,7 +14,7 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
     LeagueSeasonWithDivisionTeamsAndUnassignedSchemaRef,
     LeagueSetupSchemaRef,
     NotFoundErrorSchemaRef,
-    StandingsTeamSchemaRef,
+    SeasonStandingsResponseSchemaRef,
     UpsertDivisionSeasonSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
@@ -129,7 +129,7 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
           'Season standings in either grouped-by-league format or as a flat list of team records.',
         content: {
           'application/json': {
-            schema: StandingsTeamSchemaRef.array(),
+            schema: SeasonStandingsResponseSchemaRef,
           },
         },
       },

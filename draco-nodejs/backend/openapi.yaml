@@ -5,12 +5,15 @@ info:
 servers:
   - url: https://localhost:3001
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
   schemas:
+    SeasonStandingsResponse:
+      oneOf:
+        - type: array
+          items:
+            $ref: "#/components/schemas/StandingsLeague"
+        - type: array
+          items:
+            $ref: "#/components/schemas/StandingsTeam"
     RosterMember:
       type: object
       properties:
@@ -5756,6 +5759,11 @@ components:
           type: string
       required:
         - hasRole
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters: {}
 paths:
   /api/accounts/search:
@@ -9258,9 +9266,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/StandingsTeam"
+                $ref: "#/components/schemas/SeasonStandingsResponse"
         "500":
           description: Unexpected server error while retrieving season standings.
           content:

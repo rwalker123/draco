@@ -10,14 +10,23 @@
     }
   ],
   "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    },
     "schemas": {
+      "SeasonStandingsResponse": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StandingsLeague"
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StandingsTeam"
+            }
+          }
+        ]
+      },
       "RosterMember": {
         "type": "object",
         "properties": {
@@ -7839,6 +7848,13 @@
         ]
       }
     },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "parameters": {}
   },
   "paths": {
@@ -13408,10 +13424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/StandingsTeam"
-                  }
+                  "$ref": "#/components/schemas/SeasonStandingsResponse"
                 }
               }
             }
