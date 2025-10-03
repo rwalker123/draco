@@ -22,9 +22,13 @@ import {
   createEmailRecipientError,
   normalizeError,
 } from '../utils/errorHandling';
-import { searchContacts as apiSearchContacts } from '@draco/shared-api-client';
+import {
+  listSeasonLeagueSeasons,
+  searchContacts as apiSearchContacts,
+} from '@draco/shared-api-client';
 import { createApiClient } from '../lib/apiClientFactory';
 import { unwrapApiResult } from '../utils/apiResult';
+import { mapLeagueSetup } from '../utils/leagueSeasonMapper';
 
 // Season interface matching backend response
 export interface Season {
@@ -658,74 +662,70 @@ export class EmailRecipientService {
       return { success: false, error: headersResult.error };
     }
 
-    const params = new URLSearchParams();
-    if (includePlayerCounts) {
-      params.append('includePlayerCounts', 'true');
-    }
-    if (includeManagerCounts) {
-      params.append('includeManagerCounts', 'true');
-    }
-
-    const url = `/api/accounts/${accountId}/seasons/${seasonId}/leagues${params.toString() ? `?${params.toString()}` : ''}`;
+    const apiClient = createApiClient({ token: token || undefined });
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
+        const result = await listSeasonLeagueSeasons({
+          client: apiClient,
+          path: { accountId, seasonId },
+          query: {
+            includeTeams: true,
+            includeUnassignedTeams: true,
+            includePlayerCounts: includePlayerCounts || includeManagerCounts ? true : undefined,
+            includeManagerCounts: includeManagerCounts || undefined,
+          },
+          throwOnError: false,
         });
 
-        const data = await this.handleResponse<{
-          success: boolean;
-          data: {
-            leagueSeasons: Array<{
-              id: string;
-              leagueId: string;
-              leagueName: string;
-              accountId: string;
-              teamCount?: number;
-              playerCount?: number;
-              divisions?: Array<{
-                id: string;
-                name: string;
-                teamCount: number;
-              }>;
-            }>;
-          };
-        }>(response);
+        const data = unwrapApiResult(result, 'Failed to load leagues');
+        const mapped = mapLeagueSetup(data, accountId);
 
-        if (!data.data?.leagueSeasons || !Array.isArray(data.data.leagueSeasons)) {
+        if (!mapped.leagueSeasons || !Array.isArray(mapped.leagueSeasons)) {
           throw createEmailRecipientError(
             EmailRecipientErrorCode.INVALID_DATA,
             'Invalid leagues response format',
             {
-              details: { responseData: data },
               context: { operation: 'fetch_leagues', accountId, seasonId },
             },
           );
         }
 
-        // Transform backend league seasons to frontend League format
-        const leagues: League[] = data.data.leagueSeasons.map((ls) => ({
+        const seasonInfo = mapped.season ?? {
+          id: seasonId,
+          name: '',
+          accountId,
+        };
+
+        const leagues: League[] = mapped.leagueSeasons.map((ls) => ({
           id: ls.leagueId,
           name: ls.leagueName,
-          divisions: (ls.divisions || []).map((div) => ({
-            id: div.id,
-            name: div.name,
-            teams: [], // Teams would need to be fetched separately if needed
-            teamCount: div.teamCount,
-            totalPlayers: 0, // Would need to be calculated from team rosters
+          divisions: ls.divisions.map((division) => ({
+            id: division.divisionId,
+            name: division.divisionName,
+            teams: division.teams.map((team) => ({
+              id: team.id,
+              name: team.name,
+              playerCount: team.playerCount ?? 0,
+              leagueId: ls.leagueId,
+              leagueName: ls.leagueName,
+              divisionId: division.divisionId,
+              divisionName: division.divisionName,
+            })),
+            teamCount: division.teamCount,
+            totalPlayers: division.totalPlayers,
           })),
-          teamCount: ls.teamCount || 0,
-          totalPlayers: ls.playerCount || 0, // Use player count from API if available
-          seasonId: seasonId,
-          seasonName: '', // This would need to be fetched separately if needed
+          teamCount: ls.totalTeams,
+          totalPlayers: ls.totalPlayers,
+          seasonId: seasonInfo.id,
+          seasonName: seasonInfo.name,
         }));
 
         return leagues;
       },
       {
         operation: 'fetch_leagues',
-        additionalData: { endpoint: url },
+        additionalData: { endpoint: 'openapi:listSeasonLeagueSeasons' },
       },
     );
   }

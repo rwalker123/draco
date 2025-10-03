@@ -72,3 +72,4 @@ export type LeagueSeasonWithDivisionTeamsAndUnassignedType = z.infer<
   typeof LeagueSeasonWithDivisionTeamsAndUnassignedSchema
 >;
 export type LeagueSetupType = z.infer<typeof LeagueSetupSchema>;
+export type TeamSeasonWithPlayerCountType = z.infer<typeof TeamSeasonWithPlayerCountSchema>;

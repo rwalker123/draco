@@ -900,6 +900,10 @@ router.post(
       }
     } else {
       // Creating new division
+      if (!name || !name.trim()) {
+        throw new ValidationError('Division name is required to create a new division');
+      }
+
       const trimmedName = name.trim();
 
       // Check if division with this name already exists

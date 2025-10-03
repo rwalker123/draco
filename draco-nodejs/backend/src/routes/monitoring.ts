@@ -4,15 +4,19 @@ import { databaseConfig } from '../config/database.js';
 import prisma from '../lib/prisma.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router();
-
+const routeProtection = ServiceFactory.getRouteProtection();
 /**
  * GET /api/monitoring/health
  * Provides aggregated health details covering database connectivity, performance, and uptime.
  */
 router.get(
   '/health',
+  authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response) => {
     const startTime = Date.now();
 
@@ -65,6 +69,8 @@ router.get(
  */
 router.get(
   '/performance',
+  authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response) => {
     const windowMinutes = parseInt(req.query.window as string) || 5;
     const windowMs = windowMinutes * 60 * 1000;
@@ -117,6 +123,8 @@ router.get(
  */
 router.get(
   '/slow-queries',
+  authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const slowQueries = performanceMonitor.getSlowQueries(limit);
@@ -143,6 +151,8 @@ router.get(
  */
 router.get(
   '/connection-pool',
+  authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response) => {
     const metrics = getConnectionPoolMetrics();
 
@@ -197,6 +207,8 @@ function getConnectionPoolRecommendations(metrics: {
  */
 router.post(
   '/reset',
+  authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response) => {
     performanceMonitor.reset();
 
@@ -213,6 +225,8 @@ router.post(
  */
 router.get(
   '/config',
+  authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response) => {
     res.json({
       timestamp: DateUtils.formatDateTimeForResponse(new Date()),

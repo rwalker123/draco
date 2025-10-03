@@ -6242,10 +6242,7 @@
             "type": "integer",
             "nullable": true
           }
-        },
-        "required": [
-          "name"
-        ]
+        }
       },
       "ValidationError": {
         "type": "object",
@@ -12007,10 +12004,7 @@
                     "type": "integer",
                     "nullable": true
                   }
-                },
-                "required": [
-                  "name"
-                ]
+                }
               }
             }
           }
