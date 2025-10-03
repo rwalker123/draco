@@ -14,6 +14,7 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
     LeagueSeasonWithDivisionTeamsAndUnassignedSchemaRef,
     LeagueSetupSchemaRef,
     NotFoundErrorSchemaRef,
+    StandingsTeamSchemaRef,
     UpsertDivisionSeasonSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
@@ -72,6 +73,68 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
       },
       500: {
         description: 'Unexpected server error while fetching league seasons',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/seasons/:seasonId/standings
+   * Retrieve season standings optionally grouped by league and division.
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/standings',
+    operationId: 'getSeasonStandings',
+    summary: 'List season standings',
+    description: 'Retrieve team standings for a season with optional league/division grouping.',
+    tags: ['League Seasons'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'grouped',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+          default: false,
+        },
+        description: 'Return standings grouped by league and division when true.',
+      },
+    ],
+    responses: {
+      200: {
+        description:
+          'Season standings in either grouped-by-league format or as a flat list of team records.',
+        content: {
+          'application/json': {
+            schema: StandingsTeamSchemaRef.array(),
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while retrieving season standings.',
         content: {
           'application/json': {
             schema: InternalServerErrorSchemaRef,

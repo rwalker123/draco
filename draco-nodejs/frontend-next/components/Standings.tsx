@@ -14,40 +14,10 @@ import {
   Paper,
   Chip,
 } from '@mui/material';
-
-interface StandingsRow {
-  teamId: string;
-  teamName: string;
-  leagueId: string;
-  leagueName: string;
-  divisionId: string | null;
-  divisionName: string | null;
-  divisionPriority: number | null;
-  w: number;
-  l: number;
-  t: number;
-  pct: number;
-  gb: number;
-  divisionRecord: { w: number; l: number; t: number };
-  [key: string]: unknown;
-}
-
-interface GroupedStandingsResponse {
-  leagues: LeagueStandings[];
-}
-
-interface LeagueStandings {
-  leagueId: string;
-  leagueName: string;
-  divisions: DivisionStandings[];
-}
-
-interface DivisionStandings {
-  divisionId: string | null;
-  divisionName: string | null;
-  divisionPriority: number | null;
-  teams: StandingsRow[];
-}
+import { getSeasonStandings } from '@draco/shared-api-client';
+import { StandingsLeagueType, StandingsTeamType } from '@draco/shared-schemas';
+import { useApiClient } from '../hooks/useApiClient';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface StandingsProps {
   accountId: string;
@@ -56,30 +26,113 @@ interface StandingsProps {
   showHeader?: boolean;
 }
 
-const formatPercentage = (value: unknown): string => {
-  const num = typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
+const formatPercentage = (value: number): string => {
+  const num = Number.isFinite(value) ? value : 0;
   return num.toFixed(3);
 };
 
-const formatGamesBehind = (value: unknown): string => {
-  const num = typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
+const formatGamesBehind = (value: number): string => {
+  const num = Number.isFinite(value) ? value : 0;
   return num === 0 ? '-' : num.toFixed(1);
 };
 
-const formatDivisionRecord = (value: unknown): string => {
-  if (!value || typeof value !== 'object') return '';
-  const { w, l, t } = value as { w: number; l: number; t: number };
+const formatDivisionRecord = (value: StandingsTeamType['divisionRecord']): string => {
+  if (!value) return '';
+  const { w, l, t } = value;
   return t > 0 ? `${w}-${l}-${t}` : `${w}-${l}`;
 };
 
-const formatTies = (value: unknown): string => {
-  if (value === 0 || value === '0') return '0';
-  if (value == null || value === '') return '0';
-  return String(value);
+const formatTies = (value: number): string => {
+  if (!Number.isFinite(value)) return '0';
+  return value.toString();
+};
+
+const isStandingsLeagueArray = (payload: unknown): payload is StandingsLeagueType[] => {
+  return (
+    Array.isArray(payload) &&
+    payload.every(
+      (item) =>
+        item &&
+        typeof item === 'object' &&
+        'league' in item &&
+        'divisions' in item &&
+        Array.isArray((item as StandingsLeagueType).divisions),
+    )
+  );
+};
+
+const isStandingsTeamArray = (payload: unknown): payload is StandingsTeamType[] => {
+  return (
+    Array.isArray(payload) &&
+    payload.every((item) => item && typeof item === 'object' && 'team' in item)
+  );
+};
+
+const normalizeStandingsResponse = (payload: unknown): StandingsLeagueType[] => {
+  if (!Array.isArray(payload) || payload.length === 0) {
+    return [];
+  }
+
+  if (isStandingsLeagueArray(payload)) {
+    return payload;
+  }
+
+  if (isStandingsTeamArray(payload)) {
+    const leagueMap = new Map<
+      string,
+      {
+        info: StandingsLeagueType['league'];
+        divisions: Map<string, StandingsLeagueType['divisions'][number]>;
+      }
+    >();
+
+    payload.forEach((team) => {
+      const leagueId = team.league?.id ?? 'unassigned-league';
+      const leagueName = team.league?.name ?? 'Unassigned League';
+
+      let leagueEntry = leagueMap.get(leagueId);
+      if (!leagueEntry) {
+        leagueEntry = {
+          info: { id: leagueId, name: leagueName },
+          divisions: new Map(),
+        };
+        leagueMap.set(leagueId, leagueEntry);
+      }
+
+      const divisionId = team.division?.id ?? 'unassigned-division';
+      const divisionName = team.division?.name ?? 'Unassigned Division';
+
+      let divisionEntry = leagueEntry.divisions.get(divisionId);
+      if (!divisionEntry) {
+        divisionEntry = {
+          division: {
+            id: divisionId,
+            division: {
+              id: divisionId,
+              name: divisionName,
+            },
+            priority: 0,
+          },
+          teams: [],
+        };
+        leagueEntry.divisions.set(divisionId, divisionEntry);
+      }
+
+      divisionEntry.teams.push(team);
+    });
+
+    return Array.from(leagueMap.values()).map((entry) => ({
+      league: entry.info,
+      divisions: Array.from(entry.divisions.values()),
+    }));
+  }
+
+  return [];
 };
 
 export default function Standings({ accountId, seasonId, showHeader = true }: StandingsProps) {
-  const [groupedStandings, setGroupedStandings] = useState<GroupedStandingsResponse | null>(null);
+  const apiClient = useApiClient();
+  const [groupedStandings, setGroupedStandings] = useState<StandingsLeagueType[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,34 +143,30 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/standings?grouped=true`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+      const result = await getSeasonStandings({
+        client: apiClient,
+        throwOnError: false,
+        path: { accountId, seasonId },
+        query: { grouped: true },
+      });
 
-      if (response.ok) {
-        const data = await response.json();
-        setGroupedStandings(data.data || null);
-      } else {
-        throw new Error('Failed to fetch standings');
-      }
+      const data = unwrapApiResult(result, 'Failed to load standings');
+      const normalized = normalizeStandingsResponse(data);
+      setGroupedStandings(normalized);
     } catch (error) {
       console.error('Error loading standings:', error);
       setError('Failed to load standings');
+      setGroupedStandings(null);
     } finally {
       setLoading(false);
     }
-  }, [accountId, seasonId]);
+  }, [accountId, apiClient, seasonId]);
 
   useEffect(() => {
     loadStandings();
   }, [loadStandings]);
 
-  const sortTeams = (teams: StandingsRow[]): StandingsRow[] => {
+  const sortTeams = (teams: StandingsTeamType[]): StandingsTeamType[] => {
     return [...teams].sort((a, b) => {
       // Sort by winning percentage (descending), then by wins (descending)
       if (a.pct !== b.pct) {
@@ -145,7 +194,7 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
     );
   }
 
-  if (!loading && (!groupedStandings || groupedStandings.leagues.length === 0)) {
+  if (!loading && (!groupedStandings || groupedStandings.length === 0)) {
     return (
       <Box p={3}>
         <Typography variant="body1" color="text.secondary">
@@ -155,7 +204,7 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
     );
   }
 
-  const renderStandingsTable = (teams: StandingsRow[], isFirstTable: boolean = false) => (
+  const renderStandingsTable = (teams: StandingsTeamType[], isFirstTable: boolean = false) => (
     <TableContainer
       component={Paper}
       sx={{
@@ -195,7 +244,7 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
         <TableBody>
           {sortTeams(teams).map((team, index) => (
             <TableRow
-              key={team.teamId}
+              key={team.team.id}
               sx={{
                 '&:hover': { backgroundColor: 'action.hover' },
                 backgroundColor: index === 0 ? 'success.light' : 'inherit',
@@ -203,7 +252,7 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
             >
               <TableCell sx={{ minWidth: 200 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {team.teamName}
+                  {team.team.name ?? 'Unnamed Team'}
                   {index === 0 && (
                     <Chip
                       label="1st"
@@ -252,8 +301,8 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
 
     return (
       <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
-        {groupedStandings.leagues.map((league) => (
-          <Box key={league.leagueId} sx={{ mb: 5 }}>
+        {groupedStandings.map((league) => (
+          <Box key={league.league.id ?? 'no-league'} sx={{ mb: 5 }}>
             <Typography
               variant="h5"
               sx={{
@@ -267,15 +316,17 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
                 letterSpacing: '0.05em',
               }}
             >
-              {league.leagueName}
+              {league.league.name ?? 'Unnamed League'}
             </Typography>
 
             {league.divisions.map((division) => {
               const currentIsFirst = isFirstTable;
               isFirstTable = false;
+              const divisionKey = division.division.id ?? 'no-division';
+              const divisionName = division.division.division?.name ?? 'Unassigned Division';
 
               return (
-                <Box key={division.divisionId || 'no-division'} sx={{ mb: 4 }}>
+                <Box key={divisionKey} sx={{ mb: 4 }}>
                   <Typography
                     variant="h6"
                     sx={{
@@ -293,7 +344,7 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
                       minWidth: '200px',
                     }}
                   >
-                    {division.divisionName}
+                    {divisionName}
                   </Typography>
 
                   {division.teams.length > 0 ? (
