@@ -7,16 +7,18 @@ import React, {
   ReactNode,
   useCallback,
 } from 'react';
-import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { ROLE_NAME_TO_ID } from '../utils/roleUtils';
 import { useParams } from 'next/navigation';
-import { ContactRoleType } from '@draco/shared-schemas';
+import { getCurrentUserRoles, getRoleMetadata } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../utils/apiResult';
+import { useApiClient } from '../hooks/useApiClient';
+import { RoleMetadataSchemaType, RoleWithContactType } from '@draco/shared-schemas';
 
 interface UserRoles {
   accountId: string;
   globalRoles: string[];
-  contactRoles: ContactRoleType[];
+  contactRoles: RoleWithContactType[];
 }
 
 export interface RoleContextType {
@@ -40,13 +42,6 @@ interface RoleContext {
   seasonId?: string;
 }
 
-interface RoleMetadata {
-  version: string;
-  timestamp: string;
-  hierarchy: Record<string, string[]>;
-  permissions: Record<string, { roleId: string; permissions: string[]; context: string }>;
-}
-
 // Cache keys for localStorage
 const ROLE_METADATA_CACHE_KEY = 'draco_role_metadata';
 const ROLE_METADATA_VERSION_KEY = 'draco_role_metadata_version';
@@ -56,8 +51,9 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const { user, token, loading: authLoading } = useAuth();
   const [userRoles, setUserRoles] = useState<UserRoles | null>(null);
-  const [roleMetadata, setRoleMetadata] = useState<RoleMetadata | null>(null);
+  const [roleMetadata, setRoleMetadata] = useState<RoleMetadataSchemaType | null>(null);
   const { accountId } = useParams();
+  const apiClient = useApiClient();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
 
   // Initialize loading as true if we have auth but need to fetch roles
@@ -110,45 +106,37 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   }, [authLoading, user, token, userRoles]);
 
   // Fetch role metadata from API and cache in localStorage
-  const fetchRoleMetadata = useCallback(async (): Promise<RoleMetadata | null> => {
+  const fetchRoleMetadata = useCallback(async (): Promise<RoleMetadataSchemaType | null> => {
     if (!token) return null;
 
     try {
-      // Check if we have cached metadata
       const cachedMetadata = localStorage.getItem(ROLE_METADATA_CACHE_KEY);
       const cachedVersion = localStorage.getItem(ROLE_METADATA_VERSION_KEY);
 
       if (cachedMetadata && cachedVersion) {
-        const parsedMetadata: RoleMetadata = JSON.parse(cachedMetadata);
-        // Use cached data if version matches
+        const parsedMetadata: RoleMetadataSchemaType = JSON.parse(cachedMetadata);
         if (parsedMetadata.version === cachedVersion) {
           return parsedMetadata;
         }
       }
 
-      // Fetch fresh metadata from API
-      const response = await axios.get('/api/roles/roles/metadata', {
-        headers: { Authorization: `Bearer ${token}` },
+      const result = await getRoleMetadata({
+        client: apiClient,
+        throwOnError: false,
       });
 
-      if (response.data.success) {
-        const metadata: RoleMetadata = response.data.data;
+      const metadata = unwrapApiResult(result, 'Failed to fetch role metadata');
 
-        // Cache the metadata
-        localStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
-        localStorage.setItem(ROLE_METADATA_VERSION_KEY, metadata.version);
+      localStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
+      localStorage.setItem(ROLE_METADATA_VERSION_KEY, metadata.version);
 
-        return metadata;
-      } else {
-        throw new Error(response.data.message || 'Failed to fetch role metadata');
-      }
+      return metadata;
     } catch (err: unknown) {
       console.error('Error fetching role metadata:', err);
-      // If API fails, show error and disable role checking
       setError('Failed to load role permissions. Some features may be restricted.');
       return null;
     }
-  }, [token]);
+  }, [token, apiClient]);
 
   const fetchUserRoles = useCallback(
     async (accountId?: string) => {
@@ -165,23 +153,19 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
           setRoleMetadata(metadata);
         }
 
-        const url = accountId
-          ? `/api/roles/user-roles?accountId=${accountId}`
-          : `/api/roles/user-roles`;
-
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
+        const result = await getCurrentUserRoles({
+          client: apiClient,
+          throwOnError: false,
+          query: accountId ? { accountId } : undefined,
         });
 
-        if (response.data.success) {
-          setUserRoles({
-            accountId: response.data.data.accountId,
-            globalRoles: response.data.data.globalRoles || [],
-            contactRoles: response.data.data.contactRoles || [],
-          });
-        } else {
-          setError(response.data.message || 'Failed to fetch user roles');
-        }
+        const data = unwrapApiResult(result, 'Failed to fetch user roles');
+
+        setUserRoles((previous) => ({
+          accountId: data.contactRoles?.[0]?.accountId ?? accountId ?? previous?.accountId ?? '',
+          globalRoles: data.globalRoles ?? [],
+          contactRoles: data.contactRoles ?? [],
+        }));
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to fetch user roles');
         setUserRoles(null);
@@ -190,7 +174,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         setInitialized(true);
       }
     },
-    [token, fetchRoleMetadata],
+    [token, apiClient, fetchRoleMetadata],
   );
 
   useEffect(() => {
@@ -216,7 +200,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     // Convert role name to ID if needed
     const actualRoleId = normalizeRoleId(ROLE_NAME_TO_ID[roleId] || roleId);
 
-    const matchesContext = (contactRole: ContactRoleType) => {
+    const matchesContext = (contactRole: RoleWithContactType) => {
       if (context?.accountId && userRoles.accountId !== context.accountId) {
         return false;
       }

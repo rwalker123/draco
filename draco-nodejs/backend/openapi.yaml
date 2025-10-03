@@ -481,6 +481,103 @@ components:
         - id
         - firstName
         - lastName
+    ContactWithContactRoles:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        userId:
+          type: string
+          maxLength: 50
+        photoUrl:
+          type: string
+          format: uri
+        contactDetails:
+          type: object
+          properties:
+            phone1:
+              type: string
+              nullable: true
+              default: ""
+            phone2:
+              type: string
+              nullable: true
+              default: ""
+            phone3:
+              type: string
+              nullable: true
+              default: ""
+            streetAddress:
+              type: string
+              nullable: true
+              maxLength: 100
+              default: ""
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            zip:
+              type: string
+              nullable: true
+              maxLength: 10
+              default: ""
+            dateOfBirth:
+              type: string
+              nullable: true
+              default: ""
+        roles:
+          type: array
+          items:
+            type: object
+            properties:
+              roleId:
+                type: string
+                maxLength: 50
+              roleName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              roleData:
+                type: string
+                pattern: ^d+$
+              contextName:
+                type: string
+                maxLength: 50
+              id:
+                type: string
+                pattern: ^d+$
+            required:
+              - roleId
+              - roleData
+              - id
+      required:
+        - id
+        - firstName
+        - lastName
+        - roles
     ContactValidationWithSignIn:
       type: object
       properties:
@@ -562,6 +659,135 @@ components:
         - validationType
         - userName
         - password
+    RegisteredUserWithRoles:
+      type: object
+      properties:
+        userId:
+          type: string
+        userName:
+          type: string
+          maxLength: 100
+          format: email
+        token:
+          type: string
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            middleName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            userId:
+              type: string
+              maxLength: 50
+            photoUrl:
+              type: string
+              format: uri
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+                streetAddress:
+                  type: string
+                  nullable: true
+                  maxLength: 100
+                  default: ""
+                city:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                state:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                zip:
+                  type: string
+                  nullable: true
+                  maxLength: 10
+                  default: ""
+                dateOfBirth:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+        globalRoles:
+          type: array
+          items:
+            type: string
+        contactRoles:
+          type: array
+          items:
+            type: object
+            properties:
+              roleId:
+                type: string
+                maxLength: 50
+              roleName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              roleData:
+                type: string
+                pattern: ^d+$
+              contextName:
+                type: string
+                maxLength: 50
+              id:
+                type: string
+                pattern: ^d+$
+              accountId:
+                type: string
+                pattern: ^d+$
+              contact:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                required:
+                  - id
+            required:
+              - roleId
+              - roleData
+              - id
+              - accountId
+              - contact
+      required:
+        - userId
+        - userName
+        - globalRoles
+        - contactRoles
     RegisteredUser:
       type: object
       properties:
@@ -1332,6 +1558,39 @@ components:
         - roleId
         - roleData
         - id
+    BaseRole:
+      type: object
+      properties:
+        roleId:
+          type: string
+          maxLength: 50
+        roleName:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - roleId
+    RoleCheck:
+      type: object
+      properties:
+        userId:
+          type: string
+          maxLength: 50
+        roleId:
+          type: string
+          maxLength: 50
+        hasRole:
+          type: boolean
+        roleLevel:
+          type: string
+          maxLength: 50
+        context:
+          type: string
+          pattern: ^d+$
+      required:
+        - userId
+        - roleId
+        - hasRole
     Account:
       type: object
       properties:
@@ -1926,6 +2185,45 @@ components:
         - teamManagers
       title: AutomaticRoleHolders
       description: Automatic role holders
+    RoleMetadata:
+      type: object
+      properties:
+        version:
+          type: string
+          maxLength: 20
+        timestamp:
+          type: string
+          nullable: true
+          maxLength: 50
+        hierarchy:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        permissions:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              roleId:
+                type: string
+              permissions:
+                type: array
+                items:
+                  type: string
+                  maxLength: 100
+              context:
+                type: string
+            required:
+              - roleId
+              - permissions
+              - context
+      required:
+        - version
+        - timestamp
+        - hierarchy
+        - permissions
     CreateAccount:
       type: object
       properties:
@@ -11415,6 +11713,193 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/roles/user-roles:
+    get:
+      description: Get current user's roles
+      operationId: getCurrentUserRoles
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Current user's roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredUserWithRoles"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/roles/check-role:
+    get:
+      description: Check if current user has a specific role
+      operationId: checkUserRole
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - name: roleId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+        - name: leagueId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Role check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleCheck"
+        "400":
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/roles/role-ids:
+    get:
+      description: Get all available roles
+      operationId: listRoleIdentifiers
+      tags:
+        - Users
+      responses:
+        "200":
+          description: Available roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BaseRole"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/roles/account-users/{accountId}:
+    get:
+      description: Get all users with roles in a specific account
+      operationId: listAccountUsersWithRoles
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Users with roles for the account
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContactWithContactRoles"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/roles/roles/metadata:
+    get:
+      description: Get role metadata for frontend caching
+      operationId: getRoleMetadata
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      responses:
+        "200":
+          description: Role metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleMetadata"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
         "500":
           description: Internal server error
           content:

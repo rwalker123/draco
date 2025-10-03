@@ -16,14 +16,17 @@ import {
   AuthenticationErrorSchema,
   AuthorizationErrorSchema,
   AutomaticRoleHoldersSchema,
+  BaseRoleSchema,
   AttachmentUploadResult,
   BaseballPositionSchema,
   ConflictErrorSchema,
   ContactPlayersWantedCreatorSchema,
   ContactSchema,
   ContactRoleSchema,
+  ContactWithContactRolesSchema,
   BaseContactSchema,
   ContactValidationWithSignInSchema,
+  RegisteredUserWithRolesSchema,
   RegisteredUserSchema,
   CreateAccountSchema,
   CreateContactSchema,
@@ -44,6 +47,8 @@ import {
   PlayersWantedClassifiedPagedSchema,
   PlayersWantedClassifiedSchema,
   PollVoteRequestSchema,
+  RoleCheckSchema,
+  RoleMetadataSchema,
   RosterMemberSchema,
   RosterPlayerSchema,
   SignRosterMemberSchema,
@@ -95,9 +100,17 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const SignRosterMemberSchemaRef = registry.register('SignRosterMember', SignRosterMemberSchema);
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
   const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
+  const ContactWithContactRolesSchemaRef = registry.register(
+    'ContactWithContactRoles',
+    ContactWithContactRolesSchema,
+  );
   const ContactValidationWithSignInSchemaRef = registry.register(
     'ContactValidationWithSignIn',
     ContactValidationWithSignInSchema,
+  );
+  const RegisteredUserWithRolesSchemaRef = registry.register(
+    'RegisteredUserWithRoles',
+    RegisteredUserWithRolesSchema,
   );
   const RegisteredUserSchemaRef = registry.register('RegisteredUser', RegisteredUserSchema);
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
@@ -128,6 +141,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const PagedContactSchemaRef = registry.register('PagedContact', PagedContactSchema);
   const ContactRoleSchemaRef = registry.register('ContactRole', ContactRoleSchema);
+  const BaseRoleSchemaRef = registry.register('BaseRole', BaseRoleSchema);
+  const RoleCheckSchemaRef = registry.register('RoleCheck', RoleCheckSchema);
   const AccountSchemaRef = registry.register('Account', AccountSchema);
   const AccountSearchQuerySchemaRef = registry.register(
     'AccountSearchQuery',
@@ -149,6 +164,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'AutomaticRoleHolders',
     AutomaticRoleHoldersSchema,
   );
+  const RoleMetadataSchemaRef = registry.register('RoleMetadata', RoleMetadataSchema);
   const CreateAccountSchemaRef = registry.register('CreateAccount', CreateAccountSchema);
   const AccountNameSchemaRef = registry.register('AccountName', AccountNameSchema);
   const AccountHeaderSchemaRef = registry.register('AccountHeader', AccountHeaderSchema);
@@ -298,6 +314,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SignRosterMemberSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
+    ContactWithContactRolesSchemaRef,
     TeamManagerSchemaRef,
     UpsertTeamManagerSchemaRef,
     CreateContactSchemaRef,
@@ -310,7 +327,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     EmailTemplatesListSchemaRef,
     AttachmentUploadResultSchemaRef,
     ContactRoleSchemaRef,
+    BaseRoleSchemaRef,
+    RoleCheckSchemaRef,
     RegisteredUserSchemaRef,
+    RegisteredUserWithRolesSchemaRef,
     ContactValidationWithSignInSchemaRef,
     PagedContactSchemaRef,
     AccountSchemaRef,
@@ -327,6 +347,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreateAccountUrlSchemaRef,
     AccountTwitterSettingsSchemaRef,
     AutomaticRoleHoldersSchemaRef,
+    RoleMetadataSchemaRef,
     SponsorSchemaRef,
     SponsorListSchemaRef,
     CreateSponsorSchemaRef,

@@ -9,6 +9,13 @@ import {
   ContactRoleType,
   ContactSearchParamsType,
 } from '@draco/shared-schemas';
+import {
+  getCurrentUserRoles as apiGetCurrentUserRoles,
+  listRoleIdentifiers,
+} from '@draco/shared-api-client';
+import type { Client } from '@draco/shared-api-client/generated/client';
+import { createApiClient } from '../lib/apiClientFactory';
+import { unwrapApiResult } from '../utils/apiResult';
 import qs from 'qs';
 
 // Pagination interface for API responses
@@ -26,9 +33,11 @@ interface PaginationInfo {
  */
 export class UserManagementService {
   private token: string;
+  private client: Client;
 
   constructor(token: string) {
     this.token = token;
+    this.client = createApiClient({ token });
   }
 
   /**
@@ -106,23 +115,17 @@ export class UserManagementService {
    * Fetch available roles
    */
   async fetchRoles(): Promise<Role[]> {
-    const response = await fetch('/api/roles/role-ids', {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
+    const result = await listRoleIdentifiers({
+      client: this.client,
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to load roles');
-    }
+    const roles = unwrapApiResult(result, 'Failed to load roles');
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error('Failed to load roles');
-    }
-
-    return data.data.roles || [];
+    return roles.map((role) => ({
+      id: role.roleId,
+      name: role.roleName ?? role.roleId,
+    }));
   }
 
   /**
@@ -184,23 +187,29 @@ export class UserManagementService {
       accountId: string;
     }>;
   }> {
-    const response = await fetch(`/api/roles/user-roles?accountId=${accountId}`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
+    const result = await apiGetCurrentUserRoles({
+      client: this.client,
+      throwOnError: false,
+      query: {
+        accountId,
       },
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to load user roles');
-    }
+    const data = unwrapApiResult(result, 'Failed to load user roles');
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error('Failed to load user roles');
-    }
-
-    return data.data;
+    return {
+      userId: data.userId,
+      username: data.userName,
+      accountId: data.contactRoles?.[0]?.accountId ?? accountId,
+      globalRoles: data.globalRoles ?? [],
+      contactRoles: (data.contactRoles ?? []).map((role) => ({
+        id: role.id,
+        contactId: role.contact?.id ?? '',
+        roleId: role.roleId,
+        roleData: role.roleData,
+        accountId: role.accountId ?? accountId,
+      })),
+    };
   }
 
   /**
