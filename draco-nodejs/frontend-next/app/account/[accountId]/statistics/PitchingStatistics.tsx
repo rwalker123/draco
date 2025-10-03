@@ -14,36 +14,11 @@ import {
 } from '@mui/material';
 import StatisticsTable, { formatERA, formatIPDecimal } from './StatisticsTable';
 import type { ColumnConfig } from './StatisticsTable';
+import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import { fetchPitchingStatistics } from '../../../../services/statisticsService';
 
-interface PitchingStatsRow {
-  playerId: string;
-  playerName: string;
-  teams?: string[];
-  teamName: string;
-  ip: number;
-  ip2: number; // partial innings (outs)
-  w: number;
-  l: number;
-  s: number; // saves
-  h: number;
-  r: number;
-  er: number;
-  bb: number;
-  so: number;
-  hr: number;
-  bf: number; // batters faced
-  wp: number; // wild pitches
-  hbp: number;
-  // Calculated fields
-  era: number | string;
-  whip: number | string;
-  k9: number | string;
-  bb9: number | string;
-  oba: number | string; // opponent batting average
-  slg: number | string; // opponent slugging
-  ipDecimal: number | string; // innings pitched as decimal
-  [key: string]: unknown;
-}
+type PitchingStatsRow = PlayerPitchingStatsType;
 
 interface StatisticsFilters {
   seasonId: string;
@@ -119,6 +94,7 @@ const PITCHING_COLUMNS: ColumnConfig<PitchingStatsRow>[] = [
 ];
 
 export default function PitchingStatistics({ accountId, filters }: PitchingStatisticsProps) {
+  const apiClient = useApiClient();
   const [stats, setStats] = useState<PitchingStatsRow[]>([]);
   const [previousStats, setPreviousStats] = useState<PitchingStatsRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -129,20 +105,13 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
   const [pageSize, setPageSize] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    if (filters.leagueId && filters.leagueId !== '') {
-      const timeoutId = setTimeout(() => {
-        loadPitchingStats();
-      }, 50); // Short debounce for all operations
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      setStats([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sortField, sortOrder, page, pageSize, accountId]);
-
   const loadPitchingStats = useCallback(async () => {
+    if (!filters.leagueId) {
+      setStats([]);
+      setPreviousStats([]);
+      return;
+    }
+
     // Store current stats as previous before loading
     if (stats.length > 0) {
       setPreviousStats(stats);
@@ -158,46 +127,60 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
       };
       const backendSortField = sortFieldMap[String(sortField)] || String(sortField);
 
-      const params = new URLSearchParams({
-        sortBy: backendSortField,
-        sortOrder,
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-        ...(filters.divisionId && filters.divisionId !== '0' && { divisionId: filters.divisionId }),
-        ...(filters.isHistorical && { historical: 'true' }),
-      });
-
-      const response = await fetch(
-        `/api/accounts/${accountId}/statistics/pitching/${filters.leagueId}?${params}`,
+      const statsData = await fetchPitchingStatistics(
+        accountId,
+        filters.leagueId,
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          divisionId: filters.divisionId,
+          isHistorical: filters.isHistorical,
+          page,
+          pageSize,
+          sortField: backendSortField,
+          sortOrder,
         },
+        { client: apiClient },
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        const statsData = data.data || [];
+      // Atomic swap - new data replaces everything instantly
+      setStats(statsData);
+      setPreviousStats([]); // Clear previous data after successful load
 
-        // Atomic swap - new data replaces everything instantly
-        setStats(statsData);
-        setPreviousStats([]); // Clear previous data after successful load
-
-        // Calculate total pages (this would ideally come from the API)
-        // For now, assume there might be more data if we get a full page
-        const hasMore = statsData.length === pageSize;
-        setTotalPages(hasMore ? page + 1 : page);
-      } else {
-        throw new Error('Failed to fetch pitching statistics');
-      }
+      // Calculate total pages (this would ideally come from the API)
+      // For now, assume there might be more data if we get a full page
+      const hasMore = statsData.length === pageSize;
+      setTotalPages(hasMore ? page + 1 : page);
     } catch (error) {
       console.error('Error loading pitching statistics:', error);
-      setError('Failed to load pitching statistics');
+      const message = error instanceof Error ? error.message : 'Failed to load pitching statistics';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, [accountId, filters, sortField, sortOrder, page, pageSize, stats]);
+  }, [
+    accountId,
+    apiClient,
+    filters.divisionId,
+    filters.isHistorical,
+    filters.leagueId,
+    page,
+    pageSize,
+    sortField,
+    sortOrder,
+    stats,
+  ]);
+
+  useEffect(() => {
+    if (!filters.leagueId || filters.leagueId === '') {
+      setStats([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      loadPitchingStats();
+    }, 50);
+
+    return () => clearTimeout(timeoutId);
+  }, [filters.leagueId, loadPitchingStats]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {

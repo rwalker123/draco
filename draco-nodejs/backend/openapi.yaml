@@ -3635,6 +3635,384 @@ components:
             limit: 50
             skip: 0
             sortOrder: asc
+    PlayerBattingStats:
+      type: object
+      properties:
+        playerId:
+          type: string
+          pattern: ^d+$
+        playerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        teams:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        teamName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        ab:
+          type: number
+          minimum: 0
+        h:
+          type: number
+          minimum: 0
+        r:
+          type: number
+          minimum: 0
+        d:
+          type: number
+          minimum: 0
+        t:
+          type: number
+          minimum: 0
+        hr:
+          type: number
+          minimum: 0
+        rbi:
+          type: number
+          minimum: 0
+        bb:
+          type: number
+          minimum: 0
+        so:
+          type: number
+          minimum: 0
+        hbp:
+          type: number
+          minimum: 0
+        sb:
+          type: number
+          minimum: 0
+        sf:
+          type: number
+          minimum: 0
+        sh:
+          type: number
+          minimum: 0
+        avg:
+          type: number
+          minimum: 0
+        obp:
+          type: number
+          minimum: 0
+        slg:
+          type: number
+          minimum: 0
+        ops:
+          type: number
+          minimum: 0
+        tb:
+          type: number
+          minimum: 0
+        pa:
+          type: number
+          minimum: 0
+      required:
+        - playerId
+        - playerName
+        - teamName
+        - ab
+        - h
+        - r
+        - d
+        - t
+        - hr
+        - rbi
+        - bb
+        - so
+        - hbp
+        - sb
+        - sf
+        - sh
+        - avg
+        - obp
+        - slg
+        - ops
+        - tb
+        - pa
+    PlayerPitchingStats:
+      type: object
+      properties:
+        playerId:
+          type: string
+          pattern: ^d+$
+        playerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        teams:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        teamName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        ip:
+          type: number
+          minimum: 0
+        ip2:
+          type: number
+          minimum: 0
+        w:
+          type: number
+          minimum: 0
+        l:
+          type: number
+          minimum: 0
+        s:
+          type: number
+          minimum: 0
+        h:
+          type: number
+          minimum: 0
+        r:
+          type: number
+          minimum: 0
+        er:
+          type: number
+          minimum: 0
+        bb:
+          type: number
+          minimum: 0
+        so:
+          type: number
+          minimum: 0
+        hr:
+          type: number
+          minimum: 0
+        bf:
+          type: number
+          minimum: 0
+        wp:
+          type: number
+          minimum: 0
+        hbp:
+          type: number
+          minimum: 0
+        era:
+          type: number
+          minimum: 0
+        whip:
+          type: number
+          minimum: 0
+        k9:
+          type: number
+          minimum: 0
+        bb9:
+          type: number
+          minimum: 0
+        oba:
+          type: number
+          minimum: 0
+        slg:
+          type: number
+          minimum: 0
+        ipDecimal:
+          type: number
+          minimum: 0
+      required:
+        - playerId
+        - playerName
+        - teamName
+        - ip
+        - ip2
+        - w
+        - l
+        - s
+        - h
+        - r
+        - er
+        - bb
+        - so
+        - hr
+        - bf
+        - wp
+        - hbp
+        - era
+        - whip
+        - k9
+        - bb9
+        - oba
+        - slg
+        - ipDecimal
+    BattingStatisticsFilters:
+      type: object
+      properties:
+        leagueId:
+          type: string
+        divisionId:
+          type: string
+        teamId:
+          type: string
+        isHistorical:
+          type: boolean
+          default: false
+        includeAllGameTypes:
+          type: boolean
+          default: false
+        page:
+          type: string
+          default: 1
+        pageSize:
+          type: string
+          default: 50
+        minAB:
+          type: string
+          default: 10
+        sortField:
+          type: string
+          default: avg
+        sortOrder:
+          type: string
+          enum:
+            - asc
+            - desc
+          default: desc
+    PitchingStatisticsFilters:
+      type: object
+      properties:
+        leagueId:
+          type: string
+        divisionId:
+          type: string
+        teamId:
+          type: string
+        isHistorical:
+          type: boolean
+          default: false
+        includeAllGameTypes:
+          type: boolean
+          default: false
+        page:
+          type: string
+          default: 1
+        pageSize:
+          type: string
+          default: 50
+        minIP:
+          type: string
+          default: 1
+        sortField:
+          type: string
+          default: era
+        sortOrder:
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+    LeaderStatisticsFilters:
+      type: object
+      properties:
+        leagueId:
+          type: string
+        divisionId:
+          type: string
+        teamId:
+          type: string
+        isHistorical:
+          type: boolean
+          default: false
+        includeAllGameTypes:
+          type: boolean
+          default: false
+        page:
+          type: string
+          default: 1
+        pageSize:
+          type: string
+          default: 50
+        minAB:
+          type: string
+          default: 0
+        minIP:
+          type: string
+          default: 0
+        limit:
+          type: string
+          default: 5
+    LeaderRow:
+      type: object
+      properties:
+        playerId:
+          type: string
+          pattern: ^d+$
+        playerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        teams:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        teamName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        statValue:
+          type: number
+          minimum: 0
+        category:
+          type: string
+        rank:
+          type: number
+        isTie:
+          type: boolean
+        tieCount:
+          type: number
+      required:
+        - playerId
+        - playerName
+        - teamName
+        - statValue
+        - category
+        - rank
+    LeaderCategories:
+      type: object
+      properties:
+        batting:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+              format:
+                type: string
+            required:
+              - key
+              - label
+              - format
+        pitching:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+              format:
+                type: string
+            required:
+              - key
+              - label
+              - format
+      required:
+        - batting
+        - pitching
     BaseballPosition:
       type: object
       properties:
@@ -13219,6 +13597,349 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/statistics/leader-categories:
+    get:
+      operationId: getLeaderCategories
+      summary: Get leader categories
+      description: Retrieve configured batting and pitching leader categories for an
+        account.
+      tags:
+        - Statistics
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Leader categories retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderCategories"
+        "400":
+          description: Invalid account id provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/statistics/batting/{leagueId}:
+    get:
+      operationId: listBattingStatistics
+      summary: List batting statistics
+      description: Fetch batting statistics for a league, supporting optional
+        division, team, and historical filters.
+      tags:
+        - Statistics
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: leagueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: string
+          required: false
+          name: leagueId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: divisionId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: teamId
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: isHistorical
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: includeAllGameTypes
+          in: query
+        - schema:
+            type: string
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: string
+            default: 50
+          required: false
+          name: pageSize
+          in: query
+        - schema:
+            type: string
+            default: 10
+          required: false
+          name: minAB
+          in: query
+        - schema:
+            type: string
+            default: avg
+          required: false
+          name: sortField
+          in: query
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          required: false
+          name: sortOrder
+          in: query
+      responses:
+        "200":
+          description: Batting statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerBattingStats"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/statistics/pitching/{leagueId}:
+    get:
+      operationId: listPitchingStatistics
+      summary: List pitching statistics
+      description: Fetch pitching statistics for a league, supporting optional
+        division, team, and historical filters.
+      tags:
+        - Statistics
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: leagueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: string
+          required: false
+          name: leagueId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: divisionId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: teamId
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: isHistorical
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: includeAllGameTypes
+          in: query
+        - schema:
+            type: string
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: string
+            default: 50
+          required: false
+          name: pageSize
+          in: query
+        - schema:
+            type: string
+            default: 1
+          required: false
+          name: minIP
+          in: query
+        - schema:
+            type: string
+            default: era
+          required: false
+          name: sortField
+          in: query
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+          required: false
+          name: sortOrder
+          in: query
+      responses:
+        "200":
+          description: Pitching statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerPitchingStats"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/statistics/leaders/{leagueId}:
+    get:
+      operationId: listStatisticalLeaders
+      summary: List statistical leaders
+      description: Retrieve statistical leaders for a category within a league with
+        optional filters and limits.
+      tags:
+        - Statistics
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: leagueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: category
+          in: query
+          required: true
+          description: "Statistic category key (for example: avg, era, hr)."
+          schema:
+            type: string
+        - schema:
+            type: string
+          required: false
+          name: leagueId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: divisionId
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: teamId
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: isHistorical
+          in: query
+        - schema:
+            type: boolean
+            default: false
+          required: false
+          name: includeAllGameTypes
+          in: query
+        - schema:
+            type: string
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: string
+            default: 50
+          required: false
+          name: pageSize
+          in: query
+        - schema:
+            type: string
+            default: 0
+          required: false
+          name: minAB
+          in: query
+        - schema:
+            type: string
+            default: 0
+          required: false
+          name: minIP
+          in: query
+        - schema:
+            type: string
+            default: 5
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Leader board retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderRow"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
         "500":
           description: Internal server error
           content:
