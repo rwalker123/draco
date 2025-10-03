@@ -10,14 +10,23 @@
     }
   ],
   "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    },
     "schemas": {
+      "SeasonStandingsResponse": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StandingsLeague"
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StandingsTeam"
+            }
+          }
+        ]
+      },
       "RosterMember": {
         "type": "object",
         "properties": {
@@ -4539,6 +4548,283 @@
         "title": "TeamsWantedContactQuery",
         "description": "Query parameters used to request Teams Wanted contact information"
       },
+      "StandingsLeague": {
+        "type": "object",
+        "properties": {
+          "league": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "divisions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "division": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "division": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^d+$"
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    },
+                    "priority": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "division",
+                    "priority"
+                  ]
+                },
+                "teams": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "w": {
+                        "type": "number"
+                      },
+                      "l": {
+                        "type": "number"
+                      },
+                      "t": {
+                        "type": "number"
+                      },
+                      "team": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^d+$"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          }
+                        },
+                        "required": [
+                          "id"
+                        ]
+                      },
+                      "league": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^d+$"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ]
+                      },
+                      "division": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^d+$"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ]
+                      },
+                      "pct": {
+                        "type": "number"
+                      },
+                      "gb": {
+                        "type": "number"
+                      },
+                      "divisionRecord": {
+                        "type": "object",
+                        "properties": {
+                          "w": {
+                            "type": "number"
+                          },
+                          "l": {
+                            "type": "number"
+                          },
+                          "t": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "w",
+                          "l",
+                          "t"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "w",
+                      "l",
+                      "t",
+                      "team",
+                      "pct",
+                      "gb"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "division",
+                "teams"
+              ]
+            }
+          }
+        },
+        "required": [
+          "league",
+          "divisions"
+        ]
+      },
+      "StandingsTeam": {
+        "type": "object",
+        "properties": {
+          "w": {
+            "type": "number"
+          },
+          "l": {
+            "type": "number"
+          },
+          "t": {
+            "type": "number"
+          },
+          "team": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id"
+            ]
+          },
+          "league": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "division": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "pct": {
+            "type": "number"
+          },
+          "gb": {
+            "type": "number"
+          },
+          "divisionRecord": {
+            "type": "object",
+            "properties": {
+              "w": {
+                "type": "number"
+              },
+              "l": {
+                "type": "number"
+              },
+              "t": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "w",
+              "l",
+              "t"
+            ]
+          }
+        },
+        "required": [
+          "w",
+          "l",
+          "t",
+          "team",
+          "pct",
+          "gb"
+        ]
+      },
       "ContactPlayersWantedCreator": {
         "type": "object",
         "properties": {
@@ -7560,6 +7846,13 @@
         "required": [
           "hasRole"
         ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     },
     "parameters": {}
@@ -13076,6 +13369,68 @@
           },
           "500": {
             "description": "Unexpected server error while adding league to season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/standings": {
+      "get": {
+        "operationId": "getSeasonStandings",
+        "summary": "List season standings",
+        "description": "Retrieve team standings for a season with optional league/division grouping.",
+        "tags": [
+          "League Seasons"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "grouped",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Return standings grouped by league and division when true."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Season standings in either grouped-by-league format or as a flat list of team records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonStandingsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving season standings.",
             "content": {
               "application/json": {
                 "schema": {

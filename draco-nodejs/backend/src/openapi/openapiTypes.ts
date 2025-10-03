@@ -66,6 +66,8 @@ import {
   TeamsWantedContactQuerySchema,
   TeamsWantedOwnerClassifiedSchema,
   TeamsWantedPublicClassifiedPagedSchema,
+  StandingsLeagueSchema,
+  StandingsTeamSchema,
   UpsertPlayersWantedClassifiedSchema,
   UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
@@ -252,6 +254,28 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'TeamsWantedContactQuery',
     TeamsWantedContactQuerySchema,
   );
+  const StandingsLeagueSchemaRef = registry.register('StandingsLeague', StandingsLeagueSchema);
+  const StandingsTeamSchemaRef = registry.register('StandingsTeam', StandingsTeamSchema);
+  const SeasonStandingsResponseSchemaRef = registry.registerComponent(
+    'schemas',
+    'SeasonStandingsResponse',
+    {
+      oneOf: [
+        {
+          type: 'array',
+          items: {
+            $ref: '#/components/schemas/StandingsLeague',
+          },
+        },
+        {
+          type: 'array',
+          items: {
+            $ref: '#/components/schemas/StandingsTeam',
+          },
+        },
+      ],
+    },
+  ).ref;
   const ContactPlayersWantedCreatorSchemaRef = registry.register(
     'ContactPlayersWantedCreator',
     ContactPlayersWantedCreatorSchema,
@@ -415,6 +439,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     TeamsWantedAccessCodeSchemaRef,
     TeamsWantedContactInfoSchemaRef,
     TeamsWantedContactQuerySchemaRef,
+    StandingsLeagueSchemaRef,
+    StandingsTeamSchemaRef,
+    SeasonStandingsResponseSchemaRef,
     ContactPlayersWantedCreatorSchemaRef,
     BaseballPositionSchemaRef,
     ExperienceLevelSchemaRef,
