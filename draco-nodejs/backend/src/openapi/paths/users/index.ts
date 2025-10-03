@@ -115,7 +115,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         },
       },
       {
-        name: 'userId',
+        name: 'contactId',
         in: 'path',
         required: true,
         schema: {
@@ -149,7 +149,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       },
     },
     responses: {
-      204: {
+      200: {
         description: 'Role removed successfully',
         content: {
           'application/json': {
