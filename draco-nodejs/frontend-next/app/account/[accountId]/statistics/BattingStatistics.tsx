@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -93,17 +93,19 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
+  const statsRef = useRef<BattingStatsRow[]>([]);
 
   const loadBattingStats = useCallback(async () => {
     if (!filters.leagueId) {
       setStats([]);
+      statsRef.current = [];
       setPreviousStats([]);
       return;
     }
 
     // Store current stats as previous before loading
-    if (stats.length > 0) {
-      setPreviousStats(stats);
+    if (statsRef.current.length > 0) {
+      setPreviousStats(statsRef.current);
     }
 
     setLoading(true);
@@ -126,6 +128,7 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
 
       // Atomic swap - new data replaces everything instantly
       setStats(statsData);
+      statsRef.current = statsData;
       setPreviousStats([]); // Clear previous data after successful load
 
       // Calculate total pages (this would ideally come from the API)
@@ -149,12 +152,12 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
     pageSize,
     sortField,
     sortOrder,
-    stats,
   ]);
 
   useEffect(() => {
     if (!filters.leagueId || filters.leagueId === '') {
       setStats([]);
+      statsRef.current = [];
       return;
     }
 
