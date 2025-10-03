@@ -10,7 +10,15 @@ import {
   UpsertTeamSeasonType,
 } from '@draco/shared-schemas';
 import { TeamResponseFormatter } from '../responseFormatters/index.js';
-import { teamsseason, teams } from '@prisma/client';
+import { Prisma, teamsseason, teams } from '@prisma/client';
+import { dbTeamSeasonValidationResult } from '../repositories/types/dbTypes.js';
+
+export interface TeamValidationOptions {
+  includeTeams?: boolean;
+  includeDivisionSeason?: boolean;
+  includeLeagueSeason?: boolean;
+  customIncludes?: Prisma.teamsseasonInclude;
+}
 
 export class TeamService {
   private readonly teamRepository: ITeamRepository;
@@ -185,5 +193,86 @@ export class TeamService {
       name: leagueInfo.leagueseason.league.name,
       accountId: accountId.toString(),
     };
+  }
+
+  async validateTeamSeasonAccess(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    options: TeamValidationOptions = {},
+  ): Promise<dbTeamSeasonValidationResult> {
+    const include = this.buildTeamValidationInclude(options);
+    const teamSeason = await this.teamRepository.findTeamSeasonForValidation(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      include,
+    );
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team not found or access denied');
+    }
+
+    return teamSeason;
+  }
+
+  async validateTeamSeasonWithTeamDetails(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeasonValidationResult> {
+    return this.validateTeamSeasonAccess(teamSeasonId, seasonId, accountId, {
+      includeTeams: true,
+      includeLeagueSeason: true,
+    });
+  }
+
+  async validateTeamSeasonWithDivision(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeasonValidationResult> {
+    return this.validateTeamSeasonAccess(teamSeasonId, seasonId, accountId, {
+      includeTeams: true,
+      includeDivisionSeason: true,
+      includeLeagueSeason: true,
+    });
+  }
+
+  async validateTeamSeasonBasic(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeasonValidationResult> {
+    return this.validateTeamSeasonAccess(teamSeasonId, seasonId, accountId, {
+      includeLeagueSeason: true,
+    });
+  }
+
+  private buildTeamValidationInclude(options: TeamValidationOptions): Prisma.teamsseasonInclude {
+    if (options.customIncludes) {
+      return options.customIncludes;
+    }
+
+    const include: Prisma.teamsseasonInclude = {
+      leagueseason: {
+        include: {
+          league: true,
+          ...(options.includeLeagueSeason ? { season: true } : {}),
+        },
+      },
+      ...(options.includeTeams ? { teams: true } : {}),
+      ...(options.includeDivisionSeason
+        ? {
+            divisionseason: {
+              include: {
+                divisiondefs: true,
+              },
+            },
+          }
+        : {}),
+    };
+
+    return include;
   }
 }

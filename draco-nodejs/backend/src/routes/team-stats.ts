@@ -1,8 +1,6 @@
-import prisma from '../lib/prisma.js';
 import { Router, Request, Response, NextFunction } from 'express';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { StatsResponseFormatter } from '../responseFormatters/index.js';
-import { validateTeamSeasonBasic } from '../utils/teamValidation.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import {
@@ -52,7 +50,7 @@ router.get(
     const { limit, upcoming, recent } = RecentGamesQuerySchema.parse(req.query);
 
     // Validate team/season/account relationship first
-    await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
+    await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
 
     const response: RecentGamesType = await teamStatsService.getTeamGames(
       teamSeasonId,
@@ -79,7 +77,7 @@ router.get(
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
     // Verify the team season exists and belongs to this account and season
-    await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
+    await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
 
     const battingStats = await teamStatsService.getTeamBattingStats(teamSeasonId, accountId);
     const response: PlayerBattingStatsBriefType[] =
@@ -99,7 +97,7 @@ router.get(
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
     // Verify the team season exists and belongs to this account and season
-    await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
+    await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
 
     const pitchingStats = await teamStatsService.getTeamPitchingStats(
       teamSeasonId,

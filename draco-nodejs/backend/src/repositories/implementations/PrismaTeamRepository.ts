@@ -1,4 +1,4 @@
-import { PrismaClient, teamsseason, teams, teamseasonmanager } from '@prisma/client';
+import { PrismaClient, teamsseason, teams, teamseasonmanager, Prisma } from '@prisma/client';
 import { ITeamRepository } from '../interfaces/index.js';
 import {
   dbTeam,
@@ -10,6 +10,7 @@ import {
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
+  dbTeamSeasonValidationResult,
 } from '../types/dbTypes.js';
 import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
 import { BatchQueryHelper } from './batchQueries.js';
@@ -506,5 +507,35 @@ export class PrismaTeamRepository implements ITeamRepository {
    */
   async getTeamRecords(teamSeasonIds: bigint[]): Promise<Map<string, dbTeamSeasonRecord>> {
     return BatchQueryHelper.batchTeamRecords(this.prisma, teamSeasonIds);
+  }
+
+  async findTeamSeasonForValidation(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    include?: Prisma.teamsseasonInclude,
+  ): Promise<dbTeamSeasonValidationResult | null> {
+    const finalInclude = include ?? {
+      leagueseason: {
+        include: {
+          league: true,
+        },
+      },
+    };
+
+    const teamSeason = await this.prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: {
+            accountid: accountId,
+          },
+        },
+      },
+      include: finalInclude,
+    });
+
+    return teamSeason as dbTeamSeasonValidationResult | null;
   }
 }

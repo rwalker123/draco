@@ -1,12 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { createStorageService } from '../services/storageService.js';
 import { validateLogoFile, getLogoUrl } from '../config/logo.js';
-import { validateTeamSeasonWithTeamDetails } from '../utils/teamValidation.js';
-import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();
+const teamService = ServiceFactory.getTeamService();
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/logo
@@ -20,8 +20,7 @@ router.get(
     const teamSeasonId = req.params.teamSeasonId;
 
     // First, get the team season to find the teamId
-    const teamSeason = await validateTeamSeasonWithTeamDetails(
-      prisma,
+    const teamSeason = await teamService.validateTeamSeasonWithTeamDetails(
       BigInt(teamSeasonId),
       BigInt(seasonId),
       BigInt(accountId),
