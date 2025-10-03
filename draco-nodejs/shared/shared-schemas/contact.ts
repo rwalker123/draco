@@ -195,6 +195,21 @@ export const RegisteredUserSchema = z.object({
 
 export const RegisteredUserWithRolesSchema = RegisteredUserSchema.extend(UserRolesSchema.shape);
 
+export const VerifyTokenRequestSchema = z.object({
+  token: z.string().min(1),
+});
+
+export const ChangePasswordRequestSchema = z.object({
+  currentPassword: z.string().min(6),
+  newPassword: z.string().min(6),
+});
+
+export const RoleCheckResponseSchema = z.object({
+  hasRole: z.boolean(),
+  roleLevel: z.string().optional(),
+  context: z.string().optional(),
+});
+
 export const ContactSearchParamsSchema = z.object({
   q: z.string().trim().max(100).optional(),
   includeRoles: booleanQueryParam.optional().default(false),
@@ -227,3 +242,6 @@ export type RegisteredUserType = z.infer<typeof RegisteredUserSchema>;
 export type ContactSearchParamsType = z.infer<typeof ContactSearchParamsSchema>;
 export type RegisteredUserWithRolesType = z.infer<typeof RegisteredUserWithRolesSchema>;
 export type ContactWithContactRolesType = z.infer<typeof ContactWithContactRolesSchema>;
+export type VerifyTokenRequestType = z.infer<typeof VerifyTokenRequestSchema>;
+export type ChangePasswordRequestType = z.infer<typeof ChangePasswordRequestSchema>;
+export type RoleCheckResponseType = z.infer<typeof RoleCheckResponseSchema>;

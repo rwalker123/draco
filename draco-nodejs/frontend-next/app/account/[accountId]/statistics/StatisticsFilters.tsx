@@ -12,21 +12,15 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import { listAllTimeLeagues } from '@draco/shared-api-client';
+import { listAccountSeasons, listAllTimeLeagues } from '@draco/shared-api-client';
 import { LeagueType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
+import { mapSeasonsWithDivisions, SeasonSummary } from '../../../../utils/seasonMapper';
 
 interface Division {
   id: string;
   name: string;
-}
-
-interface LeagueFromAPI {
-  id: string;
-  leagueId: string;
-  leagueName: string;
-  divisions?: Division[];
 }
 
 interface League {
@@ -34,13 +28,7 @@ interface League {
   name: string;
 }
 
-interface Season {
-  id: string;
-  name: string;
-  accountId: string;
-  isCurrent: boolean;
-  leagues: LeagueFromAPI[];
-}
+type Season = SeasonSummary;
 
 interface StatisticsFilters {
   seasonId: string;
@@ -103,40 +91,39 @@ export default function StatisticsFilters({
   const loadSeasons = useCallback(async () => {
     setLoading((prev) => ({ ...prev, seasons: true }));
     try {
-      const response = await fetch(`/api/accounts/${accountId}/seasons?includeDivisions=true`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const result = await listAccountSeasons({
+        client: apiClient,
+        path: { accountId },
+        query: { includeDivisions: true },
+        throwOnError: false,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const seasonsApiData = data.data?.seasons || [];
+      const seasonsResponse = unwrapApiResult(result, 'Failed to load seasons');
+      const mappedSeasons = mapSeasonsWithDivisions(seasonsResponse);
 
-        // Cache the full data
-        setSeasonsData(seasonsApiData);
+      setSeasonsData(mappedSeasons);
 
-        // Add "All Time" option as the first item for the dropdown
-        const allSeasons = [
-          { id: '0', name: 'All Time', accountId, isCurrent: false, leagues: [] },
-          ...seasonsApiData,
-        ];
+      const allTimeOption: Season = {
+        id: '0',
+        name: 'All Time',
+        accountId,
+        isCurrent: false,
+        leagues: [],
+      };
 
-        setSeasons(allSeasons);
+      const allSeasons = [allTimeOption, ...mappedSeasons];
+      setSeasons(allSeasons);
 
-        // Auto-select current season if none selected
-        if (!filters.seasonId && seasonsApiData.length > 0) {
-          const currentSeason =
-            seasonsApiData.find((s: Season) => s.isCurrent) || seasonsApiData[0];
-          onChange({ seasonId: currentSeason.id });
-        }
+      if (!filters.seasonId && mappedSeasons.length > 0) {
+        const currentSeason = mappedSeasons.find((s) => s.isCurrent) ?? mappedSeasons[0];
+        onChange({ seasonId: currentSeason.id });
       }
     } catch (error) {
       console.error('Error loading seasons:', error);
     } finally {
       setLoading((prev) => ({ ...prev, seasons: false }));
     }
-  }, [accountId, onChange, filters.seasonId]);
+  }, [accountId, apiClient, filters.seasonId, onChange]);
 
   const loadLeagues = useCallback(async () => {
     setLoading((prev) => ({ ...prev, leagues: true }));

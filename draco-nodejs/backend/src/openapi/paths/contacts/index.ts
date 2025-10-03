@@ -477,6 +477,64 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     },
   });
 
+  // GET /api/accounts/{accountId}/contacts/{contactId}/photo
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/{contactId}/photo',
+    description: 'Retrieve a contact photo as an image stream.',
+    operationId: 'getContactPhoto',
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'PNG contact photo.',
+        content: {
+          'image/png': {
+            schema: {
+              type: 'string',
+              format: 'binary',
+            },
+          },
+        },
+      },
+      404: {
+        description: 'Contact or photo not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected error while retrieving the contact photo',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
   // DELETE /api/accounts/{accountId}/contacts/{contactId}/photo
   registry.registerPath({
     method: 'delete',

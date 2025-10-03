@@ -42,7 +42,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
-import axios from 'axios';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import {
   listAccountLeagues,
@@ -50,22 +49,26 @@ import {
   updateLeague,
   addLeagueToSeason as apiAddLeagueToSeason,
   removeLeagueFromSeason as apiRemoveLeagueFromSeason,
+  listAccountSeasons,
+  createAccountSeason,
+  updateAccountSeason,
+  deleteAccountSeason,
+  copyAccountSeason,
+  setCurrentAccountSeason,
 } from '@draco/shared-api-client';
-import { LeagueType, UpsertLeagueType } from '@draco/shared-schemas';
+import { LeagueType, UpsertLeagueType, UpsertSeasonType, SeasonType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
+import {
+  mapSeasonWithDivisions,
+  mapSeasonsWithDivisions,
+  mapSeasonUpdate,
+  mapLeagueSeasonWithDivisions,
+  SeasonSummary,
+  SeasonLeagueSummary,
+} from '../../../../utils/seasonMapper';
 
-interface Season {
-  id: string;
-  name: string;
-  accountId: string;
-  isCurrent: boolean;
-  leagues: Array<{
-    id: string;
-    leagueId: string;
-    leagueName: string;
-  }>;
-}
+type Season = SeasonSummary;
 
 interface League {
   id: string;
@@ -117,36 +120,26 @@ const SeasonManagement: React.FC = () => {
   const canManageLeagues = hasSeasonManagementPermissions;
 
   const fetchSeasons = useCallback(async () => {
-    if (!accountId) return;
+    if (!accountIdStr) return;
 
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/accounts/${accountId}/seasons`);
+      const result = await listAccountSeasons({
+        client: apiClient,
+        path: { accountId: accountIdStr },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSeasons(response.data.data.seasons);
-      } else {
-        setError(response.data.message || 'Failed to fetch seasons');
-      }
+      const seasonsData = unwrapApiResult(result, 'Failed to fetch seasons');
+      const mappedSeasons = mapSeasonsWithDivisions(seasonsData);
+      setSeasons(mappedSeasons);
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setError((err as { response: { data: { message: string } } }).response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to load season data');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to load season data');
     } finally {
       setLoading(false);
     }
-  }, [accountId]);
+  }, [accountIdStr, apiClient]);
 
   const fetchAvailableLeagues = useCallback(async () => {
     if (!accountIdStr || !token) return;
@@ -175,21 +168,27 @@ const SeasonManagement: React.FC = () => {
   }, [accountIdStr, apiClient, token]);
 
   useEffect(() => {
-    if (accountId) {
+    if (accountIdStr) {
       fetchSeasons();
       fetchAvailableLeagues();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountId]);
+  }, [accountIdStr, fetchSeasons, fetchAvailableLeagues]);
 
   // Targeted update functions for better UX
   const addSeasonToState = useCallback((newSeason: Season) => {
     setSeasons((prev) => [...prev, newSeason]);
   }, []);
 
-  const updateSeasonInState = useCallback((updatedSeason: Season) => {
+  const updateSeasonInState = useCallback((seasonUpdate: Partial<Season> & { id: string }) => {
     setSeasons((prev) =>
-      prev.map((season) => (season.id === updatedSeason.id ? updatedSeason : season)),
+      prev.map((season) =>
+        season.id === seasonUpdate.id
+          ? {
+              ...season,
+              ...seasonUpdate,
+            }
+          : season,
+      ),
     );
   }, []);
 
@@ -207,13 +206,17 @@ const SeasonManagement: React.FC = () => {
   }, []);
 
   const addLeagueToSeasonInState = useCallback(
-    (seasonId: string, leagueSeason: { id: string; leagueId: string; leagueName: string }) => {
+    (seasonId: string, leagueSeason: SeasonLeagueSummary) => {
       setSeasons((prev) =>
         prev.map((season) => {
           if (season.id !== seasonId) return season;
+          const normalizedLeagueSeason: SeasonLeagueSummary = {
+            ...leagueSeason,
+            divisions: leagueSeason.divisions ?? [],
+          };
           return {
             ...season,
-            leagues: [...season.leagues, leagueSeason],
+            leagues: [...season.leagues, normalizedLeagueSeason],
           };
         }),
       );
@@ -244,189 +247,133 @@ const SeasonManagement: React.FC = () => {
   }, []);
 
   const handleCreateSeason = async () => {
-    if (!accountId || !token || !formData.name.trim()) return;
+    if (!accountIdStr || !token || !formData.name.trim()) return;
 
     setFormLoading(true);
     try {
-      const response = await axios.post(
-        `/api/accounts/${accountId}/seasons`,
-        { name: formData.name.trim() },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const payload: UpsertSeasonType = { name: formData.name.trim() };
+      const result = await createAccountSeason({
+        client: apiClient,
+        path: { accountId: accountIdStr },
+        body: payload,
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSuccessMessage('Season created successfully');
-        setCreateDialogOpen(false);
-        setFormData({ name: '' });
-        addSeasonToState(response.data.data.season);
-      } else {
-        setError(response.data.message || 'Failed to create season');
-      }
+      const createdSeason = unwrapApiResult(result, 'Failed to create season');
+      const mappedSeason = mapSeasonWithDivisions(createdSeason);
+
+      setSuccessMessage('Season created successfully');
+      setCreateDialogOpen(false);
+      setFormData({ name: '' });
+      addSeasonToState(mappedSeason);
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setError((err as { response: { data: { message: string } } }).response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to create season');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to create season');
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleEditSeason = async () => {
-    if (!accountId || !token || !selectedSeason || !formData.name.trim()) return;
+    if (!accountIdStr || !token || !selectedSeason || !formData.name.trim()) return;
 
     setFormLoading(true);
     try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
-        { name: formData.name.trim() },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const payload: UpsertSeasonType = { name: formData.name.trim() };
+      const result = await updateAccountSeason({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: selectedSeason.id },
+        body: payload,
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSuccessMessage('Season updated successfully');
-        setEditDialogOpen(false);
-        setFormData({ name: '' });
-        setSelectedSeason(null);
-        updateSeasonInState(response.data.data.season);
-      } else {
-        setError(response.data.message || 'Failed to update season');
-      }
+      const updatedSeason = unwrapApiResult(result, 'Failed to update season') as SeasonType;
+
+      setSuccessMessage('Season updated successfully');
+      setEditDialogOpen(false);
+      setFormData({ name: '' });
+      setSelectedSeason(null);
+      updateSeasonInState(mapSeasonUpdate(updatedSeason));
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setError((err as { response: { data: { message: string } } }).response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to update season');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to update season');
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleDeleteSeason = async () => {
-    if (!accountId || !token || !selectedSeason) return;
+    if (!accountIdStr || !token || !selectedSeason) return;
 
     setFormLoading(true);
     try {
-      const response = await axios.delete(
-        `/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await deleteAccountSeason({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: selectedSeason.id },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
+      const deleted = unwrapApiResult(result, 'Failed to delete season');
+
+      if (deleted) {
         setSuccessMessage('Season deleted successfully');
         setDeleteDialogOpen(false);
-        setSelectedSeason(null);
         removeSeasonFromState(selectedSeason.id);
-      } else {
-        setError(response.data.message || 'Failed to delete season');
-      }
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setError((err as { response: { data: { message: string } } }).response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
+        setSelectedSeason(null);
       } else {
         setError('Failed to delete season');
       }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete season');
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleCopySeason = async () => {
-    if (!accountId || !token || !selectedSeason) return;
+    if (!accountIdStr || !token || !selectedSeason) return;
 
     setFormLoading(true);
     try {
-      const response = await axios.post(
-        `/api/accounts/${accountId}/seasons/${selectedSeason.id}/copy`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await copyAccountSeason({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: selectedSeason.id },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSuccessMessage(
-          `Season copied successfully. ${response.data.data.copiedLeagues} leagues copied.`,
-        );
-        setCopyDialogOpen(false);
-        setSelectedSeason(null);
-        addSeasonToState(response.data.data.season);
-      } else {
-        setError(response.data.message || 'Failed to copy season');
-      }
+      const copiedSeason = unwrapApiResult(result, 'Failed to copy season');
+      const mappedSeason = mapSeasonWithDivisions(copiedSeason);
+
+      setSuccessMessage(
+        `Season copied successfully with ${mappedSeason.leagues.length} league${
+          mappedSeason.leagues.length === 1 ? '' : 's'
+        }.`,
+      );
+      setCopyDialogOpen(false);
+      setSelectedSeason(null);
+      addSeasonToState(mappedSeason);
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setError((err as { response: { data: { message: string } } }).response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to copy season');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to copy season');
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleSetCurrentSeason = async (season: Season) => {
-    if (!accountId || !token) return;
+    if (!accountIdStr || !token) return;
 
     try {
-      const response = await axios.post(
-        `/api/accounts/${accountId}/seasons/${season.id}/set-current`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await setCurrentAccountSeason({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: season.id },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSuccessMessage(`"${season.name}" is now the current season`);
-        updateCurrentSeasonInState(season.id);
-      } else {
-        setError(response.data.message || 'Failed to set current season');
-      }
+      const updatedSeason = unwrapApiResult(result, 'Failed to set current season') as SeasonType;
+
+      setSuccessMessage(`"${season.name}" is now the current season`);
+      updateSeasonInState(mapSeasonUpdate(updatedSeason));
+      updateCurrentSeasonInState(season.id);
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setError((err as { response: { data: { message: string } } }).response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to set current season');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to set current season');
     }
   };
 
@@ -479,11 +426,7 @@ const SeasonManagement: React.FC = () => {
 
       const addedLeagueSeason = unwrapApiResult(result, 'Failed to add league to season');
 
-      const mappedLeagueSeason = {
-        id: addedLeagueSeason.id,
-        leagueId: addedLeagueSeason.league.id,
-        leagueName: addedLeagueSeason.league.name,
-      };
+      const mappedLeagueSeason = mapLeagueSeasonWithDivisions(addedLeagueSeason);
 
       setDialogSuccessMessage(
         `League "${selectedLeague.name}" added to season "${selectedSeason.name}"`,
@@ -656,11 +599,7 @@ const SeasonManagement: React.FC = () => {
             'Failed to add league to season after creation',
           );
 
-          const mappedLeagueSeason = {
-            id: addedLeagueSeason.id,
-            leagueId: addedLeagueSeason.league.id,
-            leagueName: addedLeagueSeason.league.name,
-          };
+          const mappedLeagueSeason = mapLeagueSeasonWithDivisions(addedLeagueSeason);
 
           setDialogSuccessMessage(
             `League "${newLeague.name}" created and added to season "${selectedSeason.name}"`,

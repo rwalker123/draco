@@ -1,7 +1,13 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
 import { SignInCredentialsType } from '@draco/shared-schemas';
+import {
+  login as loginApi,
+  getAuthenticatedUser,
+  logout as logoutApi,
+} from '@draco/shared-api-client';
+import { createApiClient } from '../lib/apiClientFactory';
+import { unwrapApiResult, getApiErrorMessage } from '../utils/apiResult';
 
 const LOGIN_ERROR_MESSAGE =
   'Invalid username or password. If you forgot your password, click the "Forgot your password?" link to reset it.';
@@ -13,6 +19,22 @@ interface User {
   firstname?: string;
   lastname?: string;
 }
+
+interface AuthenticatedUserDetails {
+  id?: string;
+  userId?: string;
+  username?: string;
+  userName?: string;
+  email?: string | null;
+  firstname?: string | null;
+  firstName?: string | null;
+  lastname?: string | null;
+  lastName?: string | null;
+}
+
+type AuthenticatedUserResponse = AuthenticatedUserDetails & {
+  user?: AuthenticatedUserDetails;
+};
 
 export interface AuthContextType {
   user: User | null;
@@ -67,29 +89,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post('/api/auth/login', {
-        userName: creds.userName,
-        password: creds.password,
+      const client = createApiClient();
+      const result = await loginApi({
+        client,
+        body: {
+          userName: creds.userName,
+          password: creds.password,
+        },
+        throwOnError: false,
       });
-      if (response.data && response.data.token) {
-        setToken(response.data.token);
-        localStorage.setItem('jwtToken', response.data.token);
-        await fetchUser(response.data.token);
-        setLoading(false);
-        return true;
-      } else {
+
+      const loginResponse = unwrapApiResult(result, LOGIN_ERROR_MESSAGE);
+
+      const newToken = loginResponse.token;
+
+      if (!newToken) {
         setError(LOGIN_ERROR_MESSAGE);
         setLoading(false);
         return false;
       }
-    } catch {
-      setError(LOGIN_ERROR_MESSAGE);
+
+      setToken(newToken);
+      localStorage.setItem('jwtToken', newToken);
+      await fetchUser(newToken);
+      setLoading(false);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : LOGIN_ERROR_MESSAGE;
+      setError(message || LOGIN_ERROR_MESSAGE);
       setLoading(false);
       return false;
     }
   };
 
   const logout = (refreshPage: boolean = false) => {
+    const authToken = token;
+    if (authToken) {
+      const client = createApiClient({ token: authToken });
+      logoutApi({ client, throwOnError: false }).catch(() => undefined);
+    }
+
     setToken(null);
     setUser(null);
     localStorage.removeItem('jwtToken');
@@ -129,20 +168,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${authToken}` },
+      const client = createApiClient({ token: authToken });
+      const result = await getAuthenticatedUser({
+        client,
+        throwOnError: false,
       });
-      if (response.data.success && response.data.user) {
-        setUser(response.data.user);
+
+      const data = unwrapApiResult(result, 'Failed to load current user');
+
+      const envelope = data as AuthenticatedUserResponse;
+      const payload = envelope.user ?? envelope;
+
+      if (payload && (payload.id || payload.userId)) {
+        setUser({
+          id: payload.id ?? payload.userId ?? '',
+          username: payload.username ?? payload.userName ?? '',
+          email: payload.email ?? undefined,
+          firstname: payload.firstname ?? payload.firstName ?? undefined,
+          lastname: payload.lastname ?? payload.lastName ?? undefined,
+        });
       } else {
         setUser(null);
-        // Clear invalid token
         setToken(null);
         localStorage.removeItem('jwtToken');
       }
-    } catch {
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'Failed to load current user');
+      console.error('Failed to fetch authenticated user:', err);
+      setError(message);
       setUser(null);
-      // Clear invalid token
       setToken(null);
       localStorage.removeItem('jwtToken');
     } finally {

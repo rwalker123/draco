@@ -26,6 +26,7 @@ import {
   ContactWithContactRolesSchema,
   BaseContactSchema,
   ContactValidationWithSignInSchema,
+  SignInCredentialsSchema,
   RegisteredUserWithRolesSchema,
   RegisteredUserSchema,
   CreateAccountSchema,
@@ -57,6 +58,8 @@ import {
   SeasonManagerListSchema,
   SeasonManagerSchema,
   SeasonManagerWithLeagueSchema,
+  SeasonParticipantCountDataSchema,
+  SeasonSchema,
   TeamManagerSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
@@ -85,10 +88,12 @@ import {
   LeagueSchema,
   LeagueSeasonQueryParamsSchema,
   LeagueSeasonSchema,
+  LeagueSeasonWithDivisionSchema,
   LeagueSeasonWithDivisionTeamsAndUnassignedSchema,
   LeagueSetupSchema,
   UpsertDivisionSeasonSchema,
   UpsertLeagueSchema,
+  UpsertSeasonSchema,
   GameSchema,
   GameResultSchema,
   GamesWithRecapsSchema,
@@ -96,6 +101,9 @@ import {
   UpsertGameSchema,
   UpsertGameRecapSchema,
   RoleWithContactSchema,
+  VerifyTokenRequestSchema,
+  ChangePasswordRequestSchema,
+  RoleCheckResponseSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -117,6 +125,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RegisteredUserWithRolesSchema,
   );
   const RegisteredUserSchemaRef = registry.register('RegisteredUser', RegisteredUserSchema);
+  const SignInCredentialsSchemaRef = registry.register(
+    'SignInCredentials',
+    SignInCredentialsSchema,
+  );
   const SeasonManagerSchemaRef = registry.register('SeasonManager', SeasonManagerSchema);
   const SeasonManagerListSchemaRef = registry.register(
     'SeasonManagerList',
@@ -125,6 +137,11 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const SeasonManagerWithLeagueSchemaRef = registry.register(
     'SeasonManagerWithLeague',
     SeasonManagerWithLeagueSchema,
+  );
+  const SeasonSchemaRef = registry.register('Season', SeasonSchema);
+  const SeasonParticipantCountDataSchemaRef = registry.register(
+    'SeasonParticipantCountData',
+    SeasonParticipantCountDataSchema,
   );
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
   const UpsertTeamManagerSchemaRef = registry.register(
@@ -284,6 +301,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     LeagueSeasonQueryParamsSchema,
   );
   const LeagueSeasonSchemaRef = registry.register('LeagueSeason', LeagueSeasonSchema);
+  const LeagueSeasonWithDivisionSchemaRef = registry.register(
+    'LeagueSeasonWithDivision',
+    LeagueSeasonWithDivisionSchema,
+  );
   const LeagueSeasonWithDivisionTeamsAndUnassignedSchemaRef = registry.register(
     'LeagueSeasonWithDivisionTeamsAndUnassigned',
     LeagueSeasonWithDivisionTeamsAndUnassignedSchema,
@@ -300,6 +321,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const UpsertGameSchemaRef = registry.register('UpsertGame', UpsertGameSchema);
   const UpsertGameRecapSchemaRef = registry.register('UpsertGameRecap', UpsertGameRecapSchema);
+  const UpsertSeasonSchemaRef = registry.register('UpsertSeason', UpsertSeasonSchema);
   const UpsertDivisionSeasonSchemaRef = registry.register(
     'UpsertDivisionSeason',
     UpsertDivisionSeasonSchema,
@@ -322,6 +344,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const PagingSchemaRef = registry.register('Paging', PagingSchema);
   const RoleWithContactSchemaRef = registry.register('RoleWithContact', RoleWithContactSchema);
+  const VerifyTokenRequestSchemaRef = registry.register(
+    'VerifyTokenRequest',
+    VerifyTokenRequestSchema,
+  );
+  const ChangePasswordRequestSchemaRef = registry.register(
+    'ChangePasswordRequest',
+    ChangePasswordRequestSchema,
+  );
+  const RoleCheckResponseSchemaRef = registry.register(
+    'RoleCheckResponse',
+    RoleCheckResponseSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -332,6 +366,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonManagerSchemaRef,
     SeasonManagerListSchemaRef,
     SeasonManagerWithLeagueSchemaRef,
+    SeasonSchemaRef,
+    SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
     UpsertTeamManagerSchemaRef,
     CreateContactSchemaRef,
@@ -348,6 +384,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RoleCheckSchemaRef,
     RegisteredUserSchemaRef,
     RegisteredUserWithRolesSchemaRef,
+    SignInCredentialsSchemaRef,
     ContactValidationWithSignInSchemaRef,
     PagedContactSchemaRef,
     AccountSchemaRef,
@@ -399,6 +436,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     DivisionSeasonWithTeamsSchemaRef,
     LeagueSeasonQueryParamsSchemaRef,
     LeagueSeasonSchemaRef,
+    LeagueSeasonWithDivisionSchemaRef,
     LeagueSeasonWithDivisionTeamsAndUnassignedSchemaRef,
     LeagueSetupSchemaRef,
     LeagueSchemaRef,
@@ -409,6 +447,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,
+    UpsertSeasonSchemaRef,
     UpsertDivisionSeasonSchemaRef,
     ValidationErrorSchemaRef,
     AuthenticationErrorSchemaRef,
@@ -419,6 +458,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PagingSchemaRef,
     ContactSearchParamsSchemaRef,
     RoleWithContactSchemaRef,
+    VerifyTokenRequestSchemaRef,
+    ChangePasswordRequestSchemaRef,
+    RoleCheckResponseSchemaRef,
   };
 };
 

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { AuthenticationError, ValidationError } from '../utils/customErrors.js';
+import { AuthenticationError, ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { RepositoryFactory } from '../repositories/index.js';
 import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 
@@ -22,6 +22,21 @@ export class AuthService {
   private readonly JWT_EXPIRES_IN = '24h';
 
   private readonly userRepository = RepositoryFactory.getUserRepository();
+
+  async getUserById(userId: string): Promise<RegisteredUserType | null> {
+    const user = await this.userRepository.findByUserId(userId);
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    const result: RegisteredUserType = {
+      userId: userId,
+      userName: user.username || '',
+    };
+
+    return result;
+  }
 
   /**
    * Authenticate user with username and password
