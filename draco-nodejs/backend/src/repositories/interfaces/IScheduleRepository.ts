@@ -1,0 +1,58 @@
+import { Prisma, leagueschedule, teamsseason, gamerecap } from '@prisma/client';
+import { IBaseRepository } from './IBaseRepository.js';
+import {
+  dbScheduleGameWithDetails,
+  dbScheduleGameForAccount,
+  dbScheduleGameWithRecaps,
+  dbGameRecap,
+  dbScheduleCreateData,
+  dbScheduleUpdateData,
+  dbScheduleResultUpdateData,
+} from '../types/index.js';
+
+export interface ScheduleListFilters {
+  dateRange?: { start: Date; end: Date };
+  teamId?: bigint;
+  includeRecaps?: boolean;
+}
+
+export interface ScheduleListOptions {
+  skip: number;
+  take: number;
+  sortOrder: Prisma.SortOrder;
+}
+
+export interface IScheduleRepository extends IBaseRepository<leagueschedule> {
+  findGameWithAccountContext(
+    gameId: bigint,
+    accountId: bigint,
+  ): Promise<dbScheduleGameForAccount | null>;
+  findGameWithDetails(gameId: bigint): Promise<dbScheduleGameWithDetails | null>;
+  listSeasonGames(
+    seasonId: bigint,
+    filters: ScheduleListFilters,
+    options: ScheduleListOptions,
+  ): Promise<dbScheduleGameWithDetails[] | dbScheduleGameWithRecaps[]>;
+  countSeasonGames(seasonId: bigint, filters: ScheduleListFilters): Promise<number>;
+  findTeamsInLeagueSeason(
+    leagueSeasonId: bigint,
+    seasonId: bigint,
+    teamIds: bigint[],
+  ): Promise<teamsseason[]>;
+  createGame(data: dbScheduleCreateData): Promise<dbScheduleGameWithDetails>;
+  updateGame(gameId: bigint, data: dbScheduleUpdateData): Promise<dbScheduleGameWithDetails>;
+  updateGameResults(
+    gameId: bigint,
+    data: dbScheduleResultUpdateData,
+  ): Promise<dbScheduleGameWithDetails>;
+  deleteGame(gameId: bigint): Promise<void>;
+  findFieldConflict(
+    fieldId: bigint,
+    gameDate: Date,
+    leagueSeasonId: bigint,
+    excludeGameId?: bigint,
+  ): Promise<leagueschedule | null>;
+  findRecap(gameId: bigint, teamSeasonId: bigint): Promise<dbGameRecap | null>;
+  upsertRecap(gameId: bigint, teamSeasonId: bigint, recap: string): Promise<gamerecap>;
+  getTeamNames(teamIds: bigint[]): Promise<Map<string, string>>;
+}

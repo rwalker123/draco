@@ -17,3 +17,4 @@ export * from './IWorkoutRepository.js';
 export * from './IEmailRepository.js';
 export * from './IEmailTemplateRepository.js';
 export * from './IEmailAttachmentRepository.js';
+export * from './IScheduleRepository.js';

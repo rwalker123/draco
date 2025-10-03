@@ -34,6 +34,7 @@ import { SponsorService } from './sponsorService.js';
 import { PollService } from './pollService.js';
 import { FieldService } from './fieldService.js';
 import { UmpireService } from './umpireService.js';
+import { ScheduleService } from './scheduleService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -66,6 +67,7 @@ export class ServiceFactory {
   private static pollService: PollService;
   private static fieldService: FieldService;
   private static umpireService: UmpireService;
+  private static scheduleService: ScheduleService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -262,5 +264,12 @@ export class ServiceFactory {
       this.emailService = new EmailService();
     }
     return this.emailService;
+  }
+
+  static getScheduleService(): ScheduleService {
+    if (!this.scheduleService) {
+      this.scheduleService = new ScheduleService();
+    }
+    return this.scheduleService;
   }
 }

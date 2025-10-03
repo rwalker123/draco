@@ -17,6 +17,7 @@ import {
   IEmailRepository,
   IEmailTemplateRepository,
   IEmailAttachmentRepository,
+  IScheduleRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -37,6 +38,7 @@ import {
   PrismaEmailTemplateRepository,
   PrismaPlayersWantedRepository,
   PrismaEmailAttachmentRepository,
+  PrismaScheduleRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -64,6 +66,7 @@ export class RepositoryFactory {
   private static emailRepository: IEmailRepository;
   private static emailTemplateRepository: IEmailTemplateRepository;
   private static emailAttachmentRepository: IEmailAttachmentRepository;
+  private static scheduleRepository: IScheduleRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -188,5 +191,12 @@ export class RepositoryFactory {
       this.emailAttachmentRepository = new PrismaEmailAttachmentRepository(prisma);
     }
     return this.emailAttachmentRepository;
+  }
+
+  static getScheduleRepository(): IScheduleRepository {
+    if (!this.scheduleRepository) {
+      this.scheduleRepository = new PrismaScheduleRepository(prisma);
+    }
+    return this.scheduleRepository;
   }
 }
