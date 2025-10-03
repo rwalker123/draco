@@ -17,7 +17,6 @@ import {
   extractLeagueSeasonParams,
   extractBigIntParams,
 } from '../utils/paramExtraction.js';
-import { validateTeamSeasonWithDivision } from '../utils/teamValidation.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import prisma from '../lib/prisma.js';
 import { DivisionSeason } from '../interfaces/divisionInterfaces.js';
@@ -35,6 +34,7 @@ import {
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
+const teamService = ServiceFactory.getTeamService();
 
 // Types for Prisma result objects
 interface dbDivisionSeasonResult {
@@ -1224,8 +1224,7 @@ router.put(
     }
 
     // Verify the team season exists and belongs to this account and season
-    const teamSeason = await validateTeamSeasonWithDivision(
-      prisma,
+    const teamSeason = await teamService.validateTeamSeasonWithDivision(
       teamSeasonId,
       seasonId,
       accountId,
@@ -1288,8 +1287,7 @@ router.delete(
     }
 
     // Verify the team season exists and belongs to this account and season
-    const teamSeason = await validateTeamSeasonWithDivision(
-      prisma,
+    const teamSeason = await teamService.validateTeamSeasonWithDivision(
       teamSeasonId,
       seasonId,
       accountId,

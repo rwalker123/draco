@@ -1,4 +1,4 @@
-import { teamsseason, teams, teamseasonmanager } from '@prisma/client';
+import { teamsseason, teams, teamseasonmanager, Prisma } from '@prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbTeam,
@@ -10,6 +10,7 @@ import {
   dbTeamsWithLeaguesAndDivisions,
   dbUserManagerTeams,
   dbUserTeams,
+  dbTeamSeasonValidationResult,
 } from '../types/dbTypes.js';
 
 export interface ITeamRepository extends IBaseRepository<teamsseason> {
@@ -73,4 +74,11 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
 
   getTeamRecord(teamSeasonId: bigint): Promise<dbTeamSeasonRecord>;
   getTeamRecords(teamSeasonIds: bigint[]): Promise<Map<string, dbTeamSeasonRecord>>;
+
+  findTeamSeasonForValidation(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    include?: Prisma.teamsseasonInclude,
+  ): Promise<dbTeamSeasonValidationResult | null>;
 }

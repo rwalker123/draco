@@ -1,5 +1,42 @@
 import { playerswantedclassified, Prisma, teamswantedclassified } from '@prisma/client';
 
+export interface dbTeamSeasonValidationResult {
+  id: bigint;
+  teamid: bigint;
+  name: string;
+  leagueseasonid: bigint;
+  divisionseasonid: bigint | null;
+  leagueseason: {
+    id: bigint;
+    seasonid: bigint;
+    leagueid: bigint;
+    league: {
+      id: bigint;
+      name: string;
+      accountid: bigint;
+    };
+    season?: {
+      id: bigint;
+      name: string;
+    };
+  };
+  teams?: {
+    id: bigint;
+    webaddress: string | null;
+    youtubeuserid: string | null;
+    defaultvideo: string | null;
+    autoplayvideo: boolean;
+  };
+  divisionseason?: {
+    id: bigint;
+    divisionid: bigint;
+    divisiondefs: {
+      id: bigint;
+      name: string;
+    };
+  };
+}
+
 // db types used to map to the response schemas
 export type dbBaseContact = Prisma.contactsGetPayload<{
   select: {
