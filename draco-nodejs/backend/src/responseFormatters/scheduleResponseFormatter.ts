@@ -40,7 +40,7 @@ export class ScheduleResponseFormatter {
         ...(options.visitorTeamName ? { name: options.visitorTeamName } : {}),
       },
       league: {
-        id: game.leagueseason.league.id.toString(),
+        id: game.leagueseason.id.toString(),
         name: game.leagueseason.league.name,
       },
       season: game.leagueseason.season
