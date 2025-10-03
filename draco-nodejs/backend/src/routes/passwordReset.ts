@@ -6,8 +6,12 @@ import { EmailService, EmailConfig } from '../services/emailService.js';
 import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, InternalServerError } from '../utils/customErrors.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router();
+const routeProtection = ServiceFactory.getRouteProtection();
+
 // Email configuration - you'll need to update these with your actual email settings
 const emailConfig: EmailConfig = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -150,6 +154,8 @@ router.post(
  */
 router.delete(
   '/cleanup',
+  authenticateToken,
+  routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const deletedCount = await PasswordResetModel.cleanupExpiredTokens();
 

@@ -9051,6 +9051,189 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/passwordReset/request:
+    post:
+      summary: Request password reset
+      description: Creates a password reset token for the supplied email address and
+        sends a reset message when that account exists.
+      operationId: requestPasswordReset
+      tags:
+        - Password Reset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  minLength: 1
+                testMode:
+                  type: boolean
+              required:
+                - email
+      responses:
+        "200":
+          description: Password reset token generated (email is sent or test token
+            returned).
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: boolean
+                    enum:
+                      - true
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+                    required:
+                      - success
+                      - message
+                  - type: object
+                    properties:
+                      token:
+                        type: string
+                      userId:
+                        type: string
+                      email:
+                        type: string
+                    required:
+                      - token
+                      - userId
+                      - email
+        "400":
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Unable to generate or deliver the password reset token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/passwordReset/verify:
+    post:
+      summary: Verify password reset token
+      description: Validates a password reset token before allowing a password change.
+      operationId: verifyPasswordResetToken
+      tags:
+        - Password Reset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  minLength: 1
+              required:
+                - token
+      responses:
+        "200":
+          description: Token verification result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                required:
+                  - valid
+        "400":
+          description: Reset token missing or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Unexpected server error while verifying the token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/passwordReset/reset:
+    post:
+      summary: Reset password
+      description: Resets the user password when provided with a valid reset token.
+      operationId: resetPasswordWithToken
+      tags:
+        - Password Reset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  minLength: 1
+                newPassword:
+                  type: string
+                  minLength: 6
+              required:
+                - token
+                - newPassword
+      responses:
+        "200":
+          description: Password reset completed.
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "400":
+          description: Invalid reset token or new password.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Unexpected server error while resetting the password.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/passwordReset/cleanup:
+    delete:
+      summary: Clean up expired password reset tokens
+      description: Deletes expired password reset tokens. Administrator access is required.
+      operationId: cleanupExpiredPasswordResetTokens
+      tags:
+        - Password Reset
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Number of expired tokens removed.
+          content:
+            application/json:
+              schema:
+                type: integer
+                minimum: 0
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User lacks administrator privileges.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected server error while cleaning up tokens.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/player-classifieds/players-wanted:
     post:
       operationId: createPlayersWantedClassified
