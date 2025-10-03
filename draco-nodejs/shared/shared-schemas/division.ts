@@ -22,7 +22,8 @@ export const DivisionSeasonSchema = z.object({
 });
 
 export const UpsertDivisionSeasonSchema = z.object({
-  name: nameSchema,
+  divisionId: bigintToStringSchema.optional(),
+  name: nameSchema.optional(),
   priority: z.coerce.number().int().optional(),
 });
 

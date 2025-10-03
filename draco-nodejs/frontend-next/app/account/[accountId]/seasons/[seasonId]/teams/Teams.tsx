@@ -20,6 +20,10 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
 import { Team } from '@/types/schedule';
+import { useApiClient } from '@/hooks/useApiClient';
+import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import { unwrapApiResult } from '@/utils/apiResult';
+import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
 
 interface Division {
   id: string;
@@ -55,6 +59,7 @@ interface TeamsProps {
 const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const { user, token } = useAuth();
   const { hasRole } = useRole();
+  const apiClient = useApiClient();
 
   // Check if user has edit permissions for teams
   const canEditTeams =
@@ -256,28 +261,53 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       setLoading(true);
       setError('');
 
-      // Load league seasons with divisions and teams for the given season
-      const leagueSeasonsResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+      const leagueResult = await listSeasonLeagueSeasons({
+        client: apiClient,
+        path: { accountId, seasonId },
+        query: {
+          includeTeams: true,
+          includeUnassignedTeams: true,
         },
-      );
+        throwOnError: false,
+      });
 
-      if (!leagueSeasonsResponse.ok) {
-        throw new Error('Failed to load teams data');
-      }
+      const leagueData = unwrapApiResult(leagueResult, 'Failed to load teams data');
+      const mapped = mapLeagueSetup(leagueData, accountId);
+      const seasonInfo = mapped.season ?? { id: seasonId, name: '', accountId };
 
-      const leagueSeasonsData = await leagueSeasonsResponse.json();
-      setTeamsData(leagueSeasonsData.data);
+      const mappedLeagueSeasons = mapped.leagueSeasons.map((leagueSeason) => ({
+        id: leagueSeason.id,
+        leagueId: leagueSeason.leagueId,
+        leagueName: leagueSeason.leagueName,
+        accountId: leagueSeason.accountId,
+        divisions: leagueSeason.divisions.map((division) => ({
+          id: division.id,
+          divisionId: division.divisionId,
+          divisionName: division.divisionName,
+          priority: division.priority,
+          teams: division.teams.map((team) => ({
+            id: team.id,
+            teamId: team.teamId,
+            name: team.name,
+            logoUrl: team.logoUrl ?? undefined,
+            webAddress: team.webAddress ?? undefined,
+            youtubeUserId: team.youtubeUserId ?? undefined,
+            defaultVideo: team.defaultVideo ?? undefined,
+            autoPlayVideo: team.autoPlayVideo,
+          })),
+        })),
+      }));
+
+      setTeamsData({
+        season: seasonInfo,
+        leagueSeasons: mappedLeagueSeasons,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teams data');
     } finally {
       setLoading(false);
     }
-  }, [accountId, seasonId]);
+  }, [accountId, apiClient, seasonId]);
 
   useEffect(() => {
     loadTeamsData();

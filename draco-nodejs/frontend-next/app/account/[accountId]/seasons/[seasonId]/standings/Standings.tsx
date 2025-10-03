@@ -4,6 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import Standings from '../../../../../../components/Standings';
+import { useApiClient } from '@/hooks/useApiClient';
+import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import { unwrapApiResult } from '@/utils/apiResult';
+import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
 
 interface StandingsPageProps {
   accountId: string;
@@ -12,26 +16,30 @@ interface StandingsPageProps {
 
 export default function StandingsPage({ accountId, seasonId }: StandingsPageProps) {
   const [seasonName, setSeasonName] = useState<string>('');
+  const apiClient = useApiClient();
 
   // Fetch season name
   useEffect(() => {
     async function fetchSeasonName() {
       if (!accountId || !seasonId) return;
+
       try {
-        // Use the leagues endpoint to get season data (same as Teams page)
-        const res = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/leagues`);
-        if (res.ok) {
-          const data = await res.json();
-          setSeasonName(data.data?.season?.name || '');
-        } else {
-          setSeasonName('');
-        }
+        const result = await listSeasonLeagueSeasons({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to load season information');
+        const mapped = mapLeagueSetup(data, accountId);
+        setSeasonName(mapped.season?.name || '');
       } catch {
         setSeasonName('');
       }
     }
+
     fetchSeasonName();
-  }, [accountId, seasonId]);
+  }, [accountId, seasonId, apiClient]);
 
   if (!seasonId || seasonId === '0') {
     return (

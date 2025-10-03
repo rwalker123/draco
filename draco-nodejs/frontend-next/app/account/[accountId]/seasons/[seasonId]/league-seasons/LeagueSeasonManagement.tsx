@@ -36,9 +36,19 @@ import {
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { isAxiosError } from '../../../../../../context/AccountContext';
-import { deleteLeague } from '@draco/shared-api-client';
+import {
+  deleteLeague,
+  listSeasonLeagueSeasons,
+  addDivisionToLeagueSeason as apiAddDivisionToLeagueSeason,
+  deleteLeagueSeasonDivision as apiDeleteLeagueSeasonDivision,
+  updateLeagueSeasonDivision as apiUpdateLeagueSeasonDivision,
+  assignLeagueSeasonTeamDivision as apiAssignLeagueSeasonTeamDivision,
+  removeLeagueSeasonTeamDivision as apiRemoveLeagueSeasonTeamDivision,
+  removeLeagueFromSeason as apiRemoveLeagueFromSeason,
+} from '@draco/shared-api-client';
 import { createApiClient } from '../../../../../../lib/apiClientFactory';
 import { unwrapApiResult } from '../../../../../../utils/apiResult';
+import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
 
 interface LeagueSeason {
   id: string;
@@ -171,34 +181,55 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setLoading(true);
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues?includeTeams=true&includeUnassigned=true`,
-      );
+      const result = await listSeasonLeagueSeasons({
+        client: apiClient,
+        path: { accountId, seasonId: season.id },
+        query: { includeTeams: true, includeUnassignedTeams: true },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        // Ensure each league season has the required properties with default values
-        const leagueSeasonsWithDefaults = response.data.data.leagueSeasons.map(
-          (ls: LeagueSeason) => ({
-            ...ls,
-            divisions: ls.divisions || [],
-            unassignedTeams: ls.unassignedTeams || [],
-          }),
-        );
-        setLeagueSeasons(leagueSeasonsWithDefaults);
-      }
-    } catch (error: unknown) {
+      const data = unwrapApiResult(result, 'Failed to fetch league seasons');
+      const mapped = mapLeagueSetup(data, accountId);
+
+      const formattedLeagueSeasons = mapped.leagueSeasons.map((leagueSeason) => ({
+        id: leagueSeason.id,
+        leagueId: leagueSeason.leagueId,
+        leagueName: leagueSeason.leagueName,
+        accountId: leagueSeason.accountId,
+        divisions: leagueSeason.divisions.map((division) => ({
+          id: division.id,
+          divisionId: division.divisionId,
+          divisionName: division.divisionName,
+          priority: division.priority,
+          teams: division.teams.map((team) => ({
+            id: team.id,
+            teamId: team.teamId,
+            name: team.name,
+            webAddress: team.webAddress ?? '',
+            youtubeUserId: team.youtubeUserId ?? '',
+            defaultVideo: team.defaultVideo ?? '',
+            autoPlayVideo: team.autoPlayVideo,
+          })),
+        })),
+        unassignedTeams: leagueSeason.unassignedTeams.map((team) => ({
+          id: team.id,
+          teamId: team.teamId,
+          name: team.name,
+          webAddress: team.webAddress ?? '',
+          youtubeUserId: team.youtubeUserId ?? '',
+          defaultVideo: team.defaultVideo ?? '',
+          autoPlayVideo: team.autoPlayVideo,
+        })),
+      }));
+
+      setLeagueSeasons(formattedLeagueSeasons);
+    } catch (error) {
       console.error('Error fetching league seasons:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to fetch league seasons');
-      }
+      setError(error instanceof Error ? error.message : 'Failed to fetch league seasons');
     } finally {
       setLoading(false);
     }
-  }, [accountId, season.id]);
+  }, [accountId, apiClient, season.id]);
 
   // Targeted update functions for better UX
   const removeLeagueSeasonFromState = useCallback((leagueSeasonId: string) => {
@@ -348,31 +379,36 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setFormLoading(true);
     try {
-      const response = await axios.post(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
-        {
+      const result = await apiAddDivisionToLeagueSeason({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: season.id,
+          leagueSeasonId: selectedLeagueSeason.id,
+        },
+        body: {
           divisionId: selectedDivision.id,
           priority: divisionPriority,
         },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        setAddDivisionDialogOpen(false);
-        // Use targeted update instead of full refresh
-        const newDivisionSeason = response.data.data.divisionSeason;
-        addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, newDivisionSeason);
-      }
-    } catch (error: unknown) {
+      const divisionSeason = unwrapApiResult(result, 'Failed to add division to league season');
+
+      const mappedDivisionSeason = {
+        id: divisionSeason.id,
+        divisionId: divisionSeason.division.id,
+        divisionName: divisionSeason.division.name,
+        priority: divisionSeason.priority,
+        teams: [] as TeamSeason[],
+      };
+
+      setSuccessMessage(`Division added to ${selectedLeagueSeason.leagueName}`);
+      setAddDivisionDialogOpen(false);
+      addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, mappedDivisionSeason);
+    } catch (error) {
       console.error('Error adding division:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to add division');
-      }
+      setError(error instanceof Error ? error.message : 'Failed to add division');
     } finally {
       setFormLoading(false);
     }
@@ -387,25 +423,26 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setFormLoading(true);
     try {
-      const response = await axios.delete(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/divisions/${divisionSeason.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await apiDeleteLeagueSeasonDivision({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: season.id,
+          leagueSeasonId: leagueSeason.id,
+          divisionSeasonId: divisionSeason.id,
+        },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        // Use targeted update instead of full refresh
+      const removed = unwrapApiResult(result, 'Failed to remove division from league season');
+
+      if (removed) {
+        setSuccessMessage(`Division removed from ${leagueSeason.leagueName}`);
         removeDivisionFromLeagueSeasonInState(leagueSeason.id, divisionSeason.id);
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error removing division:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to remove division');
-      }
+      setError(error instanceof Error ? error.message : 'Failed to remove division');
     } finally {
       setFormLoading(false);
     }
@@ -417,39 +454,40 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setFormLoading(true);
     try {
-      // Single API call to create division and add to league season
-      const response = await axios.post(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
-        {
+      const result = await apiAddDivisionToLeagueSeason({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: season.id,
+          leagueSeasonId: selectedLeagueSeason.id,
+        },
+        body: {
           name: newDivisionNameInAddDialog.trim(),
           priority: divisionPriority,
         },
-        { headers: { Authorization: `Bearer ${token}` } },
+        throwOnError: false,
+      });
+
+      const divisionSeason = unwrapApiResult(result, 'Failed to create division');
+
+      const mappedDivisionSeason = {
+        id: divisionSeason.id,
+        divisionId: divisionSeason.division.id,
+        divisionName: divisionSeason.division.name,
+        priority: divisionSeason.priority,
+        teams: [] as TeamSeason[],
+      };
+
+      setSuccessMessage(
+        `Division "${mappedDivisionSeason.divisionName}" created and added to league "${selectedLeagueSeason.leagueName}"`,
       );
+      addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, mappedDivisionSeason);
 
-      if (response.data.success) {
-        const newDivisionSeason = response.data.data.divisionSeason;
-
-        setSuccessMessage(
-          `Division "${newDivisionSeason.divisionName}" created and added to league "${selectedLeagueSeason.leagueName}"`,
-        );
-        // Use targeted update instead of full refresh
-        addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, newDivisionSeason);
-
-        setCreateDivisionInAddDialog(false);
-        setNewDivisionNameInAddDialog('');
-        setAddDivisionDialogOpen(false);
-      } else {
-        setError(response.data.message || 'Failed to create division');
-      }
-    } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Failed to create division');
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to create division');
-      }
+      setCreateDivisionInAddDialog(false);
+      setNewDivisionNameInAddDialog('');
+      setAddDivisionDialogOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create division');
     } finally {
       setFormLoading(false);
     }
@@ -465,30 +503,29 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setFormLoading(true);
     try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/assign-division`,
-        {
-          divisionSeasonId: divisionSeason.id,
+      const result = await apiAssignLeagueSeasonTeamDivision({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: season.id,
+          leagueSeasonId: leagueSeason.id,
+          teamSeasonId: teamSeason.id,
         },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+        body: { divisionSeasonId: divisionSeason.id },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
+      const assigned = unwrapApiResult(result, 'Failed to assign team to division');
+
+      if (assigned) {
         setSuccessMessage(
           `Team "${teamSeason.name}" automatically assigned to division "${divisionSeason.divisionName}"`,
         );
-        // Use targeted update instead of full refresh
         addTeamToDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error assigning team to division:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to assign team to division');
-      }
+      setError(error instanceof Error ? error.message : 'Failed to assign team to division');
     } finally {
       setFormLoading(false);
     }
@@ -502,40 +539,40 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       !selectedTeamSeason ||
       !targetDivisionSeason ||
       !selectedTeamLeagueSeason
-    )
+    ) {
       return;
+    }
 
     setFormLoading(true);
     try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedTeamLeagueSeason.id}/teams/${selectedTeamSeason.id}/assign-division`,
-        {
-          divisionSeasonId: targetDivisionSeason.id,
+      const result = await apiAssignLeagueSeasonTeamDivision({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: season.id,
+          leagueSeasonId: selectedTeamLeagueSeason.id,
+          teamSeasonId: selectedTeamSeason.id,
         },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+        body: { divisionSeasonId: targetDivisionSeason.id },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
+      const assigned = unwrapApiResult(result, 'Failed to assign team to division');
+
+      if (assigned) {
         setSuccessMessage(
           `Team "${selectedTeamSeason.name}" assigned to division "${targetDivisionSeason.divisionName}"`,
         );
         setAssignTeamDialogOpen(false);
-        // Use targeted update instead of full refresh
         addTeamToDivisionInState(
           selectedTeamLeagueSeason.id,
           targetDivisionSeason.id,
           selectedTeamSeason,
         );
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error assigning team to division:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to assign team to division');
-      }
+      setError(error instanceof Error ? error.message : 'Failed to assign team to division');
     } finally {
       setFormLoading(false);
     }
@@ -562,31 +599,31 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setFormLoading(true);
     try {
-      const response = await axios.delete(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/remove-from-division`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await apiRemoveLeagueSeasonTeamDivision({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: season.id,
+          leagueSeasonId: leagueSeason.id,
+          teamSeasonId: teamSeason.id,
+        },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        // Use targeted update instead of full refresh
-        // Find which division the team was in
+      const removed = unwrapApiResult(result, 'Failed to remove team from division');
+
+      if (removed) {
         const divisionSeason = leagueSeason.divisions?.find((div) =>
           div.teams?.some((team) => team.id === teamSeason.id),
         );
         if (divisionSeason) {
           removeTeamFromDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
         }
+        setSuccessMessage(`Team "${teamSeason.name}" removed from division`);
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error removing team from division:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to remove team from division');
-      }
+      setError(error instanceof Error ? error.message : 'Failed to remove team from division');
     } finally {
       setFormLoading(false);
     }
@@ -610,14 +647,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setFormLoading(true);
     try {
-      // First, remove the league from this season (delete leagueseason record)
-      const removeFromSeasonResponse = await axios.delete(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueToDelete.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const removeResult = await apiRemoveLeagueFromSeason({
+        client: apiClient,
+        path: { accountId, seasonId: season.id, leagueSeasonId: leagueToDelete.id },
+        throwOnError: false,
+      });
 
-      if (removeFromSeasonResponse.data.success) {
-        // Now try to delete the league definition (may fail if used in other seasons)
+      const removed = unwrapApiResult(removeResult, 'Failed to remove league from season');
+
+      if (removed) {
         try {
           const deleteLeagueResult = await deleteLeague({
             client: apiClient,
@@ -660,7 +698,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         // Use targeted update instead of full refresh
         removeLeagueSeasonFromState(leagueToDelete.id);
       } else {
-        setError(removeFromSeasonResponse.data.message || 'Failed to remove league from season');
+        setError('Failed to remove league from season');
       }
     } catch (error: unknown) {
       console.error('Error removing league from season:', error);
@@ -841,37 +879,37 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setFormLoading(true);
     try {
-      // Single API call to update both name and priority
-      const response = await axios.put(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeasonForEdit.id}/divisions/${divisionToEdit.id}`,
-        {
+      const result = await apiUpdateLeagueSeasonDivision({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: season.id,
+          leagueSeasonId: leagueSeasonForEdit.id,
+          divisionSeasonId: divisionToEdit.id,
+        },
+        body: {
           name: editDivisionName.trim(),
           priority: editDivisionPriority,
         },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
+      const updated = unwrapApiResult(result, 'Failed to update division');
+
+      if (updated) {
         setSuccessMessage('Division updated successfully');
         setEditDivisionDialogOpen(false);
         setDivisionToEdit(null);
         setLeagueSeasonForEdit(null);
         setEditDivisionName('');
         setEditDivisionPriority(0);
-        // Refresh the data to show updated values
         fetchLeagueSeasons();
-      } else {
-        setError(response.data.message || 'Failed to update division');
-      }
-    } catch (error: unknown) {
-      console.error('Error updating division:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
       } else {
         setError('Failed to update division');
       }
+    } catch (error) {
+      console.error('Error updating division:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update division');
     } finally {
       setFormLoading(false);
     }

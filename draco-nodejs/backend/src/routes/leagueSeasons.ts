@@ -851,7 +851,9 @@ router.post(
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
-    const { divisionId, name, priority } = req.body;
+
+    const input = UpsertDivisionSeasonSchema.parse(req.body);
+    const { divisionId, name, priority } = input;
 
     // Must provide either divisionId (existing) or name (new)
     if (!divisionId && (!name || !name.trim())) {
@@ -898,6 +900,10 @@ router.post(
       }
     } else {
       // Creating new division
+      if (!name || !name.trim()) {
+        throw new ValidationError('Division name is required to create a new division');
+      }
+
       const trimmedName = name.trim();
 
       // Check if division with this name already exists

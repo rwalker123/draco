@@ -44,7 +44,13 @@ import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import axios from 'axios';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
-import { listAccountLeagues, createLeague, updateLeague } from '@draco/shared-api-client';
+import {
+  listAccountLeagues,
+  createLeague,
+  updateLeague,
+  addLeagueToSeason as apiAddLeagueToSeason,
+  removeLeagueFromSeason as apiRemoveLeagueFromSeason,
+} from '@draco/shared-api-client';
 import { LeagueType, UpsertLeagueType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
@@ -458,75 +464,67 @@ const SeasonManagement: React.FC = () => {
   };
 
   const handleAddLeagueToSeason = async () => {
-    if (!accountId || !token || !selectedSeason || !selectedLeague) return;
+    if (!accountIdStr || !token || !selectedSeason || !selectedLeague) return;
 
     setFormLoading(true);
     setDialogSuccessMessage(null);
     setDialogErrorMessage(null);
     try {
-      const response = await axios.post(
-        `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
-        { leagueId: selectedLeague.id },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await apiAddLeagueToSeason({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: selectedSeason.id },
+        body: { leagueId: selectedLeague.id },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setDialogSuccessMessage(
-          `League "${selectedLeague.name}" added to season "${selectedSeason.name}"`,
-        );
-        addLeagueToSeasonInState(selectedSeason.id, response.data.data.leagueSeason);
-        // Update selectedSeason for dialog
-        setSelectedSeason((prev) =>
-          prev
-            ? {
-                ...prev,
-                leagues: [...prev.leagues, response.data.data.leagueSeason],
-              }
-            : prev,
-        );
-        setSelectedLeague(null);
-      } else {
-        setDialogErrorMessage(response.data.message || 'Failed to add league to season');
-      }
+      const addedLeagueSeason = unwrapApiResult(result, 'Failed to add league to season');
+
+      const mappedLeagueSeason = {
+        id: addedLeagueSeason.id,
+        leagueId: addedLeagueSeason.league.id,
+        leagueName: addedLeagueSeason.league.name,
+      };
+
+      setDialogSuccessMessage(
+        `League "${selectedLeague.name}" added to season "${selectedSeason.name}"`,
+      );
+      addLeagueToSeasonInState(selectedSeason.id, mappedLeagueSeason);
+      setSelectedSeason((prev) =>
+        prev
+          ? {
+              ...prev,
+              leagues: [...prev.leagues, mappedLeagueSeason],
+            }
+          : prev,
+      );
+      setSelectedLeague(null);
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setDialogErrorMessage(
-          (err as { response: { data: { message: string } } }).response.data.message,
-        );
-      } else if (err instanceof Error) {
-        setDialogErrorMessage(err.message);
-      } else {
-        setDialogErrorMessage('Failed to add league to season');
-      }
+      setDialogErrorMessage(err instanceof Error ? err.message : 'Failed to add league to season');
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleRemoveLeagueFromSeason = async (leagueSeasonId: string, leagueName: string) => {
-    if (!accountId || !token || !selectedSeason) return;
+    if (!accountIdStr || !token || !selectedSeason) return;
 
     setFormLoading(true);
     setDialogSuccessMessage(null);
     setDialogErrorMessage(null);
     try {
-      const response = await axios.delete(
-        `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues/${leagueSeasonId}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await apiRemoveLeagueFromSeason({
+        client: apiClient,
+        path: { accountId: accountIdStr, seasonId: selectedSeason.id, leagueSeasonId },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
+      const removed = unwrapApiResult(result, 'Failed to remove league from season');
+
+      if (removed) {
         setDialogSuccessMessage(
           `League "${leagueName}" removed from season "${selectedSeason.name}"`,
         );
         removeLeagueFromSeasonInState(selectedSeason.id, leagueSeasonId);
-        // Update selectedSeason for dialog
         setSelectedSeason((prev) =>
           prev
             ? {
@@ -536,24 +534,12 @@ const SeasonManagement: React.FC = () => {
             : prev,
         );
       } else {
-        setDialogErrorMessage(response.data.message || 'Failed to remove league from season');
-      }
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-          'string'
-      ) {
-        setDialogErrorMessage(
-          (err as { response: { data: { message: string } } }).response.data.message,
-        );
-      } else if (err instanceof Error) {
-        setDialogErrorMessage(err.message);
-      } else {
         setDialogErrorMessage('Failed to remove league from season');
       }
+    } catch (err: unknown) {
+      setDialogErrorMessage(
+        err instanceof Error ? err.message : 'Failed to remove league from season',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -656,31 +642,42 @@ const SeasonManagement: React.FC = () => {
       const newLeague = unwrapApiResult(result, 'Failed to create league') as LeagueType;
 
       // If checkbox is checked, add the league to the season
-      if (addToSeasonAfterCreate && selectedSeason) {
-        const addResponse = await axios.post(
-          `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
-          { leagueId: newLeague.id },
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
+      if (addToSeasonAfterCreate && selectedSeason && accountIdStr) {
+        try {
+          const addResult = await apiAddLeagueToSeason({
+            client: apiClient,
+            path: { accountId: accountIdStr, seasonId: selectedSeason.id },
+            body: { leagueId: newLeague.id },
+            throwOnError: false,
+          });
 
-        if (addResponse.data.success) {
+          const addedLeagueSeason = unwrapApiResult(
+            addResult,
+            'Failed to add league to season after creation',
+          );
+
+          const mappedLeagueSeason = {
+            id: addedLeagueSeason.id,
+            leagueId: addedLeagueSeason.league.id,
+            leagueName: addedLeagueSeason.league.name,
+          };
+
           setDialogSuccessMessage(
             `League "${newLeague.name}" created and added to season "${selectedSeason.name}"`,
           );
 
-          // Use targeted update instead of full refresh
-          addLeagueToSeasonInState(selectedSeason.id, addResponse.data.data.leagueSeason);
+          addLeagueToSeasonInState(selectedSeason.id, mappedLeagueSeason);
 
-          // Also update selectedSeason for the dialog
           setSelectedSeason((prev) =>
             prev
               ? {
                   ...prev,
-                  leagues: [...prev.leagues, addResponse.data.data.leagueSeason],
+                  leagues: [...prev.leagues, mappedLeagueSeason],
                 }
               : prev,
           );
-        } else {
+        } catch (error) {
+          console.warn('Failed to add newly created league to season', error);
           setDialogSuccessMessage(
             `League "${newLeague.name}" created successfully, but failed to add to season`,
           );

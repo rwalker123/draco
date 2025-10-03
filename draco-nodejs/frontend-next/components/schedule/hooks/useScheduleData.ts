@@ -4,8 +4,9 @@ import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { Game, Team, Field, Umpire, League, FilterType } from '@/types/schedule';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { listSeasonGames } from '@draco/shared-api-client';
+import { listSeasonGames, listSeasonLeagueSeasons } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../../../utils/apiResult';
+import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
 
 interface UseScheduleDataProps {
@@ -113,128 +114,117 @@ export const useScheduleData = ({
       setLoadingStaticData(true);
       setError('');
 
-      // Get current season first using the hook
       const currentSeasonId = await fetchCurrentSeason();
 
-      // Load static data in parallel
-      const requests = [
-        fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues?includeTeams`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-
-        fetch(`/api/accounts/${accountId}/fields`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ];
-
-      // Only add umpires request if we have a token
-      if (token) {
-        requests.push(
-          fetch(`/api/accounts/${accountId}/umpires`, {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-        );
-      }
-
-      const responses = await Promise.all(requests);
-      const [leaguesResponse, fieldsResponse, umpiresResponse] = responses;
-
-      // Process leagues for current season (may fail for unauthenticated users)
-      if (leaguesResponse.ok) {
-        const leaguesData = await leaguesResponse.json();
-        const leaguesList = leaguesData.data?.leagueSeasons || [];
-
-        // Build the leagues array and cache teams for each league
-        const newLeagueTeamsCache = new Map<string, Team[]>();
-        const processedLeagues = leaguesList.map(
-          (ls: {
-            id: string;
-            leagueName: string;
-            divisions?: Array<{ teams: Team[] }>;
-            unassignedTeams?: Team[];
-          }) => {
-            const allTeams: Team[] = [];
-
-            // Add teams from divisions
-            if (ls.divisions) {
-              ls.divisions.forEach((division: { teams: Team[] }) => {
-                division.teams.forEach((team: Team) => {
-                  allTeams.push({
-                    id: team.id,
-                    name: team.name,
-                  });
-                });
-              });
-            }
-
-            // Add unassigned teams
-            if (ls.unassignedTeams) {
-              ls.unassignedTeams.forEach((team: Team) => {
-                allTeams.push({
-                  id: team.id,
-                  name: team.name,
-                });
-              });
-            }
-
-            // Cache the teams for this league
-            newLeagueTeamsCache.set(ls.id, allTeams);
-
-            return {
-              id: ls.id,
-              name: ls.leagueName,
-            };
+      try {
+        const leagueResult = await listSeasonLeagueSeasons({
+          client: apiClient,
+          path: { accountId, seasonId: currentSeasonId },
+          query: {
+            includeTeams: true,
+            includeUnassignedTeams: true,
           },
-        );
+          throwOnError: false,
+        });
+
+        const leagueData = unwrapApiResult(leagueResult, 'Failed to load leagues');
+        const mapped = mapLeagueSetup(leagueData, accountId);
+
+        const newLeagueTeamsCache = new Map<string, Team[]>();
+        const processedLeagues = mapped.leagueSeasons.map((leagueSeason) => {
+          const leagueTeams: Team[] = [];
+
+          leagueSeason.divisions.forEach((division) => {
+            division.teams.forEach((team) => {
+              leagueTeams.push({
+                id: team.id,
+                teamId: team.teamId,
+                name: team.name,
+                teamName: team.name,
+                logoUrl: team.logoUrl ?? undefined,
+                webAddress: team.webAddress ?? undefined,
+                youtubeUserId: team.youtubeUserId ?? undefined,
+                defaultVideo: team.defaultVideo ?? undefined,
+                autoPlayVideo: team.autoPlayVideo,
+                leagueName: leagueSeason.leagueName,
+                divisionName: division.divisionName,
+              });
+            });
+          });
+
+          leagueSeason.unassignedTeams.forEach((team) => {
+            leagueTeams.push({
+              id: team.id,
+              teamId: team.teamId,
+              name: team.name,
+              teamName: team.name,
+              logoUrl: team.logoUrl ?? undefined,
+              webAddress: team.webAddress ?? undefined,
+              youtubeUserId: team.youtubeUserId ?? undefined,
+              defaultVideo: team.defaultVideo ?? undefined,
+              autoPlayVideo: team.autoPlayVideo,
+              leagueName: leagueSeason.leagueName,
+            });
+          });
+
+          newLeagueTeamsCache.set(leagueSeason.id, leagueTeams);
+
+          return {
+            id: leagueSeason.id,
+            name: leagueSeason.leagueName,
+          };
+        });
 
         setLeagues(processedLeagues);
         setLeagueTeamsCache(newLeagueTeamsCache);
 
-        // Also set all teams (for backwards compatibility)
-        const allTeamsSet = new Set<string>();
-        const allTeamsArray: Team[] = [];
+        const uniqueTeams = new Map<string, Team>();
         newLeagueTeamsCache.forEach((teams) => {
           teams.forEach((team) => {
-            if (!allTeamsSet.has(team.id)) {
-              allTeamsSet.add(team.id);
-              allTeamsArray.push(team);
+            if (!uniqueTeams.has(team.id)) {
+              uniqueTeams.set(team.id, team);
             }
           });
         });
-        setTeams(allTeamsArray);
-      } else if (leaguesResponse.status === 401) {
-        // For unauthenticated users, set empty leagues array
+        setTeams(Array.from(uniqueTeams.values()));
+      } catch (leagueError) {
+        console.warn('Failed to load leagues:', leagueError);
         setLeagues([]);
         setLeagueTeamsCache(new Map());
-      } else {
-        console.warn('Failed to load leagues:', leaguesResponse.status);
-        setLeagues([]);
-        setLeagueTeamsCache(new Map());
+        setTeams([]);
       }
 
-      // Process fields (should work for all users)
+      const fieldsPromise = fetch(`/api/accounts/${accountId}/fields`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const umpirePromise = token
+        ? fetch(`/api/accounts/${accountId}/umpires`, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        : Promise.resolve(null);
+
+      const [fieldsResponse, umpiresResponse] = await Promise.all([fieldsPromise, umpirePromise]);
+
       if (fieldsResponse.ok) {
         const fieldsData = await fieldsResponse.json();
         setFields(fieldsData.fields);
       }
 
-      // Process umpires (requires authentication)
       if (umpiresResponse) {
         if (umpiresResponse.ok) {
           const umpiresData = await umpiresResponse.json();
           setUmpires(umpiresData.umpires);
         } else if (umpiresResponse.status === 401) {
-          // For unauthenticated users, set empty umpires array
           setUmpires([]);
         } else {
           console.warn('Failed to load umpires:', umpiresResponse.status);
           setUmpires([]);
         }
       } else {
-        // No token available, set empty umpires array
         setUmpires([]);
       }
     } catch (err: unknown) {
@@ -242,7 +232,7 @@ export const useScheduleData = ({
     } finally {
       setLoadingStaticData(false);
     }
-  }, [accountId, token, fetchCurrentSeason]);
+  }, [accountId, apiClient, token, fetchCurrentSeason]);
 
   // Load games data
   const loadGamesData = useCallback(async () => {

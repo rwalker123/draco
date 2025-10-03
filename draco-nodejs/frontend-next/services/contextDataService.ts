@@ -3,38 +3,26 @@
  * Centralized API service functions for fetching context data (leagues, teams) for role assignment
  */
 
+import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import type { Client } from '@draco/shared-api-client/generated/client';
+import { createApiClient } from '../lib/apiClientFactory';
+import { unwrapApiResult } from '../utils/apiResult';
+import {
+  mapLeagueSetup,
+  type LeagueSeasonSummary,
+  type LeagueSeasonDivision,
+  type LeagueSeasonTeam,
+} from '../utils/leagueSeasonMapper';
+
+export type LeagueSeason = LeagueSeasonSummary;
+export type Division = LeagueSeasonDivision;
+export type Team = LeagueSeasonTeam;
+
 export interface League {
   id: string;
   leagueId: string;
   leagueName: string;
   accountId: string;
-}
-
-export interface Team {
-  id: string;
-  teamId: string;
-  name: string;
-  webAddress: string | null;
-  youtubeUserId: string | null;
-  defaultVideo: string | null;
-  autoPlayVideo: boolean;
-}
-
-export interface Division {
-  id: string;
-  divisionId: string;
-  divisionName: string;
-  priority: number;
-  teams: Team[];
-}
-
-export interface LeagueSeason {
-  id: string;
-  leagueId: string;
-  leagueName: string;
-  accountId: string;
-  divisions?: Division[];
-  unassignedTeams?: Team[];
 }
 
 export interface ContextDataResponse {
@@ -51,10 +39,10 @@ export interface ContextDataResponse {
  * Centralized API service functions for context data operations
  */
 export class ContextDataService {
-  private token: string;
+  private client: Client;
 
   constructor(token: string) {
-    this.token = token;
+    this.client = createApiClient({ token: token || undefined });
   }
 
   /**
@@ -62,51 +50,36 @@ export class ContextDataService {
    * This single call provides all the data needed for both league and team selection
    */
   async fetchLeaguesAndTeams(accountId: string, seasonId: string): Promise<ContextDataResponse> {
-    const response = await fetch(
-      `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams=true`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+    const result = await listSeasonLeagueSeasons({
+      client: this.client,
+      path: { accountId, seasonId },
+      query: { includeTeams: true, includeUnassignedTeams: true },
+      throwOnError: false,
+    });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to load leagues and teams');
-    }
+    const data = unwrapApiResult(result, 'Failed to load leagues and teams');
+    const mapped = mapLeagueSetup(data, accountId);
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load leagues and teams');
-    }
-
-    return data.data;
+    return {
+      season: mapped.season,
+      leagueSeasons: mapped.leagueSeasons,
+    };
   }
 
   /**
    * Get all leagues for a season (without teams data)
    */
   async fetchLeagues(accountId: string, seasonId: string): Promise<League[]> {
-    const response = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/leagues`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
+    const result = await listSeasonLeagueSeasons({
+      client: this.client,
+      path: { accountId, seasonId },
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to load leagues');
-    }
+    const data = unwrapApiResult(result, 'Failed to load leagues');
+    const mapped = mapLeagueSetup(data, accountId);
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to load leagues');
-    }
-
-    return data.data.leagueSeasons.map((ls: LeagueSeason) => ({
+    return mapped.leagueSeasons.map((ls) => ({
       id: ls.id,
       leagueId: ls.leagueId,
       leagueName: ls.leagueName,

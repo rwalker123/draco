@@ -72,7 +72,14 @@ import {
   WorkoutSourcesSchema,
   WorkoutSummarySchema,
   ContactSearchParamsSchema,
+  DivisionSeasonSchema,
+  DivisionSeasonWithTeamsSchema,
   LeagueSchema,
+  LeagueSeasonQueryParamsSchema,
+  LeagueSeasonSchema,
+  LeagueSeasonWithDivisionTeamsAndUnassignedSchema,
+  LeagueSetupSchema,
+  UpsertDivisionSeasonSchema,
   UpsertLeagueSchema,
   GameSchema,
   GameResultSchema,
@@ -238,6 +245,21 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'WorkoutRegistrationsQuery',
     WorkoutRegistrationsQuerySchema,
   );
+  const DivisionSeasonSchemaRef = registry.register('DivisionSeason', DivisionSeasonSchema);
+  const DivisionSeasonWithTeamsSchemaRef = registry.register(
+    'DivisionSeasonWithTeams',
+    DivisionSeasonWithTeamsSchema,
+  );
+  const LeagueSeasonQueryParamsSchemaRef = registry.register(
+    'LeagueSeasonQueryParams',
+    LeagueSeasonQueryParamsSchema,
+  );
+  const LeagueSeasonSchemaRef = registry.register('LeagueSeason', LeagueSeasonSchema);
+  const LeagueSeasonWithDivisionTeamsAndUnassignedSchemaRef = registry.register(
+    'LeagueSeasonWithDivisionTeamsAndUnassigned',
+    LeagueSeasonWithDivisionTeamsAndUnassignedSchema,
+  );
+  const LeagueSetupSchemaRef = registry.register('LeagueSetup', LeagueSetupSchema);
   const LeagueSchemaRef = registry.register('League', LeagueSchema);
   const UpsertLeagueSchemaRef = registry.register('UpsertLeague', UpsertLeagueSchema);
   const GameSchemaRef = registry.register('Game', GameSchema);
@@ -249,6 +271,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const UpsertGameSchemaRef = registry.register('UpsertGame', UpsertGameSchema);
   const UpsertGameRecapSchemaRef = registry.register('UpsertGameRecap', UpsertGameRecapSchema);
+  const UpsertDivisionSeasonSchemaRef = registry.register(
+    'UpsertDivisionSeason',
+    UpsertDivisionSeasonSchema,
+  );
 
   const ValidationErrorSchemaRef = registry.register('ValidationError', ValidationErrorSchema);
   const AuthenticationErrorSchemaRef = registry.register(
@@ -331,6 +357,12 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutListQuerySchemaRef,
     WorkoutRegistrationsQuerySchemaRef,
+    DivisionSeasonSchemaRef,
+    DivisionSeasonWithTeamsSchemaRef,
+    LeagueSeasonQueryParamsSchemaRef,
+    LeagueSeasonSchemaRef,
+    LeagueSeasonWithDivisionTeamsAndUnassignedSchemaRef,
+    LeagueSetupSchemaRef,
     LeagueSchemaRef,
     UpsertLeagueSchemaRef,
     GameSchemaRef,
@@ -339,6 +371,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,
+    UpsertDivisionSeasonSchemaRef,
     ValidationErrorSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
