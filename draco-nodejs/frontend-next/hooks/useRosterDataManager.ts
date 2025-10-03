@@ -13,6 +13,7 @@ import {
   removeManager as apiRemoveManager,
   deleteContactPhoto as apiDeleteContactPhoto,
   getContactRoster as apiGetContactRoster,
+  getAccountSeason,
 } from '@draco/shared-api-client';
 import {
   TeamManagerType,
@@ -268,18 +269,19 @@ export const useRosterDataManager = (
     if (!accountId || !seasonId || !token) return;
 
     try {
-      const response = await axios.get(`/api/accounts/${accountId}/seasons/${seasonId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const result = await getAccountSeason({
+        client: apiClient,
+        path: { accountId, seasonId },
+        throwOnError: false,
       });
 
-      if (response.data.success) {
-        setSeason(response.data.data.season);
-      }
+      const seasonData = unwrapApiResult(result, 'Failed to fetch season data');
+      setSeason({ id: seasonData.id, name: seasonData.name });
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error, 'Failed to fetch season data');
       setError(errorMessage);
     }
-  }, [accountId, seasonId, token, setSeason, setError, getErrorMessage]);
+  }, [accountId, seasonId, token, setSeason, setError, getErrorMessage, apiClient]);
 
   // Fetch league data
   const fetchLeagueData = useCallback(async () => {

@@ -1,4 +1,7 @@
 import { useState, useCallback } from 'react';
+import { getCurrentSeason } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../utils/apiResult';
+import { useApiClient } from './useApiClient';
 
 interface UseCurrentSeasonReturn {
   currentSeasonId: string | null;
@@ -17,25 +20,22 @@ export const useCurrentSeason = (accountId: string): UseCurrentSeasonReturn => {
   const [currentSeasonName, setCurrentSeasonName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const apiClient = useApiClient();
 
   const fetchCurrentSeason = useCallback(async (): Promise<string> => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountId}/seasons/current`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const result = await getCurrentSeason({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to load current season');
-      }
-
-      const data = await response.json();
-      const seasonId = data.data.season.id;
-      const seasonName = data.data.season.name;
+      const season = unwrapApiResult(result, 'Failed to load current season');
+      const seasonId = season.id;
+      const seasonName = season.name;
 
       setCurrentSeasonId(seasonId);
       setCurrentSeasonName(seasonName);
@@ -48,7 +48,7 @@ export const useCurrentSeason = (accountId: string): UseCurrentSeasonReturn => {
     } finally {
       setLoading(false);
     }
-  }, [accountId]);
+  }, [accountId, apiClient]);
 
   return {
     currentSeasonId,

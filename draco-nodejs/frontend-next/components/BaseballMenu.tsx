@@ -23,6 +23,9 @@ import {
   Menu as HamburgerIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
+import { getCurrentSeason } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../utils/apiResult';
+import { useApiClient } from '../hooks/useApiClient';
 
 interface BaseballMenuProps {
   accountId: string;
@@ -36,20 +39,23 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentSeasonId, setCurrentSeasonId] = useState<string | null>(null);
   const [loadingSeason, setLoadingSeason] = useState(true);
+  const apiClient = useApiClient();
 
   useEffect(() => {
     let isMounted = true;
     const fetchCurrentSeason = async () => {
       setLoadingSeason(true);
       try {
-        const response = await fetch(`/api/accounts/${accountId}/seasons/current`);
-        if (response.ok) {
-          const data = await response.json();
-          if (isMounted) setCurrentSeasonId(data.data.season.id);
-        } else {
-          if (isMounted) setCurrentSeasonId(null);
-        }
-      } catch {
+        const result = await getCurrentSeason({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        const season = unwrapApiResult(result, 'Failed to load current season');
+        if (isMounted) setCurrentSeasonId(season.id);
+      } catch (error) {
+        console.warn('Failed to load current season', error);
         if (isMounted) setCurrentSeasonId(null);
       } finally {
         if (isMounted) setLoadingSeason(false);
@@ -59,7 +65,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     return () => {
       isMounted = false;
     };
-  }, [accountId]);
+  }, [accountId, apiClient]);
 
   const menuItems = [
     {

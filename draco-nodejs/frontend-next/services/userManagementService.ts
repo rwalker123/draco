@@ -1,6 +1,7 @@
 import { DependencyCheckResult, Role } from '../types/users';
 import { ContactUpdateResponse } from '../types/userManagementTypeGuards';
 import { ContactTransformationService } from './contactTransformationService';
+import { createContactMediaService } from './contactMediaService';
 import { handleApiErrorResponse } from '../utils/errorHandling';
 import {
   ContactType,
@@ -34,10 +35,12 @@ interface PaginationInfo {
 export class UserManagementService {
   private token: string;
   private client: Client;
+  private mediaService: ReturnType<typeof createContactMediaService> | null;
 
   constructor(token: string) {
     this.token = token;
     this.client = createApiClient({ token });
+    this.mediaService = createContactMediaService(token);
   }
 
   /**
@@ -397,17 +400,11 @@ export class UserManagementService {
    * Delete contact photo
    */
   async deleteContactPhoto(accountId: string, contactId: string): Promise<void> {
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}/photo`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to delete contact photo (${response.status})`);
+    if (!this.mediaService) {
+      throw new Error('Media service unavailable');
     }
+
+    await this.mediaService.deletePhoto(accountId, contactId);
   }
 
   /**

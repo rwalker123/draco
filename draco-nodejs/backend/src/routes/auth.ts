@@ -1,15 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/authService.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { authRateLimit, passwordRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import prisma from '../lib/prisma.js';
-import { SignInCredentialsSchema } from '@draco/shared-schemas';
+import { RegisteredUserType, SignInCredentialsSchema } from '@draco/shared-schemas';
 
 const router = Router();
-const authService = new AuthService();
+const authService = ServiceFactory.getAuthService();
 const roleService = ServiceFactory.getRoleVerification();
 
 /**
@@ -63,35 +62,8 @@ router.get(
       throw new AuthenticationError('User not authenticated');
     }
 
-    // Fetch first and last name and email from contacts table
-    let firstname = undefined;
-    let lastname = undefined;
-    let email = undefined;
-    try {
-      const contact = await prisma.contacts.findFirst({
-        where: { userid: req.user.id },
-        select: { firstname: true, lastname: true, email: true },
-      });
-      if (contact) {
-        firstname = contact.firstname;
-        lastname = contact.lastname;
-        email = contact.email;
-      }
-    } catch (_e) {
-      // If contacts table is missing or error, just skip
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'User information retrieved',
-      user: {
-        id: req.user.id,
-        username: req.user.username,
-        firstname,
-        lastname,
-        email,
-      },
-    });
+    const result = await authService.getUserById(req.user.id);
+    res.status(200).json(result);
   }),
 );
 
@@ -185,7 +157,6 @@ router.get(
     const roleCheck = await roleService.hasRole(req.user.id, roleId, context);
 
     res.status(200).json({
-      success: true,
       hasRole: roleCheck.hasRole,
       roleLevel: roleCheck.roleLevel,
       context: roleCheck.context,

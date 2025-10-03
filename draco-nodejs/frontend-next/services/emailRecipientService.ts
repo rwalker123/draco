@@ -23,6 +23,8 @@ import {
   normalizeError,
 } from '../utils/errorHandling';
 import {
+  getCurrentSeason,
+  getSeasonParticipantCount,
   listSeasonLeagueSeasons,
   searchContacts as apiSearchContacts,
 } from '@draco/shared-api-client';
@@ -95,18 +97,6 @@ export interface TeamsResponse {
   success: boolean;
   data: {
     teams: BackendTeam[];
-  };
-  error?: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
-
-export interface CurrentSeasonResponse {
-  success: boolean;
-  data: {
-    season: Season | null;
   };
   error?: {
     code: string;
@@ -473,25 +463,26 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
-    }
-
-    const url = `/api/accounts/${accountId}/seasons/current`;
-
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
+        const apiClient = createApiClient({ token: token || undefined });
+        const result = await getCurrentSeason({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
         });
 
-        const data = await this.handleResponse<CurrentSeasonResponse>(response);
-        return data.data.season;
+        const season = unwrapApiResult(result, 'Failed to fetch current season');
+
+        return {
+          id: season.id,
+          name: season.name,
+          accountId: season.accountId,
+        } satisfies Season;
       },
       {
         operation: 'fetch_current_season',
-        additionalData: { endpoint: url },
+        additionalData: { endpoint: 'openapi:getCurrentSeason' },
       },
     );
   }
@@ -760,31 +751,18 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
-    }
-
-    const url = `/api/accounts/${accountId}/seasons/${seasonId}/participants/count`;
-
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
+        const apiClient = createApiClient({ token: token || undefined });
+        const result = await getSeasonParticipantCount({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
         });
 
-        const data = await this.handleResponse<{
-          success: boolean;
-          data: {
-            seasonId: string;
-            participantCount: number;
-          };
-        }>(response);
+        const data = unwrapApiResult(result, 'Failed to load season participant count');
 
-        if (
-          data.data?.participantCount === undefined ||
-          typeof data.data.participantCount !== 'number'
-        ) {
+        if (typeof data.participantCount !== 'number') {
           throw createEmailRecipientError(
             EmailRecipientErrorCode.INVALID_DATA,
             'Invalid season participants count response format',
@@ -795,11 +773,11 @@ export class EmailRecipientService {
           );
         }
 
-        return data.data.participantCount;
+        return data.participantCount;
       },
       {
         operation: 'fetch_season_participants_count',
-        additionalData: { endpoint: url },
+        additionalData: { endpoint: 'openapi:getSeasonParticipantCount' },
       },
     );
   }

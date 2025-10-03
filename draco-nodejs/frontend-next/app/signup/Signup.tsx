@@ -13,6 +13,9 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import AccountPageHeader from '../../components/AccountPageHeader';
+import { registerUser } from '@draco/shared-api-client';
+import { createApiClient } from '../../lib/apiClientFactory';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [formData, setFormData] = useState({
@@ -67,29 +70,24 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.email.trim(), // Use email as username
-          email: formData.email.trim(),
+      const client = createApiClient();
+      const result = await registerUser({
+        client,
+        throwOnError: false,
+        body: {
+          userName: formData.email.trim(),
           password: formData.password,
-        }),
+        },
       });
 
-      if (response.ok) {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push(next || '/login');
-        }, 2000);
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to sign up');
-      }
-    } catch {
-      setError('Failed to sign up. Please try again.');
+      unwrapApiResult(result, 'Failed to sign up');
+
+      setSuccess(true);
+      setTimeout(() => {
+        router.push(next || '/login');
+      }, 2000);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to sign up. Please try again.');
     } finally {
       setLoading(false);
     }
