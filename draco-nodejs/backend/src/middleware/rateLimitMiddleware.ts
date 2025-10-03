@@ -114,3 +114,14 @@ export const cleanupRateLimit = createRateLimit({
   message: 'Rate limit exceeded: Maximum 10 cleanup operations per day per user',
   skipSuccessfulRequests: false, // Count all requests
 });
+
+/**
+ * Health monitoring rate limiting
+ * 30 requests per minute per IP
+ */
+export const monitoringHealthRateLimit = createRateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  message: 'Rate limit exceeded: Too many health check requests, please slow down.',
+  skipSuccessfulRequests: false,
+});

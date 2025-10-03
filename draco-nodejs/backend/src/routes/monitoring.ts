@@ -5,6 +5,7 @@ import prisma from '../lib/prisma.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { monitoringHealthRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router();
@@ -15,8 +16,7 @@ const routeProtection = ServiceFactory.getRouteProtection();
  */
 router.get(
   '/health',
-  authenticateToken,
-  routeProtection.requireAdministrator(),
+  monitoringHealthRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
     const startTime = Date.now();
 
