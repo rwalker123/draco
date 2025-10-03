@@ -152,6 +152,93 @@ export type dbLeagueSeason = Prisma.leagueseasonGetPayload<{
   };
 }>;
 
+export type dbScheduleGameWithDetails = Prisma.leaguescheduleGetPayload<{
+  include: {
+    availablefields: true;
+    leagueseason: {
+      include: {
+        league: true;
+        season: true;
+      };
+    };
+  };
+}>;
+
+export type dbScheduleGameWithRecaps = Prisma.leaguescheduleGetPayload<{
+  include: {
+    availablefields: true;
+    leagueseason: {
+      include: {
+        league: true;
+        season: true;
+      };
+    };
+    gamerecap: {
+      select: {
+        teamid: true;
+        recap: true;
+      };
+    };
+  };
+}>;
+
+export type dbScheduleGameForAccount = Prisma.leaguescheduleGetPayload<{
+  include: {
+    leagueseason: {
+      include: {
+        league: true;
+        season: true;
+      };
+    };
+  };
+}>;
+
+export type dbGameRecap = Prisma.gamerecapGetPayload<{
+  select: {
+    gameid: true;
+    teamid: true;
+    recap: true;
+  };
+}>;
+
+export type dbScheduleCreateData = Pick<
+  Prisma.leaguescheduleUncheckedCreateInput,
+  | 'gamedate'
+  | 'hteamid'
+  | 'vteamid'
+  | 'hscore'
+  | 'vscore'
+  | 'comment'
+  | 'fieldid'
+  | 'leagueid'
+  | 'gamestatus'
+  | 'gametype'
+  | 'umpire1'
+  | 'umpire2'
+  | 'umpire3'
+  | 'umpire4'
+>;
+
+export type dbScheduleUpdateData = Pick<
+  Prisma.leaguescheduleUncheckedUpdateInput,
+  | 'gamedate'
+  | 'hteamid'
+  | 'vteamid'
+  | 'comment'
+  | 'fieldid'
+  | 'gamestatus'
+  | 'gametype'
+  | 'umpire1'
+  | 'umpire2'
+  | 'umpire3'
+  | 'umpire4'
+>;
+
+export type dbScheduleResultUpdateData = Pick<
+  Prisma.leaguescheduleUncheckedUpdateInput,
+  'hscore' | 'vscore' | 'gamestatus'
+>;
+
 // Type for raw SQL query result from getContactsWithRoles
 export type dbContactWithRole = {
   id: bigint;
