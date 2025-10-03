@@ -1,7 +1,12 @@
-import axios, { AxiosResponse } from 'axios';
+import {
+  listSeasonManagers as apiListSeasonManagers,
+  type ListSeasonManagersData,
+  type SeasonManagerList,
+} from '@draco/shared-api-client';
+import type { Client } from '@draco/shared-api-client/generated/client';
+import { createApiClient } from '../lib/apiClientFactory';
+import { unwrapApiResult } from '../utils/apiResult';
 import { ManagerInfo, LeagueNames, TeamNames } from '../types/emails/recipients';
-import { BackendManager, BackendManagersResponse } from '../types/emails/backendTypes';
-import { isBackendManagersResponse } from '../utils/emailTypeGuards';
 
 /**
  * Manager Service - Handles manager data fetching and transformation
@@ -68,10 +73,10 @@ export interface ManagerService {
  * Manager service implementation
  */
 class ManagerServiceImpl implements ManagerService {
-  private token: string;
+  private client: Client;
 
-  constructor(token: string) {
-    this.token = token;
+  constructor(client: Client) {
+    this.client = client;
   }
 
   /**
@@ -87,47 +92,9 @@ class ManagerServiceImpl implements ManagerService {
     teamNames: TeamNames;
   }> {
     try {
-      const url = `/api/accounts/${accountId}/seasons/${seasonId}/managers`;
-      const response: AxiosResponse<BackendManagersResponse> = await axios.get(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.token}`,
-        },
-        signal,
-      });
-
-      const data = response.data;
-
-      if (!isBackendManagersResponse(data)) {
-        console.error('ManagerService: Invalid response format:', data);
-        throw new Error('Invalid response format from server');
-      }
-
-      const result = {
-        managers: this.transformManagers(data.managers),
-        leagueNames: data.leagueNames,
-        teamNames: data.teamNames,
-      };
-
-      return result;
+      return await this.fetchSeasonManagers(accountId, seasonId, undefined, signal);
     } catch (error) {
-      console.log('🔍 ManagerService: Error fetching managers:', error);
-      console.log('🔍 ManagerService: Token used:', this.token ? 'Present' : 'Missing');
-      console.log(
-        '🔍 ManagerService: Request URL:',
-        `/api/accounts/${accountId}/seasons/${seasonId}/managers`,
-      );
-
-      // For development, return mock data if API is not available
-      if (error instanceof Error && error.message.includes('404')) {
-        console.log('ManagerService: API endpoint not found, returning mock data');
-        return this.getMockData();
-      }
-
-      if (error instanceof Error) {
-        throw new Error(error.message);
-      }
-      throw new Error('Failed to fetch managers');
+      throw this.toServiceError(error, 'Failed to fetch managers');
     }
   }
 
@@ -145,27 +112,14 @@ class ManagerServiceImpl implements ManagerService {
     teamNames: TeamNames;
   }> {
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/leagues/${leagueId}/managers`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.token}`,
-          },
-          signal,
-        },
+      return await this.fetchSeasonManagers(
+        accountId,
+        seasonId,
+        { leagueSeasonId: leagueId },
+        signal,
       );
-
-      const data = response.data;
-
-      return {
-        managers: this.transformManagers(data.managers),
-        leagueNames: data.leagueNames || {},
-        teamNames: data.teamNames || {},
-      };
     } catch (error) {
-      console.error('Error fetching managers by league:', error);
-      throw new Error('Failed to fetch managers by league');
+      throw this.toServiceError(error, 'Failed to fetch managers by league');
     }
   }
 
@@ -183,27 +137,9 @@ class ManagerServiceImpl implements ManagerService {
     teamNames: TeamNames;
   }> {
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamId}/managers`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.token}`,
-          },
-          signal,
-        },
-      );
-
-      const data = response.data;
-
-      return {
-        managers: this.transformManagers(data.managers),
-        leagueNames: data.leagueNames || {},
-        teamNames: data.teamNames || {},
-      };
+      return await this.fetchSeasonManagers(accountId, seasonId, { teamSeasonId: teamId }, signal);
     } catch (error) {
-      console.error('Error fetching managers by team:', error);
-      throw new Error('Failed to fetch managers by team');
+      throw this.toServiceError(error, 'Failed to fetch managers by team');
     }
   }
 
@@ -221,107 +157,85 @@ class ManagerServiceImpl implements ManagerService {
     teamNames: TeamNames;
   }> {
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/managers/search`,
-        {
-          params: { q: query },
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.token}`,
-          },
-          signal,
-        },
-      );
-
-      const data = response.data;
-
-      return {
-        managers: this.transformManagers(data.managers),
-        leagueNames: data.leagueNames || {},
-        teamNames: data.teamNames || {},
-      };
+      return await this.fetchSeasonManagers(accountId, seasonId, { search: query }, signal);
     } catch (error) {
-      console.error('Error searching managers:', error);
-      throw new Error('Failed to search managers');
+      throw this.toServiceError(error, 'Failed to search managers');
     }
   }
 
   /**
-   * Transform backend manager data to frontend format
+   * Execute the listSeasonManagers request and transform the response.
    */
-  private transformManagers(backendManagers: BackendManager[]): ManagerInfo[] {
-    return backendManagers.map((manager) => ({
-      id: manager.id,
-      name: `${manager.firstName} ${manager.lastName}`,
-      email: manager.email,
-      phone1: manager.phone1 || '',
-      phone2: manager.phone2 || '',
-      phone3: manager.phone3 || '',
-      allTeams: manager.allTeams,
-      hasValidEmail: manager.hasValidEmail,
-    }));
-  }
-
-  /**
-   * Get mock data for development/testing
-   */
-  private getMockData(): {
+  private async fetchSeasonManagers(
+    accountId: string,
+    seasonId: string,
+    query?: ListSeasonManagersData['query'],
+    signal?: AbortSignal,
+  ): Promise<{
     managers: ManagerInfo[];
     leagueNames: LeagueNames;
     teamNames: TeamNames;
-  } {
-    const mockManagers: ManagerInfo[] = [
-      {
-        id: 'manager1',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone1: '555-0101',
-        phone2: '555-0102',
-        phone3: '555-0103',
-        allTeams: [
-          { leagueSeasonId: 'league1', teamSeasonId: 'team1' },
-          { leagueSeasonId: 'league1', teamSeasonId: 'team2' },
-        ],
-        hasValidEmail: true,
-      },
-      {
-        id: 'manager2',
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        phone1: '555-0201',
-        phone2: '',
-        phone3: '',
-        allTeams: [{ leagueSeasonId: 'league2', teamSeasonId: 'team3' }],
-        hasValidEmail: true,
-      },
-      {
-        id: 'manager3',
-        name: 'Bob Johnson',
-        email: 'bob.johnson@example.com',
-        phone1: '555-0301',
-        phone2: '555-0302',
-        phone3: '',
-        allTeams: [{ leagueSeasonId: 'league1', teamSeasonId: 'team1' }],
-        hasValidEmail: true,
-      },
-    ];
-
-    const mockLeagueNames: LeagueNames = {
-      league1: 'Baseball League A',
-      league2: 'Baseball League B',
+  }> {
+    const options: Parameters<typeof apiListSeasonManagers>[0] = {
+      client: this.client,
+      throwOnError: false,
+      path: { accountId, seasonId },
     };
 
-    const mockTeamNames: TeamNames = {
-      team1: 'Red Sox',
-      team2: 'Blue Jays',
-      team3: 'Yankees',
+    if (query && Object.keys(query).length > 0) {
+      options.query = query;
+    }
+
+    if (signal) {
+      options.signal = signal;
+    }
+
+    const result = await apiListSeasonManagers(options);
+    const payload = unwrapApiResult(result, 'Failed to fetch season managers');
+
+    return this.transformSeasonManagerList(payload);
+  }
+
+  private transformSeasonManagerList(data: SeasonManagerList) {
+    return {
+      managers: data.managers.map((manager) => this.transformSeasonManager(manager)),
+      leagueNames: this.toNameRecord(data.leagueNames),
+      teamNames: this.toNameRecord(data.teamNames),
     };
+  }
+
+  private transformSeasonManager(manager: SeasonManagerList['managers'][number]): ManagerInfo {
+    const { contact, hasValidEmail, allTeams } = manager;
+    const nameSegments = [contact.firstName, contact.lastName].filter(Boolean);
 
     return {
-      managers: mockManagers,
-      leagueNames: mockLeagueNames,
-      teamNames: mockTeamNames,
+      id: contact.id,
+      name: nameSegments.join(' ').trim() || contact.id,
+      email: contact.email ?? null,
+      phone1: contact.contactDetails?.phone1 ?? '',
+      phone2: contact.contactDetails?.phone2 ?? '',
+      phone3: contact.contactDetails?.phone3 ?? '',
+      allTeams: allTeams.map((team) => ({
+        leagueSeasonId: team.league?.id ?? '',
+        teamSeasonId: team.id,
+      })),
+      hasValidEmail,
     };
+  }
+
+  private toNameRecord(items: Array<{ id: string; name?: string }>): Record<string, string> {
+    return items.reduce<Record<string, string>>((acc, item) => {
+      acc[item.id] = item.name ?? '';
+      return acc;
+    }, {});
+  }
+
+  private toServiceError(error: unknown, fallback: string): Error {
+    if (error instanceof Error) {
+      return error;
+    }
+
+    return new Error(fallback);
   }
 }
 
@@ -329,5 +243,6 @@ class ManagerServiceImpl implements ManagerService {
  * Factory function to create manager service instance
  */
 export const createManagerService = (token: string): ManagerService => {
-  return new ManagerServiceImpl(token);
+  const client = createApiClient({ token: token || undefined });
+  return new ManagerServiceImpl(client);
 };

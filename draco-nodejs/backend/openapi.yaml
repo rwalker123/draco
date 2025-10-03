@@ -873,6 +873,323 @@ components:
       required:
         - userId
         - userName
+    SeasonManager:
+      type: object
+      properties:
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+        hasValidEmail:
+          type: boolean
+        allTeams:
+          type: array
+          items:
+            type: object
+            properties:
+              league:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                required:
+                  - id
+                  - name
+              id:
+                type: string
+                pattern: ^d+$
+              name:
+                type: string
+                minLength: 1
+                maxLength: 100
+            required:
+              - id
+      required:
+        - contact
+        - hasValidEmail
+        - allTeams
+      description: Aggregated view of a season manager and the teams they manage
+    SeasonManagerList:
+      type: object
+      properties:
+        managers:
+          type: array
+          items:
+            type: object
+            properties:
+              contact:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  firstName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  lastName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  email:
+                    type: string
+                    maxLength: 100
+                    format: email
+                  contactDetails:
+                    type: object
+                    properties:
+                      phone1:
+                        type: string
+                        nullable: true
+                        default: ""
+                      phone2:
+                        type: string
+                        nullable: true
+                        default: ""
+                      phone3:
+                        type: string
+                        nullable: true
+                        default: ""
+                required:
+                  - id
+                  - firstName
+                  - lastName
+              hasValidEmail:
+                type: boolean
+              allTeams:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    league:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^d+$
+                        name:
+                          type: string
+                          minLength: 1
+                          maxLength: 100
+                      required:
+                        - id
+                        - name
+                    id:
+                      type: string
+                      pattern: ^d+$
+                    name:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                  required:
+                    - id
+            required:
+              - contact
+              - hasValidEmail
+              - allTeams
+            description: Aggregated view of a season manager and the teams they manage
+        leagueNames:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              name:
+                type: string
+                minLength: 1
+                maxLength: 100
+            required:
+              - id
+              - name
+        teamNames:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              name:
+                type: string
+                minLength: 1
+                maxLength: 100
+            required:
+              - id
+      required:
+        - managers
+        - leagueNames
+        - teamNames
+      description: Payload returned when listing season managers for an account season
+    SeasonManagerWithLeague:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        team:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            firstName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            lastName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            middleName:
+              type: string
+              minLength: 1
+              maxLength: 100
+            email:
+              type: string
+              maxLength: 100
+              format: email
+            userId:
+              type: string
+              maxLength: 50
+            photoUrl:
+              type: string
+              format: uri
+            contactDetails:
+              type: object
+              properties:
+                phone1:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone2:
+                  type: string
+                  nullable: true
+                  default: ""
+                phone3:
+                  type: string
+                  nullable: true
+                  default: ""
+                streetAddress:
+                  type: string
+                  nullable: true
+                  maxLength: 100
+                  default: ""
+                city:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                state:
+                  type: string
+                  nullable: true
+                  maxLength: 50
+                  default: ""
+                zip:
+                  type: string
+                  nullable: true
+                  maxLength: 10
+                  default: ""
+                dateOfBirth:
+                  type: string
+                  nullable: true
+                  default: ""
+          required:
+            - id
+            - firstName
+            - lastName
+        league:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            league:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^d+$
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+              required:
+                - id
+                - name
+            season:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^d+$
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+              required:
+                - id
+                - name
+          required:
+            - id
+            - league
+      required:
+        - id
+        - team
+        - contact
+        - league
+      description: Team assignment for a season manager with league and team context
     TeamManager:
       type: object
       properties:
@@ -9252,6 +9569,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/managers:
+    get:
+      description: List managers for the given season
+      operationId: listSeasonManagers
+      security:
+        - bearerAuth: []
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: leagueSeasonId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+          description: Filter managers by league season id
+        - name: teamSeasonId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+          description: Filter managers by team season id
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter managers by contact name or email
+      responses:
+        "200":
+          description: Season managers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeasonManagerList"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
     post:
       description: Add a manager to the team for the given season
@@ -11713,7 +12102,7 @@ paths:
           schema:
             type: string
             format: number
-        - name: userId
+        - name: contactId
           in: path
           required: true
           schema:
@@ -11739,7 +12128,7 @@ paths:
               required:
                 - roleData
       responses:
-        "204":
+        "200":
           description: Role removed successfully
           content:
             application/json:
