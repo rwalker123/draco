@@ -19,6 +19,7 @@ import {
   BaseRoleSchema,
   AttachmentUploadResult,
   BaseballPositionSchema,
+  BattingStatisticsFiltersSchema,
   ConflictErrorSchema,
   ContactPlayersWantedCreatorSchema,
   ContactSchema,
@@ -44,9 +45,12 @@ import {
   EmailTemplatesListSchema,
   InternalServerErrorSchema,
   NotFoundErrorSchema,
+  PlayerBattingStatsSchema,
+  PlayerPitchingStatsSchema,
   PlayerClassifiedSearchQuerySchema,
   PlayersWantedClassifiedPagedSchema,
   PlayersWantedClassifiedSchema,
+  PitchingStatisticsFiltersSchema,
   PollVoteRequestSchema,
   RoleCheckSchema,
   RoleMetadataSchema,
@@ -99,6 +103,9 @@ import {
   GameSchema,
   GameResultSchema,
   GamesWithRecapsSchema,
+  LeaderCategoriesSchema,
+  LeaderRowSchema,
+  LeaderStatisticsFiltersSchema,
   UpdateGameResultsSchema,
   UpsertGameSchema,
   UpsertGameRecapSchema,
@@ -284,6 +291,28 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ContactSearchParams',
     ContactSearchParamsSchema,
   );
+  const PlayerBattingStatsSchemaRef = registry.register(
+    'PlayerBattingStats',
+    PlayerBattingStatsSchema,
+  );
+  const PlayerPitchingStatsSchemaRef = registry.register(
+    'PlayerPitchingStats',
+    PlayerPitchingStatsSchema,
+  );
+  const BattingStatisticsFiltersSchemaRef = registry.register(
+    'BattingStatisticsFilters',
+    BattingStatisticsFiltersSchema,
+  );
+  const PitchingStatisticsFiltersSchemaRef = registry.register(
+    'PitchingStatisticsFilters',
+    PitchingStatisticsFiltersSchema,
+  );
+  const LeaderStatisticsFiltersSchemaRef = registry.register(
+    'LeaderStatisticsFilters',
+    LeaderStatisticsFiltersSchema,
+  );
+  const LeaderRowSchemaRef = registry.register('LeaderRow', LeaderRowSchema);
+  const LeaderCategoriesSchemaRef = registry.register('LeaderCategories', LeaderCategoriesSchema);
   const BaseballPositionSchemaRef = registry.register('BaseballPosition', BaseballPositionSchema);
   const ExperienceLevelSchemaRef = registry.register('ExperienceLevel', ExperienceLevelSchema);
   const AccountPollSchemaRef = registry.register('AccountPoll', AccountPollSchema);
@@ -484,6 +513,13 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     InternalServerErrorSchemaRef,
     PagingSchemaRef,
     ContactSearchParamsSchemaRef,
+    PlayerBattingStatsSchemaRef,
+    PlayerPitchingStatsSchemaRef,
+    BattingStatisticsFiltersSchemaRef,
+    PitchingStatisticsFiltersSchemaRef,
+    LeaderStatisticsFiltersSchemaRef,
+    LeaderRowSchemaRef,
+    LeaderCategoriesSchemaRef,
     RoleWithContactSchemaRef,
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,

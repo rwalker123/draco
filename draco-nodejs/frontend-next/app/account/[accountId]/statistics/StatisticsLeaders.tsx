@@ -9,19 +9,18 @@ import StatisticsTable, {
 } from './StatisticsTable';
 import type { ColumnConfig } from './StatisticsTable';
 import LeaderCard from './LeaderCard';
+import type {
+  LeaderCategoriesType,
+  LeaderCategoryType,
+  LeaderRowType,
+} from '@draco/shared-schemas';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import {
+  fetchLeaderCategories,
+  fetchStatisticalLeaders,
+} from '../../../../services/statisticsService';
 
-interface LeaderRow {
-  playerId: string;
-  playerName: string;
-  teams?: string[];
-  teamName: string;
-  statValue: number | string;
-  category: string;
-  rank: number;
-  isTie?: boolean;
-  tieCount?: number;
-  [key: string]: unknown;
-}
+type LeaderRow = LeaderRowType;
 
 interface StatisticsFilters {
   seasonId: string;
@@ -35,13 +34,10 @@ interface StatisticsLeadersProps {
   filters: StatisticsFilters;
 }
 
-interface LeaderCategory {
-  key: string;
-  label: string;
-  format: string;
-}
+type LeaderCategory = LeaderCategoryType;
 
 export default function StatisticsLeaders({ accountId, filters }: StatisticsLeadersProps) {
+  const apiClient = useApiClient();
   const [battingCategories, setBattingCategories] = useState<LeaderCategory[]>([]);
   const [pitchingCategories, setPitchingCategories] = useState<LeaderCategory[]>([]);
   const [battingLeaders, setBattingLeaders] = useState<{ [key: string]: LeaderRow[] }>({});
@@ -49,96 +45,62 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load categories on component mount
-  useEffect(() => {
-    loadCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountId]);
-
-  // Load leaders when filters change and categories are available
-  useEffect(() => {
-    if (
-      filters.leagueId &&
-      filters.leagueId !== '' &&
-      (battingCategories.length > 0 || pitchingCategories.length > 0)
-    ) {
-      loadLeaders();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, accountId, battingCategories, pitchingCategories]);
-
   const loadCategories = useCallback(async () => {
     try {
-      const response = await fetch(`/api/accounts/${accountId}/statistics/leader-categories`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const categories: LeaderCategoriesType = await fetchLeaderCategories(accountId, {
+        client: apiClient,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setBattingCategories(data.data?.batting || []);
-        setPitchingCategories(data.data?.pitching || []);
-      }
+      setBattingCategories(categories.batting ?? []);
+      setPitchingCategories(categories.pitching ?? []);
     } catch (error) {
       console.error('Error loading categories:', error);
-      setError('Failed to load leader categories');
+      const message = error instanceof Error ? error.message : 'Failed to load leader categories';
+      setError(message);
     }
-  }, [accountId]);
+  }, [accountId, apiClient]);
 
   const loadLeaders = useCallback(async () => {
+    if (!filters.leagueId) {
+      setBattingLeaders({});
+      setPitchingLeaders({});
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       // Load batting leaders
       const battingPromises = battingCategories.map(async (category) => {
-        const params = new URLSearchParams({
-          category: category.key,
-          ...(filters.divisionId &&
-            filters.divisionId !== '0' && { divisionId: filters.divisionId }),
-          ...(filters.isHistorical && { historical: 'true' }),
-        });
-
-        const response = await fetch(
-          `/api/accounts/${accountId}/statistics/leaders/${filters.leagueId}?${params}`,
+        const leaders = await fetchStatisticalLeaders(
+          accountId,
+          filters.leagueId,
+          category.key,
           {
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            divisionId: filters.divisionId,
+            isHistorical: filters.isHistorical,
           },
+          { client: apiClient },
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          return { category: category.key, leaders: data.data || [] };
-        }
-        return { category: category.key, leaders: [] };
+        return { category: category.key, leaders };
       });
 
       // Load pitching leaders
       const pitchingPromises = pitchingCategories.map(async (category) => {
-        const params = new URLSearchParams({
-          category: category.key,
-          ...(filters.divisionId &&
-            filters.divisionId !== '0' && { divisionId: filters.divisionId }),
-          ...(filters.isHistorical && { historical: 'true' }),
-        });
-
-        const response = await fetch(
-          `/api/accounts/${accountId}/statistics/leaders/${filters.leagueId}?${params}`,
+        const leaders = await fetchStatisticalLeaders(
+          accountId,
+          filters.leagueId,
+          category.key,
           {
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            divisionId: filters.divisionId,
+            isHistorical: filters.isHistorical,
           },
+          { client: apiClient },
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          return { category: category.key, leaders: data.data || [] };
-        }
-        return { category: category.key, leaders: [] };
+        return { category: category.key, leaders };
       });
 
       const [battingResults, pitchingResults] = await Promise.all([
@@ -167,11 +129,36 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
       setPitchingLeaders(pitchingLeadersObj);
     } catch (error) {
       console.error('Error loading leaders:', error);
-      setError('Failed to load statistical leaders');
+      const message = error instanceof Error ? error.message : 'Failed to load statistical leaders';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, [accountId, filters, battingCategories, pitchingCategories]);
+  }, [
+    accountId,
+    apiClient,
+    battingCategories,
+    filters.divisionId,
+    filters.isHistorical,
+    filters.leagueId,
+    pitchingCategories,
+  ]);
+
+  // Load categories on component mount
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  // Load leaders when filters change and categories are available
+  useEffect(() => {
+    if (
+      filters.leagueId &&
+      filters.leagueId !== '' &&
+      (battingCategories.length > 0 || pitchingCategories.length > 0)
+    ) {
+      loadLeaders();
+    }
+  }, [filters.leagueId, battingCategories, pitchingCategories, loadLeaders]);
 
   const getFormatter = (format: string) => {
     switch (format) {

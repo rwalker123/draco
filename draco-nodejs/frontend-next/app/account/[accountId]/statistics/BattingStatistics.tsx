@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -17,34 +17,11 @@ import StatisticsTable, {
   formatBattingAverage,
   formatPercentage,
 } from './StatisticsTable';
+import type { PlayerBattingStatsType } from '@draco/shared-schemas';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import { fetchBattingStatistics } from '../../../../services/statisticsService';
 
-interface BattingStatsRow {
-  playerId: string;
-  playerName: string;
-  teams?: string[];
-  teamName: string;
-  ab: number;
-  h: number;
-  r: number;
-  d: number; // doubles
-  t: number; // triples
-  hr: number;
-  rbi: number;
-  bb: number;
-  so: number;
-  hbp: number;
-  sb: number;
-  sf: number;
-  sh: number;
-  // Calculated fields
-  avg: number | string;
-  obp: number | string;
-  slg: number | string;
-  ops: number | string;
-  tb: number | string;
-  pa: number | string;
-  [key: string]: unknown;
-}
+type BattingStatsRow = PlayerBattingStatsType;
 
 interface StatisticsFilters {
   seasonId: string;
@@ -106,6 +83,7 @@ const BATTING_COLUMNS: ColumnConfig<BattingStatsRow>[] = [
 ];
 
 export default function BattingStatistics({ accountId, filters }: BattingStatisticsProps) {
+  const apiClient = useApiClient();
   const [stats, setStats] = useState<BattingStatsRow[]>([]);
   const [previousStats, setPreviousStats] = useState<BattingStatsRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,70 +93,80 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
-
-  useEffect(() => {
-    if (filters.leagueId && filters.leagueId !== '') {
-      const timeoutId = setTimeout(() => {
-        loadBattingStats();
-      }, 50); // Short debounce for all operations
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      setStats([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sortField, sortOrder, page, pageSize, accountId]);
+  const statsRef = useRef<BattingStatsRow[]>([]);
 
   const loadBattingStats = useCallback(async () => {
+    if (!filters.leagueId) {
+      setStats([]);
+      statsRef.current = [];
+      setPreviousStats([]);
+      return;
+    }
+
     // Store current stats as previous before loading
-    if (stats.length > 0) {
-      setPreviousStats(stats);
+    if (statsRef.current.length > 0) {
+      setPreviousStats(statsRef.current);
     }
 
     setLoading(true);
     setError(null);
 
     try {
-      const params = new URLSearchParams({
-        sortBy: String(sortField),
-        sortOrder,
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-        ...(filters.divisionId && filters.divisionId !== '0' && { divisionId: filters.divisionId }),
-        ...(filters.isHistorical && { historical: 'true' }),
-      });
-
-      const response = await fetch(
-        `/api/accounts/${accountId}/statistics/batting/${filters.leagueId}?${params}`,
+      const statsData = await fetchBattingStatistics(
+        accountId,
+        filters.leagueId,
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          divisionId: filters.divisionId,
+          isHistorical: filters.isHistorical,
+          page,
+          pageSize,
+          sortField: String(sortField),
+          sortOrder,
         },
+        { client: apiClient },
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        const statsData = data.data || [];
+      // Atomic swap - new data replaces everything instantly
+      setStats(statsData);
+      statsRef.current = statsData;
+      setPreviousStats([]); // Clear previous data after successful load
 
-        // Atomic swap - new data replaces everything instantly
-        setStats(statsData);
-        setPreviousStats([]); // Clear previous data after successful load
-
-        // Calculate total pages (this would ideally come from the API)
-        // For now, assume there might be more data if we get a full page
-        const hasMore = statsData.length === pageSize;
-        setTotalPages(hasMore ? page + 1 : page);
-      } else {
-        throw new Error('Failed to fetch batting statistics');
-      }
+      // Calculate total pages (this would ideally come from the API)
+      // For now, assume there might be more data if we get a full page
+      const hasMore = statsData.length === pageSize;
+      setTotalPages(hasMore ? page + 1 : page);
     } catch (error) {
       console.error('Error loading batting statistics:', error);
-      setError('Failed to load batting statistics');
+      const message = error instanceof Error ? error.message : 'Failed to load batting statistics';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, [accountId, filters, sortField, sortOrder, page, pageSize, stats]);
+  }, [
+    accountId,
+    apiClient,
+    filters.divisionId,
+    filters.isHistorical,
+    filters.leagueId,
+    page,
+    pageSize,
+    sortField,
+    sortOrder,
+  ]);
+
+  useEffect(() => {
+    if (!filters.leagueId || filters.leagueId === '') {
+      setStats([]);
+      statsRef.current = [];
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      loadBattingStats();
+    }, 50);
+
+    return () => clearTimeout(timeoutId);
+  }, [filters.leagueId, loadBattingStats]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
