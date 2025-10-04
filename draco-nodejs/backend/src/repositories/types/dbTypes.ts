@@ -1,6 +1,18 @@
 import { playerswantedclassified, Prisma, teamswantedclassified } from '@prisma/client';
 
 // db types used to map to the response schemas
+export type dbLeague = Prisma.leagueGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    accountid: true;
+  };
+}>;
+
+export type dbLeagueCreateInput = Prisma.leagueUncheckedCreateInput;
+
+export type dbLeagueUpdateInput = Prisma.leagueUncheckedUpdateInput;
+
 export type dbBaseContact = Prisma.contactsGetPayload<{
   select: {
     id: true;

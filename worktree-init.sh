@@ -85,6 +85,48 @@ WORKTREE_HASH=$((WORKTREE_HASH & 0x7fffffff)) # Ensure positive
 BACKEND_TARGET_PORT=$((3001 + (WORKTREE_HASH % 99)))
 FRONTEND_TARGET_PORT=$((4001 + (WORKTREE_HASH % 99)))
 
+# Reserved ports that should not be assigned to any worktree services
+RESERVED_PORTS=(3001 4001 4045)
+
+# Collect ports already assigned to other worktrees from the registry
+IN_USE_PORTS=()
+if [ -f "$REGISTRY_PATH" ]; then
+    while IFS= read -r assigned_port; do
+        if [ -n "$assigned_port" ]; then
+            IN_USE_PORTS+=("$assigned_port")
+        fi
+    done < <(
+        jq -r --arg path "$CURRENT_DIR" '
+          (.worktrees // {})
+          | to_entries[]
+          | select(.key != $path)
+          | [ .value.backendPort, .value.frontendPort ]
+          | map(select(. != null))
+          | .[]
+        ' "$REGISTRY_PATH"
+    )
+fi
+
+is_port_in_use() {
+    local port="$1"
+    for used in "${IN_USE_PORTS[@]}"; do
+        if [ "$port" -eq "$used" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+is_reserved_port() {
+    local port="$1"
+    for reserved in "${RESERVED_PORTS[@]}"; do
+        if [ "$port" -eq "$reserved" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 print_status "Calculated target ports: Backend $BACKEND_TARGET_PORT, Frontend $FRONTEND_TARGET_PORT"
 
 # Function to check if port is available
@@ -94,29 +136,34 @@ check_port_available() {
 }
 
 # Find available ports
-BACKEND_PORT=$BACKEND_TARGET_PORT
-FRONTEND_PORT=$FRONTEND_TARGET_PORT
+find_available_port() {
+    local target_port="$1"
+    local min_port="$2"
+    local max_port="$3"
+    local service_name="$4"
 
-# Check if target ports are available, otherwise find next available
-if ! check_port_available "$BACKEND_PORT"; then
-    print_warning "Backend port $BACKEND_PORT is busy, finding next available..."
-    for ((p=3001; p<=3099; p++)); do
-        if check_port_available "$p"; then
-            BACKEND_PORT=$p
-            break
-        fi
-    done
-fi
+    local port="$target_port"
 
-if ! check_port_available "$FRONTEND_PORT"; then
-    print_warning "Frontend port $FRONTEND_PORT is busy, finding next available..."
-    for ((p=4001; p<=4099; p++)); do
-        if check_port_available "$p"; then
-            FRONTEND_PORT=$p
-            break
-        fi
-    done
-fi
+    if is_reserved_port "$port" || is_port_in_use "$port" || ! check_port_available "$port"; then
+        print_warning "$service_name port $port is unavailable, finding next available..." >&2
+        for ((p=min_port; p<=max_port; p++)); do
+            if ! is_reserved_port "$p" && ! is_port_in_use "$p" && check_port_available "$p"; then
+                port=$p
+                break
+            fi
+        done
+    fi
+
+    if is_reserved_port "$port" || is_port_in_use "$port" || ! check_port_available "$port"; then
+        print_error "Unable to find available port for $service_name in range $min_port-$max_port"
+        exit 1
+    fi
+
+    echo "$port"
+}
+
+BACKEND_PORT=$(find_available_port "$BACKEND_TARGET_PORT" 3001 3099 "Backend")
+FRONTEND_PORT=$(find_available_port "$FRONTEND_TARGET_PORT" 4001 4099 "Frontend")
 
 print_success "Assigned ports: Backend $BACKEND_PORT, Frontend $FRONTEND_PORT"
 
