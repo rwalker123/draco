@@ -10,7 +10,7 @@ import {
   listSeasonGames,
   listSeasonLeagueSeasons,
 } from '@draco/shared-api-client';
-import { unwrapApiResult } from '../../../utils/apiResult';
+import { ApiClientError, unwrapApiResult } from '../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
 
@@ -199,14 +199,14 @@ export const useScheduleData = ({
         setTeams([]);
       }
 
-      const fieldsResult = await listAccountFields({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
+      try {
+        const fieldsResult = await listAccountFields({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
 
-      if (!fieldsResult.error) {
-        const fieldsData = fieldsResult.data;
+        const fieldsData = unwrapApiResult(fieldsResult, 'Failed to load fields');
         const mappedFields: Field[] = fieldsData.fields.map((field) => ({
           id: field.id,
           name: field.name,
@@ -222,20 +222,20 @@ export const useScheduleData = ({
           longitude: '',
         }));
         setFields(mappedFields);
-      } else {
-        console.warn('Failed to load fields:', fieldsResult.error);
+      } catch (fieldsError) {
+        console.warn('Failed to load fields:', fieldsError);
         setFields([]);
       }
 
       if (token) {
-        const umpiresResult = await listAccountUmpires({
-          client: apiClient,
-          path: { accountId },
-          throwOnError: false,
-        });
+        try {
+          const umpiresResult = await listAccountUmpires({
+            client: apiClient,
+            path: { accountId },
+            throwOnError: false,
+          });
 
-        if (!umpiresResult.error) {
-          const umpireData = umpiresResult.data;
+          const umpireData = unwrapApiResult(umpiresResult, 'Failed to load umpires');
           const mappedUmpires: Umpire[] = umpireData.umpires.map((umpire) => ({
             id: umpire.id,
             contactId: umpire.contactId,
@@ -245,11 +245,13 @@ export const useScheduleData = ({
             displayName: umpire.displayName,
           }));
           setUmpires(mappedUmpires);
-        } else if (umpiresResult.response.status === 401) {
-          setUmpires([]);
-        } else {
-          console.warn('Failed to load umpires:', umpiresResult.response.status);
-          setUmpires([]);
+        } catch (umpiresError) {
+          if (umpiresError instanceof ApiClientError && umpiresError.status === 401) {
+            setUmpires([]);
+          } else {
+            console.warn('Failed to load umpires:', umpiresError);
+            setUmpires([]);
+          }
         }
       } else {
         setUmpires([]);

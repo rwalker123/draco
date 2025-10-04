@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
 import { ContactTransformationService } from '../services/contactTransformationService';
@@ -128,6 +128,15 @@ export const useRosterDataManager = (
     return getApiErrorMessage(error, defaultMessage);
   }, []);
 
+  const getErrorMessageRef = useRef(getErrorMessage);
+  getErrorMessageRef.current = getErrorMessage;
+
+  const getErrorMessageMemo = useMemo(
+    () => (error: unknown, defaultMessage: string) =>
+      getErrorMessageRef.current(error, defaultMessage),
+    [],
+  );
+
   // Helper function to transform backend data
   const transformBackendData = useCallback((data: unknown) => {
     if (!data) return data;
@@ -210,12 +219,12 @@ export const useRosterDataManager = (
       dataCacheRef.current.rosterData = roster;
       setRosterData(roster);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch roster data');
+      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch roster data');
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [accountId, seasonId, teamSeasonId, token, apiClient, getErrorMessage]);
+  }, [accountId, seasonId, teamSeasonId, token, apiClient, getErrorMessageMemo]);
 
   // Fetch available players - returns data directly instead of storing in state
   const fetchAvailablePlayers = useCallback(
@@ -240,12 +249,20 @@ export const useRosterDataManager = (
         const errorMessage =
           error instanceof ApiClientError
             ? getApiErrorMessage(error.details ?? error, 'Failed to fetch available players')
-            : getErrorMessage(error, 'Failed to fetch available players');
+            : getErrorMessageMemo(error, 'Failed to fetch available players');
         console.error(errorMessage, error);
         return [];
       }
     },
-    [accountId, seasonId, teamSeasonId, token, apiClient, getErrorMessage, transformBackendData],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      token,
+      apiClient,
+      getErrorMessageMemo,
+      transformBackendData,
+    ],
   );
 
   // Fetch managers
@@ -267,10 +284,19 @@ export const useRosterDataManager = (
       const message =
         error instanceof ApiClientError
           ? getApiErrorMessage(error.details ?? error, 'Failed to fetch managers')
-          : getErrorMessage(error, 'Failed to fetch managers');
+          : getErrorMessageMemo(error, 'Failed to fetch managers');
       console.warn(message, error);
     }
-  }, [accountId, seasonId, teamSeasonId, token, apiClient, transformBackendData, setManagers]);
+  }, [
+    accountId,
+    seasonId,
+    teamSeasonId,
+    token,
+    apiClient,
+    transformBackendData,
+    setManagers,
+    getErrorMessageMemo,
+  ]);
 
   // Fetch season data
   const fetchSeasonData = useCallback(async () => {
@@ -286,10 +312,10 @@ export const useRosterDataManager = (
       const seasonData = unwrapApiResult(result, 'Failed to fetch season data');
       setSeason({ id: seasonData.id, name: seasonData.name });
     } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch season data');
+      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch season data');
       setError(errorMessage);
     }
-  }, [accountId, seasonId, token, setSeason, setError, getErrorMessage, apiClient]);
+  }, [accountId, seasonId, token, setSeason, setError, getErrorMessageMemo, apiClient]);
 
   // Fetch league data
   const fetchLeagueData = useCallback(async () => {
@@ -306,10 +332,19 @@ export const useRosterDataManager = (
 
       setLeague(leagueData ? { id: leagueData.id, name: leagueData.name } : null);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch league data');
+      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch league data');
       setError(errorMessage);
     }
-  }, [accountId, seasonId, teamSeasonId, token, setLeague, setError, getErrorMessage, apiClient]);
+  }, [
+    accountId,
+    seasonId,
+    teamSeasonId,
+    token,
+    setLeague,
+    setError,
+    getErrorMessageMemo,
+    apiClient,
+  ]);
 
   // Update roster member with optimistic updates
   const updateRosterMember = useCallback(
