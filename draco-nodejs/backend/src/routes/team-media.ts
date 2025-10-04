@@ -50,37 +50,6 @@ router.get(
 );
 
 /**
- * GET /api/accounts/:accountId/teams/:teamId/logo
- * Get team logo from S3 or local storage using direct team ID
- */
-router.get(
-  '/:teamId/logo',
-  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    const accountId = req.params.accountId;
-    const teamId = req.params.teamId;
-
-    // Get the logo from storage service
-    const logoBuffer = await storageService.getLogo(accountId, teamId);
-
-    if (!logoBuffer) {
-      res.status(404).json({
-        success: false,
-        message: 'Logo not found',
-      });
-      return;
-    }
-
-    // Set appropriate headers
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
-    res.setHeader('Content-Length', logoBuffer.length.toString());
-
-    // Send the image buffer
-    res.send(logoBuffer);
-  }),
-);
-
-/**
  * Helper function to handle logo upload for team update route
  * This will be used by the main teams.ts file
  */

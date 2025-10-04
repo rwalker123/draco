@@ -70,65 +70,6 @@ export const registerTeamsEndpoints = ({ registry, schemaRefs }: RegisterContext
       },
     },
   });
-
-  // GET /api/accounts/{accountId}/teams/{teamId}/logo
-  registry.registerPath({
-    method: 'get',
-    path: '/api/accounts/{accountId}/teams/{teamId}/logo',
-    operationId: 'getTeamLogo',
-    summary: 'Get team logo',
-    description: 'Retrieves the logo for the specified team.',
-    tags: ['Teams'],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'teamId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'Logo retrieved successfully',
-        content: {
-          'image/png': {
-            schema: {
-              type: 'string',
-              format: 'binary',
-            },
-          },
-        },
-      },
-      404: {
-        description: 'Team logo not found',
-        content: {
-          'application/json': {
-            schema: NotFoundErrorSchemaRef,
-          },
-        },
-      },
-      500: {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: InternalServerErrorSchemaRef,
-          },
-        },
-      },
-    },
-  });
 };
 
 export default registerTeamsEndpoints;
