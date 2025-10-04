@@ -2,15 +2,21 @@ import { RegisterContext } from '../../openapiTypes.js';
 
 export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
+    InternalServerErrorSchemaRef,
     BattingStatisticsFiltersSchemaRef,
     LeaderCategoriesSchemaRef,
     LeaderRowSchemaRef,
     LeaderStatisticsFiltersSchemaRef,
+    NotFoundErrorSchemaRef,
     PitchingStatisticsFiltersSchemaRef,
+    PlayerBattingStatsBriefSchemaRef,
     PlayerBattingStatsSchemaRef,
+    PlayerPitchingStatsBriefSchemaRef,
     PlayerPitchingStatsSchemaRef,
+    RecentGamesQuerySchemaRef,
+    RecentGamesSchemaRef,
+    TeamSeasonRecordSchemaRef,
     ValidationErrorSchemaRef,
-    InternalServerErrorSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/{accountId}/statistics/leader-categories
@@ -235,6 +241,302 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
         content: {
           'application/json': {
             schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/record
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/record',
+    operationId: 'getTeamSeasonRecord',
+    summary: 'Get team season record',
+    description: 'Retrieve the win/loss/tie record for a specific team within a season.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Team season record retrieved',
+        content: {
+          'application/json': {
+            schema: TeamSeasonRecordSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Invalid parameters provided',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found for the provided account and season',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/games
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/games',
+    operationId: 'listTeamSeasonGames',
+    summary: 'List team games',
+    description:
+      'Return the recent and upcoming games for a team season with optional limits by category.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      query: RecentGamesQuerySchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Team games retrieved',
+        content: {
+          'application/json': {
+            schema: RecentGamesSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Invalid query parameters provided',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found for the provided account and season',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/batting-stats
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/batting-stats',
+    operationId: 'listTeamSeasonBattingStats',
+    summary: 'List team batting statistics',
+    description: 'Retrieve batting statistics for all players on a team season.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Team batting statistics retrieved',
+        content: {
+          'application/json': {
+            schema: PlayerBattingStatsBriefSchemaRef.array(),
+          },
+        },
+      },
+      400: {
+        description: 'Invalid parameters provided',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found for the provided account and season',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/pitching-stats
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/pitching-stats',
+    operationId: 'listTeamSeasonPitchingStats',
+    summary: 'List team pitching statistics',
+    description: 'Retrieve pitching statistics for all players on a team season.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Team pitching statistics retrieved',
+        content: {
+          'application/json': {
+            schema: PlayerPitchingStatsBriefSchemaRef.array(),
+          },
+        },
+      },
+      400: {
+        description: 'Invalid parameters provided',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found for the provided account and season',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
           },
         },
       },

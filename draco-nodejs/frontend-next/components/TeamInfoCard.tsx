@@ -4,8 +4,12 @@ import { Trophy } from 'lucide-react';
 import TeamAvatar from './TeamAvatar';
 import { Team } from '@/types/schedule';
 import { useApiClient } from '../hooks/useApiClient';
-import { getAccountName as apiGetAccountName } from '@draco/shared-api-client';
+import {
+  getAccountName as apiGetAccountName,
+  getTeamSeasonRecord as apiGetTeamSeasonRecord,
+} from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
+import type { TeamSeasonRecordType } from '@draco/shared-schemas';
 
 interface TeamInfoCardProps {
   accountId?: string;
@@ -69,19 +73,28 @@ export default function TeamInfoCard({
       setRecordLoading(true);
       setRecordError(null);
       try {
-        const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/record`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch team record');
-        const data = await res.json();
-        setRecord(data.data.record);
+        const result = await apiGetTeamSeasonRecord({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult<TeamSeasonRecordType>(result, 'Failed to fetch team record');
+
+        setRecord({
+          wins: data.record.w,
+          losses: data.record.l,
+          ties: data.record.t,
+        });
       } catch (err: unknown) {
+        setRecord(null);
         setRecordError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setRecordLoading(false);
       }
     }
     fetchRecord();
-  }, [accountId, seasonId, teamSeasonId]);
+  }, [accountId, apiClient, seasonId, teamSeasonId]);
 
   useEffect(() => {
     async function fetchAccountName() {

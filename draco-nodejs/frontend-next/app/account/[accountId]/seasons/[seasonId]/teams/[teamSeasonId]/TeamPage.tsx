@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -16,10 +18,17 @@ import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import { SponsorService } from '../../../../../../../services/sponsorService';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
-import { SponsorType } from '@draco/shared-schemas';
+import {
+  SponsorType,
+  type GameType as SharedGameType,
+  type RecentGamesType,
+} from '@draco/shared-schemas';
 import { useRole } from '../../../../../../../context/RoleContext';
 import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
 import { useAccountMembership } from '../../../../../../../hooks/useAccountMembership';
+import { useApiClient } from '../../../../../../../hooks/useApiClient';
+import { unwrapApiResult } from '../../../../../../../utils/apiResult';
+import { listTeamSeasonGames as apiListTeamSeasonGames } from '@draco/shared-api-client';
 
 interface TeamPageProps {
   accountId: string;
@@ -57,48 +66,73 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { isMember } = useAccountMembership(accountId);
   const isAccountMember = isMember === true;
+  const apiClient = useApiClient();
 
   React.useEffect(() => {
-    setLoading(true);
-    setError(null);
-    fetch(
-      `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/games?upcoming=true&recent=true&limit=5`,
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.success) throw new Error(data.message || 'Failed to load games');
+    let isMounted = true;
 
-        // Transform raw API data to match Game interface
-        const transformGame = (rawGame: Record<string, unknown>) => ({
-          id: rawGame.id as string,
-          date: rawGame.date as string,
-          homeTeamId: rawGame.homeTeamId as string,
-          awayTeamId: rawGame.awayTeamId as string,
-          homeTeamName: rawGame.homeTeamName as string,
-          awayTeamName: rawGame.awayTeamName as string,
-          homeScore: rawGame.homeScore as number,
-          awayScore: rawGame.awayScore as number,
-          gameStatus: rawGame.gameStatus as number,
-          gameStatusText: rawGame.gameStatusText as string,
-          gameStatusShortText: rawGame.gameStatusShortText as string,
-          leagueName: rawGame.leagueName as string,
-          fieldId: rawGame.fieldId as string | null,
-          fieldName: rawGame.fieldName as string | null,
-          fieldShortName: rawGame.fieldShortName as string | null,
-          hasGameRecap: rawGame.hasGameRecap as boolean,
-          gameRecaps: [], // Teams API doesn't return gameRecaps, so initialize as empty
-          gameType: Number(rawGame.gameType),
+    const transformGame = (game: SharedGameType): Game => ({
+      id: game.id,
+      date: game.gameDate,
+      homeTeamId: game.homeTeam.id ?? '',
+      awayTeamId: game.visitorTeam.id ?? '',
+      homeTeamName: game.homeTeam.name ?? '',
+      awayTeamName: game.visitorTeam.name ?? '',
+      homeScore: game.homeScore,
+      awayScore: game.visitorScore,
+      gameStatus: game.gameStatus,
+      gameStatusText: game.gameStatusText ?? '',
+      gameStatusShortText: game.gameStatusShortText,
+      leagueName: game.league.name ?? '',
+      fieldId: game.field?.id ?? null,
+      fieldName: game.field?.name ?? null,
+      fieldShortName: game.field?.shortName ?? null,
+      hasGameRecap: game.hasGameRecap ?? false,
+      gameRecaps: [],
+      gameType: game.gameType ? Number(game.gameType) : undefined,
+    });
+
+    const fetchGames = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await apiListTeamSeasonGames({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          query: { upcoming: true, recent: true, limit: 5 },
+          throwOnError: false,
         });
 
-        const transformedUpcoming = (data.data.upcoming || []).map(transformGame);
-        const transformedRecent = (data.data.recent || []).map(transformGame);
+        const data = unwrapApiResult<RecentGamesType>(result, 'Failed to load games');
 
-        setUpcomingGames(transformedUpcoming);
-        setCompletedGames(transformedRecent);
-      })
-      .catch((err) => setError(err.message || 'Error loading games'))
-      .finally(() => setLoading(false));
-  }, [accountId, seasonId, teamSeasonId]);
+        if (!isMounted) {
+          return;
+        }
+
+        const upcomingMapped = (data.upcoming ?? []).map(transformGame);
+        const recentMapped = (data.recent ?? []).map(transformGame);
+
+        setUpcomingGames(upcomingMapped);
+        setCompletedGames(recentMapped);
+      } catch (err: unknown) {
+        if (!isMounted) {
+          return;
+        }
+        const message = err instanceof Error ? err.message : 'Error loading games';
+        setError(message);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchGames();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId, apiClient, seasonId, teamSeasonId]);
 
   const handleEditSummary = async (game: Game) => {
     setSelectedGame(game);

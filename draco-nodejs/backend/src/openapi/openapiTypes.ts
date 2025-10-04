@@ -45,13 +45,17 @@ import {
   EmailTemplatesListSchema,
   InternalServerErrorSchema,
   NotFoundErrorSchema,
+  PlayerBattingStatsBriefSchema,
   PlayerBattingStatsSchema,
   PlayerPitchingStatsSchema,
+  PlayerPitchingStatsBriefSchema,
   PlayerClassifiedSearchQuerySchema,
   PlayersWantedClassifiedPagedSchema,
   PlayersWantedClassifiedSchema,
   PitchingStatisticsFiltersSchema,
   PollVoteRequestSchema,
+  RecentGamesQuerySchema,
+  RecentGamesSchema,
   RoleCheckSchema,
   RoleMetadataSchema,
   RosterMemberSchema,
@@ -72,6 +76,7 @@ import {
   TeamsWantedPublicClassifiedPagedSchema,
   StandingsLeagueSchema,
   StandingsTeamSchema,
+  TeamSeasonRecordSchema,
   UpsertPlayersWantedClassifiedSchema,
   UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
@@ -263,6 +268,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const StandingsLeagueSchemaRef = registry.register('StandingsLeague', StandingsLeagueSchema);
   const StandingsTeamSchemaRef = registry.register('StandingsTeam', StandingsTeamSchema);
+  const TeamSeasonRecordSchemaRef = registry.register('TeamSeasonRecord', TeamSeasonRecordSchema);
   const SeasonStandingsResponseSchemaRef = registry.registerComponent(
     'schemas',
     'SeasonStandingsResponse',
@@ -295,9 +301,17 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'PlayerBattingStats',
     PlayerBattingStatsSchema,
   );
+  const PlayerBattingStatsBriefSchemaRef = registry.register(
+    'PlayerBattingStatsBrief',
+    PlayerBattingStatsBriefSchema,
+  );
   const PlayerPitchingStatsSchemaRef = registry.register(
     'PlayerPitchingStats',
     PlayerPitchingStatsSchema,
+  );
+  const PlayerPitchingStatsBriefSchemaRef = registry.register(
+    'PlayerPitchingStatsBrief',
+    PlayerPitchingStatsBriefSchema,
   );
   const BattingStatisticsFiltersSchemaRef = registry.register(
     'BattingStatisticsFilters',
@@ -313,6 +327,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const LeaderRowSchemaRef = registry.register('LeaderRow', LeaderRowSchema);
   const LeaderCategoriesSchemaRef = registry.register('LeaderCategories', LeaderCategoriesSchema);
+  const RecentGamesQuerySchemaRef = registry.register('RecentGamesQuery', RecentGamesQuerySchema);
   const BaseballPositionSchemaRef = registry.register('BaseballPosition', BaseballPositionSchema);
   const ExperienceLevelSchemaRef = registry.register('ExperienceLevel', ExperienceLevelSchema);
   const AccountPollSchemaRef = registry.register('AccountPoll', AccountPollSchema);
@@ -367,6 +382,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const UpsertLeagueSchemaRef = registry.register('UpsertLeague', UpsertLeagueSchema);
   const GameSchemaRef = registry.register('Game', GameSchema);
   const GameResultSchemaRef = registry.register('GameResult', GameResultSchema);
+  const RecentGamesSchemaRef = registry.register('RecentGames', RecentGamesSchema);
   const GamesWithRecapsSchemaRef = registry.register('GamesWithRecaps', GamesWithRecapsSchema);
   const UpdateGameResultsSchemaRef = registry.register(
     'UpdateGameResults',
@@ -470,6 +486,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     TeamsWantedContactQuerySchemaRef,
     StandingsLeagueSchemaRef,
     StandingsTeamSchemaRef,
+    TeamSeasonRecordSchemaRef,
     SeasonStandingsResponseSchemaRef,
     ContactPlayersWantedCreatorSchemaRef,
     BaseballPositionSchemaRef,
@@ -499,6 +516,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpsertLeagueSchemaRef,
     GameSchemaRef,
     GameResultSchemaRef,
+    RecentGamesSchemaRef,
     GamesWithRecapsSchemaRef,
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
@@ -514,12 +532,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PagingSchemaRef,
     ContactSearchParamsSchemaRef,
     PlayerBattingStatsSchemaRef,
+    PlayerBattingStatsBriefSchemaRef,
     PlayerPitchingStatsSchemaRef,
+    PlayerPitchingStatsBriefSchemaRef,
     BattingStatisticsFiltersSchemaRef,
     PitchingStatisticsFiltersSchemaRef,
     LeaderStatisticsFiltersSchemaRef,
     LeaderRowSchemaRef,
     LeaderCategoriesSchemaRef,
+    RecentGamesQuerySchemaRef,
     RoleWithContactSchemaRef,
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
