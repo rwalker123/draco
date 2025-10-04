@@ -10,3 +10,4 @@ export * from './EmailResponseFormatter.js';
 export * from './EmailTemplateResponseFormatter.js';
 export * from './statsResponseFormatter.js';
 export * from './scheduleResponseFormatter.js';
+export * from './LeagueResponseFormatter.js';
