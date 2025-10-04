@@ -477,6 +477,129 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     },
   });
 
+  // DELETE /api/accounts/{accountId}/contacts/{contactId}
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/contacts/{contactId}',
+    description:
+      'Delete a contact from an account. Use check=true to perform a dependency check without deleting and force=true to bypass dependency safeguards.',
+    operationId: 'deleteContact',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'force',
+        in: 'query',
+        required: false,
+        description: 'Set to true to bypass dependency checks and force deletion.',
+        schema: {
+          type: 'boolean',
+          default: false,
+        },
+      },
+      {
+        name: 'check',
+        in: 'query',
+        required: false,
+        description: 'Set to true to return dependency information without deleting the contact.',
+        schema: {
+          type: 'boolean',
+          default: false,
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Dependency check result or deletion summary',
+        content: {
+          'application/json': {
+            schema: z.object({
+              contact: ContactSchemaRef.optional(),
+              deletedContact: ContactSchemaRef.optional(),
+              dependencyCheck: z
+                .object({
+                  canDelete: z.boolean(),
+                  dependencies: z
+                    .array(
+                      z.object({
+                        table: z.string(),
+                        count: z.number(),
+                        description: z.string(),
+                        riskLevel: z.enum(['critical', 'high', 'medium', 'low']),
+                      }),
+                    )
+                    .optional(),
+                  message: z.string(),
+                  totalDependencies: z.number(),
+                })
+                .optional(),
+              dependenciesDeleted: z.number().optional(),
+              wasForced: z.boolean().optional(),
+            }),
+          },
+        },
+      },
+      400: {
+        description: 'Validation error preventing deletion',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - Account admin required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
   // GET /api/accounts/{accountId}/contacts/{contactId}/photo
   registry.registerPath({
     method: 'get',

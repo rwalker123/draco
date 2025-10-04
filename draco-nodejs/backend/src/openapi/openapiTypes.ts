@@ -36,6 +36,9 @@ import {
   CreateContactRoleSchema,
   CreatePollSchema,
   CreateSponsorSchema,
+  FieldSchema,
+  FieldsSchema,
+  UpsertFieldSchema,
   UpsertTeamManagerSchema,
   UpdatePollSchema,
   ExperienceLevelSchema,
@@ -57,6 +60,8 @@ import {
   PollVoteRequestSchema,
   RecentGamesQuerySchema,
   RecentGamesSchema,
+  UmpireSchema,
+  UmpiresSchema,
   RoleCheckSchema,
   RoleMetadataSchema,
   RosterMemberSchema,
@@ -133,6 +138,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ContactWithContactRoles',
     ContactWithContactRolesSchema,
   );
+  const FieldSchemaRef = registry.register('Field', FieldSchema);
+  const FieldsSchemaRef = registry.register('Fields', FieldsSchema);
+  const UpsertFieldSchemaRef = registry.register('UpsertField', UpsertFieldSchema);
   const ContactValidationWithSignInSchemaRef = registry.register(
     'ContactValidationWithSignIn',
     ContactValidationWithSignInSchema,
@@ -199,6 +207,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const PagedContactSchemaRef = registry.register('PagedContact', PagedContactSchema);
   const ContactRoleSchemaRef = registry.register('ContactRole', ContactRoleSchema);
+  const UmpireSchemaRef = registry.register('Umpire', UmpireSchema);
+  const UmpiresSchemaRef = registry.register('Umpires', UmpiresSchema);
   const BaseRoleSchemaRef = registry.register('BaseRole', BaseRoleSchema);
   const RoleCheckSchemaRef = registry.register('RoleCheck', RoleCheckSchema);
   const AccountSchemaRef = registry.register('Account', AccountSchema);
@@ -446,6 +456,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     ContactSchemaRef,
     BaseContactSchemaRef,
     ContactWithContactRolesSchemaRef,
+    FieldSchemaRef,
+    FieldsSchemaRef,
+    UpsertFieldSchemaRef,
     SeasonManagerSchemaRef,
     SeasonManagerListSchemaRef,
     SeasonManagerWithLeagueSchemaRef,
@@ -466,6 +479,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     EmailTemplatesListSchemaRef,
     AttachmentUploadResultSchemaRef,
     ContactRoleSchemaRef,
+    UmpireSchemaRef,
+    UmpiresSchemaRef,
     BaseRoleSchemaRef,
     RoleCheckSchemaRef,
     RegisteredUserSchemaRef,
