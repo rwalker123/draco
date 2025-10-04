@@ -22,6 +22,12 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     ValidationErrorSchemaRef,
     ConflictErrorSchemaRef,
     AutomaticRoleHoldersSchemaRef,
+    TeamSeasonSchemaRef,
+    FieldSchemaRef,
+    FieldsSchemaRef,
+    UpsertFieldSchemaRef,
+    UmpiresSchemaRef,
+    PagingSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/search
@@ -1050,6 +1056,443 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/user-teams
+   * Get teams the current user belongs to for the given account
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/user-teams',
+    description: 'Get teams that the authenticated user is associated with for this account.',
+    operationId: 'getAccountUserTeams',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Teams for the authenticated user within the account',
+        content: {
+          'application/json': {
+            schema: TeamSeasonSchemaRef.array(),
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied for this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Current season or user teams not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/fields
+   * List fields for an account (public)
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/fields',
+    description: 'List fields configured for the account. This endpoint is public.',
+    operationId: 'listAccountFields',
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      query: PagingSchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Paginated list of fields for the account',
+        content: {
+          'application/json': {
+            schema: FieldsSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Invalid paging parameters',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * POST /api/accounts/:accountId/fields
+   * Create a new field for an account
+   */
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/fields',
+    description: 'Create a new field for the account.',
+    operationId: 'createAccountField',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpsertFieldSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Field created successfully',
+        content: {
+          'application/json': {
+            schema: FieldSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error creating the field',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Permission denied to manage fields for this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * PUT /api/accounts/:accountId/fields/:fieldId
+   * Update a field for the account
+   */
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/fields/{fieldId}',
+    description: 'Update an existing field for the account.',
+    operationId: 'updateAccountField',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'fieldId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpsertFieldSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated field details',
+        content: {
+          'application/json': {
+            schema: FieldSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error updating the field',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Permission denied to manage fields for this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Field not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * DELETE /api/accounts/:accountId/fields/:fieldId
+   * Delete a field for the account
+   */
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/fields/{fieldId}',
+    description: 'Delete an existing field from the account.',
+    operationId: 'deleteAccountField',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'fieldId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Deleted field details',
+        content: {
+          'application/json': {
+            schema: FieldSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Cannot delete field due to dependencies',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Permission denied to manage fields for this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Field not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/umpires
+   * List umpires for an account
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/umpires',
+    description: 'List umpires configured for the account.',
+    operationId: 'listAccountUmpires',
+    security: [{ bearerAuth: [] }],
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      query: PagingSchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Paginated list of umpires for the account',
+        content: {
+          'application/json': {
+            schema: UmpiresSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Invalid paging parameters',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Permission denied to manage umpires for this account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
           },
         },
       },

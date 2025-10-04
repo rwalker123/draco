@@ -1,9 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { SeasonManagerFilters } from '../services/seasonManagerService.js';
-import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
-import { RouteProtection } from '../middleware/routeProtection.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import {
@@ -15,8 +13,7 @@ import {
 
 const router = Router({ mergeParams: true });
 const seasonManagerService = ServiceFactory.getSeasonManagerService();
-const roleService = ServiceFactory.getRoleService();
-const routeProtection = new RouteProtection(roleService, prisma);
+const routeProtection = ServiceFactory.getRouteProtection();
 
 // GET: List all managers for a season
 router.get(
