@@ -6,7 +6,7 @@ import {
 } from '@draco/shared-api-client';
 import { ContactType } from '@draco/shared-schemas';
 import { createApiClient } from '../lib/apiClientFactory';
-import { getApiErrorMessage, unwrapApiResult } from '../utils/apiResult';
+import { ApiClientError, getApiErrorMessage, unwrapApiResult } from '../utils/apiResult';
 import { ContactTransformationService } from './contactTransformationService';
 
 export interface SelfRegisterInput {
@@ -113,22 +113,23 @@ export const AccountRegistrationService = {
         throwOnError: false,
       });
 
-      if (result.error) {
-        const status = result.response.status;
-        if (status === 401 || status === 403 || status === 404) {
-          return null;
-        }
-
-        throw new Error(getApiErrorMessage(result.error, FETCH_CONTACT_ERROR_MESSAGE));
-      }
-
-      const backendContact = result.data as Record<string, unknown> | undefined;
+      const backendContact = unwrapApiResult(result, FETCH_CONTACT_ERROR_MESSAGE) as
+        | Record<string, unknown>
+        | undefined;
       if (!backendContact) {
         return null;
       }
 
       return ContactTransformationService.transformBackendContact(backendContact);
     } catch (error) {
+      if (error instanceof ApiClientError) {
+        if (error.status && [401, 403, 404].includes(error.status)) {
+          return null;
+        }
+
+        throw error;
+      }
+
       if (error instanceof Error) {
         throw error;
       }
