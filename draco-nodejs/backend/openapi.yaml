@@ -1332,6 +1332,87 @@ components:
         - team
         - contact
       description: Schema for a manager of a team for a given season
+    TeamSeason:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        team:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            webAddress:
+              type: string
+              nullable: true
+            youtubeUserId:
+              type: string
+              nullable: true
+            defaultVideo:
+              type: string
+              nullable: true
+            autoPlayVideo:
+              type: boolean
+            logoUrl:
+              type: string
+              nullable: true
+              format: uri
+          required:
+            - id
+        season:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            accountId:
+              type: string
+              pattern: ^d+$
+            isCurrent:
+              type: boolean
+          required:
+            - id
+            - name
+            - accountId
+        league:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+        division:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+          required:
+            - id
+            - name
+      required:
+        - id
+        - team
     UpsertTeamManager:
       type: object
       properties:
@@ -1339,6 +1420,102 @@ components:
           type: string
       required:
         - contactId
+    UpsertTeamSeason:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        season:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            accountId:
+              type: string
+              pattern: ^d+$
+            isCurrent:
+              type: boolean
+          required:
+            - id
+            - name
+            - accountId
+        team:
+          type: object
+          properties:
+            webAddress:
+              type: string
+              nullable: true
+            youtubeUserId:
+              type: string
+              nullable: true
+            defaultVideo:
+              type: string
+              nullable: true
+            autoPlayVideo:
+              type: boolean
+        divisionId:
+          type: string
+          nullable: true
+        leagueId:
+          type: string
+          nullable: true
+    UpsertTeamSeasonWithLogo:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        season:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            accountId:
+              type: string
+              pattern: ^d+$
+            isCurrent:
+              type: boolean
+          required:
+            - id
+            - name
+            - accountId
+        team:
+          type: object
+          properties:
+            webAddress:
+              type: string
+              nullable: true
+            youtubeUserId:
+              type: string
+              nullable: true
+            defaultVideo:
+              type: string
+              nullable: true
+            autoPlayVideo:
+              type: boolean
+        divisionId:
+          type: string
+          nullable: true
+        leagueId:
+          type: string
+          nullable: true
+        logo:
+          type: string
+          format: binary
+          description: Optional team logo image.
     CreateContact:
       type: object
       properties:
@@ -14758,6 +14935,227 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams:
+    get:
+      operationId: listSeasonTeams
+      summary: List teams for a season
+      description: Retrieves all teams configured for the specified season.
+      tags:
+        - Teams
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Teams retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamSeason"
+        "404":
+          description: Season not found for the provided identifiers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error while retrieving teams.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/league:
+    get:
+      operationId: getTeamSeasonLeague
+      summary: Get team league details
+      description: Retrieves the league information linked to the specified team season.
+      tags:
+        - Teams
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: League information retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/League"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Account admin permission required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: League information not found for the provided team season.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error while retrieving league information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}:
+    get:
+      operationId: getTeamSeasonDetails
+      summary: Get team season details
+      description: Retrieves detailed information and the current record for a team season.
+      tags:
+        - Teams
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Team season details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamSeasonRecord"
+        "404":
+          description: Team season not found for the provided identifiers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error while retrieving team season details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      operationId: updateTeamSeason
+      summary: Update team season
+      description: Updates team season metadata such as name and linked media.
+        Supports optional logo uploads.
+      tags:
+        - Teams
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamSeason"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamSeasonWithLogo"
+            encoding:
+              logo:
+                contentType: image/*
+      responses:
+        "200":
+          description: Team season updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamSeason"
+        "400":
+          description: Invalid update payload provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Missing 'account.manage' permission for the target account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team season not found for the provided identifiers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error while updating the team season.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/logo:
     get:
       operationId: getTeamSeasonLogo
@@ -15103,6 +15501,274 @@ paths:
                 $ref: "#/components/schemas/AuthenticationError"
         "500":
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/webhooks/sendgrid:
+    post:
+      operationId: processSendGridWebhook
+      summary: Process SendGrid webhook events
+      description: Receives webhook events from SendGrid and updates email delivery
+        status for tracked recipients.
+      tags:
+        - Webhooks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - type: object
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                      description: Recipient email address associated with the event.
+                    timestamp:
+                      type: integer
+                      description: Unix timestamp (in seconds) when the webhook event occurred.
+                    event:
+                      type: string
+                      enum:
+                        - delivered
+                        - bounce
+                        - dropped
+                        - open
+                        - click
+                        - processed
+                        - deferred
+                        - spam_report
+                        - unsubscribe
+                        - group_unsubscribe
+                        - group_resubscribe
+                      description: Event type emitted by SendGrid.
+                    sg_event_id:
+                      type: string
+                      description: Unique SendGrid event identifier.
+                    sg_message_id:
+                      type: string
+                      description: Unique SendGrid message identifier.
+                    smtp-id:
+                      type: string
+                      description: Optional SMTP identifier for the event.
+                    reason:
+                      type: string
+                      description: Reason provided for bounce or drop events.
+                    status:
+                      type: string
+                      description: SMTP status code returned by SendGrid.
+                    response:
+                      type: string
+                      description: SMTP response text returned by SendGrid.
+                    url:
+                      type: string
+                      format: uri
+                      description: URL the recipient clicked, when applicable.
+                    useragent:
+                      type: string
+                      description: User agent captured for open or click events.
+                  required:
+                    - email
+                    - timestamp
+                    - event
+                    - sg_event_id
+                    - sg_message_id
+                - type: array
+                  items:
+                    type: object
+                    properties:
+                      email:
+                        type: string
+                        format: email
+                        description: Recipient email address associated with the event.
+                      timestamp:
+                        type: integer
+                        description: Unix timestamp (in seconds) when the webhook event occurred.
+                      event:
+                        type: string
+                        enum:
+                          - delivered
+                          - bounce
+                          - dropped
+                          - open
+                          - click
+                          - processed
+                          - deferred
+                          - spam_report
+                          - unsubscribe
+                          - group_unsubscribe
+                          - group_resubscribe
+                        description: Event type emitted by SendGrid.
+                      sg_event_id:
+                        type: string
+                        description: Unique SendGrid event identifier.
+                      sg_message_id:
+                        type: string
+                        description: Unique SendGrid message identifier.
+                      smtp-id:
+                        type: string
+                        description: Optional SMTP identifier for the event.
+                      reason:
+                        type: string
+                        description: Reason provided for bounce or drop events.
+                      status:
+                        type: string
+                        description: SMTP status code returned by SendGrid.
+                      response:
+                        type: string
+                        description: SMTP response text returned by SendGrid.
+                      url:
+                        type: string
+                        format: uri
+                        description: URL the recipient clicked, when applicable.
+                      useragent:
+                        type: string
+                        description: User agent captured for open or click events.
+                    required:
+                      - email
+                      - timestamp
+                      - event
+                      - sg_event_id
+                      - sg_message_id
+                  minItems: 1
+              description: SendGrid webhook payload containing one or more events.
+      responses:
+        "200":
+          description: Webhook events were processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Status message describing the processing outcome.
+                  processed:
+                    type: integer
+                    minimum: 0
+                    description: Number of events successfully processed.
+                  total:
+                    type: integer
+                    minimum: 0
+                    description: Total number of events received in the webhook payload.
+                  errors:
+                    type: integer
+                    minimum: 0
+                    description: Number of events that encountered processing errors.
+                required:
+                  - message
+                  - processed
+                  - total
+                  - errors
+        "400":
+          description: The webhook payload was empty or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: The webhook signature could not be validated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "500":
+          description: An unexpected server error occurred while processing webhook events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/webhooks/health:
+    get:
+      operationId: getWebhookHealth
+      summary: Webhook health check
+      description: Returns current configuration and availability details for webhook
+        integrations.
+      tags:
+        - Webhooks
+      responses:
+        "200":
+          description: Webhook health status retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: Overall webhook health status.
+                  timestamp:
+                    type: string
+                    description: ISO 8601 timestamp describing when the health check was generated.
+                  provider:
+                    type: string
+                    description: Configured email provider handling outbound email and webhooks.
+                  webhooks:
+                    type: object
+                    properties:
+                      sendgrid:
+                        type: object
+                        properties:
+                          enabled:
+                            type: boolean
+                            description: Indicates whether the SendGrid webhook is enabled.
+                          endpoint:
+                            type: string
+                            description: Webhook endpoint path configured for SendGrid.
+                        required:
+                          - enabled
+                          - endpoint
+                    required:
+                      - sendgrid
+                required:
+                  - status
+                  - timestamp
+                  - provider
+                  - webhooks
+        "500":
+          description: Unexpected server error while retrieving webhook health information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/webhooks/stats:
+    get:
+      operationId: getWebhookStats
+      summary: Retrieve webhook processing statistics
+      description: Returns aggregated statistics about recently processed webhook events.
+      tags:
+        - Webhooks
+      responses:
+        "200":
+          description: Webhook statistics retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_events_processed:
+                    type: integer
+                    minimum: 0
+                    description: Total number of webhook events processed by the system.
+                  last_event_timestamp:
+                    type: string
+                    nullable: true
+                    description: Timestamp of the most recently processed webhook event, if
+                      available.
+                  provider_status:
+                    type: object
+                    properties:
+                      sendgrid:
+                        type: boolean
+                        description: Indicates whether SendGrid is the active outbound email provider.
+                    required:
+                      - sendgrid
+                required:
+                  - total_events_processed
+                  - last_event_timestamp
+                  - provider_status
+        "500":
+          description: Unexpected server error while retrieving webhook statistics.
           content:
             application/json:
               schema:

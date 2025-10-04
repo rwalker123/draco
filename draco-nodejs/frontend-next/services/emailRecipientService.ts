@@ -26,6 +26,7 @@ import {
   getCurrentSeason,
   getSeasonParticipantCount,
   listSeasonLeagueSeasons,
+  listSeasonTeams,
   searchContacts as apiSearchContacts,
 } from '@draco/shared-api-client';
 import { createApiClient } from '../lib/apiClientFactory';
@@ -85,18 +86,6 @@ export interface ContactsResponse {
     limit: number;
     hasNext: boolean;
     hasPrev: boolean;
-  };
-  error?: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
-
-export interface TeamsResponse {
-  success: boolean;
-  data: {
-    teams: BackendTeam[];
   };
   error?: {
     code: string;
@@ -517,37 +506,38 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
-    }
-
-    const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams`;
+    const apiClient = createApiClient({ token: token || undefined });
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
+        const result = await listSeasonTeams({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
         });
 
-        const data = await this.handleResponse<TeamsResponse>(response);
+        const teams = unwrapApiResult(result, 'Failed to fetch teams for email recipients');
 
-        if (!data.data?.teams || !Array.isArray(data.data.teams)) {
-          throw createEmailRecipientError(
-            EmailRecipientErrorCode.INVALID_DATA,
-            'Invalid teams response format',
-            {
-              details: { responseData: data },
-              context: { operation: 'fetch_teams', accountId, seasonId },
-            },
-          );
-        }
-
-        return data.data.teams;
+        return (teams ?? []).map(
+          (team) =>
+            ({
+              id: team.id,
+              teamId: team.team?.id ?? team.id,
+              name: team.name ?? '',
+              webAddress: team.team?.webAddress ?? null,
+              youtubeUserId: team.team?.youtubeUserId ?? null,
+              defaultVideo: team.team?.defaultVideo ?? null,
+              autoPlayVideo: team.team?.autoPlayVideo ?? false,
+              leagueId: team.league?.id,
+              leagueName: team.league?.name,
+              divisionId: team.division?.id,
+              divisionName: team.division?.name,
+            }) satisfies BackendTeam,
+        );
       },
       {
         operation: 'fetch_teams',
-        additionalData: { endpoint: url },
+        additionalData: { accountId, seasonId },
       },
     );
   }

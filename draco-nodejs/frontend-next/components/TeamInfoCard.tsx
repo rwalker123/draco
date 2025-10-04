@@ -6,7 +6,7 @@ import { Team } from '@/types/schedule';
 import { useApiClient } from '../hooks/useApiClient';
 import {
   getAccountName as apiGetAccountName,
-  getTeamSeasonRecord as apiGetTeamSeasonRecord,
+  getTeamSeasonDetails as apiGetTeamSeasonDetails,
 } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
 import type { TeamSeasonRecordType } from '@draco/shared-schemas';
@@ -43,57 +43,61 @@ export default function TeamInfoCard({
   const [leagueName, setLeagueName] = useState<string>('');
 
   useEffect(() => {
-    async function fetchTeam() {
-      setLoading(true);
-      setError(null);
-      try {
-        const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch team info');
-        const data = await res.json();
-        const teamData = {
-          ...data.data.teamSeason,
-          seasonName: data.data.season?.name || '',
-        };
-        setTeam(teamData);
-        setSeasonName(data.data.season?.name || '');
-        setLeagueName(data.data.teamSeason?.leagueName || '');
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
+    if (!accountId || !seasonId || !teamSeasonId) {
+      return;
     }
-    if (accountId && seasonId && teamSeasonId) fetchTeam();
-  }, [accountId, seasonId, teamSeasonId]);
 
-  useEffect(() => {
-    async function fetchRecord() {
-      if (!accountId || !seasonId || !teamSeasonId) return;
+    const fetchTeam = async () => {
+      setLoading(true);
       setRecordLoading(true);
+      setError(null);
       setRecordError(null);
+
       try {
-        const result = await apiGetTeamSeasonRecord({
+        const result = await apiGetTeamSeasonDetails({
           client: apiClient,
           path: { accountId, seasonId, teamSeasonId },
           throwOnError: false,
         });
 
-        const data = unwrapApiResult<TeamSeasonRecordType>(result, 'Failed to fetch team record');
+        const data = unwrapApiResult<TeamSeasonRecordType>(
+          result,
+          'Failed to fetch team information',
+        );
 
+        const teamData: Team = {
+          id: data.id,
+          name: data.name ?? 'Unknown Team',
+          logoUrl: data.team.logoUrl ?? undefined,
+          webAddress: data.team.webAddress ?? undefined,
+          youtubeUserId: data.team.youtubeUserId ?? undefined,
+          defaultVideo: data.team.defaultVideo ?? undefined,
+          autoPlayVideo: data.team.autoPlayVideo ?? false,
+          seasonName: data.season?.name,
+          leagueName: data.league?.name,
+        };
+
+        setTeam(teamData);
+        setSeasonName(data.season?.name ?? '');
+        setLeagueName(data.league?.name ?? '');
         setRecord({
           wins: data.record.w,
           losses: data.record.l,
           ties: data.record.t,
         });
       } catch (err: unknown) {
+        setTeam(null);
         setRecord(null);
-        setRecordError(err instanceof Error ? err.message : 'Unknown error');
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        setError(message);
+        setRecordError(message);
       } finally {
+        setLoading(false);
         setRecordLoading(false);
       }
-    }
-    fetchRecord();
+    };
+
+    fetchTeam();
   }, [accountId, apiClient, seasonId, teamSeasonId]);
 
   useEffect(() => {

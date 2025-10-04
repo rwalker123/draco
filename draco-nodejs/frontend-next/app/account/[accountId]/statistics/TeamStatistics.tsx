@@ -26,6 +26,7 @@ import { Team } from '@/types/schedule';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import {
+  listSeasonTeams as apiListSeasonTeams,
   listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
   listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
 } from '@draco/shared-api-client';
@@ -205,38 +206,30 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setError(null);
 
     try {
-      const response = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/teams`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const result = await apiListSeasonTeams({
+        client: apiClient,
+        path: { accountId, seasonId },
+        throwOnError: false,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Transform the API response structure to match expected format
-        const rawTeams = data.data?.teams || [];
-        const teamsData = rawTeams.map(
-          (team: {
-            id: string;
-            name: string;
-            teamId: string;
-            league?: { name: string };
-            division?: { name: string } | null;
-          }) => ({
-            teamId: team.id, // Use team season ID for API calls
-            teamName: team.name,
-            leagueName: team.league?.name || 'Unknown League',
-            divisionName: team.division?.name || 'No Division',
-          }),
-        );
-        setTeams(teamsData);
+      const teamSeasons = unwrapApiResult(result, 'Failed to load teams');
+      const teamsData = (teamSeasons ?? []).map((teamSeason) => {
+        const displayName = teamSeason.name ?? teamSeason.team?.webAddress ?? 'Unknown Team';
+        return {
+          id: teamSeason.id,
+          teamId: teamSeason.id,
+          name: displayName,
+          teamName: displayName,
+          logoUrl: teamSeason.team?.logoUrl ?? undefined,
+          leagueName: teamSeason.league?.name ?? 'Unknown League',
+          divisionName: teamSeason.division?.name ?? 'No Division',
+        } satisfies Team;
+      });
 
-        // Auto-select first team if available
-        if (teamsData.length > 0 && !selectedTeamId) {
-          setSelectedTeamId(teamsData[0].teamId);
-        }
-      } else {
-        throw new Error('Failed to fetch teams');
+      setTeams(teamsData);
+
+      if (teamsData.length > 0 && !selectedTeamId) {
+        setSelectedTeamId(teamsData[0].teamId);
       }
     } catch (error) {
       console.error('Error loading teams:', error);
@@ -244,7 +237,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     } finally {
       setLoading((prev) => ({ ...prev, teams: false }));
     }
-  }, [accountId, seasonId, selectedTeamId]);
+  }, [accountId, seasonId, selectedTeamId, apiClient]);
 
   const loadBattingStats = useCallback(async () => {
     if (!selectedTeamId || !seasonId) return;

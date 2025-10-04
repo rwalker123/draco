@@ -1,4 +1,5 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import {
   AccountAffiliationSchema,
   AccountDetailsQuerySchema,
@@ -69,6 +70,7 @@ import {
   SeasonParticipantCountDataSchema,
   SeasonSchema,
   TeamManagerSchema,
+  TeamSeasonSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
   TeamsWantedContactQuerySchema,
@@ -77,6 +79,7 @@ import {
   StandingsLeagueSchema,
   StandingsTeamSchema,
   TeamSeasonRecordSchema,
+  UpsertTeamSeasonSchema,
   UpsertPlayersWantedClassifiedSchema,
   UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
@@ -158,9 +161,20 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonParticipantCountDataSchema,
   );
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
+  const TeamSeasonSchemaRef = registry.register('TeamSeason', TeamSeasonSchema);
   const UpsertTeamManagerSchemaRef = registry.register(
     'UpsertTeamManager',
     UpsertTeamManagerSchema,
+  );
+  const UpsertTeamSeasonSchemaRef = registry.register('UpsertTeamSeason', UpsertTeamSeasonSchema);
+  const UpsertTeamSeasonWithLogoSchemaRef = registry.register(
+    'UpsertTeamSeasonWithLogo',
+    UpsertTeamSeasonSchema.extend({
+      logo: z
+        .string()
+        .openapi({ type: 'string', format: 'binary', description: 'Optional team logo image.' })
+        .optional(),
+    }),
   );
   const CreateContactSchemaRef = registry.register('CreateContact', CreateContactSchema);
   const CreateContactRoleSchemaRef = registry.register(
@@ -438,7 +452,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonSchemaRef,
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
+    TeamSeasonSchemaRef,
     UpsertTeamManagerSchemaRef,
+    UpsertTeamSeasonSchemaRef,
+    UpsertTeamSeasonWithLogoSchemaRef,
     CreateContactSchemaRef,
     CreateContactRoleSchemaRef,
     EmailComposeSchemaRef,

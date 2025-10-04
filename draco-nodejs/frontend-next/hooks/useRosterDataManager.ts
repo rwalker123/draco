@@ -14,6 +14,7 @@ import {
   deleteContactPhoto as apiDeleteContactPhoto,
   getContactRoster as apiGetContactRoster,
   getAccountSeason,
+  getTeamSeasonLeague as apiGetTeamSeasonLeague,
 } from '@draco/shared-api-client';
 import {
   TeamManagerType,
@@ -288,19 +289,20 @@ export const useRosterDataManager = (
     if (!accountId || !seasonId || !teamSeasonId || !token) return;
 
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/league`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await apiGetTeamSeasonLeague({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        setLeague(response.data.data);
-      }
+      const leagueData = unwrapApiResult(result, 'Failed to fetch league data');
+
+      setLeague(leagueData ? { id: leagueData.id, name: leagueData.name } : null);
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error, 'Failed to fetch league data');
       setError(errorMessage);
     }
-  }, [accountId, seasonId, teamSeasonId, token, setLeague, setError, getErrorMessage]);
+  }, [accountId, seasonId, teamSeasonId, token, setLeague, setError, getErrorMessage, apiClient]);
 
   // Update roster member with optimistic updates
   const updateRosterMember = useCallback(

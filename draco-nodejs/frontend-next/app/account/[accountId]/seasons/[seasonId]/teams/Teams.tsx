@@ -21,7 +21,12 @@ import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
 import { Team } from '@/types/schedule';
 import { useApiClient } from '@/hooks/useApiClient';
-import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import {
+  listSeasonLeagueSeasons,
+  updateTeamSeason as apiUpdateTeamSeason,
+} from '@draco/shared-api-client';
+import type { UpsertTeamSeasonWithLogo } from '@draco/shared-api-client';
+import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
 
@@ -325,36 +330,27 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   const handleSaveTeam = async (updatedName: string, logoFile: File | null) => {
     if (!selectedTeam) return;
-    // Validate team name (already done in dialog, but double-check)
     if (!updatedName.trim()) throw new Error('Team name is required');
-    // Check if user is authenticated
     if (!token) throw new Error('Authentication required. Please log in again.');
-    // Prepare form data for file upload
-    const formData = new FormData();
-    formData.append('name', updatedName.trim());
+
+    const payload: UpsertTeamSeasonWithLogo = { name: updatedName.trim() };
     if (logoFile) {
-      formData.append('logo', logoFile);
+      payload.logo = logoFile;
     }
-    // Update team information
-    const updateResponse = await fetch(
-      `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeam.id}`,
-      {
-        method: 'PUT',
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-    if (!updateResponse.ok) {
-      if (updateResponse.status === 401) {
-        throw new Error('Authentication failed. Please log in again.');
-      }
-      const errorData = await updateResponse.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to update team');
-    }
-    const updateData = await updateResponse.json();
-    const newLogoUrl = addCacheBuster(updateData.data.team.logoUrl, Date.now());
+
+    const result = await apiUpdateTeamSeason({
+      client: apiClient,
+      path: { accountId, seasonId, teamSeasonId: selectedTeam.id },
+      body: payload,
+      throwOnError: false,
+      ...(logoFile ? { ...formDataBodySerializer, headers: { 'Content-Type': null } } : {}),
+    });
+
+    const updatedTeam = unwrapApiResult(result, 'Failed to update team');
+
+    const newLogoUrl = updatedTeam.team.logoUrl
+      ? addCacheBuster(updatedTeam.team.logoUrl, Date.now())
+      : undefined;
     setTeamsData((prevData) => {
       if (!prevData) return prevData;
       return {
@@ -368,7 +364,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                 ? {
                     ...team,
                     name: updatedName.trim(),
-                    logoUrl: newLogoUrl,
+                    logoUrl: newLogoUrl ?? team.logoUrl,
                   }
                 : team,
             ),
@@ -376,7 +372,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         })),
       };
     });
-    setSuccess(updateData.message || 'Team updated successfully');
+    setSuccess('Team updated successfully');
   };
 
   const renderTeamCard = (team: Team) => {
