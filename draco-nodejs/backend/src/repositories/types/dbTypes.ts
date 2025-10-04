@@ -195,11 +195,211 @@ export type dbTeamSeasonWithLeaguesAndTeams = Prisma.teamsseasonGetPayload<{
   };
 }>;
 
+export type dbTeamSeasonWithTeam = Prisma.teamsseasonGetPayload<{
+  include: {
+    teams: {
+      select: {
+        id: true;
+        webaddress: true;
+        youtubeuserid: true;
+        defaultvideo: true;
+        autoplayvideo: true;
+      };
+    };
+  };
+}>;
+
+export type dbDivisionDefinition = Prisma.divisiondefsGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    accountid: true;
+  };
+}>;
+
+export type dbDivisionSeasonWithDefinition = Prisma.divisionseasonGetPayload<{
+  include: {
+    divisiondefs: {
+      select: {
+        id: true;
+        name: true;
+        accountid: true;
+      };
+    };
+  };
+}>;
+
+export type dbDivisionSeasonWithTeams = Prisma.divisionseasonGetPayload<{
+  include: {
+    divisiondefs: {
+      select: {
+        id: true;
+        name: true;
+        accountid: true;
+      };
+    };
+    teamsseason: {
+      include: {
+        teams: {
+          select: {
+            id: true;
+            webaddress: true;
+            youtubeuserid: true;
+            defaultvideo: true;
+            autoplayvideo: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
 export type dbLeagueSeason = Prisma.leagueseasonGetPayload<{
   include: {
     league: true;
   };
 }>;
+
+export type dbLeagueSeasonRecord = Prisma.leagueseasonGetPayload<{
+  select: {
+    id: true;
+    leagueid: true;
+    seasonid: true;
+  };
+}>;
+
+export type dbLeagueSeasonWithTeams = Prisma.leagueseasonGetPayload<{
+  include: {
+    league: {
+      select: {
+        id: true;
+        name: true;
+        accountid: true;
+      };
+    };
+    season: {
+      select: {
+        id: true;
+        name: true;
+        accountid: true;
+      };
+    };
+    divisionseason: {
+      include: {
+        divisiondefs: {
+          select: {
+            id: true;
+            name: true;
+            accountid: true;
+          };
+        };
+        teamsseason: {
+          include: {
+            teams: {
+              select: {
+                id: true;
+                webaddress: true;
+                youtubeuserid: true;
+                defaultvideo: true;
+                autoplayvideo: true;
+              };
+            };
+          };
+        };
+      };
+    };
+    teamsseason: {
+      include: {
+        teams: {
+          select: {
+            id: true;
+            webaddress: true;
+            youtubeuserid: true;
+            defaultvideo: true;
+            autoplayvideo: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbLeagueSeasonWithDivisionDetails = Prisma.leagueseasonGetPayload<{
+  include: {
+    league: {
+      select: {
+        id: true;
+        name: true;
+        accountid: true;
+      };
+    };
+    divisionseason: {
+      include: {
+        divisiondefs: {
+          select: {
+            id: true;
+            name: true;
+            accountid: true;
+          };
+        };
+        teamsseason: {
+          include: {
+            teams: {
+              select: {
+                id: true;
+                webaddress: true;
+                youtubeuserid: true;
+                defaultvideo: true;
+                autoplayvideo: true;
+              };
+            };
+          };
+        };
+      };
+    };
+    teamsseason: {
+      include: {
+        teams: {
+          select: {
+            id: true;
+            webaddress: true;
+            youtubeuserid: true;
+            defaultvideo: true;
+            autoplayvideo: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbLeagueSeasonWithCounts = Prisma.leagueseasonGetPayload<{
+  include: {
+    league: {
+      select: {
+        id: true;
+        name: true;
+        accountid: true;
+      };
+    };
+    _count: {
+      select: {
+        divisionseason: true;
+        gameejections: true;
+        golfmatch: true;
+        leagueevents: true;
+        leagueschedule: true;
+        playoffsetup: true;
+        teamsseason: true;
+      };
+    };
+  };
+}>;
+
+export interface dbTeamSeasonCountResult {
+  teamseasonid: bigint;
+  count: number;
+}
 
 export type dbScheduleGameWithDetails = Prisma.leaguescheduleGetPayload<{
   include: {
