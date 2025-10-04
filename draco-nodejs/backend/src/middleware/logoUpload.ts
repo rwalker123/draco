@@ -12,6 +12,13 @@ const logoUpload = multer({
 
 export const logoUploadMiddleware = (fieldName = 'logo') => {
   return (req: Request, res: Response, next: NextFunction): void => {
+    const contentType = req.headers['content-type'];
+
+    if (!contentType || !contentType.toLowerCase().includes('multipart/form-data')) {
+      next();
+      return;
+    }
+
     logoUpload.single(fieldName)(req, res, (err: unknown) => {
       if (err) {
         const message = err instanceof Error ? err.message : 'Failed to process upload';
