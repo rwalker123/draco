@@ -4825,6 +4825,138 @@
           "gb"
         ]
       },
+      "TeamSeasonRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "team": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "webAddress": {
+                "type": "string",
+                "nullable": true
+              },
+              "youtubeUserId": {
+                "type": "string",
+                "nullable": true
+              },
+              "defaultVideo": {
+                "type": "string",
+                "nullable": true
+              },
+              "autoPlayVideo": {
+                "type": "boolean"
+              },
+              "logoUrl": {
+                "type": "string",
+                "nullable": true,
+                "format": "uri"
+              }
+            },
+            "required": [
+              "id"
+            ]
+          },
+          "season": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "accountId": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "isCurrent": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "accountId"
+            ]
+          },
+          "league": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "division": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "record": {
+            "type": "object",
+            "properties": {
+              "w": {
+                "type": "number"
+              },
+              "l": {
+                "type": "number"
+              },
+              "t": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "w",
+              "l",
+              "t"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "team",
+          "record"
+        ]
+      },
       "ContactPlayersWantedCreator": {
         "type": "object",
         "properties": {
@@ -5049,6 +5181,89 @@
           "pa"
         ]
       },
+      "PlayerBattingStatsBrief": {
+        "type": "object",
+        "properties": {
+          "playerId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "ab": {
+            "type": "number",
+            "minimum": 0
+          },
+          "h": {
+            "type": "number",
+            "minimum": 0
+          },
+          "r": {
+            "type": "number",
+            "minimum": 0
+          },
+          "d": {
+            "type": "number",
+            "minimum": 0
+          },
+          "t": {
+            "type": "number",
+            "minimum": 0
+          },
+          "hr": {
+            "type": "number",
+            "minimum": 0
+          },
+          "rbi": {
+            "type": "number",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "number",
+            "minimum": 0
+          },
+          "so": {
+            "type": "number",
+            "minimum": 0
+          },
+          "avg": {
+            "type": "number",
+            "minimum": 0
+          },
+          "obp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "slg": {
+            "type": "number",
+            "minimum": 0
+          },
+          "ops": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "playerId",
+          "playerName",
+          "ab",
+          "h",
+          "r",
+          "d",
+          "t",
+          "hr",
+          "rbi",
+          "bb",
+          "so",
+          "avg",
+          "obp",
+          "slg",
+          "ops"
+        ]
+      },
       "PlayerPitchingStats": {
         "type": "object",
         "properties": {
@@ -5184,6 +5399,80 @@
           "oba",
           "slg",
           "ipDecimal"
+        ]
+      },
+      "PlayerPitchingStatsBrief": {
+        "type": "object",
+        "properties": {
+          "playerId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "w": {
+            "type": "number",
+            "minimum": 0
+          },
+          "l": {
+            "type": "number",
+            "minimum": 0
+          },
+          "s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "h": {
+            "type": "number",
+            "minimum": 0
+          },
+          "r": {
+            "type": "number",
+            "minimum": 0
+          },
+          "er": {
+            "type": "number",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "number",
+            "minimum": 0
+          },
+          "so": {
+            "type": "number",
+            "minimum": 0
+          },
+          "era": {
+            "type": "number",
+            "minimum": 0
+          },
+          "whip": {
+            "type": "number",
+            "minimum": 0
+          },
+          "ip": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Innings pitched, rounded to nearest whole inning"
+          }
+        },
+        "required": [
+          "playerId",
+          "playerName",
+          "w",
+          "l",
+          "s",
+          "h",
+          "r",
+          "er",
+          "bb",
+          "so",
+          "era",
+          "whip",
+          "ip"
         ]
       },
       "BattingStatisticsFilters": {
@@ -5423,6 +5712,28 @@
           "batting",
           "pitching"
         ]
+      },
+      "RecentGamesQuery": {
+        "type": "object",
+        "properties": {
+          "upcoming": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include upcoming games"
+          },
+          "recent": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include recent games"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 5,
+            "description": "Maximum number of games to return for each category"
+          }
+        }
       },
       "BaseballPosition": {
         "type": "object",
@@ -7537,6 +7848,475 @@
           "homeScore",
           "visitorScore",
           "gameStatus"
+        ]
+      },
+      "RecentGames": {
+        "type": "object",
+        "properties": {
+          "upcoming": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "gameDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "homeTeam": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "visitorTeam": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "league": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "season": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "homeScore": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "visitorScore": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "comment": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "field": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "shortName": {
+                      "type": "string",
+                      "maxLength": 5
+                    },
+                    "address": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "city": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "state": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "zip": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "shortName"
+                  ]
+                },
+                "gameStatus": {
+                  "type": "number"
+                },
+                "gameStatusText": {
+                  "type": "string",
+                  "enum": [
+                    "Final",
+                    "Rainout",
+                    "Postponed",
+                    "Did Not Report",
+                    "Scheduled",
+                    "Forfeit",
+                    "Unknown"
+                  ]
+                },
+                "gameStatusShortText": {
+                  "type": "string",
+                  "enum": [
+                    "",
+                    "F",
+                    "PPD",
+                    "R",
+                    "DNR"
+                  ]
+                },
+                "gameType": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "hasGameRecap": {
+                  "type": "boolean"
+                },
+                "umpire1": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "umpire2": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "umpire3": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "umpire4": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "gameDate",
+                "homeTeam",
+                "visitorTeam",
+                "league",
+                "homeScore",
+                "visitorScore",
+                "gameStatus",
+                "gameType"
+              ]
+            }
+          },
+          "recent": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "gameDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "homeTeam": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "visitorTeam": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "league": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "season": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "homeScore": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "visitorScore": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "comment": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "field": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "shortName": {
+                      "type": "string",
+                      "maxLength": 5
+                    },
+                    "address": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "city": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "state": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "zip": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "shortName"
+                  ]
+                },
+                "gameStatus": {
+                  "type": "number"
+                },
+                "gameStatusText": {
+                  "type": "string",
+                  "enum": [
+                    "Final",
+                    "Rainout",
+                    "Postponed",
+                    "Did Not Report",
+                    "Scheduled",
+                    "Forfeit",
+                    "Unknown"
+                  ]
+                },
+                "gameStatusShortText": {
+                  "type": "string",
+                  "enum": [
+                    "",
+                    "F",
+                    "PPD",
+                    "R",
+                    "DNR"
+                  ]
+                },
+                "gameType": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "hasGameRecap": {
+                  "type": "boolean"
+                },
+                "umpire1": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "umpire2": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "umpire3": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                },
+                "umpire4": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "gameDate",
+                "homeTeam",
+                "visitorTeam",
+                "league",
+                "homeScore",
+                "visitorScore",
+                "gameStatus",
+                "gameType"
+              ]
+            }
+          }
+        },
+        "required": [
+          "upcoming",
+          "recent"
         ]
       },
       "GamesWithRecaps": {
@@ -20775,6 +21555,371 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/record": {
+      "get": {
+        "operationId": "getTeamSeasonRecord",
+        "summary": "Get team season record",
+        "description": "Retrieve the win/loss/tie record for a specific team within a season.",
+        "tags": [
+          "Statistics"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team season record retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamSeasonRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found for the provided account and season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/games": {
+      "get": {
+        "operationId": "listTeamSeasonGames",
+        "summary": "List team games",
+        "description": "Return the recent and upcoming games for a team season with optional limits by category.",
+        "tags": [
+          "Statistics"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include upcoming games"
+            },
+            "required": false,
+            "description": "Include upcoming games",
+            "name": "upcoming",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include recent games"
+            },
+            "required": false,
+            "description": "Include recent games",
+            "name": "recent",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 5,
+              "description": "Maximum number of games to return for each category"
+            },
+            "required": false,
+            "description": "Maximum number of games to return for each category",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team games retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentGames"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found for the provided account and season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/batting-stats": {
+      "get": {
+        "operationId": "listTeamSeasonBattingStats",
+        "summary": "List team batting statistics",
+        "description": "Retrieve batting statistics for all players on a team season.",
+        "tags": [
+          "Statistics"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team batting statistics retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlayerBattingStatsBrief"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found for the provided account and season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/pitching-stats": {
+      "get": {
+        "operationId": "listTeamSeasonPitchingStats",
+        "summary": "List team pitching statistics",
+        "description": "Retrieve pitching statistics for all players on a team season.",
+        "tags": [
+          "Statistics"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team pitching statistics retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlayerPitchingStatsBrief"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found for the provided account and season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

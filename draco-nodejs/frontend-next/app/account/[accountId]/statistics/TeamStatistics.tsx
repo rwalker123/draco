@@ -23,58 +23,40 @@ import StatisticsTable, {
   formatIPDecimal,
 } from './StatisticsTable';
 import { Team } from '@/types/schedule';
+import { useApiClient } from '@/hooks/useApiClient';
+import { unwrapApiResult } from '@/utils/apiResult';
+import {
+  listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
+  listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
+} from '@draco/shared-api-client';
+import type {
+  PlayerBattingStatsBriefType,
+  PlayerPitchingStatsBriefType,
+} from '@draco/shared-schemas';
 
-interface BattingStatsRow {
-  playerId: string;
-  playerName: string;
-  teamName: string;
-  ab: number;
-  h: number;
-  r: number;
-  d: number;
-  t: number;
-  hr: number;
-  rbi: number;
-  bb: number;
-  so: number;
-  hbp: number;
-  sb: number;
-  sf: number;
-  sh: number;
-  avg: number;
-  obp: number;
-  slg: number;
-  ops: number;
-  tb: number;
-  pa: number;
+interface BattingStatsRow extends PlayerBattingStatsBriefType {
+  teamName?: string;
+  hbp?: number;
+  sb?: number;
+  sf?: number;
+  sh?: number;
+  tb?: number;
+  pa?: number;
   [key: string]: unknown;
 }
 
-interface PitchingStatsRow {
-  playerId: string;
-  playerName: string;
-  teamName: string;
-  ip: number;
-  ip2: number;
-  w: number;
-  l: number;
-  s: number;
-  h: number;
-  r: number;
-  er: number;
-  bb: number;
-  so: number;
-  hr: number;
-  bf: number;
-  wp: number;
-  hbp: number;
-  era: number;
-  whip: number;
-  k9: number;
-  bb9: number;
-  oba: number;
-  slg: number;
-  ipDecimal: number;
+interface PitchingStatsRow extends PlayerPitchingStatsBriefType {
+  teamName?: string;
+  ip2?: number;
+  hr?: number;
+  bf?: number;
+  wp?: number;
+  hbp?: number;
+  k9?: number;
+  bb9?: number;
+  oba?: number;
+  slg?: number;
+  ipDecimal?: number;
   [key: string]: unknown;
 }
 
@@ -214,6 +196,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
   const [battingSortOrder, setBattingSortOrder] = useState<'asc' | 'desc'>('desc');
   const [pitchingSortField, setPitchingSortField] = useState<keyof PitchingStatsRow>('era');
   const [pitchingSortOrder, setPitchingSortOrder] = useState<'asc' | 'desc'>('asc');
+  const apiClient = useApiClient();
 
   const loadTeams = useCallback(async () => {
     if (!seasonId || seasonId === '0') return;
@@ -269,28 +252,25 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setLoading((prev) => ({ ...prev, batting: true }));
 
     try {
-      const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeamId}/batting-stats`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
+      const result = await apiListTeamSeasonBattingStats({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+        throwOnError: false,
+      });
+
+      const data = unwrapApiResult<PlayerBattingStatsBriefType[]>(
+        result,
+        'Failed to load batting stats',
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setBattingStats(data.data || []);
-      } else {
-        throw new Error('Failed to fetch batting stats');
-      }
-    } catch (error) {
-      console.error('Error loading batting stats:', error);
-      setError('Failed to load batting stats');
+      setBattingStats(data.map((stat) => ({ ...stat })));
+    } catch (fetchError) {
+      console.error('Error loading batting stats:', fetchError);
+      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load batting stats');
     } finally {
       setLoading((prev) => ({ ...prev, batting: false }));
     }
-  }, [accountId, selectedTeamId, seasonId]);
+  }, [accountId, apiClient, seasonId, selectedTeamId]);
 
   const loadPitchingStats = useCallback(async () => {
     if (!selectedTeamId || !seasonId) return;
@@ -298,28 +278,25 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setLoading((prev) => ({ ...prev, pitching: true }));
 
     try {
-      const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeamId}/pitching-stats`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
+      const result = await apiListTeamSeasonPitchingStats({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+        throwOnError: false,
+      });
+
+      const data = unwrapApiResult<PlayerPitchingStatsBriefType[]>(
+        result,
+        'Failed to load pitching stats',
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setPitchingStats(data.data || []);
-      } else {
-        throw new Error('Failed to fetch pitching stats');
-      }
-    } catch (error) {
-      console.error('Error loading pitching stats:', error);
-      setError('Failed to load pitching stats');
+      setPitchingStats(data.map((stat) => ({ ...stat })));
+    } catch (fetchError) {
+      console.error('Error loading pitching stats:', fetchError);
+      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load pitching stats');
     } finally {
       setLoading((prev) => ({ ...prev, pitching: false }));
     }
-  }, [accountId, selectedTeamId, seasonId]);
+  }, [accountId, apiClient, seasonId, selectedTeamId]);
 
   useEffect(() => {
     loadTeams();
