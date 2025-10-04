@@ -102,6 +102,41 @@ export type dbTeamManagerWithContact = Prisma.teamseasonmanagerGetPayload<{
   include: { contacts: true };
 }>;
 
+export type dbSeasonManagerWithRelations = Prisma.teamseasonmanagerGetPayload<{
+  select: {
+    id: true;
+    contactid: true;
+    contacts: {
+      select: {
+        id: true;
+        firstname: true;
+        lastname: true;
+        email: true;
+        phone1: true;
+        phone2: true;
+        phone3: true;
+      };
+    };
+    teamsseason: {
+      select: {
+        id: true;
+        name: true;
+        leagueseasonid: true;
+        leagueseason: {
+          select: {
+            id: true;
+            league: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
 export type dbLeagueUmpireWithContact = Prisma.leagueumpiresGetPayload<{
   include: {
     contacts: {

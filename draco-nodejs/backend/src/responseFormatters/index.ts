@@ -11,3 +11,5 @@ export * from './EmailTemplateResponseFormatter.js';
 export * from './statsResponseFormatter.js';
 export * from './scheduleResponseFormatter.js';
 export * from './LeagueResponseFormatter.js';
+export * from './managerResponseFormatter.js';
+export * from './seasonManagerResponseFormatter.js';
