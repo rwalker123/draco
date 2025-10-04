@@ -174,22 +174,26 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
     if (value && value.trim() !== '' && value.length > 10 && !initialContact) {
       const fetchInitialContact = async () => {
         try {
-          const response = await fetch(`/api/accounts/${accountId}/contacts/${value}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              const contact = data.data.contact;
-              setInitialContact(contact);
-              setInputValue(contact.displayName || `${contact.firstName} ${contact.lastName}`);
-              setSelectedContact(contact);
-            }
+          if (!token || !accountId) {
+            return;
           }
+
+          const userService = createUserManagementService(token);
+          const contact = await userService.getContact(accountId, value);
+
+          const normalizedContact: SearchContact = {
+            id: contact.id,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            email: contact.email || undefined,
+            userId: contact.userId || undefined,
+            displayName: `${contact.firstName} ${contact.lastName}`.trim(),
+            searchText: `${contact.firstName} ${contact.lastName} ${contact.email ?? ''}`.trim(),
+          };
+
+          setInitialContact(normalizedContact);
+          setInputValue(normalizedContact.displayName || normalizedContact.searchText || '');
+          setSelectedContact(normalizedContact);
         } catch (error) {
           console.error('Error fetching initial contact:', error);
         }

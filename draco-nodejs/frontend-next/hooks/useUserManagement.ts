@@ -12,7 +12,13 @@ import { getRoleDisplayName } from '../utils/roleUtils';
 import { Role, UseUserManagementReturn } from '../types/users';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
-import { ContactRoleType, ContactType, RoleWithContactType } from '@draco/shared-schemas';
+import {
+  BaseContactType,
+  ContactRoleType,
+  ContactType,
+  RoleWithContactType,
+  TeamManagerWithTeamsType,
+} from '@draco/shared-schemas';
 
 // Pagination state for atomic updates
 interface PaginationState {
@@ -129,26 +135,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [contextDataLoading, setContextDataLoading] = useState(false);
 
   // Automatic role holders state
-  const [accountOwner, setAccountOwner] = useState<{
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    photoUrl?: string;
-  } | null>(null); // Initialize as null, but will be set once loaded
-  const [teamManagers, setTeamManagers] = useState<
-    Array<{
-      contactId: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      photoUrl?: string;
-      teams: Array<{
-        teamSeasonId: string;
-        teamName: string;
-      }>;
-    }>
-  >([]);
+  const [accountOwner, setAccountOwner] = useState<BaseContactType | null>(null); // Initialize as null, but will be set once loaded
+  const [teamManagers, setTeamManagers] = useState<TeamManagerWithTeamsType[]>([]);
   const [automaticRolesLoading, setAutomaticRolesLoading] = useState(false);
 
   // Service instances

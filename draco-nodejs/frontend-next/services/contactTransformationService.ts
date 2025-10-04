@@ -42,14 +42,14 @@ export class ContactTransformationService {
       userId: '', // Not provided in ContactUpdateResponse
       photoUrl: response.photoUrl || undefined,
       contactDetails: {
-        phone1: response.phone1 || null,
-        phone2: response.phone2 || null,
-        phone3: response.phone3 || null,
-        streetAddress: response.streetaddress || null,
-        city: response.city || null,
-        state: response.state || null,
-        zip: response.zip || null,
-        dateOfBirth: response.dateofbirth || null,
+        phone1: response.phone1 || '',
+        phone2: response.phone2 || '',
+        phone3: response.phone3 || '',
+        streetAddress: response.streetaddress || '',
+        city: response.city || '',
+        state: response.state || '',
+        zip: response.zip || '',
+        dateOfBirth: response.dateofbirth || '',
       },
       contactroles: [], // Not provided in ContactUpdateResponse
     };
@@ -94,27 +94,27 @@ export class ContactTransformationService {
 
     if (nestedDetails) {
       return {
-        phone1: (nestedDetails.phone1 as string) || null,
-        phone2: (nestedDetails.phone2 as string) || null,
-        phone3: (nestedDetails.phone3 as string) || null,
-        streetAddress: (nestedDetails.streetAddress as string) || null,
-        city: (nestedDetails.city as string) || null,
-        state: (nestedDetails.state as string) || null,
-        zip: (nestedDetails.zip as string) || null,
-        dateOfBirth: (nestedDetails.dateOfBirth as string) || null,
+        phone1: (nestedDetails.phone1 as string) || '',
+        phone2: (nestedDetails.phone2 as string) || '',
+        phone3: (nestedDetails.phone3 as string) || '',
+        streetAddress: (nestedDetails.streetAddress as string) || '',
+        city: (nestedDetails.city as string) || '',
+        state: (nestedDetails.state as string) || '',
+        zip: (nestedDetails.zip as string) || '',
+        dateOfBirth: (nestedDetails.dateOfBirth as string) || '',
       };
     }
 
     // Handle case where contact details are at the top level
     return {
-      phone1: (backendContact.phone1 as string) || null,
-      phone2: (backendContact.phone2 as string) || null,
-      phone3: (backendContact.phone3 as string) || null,
-      streetAddress: (backendContact.streetAddress as string) || null,
-      city: (backendContact.city as string) || null,
-      state: (backendContact.state as string) || null,
-      zip: (backendContact.zip as string) || null,
-      dateOfBirth: (backendContact.dateOfBirth as string) || null,
+      phone1: (backendContact.phone1 as string) || '',
+      phone2: (backendContact.phone2 as string) || '',
+      phone3: (backendContact.phone3 as string) || '',
+      streetAddress: (backendContact.streetAddress as string) || '',
+      city: (backendContact.city as string) || '',
+      state: (backendContact.state as string) || '',
+      zip: (backendContact.zip as string) || '',
+      dateOfBirth: (backendContact.dateOfBirth as string) || '',
       // ❌ Removed: middlename (moved to top-level middleName)
     };
   }

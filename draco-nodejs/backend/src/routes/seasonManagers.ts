@@ -57,9 +57,9 @@ router.get(
         lastName: manager.lastName,
         email: manager.email || undefined,
         contactDetails: {
-          phone1: manager.phone1 || null,
-          phone2: manager.phone2 || null,
-          phone3: manager.phone3 || null,
+          phone1: manager.phone1 || '',
+          phone2: manager.phone2 || '',
+          phone3: manager.phone3 || '',
         },
       },
       hasValidEmail: manager.hasValidEmail,
