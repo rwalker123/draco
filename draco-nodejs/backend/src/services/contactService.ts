@@ -8,6 +8,7 @@ import {
   CreateContactType,
   RosterPlayerType,
   ContactValidationType,
+  NamedContactType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError } from '../utils/customErrors.js';
 import { ContactResponseFormatter, TeamResponseFormatter } from '../responseFormatters/index.js';
@@ -45,6 +46,19 @@ export class ContactService {
 
     const response = ContactResponseFormatter.formatRosterPlayerResponse(dbRoster);
     return response;
+  }
+
+  /**
+   * Get a contact with name details
+   * @param contactId
+   * @returns BaseContactType
+   */
+  async getNamedContact(accountId: bigint, contactId: bigint): Promise<NamedContactType | null> {
+    const dbContact = await this.contactRepository.findContactInAccount(contactId, accountId);
+    if (!dbContact) {
+      throw new NotFoundError('Contact not found');
+    }
+    return ContactResponseFormatter.formatNamedContactResponse(dbContact);
   }
 
   /**
