@@ -1,6 +1,7 @@
 import { contactroles, PrismaClient } from '@prisma/client';
 import { IRoleRepository } from '../interfaces/index.js';
 import {
+  dbAspnetRole,
   dbAspnetRoleName,
   dbAspnetRolesId,
   dbContactRoles,
@@ -9,6 +10,18 @@ import {
 
 export class PrismaRoleRepository implements IRoleRepository {
   constructor(private prisma: PrismaClient) {}
+
+  async findAllRoles(): Promise<dbAspnetRole[]> {
+    return await this.prisma.aspnetroles.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  }
 
   async findById(id: bigint): Promise<dbContactRoles | null> {
     return await this.prisma.contactroles.findUnique({

@@ -2,8 +2,11 @@
 // Follows Interface Segregation Principle to avoid fat interfaces
 
 import {
+  BaseRoleType,
   ContactRoleType,
+  ContactWithContactRolesType,
   CreateContactRoleType,
+  RegisteredUserWithRolesType,
   RoleWithContactType,
   UserRolesType,
 } from '@draco/shared-schemas';
@@ -25,6 +28,25 @@ export interface IRoleQuery {
    * Get all roles for a user (both global and contact roles)
    */
   getUserRoles(userId: string, accountId?: bigint): Promise<UserRolesType>;
+
+  /**
+   * Get registered user with roles for a user
+   */
+  getRegisteredUserWithRoles(
+    userId: string,
+    userName: string,
+    accountId?: bigint,
+  ): Promise<RegisteredUserWithRolesType>;
+
+  /**
+   * Get all role identifiers
+   */
+  getRoleIdentifiers(): Promise<BaseRoleType[]>;
+
+  /**
+   * Get contacts with roles for an account
+   */
+  getAccountContactsWithRoles(accountId: bigint): Promise<ContactWithContactRolesType[]>;
 
   /**
    * Get global roles for a user from aspnetuserroles table

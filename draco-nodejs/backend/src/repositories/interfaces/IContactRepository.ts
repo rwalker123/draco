@@ -1,6 +1,11 @@
 import { contacts } from '@prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
-import { dbBaseContact, dbContactWithRoleAndDetails, dbRosterPlayer } from '../types/dbTypes.js';
+import {
+  dbBaseContact,
+  dbContactWithAccountRoles,
+  dbContactWithRoleAndDetails,
+  dbRosterPlayer,
+} from '../types/dbTypes.js';
 import { ContactQueryOptions } from '../../interfaces/contactInterfaces.js';
 
 export interface IContactRepository extends IBaseRepository<contacts> {
@@ -10,6 +15,7 @@ export interface IContactRepository extends IBaseRepository<contacts> {
   isAccountOwner(contactId: bigint, accountId: bigint): Promise<boolean>;
   findByUserId(userId: string, accountId: bigint): Promise<dbBaseContact | null>;
   findContactsByUserIds(userIds: string[]): Promise<dbBaseContact[]>;
+  findContactsWithRolesByAccountId(accountId: bigint): Promise<dbContactWithAccountRoles[]>;
   searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,

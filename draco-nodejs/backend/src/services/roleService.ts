@@ -5,8 +5,11 @@ import { RoleNamesType } from '../types/roles.js';
 import { ROLE_IDS, ROLE_PERMISSIONS_BY_ID, hasRoleOrHigher } from '../config/roles.js';
 import { IRoleService } from '../interfaces/roleInterfaces.js';
 import {
+  BaseRoleType,
   ContactRoleType,
+  ContactWithContactRolesType,
   CreateContactRoleType,
+  RegisteredUserWithRolesType,
   RoleCheckType,
   RoleWithContactType,
   UserRolesType,
@@ -56,6 +59,25 @@ export class RoleService implements IRoleService {
       globalRoles,
       contactRoles,
     };
+  }
+
+  async getRegisteredUserWithRoles(
+    userId: string,
+    userName: string,
+    accountId?: bigint,
+  ): Promise<RegisteredUserWithRolesType> {
+    const userRoles = await this.getUserRoles(userId, accountId);
+    return RoleResponseFormatter.formatRegisteredUserWithRoles({ userId, userName }, userRoles);
+  }
+
+  async getRoleIdentifiers(): Promise<BaseRoleType[]> {
+    const dbRoles = await this.roleRepository.findAllRoles();
+    return RoleResponseFormatter.formatRoleIdentifiers(dbRoles);
+  }
+
+  async getAccountContactsWithRoles(accountId: bigint): Promise<ContactWithContactRolesType[]> {
+    const dbContacts = await this.contactRepository.findContactsWithRolesByAccountId(accountId);
+    return RoleResponseFormatter.formatContactsWithRoles(dbContacts);
   }
 
   async getUserRolesByContactId(contactId: bigint, accountId: bigint): Promise<UserRolesType> {
@@ -124,7 +146,7 @@ export class RoleService implements IRoleService {
     // Check global roles first
     const foundGlobalRole = userRoles.globalRoles.find((role) => role === roleId);
     if (foundGlobalRole) {
-      return RoleResponseFormatter.formatGlobalRoleCheckResult(foundGlobalRole);
+      return RoleResponseFormatter.formatGlobalRoleCheckResult(foundGlobalRole, userId);
     }
 
     // Check contact roles
