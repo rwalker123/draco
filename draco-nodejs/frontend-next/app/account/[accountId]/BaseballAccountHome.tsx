@@ -131,11 +131,18 @@ const BaseballAccountHome: React.FC = () => {
           throwOnError: false,
         });
 
-        if (ignore || result.error) {
+        if (ignore) {
           return;
         }
 
-        const teams: UserTeam[] = result.data.map((team) => ({
+        const teamsResponse = unwrapApiResult(result, 'Failed to load teams');
+
+        if (ignore) {
+          return;
+        }
+
+        const normalizedTeams = Array.isArray(teamsResponse) ? teamsResponse : [];
+        const teams: UserTeam[] = normalizedTeams.map((team) => ({
           id: team.id,
           name: team.name ?? 'Team',
           leagueName: team.league?.name ?? 'Unknown League',

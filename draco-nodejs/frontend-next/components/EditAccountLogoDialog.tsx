@@ -20,6 +20,7 @@ import { addCacheBuster } from '../utils/addCacheBuster';
 import { uploadAccountLogo, deleteAccountLogo } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
+import { assertNoApiError } from '../utils/apiResult';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
@@ -103,13 +104,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
         ...formDataBodySerializer,
       });
 
-      if (result.error) {
-        const message =
-          typeof result.error === 'object' && result.error && 'message' in result.error
-            ? String((result.error as { message?: unknown }).message ?? '')
-            : '';
-        throw new Error(message || 'Failed to upload logo');
-      }
+      assertNoApiError(result, 'Failed to upload logo');
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
       onLogoUpdated();
       onClose();
@@ -130,9 +125,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
         throwOnError: false,
       });
 
-      if (result.error) {
-        throw new Error('Failed to delete logo');
-      }
+      assertNoApiError(result, 'Failed to delete logo');
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
       onLogoUpdated();
       onClose();

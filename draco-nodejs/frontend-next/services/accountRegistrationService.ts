@@ -151,26 +151,31 @@ export const AccountRegistrationService = {
       input.dateOfBirth,
     );
 
-    const result = await client.post<{ 200: RegisteredUser }, unknown, false>({
-      url: '/api/accounts/{accountId}/contacts/me',
-      path: { accountId },
-      headers: { 'Content-Type': 'application/json' },
-      body: {
-        firstName: input.firstName,
-        middleName: input.middleName,
-        lastName: input.lastName,
-        validationType,
-        contactDetails,
-      },
-      throwOnError: false,
-    });
+    try {
+      const result = await client.post<{ 200: RegisteredUser }, unknown, false>({
+        url: '/api/accounts/{accountId}/contacts/me',
+        path: { accountId },
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          firstName: input.firstName,
+          middleName: input.middleName,
+          lastName: input.lastName,
+          validationType,
+          contactDetails,
+        },
+        throwOnError: false,
+      });
 
-    if (result.error) {
-      throw new Error(getApiErrorMessage(result.error, REGISTRATION_ERROR_MESSAGE));
+      const registered = unwrapApiResult(result, REGISTRATION_ERROR_MESSAGE) as RegisteredUser;
+      const backendContact = assertRegisteredContact(registered);
+      return ContactTransformationService.transformBackendContact(backendContact);
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        throw new Error(getApiErrorMessage(error.details ?? error, REGISTRATION_ERROR_MESSAGE));
+      }
+
+      throw error;
     }
-
-    const backendContact = assertRegisteredContact(result.data as RegisteredUser | undefined);
-    return ContactTransformationService.transformBackendContact(backendContact);
   },
 
   async combinedRegister(

@@ -18,7 +18,7 @@ import {
 
 import { getTeamsWantedByAccessCode as getTeamsWantedByAccessCodeApi } from '@draco/shared-api-client';
 import { createApiClient } from '../lib/apiClientFactory';
-import { getApiErrorMessage } from '../utils/apiResult';
+import { ApiClientError, unwrapApiResult } from '../utils/apiResult';
 
 // ============================================================================
 // SECURITY LOGGING
@@ -79,31 +79,7 @@ export const accessCodeService = {
         throwOnError: false,
       });
 
-      if (result.error) {
-        const message = getApiErrorMessage(result.error, 'Failed to verify access code');
-        const errorCode =
-          typeof (result.error as { errorCode?: string }).errorCode === 'string'
-            ? (result.error as { errorCode?: string }).errorCode
-            : 'API_ERROR';
-
-        // Record failed attempt
-        recordAttempt(accountId, false);
-
-        // Log security event
-        logSecurityEvent({
-          accountId,
-          accessCodeHash: '***', // Never log actual access codes
-          operation: 'verification_failure',
-          success: false,
-          errorCode,
-        });
-
-        return {
-          success: false,
-          message,
-          errorCode,
-        };
-      }
+      const classified = unwrapApiResult(result, 'Failed to verify access code');
 
       // Record successful attempt
       recordAttempt(accountId, true);
@@ -118,12 +94,32 @@ export const accessCodeService = {
 
       return {
         success: true,
-        classified: result.data,
+        classified,
         message: 'Access code verified successfully',
       };
-    } catch {
+    } catch (error) {
       // Record failed attempt
       recordAttempt(accountId, false);
+
+      let errorCode: string = 'NETWORK_ERROR';
+      let message = 'Network error occurred while verifying access code';
+
+      if (error instanceof ApiClientError) {
+        message = error.message || 'Failed to verify access code';
+
+        if (
+          error.details &&
+          typeof error.details === 'object' &&
+          'errorCode' in error.details &&
+          typeof (error.details as { errorCode?: unknown }).errorCode === 'string'
+        ) {
+          errorCode = (error.details as { errorCode: string }).errorCode;
+        } else {
+          errorCode = 'API_ERROR';
+        }
+      } else if (error instanceof Error) {
+        message = error.message || message;
+      }
 
       // Log security event
       logSecurityEvent({
@@ -131,13 +127,13 @@ export const accessCodeService = {
         accessCodeHash: '***', // Never log actual access codes
         operation: 'verification_failure',
         success: false,
-        errorCode: 'NETWORK_ERROR',
+        errorCode,
       });
 
       return {
         success: false,
-        message: 'Network error occurred while verifying access code',
-        errorCode: 'NETWORK_ERROR',
+        message,
+        errorCode,
       };
     }
   },

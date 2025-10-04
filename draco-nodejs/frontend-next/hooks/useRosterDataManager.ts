@@ -23,7 +23,12 @@ import {
   TeamRosterMembersType,
   SignRosterMemberType,
 } from '@draco/shared-schemas';
-import { assertNoApiError, getApiErrorMessage, unwrapApiResult } from '../utils/apiResult';
+import {
+  ApiClientError,
+  assertNoApiError,
+  getApiErrorMessage,
+  unwrapApiResult,
+} from '../utils/apiResult';
 
 interface Season {
   id: string;
@@ -228,17 +233,14 @@ export const useRosterDataManager = (
           throwOnError: false,
         });
 
-        if (result.error) {
-          const message = getApiErrorMessage(result.error, 'Failed to fetch available players');
-          console.error(message, result.error);
-          return [];
-        }
-
-        const data = result.data ?? [];
+        const data = unwrapApiResult(result, 'Failed to fetch available players') ?? [];
         const transformed = transformBackendData(data) as BaseContactType[];
         return transformed || [];
       } catch (error: unknown) {
-        const errorMessage = getErrorMessage(error, 'Failed to fetch available players');
+        const errorMessage =
+          error instanceof ApiClientError
+            ? getApiErrorMessage(error.details ?? error, 'Failed to fetch available players')
+            : getErrorMessage(error, 'Failed to fetch available players');
         console.error(errorMessage, error);
         return [];
       }
@@ -257,18 +259,16 @@ export const useRosterDataManager = (
         throwOnError: false,
       });
 
-      if (result.error) {
-        const message = getApiErrorMessage(result.error, 'Failed to fetch managers');
-        console.warn(message, result.error);
-        return;
-      }
-
-      const managers = result.data ?? [];
+      const managers = unwrapApiResult(result, 'Failed to fetch managers') ?? [];
       const transformedManagers = transformBackendData(managers) as TeamManagerType[];
       dataCacheRef.current.managers = transformedManagers;
       setManagers(transformedManagers);
     } catch (error: unknown) {
-      console.warn('Failed to fetch managers:', error);
+      const message =
+        error instanceof ApiClientError
+          ? getApiErrorMessage(error.details ?? error, 'Failed to fetch managers')
+          : getErrorMessage(error, 'Failed to fetch managers');
+      console.warn(message, error);
     }
   }, [accountId, seasonId, teamSeasonId, token, apiClient, transformBackendData, setManagers]);
 

@@ -31,6 +31,7 @@ import CharacterCounter from '../common/CharacterCounter';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
 import { getAccountUserTeams } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 // Use shared validation constants
 const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
@@ -272,20 +273,22 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
           throwOnError: false,
         });
 
-        if (result.error) {
-          throw new Error('Failed to load teams');
-        }
+        const teamsResponse = unwrapApiResult(result, 'Failed to load teams');
+        const normalizedTeams = Array.isArray(teamsResponse) ? teamsResponse : [];
 
-        const teamsResponse: string[] = result.data
-          .map((team) => {
-            const parts = [team.league?.name, team.name]
-              .map((part) => part?.trim())
-              .filter((part): part is string => Boolean(part && part.length > 0));
-            return parts.join(' ').trim();
-          })
-          .filter((teamName) => teamName.length > 0);
+        const teams: string[] = Array.from(
+          new Set(
+            normalizedTeams
+              .map((team) => {
+                const parts = [team.league?.name, team.name]
+                  .map((part) => part?.trim())
+                  .filter((part): part is string => Boolean(part && part.length > 0));
+                return parts.join(' ').trim();
+              })
+              .filter((teamName) => teamName.length > 0),
+          ),
+        );
 
-        const teams = Array.from(new Set(teamsResponse));
         if (!ignore) {
           setTeamOptions(teams);
         }
