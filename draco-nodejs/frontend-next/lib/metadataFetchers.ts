@@ -1,4 +1,8 @@
 import type { AccountHeaderType } from '@draco/shared-schemas';
+import { getTeamSeasonDetails as apiGetTeamSeasonDetails } from '@draco/shared-api-client';
+import type { TeamSeasonRecordType } from '@draco/shared-schemas';
+import { unwrapApiResult } from '../utils/apiResult';
+import { createApiClient } from './apiClientFactory';
 
 // Utility functions for fetching metadata for page titles and icons
 
@@ -91,15 +95,18 @@ export async function getTeamInfo(
     }
 
     // NOTE: See comment above about calling the backend directly from server utilities.
-    const res = await fetch(
-      `${apiUrl}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`,
-    );
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.success && data?.data?.teamSeason) {
-        team = data.data.teamSeason.name || team;
-        league = data.data.teamSeason.leagueName || league;
-      }
+    const client = createApiClient({ baseUrl: apiUrl });
+    const result = await apiGetTeamSeasonDetails({
+      client,
+      path: { accountId, seasonId, teamSeasonId },
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult<TeamSeasonRecordType>(result, 'Failed to fetch team info');
+
+    if (data) {
+      team = data.name ?? team;
+      league = data.league?.name ?? league;
     }
   } catch (error) {
     console.warn('Failed to fetch team info:', error);
