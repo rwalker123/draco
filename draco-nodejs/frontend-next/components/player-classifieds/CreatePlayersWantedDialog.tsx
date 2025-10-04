@@ -29,6 +29,8 @@ import { useAuth } from '../../context/AuthContext';
 import { PLAYER_CLASSIFIED_VALIDATION } from '../../utils/characterValidation';
 import CharacterCounter from '../common/CharacterCounter';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
+import { getAccountUserTeams } from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
 
 // Use shared validation constants
 const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
@@ -92,6 +94,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 }) => {
   const { user, token } = useAuth();
   const isAuthenticated = !!user && !!token;
+  const apiClient = useApiClient();
 
   const [formData, setFormData] = useState<UpsertPlayersWantedClassifiedType>(
     initialData ?? EMPTY_FORM,
@@ -263,28 +266,25 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     const fetchTeams = async () => {
       try {
         setTeamsLoading(true);
-        const response = await fetch(`/api/accounts/${accountId}/user-teams`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+        const result = await getAccountUserTeams({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
         });
 
-        if (!response.ok) {
+        if (result.error) {
           throw new Error('Failed to load teams');
         }
 
-        const data = await response.json();
-        const teamsResponse: string[] =
-          data?.data?.teams
-            ?.map((team: { name?: string; leagueName?: string }) => {
-              const parts = [team.leagueName, team.name].filter(
-                (part) => !!part && part.trim().length,
-              );
-              return parts.join(' ').trim();
-            })
-            .filter((teamName: string) => teamName.length > 0) ?? [];
+        const teamsResponse: string[] = result.data
+          .map((team) => {
+            const parts = [team.league?.name, team.name]
+              .map((part) => part?.trim())
+              .filter((part): part is string => Boolean(part && part.length > 0));
+            return parts.join(' ').trim();
+          })
+          .filter((teamName) => teamName.length > 0);
+
         const teams = Array.from(new Set(teamsResponse));
         if (!ignore) {
           setTeamOptions(teams);
@@ -306,7 +306,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     return () => {
       ignore = true;
     };
-  }, [open, accountId, isAuthenticated, token]);
+  }, [open, accountId, isAuthenticated, token, apiClient]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

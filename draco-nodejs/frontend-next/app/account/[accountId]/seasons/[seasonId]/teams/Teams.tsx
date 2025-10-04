@@ -99,14 +99,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export roster for ${leagueSeason.leagueName} - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/roster/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -116,7 +110,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export roster: ' + error);
     }
@@ -131,14 +124,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export managers for ${leagueSeason.leagueName} - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/managers/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -148,7 +135,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export managers: ' + error);
     }
@@ -188,14 +174,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export season roster - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/roster/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -205,7 +185,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export season roster: ' + error);
     }
@@ -219,14 +198,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export season managers - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/managers/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -236,7 +209,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export season managers: ' + error);
     }

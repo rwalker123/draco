@@ -4,7 +4,12 @@ import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { Game, Team, Field, Umpire, League, FilterType } from '@/types/schedule';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { listSeasonGames, listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import {
+  listAccountFields,
+  listAccountUmpires,
+  listSeasonGames,
+  listSeasonLeagueSeasons,
+} from '@draco/shared-api-client';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
@@ -194,34 +199,56 @@ export const useScheduleData = ({
         setTeams([]);
       }
 
-      const fieldsPromise = fetch(`/api/accounts/${accountId}/fields`, {
-        headers: { 'Content-Type': 'application/json' },
+      const fieldsResult = await listAccountFields({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
       });
 
-      const umpirePromise = token
-        ? fetch(`/api/accounts/${accountId}/umpires`, {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          })
-        : Promise.resolve(null);
-
-      const [fieldsResponse, umpiresResponse] = await Promise.all([fieldsPromise, umpirePromise]);
-
-      if (fieldsResponse.ok) {
-        const fieldsData = await fieldsResponse.json();
-        setFields(fieldsData.fields);
+      if (!fieldsResult.error) {
+        const fieldsData = fieldsResult.data;
+        const mappedFields: Field[] = fieldsData.fields.map((field) => ({
+          id: field.id,
+          name: field.name,
+          shortName: field.shortName,
+          comment: '',
+          address: field.address ?? '',
+          city: field.city ?? '',
+          state: field.state ?? '',
+          zipCode: field.zip ?? '',
+          directions: '',
+          rainoutNumber: '',
+          latitude: '',
+          longitude: '',
+        }));
+        setFields(mappedFields);
+      } else {
+        console.warn('Failed to load fields:', fieldsResult.error);
+        setFields([]);
       }
 
-      if (umpiresResponse) {
-        if (umpiresResponse.ok) {
-          const umpiresData = await umpiresResponse.json();
-          setUmpires(umpiresData.umpires);
-        } else if (umpiresResponse.status === 401) {
+      if (token) {
+        const umpiresResult = await listAccountUmpires({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        if (!umpiresResult.error) {
+          const umpireData = umpiresResult.data;
+          const mappedUmpires: Umpire[] = umpireData.umpires.map((umpire) => ({
+            id: umpire.id,
+            contactId: umpire.contactId,
+            firstName: umpire.firstName,
+            lastName: umpire.lastName,
+            email: umpire.email ?? '',
+            displayName: umpire.displayName,
+          }));
+          setUmpires(mappedUmpires);
+        } else if (umpiresResult.response.status === 401) {
           setUmpires([]);
         } else {
-          console.warn('Failed to load umpires:', umpiresResponse.status);
+          console.warn('Failed to load umpires:', umpiresResult.response.status);
           setUmpires([]);
         }
       } else {
