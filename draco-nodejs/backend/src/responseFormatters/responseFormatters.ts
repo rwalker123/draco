@@ -1,5 +1,6 @@
 import {
   BaseContactType,
+  NamedContactType,
   RosterMemberType,
   TeamRosterMembersType,
   TeamManagerType,
@@ -41,12 +42,19 @@ export interface ApiResponse<T> {
 }
 
 export class ContactResponseFormatter {
-  static formatContactResponse(contact: dbBaseContact): BaseContactType {
-    const contactEntry: BaseContactType = {
+  static formatNamedContactResponse(contact: dbBaseContact): NamedContactType {
+    return {
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
-      middleName: contact.middlename,
+      middleName: contact.middlename || undefined,
+    };
+  }
+
+  static formatContactResponse(contact: dbBaseContact): BaseContactType {
+    const namedContact = this.formatNamedContactResponse(contact);
+    const contactEntry: BaseContactType = {
+      ...namedContact,
       email: contact.email || undefined,
       userId: contact.userid || undefined, // Roster contacts don't have userId
       photoUrl: getContactPhotoUrl(contact.creatoraccountid.toString(), contact.id.toString()),

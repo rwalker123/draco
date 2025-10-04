@@ -7,6 +7,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     ConflictErrorSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
+    NamedContactSchemaRef,
     ContactValidationWithSignInSchemaRef,
     PagedContactSchemaRef,
     RegisteredUserSchemaRef,
@@ -251,6 +252,73 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       },
       404: {
         description: 'Account not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/contacts/:contactId
+   * Retrieve a single contact by ID
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/{contactId}',
+    description: 'Get a single contact record by its identifier within an account.',
+    operationId: 'getContact',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Contact retrieved successfully.',
+        content: {
+          'application/json': {
+            schema: NamedContactSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - Account admin required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,

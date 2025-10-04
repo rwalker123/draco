@@ -201,6 +201,24 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/contacts/:contactId
+ * Retrieve a single contact by ID
+ */
+router.get(
+  '/:accountId/contacts/:contactId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, contactId } = extractContactParams(req.params);
+
+    const contact = await contactService.getNamedContact(accountId, contactId);
+
+    res.json(contact);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/automatic-role-holders
  * Get automatic role holders (Account Owner and Team Managers) for the current season
  */
