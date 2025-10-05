@@ -2,15 +2,10 @@ import React from 'react';
 import { Box, Typography, Card, CardContent } from '@mui/material';
 import { AccountCircle as CrownIcon } from '@mui/icons-material';
 import UserAvatar from '../UserAvatar';
+import { BaseContactType } from '@draco/shared-schemas';
 
 interface AccountOwnerDisplayProps {
-  accountOwner: {
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    photoUrl?: string;
-  } | null; // Keep nullable for component safety, but expect it to always have value
+  accountOwner: BaseContactType | null; // Keep nullable for component safety, but expect it to always have value
   variant?: 'header' | 'card';
 }
 
@@ -88,7 +83,7 @@ const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({
         <CrownIcon sx={{ color: '#FFD700', fontSize: 32 }} />
         <UserAvatar
           user={{
-            id: accountOwner.contactId,
+            id: accountOwner.id,
             firstName: accountOwner.firstName,
             lastName: accountOwner.lastName,
             photoUrl: accountOwner.photoUrl || '',

@@ -11,12 +11,12 @@ import {
   Typography,
   ListSubheader,
 } from '@mui/material';
-import { Team, LeagueSeason } from '../services/contextDataService';
 import { SelectChangeEvent } from '../interfaces/formInterfaces';
+import { LeagueSeasonWithDivisionTeamsType, TeamSeasonType } from '@draco/shared-schemas';
 
 interface TeamSelectorProps {
-  teams: Team[];
-  leagueSeasons?: LeagueSeason[]; // For hierarchical display
+  teams: TeamSeasonType[];
+  leagueSeasons?: LeagueSeasonWithDivisionTeamsType[]; // For hierarchical display
   value: string;
   onChange: (teamId: string) => void;
   label?: string;
@@ -72,7 +72,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
     }
 
     return teams
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
       .map((team) => (
         <MenuItem key={team.id} value={team.id}>
           <Typography variant="body1">{team.name}</Typography>
@@ -94,18 +94,18 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
     const menuItems: React.ReactNode[] = [];
 
     leagueSeasons
-      .sort((a, b) => a.leagueName.localeCompare(b.leagueName))
+      .sort((a, b) => a.league.name.localeCompare(b.league.name))
       .forEach((leagueSeason) => {
         const leagueTeams = teams.filter((team) => {
           // Find team in this league's divisions
           return leagueSeason.divisions?.some((division) =>
-            division.teams.some((divTeam) => divTeam.teamId === team.teamId),
+            division.teams.some((divTeam) => divTeam.team.id === team.team.id),
           );
         });
 
         if (leagueTeams.length > 0) {
           leagueTeams
-            .sort((a, b) => a.name.localeCompare(b.name))
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
             .forEach((team) => {
               menuItems.push(
                 <MenuItem key={team.id} value={team.id}>
@@ -114,7 +114,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
                       {team.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {leagueSeason.leagueName}
+                      {leagueSeason.league.name}
                     </Typography>
                   </Box>
                 </MenuItem>,
@@ -148,29 +148,31 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
     const menuItems: React.ReactNode[] = [];
 
     leagueSeasons
-      .sort((a, b) => a.leagueName.localeCompare(b.leagueName))
+      .sort((a, b) => a.league.name.localeCompare(b.league.name))
       .forEach((leagueSeason) => {
         // Add league header
         menuItems.push(
           <ListSubheader key={`league-${leagueSeason.id}`} sx={{ fontWeight: 'bold' }}>
-            {leagueSeason.leagueName}
+            {leagueSeason.league.name}
           </ListSubheader>,
         );
 
         if (leagueSeason.divisions) {
           leagueSeason.divisions
-            .sort((a, b) => a.priority - b.priority || a.divisionName.localeCompare(b.divisionName))
+            .sort(
+              (a, b) => a.priority - b.priority || a.division.name.localeCompare(b.division.name),
+            )
             .forEach((division) => {
               // Add division header
               menuItems.push(
                 <ListSubheader key={`division-${division.id}`} sx={{ pl: 2, fontWeight: 'medium' }}>
-                  {division.divisionName}
+                  {division.division.name}
                 </ListSubheader>,
               );
 
               // Add teams in this division
               division.teams
-                .sort((a, b) => a.name.localeCompare(b.name))
+                .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
                 .forEach((team) => {
                   menuItems.push(
                     <MenuItem key={team.id} value={team.id} sx={{ pl: 4 }}>

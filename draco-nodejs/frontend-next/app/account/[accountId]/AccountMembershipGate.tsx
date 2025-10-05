@@ -4,7 +4,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Box, Typography, Container } from '@mui/material';
 import { isPublicRoute } from '../../../config/routePermissions';
 import { useAuth } from '../../../context/AuthContext';
-import axios from 'axios';
 import {
   AccountRegistrationService,
   SelfRegisterInput,
@@ -72,10 +71,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
         setIsMember(true);
       } catch (err: unknown) {
         // Extract specific error message from backend if available
-        const errorMessage =
-          axios.isAxiosError(err) && err.response?.data?.message
-            ? err.response.data.message
-            : 'Registration failed';
+        const errorMessage = err instanceof Error ? err.message : 'Registration failed';
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -101,10 +97,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
         setIsMember(true);
       } catch (err: unknown) {
         // Extract specific error message from backend if available
-        const errorMessage =
-          axios.isAxiosError(err) && err.response?.data?.message
-            ? err.response.data.message
-            : 'Registration failed';
+        const errorMessage = err instanceof Error ? err.message : 'Registration failed';
         setError(errorMessage);
       } finally {
         setLoading(false);

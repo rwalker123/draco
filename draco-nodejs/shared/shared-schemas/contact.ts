@@ -132,7 +132,7 @@ export const TeamWithNameSchema = z.object({
 });
 
 // Team manager with associated teams (extends BaseContact)
-export const TeamManagerWithTeams = BaseContactSchema.extend({
+export const TeamManagerWithTeamsSchema = BaseContactSchema.extend({
   teams: TeamWithNameSchema.array(),
 });
 
@@ -140,7 +140,7 @@ export const TeamManagerWithTeams = BaseContactSchema.extend({
 export const AutomaticRoleHoldersSchema = z
   .object({
     accountOwner: BaseContactSchema, // NOT nullable - every account must have owner
-    teamManagers: TeamManagerWithTeams.array(),
+    teamManagers: TeamManagerWithTeamsSchema.array(),
   })
   .openapi({
     title: 'AutomaticRoleHolders',
@@ -232,7 +232,7 @@ export type CreateContactRoleType = z.infer<typeof CreateContactRoleSchema>;
 export type UserRolesType = z.infer<typeof UserRolesSchema>;
 export type PagedContactType = z.infer<typeof PagedContactSchema>;
 export type TeamWithNameType = z.infer<typeof TeamWithNameSchema>;
-export type TeamManagerWithTeamsType = z.infer<typeof TeamManagerWithTeams>;
+export type TeamManagerWithTeamsType = z.infer<typeof TeamManagerWithTeamsSchema>;
 export type AutomaticRoleHoldersType = z.infer<typeof AutomaticRoleHoldersSchema>;
 export type ContactValidationType = z.infer<typeof ContactValidationSchema>;
 export type ContactValidationWithSignInType = z.infer<typeof ContactValidationWithSignInSchema>;

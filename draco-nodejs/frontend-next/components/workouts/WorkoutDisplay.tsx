@@ -18,6 +18,9 @@ import { getWorkout } from '../../services/workoutService';
 import { WorkoutType } from '@draco/shared-schemas';
 import { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
 import { Event } from '@mui/icons-material';
+import { listAccountFields } from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 interface WorkoutDisplayProps {
   accountId: string;
@@ -41,6 +44,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [fields, setFields] = useState<Array<{ id: string; name: string }>>([]);
+  const apiClient = useApiClient();
 
   const fetchWorkout = useCallback(async () => {
     try {
@@ -58,14 +62,24 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
 
   const fetchFields = useCallback(async () => {
     try {
-      const response = await fetch(`/api/accounts/${accountId}/fields`);
-      const data = await response.json();
-      setFields(data.fields);
+      const result = await listAccountFields({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
+      });
+
+      const data = unwrapApiResult(result, 'Failed to load fields');
+      const mappedFields = data.fields.map((field) => ({
+        id: field.id,
+        name: field.name ?? field.shortName,
+      }));
+
+      setFields(mappedFields);
     } catch (err) {
       console.error('Error fetching fields:', err);
       // Don't set error for fields - it's not critical
     }
-  }, [accountId]);
+  }, [accountId, apiClient]);
 
   useEffect(() => {
     fetchWorkout();

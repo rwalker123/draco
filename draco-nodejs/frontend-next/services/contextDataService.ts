@@ -7,31 +7,16 @@ import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import { createApiClient } from '../lib/apiClientFactory';
 import { unwrapApiResult } from '../utils/apiResult';
+import { mapLeagueSetup } from '../utils/leagueSeasonMapper';
 import {
-  mapLeagueSetup,
-  type LeagueSeasonSummary,
-  type LeagueSeasonDivision,
-  type LeagueSeasonTeam,
-} from '../utils/leagueSeasonMapper';
-
-export type LeagueSeason = LeagueSeasonSummary;
-export type Division = LeagueSeasonDivision;
-export type Team = LeagueSeasonTeam;
-
-export interface League {
-  id: string;
-  leagueId: string;
-  leagueName: string;
-  accountId: string;
-}
+  LeagueSeasonWithDivisionTeamsAndUnassignedType,
+  SeasonType,
+  TeamSeasonWithPlayerCountType,
+} from '@draco/shared-schemas';
 
 export interface ContextDataResponse {
-  leagueSeasons: LeagueSeason[];
-  season: {
-    id: string;
-    name: string;
-    accountId: string;
-  } | null;
+  leagueSeasons: LeagueSeasonWithDivisionTeamsAndUnassignedType[];
+  season: SeasonType;
 }
 
 /**
@@ -58,10 +43,10 @@ export class ContextDataService {
     });
 
     const data = unwrapApiResult(result, 'Failed to load leagues and teams');
-    const mapped = mapLeagueSetup(data, accountId);
+    const mapped = mapLeagueSetup(data);
 
     return {
-      season: mapped.season,
+      season: mapped.season!,
       leagueSeasons: mapped.leagueSeasons,
     };
   }
@@ -69,7 +54,10 @@ export class ContextDataService {
   /**
    * Get all leagues for a season (without teams data)
    */
-  async fetchLeagues(accountId: string, seasonId: string): Promise<League[]> {
+  async fetchLeagues(
+    accountId: string,
+    seasonId: string,
+  ): Promise<LeagueSeasonWithDivisionTeamsAndUnassignedType[]> {
     const result = await listSeasonLeagueSeasons({
       client: this.client,
       path: { accountId, seasonId },
@@ -77,23 +65,18 @@ export class ContextDataService {
     });
 
     const data = unwrapApiResult(result, 'Failed to load leagues');
-    const mapped = mapLeagueSetup(data, accountId);
+    const mapped = mapLeagueSetup(data);
 
-    return mapped.leagueSeasons.map((ls) => ({
-      id: ls.id,
-      leagueId: ls.leagueId,
-      leagueName: ls.leagueName,
-      accountId: ls.accountId,
-    }));
+    return mapped.leagueSeasons;
   }
 
   /**
    * Get all teams for a season (flattened from all leagues and divisions)
    */
-  async fetchTeams(accountId: string, seasonId: string): Promise<Team[]> {
+  async fetchTeams(accountId: string, seasonId: string): Promise<TeamSeasonWithPlayerCountType[]> {
     const contextData = await this.fetchLeaguesAndTeams(accountId, seasonId);
 
-    const allTeams: Team[] = [];
+    const allTeams: TeamSeasonWithPlayerCountType[] = [];
 
     // Add teams from divisions
     contextData.leagueSeasons.forEach((leagueSeason) => {

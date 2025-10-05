@@ -152,6 +152,83 @@ export const registerTeamsEndpoints = ({ registry, schemaRefs }: RegisterContext
     },
   });
 
+  // DELETE /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}',
+    operationId: 'deleteSeasonTeam',
+    summary: 'Delete team season',
+    description: 'Removes a team season from the specified season.',
+    tags: ['Teams'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'Team season removed from the season',
+      },
+      401: {
+        description: 'Authentication required.',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Account admin permission required.',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found for the provided identifiers.',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while deleting the team season.',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
   // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}
   registry.registerPath({
     method: 'get',

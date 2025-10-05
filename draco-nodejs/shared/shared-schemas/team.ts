@@ -46,6 +46,9 @@ export const UpsertTeamSeasonSchema = TeamSeasonSchema.omit({
 
 export const DivisionSeasonWithTeamsSchema = DivisionSeasonSchema.extend({
   teams: TeamSeasonWithPlayerCountSchema.array(),
+  teamCount: z.number().int().nonnegative().optional(),
+  totalPlayers: z.number().int().nonnegative().optional(),
+  totalManagers: z.number().int().nonnegative().optional(),
 });
 
 export const LeagueSeasonWithDivisionTeamsSchema = LeagueSeasonSchema.extend({
@@ -55,6 +58,10 @@ export const LeagueSeasonWithDivisionTeamsSchema = LeagueSeasonSchema.extend({
 export const LeagueSeasonWithDivisionTeamsAndUnassignedSchema =
   LeagueSeasonWithDivisionTeamsSchema.extend({
     unassignedTeams: TeamSeasonWithPlayerCountSchema.array().optional(),
+    totalTeams: z.number().int().nonnegative().optional(),
+    totalPlayers: z.number().int().nonnegative().optional(),
+    totalManagers: z.number().int().nonnegative().optional(),
+    unassignedTeamCount: z.number().int().nonnegative().optional(),
   });
 
 export const LeagueSetupSchema = z.object({

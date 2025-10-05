@@ -27,6 +27,7 @@ import {
   ContactRoleSchema,
   ContactWithContactRolesSchema,
   BaseContactSchema,
+  NamedContactSchema,
   ContactValidationWithSignInSchema,
   SignInCredentialsSchema,
   RegisteredUserWithRolesSchema,
@@ -36,6 +37,9 @@ import {
   CreateContactRoleSchema,
   CreatePollSchema,
   CreateSponsorSchema,
+  FieldSchema,
+  FieldsSchema,
+  UpsertFieldSchema,
   UpsertTeamManagerSchema,
   UpdatePollSchema,
   ExperienceLevelSchema,
@@ -57,6 +61,8 @@ import {
   PollVoteRequestSchema,
   RecentGamesQuerySchema,
   RecentGamesSchema,
+  UmpireSchema,
+  UmpiresSchema,
   RoleCheckSchema,
   RoleMetadataSchema,
   RosterMemberSchema,
@@ -70,6 +76,7 @@ import {
   SeasonParticipantCountDataSchema,
   SeasonSchema,
   TeamManagerSchema,
+  TeamRosterMembersSchema,
   TeamSeasonSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
@@ -129,10 +136,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const SignRosterMemberSchemaRef = registry.register('SignRosterMember', SignRosterMemberSchema);
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
   const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
+  const NamedContactSchemaRef = registry.register('NamedContact', NamedContactSchema);
   const ContactWithContactRolesSchemaRef = registry.register(
     'ContactWithContactRoles',
     ContactWithContactRolesSchema,
   );
+  const FieldSchemaRef = registry.register('Field', FieldSchema);
+  const FieldsSchemaRef = registry.register('Fields', FieldsSchema);
+  const UpsertFieldSchemaRef = registry.register('UpsertField', UpsertFieldSchema);
   const ContactValidationWithSignInSchemaRef = registry.register(
     'ContactValidationWithSignIn',
     ContactValidationWithSignInSchema,
@@ -161,6 +172,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonParticipantCountDataSchema,
   );
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
+  const TeamRosterMembersSchemaRef = registry.register(
+    'TeamRosterMembers',
+    TeamRosterMembersSchema,
+  );
   const TeamSeasonSchemaRef = registry.register('TeamSeason', TeamSeasonSchema);
   const UpsertTeamManagerSchemaRef = registry.register(
     'UpsertTeamManager',
@@ -199,6 +214,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const PagedContactSchemaRef = registry.register('PagedContact', PagedContactSchema);
   const ContactRoleSchemaRef = registry.register('ContactRole', ContactRoleSchema);
+  const UmpireSchemaRef = registry.register('Umpire', UmpireSchema);
+  const UmpiresSchemaRef = registry.register('Umpires', UmpiresSchema);
   const BaseRoleSchemaRef = registry.register('BaseRole', BaseRoleSchema);
   const RoleCheckSchemaRef = registry.register('RoleCheck', RoleCheckSchema);
   const AccountSchemaRef = registry.register('Account', AccountSchema);
@@ -445,13 +462,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SignRosterMemberSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
+    NamedContactSchemaRef,
     ContactWithContactRolesSchemaRef,
+    FieldSchemaRef,
+    FieldsSchemaRef,
+    UpsertFieldSchemaRef,
     SeasonManagerSchemaRef,
     SeasonManagerListSchemaRef,
     SeasonManagerWithLeagueSchemaRef,
     SeasonSchemaRef,
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
+    TeamRosterMembersSchemaRef,
     TeamSeasonSchemaRef,
     UpsertTeamManagerSchemaRef,
     UpsertTeamSeasonSchemaRef,
@@ -466,6 +488,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     EmailTemplatesListSchemaRef,
     AttachmentUploadResultSchemaRef,
     ContactRoleSchemaRef,
+    UmpireSchemaRef,
+    UmpiresSchemaRef,
     BaseRoleSchemaRef,
     RoleCheckSchemaRef,
     RegisteredUserSchemaRef,

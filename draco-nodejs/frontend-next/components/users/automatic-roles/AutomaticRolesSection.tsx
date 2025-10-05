@@ -1,26 +1,11 @@
 import React from 'react';
 import { Box, Divider } from '@mui/material';
 import TeamManagersList from './TeamManagersList';
+import { BaseContactType, TeamManagerWithTeamsType } from '@draco/shared-schemas';
 
 interface AutomaticRolesSectionProps {
-  accountOwner: {
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    photoUrl?: string;
-  } | null; // Keep nullable for component safety, but expect it to always have value
-  teamManagers: Array<{
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    photoUrl?: string;
-    teams: Array<{
-      teamSeasonId: string;
-      teamName: string;
-    }>;
-  }>;
+  accountOwner: BaseContactType | null; // Keep nullable for component safety, but expect it to always have value
+  teamManagers: TeamManagerWithTeamsType[];
 }
 
 const AutomaticRolesSection: React.FC<AutomaticRolesSectionProps> = ({

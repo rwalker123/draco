@@ -10,11 +10,11 @@ import {
   Box,
   Typography,
 } from '@mui/material';
-import { League } from '../services/contextDataService';
 import { SelectChangeEvent } from '../interfaces/formInterfaces';
+import { LeagueSeasonType } from '@draco/shared-schemas';
 
 interface LeagueSelectorProps {
-  leagues: League[];
+  leagues: LeagueSeasonType[];
   value: string;
   onChange: (leagueId: string) => void;
   label?: string;
@@ -79,7 +79,7 @@ const LeagueSelector: React.FC<LeagueSelectorProps> = ({
         ) : (
           leagues.map((league) => (
             <MenuItem key={league.id} value={league.id}>
-              <Typography variant="body1">{league.leagueName}</Typography>
+              <Typography variant="body1">{league.league.name}</Typography>
             </MenuItem>
           ))
         )}

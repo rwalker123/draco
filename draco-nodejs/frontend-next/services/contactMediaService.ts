@@ -1,6 +1,7 @@
 import { createApiClient } from '../lib/apiClientFactory';
 import { deleteContactPhoto, getContactPhoto } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
+import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 
 export class ContactMediaService {
   private client: Client;
@@ -19,13 +20,10 @@ export class ContactMediaService {
       throwOnError: false,
     });
 
-    if (result.error) {
-      throw new Error('Failed to fetch contact photo');
-    }
+    const payload = unwrapApiResult(result, 'Failed to fetch contact photo');
 
     // The generated SDK returns a Response-like object when successful.
     // Ensure we convert to Blob for consumer usage.
-    const payload = result.data;
     if (payload instanceof Blob) {
       return payload;
     }
@@ -43,9 +41,7 @@ export class ContactMediaService {
       throwOnError: false,
     });
 
-    if (result.error) {
-      throw new Error('Failed to delete contact photo');
-    }
+    assertNoApiError(result, 'Failed to delete contact photo');
   }
 }
 

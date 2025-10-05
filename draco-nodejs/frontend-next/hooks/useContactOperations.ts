@@ -100,14 +100,14 @@ export function useContactOperations(accountId: string) {
           photoUrl: updatedPhotoUrl,
           contactDetails: updatedContact.contactDetails
             ? {
-                phone1: updatedContact.contactDetails.phone1 || null,
-                phone2: updatedContact.contactDetails.phone2 || null,
-                phone3: updatedContact.contactDetails.phone3 || null,
-                streetAddress: updatedContact.contactDetails.streetAddress || null,
-                city: updatedContact.contactDetails.city || null,
-                state: updatedContact.contactDetails.state || null,
-                zip: updatedContact.contactDetails.zip || null,
-                dateOfBirth: updatedContact.contactDetails.dateOfBirth || null,
+                phone1: updatedContact.contactDetails.phone1 || '',
+                phone2: updatedContact.contactDetails.phone2 || '',
+                phone3: updatedContact.contactDetails.phone3 || '',
+                streetAddress: updatedContact.contactDetails.streetAddress || '',
+                city: updatedContact.contactDetails.city || '',
+                state: updatedContact.contactDetails.state || '',
+                zip: updatedContact.contactDetails.zip || '',
+                dateOfBirth: updatedContact.contactDetails.dateOfBirth || '',
               }
             : undefined,
         };

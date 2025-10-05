@@ -2,19 +2,10 @@ import React, { useState } from 'react';
 import { Box, Typography, Card, CardContent, Chip, Collapse, IconButton } from '@mui/material';
 import UserAvatar from '../UserAvatar';
 import { Groups as ManagerIcon, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { TeamManagerWithTeamsType } from '@draco/shared-schemas';
 
 interface TeamManagersListProps {
-  teamManagers: Array<{
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    photoUrl?: string;
-    teams: Array<{
-      teamSeasonId: string;
-      teamName: string;
-    }>;
-  }>;
+  teamManagers: TeamManagerWithTeamsType[];
 }
 
 const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => {
@@ -64,7 +55,7 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
           >
             {teamManagers.map((manager, index) => (
               <Box
-                key={`${manager.contactId}-${index}`}
+                key={`${manager.id}-${index}`}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -76,7 +67,7 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
               >
                 <UserAvatar
                   user={{
-                    id: manager.contactId,
+                    id: manager.id,
                     firstName: manager.firstName,
                     lastName: manager.lastName,
                     photoUrl: manager.photoUrl || '',
@@ -103,7 +94,7 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                     {manager.teams.map((team) => (
                       <Chip
-                        key={`${manager.contactId}-${team.teamSeasonId}`}
+                        key={`${manager.id}-${team.teamSeasonId}`}
                         label={team.teamName}
                         size="small"
                         variant="outlined"

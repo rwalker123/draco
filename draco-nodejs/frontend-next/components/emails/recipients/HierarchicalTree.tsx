@@ -5,6 +5,7 @@ import { Box } from '@mui/material';
 import { HierarchicalSeason, HierarchicalSelectionItem } from '../../../types/emails/recipients';
 import { HierarchyMaps } from '../../../hooks/useHierarchicalMaps';
 import HierarchicalTreeItem from './HierarchicalTreeItem';
+import { TeamSeasonWithPlayerCountType } from '@draco/shared-schemas';
 
 interface HierarchicalTreeProps {
   hierarchicalData: HierarchicalSeason;
@@ -34,7 +35,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
   const [expandedDivisions, setExpandedDivisions] = useState<Set<string>>(() => {
     const divisionIds = new Set<string>();
     hierarchicalData.leagues.forEach((league) => {
-      league.divisions.forEach((division) => {
+      league.divisions?.forEach((division) => {
         divisionIds.add(division.id);
       });
     });
@@ -80,14 +81,14 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
 
   // Render teams
   const renderTeams = useCallback(
-    (teams: Array<{ id: string; name: string; playerCount?: number; managerCount?: number }>) => {
+    (teams: Array<TeamSeasonWithPlayerCountType>) => {
       return teams.map((team) => {
         const { checked, indeterminate } = getCheckboxState(team.id);
         return (
           <HierarchicalTreeItem
             key={team.id}
             id={team.id}
-            title={team.name}
+            title={team.name || 'Team'}
             playerCount={team.playerCount}
             managerCount={team.managerCount}
             managersOnly={managersOnly}
@@ -108,7 +109,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
   // Render divisions
   const renderDivisions = useCallback(
     (divisions: HierarchicalSeason['leagues'][0]['divisions']) => {
-      return divisions.map((division) => {
+      return divisions?.map((division) => {
         const { checked, indeterminate } = getCheckboxState(division.id);
         const isExpanded = expandedDivisions.has(division.id);
         const hasTeams = division.teams.length > 0;
@@ -117,7 +118,7 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
           <HierarchicalTreeItem
             key={division.id}
             id={division.id}
-            title={division.name}
+            title={division.division.name}
             playerCount={division.totalPlayers}
             managerCount={division.totalManagers}
             managersOnly={managersOnly}
@@ -149,13 +150,14 @@ const HierarchicalTree: React.FC<HierarchicalTreeProps> = ({
     return hierarchicalData.leagues.map((league) => {
       const { checked, indeterminate } = getCheckboxState(league.id);
       const isExpanded = expandedLeagues.has(league.id);
-      const hasChildren = league.divisions.length > 0 || (league.unassignedTeams?.length ?? 0) > 0;
+      const hasChildren =
+        (league.divisions?.length || 0) > 0 || (league.unassignedTeams?.length ?? 0) > 0;
 
       return (
         <HierarchicalTreeItem
           key={league.id}
           id={league.id}
-          title={league.name}
+          title={league.league.name}
           playerCount={league.totalPlayers}
           managerCount={league.totalManagers}
           managersOnly={managersOnly}
