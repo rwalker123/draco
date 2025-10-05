@@ -67,11 +67,8 @@ export class StatsResponseFormatter {
         ops: stat.ops,
         tb: stat.tb,
         pa: stat.pa,
+        teams: teams,
       } satisfies PlayerBattingStatsType;
-
-      if (teams) {
-        formatted.teams = teams;
-      }
 
       return formatted;
     });
@@ -105,11 +102,8 @@ export class StatsResponseFormatter {
         oba: stat.oba,
         slg: stat.slg,
         ipDecimal: stat.ipDecimal,
+        teams: teams,
       } satisfies PlayerPitchingStatsType;
-
-      if (teams) {
-        formatted.teams = teams;
-      }
 
       return formatted;
     });
