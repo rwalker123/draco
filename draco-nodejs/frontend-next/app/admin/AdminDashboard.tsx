@@ -46,13 +46,13 @@ const AdminDashboard: React.FC = () => {
           </Typography>
           <List dense>
             <ListItem>
-              <ListItemText primary="Username" secondary={user?.username || 'N/A'} />
+              <ListItemText primary="Username" secondary={user?.userName || 'N/A'} />
             </ListItem>
             <ListItem>
-              <ListItemText primary="Email" secondary={user?.email || 'N/A'} />
+              <ListItemText primary="Email" secondary={user?.contact?.email || 'N/A'} />
             </ListItem>
             <ListItem>
-              <ListItemText primary="User ID" secondary={user?.id || 'N/A'} />
+              <ListItemText primary="User ID" secondary={user?.userId || 'N/A'} />
             </ListItem>
           </List>
         </Paper>

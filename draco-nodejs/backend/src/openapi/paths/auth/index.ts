@@ -141,6 +141,18 @@ export const registerAuthEndpoints = ({ registry, schemaRefs }: RegisterContext)
     description: 'Returns the authenticated user details pulled from the token context.',
     tags: ['Auth'],
     security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+        description: 'Account context to include additional user details.',
+      },
+    ],
     responses: {
       200: {
         description: 'Current authenticated user information.',

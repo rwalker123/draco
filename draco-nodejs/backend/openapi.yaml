@@ -790,6 +790,8 @@ components:
           type: string
           minLength: 6
           maxLength: 100
+        accountId:
+          type: string
       required:
         - firstName
         - lastName
@@ -1021,6 +1023,8 @@ components:
           type: string
           minLength: 6
           maxLength: 100
+        accountId:
+          type: string
       required:
         - userName
         - password
@@ -8777,6 +8781,14 @@ paths:
         - Auth
       security:
         - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+          description: Account context to include additional user details.
       responses:
         "200":
           description: Current authenticated user information.

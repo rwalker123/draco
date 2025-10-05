@@ -61,7 +61,11 @@ router.get(
       throw new AuthenticationError('User not authenticated');
     }
 
-    const result = await authService.getUserById(req.user.id);
+    const { accountId } = req.query;
+    const result = await authService.getUserById(
+      req.user.id,
+      accountId ? (accountId as string) : undefined,
+    );
     res.status(200).json(result);
   }),
 );

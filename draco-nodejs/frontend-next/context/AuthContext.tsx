@@ -1,63 +1,48 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { SignInCredentialsType } from '@draco/shared-schemas';
+import { useParams } from 'next/navigation';
+import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 import {
   login as loginApi,
   getAuthenticatedUser,
   logout as logoutApi,
 } from '@draco/shared-api-client';
 import { createApiClient } from '../lib/apiClientFactory';
-import { unwrapApiResult, getApiErrorMessage } from '../utils/apiResult';
+import { unwrapApiResult } from '../utils/apiResult';
 
 const LOGIN_ERROR_MESSAGE =
   'Invalid username or password. If you forgot your password, click the "Forgot your password?" link to reset it.';
 
-interface User {
-  id: string;
-  username: string;
-  email?: string;
-  firstname?: string;
-  lastname?: string;
-}
-
-interface AuthenticatedUserDetails {
-  id?: string;
-  userId?: string;
-  username?: string;
-  userName?: string;
-  email?: string | null;
-  firstname?: string | null;
-  firstName?: string | null;
-  lastname?: string | null;
-  lastName?: string | null;
-}
-
-type AuthenticatedUserResponse = AuthenticatedUserDetails & {
-  user?: AuthenticatedUserDetails;
-};
-
 export interface AuthContextType {
-  user: User | null;
+  user: RegisteredUserType | null;
   token: string | null;
   loading: boolean;
   initialized: boolean;
   error: string | null;
   login: (creds: SignInCredentialsType) => Promise<boolean>;
   logout: (refreshPage?: boolean) => void;
-  fetchUser: (overrideToken?: string) => Promise<void>;
+  fetchUser: (overrideToken?: string, accountIdOverride?: string | null) => Promise<void>;
   setAuthToken: (newToken: string) => void;
   clearAllContexts: () => void;
+  accountIdFromPath: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<RegisteredUserType | null>(null);
   const [token, setToken] = useState<string | null>(null);
   // Initialize loading as false to prevent server/client hydration mismatch
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetchedAccountId, setLastFetchedAccountId] = useState<string | null>(null);
+  const params = useParams<{ accountId?: string | string[] }>();
+  const accountIdFromPath = params?.accountId
+    ? Array.isArray(params.accountId)
+      ? params.accountId[0]
+      : params.accountId
+    : null;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -77,13 +62,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (token) {
-      fetchUser();
+      const effectiveAccountId = accountIdFromPath ?? null;
+
+      if (lastFetchedAccountId !== effectiveAccountId) {
+        fetchUser(undefined, effectiveAccountId);
+      } else {
+        fetchUser();
+      }
     } else {
       setUser(null);
       setInitialized(true);
+      setLastFetchedAccountId(null);
     }
-    // eslint-disable-next-line
-  }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, accountIdFromPath]);
 
   const login = async (creds: SignInCredentialsType) => {
     setLoading(true);
@@ -95,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         body: {
           userName: creds.userName,
           password: creds.password,
+          ...(accountIdFromPath ? { accountId: accountIdFromPath } : {}),
         },
         throwOnError: false,
       });
@@ -111,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setToken(newToken);
       localStorage.setItem('jwtToken', newToken);
-      await fetchUser(newToken);
+      setUser(loginResponse as RegisteredUserType);
       setLoading(false);
       return true;
     } catch (err) {
@@ -153,12 +146,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('jwtToken', newToken);
   };
 
-  const fetchUser = async (overrideToken?: string): Promise<void> => {
+  const fetchUser = async (
+    overrideToken?: string,
+    accountIdOverride?: string | null,
+  ): Promise<void> => {
     const authToken = overrideToken || token;
     if (!authToken) {
       setUser(null);
       setLoading(false);
       setInitialized(true);
+      setLastFetchedAccountId(null);
       return;
     }
 
@@ -167,38 +164,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
     }
 
+    const effectiveAccountId =
+      accountIdOverride !== undefined ? accountIdOverride : accountIdFromPath;
+
     try {
       const client = createApiClient({ token: authToken });
       const result = await getAuthenticatedUser({
         client,
+        query: {
+          accountId: effectiveAccountId || undefined,
+        },
         throwOnError: false,
       });
 
-      const data = unwrapApiResult(result, 'Failed to load current user');
+      const payload = unwrapApiResult(result, 'Failed to load current user');
 
-      const envelope = data as AuthenticatedUserResponse;
-      const payload = envelope.user ?? envelope;
-
-      if (payload && (payload.id || payload.userId)) {
-        setUser({
-          id: payload.id ?? payload.userId ?? '',
-          username: payload.username ?? payload.userName ?? '',
-          email: payload.email ?? undefined,
-          firstname: payload.firstname ?? payload.firstName ?? undefined,
-          lastname: payload.lastname ?? payload.lastName ?? undefined,
-        });
-      } else {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('jwtToken');
-      }
-    } catch (err: unknown) {
-      const message = getApiErrorMessage(err, 'Failed to load current user');
-      console.error('Failed to fetch authenticated user:', err);
-      setError(message);
+      setUser(payload as RegisteredUserType);
+      setLastFetchedAccountId(effectiveAccountId ?? null);
+    } catch {
+      //const message = getApiErrorMessage(err, 'Failed to load current user');
+      //console.error('Failed to fetch authenticated user:', err);
+      //setError(message);
       setUser(null);
       setToken(null);
       localStorage.removeItem('jwtToken');
+      setLastFetchedAccountId(null);
     } finally {
       setLoading(false);
       setInitialized(true);
@@ -218,6 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fetchUser,
         setAuthToken,
         clearAllContexts,
+        accountIdFromPath,
       }}
     >
       {children}

@@ -77,7 +77,7 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
 
   // Format sender display
   const senderDisplay = user
-    ? `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username
+    ? `${user.contact?.firstName || ''} ${user.contact?.lastName || ''}`.trim() || user.userName
     : 'Unknown Sender';
 
   // Format scheduled date
@@ -126,7 +126,7 @@ const ComposeHeaderComponent: React.FC<ComposeHeaderProps> = ({
                 {senderDisplay}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {user?.email}
+                {user?.contact?.email}
               </Typography>
             </Box>
           </Box>

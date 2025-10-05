@@ -174,17 +174,17 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
       return '';
     }
 
-    const firstName = (user.firstname ?? '').trim();
+    const firstName = (user.contact?.firstName ?? '').trim();
     if (firstName) {
       return firstName;
     }
 
-    const lastName = (user.lastname ?? '').trim();
+    const lastName = (user.contact?.lastName ?? '').trim();
     if (lastName) {
       return lastName;
     }
 
-    const fallbackSource = user.username ?? '';
+    const fallbackSource = user.userName ?? '';
     if (!fallbackSource) {
       return '';
     }

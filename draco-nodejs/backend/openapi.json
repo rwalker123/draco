@@ -1042,6 +1042,9 @@
             "type": "string",
             "minLength": 6,
             "maxLength": 100
+          },
+          "accountId": {
+            "type": "string"
           }
         },
         "required": [
@@ -1346,6 +1349,9 @@
             "type": "string",
             "minLength": 6,
             "maxLength": 100
+          },
+          "accountId": {
+            "type": "string"
           }
         },
         "required": [
@@ -12317,6 +12323,18 @@
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            },
+            "description": "Account context to include additional user details."
           }
         ],
         "responses": {
