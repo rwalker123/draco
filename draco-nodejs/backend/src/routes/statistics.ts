@@ -6,11 +6,8 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import {
   BattingStatisticsFiltersSchema,
   LeaderCategoriesType,
-  LeaderRowType,
   LeaderStatisticsFiltersSchema,
   PitchingStatisticsFiltersSchema,
-  PlayerBattingStatsType,
-  PlayerPitchingStatsType,
 } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
@@ -45,12 +42,7 @@ router.get(
 
     const battingStats = await statisticsService.getBattingStats(accountId, filters);
 
-    const result: PlayerBattingStatsType[] = battingStats.map((stat) => ({
-      ...stat,
-      playerId: stat.playerId.toString(),
-    }));
-
-    res.json(result);
+    res.json(battingStats);
   }),
 );
 
@@ -67,12 +59,8 @@ router.get(
     filters.leagueId = leagueId;
 
     const pitchingStats = await statisticsService.getPitchingStats(accountId, filters);
-    const result: PlayerPitchingStatsType[] = pitchingStats.map((stat) => ({
-      ...stat,
-      playerId: stat.playerId.toString(),
-    }));
 
-    res.json(result);
+    res.json(pitchingStats);
   }),
 );
 
@@ -99,12 +87,7 @@ router.get(
 
     const leaders = await statisticsService.getLeaders(accountId, category, filters);
 
-    const result: LeaderRowType[] = leaders.map((leader) => ({
-      ...leader,
-      playerId: leader.playerId.toString(),
-    }));
-
-    res.json(result);
+    res.json(leaders);
   }),
 );
 

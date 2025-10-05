@@ -22,3 +22,6 @@ export * from './IScheduleRepository.js';
 export * from './IMonitoringRepository.js';
 export * from './IPasswordResetTokenRepository.js';
 export * from './IManagerRepository.js';
+export * from './IBattingStatisticsRepository.js';
+export * from './IPitchingStatisticsRepository.js';
+export * from './ILeagueLeadersDisplayRepository.js';

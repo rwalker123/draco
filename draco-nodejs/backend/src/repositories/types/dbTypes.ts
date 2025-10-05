@@ -9,6 +9,73 @@ export interface dbMonitoringConnectivityResult {
   connectivity_test: number;
 }
 
+export interface dbLeaderCategoryConfig {
+  fieldname: string;
+  isbatleader: boolean;
+}
+
+export interface dbPlayerTeamAssignment {
+  playerId: bigint;
+  teamId?: bigint | null;
+  teamName?: string | null;
+}
+
+export interface dbBattingStatisticsRow {
+  playerId: bigint;
+  playerName: string;
+  teams?: string[];
+  teamName?: string;
+  ab: number;
+  h: number;
+  r: number;
+  d: number;
+  t: number;
+  hr: number;
+  rbi: number;
+  bb: number;
+  so: number;
+  hbp: number;
+  sb: number;
+  sf: number;
+  sh: number;
+  avg: number;
+  obp: number;
+  slg: number;
+  ops: number;
+  tb: number;
+  pa: number;
+  [key: string]: string | number | bigint | string[] | undefined;
+}
+
+export interface dbPitchingStatisticsRow {
+  playerId: bigint;
+  playerName: string;
+  teams?: string[];
+  teamName?: string;
+  ip: number;
+  ip2: number;
+  w: number;
+  l: number;
+  s: number;
+  h: number;
+  r: number;
+  er: number;
+  bb: number;
+  so: number;
+  hr: number;
+  bf: number;
+  wp: number;
+  hbp: number;
+  era: number;
+  whip: number;
+  k9: number;
+  bb9: number;
+  oba: number;
+  slg: number;
+  ipDecimal: number;
+  [key: string]: string | number | bigint | string[] | undefined;
+}
+
 export interface dbTeamSeasonValidationResult {
   id: bigint;
   teamid: bigint;
