@@ -1129,6 +1129,85 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
   });
 
   /**
+   * DELETE /api/accounts/:accountId/teams/:teamId
+   * Delete a team definition when it is no longer used.
+   */
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/teams/{teamId}',
+    operationId: 'deleteAccountTeam',
+    summary: 'Delete team definition',
+    description: 'Deletes a team definition when it is no longer associated with any seasons.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      204: {
+        description: 'Team definition deleted',
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Account administrator role required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team not found for the account',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'Team is still assigned to one or more seasons',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while deleting the team',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
    * GET /api/accounts/:accountId/fields
    * List fields for an account (public)
    */

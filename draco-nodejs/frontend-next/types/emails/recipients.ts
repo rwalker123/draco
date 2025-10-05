@@ -1,5 +1,10 @@
 // Recipient selection types for email composition
-import { ContactType } from '@draco/shared-schemas';
+import {
+  ContactType,
+  DivisionSeasonWithTeamsType,
+  LeagueSeasonWithDivisionTeamsAndUnassignedType,
+  TeamSeasonWithPlayerCountType,
+} from '@draco/shared-schemas';
 
 // Enhanced recipient interface for frontend display
 export interface RecipientContact extends ContactType {
@@ -256,7 +261,7 @@ export interface HierarchicalLeague {
 export interface HierarchicalSeason {
   id: string;
   name: string;
-  leagues: HierarchicalLeague[];
+  leagues: LeagueSeasonWithDivisionTeamsAndUnassignedType[];
   totalPlayers?: number;
   totalManagers?: number;
 }
@@ -757,7 +762,7 @@ export const convertHierarchicalToContactGroups = (
       if (league) {
         const leagueGroup: ContactGroup = {
           groupType: 'league',
-          groupName: `League: ${league.name}`,
+          groupName: `League: ${league.league.name}`,
           ids: new Set([leagueId]), // League ID
           totalCount: state.managersOnly ? league.totalManagers || 0 : league.totalPlayers || 0,
           managersOnly: state.managersOnly,
@@ -775,11 +780,11 @@ export const convertHierarchicalToContactGroups = (
     const divisionGroups: ContactGroup[] = [];
     state.selectedDivisionIds.forEach((divisionId) => {
       // Find division in hierarchy to get details
-      let divisionDetails: HierarchicalDivision | null = null;
+      let divisionDetails: DivisionSeasonWithTeamsType | null = null;
       let parentLeagueId: string | null = null;
 
       for (const league of seasonData.leagues) {
-        const division = league.divisions.find((d) => d.id === divisionId);
+        const division = league.divisions?.find((d) => d.id === divisionId);
         if (division) {
           divisionDetails = division;
           parentLeagueId = league.id;
@@ -791,7 +796,7 @@ export const convertHierarchicalToContactGroups = (
       if (divisionDetails && parentLeagueId && !state.selectedLeagueIds.has(parentLeagueId)) {
         const divisionGroup: ContactGroup = {
           groupType: 'division',
-          groupName: `Division: ${divisionDetails.name}`,
+          groupName: `Division: ${divisionDetails.division.name}`,
           ids: new Set([divisionId]), // Division ID
           totalCount: state.managersOnly
             ? divisionDetails.totalManagers || 0
@@ -811,13 +816,13 @@ export const convertHierarchicalToContactGroups = (
     const teamGroups: ContactGroup[] = [];
     state.selectedTeamIds.forEach((teamId) => {
       // Find team in hierarchy to get details
-      let teamDetails: HierarchicalTeam | null = null;
+      let teamDetails: TeamSeasonWithPlayerCountType | null = null;
       let parentLeagueId: string | null = null;
       let parentDivisionId: string | null = null;
 
       // Search in divisions
       for (const league of seasonData.leagues) {
-        for (const division of league.divisions) {
+        for (const division of league.divisions ?? []) {
           const team = division.teams.find((t) => t.id === teamId);
           if (team) {
             teamDetails = team;

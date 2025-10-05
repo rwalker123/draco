@@ -16,6 +16,7 @@ import { LeagueSeasonQueryParamsSchema, UpsertDivisionSeasonSchema } from '@drac
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const leagueService = ServiceFactory.getLeagueService();
+const teamService = ServiceFactory.getTeamService();
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues
@@ -235,6 +236,29 @@ router.delete(
     await leagueService.removeDivisionSeason(accountId, seasonId, leagueSeasonId, divisionSeasonId);
 
     res.json(true);
+  }),
+);
+
+/**
+ * POST /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams
+ * Create a new team within a league season.
+ */
+router.post(
+  '/:leagueSeasonId/teams',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId, leagueSeasonId } = extractLeagueSeasonParams(req.params);
+    const { name } = req.body as { name?: string };
+
+    const teamSeason = await teamService.createTeamSeason(
+      accountId,
+      seasonId,
+      leagueSeasonId,
+      name ?? '',
+    );
+
+    res.status(201).json(teamSeason);
   }),
 );
 

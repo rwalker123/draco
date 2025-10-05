@@ -1,7 +1,6 @@
 // todo: much of this can be deleted once we fully transition to zod schemas and validation
 
 // Import context data types
-import { League, Team, LeagueSeason } from '../services/contextDataService';
 import {
   CreateContactType,
   ContactType,
@@ -9,6 +8,9 @@ import {
   RoleWithContactType,
   BaseContactType,
   TeamManagerWithTeamsType,
+  LeagueSeasonType,
+  TeamSeasonType,
+  LeagueSeasonWithDivisionTeamsType,
 } from '@draco/shared-schemas';
 
 // Contact dependency types
@@ -139,9 +141,9 @@ export interface AssignRoleDialogProps {
   preselectedUser?: ContactType | null;
   isUserReadonly?: boolean;
   // Context data props
-  leagues?: League[];
-  teams?: Team[];
-  leagueSeasons?: LeagueSeason[];
+  leagues?: LeagueSeasonWithDivisionTeamsType[];
+  teams?: TeamSeasonType[];
+  leagueSeasons?: LeagueSeasonType[];
   contextDataLoading?: boolean;
 }
 
@@ -198,9 +200,9 @@ export interface UseUserManagementReturn {
   selectedContactForDelete: ContactType | null;
 
   // Context data states
-  leagues: League[];
-  teams: Team[];
-  leagueSeasons: LeagueSeason[];
+  leagues: LeagueSeasonWithDivisionTeamsType[];
+  teams: TeamSeasonType[];
+  leagueSeasons: LeagueSeasonType[];
   contextDataLoading: boolean;
 
   // Automatic role holders states

@@ -14,16 +14,16 @@ import {
 import { PhotoCamera as PhotoCameraIcon, Save as SaveIcon } from '@mui/icons-material';
 import Image from 'next/image';
 import { getLogoSize, validateLogoFile } from '../config/teams';
-import { Team } from '@/types/schedule';
+import { TeamSeasonType } from '@draco/shared-schemas';
 
 interface EditTeamDialogProps {
   open: boolean;
-  team: Team | null;
+  teamSeason: TeamSeasonType | null;
   onClose: () => void;
   onSave: (updatedName: string, logoFile: File | null) => Promise<void>;
 }
 
-const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, team, onClose, onSave }) => {
+const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClose, onSave }) => {
   const LOGO_SIZE = getLogoSize();
   const [editingTeamName, setEditingTeamName] = useState<string>('');
   const [editingLogoFile, setEditingLogoFile] = useState<File | null>(null);
@@ -33,9 +33,9 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, team, onClose, on
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (team) {
-      setEditingTeamName(team.name || '');
-      setLogoPreview(team.logoUrl || null);
+    if (teamSeason) {
+      setEditingTeamName(teamSeason.name || '');
+      setLogoPreview(teamSeason.team.logoUrl || null);
       setEditingLogoFile(null);
       setEditDialogError(null);
       setLogoPreviewError(false);
@@ -46,7 +46,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, team, onClose, on
       setEditDialogError(null);
       setLogoPreviewError(false);
     }
-  }, [team, open]);
+  }, [teamSeason, open]);
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -91,7 +91,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, team, onClose, on
     setLogoPreviewError(false);
   }, [logoPreview]);
 
-  if (!team) {
+  if (!teamSeason) {
     return null;
   }
 

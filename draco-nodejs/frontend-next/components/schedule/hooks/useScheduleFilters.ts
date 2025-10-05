@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Game, Team, FilterType, NavigationDirection } from '@/types/schedule';
+import { Game, FilterType, NavigationDirection } from '@/types/schedule';
 import {
   startOfWeek,
   endOfWeek,
@@ -16,11 +16,12 @@ import {
   startOfYear,
   endOfYear,
 } from 'date-fns';
+import { TeamSeasonType } from '@draco/shared-schemas';
 
 interface UseScheduleFiltersProps {
   games: Game[];
   leagues: { id: string; name: string }[];
-  leagueTeams: Team[];
+  leagueTeams: TeamSeasonType[];
   loadLeagueTeams: (leagueSeasonId: string) => void;
   filterDate: Date;
   setFilterDate: (date: Date) => void;

@@ -5449,6 +5449,15 @@ components:
             required:
               - id
               - team
+        teamCount:
+          type: integer
+          minimum: 0
+        totalPlayers:
+          type: integer
+          minimum: 0
+        totalManagers:
+          type: integer
+          minimum: 0
       required:
         - id
         - division
@@ -5731,6 +5740,15 @@ components:
                   required:
                     - id
                     - team
+              teamCount:
+                type: integer
+                minimum: 0
+              totalPlayers:
+                type: integer
+                minimum: 0
+              totalManagers:
+                type: integer
+                minimum: 0
             required:
               - id
               - division
@@ -5825,6 +5843,18 @@ components:
             required:
               - id
               - team
+        totalTeams:
+          type: integer
+          minimum: 0
+        totalPlayers:
+          type: integer
+          minimum: 0
+        totalManagers:
+          type: integer
+          minimum: 0
+        unassignedTeamCount:
+          type: integer
+          minimum: 0
       required:
         - id
         - league
@@ -6009,6 +6039,15 @@ components:
                         required:
                           - id
                           - team
+                    teamCount:
+                      type: integer
+                      minimum: 0
+                    totalPlayers:
+                      type: integer
+                      minimum: 0
+                    totalManagers:
+                      type: integer
+                      minimum: 0
                   required:
                     - id
                     - division
@@ -6103,6 +6142,18 @@ components:
                   required:
                     - id
                     - team
+              totalTeams:
+                type: integer
+                minimum: 0
+              totalPlayers:
+                type: integer
+                minimum: 0
+              totalManagers:
+                type: integer
+                minimum: 0
+              unassignedTeamCount:
+                type: integer
+                minimum: 0
             required:
               - id
               - league
@@ -8133,6 +8184,62 @@ paths:
                 $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/teams/{teamId}:
+    delete:
+      operationId: deleteAccountTeam
+      summary: Delete team definition
+      description: Deletes a team definition when it is no longer associated with any
+        seasons.
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Team definition deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Account administrator role required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team not found for the account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Team is still assigned to one or more seasons
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Unexpected server error while deleting the team
           content:
             application/json:
               schema:
@@ -11803,6 +11910,91 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
         "500":
           description: Unexpected server error while fetching games
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/teams:
+    post:
+      operationId: createLeagueSeasonTeam
+      summary: Create league season team
+      description: Create a team season within the specified league season.
+      tags:
+        - League Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: leagueSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  description: Display name for the new team season.
+              required:
+                - name
+              additionalProperties: false
+      responses:
+        "201":
+          description: Team season created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamSeason"
+        "400":
+          description: Invalid request payload or parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Account administrator role required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Season or league season not found for the account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: A team with the same name already exists in this league season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Unexpected server error while creating the team season
           content:
             application/json:
               schema:
@@ -16072,6 +16264,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}:
+    delete:
+      operationId: deleteSeasonTeam
+      summary: Delete team season
+      description: Removes a team season from the specified season.
+      tags:
+        - Teams
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Team season removed from the season
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Account admin permission required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team season not found for the provided identifiers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error while deleting the team season.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
     get:
       operationId: getTeamSeasonDetails
       summary: Get team season details
