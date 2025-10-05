@@ -4,6 +4,7 @@ export * from './ITeamRepository.js';
 export * from './IAccountRepository.js';
 export * from './IContactRepository.js';
 export * from './ISeasonRepository.js';
+export * from './ISeasonsRepository.js';
 export * from './ICleanupRepository.js';
 export * from './IRoleRepository.js';
 export * from './ILeagueRepository.js';
