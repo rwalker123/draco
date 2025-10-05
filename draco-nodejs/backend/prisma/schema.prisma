@@ -728,12 +728,17 @@ model leagueschedule {
   gamerecap                                           gamerecap[]
   availablefields                                     availablefields? @relation(fields: [fieldid], references: [id], map: "fk_leagueschedule_fieldid")
   leagueseason                                        leagueseason     @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueschedule_leagueseason")
+  hometeam                                            teamsseason      @relation("leagueschedule_hteamidToteamsseason", fields: [hteamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leagueschedule_hometeam")
   leagueumpires_leagueschedule_umpire1Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire1Toleagueumpires", fields: [umpire1], references: [id], map: "fk_leagueschedule_umpire1")
   leagueumpires_leagueschedule_umpire2Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire2Toleagueumpires", fields: [umpire2], references: [id], map: "fk_leagueschedule_umpire2")
   leagueumpires_leagueschedule_umpire3Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire3Toleagueumpires", fields: [umpire3], references: [id], map: "fk_leagueschedule_umpire3")
   leagueumpires_leagueschedule_umpire4Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire4Toleagueumpires", fields: [umpire4], references: [id], map: "fk_leagueschedule_umpire4")
+  visitingteam                                        teamsseason      @relation("leagueschedule_vteamidToteamsseason", fields: [vteamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leagueschedule_visitingteam")
   pitchstatsum                                        pitchstatsum[]
   playerrecap                                         playerrecap[]
+
+  @@index([hteamid], map: "fki_L")
+  @@index([vteamid], map: "fki_fk_leagueschedule_visitingteam")
 }
 
 model leagueseason {
@@ -1086,25 +1091,27 @@ model teamseasonmanager {
 }
 
 model teamsseason {
-  id                                     BigInt              @id @default(autoincrement())
-  leagueseasonid                         BigInt
-  teamid                                 BigInt
-  name                                   String              @db.VarChar(25)
-  divisionseasonid                       BigInt?
-  batstatsum                             batstatsum[]
-  fieldstatsum                           fieldstatsum[]
-  gamerecap                              gamerecap[]
-  golfmatch_golfmatch_team2Toteamsseason golfmatch[]         @relation("golfmatch_team2Toteamsseason")
-  golfmatch_golfmatch_team1Toteamsseason golfmatch[]         @relation("golfmatch_team1Toteamsseason")
-  golfmatchscores                        golfmatchscores[]
-  golfroster                             golfroster[]
-  pitchstatsum                           pitchstatsum[]
-  playerrecap                            playerrecap[]
-  rosterseason                           rosterseason[]
-  teamseasonmanager                      teamseasonmanager[]
-  divisionseason                         divisionseason?     @relation(fields: [divisionseasonid], references: [id], map: "fk_teamsseason_divisionseasonid")
-  leagueseason                           leagueseason        @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_teamsseason_leagueseason")
-  teams                                  teams               @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamsseason_teams")
+  id                                                 BigInt              @id @default(autoincrement())
+  leagueseasonid                                     BigInt
+  teamid                                             BigInt
+  name                                               String              @db.VarChar(25)
+  divisionseasonid                                   BigInt?
+  batstatsum                                         batstatsum[]
+  fieldstatsum                                       fieldstatsum[]
+  gamerecap                                          gamerecap[]
+  golfmatch_golfmatch_team2Toteamsseason             golfmatch[]         @relation("golfmatch_team2Toteamsseason")
+  golfmatch_golfmatch_team1Toteamsseason             golfmatch[]         @relation("golfmatch_team1Toteamsseason")
+  golfmatchscores                                    golfmatchscores[]
+  golfroster                                         golfroster[]
+  leagueschedule_leagueschedule_hteamidToteamsseason leagueschedule[]    @relation("leagueschedule_hteamidToteamsseason")
+  leagueschedule_leagueschedule_vteamidToteamsseason leagueschedule[]    @relation("leagueschedule_vteamidToteamsseason")
+  pitchstatsum                                       pitchstatsum[]
+  playerrecap                                        playerrecap[]
+  rosterseason                                       rosterseason[]
+  teamseasonmanager                                  teamseasonmanager[]
+  divisionseason                                     divisionseason?     @relation(fields: [divisionseasonid], references: [id], map: "fk_teamsseason_divisionseasonid")
+  leagueseason                                       leagueseason        @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_teamsseason_leagueseason")
+  teams                                              teams               @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamsseason_teams")
 
   @@index([leagueseasonid], map: "idx_teamsseason_leagueseasonid")
 }

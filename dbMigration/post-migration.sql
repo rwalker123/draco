@@ -16,11 +16,13 @@ set fieldid = NULL
 where fieldid IN (20, 24);
 
 ALTER TABLE leagueschedule
-    ADD CONSTRAINT fk_leagueschedule_umpire1 FOREIGN KEY (umpire1) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
-    ADD CONSTRAINT fk_leagueschedule_umpire2 FOREIGN KEY (umpire2) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
-    ADD CONSTRAINT fk_leagueschedule_umpire3 FOREIGN KEY (umpire3) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
-    ADD CONSTRAINT fk_leagueschedule_umpire4 FOREIGN KEY (umpire4) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
-    ADD CONSTRAINT fk_leagueschedule_fieldid FOREIGN KEY (fieldid) REFERENCES availablefields(id) ON UPDATE CASCADE ON DELETE SET NULL;
+    ADD CONSTRAINT umpire1 FOREIGN KEY (umpire1) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT umpire2 FOREIGN KEY (umpire2) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT umpire3 FOREIGN KEY (umpire3) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT umpire4 FOREIGN KEY (umpire4) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT fk_leagueschedule_fieldid FOREIGN KEY (fieldid) REFERENCES availablefields(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    ADD CONSTRAINT hometeam FOREIGN KEY (hteamid) REFERENCES public.teamsseason (id) ON UPDATE NO ACTION ON DELETE NO ACTION NOT VALID,
+    ADD CONSTRAINT visitingteam FOREIGN KEY (vteamid) REFERENCES public.teamsseason (id) ON UPDATE NO ACTION ON DELETE NO ACTION NOT VALID;
 
 UPDATE teamsseason
 SET divisionseasonid = NULLIF(divisionseasonid, 0);

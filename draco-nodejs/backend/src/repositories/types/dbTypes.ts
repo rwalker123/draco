@@ -100,7 +100,13 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
 }>;
 
 export type dbGameInfo = Prisma.leaguescheduleGetPayload<{
-  include: { availablefields: true };
+  include: {
+    availablefields: true;
+    hometeam: { select: { id: true; name: true } };
+    visitingteam: { select: { id: true; name: true } };
+    leagueseason: { select: { id: true; league: { select: { name: true } } } };
+    _count: { select: { gamerecap: true } };
+  };
 }>;
 
 export type dbRosterSeason = Prisma.rosterseasonGetPayload<{

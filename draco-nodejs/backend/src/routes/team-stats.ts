@@ -1,11 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { StatsResponseFormatter } from '../responseFormatters/index.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import {
-  PlayerBattingStatsBriefType,
-  PlayerPitchingStatsBriefType,
   RecentGamesQuerySchema,
   RecentGamesType,
   TeamSeasonRecordType,
@@ -80,10 +77,7 @@ router.get(
     await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
 
     const battingStats = await teamStatsService.getTeamBattingStats(teamSeasonId, accountId);
-    const response: PlayerBattingStatsBriefType[] =
-      StatsResponseFormatter.formatBattingStatsResponse(battingStats);
-
-    res.json(response);
+    res.json(battingStats);
   }),
 );
 
@@ -104,10 +98,8 @@ router.get(
       seasonId,
       accountId,
     );
-    const response: PlayerPitchingStatsBriefType[] =
-      StatsResponseFormatter.formatPitchingStatsResponse(pitchingStats);
 
-    res.json(response);
+    res.json(pitchingStats);
   }),
 );
 
