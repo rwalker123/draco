@@ -5,6 +5,7 @@ import {
   IContactRepository,
   IRoleRepository,
   ISeasonRepository,
+  ISeasonsRepository,
   ILeagueRepository,
   ICleanupRepository,
   IPollRepository,
@@ -29,6 +30,7 @@ import {
   PrismaContactRepository,
   PrismaRoleRepository,
   PrismaSeasonRepository,
+  PrismaSeasonsRepository,
   PrismaLeagueRepository,
   PrismaCleanupRepository,
   PrismaPollRepository,
@@ -60,6 +62,7 @@ export class RepositoryFactory {
   private static contactRepository: IContactRepository;
   private static roleRepository: IRoleRepository;
   private static seasonRepository: ISeasonRepository;
+  private static seasonsRepository: ISeasonsRepository;
   private static leagueRepository: ILeagueRepository;
   private static cleanupRepository: ICleanupRepository;
   private static pollRepository: IPollRepository;
@@ -124,6 +127,13 @@ export class RepositoryFactory {
       this.seasonRepository = new PrismaSeasonRepository(prisma);
     }
     return this.seasonRepository;
+  }
+
+  static getSeasonsRepository(): ISeasonsRepository {
+    if (!this.seasonsRepository) {
+      this.seasonsRepository = new PrismaSeasonsRepository(prisma);
+    }
+    return this.seasonsRepository;
   }
 
   static getCleanupRepository(): ICleanupRepository {

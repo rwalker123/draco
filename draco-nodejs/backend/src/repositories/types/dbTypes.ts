@@ -177,6 +177,49 @@ export type dbSeason = Prisma.seasonGetPayload<{
   };
 }>;
 
+export interface dbSeasonWithLeagues {
+  id: bigint;
+  name: string;
+  accountid: bigint;
+  leagueseason: Array<{
+    id: bigint;
+    leagueid: bigint;
+    league: {
+      id: bigint;
+      name: string;
+    };
+    divisionseason?: Array<{
+      id: bigint;
+      priority: number | null;
+      divisiondefs: {
+        id: bigint;
+        name: string;
+      } | null;
+    }>;
+  }>;
+}
+
+export type dbLeagueSeasonBasic = Prisma.leagueseasonGetPayload<{
+  select: {
+    id: true;
+    seasonid: true;
+    leagueid: true;
+    league: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+  };
+}>;
+
+export type dbCurrentSeason = Prisma.currentseasonGetPayload<{
+  select: {
+    accountid: true;
+    seasonid: true;
+  };
+}>;
+
 export type dbContactRoles = Prisma.contactrolesGetPayload<{
   select: {
     id: true;
