@@ -1,9 +1,10 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { AuthenticationError, ValidationError, NotFoundError } from '../utils/customErrors.js';
-import { RepositoryFactory } from '../repositories/index.js';
+import { IUserRepository, RepositoryFactory } from '../repositories/index.js';
 import { BaseContactType, RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 import { ServiceFactory } from './serviceFactory.js';
+import { ContactService } from './contactService.js';
 
 export interface JWTPayload {
   userId: string;
@@ -22,9 +23,13 @@ export class AuthService {
   })();
   private readonly JWT_EXPIRES_IN = '24h';
 
-  private readonly userRepository = RepositoryFactory.getUserRepository();
-  private readonly contactService = ServiceFactory.getContactService();
+  private readonly userRepository: IUserRepository;
+  private readonly contactService: ContactService;
 
+  constructor() {
+    this.userRepository = RepositoryFactory.getUserRepository();
+    this.contactService = ServiceFactory.getContactService();
+  }
   /**
    * Get user by ID
    */
