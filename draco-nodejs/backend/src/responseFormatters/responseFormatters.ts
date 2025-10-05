@@ -1,8 +1,6 @@
 import {
   BaseContactType,
   NamedContactType,
-  RosterMemberType,
-  TeamRosterMembersType,
   RosterPlayerType,
   ContactType,
   PagedContactType,
@@ -15,9 +13,6 @@ import { DateUtils } from '../utils/dateUtils.js';
 import {
   dbBaseContact,
   dbRosterPlayer,
-  dbRosterMember,
-  dbTeamSeason,
-  dbRosterSeason,
   dbContactWithRoleAndDetails,
   dbPollQuestionWithCounts,
   dbPollQuestionWithUserVotes,
@@ -25,13 +20,6 @@ import {
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
 import { PaginationHelper } from '../utils/pagination.js';
-
-// todo: delete this once the shared api client is used more widely
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
 
 export class ContactResponseFormatter {
   static formatNamedContactResponse(contact: dbBaseContact): NamedContactType {
@@ -286,91 +274,5 @@ export class SponsorResponseFormatter {
 
   static formatSponsors(sponsors: dbSponsor[]): SponsorType[] {
     return sponsors.map((sponsor) => this.formatSponsor(sponsor));
-  }
-}
-
-export class RosterResponseFormatter {
-  static formatRosterMembersResponse(
-    dbTeamSeason: dbTeamSeason,
-    dbRosterMembers: dbRosterSeason[],
-  ): TeamRosterMembersType {
-    const rosterMembers: RosterMemberType[] = dbRosterMembers.map((member) => {
-      return this.formatRosterMemberResponse(member);
-    });
-
-    const teamRosterMembers: TeamRosterMembersType = {
-      teamSeason: {
-        id: dbTeamSeason.id.toString(),
-        name: dbTeamSeason.name,
-      },
-      rosterMembers: rosterMembers,
-    };
-
-    return teamRosterMembers;
-  }
-
-  static formatRosterMemberResponse(member: dbRosterMember): RosterMemberType {
-    const contact: dbBaseContact = member.roster.contacts;
-
-    const contactEntry: BaseContactType = ContactResponseFormatter.formatContactResponse(contact);
-
-    const player: RosterPlayerType = {
-      id: member.roster.id.toString(),
-      submittedDriversLicense: member.roster.submitteddriverslicense,
-      firstYear: member.roster.firstyear,
-      contact: contactEntry,
-    };
-
-    const rosterMember: RosterMemberType = {
-      id: member.id.toString(),
-      playerNumber: member.playernumber,
-      inactive: member.inactive,
-      submittedWaiver: member.submittedwaiver,
-      dateAdded: member.dateadded,
-      player: player,
-    };
-
-    return rosterMember;
-  }
-
-  static formatUpdateRosterMemberResponse(
-    rosterMember: RosterMemberType,
-    playerName: string,
-  ): ApiResponse<{
-    message: string;
-    rosterMember: RosterMemberType;
-  }> {
-    return {
-      success: true,
-      data: {
-        message: `Roster information updated for "${playerName}"`,
-        rosterMember,
-      },
-    };
-  }
-
-  static formatActivatePlayerResponse(
-    rosterMember: RosterMemberType,
-    playerName: string,
-  ): ApiResponse<{
-    message: string;
-    rosterMember: RosterMemberType;
-  }> {
-    return {
-      success: true,
-      data: {
-        message: `Player "${playerName}" has been reactivated`,
-        rosterMember,
-      },
-    };
-  }
-
-  static formatDeletePlayerResponse(playerName: string): ApiResponse<{ message: string }> {
-    return {
-      success: true,
-      data: {
-        message: `Player "${playerName}" has been permanently removed from the roster`,
-      },
-    };
   }
 }

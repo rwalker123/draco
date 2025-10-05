@@ -385,4 +385,64 @@ export class PrismaContactRepository implements IContactRepository {
     const contacts = await this.prisma.contacts.findMany(queryOptions);
     return { contacts, total: totalCount };
   }
+
+  async findAvailableContacts(
+    accountId: bigint,
+    excludedContactIds: bigint[],
+    firstName: string | undefined,
+    lastName: string | undefined,
+    skip: number,
+    take: number,
+  ): Promise<dbBaseContact[]> {
+    const whereClause: Prisma.contactsWhereInput = {
+      creatoraccountid: accountId,
+      ...(excludedContactIds.length
+        ? {
+            id: {
+              notIn: excludedContactIds,
+            },
+          }
+        : {}),
+      ...(firstName
+        ? {
+            firstname: {
+              contains: firstName,
+              mode: 'insensitive',
+            },
+          }
+        : {}),
+      ...(lastName
+        ? {
+            lastname: {
+              contains: lastName,
+              mode: 'insensitive',
+            },
+          }
+        : {}),
+    };
+
+    return this.prisma.contacts.findMany({
+      where: whereClause,
+      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }, { middlename: 'asc' }],
+      skip,
+      take,
+      select: {
+        id: true,
+        userid: true,
+        firstname: true,
+        lastname: true,
+        middlename: true,
+        email: true,
+        phone1: true,
+        phone2: true,
+        phone3: true,
+        streetaddress: true,
+        city: true,
+        state: true,
+        zip: true,
+        dateofbirth: true,
+        creatoraccountid: true,
+      },
+    });
+  }
 }

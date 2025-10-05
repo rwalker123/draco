@@ -21,3 +21,4 @@ export * from './IScheduleRepository.js';
 export * from './IMonitoringRepository.js';
 export * from './IPasswordResetTokenRepository.js';
 export * from './IManagerRepository.js';
+export * from './IRosterRepository.js';
