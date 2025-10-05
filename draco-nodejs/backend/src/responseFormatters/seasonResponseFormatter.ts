@@ -3,11 +3,7 @@ import {
   SeasonParticipantCountDataType,
   SeasonType,
 } from '@draco/shared-schemas';
-import {
-  dbLeagueSeasonBasic,
-  dbSeason,
-  dbSeasonWithLeagues,
-} from '../repositories/index.js';
+import { dbLeagueSeasonBasic, dbSeason, dbSeasonWithLeagues } from '../repositories/index.js';
 
 interface SeasonFormatOptions {
   includeDivisions: boolean;
@@ -27,11 +23,7 @@ export class SeasonResponseFormatter {
     season: dbSeasonWithLeagues,
     { includeDivisions, currentSeasonId, forceCurrent }: SeasonFormatOptions,
   ): LeagueSeasonWithDivisionType {
-    const isCurrent = forceCurrent
-      ? true
-      : currentSeasonId
-      ? season.id === currentSeasonId
-      : false;
+    const isCurrent = forceCurrent ? true : currentSeasonId ? season.id === currentSeasonId : false;
 
     return {
       id: season.id.toString(),

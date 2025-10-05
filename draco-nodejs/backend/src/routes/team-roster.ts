@@ -17,7 +17,7 @@ router.get(
   '/:teamSeasonId/roster',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
     const rosterMembers = await rosterService.getTeamRosterMembers(
@@ -38,12 +38,11 @@ router.get(
   '/:teamSeasonId/available-players',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
-    // Parse query parameters with defaults and validation
-    const page = parseInt(String(req.query.page || '1'), 10) || 1;
-    const limit = Math.min(100, parseInt(String(req.query.limit || '50'), 10) || 50);
+    const page = Math.max(parseInt(String(req.query.page ?? '1'), 10) || 1, 1);
+    const limit = Math.min(100, Math.max(parseInt(String(req.query.limit ?? '50'), 10) || 50, 1));
     const firstName = req.query.firstName ? String(req.query.firstName).trim() : undefined;
     const lastName = req.query.lastName ? String(req.query.lastName).trim() : undefined;
 
@@ -58,7 +57,7 @@ router.get(
     );
 
     res.json(availablePlayers);
-  },
+  }),
 );
 
 /**
@@ -69,7 +68,7 @@ router.post(
   '/:teamSeasonId/roster',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
     const addPlayerData = SignRosterMemberSchema.parse(req.body);
@@ -81,7 +80,7 @@ router.post(
     );
 
     res.status(201).json(rosterMember);
-  },
+  }),
 );
 
 /**
@@ -92,7 +91,7 @@ router.put(
   '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
       req.params,
       'accountId',
@@ -112,7 +111,7 @@ router.put(
     );
 
     res.json(updatedRosterMember);
-  },
+  }),
 );
 
 /**
@@ -123,7 +122,7 @@ router.put(
   '/:teamSeasonId/roster/:rosterMemberId/release',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
       req.params,
       'accountId',
@@ -142,7 +141,7 @@ router.put(
     );
 
     res.json(releasedPlayer);
-  },
+  }),
 );
 
 /**
@@ -153,7 +152,7 @@ router.put(
   '/:teamSeasonId/roster/:rosterMemberId/activate',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
       req.params,
       'accountId',
@@ -172,7 +171,7 @@ router.put(
     );
 
     res.json(activatedPlayer);
-  },
+  }),
 );
 
 /**
@@ -183,7 +182,7 @@ router.delete(
   '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
       req.params,
       'accountId',
@@ -195,7 +194,7 @@ router.delete(
     await rosterService.deleteRosterMember(rosterMemberId, teamSeasonId, seasonId, accountId);
 
     res.json(true);
-  },
+  }),
 );
 
 export default router;

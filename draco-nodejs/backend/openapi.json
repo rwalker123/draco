@@ -347,14 +347,6 @@
                         "maxLength": 100,
                         "format": "email"
                       },
-                      "userId": {
-                        "type": "string",
-                        "maxLength": 50
-                      },
-                      "photoUrl": {
-                        "type": "string",
-                        "format": "uri"
-                      },
                       "contactDetails": {
                         "type": "object",
                         "properties": {
@@ -403,8 +395,17 @@
                             "default": ""
                           }
                         }
+                      },
+                      "photo": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "Contact photo file"
                       }
-                    }
+                    },
+                    "required": [
+                      "firstName",
+                      "lastName"
+                    ]
                   }
                 ]
               }

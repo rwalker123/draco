@@ -50,7 +50,9 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
     }
 
     const havingClause =
-      minInningsPitched > 0 ? `HAVING (SUM(ps.ip) + SUM(ps.ip2) / 3.0) >= ${minInningsPitched}` : '';
+      minInningsPitched > 0
+        ? `HAVING (SUM(ps.ip) + SUM(ps.ip2) / 3.0) >= ${minInningsPitched}`
+        : '';
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
     const sortFieldSql = sortField.toLowerCase() === 'ip' ? '"ipDecimal"' : sortField.toLowerCase();
     const teamJoin =

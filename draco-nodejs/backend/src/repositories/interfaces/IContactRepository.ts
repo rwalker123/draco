@@ -25,4 +25,12 @@ export interface IContactRepository extends IBaseRepository<contacts> {
     accountId: bigint,
     options: ContactQueryOptions,
   ): Promise<{ contacts: dbBaseContact[]; total: number }>;
+  findAvailableContacts(
+    accountId: bigint,
+    excludedContactIds: bigint[],
+    firstName: string | undefined,
+    lastName: string | undefined,
+    skip: number,
+    take: number,
+  ): Promise<dbBaseContact[]>;
 }

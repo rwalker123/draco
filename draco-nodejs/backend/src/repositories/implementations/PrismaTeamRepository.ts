@@ -2,6 +2,7 @@ import { PrismaClient, teamsseason, teams, teamseasonmanager, Prisma } from '@pr
 import { ITeamRepository } from '../interfaces/index.js';
 import {
   dbTeam,
+  dbTeamSeason,
   dbTeamSeasonLeague,
   dbTeamSeasonManagerContact,
   dbTeamSeasonRecord,
@@ -155,6 +156,20 @@ export class PrismaTeamRepository implements ITeamRepository {
         id: teamSeasonId,
         leagueseason: { seasonid: seasonId, league: { accountid: accountId } },
       },
+    });
+  }
+
+  async findTeamSeasonSummary(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeason | null> {
+    return this.prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: { seasonid: seasonId, league: { accountid: accountId } },
+      },
+      select: { id: true, name: true },
     });
   }
 

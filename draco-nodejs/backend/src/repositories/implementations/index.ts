@@ -24,3 +24,4 @@ export * from './PrismaManagerRepository.js';
 export * from './PrismaBattingStatisticsRepository.js';
 export * from './PrismaPitchingStatisticsRepository.js';
 export * from './PrismaLeagueLeadersDisplayRepository.js';
+export * from './PrismaRosterRepository.js';

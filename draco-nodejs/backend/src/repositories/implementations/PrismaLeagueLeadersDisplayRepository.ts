@@ -16,10 +16,7 @@ export class PrismaLeagueLeadersDisplayRepository implements ILeagueLeadersDispl
     });
   }
 
-  async findCategory(
-    accountId: bigint,
-    fieldName: string,
-  ): Promise<dbLeaderCategoryConfig | null> {
+  async findCategory(accountId: bigint, fieldName: string): Promise<dbLeaderCategoryConfig | null> {
     return this.prisma.displayleagueleaders.findFirst({
       where: {
         accountid: accountId,

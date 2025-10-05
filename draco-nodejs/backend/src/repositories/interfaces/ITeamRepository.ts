@@ -2,6 +2,7 @@ import { teamsseason, teams, teamseasonmanager, Prisma } from '@prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbTeam,
+  dbTeamSeason,
   dbTeamSeasonLeague,
   dbTeamSeasonManagerContact,
   dbTeamSeasonRecord,
@@ -20,6 +21,11 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     seasonId: bigint,
     accountId: bigint,
   ): Promise<dbTeamSeasonWithLeague | null>;
+  findTeamSeasonSummary(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeason | null>;
   findTeamDefinition(teamId: bigint): Promise<teams | null>;
   createTeamDefinition(data: Partial<teams>): Promise<teams>;
   deleteTeamDefinition(teamId: bigint): Promise<teams>;

@@ -25,6 +25,7 @@ import {
   IBattingStatisticsRepository,
   IPitchingStatisticsRepository,
   ILeagueLeadersDisplayRepository,
+  IRosterRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -53,6 +54,7 @@ import {
   PrismaBattingStatisticsRepository,
   PrismaPitchingStatisticsRepository,
   PrismaLeagueLeadersDisplayRepository,
+  PrismaRosterRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -88,6 +90,7 @@ export class RepositoryFactory {
   private static battingStatisticsRepository: IBattingStatisticsRepository;
   private static pitchingStatisticsRepository: IPitchingStatisticsRepository;
   private static leagueLeadersDisplayRepository: ILeagueLeadersDisplayRepository;
+  private static rosterRepository: IRosterRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -108,6 +111,13 @@ export class RepositoryFactory {
       this.teamRepository = new PrismaTeamRepository(prisma);
     }
     return this.teamRepository;
+  }
+
+  static getRosterRepository(): IRosterRepository {
+    if (!this.rosterRepository) {
+      this.rosterRepository = new PrismaRosterRepository(prisma);
+    }
+    return this.rosterRepository;
   }
 
   static getAccountRepository(): IAccountRepository {

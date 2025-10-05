@@ -56,10 +56,7 @@ export class SeasonService {
     });
   }
 
-  async getSeason(
-    accountId: bigint,
-    seasonId: bigint,
-  ): Promise<LeagueSeasonWithDivisionType> {
+  async getSeason(accountId: bigint, seasonId: bigint): Promise<LeagueSeasonWithDivisionType> {
     const [season, currentSeasonRecord] = await Promise.all([
       this.seasonsRepository.findSeasonWithLeagues(accountId, seasonId, false),
       this.seasonsRepository.findCurrentSeasonRecord(accountId),
@@ -95,7 +92,9 @@ export class SeasonService {
       accountid: accountId,
     });
 
-    return SeasonResponseFormatter.formatSeasonWithLeagueBasics(newSeason, [], { isCurrent: false });
+    return SeasonResponseFormatter.formatSeasonWithLeagueBasics(newSeason, [], {
+      isCurrent: false,
+    });
   }
 
   async updateSeason(
@@ -115,7 +114,11 @@ export class SeasonService {
       throw new ValidationError('Season name is required');
     }
 
-    const duplicateSeason = await this.seasonsRepository.findSeasonByName(accountId, name, seasonId);
+    const duplicateSeason = await this.seasonsRepository.findSeasonByName(
+      accountId,
+      name,
+      seasonId,
+    );
     if (duplicateSeason) {
       throw new ConflictError('A season with this name already exists for this account');
     }
@@ -128,11 +131,12 @@ export class SeasonService {
     });
   }
 
-  async copySeason(
-    accountId: bigint,
-    seasonId: bigint,
-  ): Promise<LeagueSeasonWithDivisionType> {
-    const sourceSeason = await this.seasonsRepository.findSeasonWithLeagues(accountId, seasonId, false);
+  async copySeason(accountId: bigint, seasonId: bigint): Promise<LeagueSeasonWithDivisionType> {
+    const sourceSeason = await this.seasonsRepository.findSeasonWithLeagues(
+      accountId,
+      seasonId,
+      false,
+    );
 
     if (!sourceSeason) {
       throw new NotFoundError('Source season not found');
@@ -186,7 +190,9 @@ export class SeasonService {
     const currentSeasonRecord = await this.seasonsRepository.findCurrentSeasonRecord(accountId);
 
     if (currentSeasonRecord?.seasonid === seasonId) {
-      throw new ValidationError('Cannot delete the current season. Set a different season as current first.');
+      throw new ValidationError(
+        'Cannot delete the current season. Set a different season as current first.',
+      );
     }
 
     await this.seasonsRepository.deleteSeason(seasonId);
@@ -204,7 +210,10 @@ export class SeasonService {
       throw new NotFoundError('Season not found');
     }
 
-    const participantCount = await this.seasonsRepository.countSeasonParticipants(accountId, seasonId);
+    const participantCount = await this.seasonsRepository.countSeasonParticipants(
+      accountId,
+      seasonId,
+    );
 
     return SeasonResponseFormatter.formatParticipantCount(seasonId, participantCount);
   }
