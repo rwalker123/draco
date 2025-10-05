@@ -6174,8 +6174,7 @@
             "minimum": 0
           },
           "ip": {
-            "type": "number",
-            "minimum": 0,
+            "type": "string",
             "description": "Innings pitched, rounded to nearest whole inning"
           }
         },
@@ -23914,7 +23913,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PlayerBattingStatsBrief"
+                    "$ref": "#/components/schemas/PlayerBattingStats"
                   }
                 }
               }
@@ -23998,7 +23997,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PlayerPitchingStatsBrief"
+                    "$ref": "#/components/schemas/PlayerPitchingStats"
                   }
                 }
               }

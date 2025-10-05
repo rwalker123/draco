@@ -9,9 +9,7 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
     LeaderStatisticsFiltersSchemaRef,
     NotFoundErrorSchemaRef,
     PitchingStatisticsFiltersSchemaRef,
-    PlayerBattingStatsBriefSchemaRef,
     PlayerBattingStatsSchemaRef,
-    PlayerPitchingStatsBriefSchemaRef,
     PlayerPitchingStatsSchemaRef,
     RecentGamesQuerySchemaRef,
     RecentGamesSchemaRef,
@@ -447,7 +445,7 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
         description: 'Team batting statistics retrieved',
         content: {
           'application/json': {
-            schema: PlayerBattingStatsBriefSchemaRef.array(),
+            schema: PlayerBattingStatsSchemaRef.array(),
           },
         },
       },
@@ -520,7 +518,7 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
         description: 'Team pitching statistics retrieved',
         content: {
           'application/json': {
-            schema: PlayerPitchingStatsBriefSchemaRef.array(),
+            schema: PlayerPitchingStatsSchemaRef.array(),
           },
         },
       },

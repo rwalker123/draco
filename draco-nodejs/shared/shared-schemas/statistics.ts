@@ -87,7 +87,7 @@ export const PlayerPitchingStatsBriefSchema = PlayerPitchingStatsSchema.omit({
   oba: true,
   slg: true,
 }).extend({
-  ip: z.number().min(0).describe('Innings pitched, rounded to nearest whole inning'),
+  ip: z.string().describe('Innings pitched, rounded to nearest whole inning'),
 });
 
 export const StatisticsFiltersSchema = z.object({

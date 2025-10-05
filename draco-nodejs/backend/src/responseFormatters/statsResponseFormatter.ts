@@ -1,4 +1,3 @@
-import { BattingStat, GameInfo, PitchingStat } from '../services/teamStatsService.js';
 import {
   GameStatusEnumType,
   GameStatusShortEnumType,
@@ -18,6 +17,7 @@ import {
   dbPitchingStatisticsRow,
 } from '../repositories/types/dbTypes.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { getGameStatusShortText, getGameStatusText } from '../utils/gameStatus.js';
 
 export class StatsResponseFormatter {
   static formatLeaderCategories(categories: dbLeaderCategoryConfig[]): LeaderCategoriesType {
@@ -147,15 +147,15 @@ export class StatsResponseFormatter {
       gameDate: DateUtils.formatDateTimeForResponse(game.gamedate) || '',
       homeTeam: {
         id: game.hteamid.toString(),
-        name: '', // Name not available in dbGameInfo
+        name: game.hometeam?.name || '',
       },
       visitorTeam: {
         id: game.vteamid.toString(),
-        name: '', // Name not available in dbGameInfo
+        name: game.visitingteam?.name || '',
       },
       league: {
         id: game.leagueid.toString(),
-        name: '', // Name not available in dbGameInfo
+        name: game.leagueseason?.league?.name || '',
       },
       homeScore: game.hscore,
       visitorScore: game.vscore,
@@ -167,47 +167,53 @@ export class StatsResponseFormatter {
             shortName: game.availablefields?.shortname || '',
           }
         : undefined,
-      hasGameRecap: undefined,
+      hasGameRecap: Boolean(game._count?.gamerecap),
       gameType: game.gametype.toString(),
     };
   }
 
-  static formatGameResponse(game: GameInfo): GameTypeShared {
+  /*
+      gameStatusText: 
+      gameStatusShortText: g,
+      
+  */
+
+  static formatGameResponse(game: dbGameInfo): GameTypeShared {
     return {
-      id: game.id,
-      gameDate: game.date ?? '',
+      id: game.id.toString(),
+      gameDate: DateUtils.formatDateTimeForResponse(game.gamedate) || '',
       homeTeam: {
-        id: game.homeTeamId || '',
-        name: game.homeTeamName,
+        id: game.hteamid.toString(),
+        name: game.hometeam?.name || '',
       },
       visitorTeam: {
-        id: game.awayTeamId || '',
-        name: game.awayTeamName,
+        id: game.vteamid.toString(),
+        name: game.visitingteam?.name || '',
       },
       league: {
-        id: '', // League ID is not available in GameInfo
-        name: game.leagueName,
+        id: game.leagueid.toString(),
+        name: game.leagueseason?.league.name || '',
       },
-      homeScore: game.homeScore || 0,
-      visitorScore: game.awayScore || 0,
-      gameStatus: game.gameStatus || 0,
-      gameStatusText: game.gameStatusText as GameStatusEnumType,
-      gameStatusShortText: game.gameStatusShortText as GameStatusShortEnumType,
-      field: game.fieldId
+      homeScore: game.hscore || 0,
+      visitorScore: game.vscore || 0,
+      gameStatus: game.gamestatus || 0,
+      gameStatusText: getGameStatusText(game.gamestatus) as GameStatusEnumType,
+      gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
+      field: game.fieldid
         ? {
-            id: game.fieldId,
-            name: game.fieldName || '',
-            shortName: game.fieldShortName || '',
+            id: game.fieldid.toString(),
+            name: game.availablefields?.name || '',
+            shortName: game.availablefields?.shortname || '',
           }
         : undefined,
-      hasGameRecap: game.hasGameRecap,
-      gameType: game.gameType?.toString() || '0',
+      hasGameRecap: Boolean(game._count?.gamerecap),
+      gameType: game.gametype.toString(),
     };
   }
 
   static formatTeamGamesResponse(gamesData: {
-    upcoming?: GameInfo[];
-    recent?: GameInfo[];
+    upcoming?: dbGameInfo[];
+    recent?: dbGameInfo[];
   }): RecentGamesType {
     return {
       upcoming:
@@ -218,19 +224,21 @@ export class StatsResponseFormatter {
     };
   }
 
-  static formatBattingStatsResponse(battingStats: BattingStat[]): PlayerBattingStatsBriefType[] {
+  static formatBattingStatsResponse(
+    battingStats: dbBattingStatisticsRow[],
+  ): PlayerBattingStatsBriefType[] {
     return battingStats.map((stat) => ({
-      playerId: stat.playerId,
+      playerId: stat.playerId.toString(),
       playerName: stat.playerName,
-      ab: stat.atBats,
-      h: stat.hits,
-      d: stat.doubles,
-      t: stat.triples,
-      hr: stat.homeRuns,
-      rbi: stat.rbis,
-      r: stat.runs,
-      bb: stat.walks,
-      so: stat.strikeouts,
+      ab: stat.ab,
+      h: stat.h,
+      d: stat.d,
+      t: stat.t,
+      hr: stat.hr,
+      rbi: stat.rbi,
+      r: stat.r,
+      bb: stat.bb,
+      so: stat.so,
       avg: stat.avg,
       obp: stat.obp,
       slg: stat.slg,
@@ -239,20 +247,20 @@ export class StatsResponseFormatter {
   }
 
   static formatPitchingStatsResponse(
-    pitchingStats: PitchingStat[],
+    pitchingStats: dbPitchingStatisticsRow[],
   ): PlayerPitchingStatsBriefType[] {
     return pitchingStats.map((stat) => ({
-      playerId: stat.playerId,
+      playerId: stat.playerId.toString(),
       playerName: stat.playerName,
-      ip: stat.inningsPitched,
-      w: stat.wins,
-      l: stat.losses,
-      s: stat.saves,
-      h: stat.hits,
-      r: stat.runs,
-      er: stat.earnedRuns,
-      bb: stat.walks,
-      so: stat.strikeouts,
+      ip: stat.ip.toString() + '.' + stat.ip2.toString(), // Use ip (string) for brief stats to preserve fractional innings
+      w: stat.w,
+      l: stat.l,
+      s: stat.s,
+      h: stat.h,
+      r: stat.r,
+      er: stat.er,
+      bb: stat.bb,
+      so: stat.so,
       era: stat.era,
       whip: stat.whip,
     }));

@@ -20,7 +20,7 @@ export interface dbPlayerTeamAssignment {
   teamName?: string | null;
 }
 
-export interface dbBattingStatisticsRow {
+export type dbBattingStatisticsRow = {
   playerId: bigint;
   playerName: string;
   teams?: string[];
@@ -44,10 +44,10 @@ export interface dbBattingStatisticsRow {
   ops: number;
   tb: number;
   pa: number;
-  [key: string]: string | number | bigint | string[] | undefined;
-}
+  //[key: string]: string | number | bigint | string[] | undefined;
+};
 
-export interface dbPitchingStatisticsRow {
+export type dbPitchingStatisticsRow = {
   playerId: bigint;
   playerName: string;
   teams?: string[];
@@ -73,8 +73,8 @@ export interface dbPitchingStatisticsRow {
   oba: number;
   slg: number;
   ipDecimal: number;
-  [key: string]: string | number | bigint | string[] | undefined;
-}
+  //[key: string]: string | number | bigint | string[] | undefined;
+};
 
 export interface dbTeamSeasonValidationResult {
   id: bigint;
@@ -171,7 +171,28 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
 }>;
 
 export type dbGameInfo = Prisma.leaguescheduleGetPayload<{
-  include: { availablefields: true };
+  select: {
+    id: true;
+    gamedate: true;
+    hteamid: true;
+    vteamid: true;
+    leagueid: true;
+    fieldid: true;
+    hscore: true;
+    vscore: true;
+    gamestatus: true;
+    gametype: true;
+    comment: true;
+    umpire1: true;
+    umpire2: true;
+    umpire3: true;
+    umpire4: true;
+    availablefields: true;
+    hometeam: { select: { id: true; name: true } };
+    visitingteam: { select: { id: true; name: true } };
+    leagueseason: { select: { id: true; league: { select: { name: true } } } };
+    _count: { select: { gamerecap: true } };
+  };
 }>;
 
 export type dbRosterSeason = Prisma.rosterseasonGetPayload<{
