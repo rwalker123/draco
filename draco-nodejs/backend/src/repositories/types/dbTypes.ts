@@ -1,4 +1,13 @@
-import { playerswantedclassified, Prisma, teamswantedclassified } from '@prisma/client';
+import {
+  aspnetusers,
+  playerswantedclassified,
+  Prisma,
+  teamswantedclassified,
+} from '@prisma/client';
+
+export interface dbMonitoringConnectivityResult {
+  connectivity_test: number;
+}
 
 export interface dbTeamSeasonValidationResult {
   id: bigint;
@@ -178,6 +187,13 @@ export type dbGlobalRoles = Prisma.aspnetuserrolesGetPayload<{
   };
 }>;
 
+export type dbAspnetRole = Prisma.aspnetrolesGetPayload<{
+  select: {
+    id: true;
+    name: true;
+  };
+}>;
+
 export type dbAspnetRolesId = Prisma.aspnetrolesGetPayload<{
   select: {
     id: true;
@@ -187,6 +203,25 @@ export type dbAspnetRolesId = Prisma.aspnetrolesGetPayload<{
 export type dbAspnetRoleName = Prisma.aspnetrolesGetPayload<{
   select: {
     name: true;
+  };
+}>;
+
+export type dbContactWithAccountRoles = Prisma.contactsGetPayload<{
+  select: {
+    id: true;
+    firstname: true;
+    lastname: true;
+    email: true;
+    middlename: true;
+    userid: true;
+    contactroles: {
+      select: {
+        id: true;
+        roleid: true;
+        roledata: true;
+        accountid: true;
+      };
+    };
   };
 }>;
 
@@ -243,6 +278,21 @@ export type dbTeamSeasonWithTeam = Prisma.teamsseasonGetPayload<{
     };
   };
 }>;
+
+export type dbUser = aspnetusers;
+
+export type dbPasswordResetToken = Prisma.passwordresettokensGetPayload<{
+  select: {
+    id: true;
+    userid: true;
+    token: true;
+    expiresat: true;
+    used: true;
+    createdat: true;
+  };
+}>;
+
+export type dbPasswordResetTokenCreateInput = Prisma.passwordresettokensUncheckedCreateInput;
 
 export type dbDivisionDefinition = Prisma.divisiondefsGetPayload<{
   select: {

@@ -641,6 +641,35 @@
           "lastName"
         ]
       },
+      "NamedContact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "middleName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName"
+        ]
+      },
       "ContactWithContactRoles": {
         "type": "object",
         "properties": {
@@ -1918,6 +1947,181 @@
           "contact"
         ],
         "description": "Schema for a manager of a team for a given season"
+      },
+      "TeamRosterMembers": {
+        "type": "object",
+        "properties": {
+          "teamSeason": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "rosterMembers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerNumber": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "inactive": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "submittedWaiver": {
+                  "type": "boolean"
+                },
+                "dateAdded": {
+                  "type": "string",
+                  "nullable": true,
+                  "format": "date",
+                  "default": null
+                },
+                "player": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "submittedDriversLicense": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "firstYear": {
+                      "type": "number",
+                      "minimum": 1900,
+                      "maximum": 2025
+                    },
+                    "contact": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^d+$"
+                        },
+                        "firstName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "lastName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "middleName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "email": {
+                          "type": "string",
+                          "maxLength": 100,
+                          "format": "email"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "maxLength": 50
+                        },
+                        "photoUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "contactDetails": {
+                          "type": "object",
+                          "properties": {
+                            "phone1": {
+                              "type": "string",
+                              "nullable": true,
+                              "default": ""
+                            },
+                            "phone2": {
+                              "type": "string",
+                              "nullable": true,
+                              "default": ""
+                            },
+                            "phone3": {
+                              "type": "string",
+                              "nullable": true,
+                              "default": ""
+                            },
+                            "streetAddress": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 100,
+                              "default": ""
+                            },
+                            "city": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 50,
+                              "default": ""
+                            },
+                            "state": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 50,
+                              "default": ""
+                            },
+                            "zip": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 10,
+                              "default": ""
+                            },
+                            "dateOfBirth": {
+                              "type": "string",
+                              "nullable": true,
+                              "default": ""
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstName",
+                        "lastName"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "firstYear",
+                    "contact"
+                  ],
+                  "description": "Schema for a player who is or was on a team roster. This contains details that only ever need to be supplied once"
+                }
+              },
+              "required": [
+                "id",
+                "player"
+              ],
+              "description": "Schema for a roster member including player details"
+            }
+          }
+        },
+        "required": [
+          "teamSeason",
+          "rosterMembers"
+        ]
       },
       "TeamSeason": {
         "type": "object",
@@ -7156,6 +7360,18 @@
                 "team"
               ]
             }
+          },
+          "teamCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPlayers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalManagers": {
+            "type": "integer",
+            "minimum": 0
           }
         },
         "required": [
@@ -7546,6 +7762,18 @@
                       "team"
                     ]
                   }
+                },
+                "teamCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "totalPlayers": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "totalManagers": {
+                  "type": "integer",
+                  "minimum": 0
                 }
               },
               "required": [
@@ -7678,6 +7906,22 @@
                 "team"
               ]
             }
+          },
+          "totalTeams": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPlayers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalManagers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unassignedTeamCount": {
+            "type": "integer",
+            "minimum": 0
           }
         },
         "required": [
@@ -7929,6 +8173,18 @@
                             "team"
                           ]
                         }
+                      },
+                      "teamCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "totalPlayers": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "totalManagers": {
+                        "type": "integer",
+                        "minimum": 0
                       }
                     },
                     "required": [
@@ -8061,6 +8317,22 @@
                       "team"
                     ]
                   }
+                },
+                "totalTeams": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "totalPlayers": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "totalManagers": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unassignedTeamCount": {
+                  "type": "integer",
+                  "minimum": 0
                 }
               },
               "required": [
@@ -11096,6 +11368,96 @@
         }
       }
     },
+    "/api/accounts/{accountId}/teams/{teamId}": {
+      "delete": {
+        "operationId": "deleteAccountTeam",
+        "summary": "Delete team definition",
+        "description": "Deletes a team definition when it is no longer associated with any seasons.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Team definition deleted"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account administrator role required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found for the account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Team is still assigned to one or more seasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the team",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/fields": {
       "get": {
         "description": "List fields configured for the account. This endpoint is public.",
@@ -12887,6 +13249,80 @@
       }
     },
     "/api/accounts/{accountId}/contacts/{contactId}": {
+      "get": {
+        "description": "Get a single contact record by its identifier within an account.",
+        "operationId": "getContact",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NamedContact"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - Account admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "description": "Update an account contact",
         "operationId": "updateContact",
@@ -16832,6 +17268,143 @@
         }
       }
     },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/teams": {
+      "post": {
+        "operationId": "createLeagueSeasonTeam",
+        "summary": "Create league season team",
+        "description": "Create a team season within the specified league season.",
+        "tags": [
+          "League Seasons"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Display name for the new team season."
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Team season created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamSeason"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request payload or parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account administrator role required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Season or league season not found for the account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A team with the same name already exists in this league season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while creating the team season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/teams/{teamSeasonId}/assign-division": {
       "put": {
         "operationId": "assignLeagueSeasonTeamDivision",
@@ -19968,6 +20541,100 @@
       }
     },
     "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster": {
+      "get": {
+        "description": "Get roster members for a specific team season.",
+        "summary": "Get team roster members",
+        "operationId": "getTeamRosterMembers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Rosters"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roster members returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRosterMembers"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - Account admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "description": "Sign a player to the team roster",
         "operationId": "signPlayer",
@@ -20061,6 +20728,146 @@
           },
           "404": {
             "description": "Contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/available-players": {
+      "get": {
+        "description": "List contacts in the account who are not currently active on a roster in this season.",
+        "summary": "List available roster players",
+        "operationId": "listAvailableRosterPlayers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Rosters"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "1-based page index to return."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "description": "Maximum number of contacts to return per page."
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter available contacts by first name."
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter available contacts by last name."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available players returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BaseContact"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - Account admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -23391,6 +24198,93 @@
       }
     },
     "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}": {
+      "delete": {
+        "operationId": "deleteSeasonTeam",
+        "summary": "Delete team season",
+        "description": "Removes a team season from the specified season.",
+        "tags": [
+          "Teams"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Team season removed from the season"
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account admin permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found for the provided identifiers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the team season.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "operationId": "getTeamSeasonDetails",
         "summary": "Get team season details",

@@ -4,14 +4,12 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
   BaseRoleType,
-  ContactWithContactRolesType,
   RegisteredUserWithRolesType,
   RoleCheckType,
   RoleMetadataSchemaType,
@@ -35,22 +33,10 @@ router.get(
     }
 
     const accountId = req.query.accountId ? BigInt(req.query.accountId as string) : undefined;
-    const userRoles = await roleService.getUserRoles(req.user.id, accountId);
+    const registeredUserWithRoles: RegisteredUserWithRolesType =
+      await roleService.getRegisteredUserWithRoles(req.user.id, req.user.username, accountId);
 
-    const result: RegisteredUserWithRolesType = {
-      userId: req.user.id,
-      userName: req.user.username,
-      globalRoles: userRoles.globalRoles,
-      contactRoles: userRoles.contactRoles.map((cr) => ({
-        id: cr.id.toString(),
-        roleId: cr.roleId,
-        roleData: cr.roleData.toString(),
-        accountId: cr.accountId.toString(),
-        contact: cr.contact,
-      })),
-    };
-
-    res.json(result);
+    res.json(registeredUserWithRoles);
   }),
 );
 
@@ -79,17 +65,13 @@ router.get(
       leagueId: leagueId ? BigInt(leagueId as string) : undefined,
     };
 
-    const roleCheck = await roleService.hasRole(req.user.id, roleId as string, context);
+    const roleCheck: RoleCheckType = await roleService.hasRole(
+      req.user.id,
+      roleId as string,
+      context,
+    );
 
-    const result: RoleCheckType = {
-      userId: req.user.id,
-      roleId: roleId as string,
-      hasRole: roleCheck.hasRole,
-      roleLevel: roleCheck.roleLevel,
-      context: roleCheck.context,
-    };
-
-    res.json(result);
+    res.json(roleCheck);
   }),
 );
 
@@ -100,22 +82,9 @@ router.get(
 router.get(
   '/role-ids',
   asyncHandler(async (req, res) => {
-    const roles = await prisma.aspnetroles.findMany({
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+    const roles: BaseRoleType[] = await roleService.getRoleIdentifiers();
 
-    const result: BaseRoleType[] = roles.map((role) => ({
-      roleId: role.id,
-      roleName: role.name,
-    }));
-
-    res.json(result);
+    res.json(roles);
   }),
 );
 
@@ -130,35 +99,9 @@ router.get(
   asyncHandler(async (req, res) => {
     const { accountId } = extractAccountParams(req.params);
 
-    // Get all contacts in this account
-    const contacts = await prisma.contacts.findMany({
-      where: {
-        creatoraccountid: accountId,
-      },
-      include: {
-        contactroles: {
-          where: {
-            accountid: accountId,
-          },
-        },
-      },
-    });
+    const contacts = await roleService.getAccountContactsWithRoles(accountId);
 
-    const result: ContactWithContactRolesType[] = contacts.map((contact) => ({
-      id: contact.id.toString(),
-      firstName: contact.firstname,
-      lastName: contact.lastname,
-      middleName: contact.middlename || undefined,
-      email: contact.email || undefined,
-      userId: contact.userid || undefined,
-      roles: contact.contactroles.map((cr) => ({
-        id: cr.id.toString(),
-        roleId: cr.roleid,
-        roleData: cr.roledata.toString(),
-      })),
-    }));
-
-    res.json(result);
+    res.json(contacts);
   }),
 );
 

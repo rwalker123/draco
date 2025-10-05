@@ -17,4 +17,6 @@ export * from './PrismaEmailTemplateRepository.js';
 export * from './PrismaEmailAttachmentRepository.js';
 export * from './PrismaPlayersWantedRepository.js';
 export * from './PrismaScheduleRepository.js';
+export * from './PrismaMonitoringRepository.js';
+export * from './PrismaPasswordResetTokenRepository.js';
 export * from './PrismaManagerRepository.js';

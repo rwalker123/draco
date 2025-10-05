@@ -1,6 +1,11 @@
 import { Prisma, PrismaClient, contacts } from '@prisma/client';
 import { IContactRepository } from '../interfaces/index.js';
-import { dbRosterPlayer, dbBaseContact, dbContactWithRoleAndDetails } from '../types/dbTypes.js';
+import {
+  dbRosterPlayer,
+  dbBaseContact,
+  dbContactWithAccountRoles,
+  dbContactWithRoleAndDetails,
+} from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
 import { ContactQueryOptions } from '../../interfaces/contactInterfaces.js';
@@ -142,6 +147,29 @@ export class PrismaContactRepository implements IContactRepository {
         middlename: true,
         creatoraccountid: true,
         userid: true,
+      },
+    });
+  }
+
+  async findContactsWithRolesByAccountId(accountId: bigint): Promise<dbContactWithAccountRoles[]> {
+    return await this.prisma.contacts.findMany({
+      where: { creatoraccountid: accountId },
+      select: {
+        id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        middlename: true,
+        userid: true,
+        contactroles: {
+          where: { accountid: accountId },
+          select: {
+            id: true,
+            roleid: true,
+            roledata: true,
+            accountid: true,
+          },
+        },
       },
     });
   }

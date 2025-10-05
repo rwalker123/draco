@@ -12,6 +12,7 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
     LeagueSeasonQueryParamsSchemaRef,
     LeagueSeasonSchemaRef,
     LeagueSeasonWithDivisionTeamsAndUnassignedSchemaRef,
+    TeamSeasonSchemaRef,
     LeagueSetupSchemaRef,
     NotFoundErrorSchemaRef,
     SeasonStandingsResponseSchemaRef,
@@ -966,6 +967,124 @@ export const registerLeagueSeasonsEndpoints = ({ registry, schemaRefs, z }: Regi
       },
       500: {
         description: 'Unexpected server error while fetching games',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * POST /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams
+   * Create a new team within a league season.
+   */
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/teams',
+    operationId: 'createLeagueSeasonTeam',
+    summary: 'Create league season team',
+    description: 'Create a team season within the specified league season.',
+    tags: ['League Seasons'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'leagueSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: z
+              .object({
+                name: z
+                  .string()
+                  .min(1, 'Team name is required')
+                  .describe('Display name for the new team season.'),
+              })
+              .strict(),
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Team season created successfully',
+        content: {
+          'application/json': {
+            schema: TeamSeasonSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Invalid request payload or parameters',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Account administrator role required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Season or league season not found for the account',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'A team with the same name already exists in this league season',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while creating the team season',
         content: {
           'application/json': {
             schema: InternalServerErrorSchemaRef,

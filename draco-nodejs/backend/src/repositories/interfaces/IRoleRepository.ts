@@ -1,8 +1,14 @@
 import { contactroles } from '@prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
-import { dbAspnetRoleName, dbAspnetRolesId, dbGlobalRoles } from '../types/dbTypes.js';
+import {
+  dbAspnetRole,
+  dbAspnetRoleName,
+  dbAspnetRolesId,
+  dbGlobalRoles,
+} from '../types/dbTypes.js';
 
 export interface IRoleRepository extends IBaseRepository<contactroles> {
+  findAllRoles(): Promise<dbAspnetRole[]>;
   findGlobalRoles(userId: string): Promise<dbGlobalRoles[]>;
   findRoleId(roleName: string): Promise<dbAspnetRolesId | null>;
   findRoleName(roleId: string): Promise<dbAspnetRoleName | null>;

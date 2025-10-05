@@ -15,6 +15,9 @@ import { ITeamsWantedCardPublicProps } from '../../types/playerClassifieds';
 import ContactInfoDialog from './ContactInfoDialog';
 import { useAuth } from '../../context/AuthContext';
 import { TeamsWantedContactInfoType } from '@draco/shared-schemas';
+import { getTeamsWantedContactInfo } from '@draco/shared-api-client';
+import { createApiClient } from '../../lib/apiClientFactory';
+import { ApiClientError, unwrapApiResult } from '../../utils/apiResult';
 
 const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
   classified,
@@ -37,45 +40,29 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
     setContactError(null);
 
     try {
-      // Build URL with access code if available
-      const url = new URL(
-        `/api/accounts/${classified.accountId}/player-classifieds/teams-wanted/${classified.id}/contact`,
-        window.location.origin,
-      );
-      if (accessCode) {
-        url.searchParams.set('accessCode', accessCode);
-      }
-
-      // Build headers with authorization if token available
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(url.toString(), {
-        headers,
+      const client = createApiClient({ token: token || undefined });
+      const result = await getTeamsWantedContactInfo({
+        client,
+        path: { accountId: classified.accountId, classifiedId: classified.id.toString() },
+        query: accessCode ? { accessCode } : undefined,
+        throwOnError: false,
       });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication required to view contact information');
-        } else if (response.status === 403) {
-          throw new Error('You do not have permission to view this contact information');
-        } else if (response.status === 404) {
-          throw new Error('Contact information not found');
-        } else {
-          throw new Error('Failed to fetch contact information');
-        }
-      }
-
-      const data = await response.json();
-      setContactInfo(data);
+      const data = unwrapApiResult(result, 'Failed to fetch contact information');
+      setContactInfo(data as TeamsWantedContactInfoType);
     } catch (error) {
-      setContactError(
-        error instanceof Error ? error.message : 'Failed to load contact information',
-      );
+      const status = error instanceof ApiClientError ? error.status : undefined;
+      if (status === 401) {
+        setContactError('Authentication required to view contact information');
+      } else if (status === 403) {
+        setContactError('You do not have permission to view this contact information');
+      } else if (status === 404) {
+        setContactError('Contact information not found');
+      } else {
+        setContactError(
+          error instanceof Error ? error.message : 'Failed to load contact information',
+        );
+      }
     } finally {
       setContactLoading(false);
     }

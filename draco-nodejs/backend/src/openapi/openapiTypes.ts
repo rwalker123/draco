@@ -27,6 +27,7 @@ import {
   ContactRoleSchema,
   ContactWithContactRolesSchema,
   BaseContactSchema,
+  NamedContactSchema,
   ContactValidationWithSignInSchema,
   SignInCredentialsSchema,
   RegisteredUserWithRolesSchema,
@@ -75,6 +76,7 @@ import {
   SeasonParticipantCountDataSchema,
   SeasonSchema,
   TeamManagerSchema,
+  TeamRosterMembersSchema,
   TeamSeasonSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
@@ -134,6 +136,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const SignRosterMemberSchemaRef = registry.register('SignRosterMember', SignRosterMemberSchema);
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
   const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
+  const NamedContactSchemaRef = registry.register('NamedContact', NamedContactSchema);
   const ContactWithContactRolesSchemaRef = registry.register(
     'ContactWithContactRoles',
     ContactWithContactRolesSchema,
@@ -169,6 +172,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonParticipantCountDataSchema,
   );
   const TeamManagerSchemaRef = registry.register('TeamManager', TeamManagerSchema);
+  const TeamRosterMembersSchemaRef = registry.register(
+    'TeamRosterMembers',
+    TeamRosterMembersSchema,
+  );
   const TeamSeasonSchemaRef = registry.register('TeamSeason', TeamSeasonSchema);
   const UpsertTeamManagerSchemaRef = registry.register(
     'UpsertTeamManager',
@@ -455,6 +462,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SignRosterMemberSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
+    NamedContactSchemaRef,
     ContactWithContactRolesSchemaRef,
     FieldSchemaRef,
     FieldsSchemaRef,
@@ -465,6 +473,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonSchemaRef,
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
+    TeamRosterMembersSchemaRef,
     TeamSeasonSchemaRef,
     UpsertTeamManagerSchemaRef,
     UpsertTeamSeasonSchemaRef,

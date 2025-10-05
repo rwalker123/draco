@@ -72,6 +72,6 @@ export class SeasonManagerResponseFormatter {
   }
 
   private static hasValidEmail(email: string | null): boolean {
-    return Boolean(email) && validator.isEmail(email);
+    return !!email && validator.isEmail(email);
   }
 }

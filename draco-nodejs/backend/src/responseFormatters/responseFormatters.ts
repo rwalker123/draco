@@ -1,14 +1,11 @@
 import {
   BaseContactType,
+  NamedContactType,
   RosterMemberType,
   TeamRosterMembersType,
   RosterPlayerType,
-  BaseRoleType,
-  RoleWithContactType,
-  RoleCheckType,
   ContactType,
   PagedContactType,
-  ContactRoleType,
   AccountPollType,
   SponsorType,
 } from '@draco/shared-schemas';
@@ -21,8 +18,6 @@ import {
   dbRosterMember,
   dbTeamSeason,
   dbRosterSeason,
-  dbGlobalRoles,
-  dbContactRoles,
   dbContactWithRoleAndDetails,
   dbPollQuestionWithCounts,
   dbPollQuestionWithUserVotes,
@@ -39,23 +34,30 @@ export interface ApiResponse<T> {
 }
 
 export class ContactResponseFormatter {
-  static formatContactResponse(contact: dbBaseContact): BaseContactType {
-    const contactEntry: BaseContactType = {
+  static formatNamedContactResponse(contact: dbBaseContact): NamedContactType {
+    return {
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
-      middleName: contact.middlename,
+      middleName: contact.middlename || undefined,
+    };
+  }
+
+  static formatContactResponse(contact: dbBaseContact): BaseContactType {
+    const namedContact = this.formatNamedContactResponse(contact);
+    const contactEntry: BaseContactType = {
+      ...namedContact,
       email: contact.email || undefined,
       userId: contact.userid || undefined, // Roster contacts don't have userId
       photoUrl: getContactPhotoUrl(contact.creatoraccountid.toString(), contact.id.toString()),
       contactDetails: {
-        phone1: contact.phone1,
-        phone2: contact.phone2,
-        phone3: contact.phone3,
-        streetAddress: contact.streetaddress,
-        city: contact.city,
-        state: contact.state,
-        zip: contact.zip,
+        phone1: contact.phone1 || '',
+        phone2: contact.phone2 || '',
+        phone3: contact.phone3 || '',
+        streetAddress: contact.streetaddress || '',
+        city: contact.city || '',
+        state: contact.state || '',
+        zip: contact.zip || '',
         dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
       },
     };
@@ -112,13 +114,13 @@ export class ContactResponseFormatter {
         if (includeContactDetails && 'phone1' in row) {
           const contactRow = row as dbContactWithRoleAndDetails;
           contactEntry.contactDetails = {
-            phone1: contactRow.phone1,
-            phone2: contactRow.phone2,
-            phone3: contactRow.phone3,
-            streetAddress: contactRow.streetaddress,
-            city: contactRow.city,
-            state: contactRow.state,
-            zip: contactRow.zip,
+            phone1: contactRow.phone1 || '',
+            phone2: contactRow.phone2 || '',
+            phone3: contactRow.phone3 || '',
+            streetAddress: contactRow.streetaddress || '',
+            city: contactRow.city || '',
+            state: contactRow.state || '',
+            zip: contactRow.zip || '',
             dateOfBirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
           };
         }
@@ -202,13 +204,13 @@ export class ContactResponseFormatter {
       contactroles: [],
       ...(includeContactDetails && {
         contactDetails: {
-          phone1: contact.phone1,
-          phone2: contact.phone2,
-          phone3: contact.phone3,
-          streetAddress: contact.streetaddress,
-          city: contact.city,
-          state: contact.state,
-          zip: contact.zip,
+          phone1: contact.phone1 || '',
+          phone2: contact.phone2 || '',
+          phone3: contact.phone3 || '',
+          streetAddress: contact.streetaddress || '',
+          city: contact.city || '',
+          state: contact.state || '',
+          zip: contact.zip || '',
           dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
         },
       }),
@@ -370,118 +372,5 @@ export class RosterResponseFormatter {
         message: `Player "${playerName}" has been permanently removed from the roster`,
       },
     };
-  }
-}
-
-export class RoleResponseFormatter {
-  /**
-   * Format the database global roles into the BaseRoleType array
-   * @param dbRoles - The database global roles
-   * @returns The formatted BaseRoleType array
-   */
-  static formatBaseRoles(dbRoles: dbGlobalRoles[]): BaseRoleType[] {
-    return dbRoles.map((role) => ({
-      roleId: role.roleid,
-      name: ROLE_NAMES[role.roleid],
-    }));
-  }
-
-  /**
-   * Format the database global roles into the string array
-   * @param dbRoles - The database global roles
-   * @returns The formatted string array
-   */
-  static formatGlobalRoles(dbRoles: dbGlobalRoles[]): string[] {
-    return dbRoles.map((role) => role.roleid);
-  }
-
-  /**
-   * Format the database contact role into the ContactRoleType
-   * @param dbContactRole - The database contact role
-   * @returns The formatted ContactRoleType
-   */
-  static formatContactRole(dbContactRole: dbContactRoles): ContactRoleType {
-    return {
-      id: dbContactRole.id.toString(),
-      roleId: dbContactRole.roleid,
-      roleData: dbContactRole.roledata.toString(),
-    };
-  }
-
-  /**
-   * Format the database contact roles into the RoleWithContactType array
-   * @param dbContact - The database contact
-   * @param dbContactRoles - The database contact roles
-   * @returns The formatted RoleWithContactType array
-   */
-  static formatRoleWithContact(
-    dbContact: dbBaseContact,
-    dbContactRoles: dbContactRoles[],
-    contextNames?: Map<string, string>,
-  ): RoleWithContactType[] {
-    return dbContactRoles.map((role) => {
-      const roleName = ROLE_NAMES[role.roleid];
-      const contextKey = `${role.roleid}-${role.roledata}`;
-      const contextName = contextNames?.get(contextKey);
-
-      return {
-        id: role.id.toString(),
-        contact: {
-          id: dbContact.id.toString(),
-        },
-        roleId: role.roleid,
-        roleName: roleName,
-        roleData: role.roledata.toString(),
-        contextName: contextName,
-        accountId: role.accountid.toString(),
-      };
-    });
-  }
-
-  /**
-   * Format the database global role into the RoleCheckType
-   * @param dbGlobalRole - The database global role
-   * @returns The formatted RoleCheckType
-   */
-  static formatGlobalRoleCheckResult(dbGlobalRole: string): RoleCheckType {
-    return {
-      roleId: dbGlobalRole,
-      userId: '',
-      hasRole: true,
-      roleLevel: 'global',
-      context: '',
-    };
-  }
-
-  /**
-   * Format the database contact role into the RoleCheckType
-   * @param dbContactRole - The database contact role
-   * @returns The formatted RoleCheckType
-   */
-  static formatContactRoleCheckResult(dbContactRole: dbContactRoles): RoleCheckType {
-    return {
-      roleId: dbContactRole.roleid,
-      userId: dbContactRole.contactid.toString(),
-      hasRole: true,
-      roleLevel: 'contact',
-      context: dbContactRole.accountid.toString(),
-    };
-  }
-
-  /**
-   * Format the database contact roles into the RoleWithContactType array
-   * @param dbContactRoles - The database contact roles
-   * @returns The formatted RoleWithContactType array
-   */
-  static formatRoleWithContacts(dbContactRoles: dbContactRoles[]): RoleWithContactType[] {
-    return dbContactRoles.map((role) => ({
-      id: role.id.toString(),
-      contact: {
-        id: role.contactid.toString(),
-      },
-      roleId: role.roleid,
-      roleData: role.roledata.toString(),
-      accountId: role.accountid.toString(),
-    }));
   }
 }

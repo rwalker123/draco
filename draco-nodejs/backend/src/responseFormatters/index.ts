@@ -1,5 +1,6 @@
 export * from './AccountResponseFormatter.js';
 export * from './responseFormatters.js';
+export * from './roleResponseFormatter.js';
 export * from './teamResponseFormatter.js';
 export * from './fieldResponseFormatter.js';
 export * from './umpireResponseFormatter.js';
@@ -11,5 +12,7 @@ export * from './EmailTemplateResponseFormatter.js';
 export * from './statsResponseFormatter.js';
 export * from './scheduleResponseFormatter.js';
 export * from './LeagueResponseFormatter.js';
+export * from './MonitoringResponseFormatter.js';
+export * from './userResponseFormatter.js';
 export * from './managerResponseFormatter.js';
 export * from './seasonManagerResponseFormatter.js';

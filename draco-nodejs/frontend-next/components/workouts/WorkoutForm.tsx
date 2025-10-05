@@ -22,6 +22,9 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { createWorkout, updateWorkout, getWorkout } from '../../services/workoutService';
 import { UpsertWorkoutType } from '@draco/shared-schemas';
+import { listAccountFields } from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 import RichTextEditor from '../email/RichTextEditor';
 import AccountPageHeader from '../AccountPageHeader';
 
@@ -32,6 +35,7 @@ interface WorkoutFormProps {
 
 export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propAccountId }) => {
   const { token } = useAuth();
+  const apiClient = useApiClient();
   const [formData, setFormData] = useState<UpsertWorkoutType>({
     workoutDesc: '',
     workoutDate: new Date().toISOString(),
@@ -83,14 +87,29 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ mode, accountId: propA
 
   const fetchFields = useCallback(async () => {
     try {
-      const response = await fetch(`/api/accounts/${accountId}/fields`);
-      const data = await response.json();
-      setFields(data.fields);
+      if (!accountId) {
+        setFields([]);
+        return;
+      }
+
+      const result = await listAccountFields({
+        client: apiClient,
+        path: { accountId: accountId as string },
+        throwOnError: false,
+      });
+
+      const data = unwrapApiResult(result, 'Failed to load fields');
+      const mappedFields = data.fields.map((field) => ({
+        id: field.id,
+        name: field.name ?? field.shortName,
+      }));
+
+      setFields(mappedFields);
     } catch (err) {
       console.error('Error fetching fields:', err);
       setError('Failed to load fields');
     }
-  }, [accountId]);
+  }, [accountId, apiClient]);
 
   useEffect(() => {
     fetchWorkout();
