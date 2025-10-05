@@ -39,6 +39,7 @@ import { LeagueService } from './LeagueService.js';
 import { MonitoringService } from './monitoringService.js';
 import { UserService } from './userService.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
+import { SeasonService } from './seasonService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -54,6 +55,7 @@ export class ServiceFactory {
   private static routeProtection: RouteProtection;
   private static rosterService: RosterService;
   private static contactService: ContactService;
+  private static seasonService: SeasonService;
   private static seasonManagerService: SeasonManagerService;
   private static registrationService: RegistrationService;
   private static authService: AuthService;
@@ -145,6 +147,13 @@ export class ServiceFactory {
     return this.contactService;
   }
 
+  static getSeasonService(): SeasonService {
+    if (!this.seasonService) {
+      this.seasonService = new SeasonService();
+    }
+    return this.seasonService;
+  }
+
   static getSeasonManagerService(): SeasonManagerService {
     if (!this.seasonManagerService) {
       const managerRepository = RepositoryFactory.getManagerRepository();
@@ -183,7 +192,15 @@ export class ServiceFactory {
 
   static getStatisticsService(): StatisticsService {
     if (!this.statisticsService) {
-      this.statisticsService = new StatisticsService(prisma);
+      const battingRepository = RepositoryFactory.getBattingStatisticsRepository();
+      const pitchingRepository = RepositoryFactory.getPitchingStatisticsRepository();
+      const leagueLeadersRepository = RepositoryFactory.getLeagueLeadersDisplayRepository();
+      this.statisticsService = new StatisticsService(
+        prisma,
+        battingRepository,
+        pitchingRepository,
+        leagueLeadersRepository,
+      );
     }
     return this.statisticsService;
   }

@@ -262,12 +262,6 @@ components:
                       type: string
                       maxLength: 100
                       format: email
-                    userId:
-                      type: string
-                      maxLength: 50
-                    photoUrl:
-                      type: string
-                      format: uri
                     contactDetails:
                       type: object
                       properties:
@@ -307,6 +301,13 @@ components:
                           type: string
                           nullable: true
                           default: ""
+                    photo:
+                      type: string
+                      format: binary
+                      description: Contact photo file
+                  required:
+                    - firstName
+                    - lastName
           required:
             - submittedDriversLicense
             - firstYear

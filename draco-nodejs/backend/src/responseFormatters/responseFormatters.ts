@@ -5,10 +5,8 @@ import {
   ContactType,
   PagedContactType,
   AccountPollType,
-  SponsorType,
 } from '@draco/shared-schemas';
 import { getContactPhotoUrl } from '../config/logo.js';
-import { getSponsorPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
   dbBaseContact,
@@ -16,7 +14,6 @@ import {
   dbContactWithRoleAndDetails,
   dbPollQuestionWithCounts,
   dbPollQuestionWithUserVotes,
-  dbSponsor,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
 import { PaginationHelper } from '../utils/pagination.js';
@@ -252,27 +249,5 @@ export class PollResponseFormatter {
       totalVotes,
       userVoteOptionId,
     };
-  }
-}
-export class SponsorResponseFormatter {
-  static formatSponsor(sponsor: dbSponsor): SponsorType {
-    return {
-      id: sponsor.id.toString(),
-      accountId: sponsor.accountid.toString(),
-      teamId: sponsor.teamid ? sponsor.teamid.toString() : undefined,
-      name: sponsor.name,
-      streetAddress: sponsor.streetaddress || '',
-      cityStateZip: sponsor.citystatezip || '',
-      description: sponsor.description || '',
-      email: sponsor.email || undefined,
-      phone: sponsor.phone || undefined,
-      fax: sponsor.fax || undefined,
-      website: sponsor.website || undefined,
-      photoUrl: getSponsorPhotoUrl(sponsor.accountid.toString(), sponsor.id.toString()),
-    };
-  }
-
-  static formatSponsors(sponsors: dbSponsor[]): SponsorType[] {
-    return sponsors.map((sponsor) => this.formatSponsor(sponsor));
   }
 }

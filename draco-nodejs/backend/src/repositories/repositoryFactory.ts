@@ -5,6 +5,7 @@ import {
   IContactRepository,
   IRoleRepository,
   ISeasonRepository,
+  ISeasonsRepository,
   ILeagueRepository,
   ICleanupRepository,
   IPollRepository,
@@ -21,6 +22,9 @@ import {
   IMonitoringRepository,
   IPasswordResetTokenRepository,
   IManagerRepository,
+  IBattingStatisticsRepository,
+  IPitchingStatisticsRepository,
+  ILeagueLeadersDisplayRepository,
   IRosterRepository,
 } from './interfaces/index.js';
 import {
@@ -30,6 +34,7 @@ import {
   PrismaContactRepository,
   PrismaRoleRepository,
   PrismaSeasonRepository,
+  PrismaSeasonsRepository,
   PrismaLeagueRepository,
   PrismaCleanupRepository,
   PrismaPollRepository,
@@ -46,6 +51,9 @@ import {
   PrismaMonitoringRepository,
   PrismaPasswordResetTokenRepository,
   PrismaManagerRepository,
+  PrismaBattingStatisticsRepository,
+  PrismaPitchingStatisticsRepository,
+  PrismaLeagueLeadersDisplayRepository,
   PrismaRosterRepository,
 } from './implementations/index.js';
 
@@ -62,6 +70,7 @@ export class RepositoryFactory {
   private static contactRepository: IContactRepository;
   private static roleRepository: IRoleRepository;
   private static seasonRepository: ISeasonRepository;
+  private static seasonsRepository: ISeasonsRepository;
   private static leagueRepository: ILeagueRepository;
   private static cleanupRepository: ICleanupRepository;
   private static pollRepository: IPollRepository;
@@ -78,6 +87,9 @@ export class RepositoryFactory {
   private static monitoringRepository: IMonitoringRepository;
   private static passwordResetTokenRepository: IPasswordResetTokenRepository;
   private static managerRepository: IManagerRepository;
+  private static battingStatisticsRepository: IBattingStatisticsRepository;
+  private static pitchingStatisticsRepository: IPitchingStatisticsRepository;
+  private static leagueLeadersDisplayRepository: ILeagueLeadersDisplayRepository;
   private static rosterRepository: IRosterRepository;
 
   static getLeagueRepository(): ILeagueRepository {
@@ -134,6 +146,13 @@ export class RepositoryFactory {
       this.seasonRepository = new PrismaSeasonRepository(prisma);
     }
     return this.seasonRepository;
+  }
+
+  static getSeasonsRepository(): ISeasonsRepository {
+    if (!this.seasonsRepository) {
+      this.seasonsRepository = new PrismaSeasonsRepository(prisma);
+    }
+    return this.seasonsRepository;
   }
 
   static getCleanupRepository(): ICleanupRepository {
@@ -239,5 +258,26 @@ export class RepositoryFactory {
       this.managerRepository = new PrismaManagerRepository(prisma);
     }
     return this.managerRepository;
+  }
+
+  static getBattingStatisticsRepository(): IBattingStatisticsRepository {
+    if (!this.battingStatisticsRepository) {
+      this.battingStatisticsRepository = new PrismaBattingStatisticsRepository(prisma);
+    }
+    return this.battingStatisticsRepository;
+  }
+
+  static getPitchingStatisticsRepository(): IPitchingStatisticsRepository {
+    if (!this.pitchingStatisticsRepository) {
+      this.pitchingStatisticsRepository = new PrismaPitchingStatisticsRepository(prisma);
+    }
+    return this.pitchingStatisticsRepository;
+  }
+
+  static getLeagueLeadersDisplayRepository(): ILeagueLeadersDisplayRepository {
+    if (!this.leagueLeadersDisplayRepository) {
+      this.leagueLeadersDisplayRepository = new PrismaLeagueLeadersDisplayRepository(prisma);
+    }
+    return this.leagueLeadersDisplayRepository;
   }
 }
