@@ -2,10 +2,10 @@
 // Implements contact role-based protection, account boundaries, and role hierarchy
 
 import { Request, Response, NextFunction } from 'express';
-import { IRoleMiddleware } from '../interfaces/roleInterfaces.js';
+import { IRoleMiddleware } from '../services/interfaces/roleInterfaces.js';
 import { PrismaClient } from '@prisma/client';
 import { ROLE_IDS } from '../config/roles.js';
-import { RoleContextData } from '../interfaces/roleInterfaces.js';
+import { RoleContextData } from '../services/interfaces/roleInterfaces.js';
 import { RoleNamesType } from '../types/roles.js';
 import { UserRolesType } from '@draco/shared-schemas';
 

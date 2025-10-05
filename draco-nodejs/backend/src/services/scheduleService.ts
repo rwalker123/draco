@@ -21,7 +21,7 @@ import {
   AuthorizationError,
 } from '../utils/customErrors.js';
 import { ServiceFactory } from './serviceFactory.js';
-import { IRoleQuery } from '../interfaces/roleInterfaces.js';
+import { IRoleQuery } from './interfaces/roleInterfaces.js';
 import { ContactService } from './contactService.js';
 import { ITeamRepository } from '../repositories/interfaces/index.js';
 import {
