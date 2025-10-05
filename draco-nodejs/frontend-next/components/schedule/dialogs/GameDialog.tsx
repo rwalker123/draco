@@ -19,10 +19,10 @@ import {
   GameDialogState,
   GameDialogCallbacks,
   GameDialogPermissions,
-  Team,
 } from '@/types/schedule';
 import { GameFormProvider } from '../contexts/GameFormContext';
 import GameFormFields from '../../../app/account/[accountId]/schedule/GameFormFields';
+import { TeamSeasonType } from '@draco/shared-schemas';
 
 interface GameDialogProps {
   // Core dialog props
@@ -59,7 +59,7 @@ const GameDialog: React.FC<GameDialogProps> = ({
   permissions,
 }) => {
   // Add local state for dialog teams
-  const [dialogTeams, setDialogTeams] = useState<Team[]>([]);
+  const [dialogTeams, setDialogTeams] = useState<TeamSeasonType[]>([]);
 
   // Destructure grouped props
   const { leagues, fields, umpires, leagueTeamsCache, currentSeasonName } = data;

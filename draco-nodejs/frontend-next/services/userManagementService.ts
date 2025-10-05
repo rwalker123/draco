@@ -2,22 +2,30 @@ import { DependencyCheckResult, Role } from '../types/users';
 import { ContactUpdateResponse } from '../types/userManagementTypeGuards';
 import { ContactTransformationService } from './contactTransformationService';
 import { createContactMediaService } from './contactMediaService';
-import { handleApiErrorResponse } from '../utils/errorHandling';
 import {
   ContactType,
   CreateContactType,
   RoleWithContactType,
   ContactRoleType,
   ContactSearchParamsType,
+  AutomaticRoleHoldersType,
 } from '@draco/shared-schemas';
 import {
+  assignRoleToUser,
+  createContact as apiCreateContact,
+  deleteContact as apiDeleteContact,
+  getAutomaticRoleHolders as apiGetAutomaticRoleHolders,
+  getContact as apiGetContact,
   getCurrentUserRoles as apiGetCurrentUserRoles,
   listRoleIdentifiers,
+  removeRoleFromUser,
+  searchContacts,
+  unlinkContactFromUser,
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
+import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { createApiClient } from '../lib/apiClientFactory';
 import { unwrapApiResult } from '../utils/apiResult';
-import qs from 'qs';
 
 // Pagination interface for API responses
 interface PaginationInfo {
@@ -68,7 +76,7 @@ export class UserManagementService {
     },
   ): Promise<{ users: ContactType[]; pagination: PaginationInfo }> {
     const searchParams: ContactSearchParamsType = {
-      q: query.trim() || undefined, // Only include 'q' if query is non-empty
+      q: query.trim() || undefined,
       includeRoles: true,
       contactDetails: true,
       seasonId: seasonId || undefined,
@@ -83,34 +91,27 @@ export class UserManagementService {
       },
     };
 
-    const queryString = qs.stringify(searchParams, { arrayFormat: 'indices', encode: true });
-    const response = await fetch(`/api/accounts/${accountId}/contacts?${queryString}`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
+    const result = await searchContacts({
+      client: this.client,
+      path: { accountId },
+      query: searchParams,
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to search users');
-    }
+    const data = unwrapApiResult(result, 'Failed to search users');
+    const usersWithRoles = data.contacts || [];
 
-    const data = await response.json();
-    if (!data) {
-      throw new Error(data.message || 'Failed to search users');
-    }
-
-    // Transform contacts to users format for frontend compatibility
-    const usersWithRoles = (data.contacts || []).map((contact: ContactType) => contact);
+    const paginationInfo: PaginationInfo = {
+      page: data.pagination?.page ?? searchParams.paging?.page ?? 1,
+      limit: data.pagination?.limit ?? searchParams.paging?.limit ?? usersWithRoles.length,
+      hasNext: data.pagination?.hasNext ?? false,
+      hasPrev: data.pagination?.hasPrev ?? false,
+      total: data.total ?? usersWithRoles.length,
+    };
 
     return {
-      users: usersWithRoles,
-      pagination: data.pagination || {
-        hasNext: false,
-        hasPrev: false,
-        total: usersWithRoles.length,
-      },
+      users: usersWithRoles as ContactType[],
+      pagination: paginationInfo,
     };
   }
 
@@ -134,44 +135,17 @@ export class UserManagementService {
   /**
    * Fetch automatic role holders (Account Owner and Team Managers)
    */
-  async fetchAutomaticRoleHolders(accountId: string): Promise<{
-    accountOwner: {
-      contactId: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      photoUrl?: string;
-    }; // NOT nullable - every account must have owner
-    teamManagers: Array<{
-      contactId: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      photoUrl?: string;
-      teams: Array<{
-        teamSeasonId: string;
-        teamName: string;
-      }>;
-    }>;
-  }> {
-    const response = await fetch(`/api/accounts/${accountId}/automatic-role-holders`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
+  async fetchAutomaticRoleHolders(accountId: string): Promise<AutomaticRoleHoldersType> {
+    const result = await apiGetAutomaticRoleHolders({
+      client: this.client,
+      path: { accountId },
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to load automatic role holders');
-    }
-
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error || 'Failed to load automatic role holders');
-    }
-
-    return data;
+    return unwrapApiResult(
+      result,
+      'Failed to load automatic role holders',
+    ) as AutomaticRoleHoldersType;
   }
 
   /**
@@ -223,33 +197,21 @@ export class UserManagementService {
     contactId: string,
     roleId: string,
     roleData: string,
-    seasonId?: string | null,
+    _seasonId?: string | null,
   ): Promise<RoleWithContactType> {
-    const body: { roleId: string; roleData: string; seasonId?: string } = {
+    const payload = {
       roleId,
       roleData,
     };
 
-    // Include seasonId if provided
-    if (seasonId) {
-      body.seasonId = seasonId;
-    }
-
-    const response = await fetch(`/api/accounts/${accountId}/users/${contactId}/roles`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+    const result = await assignRoleToUser({
+      client: this.client,
+      path: { accountId, contactId },
+      body: payload,
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to assign role');
-    }
-
-    const result = await response.json();
-    return result;
+    return unwrapApiResult(result, 'Failed to assign role');
   }
 
   /**
@@ -261,26 +223,14 @@ export class UserManagementService {
     roleId: string,
     roleData: string,
   ): Promise<ContactRoleType> {
-    const response = await fetch(
-      `/api/accounts/${accountId}/contacts/${contactId}/roles/${roleId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          roleData: roleData,
-        }),
-      },
-    );
+    const result = await removeRoleFromUser({
+      client: this.client,
+      path: { accountId, contactId, roleId },
+      body: { roleData },
+      throwOnError: false,
+    });
 
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to remove role');
-    }
-
-    const data = await response.json();
-    return data; // Backend now returns ContactRoleType with unique id
+    return unwrapApiResult(result, 'Failed to remove role');
   }
 
   /**
@@ -291,109 +241,23 @@ export class UserManagementService {
     contactData: CreateContactType,
     photoFile?: File | null,
   ): Promise<ContactType> {
-    console.log('UserManagementService: Creating contact', { accountId, hasPhoto: !!photoFile });
+    const result = photoFile
+      ? await apiCreateContact({
+          client: this.client,
+          path: { accountId },
+          body: { ...contactData, photo: photoFile },
+          throwOnError: false,
+          headers: { 'Content-Type': null },
+          ...formDataBodySerializer,
+        })
+      : await apiCreateContact({
+          client: this.client,
+          path: { accountId },
+          body: { ...contactData, photo: undefined },
+          throwOnError: false,
+        });
 
-    // Filter out undefined/empty values and format dates
-    const backendData: Record<string, unknown> = {};
-    if (contactData.firstName !== undefined) {
-      backendData.firstName = contactData.firstName;
-    }
-    if (contactData.lastName !== undefined) {
-      backendData.lastName = contactData.lastName;
-    }
-    if (contactData.middleName !== undefined) {
-      backendData.middleName = contactData.middleName;
-    }
-    if (contactData.email !== undefined) {
-      backendData.email = contactData.email;
-    }
-    if (contactData.contactDetails?.phone1 !== undefined) {
-      backendData.phone1 = contactData.contactDetails.phone1;
-    }
-    if (contactData.contactDetails?.phone2 !== undefined) {
-      backendData.phone2 = contactData.contactDetails.phone2;
-    }
-    if (contactData.contactDetails?.phone3 !== undefined) {
-      backendData.phone3 = contactData.contactDetails.phone3;
-    }
-    if (contactData.contactDetails?.streetAddress !== undefined) {
-      backendData.streetAddress = contactData.contactDetails.streetAddress;
-    }
-    if (contactData.contactDetails?.city !== undefined) {
-      backendData.city = contactData.contactDetails.city;
-    }
-    if (contactData.contactDetails?.state !== undefined) {
-      backendData.state = contactData.contactDetails.state;
-    }
-    if (contactData.contactDetails?.zip !== undefined) {
-      backendData.zip = contactData.contactDetails.zip;
-    }
-    if (
-      contactData.contactDetails?.dateOfBirth !== undefined &&
-      contactData.contactDetails?.dateOfBirth !== '' &&
-      contactData.contactDetails?.dateOfBirth !== null
-    ) {
-      // Convert ISO datetime to YYYY-MM-DD format for backend validation
-      try {
-        const date = new Date(contactData.contactDetails.dateOfBirth);
-        if (!isNaN(date.getTime())) {
-          backendData.dateofbirth = date.toISOString().split('T')[0];
-        }
-      } catch {
-        console.warn('Invalid dateofbirth format:', contactData.contactDetails.dateOfBirth);
-        // Don't include invalid dates
-      }
-    } else if (contactData.contactDetails?.dateOfBirth === null) {
-      // Explicitly set to null when provided as null
-      backendData.dateOfBirth = null;
-    }
-
-    // Use FormData if photo is provided, otherwise use JSON
-    let body: FormData | string;
-    let headers: Record<string, string>;
-
-    if (photoFile) {
-      const formData = new FormData();
-      // Add all contact data to form data - only include non-empty values
-      Object.entries(backendData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          formData.append(key, String(value));
-        }
-      });
-      // Add photo file
-      formData.append('photo', photoFile);
-
-      body = formData;
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        // Don't set Content-Type for FormData - let browser set it with boundary
-      };
-    } else {
-      body = JSON.stringify(backendData);
-      headers = {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      };
-    }
-
-    const response = await fetch(`/api/accounts/${accountId}/contacts`, {
-      method: 'POST',
-      headers,
-      body,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('UserManagementService: Create failed', { status: response.status, errorData });
-      throw new Error(errorData.message || `Failed to create contact (${response.status})`);
-    }
-
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error || 'Failed to create contact');
-    }
-
-    return data;
+    return unwrapApiResult(result, 'Failed to create contact') as ContactType;
   }
 
   /**
@@ -414,25 +278,30 @@ export class UserManagementService {
     accountId: string,
     contactId: string,
   ): Promise<{ contact: unknown; dependencyCheck: DependencyCheckResult }> {
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}?check=true`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
+    const result = await apiDeleteContact({
+      client: this.client,
+      path: { accountId, contactId },
+      query: { check: true },
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to check dependencies (${response.status})`);
+    const data = unwrapApiResult(result, 'Failed to check dependencies');
+
+    if (!data.dependencyCheck) {
+      throw new Error('Failed to check dependencies');
     }
 
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error || 'Failed to check dependencies');
-    }
+    const dependencyCheck: DependencyCheckResult = {
+      canDelete: data.dependencyCheck.canDelete,
+      dependencies: data.dependencyCheck.dependencies ?? [],
+      message: data.dependencyCheck.message,
+      totalDependencies: data.dependencyCheck.totalDependencies,
+    };
 
-    return data;
+    return {
+      contact: data.contact,
+      dependencyCheck,
+    };
   }
 
   /**
@@ -448,43 +317,44 @@ export class UserManagementService {
     dependenciesDeleted: number;
     wasForced: boolean;
   }> {
-    const queryParams = force ? '?force=true' : '';
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}${queryParams}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
+    const result = await apiDeleteContact({
+      client: this.client,
+      path: { accountId, contactId },
+      query: force ? { force: true } : undefined,
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      await handleApiErrorResponse(response, 'Failed to delete contact');
-    }
+    const data = unwrapApiResult(result, 'Failed to delete contact');
 
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error || 'Failed to delete contact');
-    }
-
-    return data;
+    return {
+      message: force ? 'Contact deleted with dependencies' : 'Contact deleted successfully',
+      deletedContact: data.deletedContact,
+      dependenciesDeleted: data.dependenciesDeleted ?? 0,
+      wasForced: data.wasForced ?? force,
+    };
   }
 
   /**
    * Revoke registration (unlink userId from contact)
    */
   async revokeRegistration(accountId: string, contactId: string): Promise<void> {
-    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}/registration`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
+    const result = await unlinkContactFromUser({
+      client: this.client,
+      path: { accountId, contactId },
+      throwOnError: false,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to revoke registration (${response.status})`);
-    }
+    unwrapApiResult(result, 'Failed to revoke registration');
+  }
+
+  async getContact(accountId: string, contactId: string): Promise<ContactType> {
+    const result = await apiGetContact({
+      client: this.client,
+      path: { accountId, contactId },
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to load contact');
   }
 }
 

@@ -1,4 +1,13 @@
-import { playerswantedclassified, Prisma, teamswantedclassified } from '@prisma/client';
+import {
+  aspnetusers,
+  playerswantedclassified,
+  Prisma,
+  teamswantedclassified,
+} from '@prisma/client';
+
+export interface dbMonitoringConnectivityResult {
+  connectivity_test: number;
+}
 
 export interface dbTeamSeasonValidationResult {
   id: bigint;
@@ -234,6 +243,21 @@ export type dbTeamSeasonWithTeam = Prisma.teamsseasonGetPayload<{
     };
   };
 }>;
+
+export type dbUser = aspnetusers;
+
+export type dbPasswordResetToken = Prisma.passwordresettokensGetPayload<{
+  select: {
+    id: true;
+    userid: true;
+    token: true;
+    expiresat: true;
+    used: true;
+    createdat: true;
+  };
+}>;
+
+export type dbPasswordResetTokenCreateInput = Prisma.passwordresettokensUncheckedCreateInput;
 
 export type dbDivisionDefinition = Prisma.divisiondefsGetPayload<{
   select: {

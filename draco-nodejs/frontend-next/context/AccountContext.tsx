@@ -21,17 +21,6 @@ export interface AccountContextType {
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
-// Type guard for AxiosError
-export function isAxiosError(error: unknown): error is { response: { data: { message: string } } } {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-      'string'
-  );
-}
-
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const { token, loading: authLoading } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();

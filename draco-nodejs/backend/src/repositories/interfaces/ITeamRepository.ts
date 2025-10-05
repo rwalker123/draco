@@ -21,6 +21,9 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     accountId: bigint,
   ): Promise<dbTeamSeasonWithLeague | null>;
   findTeamDefinition(teamId: bigint): Promise<teams | null>;
+  createTeamDefinition(data: Partial<teams>): Promise<teams>;
+  deleteTeamDefinition(teamId: bigint): Promise<teams>;
+  countTeamSeasonsByTeamId(teamId: bigint): Promise<number>;
   findTeamManager(
     contactId: bigint,
     teamId: bigint,

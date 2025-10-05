@@ -1,5 +1,6 @@
 import {
   BaseContactType,
+  NamedContactType,
   RosterMemberType,
   TeamRosterMembersType,
   TeamManagerType,
@@ -35,23 +36,30 @@ export interface ApiResponse<T> {
 }
 
 export class ContactResponseFormatter {
-  static formatContactResponse(contact: dbBaseContact): BaseContactType {
-    const contactEntry: BaseContactType = {
+  static formatNamedContactResponse(contact: dbBaseContact): NamedContactType {
+    return {
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
-      middleName: contact.middlename,
+      middleName: contact.middlename || undefined,
+    };
+  }
+
+  static formatContactResponse(contact: dbBaseContact): BaseContactType {
+    const namedContact = this.formatNamedContactResponse(contact);
+    const contactEntry: BaseContactType = {
+      ...namedContact,
       email: contact.email || undefined,
       userId: contact.userid || undefined, // Roster contacts don't have userId
       photoUrl: getContactPhotoUrl(contact.creatoraccountid.toString(), contact.id.toString()),
       contactDetails: {
-        phone1: contact.phone1,
-        phone2: contact.phone2,
-        phone3: contact.phone3,
-        streetAddress: contact.streetaddress,
-        city: contact.city,
-        state: contact.state,
-        zip: contact.zip,
+        phone1: contact.phone1 || '',
+        phone2: contact.phone2 || '',
+        phone3: contact.phone3 || '',
+        streetAddress: contact.streetaddress || '',
+        city: contact.city || '',
+        state: contact.state || '',
+        zip: contact.zip || '',
         dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
       },
     };
@@ -108,13 +116,13 @@ export class ContactResponseFormatter {
         if (includeContactDetails && 'phone1' in row) {
           const contactRow = row as dbContactWithRoleAndDetails;
           contactEntry.contactDetails = {
-            phone1: contactRow.phone1,
-            phone2: contactRow.phone2,
-            phone3: contactRow.phone3,
-            streetAddress: contactRow.streetaddress,
-            city: contactRow.city,
-            state: contactRow.state,
-            zip: contactRow.zip,
+            phone1: contactRow.phone1 || '',
+            phone2: contactRow.phone2 || '',
+            phone3: contactRow.phone3 || '',
+            streetAddress: contactRow.streetaddress || '',
+            city: contactRow.city || '',
+            state: contactRow.state || '',
+            zip: contactRow.zip || '',
             dateOfBirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
           };
         }
@@ -198,13 +206,13 @@ export class ContactResponseFormatter {
       contactroles: [],
       ...(includeContactDetails && {
         contactDetails: {
-          phone1: contact.phone1,
-          phone2: contact.phone2,
-          phone3: contact.phone3,
-          streetAddress: contact.streetaddress,
-          city: contact.city,
-          state: contact.state,
-          zip: contact.zip,
+          phone1: contact.phone1 || '',
+          phone2: contact.phone2 || '',
+          phone3: contact.phone3 || '',
+          streetAddress: contact.streetaddress || '',
+          city: contact.city || '',
+          state: contact.state || '',
+          zip: contact.zip || '',
           dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
         },
       }),

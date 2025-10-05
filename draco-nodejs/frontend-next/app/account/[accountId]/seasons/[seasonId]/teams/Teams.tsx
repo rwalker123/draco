@@ -19,7 +19,6 @@ import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
-import { Team } from '@/types/schedule';
 import { useApiClient } from '@/hooks/useApiClient';
 import {
   listSeasonLeagueSeasons,
@@ -29,31 +28,13 @@ import type { UpsertTeamSeasonWithLogo } from '@draco/shared-api-client';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
-
-interface Division {
-  id: string;
-  divisionId: string;
-  divisionName: string;
-  priority: number;
-  teams: Team[];
-}
-
-interface LeagueSeason {
-  id: string;
-  leagueId: string;
-  leagueName: string;
-  accountId: string;
-  divisions: Division[];
-}
-
-interface TeamsData {
-  season: {
-    id: string;
-    name: string;
-    accountId: string;
-  };
-  leagueSeasons: LeagueSeason[];
-}
+import {
+  DivisionSeasonWithTeamsType,
+  LeagueSeasonType,
+  LeagueSeasonWithDivisionTeamsType,
+  LeagueSetupType,
+  TeamSeasonType,
+} from '@draco/shared-schemas';
 
 interface TeamsProps {
   accountId: string;
@@ -73,14 +54,16 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       hasRole('AccountAdmin', { accountId }) ||
       hasRole('LeagueAdmin', { accountId }));
 
-  const [teamsData, setTeamsData] = useState<TeamsData | null>(null);
+  const [teamsData, setTeamsData] = useState<LeagueSetupType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Export menu states
   const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedLeagueForExport, setSelectedLeagueForExport] = useState<LeagueSeason | null>(null);
+  const [selectedLeagueForExport, setSelectedLeagueForExport] = useState<LeagueSeasonType | null>(
+    null,
+  );
   const [seasonExportMenuAnchor, setSeasonExportMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Logo configuration
@@ -88,25 +71,19 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   // Edit dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<TeamSeasonType | null>(null);
 
   // Export roster to CSV function (placeholder)
-  const handleExportRoster = async (leagueSeason: LeagueSeason) => {
+  const handleExportRoster = async (leagueSeason: LeagueSeasonType) => {
     try {
       // TODO: Implement backend endpoint for CSV export
 
       // Placeholder implementation
-      alert(`Export roster for ${leagueSeason.leagueName} - Backend implementation pending`);
+      alert(`Export roster for ${leagueSeason.league.name} - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/roster/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -116,29 +93,22 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export roster: ' + error);
     }
   };
 
   // Export managers to CSV function (placeholder)
-  const handleExportManagers = async (leagueSeason: LeagueSeason) => {
+  const handleExportManagers = async (leagueSeason: LeagueSeasonType) => {
     try {
       // TODO: Implement backend endpoint for CSV export
 
       // Placeholder implementation
-      alert(`Export managers for ${leagueSeason.leagueName} - Backend implementation pending`);
+      alert(`Export managers for ${leagueSeason.league.name} - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/managers/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -148,7 +118,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export managers: ' + error);
     }
@@ -157,7 +126,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   // Export menu handlers
   const handleExportMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
-    leagueSeason: LeagueSeason,
+    leagueSeason: LeagueSeasonType,
   ) => {
     setExportMenuAnchor(event.currentTarget);
     setSelectedLeagueForExport(leagueSeason);
@@ -188,14 +157,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export season roster - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/roster/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -205,7 +168,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export season roster: ' + error);
     }
@@ -219,14 +181,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       alert(`Export season managers - Backend implementation pending`);
 
       // Future implementation would be:
-      // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/managers/export`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      //
-      // if (response.ok) {
+      // const response = await {someAPiCall};
+      // const result = apiUnwrapResult(response, 'Failed to export managers');
       //   const blob = await response.blob();
       //   const url = window.URL.createObjectURL(blob);
       //   const a = document.createElement('a');
@@ -236,7 +192,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   a.click();
       //   window.URL.revokeObjectURL(url);
       //   document.body.removeChild(a);
-      // }
     } catch (error) {
       alert('Failed to export season managers: ' + error);
     }
@@ -277,36 +232,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       });
 
       const leagueData = unwrapApiResult(leagueResult, 'Failed to load teams data');
-      const mapped = mapLeagueSetup(leagueData, accountId);
-      const seasonInfo = mapped.season ?? { id: seasonId, name: '', accountId };
+      const mapped = mapLeagueSetup(leagueData);
+      mapped.season = mapped.season ?? { id: seasonId, name: '', accountId };
 
-      const mappedLeagueSeasons = mapped.leagueSeasons.map((leagueSeason) => ({
-        id: leagueSeason.id,
-        leagueId: leagueSeason.leagueId,
-        leagueName: leagueSeason.leagueName,
-        accountId: leagueSeason.accountId,
-        divisions: leagueSeason.divisions.map((division) => ({
-          id: division.id,
-          divisionId: division.divisionId,
-          divisionName: division.divisionName,
-          priority: division.priority,
-          teams: division.teams.map((team) => ({
-            id: team.id,
-            teamId: team.teamId,
-            name: team.name,
-            logoUrl: team.logoUrl ?? undefined,
-            webAddress: team.webAddress ?? undefined,
-            youtubeUserId: team.youtubeUserId ?? undefined,
-            defaultVideo: team.defaultVideo ?? undefined,
-            autoPlayVideo: team.autoPlayVideo,
-          })),
-        })),
-      }));
-
-      setTeamsData({
-        season: seasonInfo,
-        leagueSeasons: mappedLeagueSeasons,
-      });
+      setTeamsData(mapped);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teams data');
     } finally {
@@ -318,8 +247,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     loadTeamsData();
   }, [loadTeamsData]);
 
-  const handleEditTeam = (team: Team) => {
-    setSelectedTeam(team);
+  const handleEditTeam = (teamSeason: TeamSeasonType) => {
+    setSelectedTeam(teamSeason);
     setEditDialogOpen(true);
   };
 
@@ -357,16 +286,16 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         ...prevData,
         leagueSeasons: prevData.leagueSeasons.map((leagueSeason) => ({
           ...leagueSeason,
-          divisions: leagueSeason.divisions.map((division) => ({
+          divisions: leagueSeason.divisions?.map((division) => ({
             ...division,
-            teams: division.teams.map((team) =>
-              team.id === selectedTeam.id
+            teams: division.teams.map((teamSeason) =>
+              teamSeason.id === selectedTeam.id
                 ? {
-                    ...team,
+                    ...teamSeason,
                     name: updatedName.trim(),
-                    logoUrl: newLogoUrl ?? team.logoUrl,
+                    logoUrl: newLogoUrl ?? teamSeason.team.logoUrl,
                   }
-                : team,
+                : teamSeason,
             ),
           })),
         })),
@@ -375,10 +304,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     setSuccess('Team updated successfully');
   };
 
-  const renderTeamCard = (team: Team) => {
+  const renderTeamCard = (teamSeason: TeamSeasonType) => {
     return (
       <Box
-        key={team.id}
+        key={teamSeason.id}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -392,10 +321,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         }}
       >
         <TeamAvatar
-          name={team.name || 'Unknown Team'}
-          logoUrl={team.logoUrl}
+          name={teamSeason.name || 'Unknown Team'}
+          logoUrl={teamSeason.team.logoUrl ?? undefined}
           size={LOGO_SIZE}
-          alt={(team.name || 'Unknown Team') + ' logo'}
+          alt={(teamSeason.name || 'Unknown Team') + ' logo'}
         />
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -403,7 +332,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             component="button"
             variant="body2"
             onClick={() =>
-              router?.push(`/account/${accountId}/seasons/${seasonId}/teams/${team.id}`)
+              router?.push(`/account/${accountId}/seasons/${seasonId}/teams/${teamSeason.id}`)
             }
             sx={{
               fontWeight: 'bold',
@@ -423,13 +352,13 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
               fontSize: 'inherit',
             }}
           >
-            {team.name || 'Unknown Team'}
+            {teamSeason.name || 'Unknown Team'}
           </Link>
         </Box>
 
         {canEditTeams && (
           <IconButton
-            onClick={() => handleEditTeam(team)}
+            onClick={() => handleEditTeam(teamSeason)}
             color="primary"
             size="small"
             title="Edit team"
@@ -442,7 +371,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     );
   };
 
-  const renderDivision = (division: Division) => {
+  const renderDivision = (division: DivisionSeasonWithTeamsType) => {
     return (
       <Box key={division.id} sx={{ mb: 2 }}>
         <Typography
@@ -455,7 +384,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             fontSize: '0.8rem',
           }}
         >
-          {division.divisionName}
+          {division.division.name}
         </Typography>
         <Box sx={{ pl: 1 }}>
           {division.teams
@@ -466,7 +395,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     );
   };
 
-  const renderLeagueSeason = (leagueSeason: LeagueSeason) => {
+  const renderLeagueSeason = (leagueSeason: LeagueSeasonWithDivisionTeamsType) => {
     return (
       <Box
         key={leagueSeason.id}
@@ -496,7 +425,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                 color: 'secondary.main',
               }}
             >
-              {leagueSeason.leagueName}
+              {leagueSeason.league.name}
             </Typography>
 
             {canEditTeams && (
@@ -516,7 +445,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             )}
           </Box>
 
-          {leagueSeason.divisions.map(renderDivision)}
+          {leagueSeason.divisions?.map(renderDivision)}
         </Paper>
       </Box>
     );
@@ -615,7 +544,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
       <EditTeamDialog
         open={editDialogOpen}
-        team={selectedTeam}
+        teamSeason={selectedTeam}
         onClose={handleCloseEditDialog}
         onSave={handleSaveTeam}
       />

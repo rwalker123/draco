@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
 import { ContactTransformationService } from '../services/contactTransformationService';
@@ -13,6 +13,8 @@ import {
   removeManager as apiRemoveManager,
   deleteContactPhoto as apiDeleteContactPhoto,
   getContactRoster as apiGetContactRoster,
+  getTeamRosterMembers as apiGetTeamRosterMembers,
+  listAvailableRosterPlayers as apiListAvailableRosterPlayers,
   getAccountSeason,
   getTeamSeasonLeague as apiGetTeamSeasonLeague,
 } from '@draco/shared-api-client';
@@ -21,8 +23,12 @@ import {
   TeamRosterMembersType,
   SignRosterMemberType,
 } from '@draco/shared-schemas';
-import axios from 'axios';
-import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
+import {
+  ApiClientError,
+  assertNoApiError,
+  getApiErrorMessage,
+  unwrapApiResult,
+} from '../utils/apiResult';
 
 interface Season {
   id: string;
@@ -115,14 +121,21 @@ export const useRosterDataManager = (
 
   // Helper function to handle errors
   const getErrorMessage = useCallback((error: unknown, defaultMessage: string): string => {
-    if (axios.isAxiosError(error)) {
-      return error.response?.data?.message || error.message || defaultMessage;
-    }
     if (error instanceof Error) {
-      return error.message;
+      return error.message || defaultMessage;
     }
-    return defaultMessage;
+
+    return getApiErrorMessage(error, defaultMessage);
   }, []);
+
+  const getErrorMessageRef = useRef(getErrorMessage);
+  getErrorMessageRef.current = getErrorMessage;
+
+  const getErrorMessageMemo = useMemo(
+    () => (error: unknown, defaultMessage: string) =>
+      getErrorMessageRef.current(error, defaultMessage),
+    [],
+  );
 
   // Helper function to transform backend data
   const transformBackendData = useCallback((data: unknown) => {
@@ -192,26 +205,26 @@ export const useRosterDataManager = (
     setError(null);
 
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await apiGetTeamRosterMembers({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId },
+        throwOnError: false,
+      });
 
-      if (response.data) {
-        // const transformedData = transformBackendData(response.data) as TeamRosterMembersType;
-        dataCacheRef.current.rosterData = response.data;
-        setRosterData(response.data);
-        setLoading(false);
-      } else {
-        setError(response.data.message || 'Failed to fetch roster data');
-        setLoading(false);
-      }
+      const roster = unwrapApiResult(
+        result,
+        'Failed to fetch roster data',
+      ) as TeamRosterMembersType;
+
+      dataCacheRef.current.rosterData = roster;
+      setRosterData(roster);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch roster data');
+      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch roster data');
       setError(errorMessage);
+    } finally {
       setLoading(false);
     }
-  }, [accountId, seasonId, teamSeasonId, token, setLoading, setError, getErrorMessage]);
+  }, [accountId, seasonId, teamSeasonId, token, apiClient, getErrorMessageMemo]);
 
   // Fetch available players - returns data directly instead of storing in state
   const fetchAvailablePlayers = useCallback(
@@ -219,28 +232,37 @@ export const useRosterDataManager = (
       if (!accountId || !seasonId || !teamSeasonId || !token) return [];
 
       try {
-        // Build query string for name filtering
-        const queryParams = new URLSearchParams();
-        if (firstName?.trim()) queryParams.append('firstName', firstName.trim());
-        if (lastName?.trim()) queryParams.append('lastName', lastName.trim());
-        const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+        const result = await apiListAvailableRosterPlayers({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          query: {
+            firstName: firstName?.trim() || undefined,
+            lastName: lastName?.trim() || undefined,
+          },
+          throwOnError: false,
+        });
 
-        const response = await axios.get(
-          `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/available-players${queryString}`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-
-        if (response.data) {
-          return response.data || [];
-        }
-        return [];
+        const data = unwrapApiResult(result, 'Failed to fetch available players') ?? [];
+        const transformed = transformBackendData(data) as BaseContactType[];
+        return transformed || [];
       } catch (error: unknown) {
-        const errorMessage = getErrorMessage(error, 'Failed to fetch available players');
+        const errorMessage =
+          error instanceof ApiClientError
+            ? getApiErrorMessage(error.details ?? error, 'Failed to fetch available players')
+            : getErrorMessageMemo(error, 'Failed to fetch available players');
         console.error(errorMessage, error);
         return [];
       }
     },
-    [accountId, seasonId, teamSeasonId, token, getErrorMessage],
+    [
+      accountId,
+      seasonId,
+      teamSeasonId,
+      token,
+      apiClient,
+      getErrorMessageMemo,
+      transformBackendData,
+    ],
   );
 
   // Fetch managers
@@ -248,22 +270,33 @@ export const useRosterDataManager = (
     if (!accountId || !seasonId || !teamSeasonId || !token) return;
 
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const result = await apiClient.get<{ 200: TeamManagerType[] }, unknown, false>({
+        url: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers',
+        path: { accountId, seasonId, teamSeasonId },
+        throwOnError: false,
+      });
 
-      if (response.data.success) {
-        const managers = response.data.data || [];
-        const transformedManagers = transformBackendData(managers) as TeamManagerType[];
-        dataCacheRef.current.managers = transformedManagers;
-        setManagers(transformedManagers);
-      }
+      const managers = unwrapApiResult(result, 'Failed to fetch managers') ?? [];
+      const transformedManagers = transformBackendData(managers) as TeamManagerType[];
+      dataCacheRef.current.managers = transformedManagers;
+      setManagers(transformedManagers);
     } catch (error: unknown) {
-      // Silently handle manager fetch errors
-      console.warn('Failed to fetch managers:', error);
+      const message =
+        error instanceof ApiClientError
+          ? getApiErrorMessage(error.details ?? error, 'Failed to fetch managers')
+          : getErrorMessageMemo(error, 'Failed to fetch managers');
+      console.warn(message, error);
     }
-  }, [accountId, seasonId, teamSeasonId, token, setManagers, transformBackendData]);
+  }, [
+    accountId,
+    seasonId,
+    teamSeasonId,
+    token,
+    apiClient,
+    transformBackendData,
+    setManagers,
+    getErrorMessageMemo,
+  ]);
 
   // Fetch season data
   const fetchSeasonData = useCallback(async () => {
@@ -279,10 +312,10 @@ export const useRosterDataManager = (
       const seasonData = unwrapApiResult(result, 'Failed to fetch season data');
       setSeason({ id: seasonData.id, name: seasonData.name });
     } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch season data');
+      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch season data');
       setError(errorMessage);
     }
-  }, [accountId, seasonId, token, setSeason, setError, getErrorMessage, apiClient]);
+  }, [accountId, seasonId, token, setSeason, setError, getErrorMessageMemo, apiClient]);
 
   // Fetch league data
   const fetchLeagueData = useCallback(async () => {
@@ -299,10 +332,19 @@ export const useRosterDataManager = (
 
       setLeague(leagueData ? { id: leagueData.id, name: leagueData.name } : null);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch league data');
+      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch league data');
       setError(errorMessage);
     }
-  }, [accountId, seasonId, teamSeasonId, token, setLeague, setError, getErrorMessage, apiClient]);
+  }, [
+    accountId,
+    seasonId,
+    teamSeasonId,
+    token,
+    setLeague,
+    setError,
+    getErrorMessageMemo,
+    apiClient,
+  ]);
 
   // Update roster member with optimistic updates
   const updateRosterMember = useCallback(

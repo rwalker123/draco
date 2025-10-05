@@ -1,4 +1,5 @@
 import { GameCardData } from '@/components/GameCard';
+import { TeamSeasonType } from '@draco/shared-schemas';
 
 // Core data types
 export interface Game {
@@ -152,7 +153,7 @@ export interface GameDialogData {
   leagues: League[];
   fields: Field[];
   umpires: Umpire[];
-  leagueTeamsCache: Map<string, Team[]>;
+  leagueTeamsCache: Map<string, TeamSeasonType[]>;
   currentSeasonName?: string;
 }
 

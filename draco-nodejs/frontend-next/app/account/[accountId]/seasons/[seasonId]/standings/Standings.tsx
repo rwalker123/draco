@@ -31,7 +31,7 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
         });
 
         const data = unwrapApiResult(result, 'Failed to load season information');
-        const mapped = mapLeagueSetup(data, accountId);
+        const mapped = mapLeagueSetup(data);
         setSeasonName(mapped.season?.name || '');
       } catch {
         setSeasonName('');

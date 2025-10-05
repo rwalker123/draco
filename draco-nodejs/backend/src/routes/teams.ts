@@ -62,6 +62,23 @@ router.get(
 );
 
 /**
+ * DELETE /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId
+ * Remove a team season from the specified season.
+ */
+router.delete(
+  '/:teamSeasonId',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+
+    await teamService.removeTeamSeason(accountId, seasonId, teamSeasonId);
+
+    res.status(204).end();
+  }),
+);
+
+/**
  
  * PUT /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId
  * Update team information (name and logo)

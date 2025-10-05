@@ -30,7 +30,7 @@ import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
-import { getAccountById } from '@draco/shared-api-client';
+import { getAccountById, getAccountUserTeams } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
@@ -121,29 +121,49 @@ const BaseballAccountHome: React.FC = () => {
   useEffect(() => {
     if (!accountIdStr || !user || !token) return;
 
+    let ignore = false;
+
     const fetchUserTeams = async () => {
       try {
-        const teamsResponse = await fetch(`/api/accounts/${accountIdStr}/user-teams`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+        const result = await getAccountUserTeams({
+          client: apiClient,
+          path: { accountId: accountIdStr },
+          throwOnError: false,
         });
 
-        if (teamsResponse.ok) {
-          const teamsData = await teamsResponse.json();
-          if (teamsData.success) {
-            setUserTeams(teamsData.data.teams || []);
-          }
+        if (ignore) {
+          return;
         }
+
+        const teamsResponse = unwrapApiResult(result, 'Failed to load teams');
+
+        if (ignore) {
+          return;
+        }
+
+        const normalizedTeams = Array.isArray(teamsResponse) ? teamsResponse : [];
+        const teams: UserTeam[] = normalizedTeams.map((team) => ({
+          id: team.id,
+          name: team.name ?? 'Team',
+          leagueName: team.league?.name ?? 'Unknown League',
+          divisionName: team.division?.name ?? undefined,
+          teamId: team.team?.id,
+        }));
+
+        setUserTeams(teams);
       } catch (err) {
-        console.warn('Failed to fetch user teams:', err);
+        if (!ignore) {
+          console.warn('Failed to fetch user teams:', err);
+        }
       }
     };
 
     fetchUserTeams();
-  }, [accountIdStr, user, token]);
+
+    return () => {
+      ignore = true;
+    };
+  }, [accountIdStr, user, token, apiClient]);
 
   useEffect(() => {
     if (!accountIdStr) return;

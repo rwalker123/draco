@@ -18,3 +18,5 @@ export * from './IEmailRepository.js';
 export * from './IEmailTemplateRepository.js';
 export * from './IEmailAttachmentRepository.js';
 export * from './IScheduleRepository.js';
+export * from './IMonitoringRepository.js';
+export * from './IPasswordResetTokenRepository.js';
