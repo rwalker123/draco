@@ -3,7 +3,7 @@ import {
   IManagerRepository,
   SeasonManagerRepositoryFilters,
 } from '../interfaces/IManagerRepository.js';
-import { dbSeasonManagerWithRelations } from '../types/dbTypes.js';
+import { dbSeasonManagerWithRelations, dbTeamManagerWithContact } from '../types/dbTypes.js';
 
 export class PrismaManagerRepository implements IManagerRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -112,6 +112,38 @@ export class PrismaManagerRepository implements IManagerRepository {
         },
       },
       orderBy: [{ contacts: { lastname: 'asc' } }, { contacts: { firstname: 'asc' } }],
+    });
+  }
+
+  async findTeamManagers(teamSeasonId: bigint): Promise<dbTeamManagerWithContact[]> {
+    return this.prisma.teamseasonmanager.findMany({
+      where: { teamseasonid: teamSeasonId },
+      include: { contacts: true },
+    });
+  }
+
+  async createTeamManager(
+    teamSeasonId: bigint,
+    contactId: bigint,
+  ): Promise<dbTeamManagerWithContact> {
+    return this.prisma.teamseasonmanager.create({
+      data: {
+        teamseasonid: teamSeasonId,
+        contactid: contactId,
+      },
+      include: { contacts: true },
+    });
+  }
+
+  async findTeamManager(
+    teamSeasonId: bigint,
+    contactId: bigint,
+  ): Promise<teamseasonmanager | null> {
+    return this.prisma.teamseasonmanager.findFirst({
+      where: {
+        teamseasonid: teamSeasonId,
+        contactid: contactId,
+      },
     });
   }
 }

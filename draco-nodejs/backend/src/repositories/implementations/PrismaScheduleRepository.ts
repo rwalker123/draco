@@ -40,7 +40,6 @@ const teamGameSelect = Prisma.validator<Prisma.leaguescheduleSelect>()({
 });
 
 type TeamGameInfoPayload = Prisma.leaguescheduleGetPayload<{ select: typeof teamGameSelect }>;
-type _TeamGameInfoMatchesDbGameInfo = TeamGameInfoPayload extends dbGameInfo ? true : never;
 
 export class PrismaScheduleRepository implements IScheduleRepository {
   constructor(private prisma: PrismaClient) {}
