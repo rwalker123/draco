@@ -20,6 +20,7 @@ import {
   IScheduleRepository,
   IMonitoringRepository,
   IPasswordResetTokenRepository,
+  IManagerRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -43,6 +44,7 @@ import {
   PrismaScheduleRepository,
   PrismaMonitoringRepository,
   PrismaPasswordResetTokenRepository,
+  PrismaManagerRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -73,6 +75,7 @@ export class RepositoryFactory {
   private static scheduleRepository: IScheduleRepository;
   private static monitoringRepository: IMonitoringRepository;
   private static passwordResetTokenRepository: IPasswordResetTokenRepository;
+  private static managerRepository: IManagerRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -219,5 +222,12 @@ export class RepositoryFactory {
     }
 
     return this.passwordResetTokenRepository;
+  }
+
+  static getManagerRepository(): IManagerRepository {
+    if (!this.managerRepository) {
+      this.managerRepository = new PrismaManagerRepository(prisma);
+    }
+    return this.managerRepository;
   }
 }

@@ -1,7 +1,4 @@
-import {
-  dbPasswordResetToken,
-  dbPasswordResetTokenCreateInput,
-} from '../types/dbTypes.js';
+import { dbPasswordResetToken, dbPasswordResetTokenCreateInput } from '../types/dbTypes.js';
 
 export interface IPasswordResetTokenRepository {
   invalidateTokensForUser(userId: string): Promise<number>;

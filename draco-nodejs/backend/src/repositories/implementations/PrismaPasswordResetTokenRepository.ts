@@ -1,8 +1,5 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import {
-  dbPasswordResetToken,
-  dbPasswordResetTokenCreateInput,
-} from '../types/dbTypes.js';
+import { dbPasswordResetToken, dbPasswordResetTokenCreateInput } from '../types/dbTypes.js';
 import { IPasswordResetTokenRepository } from '../interfaces/IPasswordResetTokenRepository.js';
 
 const passwordResetTokenSelect = {
@@ -33,10 +30,7 @@ export class PrismaPasswordResetTokenRepository implements IPasswordResetTokenRe
     });
   }
 
-  async findValidToken(
-    token: string,
-    referenceDate: Date,
-  ): Promise<dbPasswordResetToken | null> {
+  async findValidToken(token: string, referenceDate: Date): Promise<dbPasswordResetToken | null> {
     return this.prisma.passwordresettokens.findFirst({
       where: {
         token,

@@ -38,6 +38,7 @@ import { ScheduleService } from './scheduleService.js';
 import { LeagueService } from './LeagueService.js';
 import { MonitoringService } from './monitoringService.js';
 import { UserService } from './userService.js';
+import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -143,7 +144,8 @@ export class ServiceFactory {
 
   static getSeasonManagerService(): SeasonManagerService {
     if (!this.seasonManagerService) {
-      this.seasonManagerService = new SeasonManagerService(prisma);
+      const managerRepository = RepositoryFactory.getManagerRepository();
+      this.seasonManagerService = new SeasonManagerService(managerRepository);
     }
     return this.seasonManagerService;
   }

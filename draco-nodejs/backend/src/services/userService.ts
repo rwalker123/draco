@@ -37,8 +37,7 @@ export class UserService {
   private readonly tokenExpiryHours: number;
 
   constructor(dependencies: UserServiceDependencies = {}) {
-    this.userRepository =
-      dependencies.userRepository ?? RepositoryFactory.getUserRepository();
+    this.userRepository = dependencies.userRepository ?? RepositoryFactory.getUserRepository();
     this.passwordResetTokenRepository =
       dependencies.passwordResetTokenRepository ??
       RepositoryFactory.getPasswordResetTokenRepository();
