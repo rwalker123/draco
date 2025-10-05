@@ -8,6 +8,11 @@ import { SendGridWebhookEvent } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from '../services/email/EmailProviderFactory.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import {
+  AuthenticationError,
+  InternalServerError,
+  ValidationError,
+} from '../utils/customErrors.js';
 
 const router = Router();
 
@@ -27,8 +32,7 @@ router.post(
 
       if (!SendGridProvider.verifyWebhookSignature(payload, signature, publicKey)) {
         console.warn('Invalid SendGrid webhook signature');
-        res.status(401).json({ error: 'Invalid webhook signature' });
-        return;
+        throw new AuthenticationError('Invalid webhook signature');
       }
     }
 
@@ -36,8 +40,7 @@ router.post(
 
     if (events.length === 0) {
       console.warn('Empty SendGrid webhook payload received');
-      res.status(400).json({ error: 'Empty webhook payload' });
-      return;
+      throw new ValidationError('Empty webhook payload');
     }
 
     console.log(`📨 Received ${events.length} SendGrid webhook events`);
@@ -46,8 +49,7 @@ router.post(
 
     if (!(provider instanceof SendGridProvider)) {
       console.error('SendGrid webhook received but current provider is not SendGrid');
-      res.status(500).json({ error: 'Provider mismatch' });
-      return;
+      throw new InternalServerError('SendGrid webhook provider mismatch');
     }
 
     const result = await provider.processWebhookEvents(events);
