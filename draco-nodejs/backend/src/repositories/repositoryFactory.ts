@@ -22,6 +22,9 @@ import {
   IMonitoringRepository,
   IPasswordResetTokenRepository,
   IManagerRepository,
+  IBattingStatisticsRepository,
+  IPitchingStatisticsRepository,
+  ILeagueLeadersDisplayRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -47,6 +50,9 @@ import {
   PrismaMonitoringRepository,
   PrismaPasswordResetTokenRepository,
   PrismaManagerRepository,
+  PrismaBattingStatisticsRepository,
+  PrismaPitchingStatisticsRepository,
+  PrismaLeagueLeadersDisplayRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -79,6 +85,9 @@ export class RepositoryFactory {
   private static monitoringRepository: IMonitoringRepository;
   private static passwordResetTokenRepository: IPasswordResetTokenRepository;
   private static managerRepository: IManagerRepository;
+  private static battingStatisticsRepository: IBattingStatisticsRepository;
+  private static pitchingStatisticsRepository: IPitchingStatisticsRepository;
+  private static leagueLeadersDisplayRepository: ILeagueLeadersDisplayRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -239,5 +248,26 @@ export class RepositoryFactory {
       this.managerRepository = new PrismaManagerRepository(prisma);
     }
     return this.managerRepository;
+  }
+
+  static getBattingStatisticsRepository(): IBattingStatisticsRepository {
+    if (!this.battingStatisticsRepository) {
+      this.battingStatisticsRepository = new PrismaBattingStatisticsRepository(prisma);
+    }
+    return this.battingStatisticsRepository;
+  }
+
+  static getPitchingStatisticsRepository(): IPitchingStatisticsRepository {
+    if (!this.pitchingStatisticsRepository) {
+      this.pitchingStatisticsRepository = new PrismaPitchingStatisticsRepository(prisma);
+    }
+    return this.pitchingStatisticsRepository;
+  }
+
+  static getLeagueLeadersDisplayRepository(): ILeagueLeadersDisplayRepository {
+    if (!this.leagueLeadersDisplayRepository) {
+      this.leagueLeadersDisplayRepository = new PrismaLeagueLeadersDisplayRepository(prisma);
+    }
+    return this.leagueLeadersDisplayRepository;
   }
 }

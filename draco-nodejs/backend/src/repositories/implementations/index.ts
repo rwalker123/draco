@@ -21,3 +21,6 @@ export * from './PrismaScheduleRepository.js';
 export * from './PrismaMonitoringRepository.js';
 export * from './PrismaPasswordResetTokenRepository.js';
 export * from './PrismaManagerRepository.js';
+export * from './PrismaBattingStatisticsRepository.js';
+export * from './PrismaPitchingStatisticsRepository.js';
+export * from './PrismaLeagueLeadersDisplayRepository.js';

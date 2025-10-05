@@ -11,13 +11,14 @@ import {
 } from '@draco/shared-schemas';
 import { RepositoryFactory, ITeamRepository, dbGameInfo } from '../repositories/index.js';
 import { StatsResponseFormatter } from '../responseFormatters/index.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class TeamStatsService {
   private statisticsService: StatisticsService;
   private teamRepository: ITeamRepository;
 
   constructor(private prisma: PrismaClient) {
-    this.statisticsService = new StatisticsService(prisma);
+    this.statisticsService = ServiceFactory.getStatisticsService();
     this.teamRepository = RepositoryFactory.getTeamRepository();
   }
 
