@@ -180,7 +180,15 @@ export class ServiceFactory {
 
   static getStatisticsService(): StatisticsService {
     if (!this.statisticsService) {
-      this.statisticsService = new StatisticsService(prisma);
+      const battingRepository = RepositoryFactory.getBattingStatisticsRepository();
+      const pitchingRepository = RepositoryFactory.getPitchingStatisticsRepository();
+      const leagueLeadersRepository = RepositoryFactory.getLeagueLeadersDisplayRepository();
+      this.statisticsService = new StatisticsService(
+        prisma,
+        battingRepository,
+        pitchingRepository,
+        leagueLeadersRepository,
+      );
     }
     return this.statisticsService;
   }
