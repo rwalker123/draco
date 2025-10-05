@@ -3,7 +3,7 @@
 
 import { RoleNamesType } from '../types/roles.js';
 import { ROLE_IDS, ROLE_PERMISSIONS_BY_ID, hasRoleOrHigher } from '../config/roles.js';
-import { IRoleService } from '../interfaces/roleInterfaces.js';
+import { IRoleService } from './interfaces/roleInterfaces.js';
 import {
   BaseRoleType,
   ContactRoleType,
@@ -25,7 +25,7 @@ import {
   ILeagueRepository,
 } from '../repositories/index.js';
 import { RoleResponseFormatter } from '../responseFormatters/index.js';
-import { RoleContextData } from '../interfaces/roleInterfaces.js';
+import { RoleContextData } from './interfaces/roleInterfaces.js';
 import { ValidationError } from '../utils/customErrors.js';
 
 export class RoleService implements IRoleService {

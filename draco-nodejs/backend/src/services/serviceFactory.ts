@@ -11,7 +11,7 @@ import {
   IRoleVerification,
   IRoleManagement,
   IRoleMiddleware,
-} from '../interfaces/roleInterfaces.js';
+} from './interfaces/roleInterfaces.js';
 import { ICleanupService } from '../interfaces/cleanupInterfaces.js';
 import { cleanupConfig } from '../config/cleanup.js';
 import prisma from '../lib/prisma.js';

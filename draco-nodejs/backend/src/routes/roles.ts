@@ -14,7 +14,7 @@ import {
   RoleCheckType,
   RoleMetadataSchemaType,
 } from '@draco/shared-schemas';
-import { RoleContextData } from '@/interfaces/roleInterfaces.js';
+import { RoleContextData } from '@/services/interfaces/roleInterfaces.js';
 
 const router = Router();
 const roleService = ServiceFactory.getRoleService();
