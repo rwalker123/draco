@@ -228,7 +228,8 @@ export class ServiceFactory {
 
   static getTeamManagerService(): TeamManagerService {
     if (!this.teamManagerService) {
-      this.teamManagerService = new TeamManagerService(prisma);
+      const managerRepository = RepositoryFactory.getManagerRepository();
+      this.teamManagerService = new TeamManagerService(managerRepository);
     }
     return this.teamManagerService;
   }
