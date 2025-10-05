@@ -16,3 +16,4 @@ export * from './MonitoringResponseFormatter.js';
 export * from './userResponseFormatter.js';
 export * from './managerResponseFormatter.js';
 export * from './seasonManagerResponseFormatter.js';
+export * from './SponsorResponseFormatter.js';
