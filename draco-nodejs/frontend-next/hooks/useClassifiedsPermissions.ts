@@ -72,7 +72,7 @@ export const useClassifiedsPermissions = ({
       }
 
       // Creator ownership - user can edit their own classifieds
-      if (user && classified.creator?.id === user.userId) {
+      if (user && classified.creator?.id === user.contact?.id) {
         return true;
       }
 
@@ -90,7 +90,7 @@ export const useClassifiedsPermissions = ({
       }
 
       // Creator ownership - user can delete their own classifieds
-      if (user && classified.creator?.id === user.userId) {
+      if (user && classified.creator?.id === user.contact?.id) {
         return true;
       }
 
