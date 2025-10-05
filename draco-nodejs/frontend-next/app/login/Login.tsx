@@ -51,7 +51,7 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
         logSecurityEvent({
           type: 'unauthorized_access',
           route: next,
-          userId: user.id,
+          userId: user.userId,
           requiredRole: 'unknown',
         });
 

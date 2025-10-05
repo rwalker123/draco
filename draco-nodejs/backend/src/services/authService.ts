@@ -1,8 +1,10 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { AuthenticationError, ValidationError, NotFoundError } from '../utils/customErrors.js';
-import { RepositoryFactory } from '../repositories/index.js';
-import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
+import { IUserRepository, RepositoryFactory } from '../repositories/index.js';
+import { BaseContactType, RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
+import { ServiceFactory } from './serviceFactory.js';
+import { ContactService } from './contactService.js';
 
 export interface JWTPayload {
   userId: string;
@@ -21,9 +23,17 @@ export class AuthService {
   })();
   private readonly JWT_EXPIRES_IN = '24h';
 
-  private readonly userRepository = RepositoryFactory.getUserRepository();
+  private readonly userRepository: IUserRepository;
+  private readonly contactService: ContactService;
 
-  async getUserById(userId: string): Promise<RegisteredUserType | null> {
+  constructor() {
+    this.userRepository = RepositoryFactory.getUserRepository();
+    this.contactService = ServiceFactory.getContactService();
+  }
+  /**
+   * Get user by ID
+   */
+  async getUserById(userId: string, accountId?: string): Promise<RegisteredUserType | null> {
     const user = await this.userRepository.findByUserId(userId);
 
     if (!user) {
@@ -34,6 +44,20 @@ export class AuthService {
       userId: userId,
       userName: user.username || '',
     };
+
+    if (accountId) {
+      try {
+        const contact: BaseContactType = (await this.contactService.getContactByUserId(
+          userId,
+          BigInt(accountId),
+        )) as BaseContactType;
+        if (contact) {
+          result.contact = contact;
+        }
+      } catch {
+        // Ignore errors fetching contact
+      }
+    }
 
     return result;
   }
@@ -77,11 +101,27 @@ export class AuthService {
     // Generate JWT token
     const token = this.generateToken(user.id, user.username || '');
 
-    return {
+    const registeredUser: RegisteredUserType = {
       token,
       userId: user.id,
       userName: user.username || '',
     };
+
+    if (token && credentials.accountId) {
+      try {
+        const contact: BaseContactType = (await this.contactService.getContactByUserId(
+          user.id,
+          BigInt(credentials.accountId),
+        )) as BaseContactType;
+        if (contact) {
+          registeredUser.contact = contact;
+        }
+      } catch {
+        // Ignore errors fetching contact
+      }
+    }
+
+    return registeredUser;
   }
 
   /**

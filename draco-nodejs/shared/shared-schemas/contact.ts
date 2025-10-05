@@ -180,6 +180,7 @@ export const SignInUserNameSchema = z.email().trim().max(100);
 export const SignInCredentialsSchema = z.object({
   userName: SignInUserNameSchema,
   password: z.string().trim().min(6).max(100),
+  accountId: z.string().trim().optional(),
 });
 
 export const ContactValidationWithSignInSchema = ContactValidationSchema.safeExtend(

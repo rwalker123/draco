@@ -169,6 +169,30 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     router.push(`/signup?${params.toString()}`);
   };
 
+  const greetingName = React.useMemo(() => {
+    if (!user) {
+      return '';
+    }
+
+    const firstName = (user.contact?.firstName ?? '').trim();
+    if (firstName) {
+      return firstName;
+    }
+
+    const lastName = (user.contact?.lastName ?? '').trim();
+    if (lastName) {
+      return lastName;
+    }
+
+    const fallbackSource = user.userName ?? '';
+    if (!fallbackSource) {
+      return '';
+    }
+
+    const [usernameWithoutDomain] = fallbackSource.split('@');
+    return usernameWithoutDomain || fallbackSource;
+  }, [user]);
+
   const handleHomeClick = () => {
     if (accountId) {
       router.push(`/account/${accountId}/home`);
@@ -237,9 +261,9 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {user ? (
               <>
-                {user.firstname && (
+                {greetingName && (
                   <Typography variant="body1" sx={{ mr: 2 }}>
-                    Hello, {user.firstname}
+                    Hi, {greetingName}
                   </Typography>
                 )}
                 {accountId && isMember === false && (
