@@ -207,7 +207,7 @@ export class ServiceFactory {
 
   static getTeamStatsService(): TeamStatsService {
     if (!this.teamStatsService) {
-      this.teamStatsService = new TeamStatsService(prisma);
+      this.teamStatsService = new TeamStatsService();
     }
     return this.teamStatsService;
   }

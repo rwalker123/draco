@@ -12,11 +12,50 @@ import {
   dbScheduleCreateData,
   dbScheduleUpdateData,
   dbScheduleResultUpdateData,
+  dbGameInfo,
 } from '../types/index.js';
 import { BatchQueryHelper } from './batchQueries.js';
 
+const teamGameSelect = Prisma.validator<Prisma.leaguescheduleSelect>()({
+  id: true,
+  gamedate: true,
+  hteamid: true,
+  vteamid: true,
+  leagueid: true,
+  fieldid: true,
+  hscore: true,
+  vscore: true,
+  gamestatus: true,
+  gametype: true,
+  comment: true,
+  umpire1: true,
+  umpire2: true,
+  umpire3: true,
+  umpire4: true,
+  availablefields: true,
+  hometeam: { select: { id: true, name: true } },
+  visitingteam: { select: { id: true, name: true } },
+  leagueseason: { select: { id: true, league: { select: { name: true } } } },
+  _count: { select: { gamerecap: true } },
+});
+
+type TeamGameInfoPayload = Prisma.leaguescheduleGetPayload<{ select: typeof teamGameSelect }>;
+type _TeamGameInfoMatchesDbGameInfo = TeamGameInfoPayload extends dbGameInfo ? true : never;
+
 export class PrismaScheduleRepository implements IScheduleRepository {
   constructor(private prisma: PrismaClient) {}
+
+  private buildTeamGamesWhere(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+  ): Prisma.leaguescheduleWhereInput {
+    return {
+      leagueseason: {
+        seasonid: seasonId,
+      },
+      OR: [{ hteamid: teamSeasonId }, { vteamid: teamSeasonId }],
+    };
+  }
 
   async findById(id: bigint): Promise<leagueschedule | null> {
     return this.prisma.leagueschedule.findUnique({
@@ -308,5 +347,43 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       return new Map();
     }
     return BatchQueryHelper.batchTeamNames(this.prisma, teamIds);
+  }
+
+  async listUpcomingGamesForTeam(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    limit: number,
+    referenceDate: Date,
+  ): Promise<dbGameInfo[]> {
+    const games: TeamGameInfoPayload[] = await this.prisma.leagueschedule.findMany({
+      where: {
+        ...this.buildTeamGamesWhere(teamSeasonId, seasonId),
+        gamedate: { gte: referenceDate },
+      },
+      select: teamGameSelect,
+      orderBy: { gamedate: 'asc' },
+      take: Math.max(limit, 0),
+    });
+
+    return games;
+  }
+
+  async listRecentGamesForTeam(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    limit: number,
+    referenceDate: Date,
+  ): Promise<dbGameInfo[]> {
+    const games: TeamGameInfoPayload[] = await this.prisma.leagueschedule.findMany({
+      where: {
+        ...this.buildTeamGamesWhere(teamSeasonId, seasonId),
+        gamedate: { lt: referenceDate },
+      },
+      select: teamGameSelect,
+      orderBy: { gamedate: 'desc' },
+      take: Math.max(limit, 0),
+    });
+
+    return games;
   }
 }

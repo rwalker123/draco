@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { StatisticsService } from './statisticsService.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import {
@@ -9,17 +8,24 @@ import {
   RecentGamesType,
   TeamRecordType,
 } from '@draco/shared-schemas';
-import { RepositoryFactory, ITeamRepository, dbGameInfo } from '../repositories/index.js';
+import {
+  RepositoryFactory,
+  ITeamRepository,
+  IScheduleRepository,
+  dbGameInfo,
+} from '../repositories/index.js';
 import { StatsResponseFormatter } from '../responseFormatters/index.js';
 import { ServiceFactory } from './serviceFactory.js';
 
 export class TeamStatsService {
-  private statisticsService: StatisticsService;
-  private teamRepository: ITeamRepository;
+  private readonly statisticsService: StatisticsService;
+  private readonly teamRepository: ITeamRepository;
+  private readonly scheduleRepository: IScheduleRepository;
 
-  constructor(private prisma: PrismaClient) {
+  constructor() {
     this.statisticsService = ServiceFactory.getStatisticsService();
     this.teamRepository = RepositoryFactory.getTeamRepository();
+    this.scheduleRepository = RepositoryFactory.getScheduleRepository();
   }
 
   async getTeamRecord(teamSeasonId: bigint): Promise<TeamRecordType> {
@@ -44,80 +50,25 @@ export class TeamStatsService {
     const { includeUpcoming = true, includeRecent = true, limit = 5 } = options;
 
     // Validate team/season/account relationship
-    const teamSeason = await this.prisma.teamsseason.findFirst({
-      where: {
-        id: teamSeasonId,
-        leagueseason: {
-          seasonid: seasonId,
-          league: {
-            accountid: accountId,
-          },
-        },
-      },
-      include: {
-        leagueseason: {
-          include: {
-            league: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const teamSeason = await this.teamRepository.findTeamSeason(teamSeasonId, seasonId, accountId);
 
     if (!teamSeason) {
       throw new NotFoundError('Team season not found');
     }
 
     const now = new Date();
-    let upcomingGames: dbGameInfo[] = [];
-    let recentGames: dbGameInfo[] = [];
+    const upcomingGamesPromise = includeUpcoming
+      ? this.scheduleRepository.listUpcomingGamesForTeam(teamSeasonId, seasonId, limit, now)
+      : Promise.resolve<dbGameInfo[]>([]);
 
-    if (includeUpcoming) {
-      // Upcoming: games in the future, order by soonest
-      upcomingGames = await this.prisma.leagueschedule.findMany({
-        where: {
-          gamedate: { gte: now },
-          leagueseason: {
-            seasonid: seasonId,
-          },
-          OR: [{ hteamid: teamSeason.id }, { vteamid: teamSeason.id }],
-        },
-        include: {
-          availablefields: true,
-          hometeam: { select: { id: true, name: true } },
-          visitingteam: { select: { id: true, name: true } },
-          leagueseason: { select: { id: true, league: { select: { name: true } } } },
-          _count: { select: { gamerecap: true } },
-        },
-        orderBy: { gamedate: 'asc' },
-        take: limit,
-      });
-    }
+    const recentGamesPromise = includeRecent
+      ? this.scheduleRepository.listRecentGamesForTeam(teamSeasonId, seasonId, limit, now)
+      : Promise.resolve<dbGameInfo[]>([]);
 
-    if (includeRecent) {
-      // Recent: games in the past, order by most recent
-      recentGames = await this.prisma.leagueschedule.findMany({
-        where: {
-          gamedate: { lt: now },
-          leagueseason: {
-            seasonid: seasonId,
-          },
-          OR: [{ hteamid: teamSeason.id }, { vteamid: teamSeason.id }],
-        },
-        include: {
-          availablefields: true,
-          hometeam: { select: { id: true, name: true } },
-          visitingteam: { select: { id: true, name: true } },
-          leagueseason: { select: { id: true, league: { select: { name: true } } } },
-          _count: { select: { gamerecap: true } },
-        },
-        orderBy: { gamedate: 'desc' },
-        take: limit,
-      });
-    }
+    const [upcomingGames, recentGames] = await Promise.all([
+      upcomingGamesPromise,
+      recentGamesPromise,
+    ]);
 
     // Map games with team names (async)
     const result: RecentGamesType = {
