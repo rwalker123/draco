@@ -1,9 +1,10 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { Team, Field, Umpire, Game } from '@/types/schedule';
+import { Field, Umpire, Game } from '@/types/schedule';
+import { TeamSeasonType } from '@draco/shared-schemas';
 
 interface GameFormContextValue {
   // Data
-  leagueTeams: Team[];
+  leagueTeams: TeamSeasonType[];
   fields: Field[];
   umpires: Umpire[];
 

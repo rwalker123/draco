@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
-import { Game, Team, Field, Umpire, League, FilterType } from '@/types/schedule';
+import { Game, Field, Umpire, League, FilterType } from '@/types/schedule';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import {
   listAccountFields,
@@ -13,6 +13,7 @@ import {
 import { ApiClientError, unwrapApiResult } from '../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
+import { TeamSeasonType } from '@draco/shared-schemas';
 
 interface UseScheduleDataProps {
   accountId: string;
@@ -23,12 +24,12 @@ interface UseScheduleDataProps {
 interface UseScheduleDataReturn {
   // Data
   games: Game[];
-  teams: Team[];
+  teams: TeamSeasonType[];
   fields: Field[];
   umpires: Umpire[];
   leagues: League[];
-  leagueTeams: Team[];
-  leagueTeamsCache: Map<string, Team[]>;
+  leagueTeams: TeamSeasonType[];
+  leagueTeamsCache: Map<string, TeamSeasonType[]>;
 
   // Loading states
   loadingGames: boolean;
@@ -63,12 +64,14 @@ export const useScheduleData = ({
 
   // Data states
   const [games, setGames] = useState<Game[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<TeamSeasonType[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
   const [umpires, setUmpires] = useState<Umpire[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
-  const [leagueTeams, setLeagueTeams] = useState<Team[]>([]);
-  const [leagueTeamsCache, setLeagueTeamsCache] = useState<Map<string, Team[]>>(new Map());
+  const [leagueTeams, setLeagueTeams] = useState<TeamSeasonType[]>([]);
+  const [leagueTeamsCache, setLeagueTeamsCache] = useState<Map<string, TeamSeasonType[]>>(
+    new Map(),
+  );
 
   // Loading states
   const [loadingGames, setLoadingGames] = useState(false);
@@ -133,57 +136,34 @@ export const useScheduleData = ({
         });
 
         const leagueData = unwrapApiResult(leagueResult, 'Failed to load leagues');
-        const mapped = mapLeagueSetup(leagueData, accountId);
+        const mapped = mapLeagueSetup(leagueData);
 
-        const newLeagueTeamsCache = new Map<string, Team[]>();
+        const newLeagueTeamsCache = new Map<string, TeamSeasonType[]>();
         const processedLeagues = mapped.leagueSeasons.map((leagueSeason) => {
-          const leagueTeams: Team[] = [];
+          const leagueTeams: TeamSeasonType[] = [];
 
-          leagueSeason.divisions.forEach((division) => {
+          leagueSeason.divisions?.forEach((division) => {
             division.teams.forEach((team) => {
-              leagueTeams.push({
-                id: team.id,
-                teamId: team.teamId,
-                name: team.name,
-                teamName: team.name,
-                logoUrl: team.logoUrl ?? undefined,
-                webAddress: team.webAddress ?? undefined,
-                youtubeUserId: team.youtubeUserId ?? undefined,
-                defaultVideo: team.defaultVideo ?? undefined,
-                autoPlayVideo: team.autoPlayVideo,
-                leagueName: leagueSeason.leagueName,
-                divisionName: division.divisionName,
-              });
+              leagueTeams.push(team);
             });
           });
 
-          leagueSeason.unassignedTeams.forEach((team) => {
-            leagueTeams.push({
-              id: team.id,
-              teamId: team.teamId,
-              name: team.name,
-              teamName: team.name,
-              logoUrl: team.logoUrl ?? undefined,
-              webAddress: team.webAddress ?? undefined,
-              youtubeUserId: team.youtubeUserId ?? undefined,
-              defaultVideo: team.defaultVideo ?? undefined,
-              autoPlayVideo: team.autoPlayVideo,
-              leagueName: leagueSeason.leagueName,
-            });
+          leagueSeason.unassignedTeams?.forEach((team) => {
+            leagueTeams.push(team);
           });
 
           newLeagueTeamsCache.set(leagueSeason.id, leagueTeams);
 
           return {
             id: leagueSeason.id,
-            name: leagueSeason.leagueName,
+            name: leagueSeason.league.name,
           };
         });
 
         setLeagues(processedLeagues);
         setLeagueTeamsCache(newLeagueTeamsCache);
 
-        const uniqueTeams = new Map<string, Team>();
+        const uniqueTeams = new Map<string, TeamSeasonType>();
         newLeagueTeamsCache.forEach((teams) => {
           teams.forEach((team) => {
             if (!uniqueTeams.has(team.id)) {

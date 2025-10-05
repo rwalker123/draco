@@ -11,8 +11,9 @@ import {
   PagedContactType,
   BaseContactType,
   PaginationType,
+  LeagueSeasonWithDivisionTeamsType,
 } from '@draco/shared-schemas';
-import { RecipientContact, League } from '../types/emails/recipients';
+import { RecipientContact } from '../types/emails/recipients';
 import { EmailRecipientErrorCode, AsyncResult, Result } from '../types/errors';
 import {
   handleApiError,
@@ -626,7 +627,7 @@ export class EmailRecipientService {
     seasonId: string,
     includePlayerCounts: boolean = false,
     includeManagerCounts: boolean = false,
-  ): AsyncResult<League[]> {
+  ): AsyncResult<LeagueSeasonWithDivisionTeamsType[]> {
     if (!accountId || accountId.trim() === '') {
       return {
         success: false,
@@ -671,7 +672,7 @@ export class EmailRecipientService {
         });
 
         const data = unwrapApiResult(result, 'Failed to load leagues');
-        const mapped = mapLeagueSetup(data, accountId);
+        const mapped = mapLeagueSetup(data);
 
         if (!mapped.leagueSeasons || !Array.isArray(mapped.leagueSeasons)) {
           throw createEmailRecipientError(
@@ -683,37 +684,13 @@ export class EmailRecipientService {
           );
         }
 
-        const seasonInfo = mapped.season ?? {
+        mapped.season = mapped.season ?? {
           id: seasonId,
           name: '',
           accountId,
         };
 
-        const leagues: League[] = mapped.leagueSeasons.map((ls) => ({
-          id: ls.leagueId,
-          name: ls.leagueName,
-          divisions: ls.divisions.map((division) => ({
-            id: division.divisionId,
-            name: division.divisionName,
-            teams: division.teams.map((team) => ({
-              id: team.id,
-              name: team.name,
-              playerCount: team.playerCount ?? 0,
-              leagueId: ls.leagueId,
-              leagueName: ls.leagueName,
-              divisionId: division.divisionId,
-              divisionName: division.divisionName,
-            })),
-            teamCount: division.teamCount,
-            totalPlayers: division.totalPlayers,
-          })),
-          teamCount: ls.totalTeams,
-          totalPlayers: ls.totalPlayers,
-          seasonId: seasonInfo.id,
-          seasonName: seasonInfo.name,
-        }));
-
-        return leagues;
+        return mapped.leagueSeasons;
       },
       {
         operation: 'fetch_leagues',

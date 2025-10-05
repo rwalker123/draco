@@ -34,53 +34,27 @@ export function useHierarchicalData() {
         });
 
         const data = unwrapApiResult(result, 'Failed to load hierarchical data');
-        const mapped = mapLeagueSetup(data, accountId);
+        const mapped = mapLeagueSetup(data);
 
-        const seasonInfo = mapped.season ?? {
+        mapped.season = mapped.season ?? {
           id: seasonId,
           name: 'Season',
           accountId,
         };
 
         const transformedData: HierarchicalSeason = {
-          id: seasonInfo.id,
-          name: seasonInfo.name || 'Season',
+          id: mapped.season.id,
+          name: mapped.season.name || 'Season',
           totalPlayers: 0,
           totalManagers: 0,
           leagues: mapped.leagueSeasons.map((league) => {
-            const divisions = league.divisions
-              .map((division) => ({
-                id: division.divisionId,
-                name: division.divisionName,
-                priority: division.priority,
-                totalPlayers: division.totalPlayers,
-                totalManagers: division.totalManagers,
-                teams: division.teams.map((team) => ({
-                  id: team.id,
-                  name: team.name,
-                  playerCount: team.playerCount ?? 0,
-                  managerCount: team.managerCount ?? 0,
-                })),
-              }))
-              .sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
-
-            const unassignedTeams = league.unassignedTeams.map((team) => ({
-              id: team.id,
-              name: team.name,
-              playerCount: team.playerCount ?? 0,
-              managerCount: team.managerCount ?? 0,
-            }));
-
-            const totalPlayers = league.totalPlayers;
-            const totalManagers = league.totalManagers;
+            const divisions = league.divisions?.sort(
+              (a, b) => a.priority - b.priority || a.division.name.localeCompare(b.division.name),
+            );
 
             return {
-              id: league.id,
-              name: league.leagueName,
+              ...league,
               divisions,
-              unassignedTeams,
-              totalPlayers,
-              totalManagers,
             };
           }),
         };

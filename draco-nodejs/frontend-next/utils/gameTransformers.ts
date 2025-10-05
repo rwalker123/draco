@@ -1,6 +1,6 @@
 import { listSeasonGames } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
-import type { GamesWithRecapsType } from '@draco/shared-schemas';
+import type { GamesWithRecapsType, TeamSeasonNameType } from '@draco/shared-schemas';
 import { Game as ScheduleGame, GameStatus } from '../types/schedule';
 import { Game } from '../components/GameListDisplay';
 import { GameCardData } from '../components/GameCard';
@@ -165,15 +165,15 @@ export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
  */
 export function convertGameToGameCardData(
   game: Game,
-  teams?: Array<{ id: string; name: string }>,
+  teams?: Array<TeamSeasonNameType>,
 ): GameCardData;
 export function convertGameToGameCardData(
   game: ScheduleGame,
-  teams: Array<{ id: string; name: string }>,
+  teams: Array<TeamSeasonNameType>,
 ): GameCardData;
 export function convertGameToGameCardData(
   game: Game | ScheduleGame,
-  teams: Array<{ id: string; name: string }> = [],
+  teams: Array<TeamSeasonNameType> = [],
 ): GameCardData {
   // Check if this is a Game from GameListDisplay (has hasGameRecap property)
   if ('hasGameRecap' in game) {
