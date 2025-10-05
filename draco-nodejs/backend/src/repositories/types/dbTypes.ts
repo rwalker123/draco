@@ -154,6 +154,10 @@ export type dbRosterMember = Prisma.rosterseasonGetPayload<{
   include: { roster: { include: { contacts: true } } };
 }>;
 
+export type dbRosterSeasonContactReference = Prisma.rosterseasonGetPayload<{
+  select: { roster: { select: { contactid: true } } };
+}>;
+
 export type dbAvailableField = Prisma.availablefieldsGetPayload<{
   select: {
     id: true;

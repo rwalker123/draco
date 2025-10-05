@@ -1,69 +1,50 @@
-import { PrismaClient } from '@prisma/client';
-import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
-import { DateUtils } from '../utils/dateUtils.js';
-import { ContactResponseFormatter, RosterResponseFormatter } from '../responseFormatters/index.js';
 import {
+  BaseContactType,
+  CreateContactType,
   CreateRosterMemberType,
   RosterMemberType,
-  TeamRosterMembersType,
-  BaseContactType,
   SignRosterMemberType,
-  CreateContactType,
+  TeamRosterMembersType,
 } from '@draco/shared-schemas';
-import { dbTeamSeason, dbRosterSeason, dbRosterMember } from '../repositories/index.js';
+import { RosterResponseFormatter, ContactResponseFormatter } from '../responseFormatters/index.js';
+import { DateUtils } from '../utils/dateUtils.js';
+import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
+import {
+  IContactRepository,
+  IRosterRepository,
+  ITeamRepository,
+  dbRosterMember,
+  dbRosterPlayer,
+  dbRosterSeasonContactReference,
+  dbTeamSeason,
+} from '../repositories/index.js';
 
 export class RosterService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(
+    private rosterRepository: IRosterRepository,
+    private teamRepository: ITeamRepository,
+    private contactRepository: IContactRepository,
+  ) {}
 
   async getTeamRosterMembers(
     teamSeasonId: bigint,
     seasonId: bigint,
     accountId: bigint,
   ): Promise<TeamRosterMembersType> {
-    // Verify the team season exists and belongs to this account and season
-    const teamSeason: dbTeamSeason | null = await this.prisma.teamsseason.findFirst({
-      where: {
-        id: teamSeasonId,
-        leagueseason: {
-          seasonid: seasonId,
-          league: {
-            accountid: accountId,
-          },
-        },
-      },
-      select: { id: true, name: true },
-    });
+    const teamSeason: dbTeamSeason | null = await this.teamRepository.findTeamSeasonSummary(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
 
     if (!teamSeason) {
       throw new NotFoundError('Team season not found');
     }
 
-    // Get all roster members for this team season
-    const rosterMembers: dbRosterSeason[] = await this.prisma.rosterseason.findMany({
-      where: {
-        teamseasonid: teamSeasonId,
-      },
-      include: {
-        roster: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
-      orderBy: [{ inactive: 'asc' }, { playernumber: 'asc' }],
-    });
-
-    const response = RosterResponseFormatter.formatRosterMembersResponse(teamSeason, rosterMembers);
-    return response;
+    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
+    return RosterResponseFormatter.formatRosterMembersResponse(teamSeason, rosterMembers);
   }
 
-  /**
-   * Get all available players (not on any team in this season) for adding to roster
-   * @param teamSeasonId
-   * @param seasonId
-   * @param accountId
-   * @returns BaseContactType[]
-   */
   async getAvailablePlayers(
     teamSeasonId: bigint,
     seasonId: bigint,
@@ -73,100 +54,31 @@ export class RosterService {
     firstName?: string,
     lastName?: string,
   ): Promise<BaseContactType[]> {
-    // Verify the team season exists and belongs to this account and season
-    const teamSeason = await this.prisma.teamsseason.findFirst({
-      where: {
-        id: teamSeasonId,
-        leagueseason: {
-          seasonid: seasonId,
-          league: {
-            accountid: accountId,
-          },
-        },
-      },
-      select: {
-        leagueseasonid: true,
-      },
-    });
+    const teamSeason = await this.teamRepository.findTeamSeason(teamSeasonId, seasonId, accountId);
 
     if (!teamSeason) {
       throw new NotFoundError('Team season not found');
     }
 
-    const leagueSeasonId = teamSeason.leagueseasonid;
+    const assignedRosterMembers: dbRosterSeasonContactReference[] =
+      await this.rosterRepository.findActiveRosterContactsByLeagueSeason(teamSeason.leagueseasonid);
 
-    // Step 1: Get ContactIds of players already on teams in this league season (active only)
-    const assignedRosterMembers = await this.prisma.rosterseason.findMany({
-      where: {
-        teamsseason: {
-          leagueseasonid: leagueSeasonId,
-        },
-        inactive: false, // Only exclude active players
-      },
-      select: {
-        roster: {
-          select: {
-            contactid: true,
-          },
-        },
-      },
-    });
-
-    const assignedContactIds = assignedRosterMembers.map((rm) => rm.roster.contactid);
-
-    // Step 2: Build where clause for available contacts
-    const whereClause = {
-      creatoraccountid: accountId,
-      id: {
-        notIn: assignedContactIds,
-      },
-      // Add name filtering if provided
-      ...(firstName && {
-        firstname: {
-          contains: firstName,
-          mode: 'insensitive' as const,
-        },
-      }),
-      ...(lastName && {
-        lastname: {
-          contains: lastName,
-          mode: 'insensitive' as const,
-        },
-      }),
-    };
-
-    // Get paginated results
+    const assignedContactIds = assignedRosterMembers.map((member) => member.roster.contactid);
     const skip = (page - 1) * limit;
-    const availableContacts = await this.prisma.contacts.findMany({
-      where: whereClause,
-      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }, { middlename: 'asc' }],
+
+    const contacts = await this.contactRepository.findAvailableContacts(
+      accountId,
+      assignedContactIds,
+      firstName,
+      lastName,
       skip,
-      take: limit + 1, // Take one extra to check if there's a next page
-      select: {
-        id: true,
-        userid: true,
-        firstname: true,
-        lastname: true,
-        middlename: true,
-        email: true,
-        phone1: true,
-        phone2: true,
-        phone3: true,
-        streetaddress: true,
-        city: true,
-        state: true,
-        zip: true,
-        dateofbirth: true,
-        creatoraccountid: true,
-      },
-    });
+      limit + 1,
+    );
 
-    // Check if there's a next page
-    const hasNext = availableContacts.length > limit;
-    const contacts = hasNext ? availableContacts.slice(0, limit) : availableContacts;
+    const hasNext = contacts.length > limit;
+    const paginatedContacts = hasNext ? contacts.slice(0, limit) : contacts;
 
-    const response = ContactResponseFormatter.formatManyContactsResponse(contacts);
-    return response;
+    return ContactResponseFormatter.formatManyContactsResponse(paginatedContacts);
   }
 
   async addPlayerToRoster(
@@ -175,185 +87,57 @@ export class RosterService {
     accountId: bigint,
     addPlayerData: SignRosterMemberType,
   ): Promise<RosterMemberType> {
-    // Extract variables from addPlayerData with proper type handling
-    const { playerNumber, submittedWaiver } = addPlayerData;
-    const { submittedDriversLicense, firstYear, contact } = addPlayerData.player;
-    if (!contact) {
-      throw new ValidationError('Contact is required');
-    }
-
-    // Verify the team season exists and belongs to this account and season
-    const teamSeason = await this.prisma.teamsseason.findFirst({
-      where: {
-        id: teamSeasonId,
-        leagueseason: {
-          seasonid: seasonId,
-          league: {
-            accountid: accountId,
-          },
-        },
-      },
-    });
+    const teamSeason = await this.teamRepository.findTeamSeason(teamSeasonId, seasonId, accountId);
 
     if (!teamSeason) {
       throw new NotFoundError('Team season not found');
     }
 
-    let existingContact: { firstname: string; lastname: string } | null = null;
-    let actualContactId: bigint;
+    const { playerNumber, submittedWaiver } = addPlayerData;
+    const { submittedDriversLicense, firstYear, contact } = addPlayerData.player;
 
-    // Type guard to check if contact has an id (existing contact)
-    const hasId = 'id' in contact && contact.id !== undefined;
-
-    // If contactId is provided, check if the contact exists
-    if (hasId) {
-      const contactId = contact.id;
-      existingContact = await this.prisma.contacts.findFirst({
-        where: {
-          id: BigInt(contactId),
-          creatoraccountid: accountId,
-        },
-        select: {
-          firstname: true,
-          lastname: true,
-        },
-      });
-
-      if (!existingContact) {
-        throw new NotFoundError('Contact not found');
-      }
-
-      actualContactId = BigInt(contactId);
-    } else {
-      // Contact data is provided for creating a new contact
-      const contactData = contact as CreateContactType;
-
-      // Validate required fields for contact creation
-      if (!contactData.firstName || !contactData.lastName) {
-        throw new ValidationError('First name and last name are required for contact creation');
-      }
-
-      // Create the contact
-      const newContact = await this.prisma.contacts.create({
-        data: {
-          firstname: contactData.firstName,
-          lastname: contactData.lastName,
-          middlename: contactData.middleName || '',
-          email: contactData.email || null,
-          phone1: contactData.contactDetails?.phone1 || null,
-          phone2: contactData.contactDetails?.phone2 || null,
-          phone3: contactData.contactDetails?.phone3 || null,
-          streetaddress: contactData.contactDetails?.streetAddress || null,
-          city: contactData.contactDetails?.city || null,
-          state: contactData.contactDetails?.state || null,
-          zip: contactData.contactDetails?.zip || null,
-          creatoraccountid: accountId,
-          dateofbirth: contactData.contactDetails?.dateOfBirth
-            ? DateUtils.parseDateOfBirthForDatabase(contactData.contactDetails.dateOfBirth)
-            : new Date('1900-01-01'),
-        },
-        select: {
-          id: true,
-          firstname: true,
-          lastname: true,
-        },
-      });
-
-      existingContact = {
-        firstname: newContact.firstname,
-        lastname: newContact.lastname,
-      };
-
-      actualContactId = newContact.id;
+    if (!contact) {
+      throw new ValidationError('Contact is required');
     }
 
-    // Check if contact already has a roster entry
-    let player = await this.prisma.roster.findFirst({
-      where: {
-        contactid: actualContactId,
-      },
-      include: {
-        contacts: {
-          select: {
-            firstname: true,
-            lastname: true,
-          },
-        },
-      },
-    });
+    const contactId = await this.resolveContact(contact, accountId);
 
-    // If no roster entry exists, create one
-    if (!player) {
-      player = await this.prisma.roster.create({
-        data: {
-          contactid: actualContactId,
-          submitteddriverslicense: submittedDriversLicense || false,
-          firstyear: firstYear || 0,
-        },
-        include: {
-          contacts: {
-            select: {
-              firstname: true,
-              lastname: true,
-            },
-          },
-        },
-      });
+    let rosterPlayer: dbRosterPlayer | null =
+      await this.rosterRepository.findRosterPlayerByContactId(contactId);
+
+    if (!rosterPlayer) {
+      rosterPlayer = await this.rosterRepository.createRosterPlayer(
+        contactId,
+        submittedDriversLicense ?? false,
+        firstYear ?? 0,
+      );
     }
 
-    // Get the leagueseasonid for this team
-    const leagueSeasonId = teamSeason.leagueseasonid;
-
-    // Check if player is already on a team in this league season
-    const existingRosterMember = await this.prisma.rosterseason.findFirst({
-      where: {
-        playerid: player.id,
-        teamsseason: {
-          leagueseasonid: leagueSeasonId,
-        },
-      },
-    });
+    const existingRosterMember = await this.rosterRepository.findRosterMemberInLeagueSeason(
+      rosterPlayer.id,
+      teamSeason.leagueseasonid,
+    );
 
     if (existingRosterMember) {
       throw new ConflictError('Player is already on a team in this season');
     }
 
-    // Update player's roster information if provided
     if (submittedDriversLicense !== undefined || firstYear !== undefined) {
-      await this.prisma.roster.update({
-        where: { id: player.id },
-        data: {
-          submitteddriverslicense:
-            submittedDriversLicense !== undefined
-              ? submittedDriversLicense
-              : player.submitteddriverslicense,
-          firstyear: firstYear !== undefined ? firstYear : player.firstyear,
-        },
-      });
+      await this.rosterRepository.updateRosterPlayer(
+        rosterPlayer.id,
+        submittedDriversLicense,
+        firstYear,
+      );
     }
 
-    // Add player to roster
-    const newRosterMember: dbRosterMember = await this.prisma.rosterseason.create({
-      data: {
-        playerid: player.id,
-        teamseasonid: teamSeasonId,
-        playernumber: playerNumber || 0,
-        inactive: false,
-        submittedwaiver: submittedWaiver || false,
-        dateadded: new Date(),
-      },
-      include: {
-        roster: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
-    });
+    const rosterMember = await this.rosterRepository.createRosterSeasonEntry(
+      rosterPlayer.id,
+      teamSeasonId,
+      playerNumber ?? 0,
+      submittedWaiver ?? false,
+    );
 
-    const rosterMember: RosterMemberType =
-      RosterResponseFormatter.formatRosterMemberResponse(newRosterMember);
-    return rosterMember;
+    return RosterResponseFormatter.formatRosterMemberResponse(rosterMember);
   }
 
   async updateRosterMember(
@@ -363,68 +147,31 @@ export class RosterService {
     accountId: bigint,
     updateData: CreateRosterMemberType,
   ): Promise<RosterMemberType> {
+    const existingRosterMember = await this.getRosterMemberForAccount(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
     const { playerNumber, submittedWaiver } = updateData;
     const { submittedDriversLicense, firstYear } = updateData.player;
 
-    // Verify the roster member exists and belongs to this team season
-    const dbRosterMember = await this.prisma.rosterseason.findFirst({
-      where: {
-        id: rosterMemberId,
-        teamseasonid: teamSeasonId,
-        teamsseason: {
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-      },
-      include: {
-        roster: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
-    });
-
-    if (!dbRosterMember) {
-      throw new NotFoundError('Roster member not found');
+    if (submittedDriversLicense !== undefined || firstYear !== undefined) {
+      await this.rosterRepository.updateRosterPlayer(
+        existingRosterMember.playerid,
+        submittedDriversLicense,
+        firstYear,
+      );
     }
 
-    // Update roster data (player-specific data)
-    await this.prisma.roster.update({
-      where: { id: dbRosterMember.playerid },
-      data: {
-        submitteddriverslicense:
-          submittedDriversLicense !== undefined
-            ? submittedDriversLicense
-            : dbRosterMember.roster.submitteddriverslicense,
-        firstyear: firstYear !== undefined ? firstYear : dbRosterMember.roster.firstyear,
-      },
-    });
+    const updatedRosterMember = await this.rosterRepository.updateRosterSeasonEntry(
+      rosterMemberId,
+      playerNumber,
+      submittedWaiver,
+    );
 
-    // Update roster season data
-    const updatedRosterMember: dbRosterMember = await this.prisma.rosterseason.update({
-      where: { id: rosterMemberId },
-      data: {
-        playernumber: playerNumber !== undefined ? playerNumber : dbRosterMember.playernumber,
-        submittedwaiver:
-          submittedWaiver !== undefined ? submittedWaiver : dbRosterMember.submittedwaiver,
-      },
-      include: {
-        roster: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
-    });
-
-    const rosterMember: RosterMemberType =
-      RosterResponseFormatter.formatRosterMemberResponse(updatedRosterMember);
-    return rosterMember;
+    return RosterResponseFormatter.formatRosterMemberResponse(updatedRosterMember);
   }
 
   async releaseOrActivatePlayer(
@@ -434,51 +181,29 @@ export class RosterService {
     accountId: bigint,
     inactive: boolean,
   ): Promise<RosterMemberType> {
-    // Verify the roster member exists and belongs to this team season
-    const dbRosterMember = await this.prisma.rosterseason.findFirst({
-      where: {
-        id: rosterMemberId,
-        teamseasonid: teamSeasonId,
-        teamsseason: {
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-      },
-      include: {
-        roster: true,
-      },
-    });
+    const rosterMember = await this.getRosterMemberForAccount(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
 
-    if (!dbRosterMember) {
-      throw new NotFoundError('Roster member not found');
+    if (inactive && rosterMember.inactive) {
+      throw new ConflictError('Player is already released');
     }
 
-    if (inactive && dbRosterMember.inactive) {
-      throw new ConflictError('Player is already released');
-    } else if (!inactive && !dbRosterMember.inactive) {
+    if (!inactive && !rosterMember.inactive) {
       throw new ConflictError('Player is already active');
     }
 
-    // Release the player
-    const updatedRosterMember: dbRosterMember = await this.prisma.rosterseason.update({
-      where: { id: rosterMemberId },
-      data: { inactive: inactive },
-      include: {
-        roster: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
-    });
+    const updatedRosterMember = await this.rosterRepository.updateRosterSeasonEntry(
+      rosterMemberId,
+      undefined,
+      undefined,
+      inactive,
+    );
 
-    const rosterMember: RosterMemberType =
-      RosterResponseFormatter.formatRosterMemberResponse(updatedRosterMember);
-    return rosterMember;
+    return RosterResponseFormatter.formatRosterMemberResponse(updatedRosterMember);
   }
 
   async deleteRosterMember(
@@ -487,45 +212,82 @@ export class RosterService {
     seasonId: bigint,
     accountId: bigint,
   ): Promise<{ playerName: string }> {
-    // Verify the roster member exists and belongs to this team season
-    const rosterMember = await this.prisma.rosterseason.findFirst({
-      where: {
-        id: rosterMemberId,
-        teamseasonid: teamSeasonId,
-        teamsseason: {
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-      },
-      include: {
-        roster: {
-          include: {
-            contacts: {
-              select: {
-                firstname: true,
-                lastname: true,
-              },
-            },
-          },
-        },
-      },
+    const rosterMember = await this.getRosterMemberForAccount(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    const playerName = `${rosterMember.roster.contacts.firstname} ${rosterMember.roster.contacts.lastname}`;
+
+    await this.rosterRepository.deleteRosterMember(rosterMemberId);
+
+    return { playerName };
+  }
+
+  private async resolveContact(
+    contact: CreateContactType | { id?: string },
+    accountId: bigint,
+  ): Promise<bigint> {
+    if ('id' in contact && contact.id !== undefined) {
+      const contactId = BigInt(contact.id);
+      const existingContact = await this.contactRepository.findContactInAccount(
+        contactId,
+        accountId,
+      );
+
+      if (!existingContact) {
+        throw new NotFoundError('Contact not found');
+      }
+
+      return contactId;
+    }
+
+    const contactData = contact as CreateContactType;
+
+    if (!contactData.firstName || !contactData.lastName) {
+      throw new ValidationError('First name and last name are required for contact creation');
+    }
+
+    const newContact = await this.contactRepository.create({
+      firstname: contactData.firstName,
+      lastname: contactData.lastName,
+      middlename: contactData.middleName || '',
+      email: contactData.email || null,
+      phone1: contactData.contactDetails?.phone1 || null,
+      phone2: contactData.contactDetails?.phone2 || null,
+      phone3: contactData.contactDetails?.phone3 || null,
+      streetaddress: contactData.contactDetails?.streetAddress || null,
+      city: contactData.contactDetails?.city || null,
+      state: contactData.contactDetails?.state || null,
+      zip: contactData.contactDetails?.zip || null,
+      creatoraccountid: accountId,
+      dateofbirth: contactData.contactDetails?.dateOfBirth
+        ? DateUtils.parseDateOfBirthForDatabase(contactData.contactDetails.dateOfBirth)
+        : new Date('1900-01-01'),
     });
+
+    return newContact.id;
+  }
+
+  private async getRosterMemberForAccount(
+    rosterMemberId: bigint,
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbRosterMember> {
+    const rosterMember = await this.rosterRepository.findRosterMemberForAccount(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
 
     if (!rosterMember) {
       throw new NotFoundError('Roster member not found');
     }
 
-    const playerName = `${rosterMember.roster.contacts.firstname} ${rosterMember.roster.contacts.lastname}`;
-
-    // Permanently delete the roster member
-    await this.prisma.rosterseason.delete({
-      where: { id: rosterMemberId },
-    });
-
-    return { playerName };
+    return rosterMember;
   }
 }

@@ -132,7 +132,10 @@ export class ServiceFactory {
 
   static getRosterService(): RosterService {
     if (!this.rosterService) {
-      this.rosterService = new RosterService(prisma);
+      const rosterRepository = RepositoryFactory.getRosterRepository();
+      const teamRepository = RepositoryFactory.getTeamRepository();
+      const contactRepository = RepositoryFactory.getContactRepository();
+      this.rosterService = new RosterService(rosterRepository, teamRepository, contactRepository);
     }
     return this.rosterService;
   }

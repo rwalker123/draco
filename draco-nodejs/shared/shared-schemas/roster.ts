@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { BaseContactSchema } from './contact.js';
+import { BaseContactSchema, CreateContactSchema } from './contact.js';
 
 extendZodWithOpenApi(z);
 
@@ -60,7 +60,7 @@ export const SignRosterMemberSchema = RosterMemberSchema.omit({
         z.object({
           id: z.string(),
         }),
-        BaseContactSchema.omit({ id: true }).partial(),
+        CreateContactSchema,
       ]),
     }),
   })
