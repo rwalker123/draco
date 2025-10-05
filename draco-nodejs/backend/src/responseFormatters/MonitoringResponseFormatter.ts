@@ -161,7 +161,7 @@ export class MonitoringResponseFormatter {
 
     return {
       status: healthStatus.status,
-      timestamp: DateUtils.formatDateTimeForResponse(params.timestamp),
+      timestamp: DateUtils.formatDateTimeForResponse(params.timestamp) || '',
       uptime: params.uptimeSeconds,
       database: {
         status: isConnected ? 'connected' : 'unavailable',
@@ -202,7 +202,7 @@ export class MonitoringResponseFormatter {
 
     return {
       timeWindow: `${windowMinutes} minutes`,
-      timestamp: DateUtils.formatDateTimeForResponse(timestamp),
+      timestamp: DateUtils.formatDateTimeForResponse(timestamp) || '',
       summary: {
         totalQueries: stats.totalQueries,
         slowQueries: stats.slowQueries,
@@ -239,7 +239,7 @@ export class MonitoringResponseFormatter {
     const { slowQueries, databaseConfig, timestamp } = params;
 
     return {
-      timestamp: DateUtils.formatDateTimeForResponse(timestamp),
+      timestamp: DateUtils.formatDateTimeForResponse(timestamp) || '',
       threshold: databaseConfig.slowQueryThreshold,
       count: slowQueries.length,
       queries: slowQueries.map((query) => ({
@@ -264,7 +264,7 @@ export class MonitoringResponseFormatter {
     const totalConnections = metrics.totalConnections || 1;
 
     return {
-      timestamp: DateUtils.formatDateTimeForResponse(timestamp),
+      timestamp: DateUtils.formatDateTimeForResponse(timestamp) || '',
       metrics,
       configuration: {
         maxConnections: databaseConfig.connectionLimit,
@@ -286,7 +286,7 @@ export class MonitoringResponseFormatter {
 
     return {
       message,
-      timestamp: DateUtils.formatDateTimeForResponse(timestamp),
+      timestamp: DateUtils.formatDateTimeForResponse(timestamp) || '',
     };
   }
 
@@ -298,7 +298,7 @@ export class MonitoringResponseFormatter {
     const { timestamp, configuration, systemInfo } = params;
 
     return {
-      timestamp: DateUtils.formatDateTimeForResponse(timestamp),
+      timestamp: DateUtils.formatDateTimeForResponse(timestamp) || '',
       configuration,
       systemInfo,
     };
