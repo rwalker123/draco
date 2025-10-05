@@ -1,33 +1,32 @@
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcrypt';
-import { randomBytes } from 'node:crypto';
-import { PasswordResetModel } from '../models/PasswordReset.js';
-import { EmailService, EmailConfig } from '../services/emailService.js';
-import prisma from '../lib/prisma.js';
+import {
+  ChangePasswordRequestSchema,
+  SignInUserNameSchema,
+  VerifyTokenRequestSchema,
+} from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { ValidationError, InternalServerError } from '../utils/customErrors.js';
+import { ValidationError } from '../utils/customErrors.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 
 const router = Router();
 const routeProtection = ServiceFactory.getRouteProtection();
+const userService = ServiceFactory.getUserService();
 
-// Email configuration - you'll need to update these with your actual email settings
-const emailConfig: EmailConfig = {
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER || 'your-email@gmail.com',
-    pass: process.env.SMTP_PASS || 'your-app-password',
-  },
-};
+const PASSWORD_RESET_ACKNOWLEDGEMENT =
+  'If an account with that email exists, a password reset link has been sent.';
 
-const emailService = new EmailService(
-  emailConfig,
-  process.env.FROM_EMAIL || 'noreply@dracosports.com',
-  process.env.BASE_URL || 'http://localhost:3000',
-);
+function parseTestModeFlag(value: unknown): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true';
+  }
+
+  return false;
+}
 
 /**
  * Request password reset
@@ -36,52 +35,31 @@ const emailService = new EmailService(
 router.post(
   '/request',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { email, testMode = false } = req.body;
+    const { email } = req.body;
 
-    if (!email) {
+    if (typeof email !== 'string') {
       throw new ValidationError('Email is required');
     }
 
-    // Find user by email
-    const user = await prisma.aspnetusers.findFirst({
-      where: { username: email },
+    const parsedEmail = SignInUserNameSchema.parse(email);
+    const testMode = parseTestModeFlag(req.body?.testMode);
+
+    const result = await userService.requestPasswordReset({
+      email: parsedEmail,
+      testMode,
     });
 
-    if (!user) {
-      // Don't reveal if user exists or not for security
+    if (result.kind === 'user-not-found') {
       res.status(200).json({
         success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.',
+        message: PASSWORD_RESET_ACKNOWLEDGEMENT,
       });
       return;
     }
 
-    // Generate reset token
-    const resetToken = randomBytes(32).toString('hex');
-
-    // Save token to database
-    await PasswordResetModel.createToken(user.id, resetToken, 24); // 24 hours expiry
-
-    if (testMode) {
-      // Test mode: return the token directly instead of sending email
-      res.status(200).json({
-        token: resetToken,
-        userId: user.id,
-        email: user.username,
-      });
-
+    if (result.kind === 'test-token') {
+      res.status(200).json(result.user);
       return;
-    }
-
-    // Send email
-    const emailSent = await emailService.sendPasswordResetEmail(
-      email,
-      user.username || email,
-      resetToken,
-    );
-
-    if (!emailSent) {
-      throw new InternalServerError('Failed to send password reset email. Please try again later.');
     }
 
     res.status(200).json(true);
@@ -95,16 +73,11 @@ router.post(
 router.post(
   '/verify',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { token } = req.body;
+    const { token } = VerifyTokenRequestSchema.parse(req.body);
 
-    if (!token) {
-      throw new ValidationError('Reset token is required');
-    }
+    const verification = await userService.verifyPasswordResetToken(token);
 
-    const tokenData = await PasswordResetModel.findValidToken(token);
-    const isValid = !!tokenData;
-
-    res.status(200).json({ valid: isValid });
+    res.status(200).json(verification);
   }),
 );
 
@@ -115,36 +88,16 @@ router.post(
 router.post(
   '/reset',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { token, newPassword } = req.body;
-
-    if (!token || !newPassword) {
-      throw new ValidationError('Reset token and new password are required');
-    }
-
-    if (newPassword.length < 6) {
-      throw new ValidationError('Password must be at least 6 characters long');
-    }
-
-    // Verify token and get user
-    const tokenData = await PasswordResetModel.findValidToken(token);
-
-    if (!tokenData) {
-      throw new ValidationError('Invalid or expired reset token');
-    }
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-    // Update user password
-    await prisma.aspnetusers.update({
-      where: { id: tokenData.userId },
-      data: { passwordhash: hashedPassword },
+    const { token } = VerifyTokenRequestSchema.pick({ token: true }).parse({
+      token: req.body?.token,
+    });
+    const { newPassword } = ChangePasswordRequestSchema.pick({ newPassword: true }).parse({
+      newPassword: req.body?.newPassword,
     });
 
-    // Mark token as used
-    await PasswordResetModel.markTokenAsUsed(tokenData.id);
+    const resetResult = await userService.resetPasswordWithToken(token, newPassword);
 
-    res.status(200).json(true);
+    res.status(200).json(resetResult);
   }),
 );
 
@@ -157,7 +110,7 @@ router.delete(
   authenticateToken,
   routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const deletedCount = await PasswordResetModel.cleanupExpiredTokens();
+    const deletedCount = await userService.cleanupExpiredPasswordResetTokens();
 
     res.status(200).json(deletedCount);
   }),

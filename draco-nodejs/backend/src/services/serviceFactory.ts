@@ -37,6 +37,7 @@ import { UmpireService } from './umpireService.js';
 import { ScheduleService } from './scheduleService.js';
 import { LeagueService } from './LeagueService.js';
 import { MonitoringService } from './monitoringService.js';
+import { UserService } from './userService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -72,6 +73,7 @@ export class ServiceFactory {
   private static scheduleService: ScheduleService;
   private static leagueService: LeagueService;
   private static monitoringService: MonitoringService;
+  private static userService: UserService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -289,5 +291,15 @@ export class ServiceFactory {
       this.monitoringService = new MonitoringService();
     }
     return this.monitoringService;
+  }
+
+  static getUserService(): UserService {
+    if (!this.userService) {
+      this.userService = new UserService({
+        emailService: this.getEmailService(),
+      });
+    }
+
+    return this.userService;
   }
 }
