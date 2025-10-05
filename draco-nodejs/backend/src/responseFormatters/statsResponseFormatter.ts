@@ -17,7 +17,7 @@ import {
   dbPitchingStatisticsRow,
 } from '../repositories/types/dbTypes.js';
 import { DateUtils } from '../utils/dateUtils.js';
-import { getGameStatusShortText, getGameStatusText } from '@/utils/gameStatus.js';
+import { getGameStatusShortText, getGameStatusText } from '../utils/gameStatus.js';
 
 export class StatsResponseFormatter {
   static formatLeaderCategories(categories: dbLeaderCategoryConfig[]): LeaderCategoriesType {
@@ -192,7 +192,7 @@ export class StatsResponseFormatter {
       },
       league: {
         id: game.leagueid.toString(),
-        name: game.leagueseason?.name || '',
+        name: game.leagueseason?.league.name || '',
       },
       homeScore: game.hscore || 0,
       visitorScore: game.vscore || 0,
@@ -224,19 +224,21 @@ export class StatsResponseFormatter {
     };
   }
 
-  static formatBattingStatsResponse(battingStats: BattingStat[]): PlayerBattingStatsBriefType[] {
+  static formatBattingStatsResponse(
+    battingStats: dbBattingStatisticsRow[],
+  ): PlayerBattingStatsBriefType[] {
     return battingStats.map((stat) => ({
-      playerId: stat.playerId,
+      playerId: stat.playerId.toString(),
       playerName: stat.playerName,
-      ab: stat.atBats,
-      h: stat.hits,
-      d: stat.doubles,
-      t: stat.triples,
-      hr: stat.homeRuns,
-      rbi: stat.rbis,
-      r: stat.runs,
-      bb: stat.walks,
-      so: stat.strikeouts,
+      ab: stat.ab,
+      h: stat.h,
+      d: stat.d,
+      t: stat.t,
+      hr: stat.hr,
+      rbi: stat.rbi,
+      r: stat.r,
+      bb: stat.bb,
+      so: stat.so,
       avg: stat.avg,
       obp: stat.obp,
       slg: stat.slg,
@@ -245,20 +247,20 @@ export class StatsResponseFormatter {
   }
 
   static formatPitchingStatsResponse(
-    pitchingStats: PitchingStat[],
+    pitchingStats: dbPitchingStatisticsRow[],
   ): PlayerPitchingStatsBriefType[] {
     return pitchingStats.map((stat) => ({
-      playerId: stat.playerId,
+      playerId: stat.playerId.toString(),
       playerName: stat.playerName,
-      ip: stat.inningsPitched,
-      w: stat.wins,
-      l: stat.losses,
-      s: stat.saves,
-      h: stat.hits,
-      r: stat.runs,
-      er: stat.earnedRuns,
-      bb: stat.walks,
-      so: stat.strikeouts,
+      ip: stat.ip.toString() + '.' + stat.ip2.toString(), // Use ip (string) for brief stats to preserve fractional innings
+      w: stat.w,
+      l: stat.l,
+      s: stat.s,
+      h: stat.h,
+      r: stat.r,
+      er: stat.er,
+      bb: stat.bb,
+      so: stat.so,
       era: stat.era,
       whip: stat.whip,
     }));

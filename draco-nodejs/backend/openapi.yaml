@@ -4574,8 +4574,7 @@ components:
           type: number
           minimum: 0
         ip:
-          type: number
-          minimum: 0
+          type: string
           description: Innings pitched, rounded to nearest whole inning
       required:
         - playerId
