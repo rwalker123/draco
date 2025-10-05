@@ -109,6 +109,24 @@ export class PrismaTeamRepository implements ITeamRepository {
     });
   }
 
+  async createTeamDefinition(data: Partial<teams>): Promise<teams> {
+    return this.prisma.teams.create({
+      data: data as Parameters<typeof this.prisma.teams.create>[0]['data'],
+    });
+  }
+
+  async deleteTeamDefinition(teamId: bigint): Promise<teams> {
+    return this.prisma.teams.delete({
+      where: { id: Number(teamId) },
+    });
+  }
+
+  async countTeamSeasonsByTeamId(teamId: bigint): Promise<number> {
+    return this.prisma.teamsseason.count({
+      where: { teamid: teamId },
+    });
+  }
+
   async findTeamManager(
     contactId: bigint,
     teamId: bigint,

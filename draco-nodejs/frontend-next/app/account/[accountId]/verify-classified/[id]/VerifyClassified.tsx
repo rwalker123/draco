@@ -18,6 +18,9 @@ import {
 import { Check as CheckIcon, Error as ErrorIcon } from '@mui/icons-material';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import { validateAccessCode } from '../../../../../utils/accessCodeValidation';
+import { verifyTeamsWantedAccess } from '@draco/shared-api-client';
+import { createApiClient } from '../../../../../lib/apiClientFactory';
+import { ApiClientError, unwrapApiResult } from '../../../../../utils/apiResult';
 
 interface VerifyClassifiedProps {
   accountId: string;
@@ -74,26 +77,20 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
       }
 
       try {
-        // Make API request to verify access
-        const response = await fetch(
-          `/api/accounts/${accountId}/player-classifieds/teams-wanted/${classifiedId}/verify`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              accessCode: validation.sanitizedValue,
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Verification failed');
+        if (!validation.sanitizedValue) {
+          throw new Error('Invalid access code');
         }
 
-        const classified = await response.json();
+        // Make API request to verify access
+        const client = createApiClient();
+        const result = await verifyTeamsWantedAccess({
+          client,
+          path: { accountId, classifiedId },
+          body: { accessCode: validation.sanitizedValue },
+          throwOnError: false,
+        });
+
+        const classified = unwrapApiResult(result, 'Verification failed');
         setState({
           loading: false,
           success: true,
@@ -115,6 +112,12 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
           router.push(`/account/${accountId}/player-classifieds?tab=teams-wanted`);
         }, 3000);
       } catch (error) {
+        const status = error instanceof ApiClientError ? error.status : undefined;
+        if (status === 400) {
+          error = new Error('Invalid access code');
+        } else if (status === 404) {
+          error = new Error('Classified not found');
+        }
         setState({
           loading: false,
           success: false,

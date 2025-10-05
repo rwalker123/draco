@@ -49,7 +49,7 @@ export function useHierarchicalMaps(
 
       // Process divisions
       const divisionIds = new Set<string>();
-      league.divisions.forEach((division) => {
+      league.divisions?.forEach((division) => {
         itemTypeMap.set(division.id, 'division');
         parentMap.set(division.id, league.id);
         childrenMap.get(league.id)!.add(division.id);

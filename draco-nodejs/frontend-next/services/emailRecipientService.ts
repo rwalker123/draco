@@ -11,8 +11,9 @@ import {
   PagedContactType,
   BaseContactType,
   PaginationType,
+  LeagueSeasonWithDivisionTeamsType,
 } from '@draco/shared-schemas';
-import { RecipientContact, League } from '../types/emails/recipients';
+import { RecipientContact } from '../types/emails/recipients';
 import { EmailRecipientErrorCode, AsyncResult, Result } from '../types/errors';
 import {
   handleApiError,
@@ -20,13 +21,14 @@ import {
   safeAsync,
   logError,
   createEmailRecipientError,
-  normalizeError,
 } from '../utils/errorHandling';
 import {
   getCurrentSeason,
   getSeasonParticipantCount,
   listSeasonLeagueSeasons,
   listSeasonTeams,
+  listSeasonManagers,
+  getTeamRosterMembers,
   searchContacts as apiSearchContacts,
 } from '@draco/shared-api-client';
 import { createApiClient } from '../lib/apiClientFactory';
@@ -147,7 +149,6 @@ const defaultServiceConfig: ServiceConfig = {
  */
 export class EmailRecipientService {
   private config: ServiceConfig;
-  private abortController?: AbortController;
 
   constructor(config: Partial<ServiceConfig> = {}) {
     this.config = { ...defaultServiceConfig, ...config };
@@ -230,62 +231,6 @@ export class EmailRecipientService {
     }
 
     return data;
-  }
-
-  /**
-   * Create fetch request with timeout and abort signal
-   */
-  private async fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
-    // Create new abort controller for this request
-    this.abortController = new AbortController();
-
-    // Set up timeout
-    const timeoutId = setTimeout(() => {
-      this.abortController?.abort();
-    }, this.config.timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: this.abortController.signal,
-      });
-
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw createEmailRecipientError(EmailRecipientErrorCode.API_TIMEOUT, 'Request timeout', {
-            details: { timeoutMs: this.config.timeoutMs, url },
-            context: {
-              operation: 'fetch_request',
-              additionalData: { endpoint: url },
-            },
-          });
-        }
-
-        if (error.message.includes('fetch')) {
-          throw createEmailRecipientError(
-            EmailRecipientErrorCode.NETWORK_ERROR,
-            'Network request failed',
-            {
-              details: { originalError: error.message, url },
-              context: {
-                operation: 'fetch_request',
-                additionalData: { endpoint: url },
-              },
-            },
-          );
-        }
-      }
-
-      throw normalizeError(error, {
-        operation: 'fetch_request',
-        additionalData: { endpoint: url },
-      });
-    }
   }
 
   /**
@@ -391,30 +336,35 @@ export class EmailRecipientService {
       };
     }
 
-    const headersResult = this.getHeaders(token);
-    if (!headersResult.success) {
-      return { success: false, error: headersResult.error };
-    }
+    const params: ContactSearchParamsType = ContactSearchParamsSchema.parse({
+      q: query.trim(),
+      seasonId: options.seasonId,
+      includeRoles: options.roles,
+      contactDetails: options.contactDetails,
+      paging:
+        options.page !== undefined || options.limit !== undefined
+          ? {
+              page: options.page ?? 1,
+              limit: options.limit ?? 50,
+              skip: ((options.page ?? 1) - 1) * (options.limit ?? 50),
+            }
+          : undefined,
+    });
 
-    const params = new URLSearchParams();
-    params.append('q', query.trim());
-    if (options.seasonId) params.append('seasonId', options.seasonId);
-    if (options.roles) params.append('roles', 'true');
-    if (options.contactDetails) params.append('contactDetails', 'true');
-    if (options.page !== undefined) params.append('page', options.page.toString());
-    if (options.limit !== undefined) params.append('limit', options.limit.toString());
-
-    const url = `/api/accounts/${accountId}/contacts?${params.toString()}`;
+    const apiClient = createApiClient({ token: token || undefined });
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
+        const result = await apiSearchContacts({
+          client: apiClient,
+          path: { accountId },
+          query: params,
+          throwOnError: false,
         });
 
-        const data = await this.handleResponse<ContactsResponse>(response);
+        const data = unwrapApiResult(result, 'Failed to search contacts') as PagedContactType;
 
-        if (!data.data?.contacts || !Array.isArray(data.data.contacts)) {
+        if (!data.contacts || !Array.isArray(data.contacts)) {
           throw createEmailRecipientError(
             EmailRecipientErrorCode.SEARCH_FAILED,
             'Invalid search response format',
@@ -426,13 +376,20 @@ export class EmailRecipientService {
         }
 
         return {
-          contacts: data.data.contacts,
-          pagination: data.pagination,
+          contacts: data.contacts,
+          pagination: data.pagination
+            ? {
+                page: data.pagination.page,
+                limit: data.pagination.limit,
+                hasNext: data.pagination.hasNext,
+                hasPrev: data.pagination.hasPrev,
+              }
+            : undefined,
         };
       },
       {
         operation: 'search_contacts',
-        additionalData: { endpoint: url },
+        additionalData: { endpoint: 'openapi:searchContacts' },
       },
     );
   }
@@ -556,20 +513,48 @@ export class EmailRecipientService {
       return { success: false, error: headersResult.error };
     }
 
-    const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`;
+    const apiClient = createApiClient({ token: token || undefined });
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
+        const result = await getTeamRosterMembers({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          throwOnError: false,
         });
 
-        const data = await this.handleResponse<ContactsResponse>(response);
-        return data.data.contacts;
+        const data = unwrapApiResult(result, 'Failed to load team roster');
+
+        const contacts: ContactType[] = data.rosterMembers
+          .map((member) => member.player?.contact)
+          .filter((contact): contact is NonNullable<typeof contact> => Boolean(contact))
+          .map((contact) => ({
+            id: contact.id,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            middleName: contact.middleName,
+            email: contact.email,
+            userId: undefined,
+            photoUrl: contact.photoUrl ?? undefined,
+            contactDetails: contact.contactDetails
+              ? {
+                  phone1: contact.contactDetails.phone1 ?? '',
+                  phone2: contact.contactDetails.phone2 ?? '',
+                  phone3: contact.contactDetails.phone3 ?? '',
+                  streetAddress: contact.contactDetails.streetAddress ?? null,
+                  city: contact.contactDetails.city ?? null,
+                  state: contact.contactDetails.state ?? null,
+                  zip: contact.contactDetails.zip ?? null,
+                  dateOfBirth: null,
+                }
+              : undefined,
+          }));
+
+        return contacts;
       },
       {
         operation: 'fetch_team_roster',
-        additionalData: { endpoint: url },
+        additionalData: { endpoint: 'openapi:getTeamRosterMembers' },
       },
     );
   }
@@ -588,20 +573,47 @@ export class EmailRecipientService {
       return { success: false, error: headersResult.error };
     }
 
-    const url = `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`;
+    const apiClient = createApiClient({ token: token || undefined });
 
     return this.executeRequest(
       async () => {
-        const response = await this.fetchWithTimeout(url, {
-          headers: headersResult.data,
+        const result = await listSeasonManagers({
+          client: apiClient,
+          path: { accountId, seasonId },
+          throwOnError: false,
         });
 
-        const data = await this.handleResponse<ContactsResponse>(response);
-        return data.data.contacts;
+        const data = unwrapApiResult(result, 'Failed to load managers');
+
+        const contacts: ContactType[] = data.managers
+          .filter((manager) => manager.allTeams.some((team) => team.id === teamSeasonId))
+          .map((manager) => ({
+            id: manager.contact.id,
+            firstName: manager.contact.firstName,
+            lastName: manager.contact.lastName,
+            middleName: undefined,
+            email: manager.contact.email,
+            userId: undefined,
+            photoUrl: undefined,
+            contactDetails: manager.contact.contactDetails
+              ? {
+                  phone1: manager.contact.contactDetails.phone1 || '',
+                  phone2: manager.contact.contactDetails.phone2 || '',
+                  phone3: manager.contact.contactDetails.phone3 || '',
+                  streetAddress: null,
+                  city: null,
+                  state: null,
+                  zip: null,
+                  dateOfBirth: null,
+                }
+              : undefined,
+          }));
+
+        return contacts;
       },
       {
         operation: 'fetch_team_managers',
-        additionalData: { endpoint: url },
+        additionalData: { endpoint: 'openapi:listSeasonManagers' },
       },
     );
   }
@@ -615,7 +627,7 @@ export class EmailRecipientService {
     seasonId: string,
     includePlayerCounts: boolean = false,
     includeManagerCounts: boolean = false,
-  ): AsyncResult<League[]> {
+  ): AsyncResult<LeagueSeasonWithDivisionTeamsType[]> {
     if (!accountId || accountId.trim() === '') {
       return {
         success: false,
@@ -660,7 +672,7 @@ export class EmailRecipientService {
         });
 
         const data = unwrapApiResult(result, 'Failed to load leagues');
-        const mapped = mapLeagueSetup(data, accountId);
+        const mapped = mapLeagueSetup(data);
 
         if (!mapped.leagueSeasons || !Array.isArray(mapped.leagueSeasons)) {
           throw createEmailRecipientError(
@@ -672,37 +684,13 @@ export class EmailRecipientService {
           );
         }
 
-        const seasonInfo = mapped.season ?? {
+        mapped.season = mapped.season ?? {
           id: seasonId,
           name: '',
           accountId,
         };
 
-        const leagues: League[] = mapped.leagueSeasons.map((ls) => ({
-          id: ls.leagueId,
-          name: ls.leagueName,
-          divisions: ls.divisions.map((division) => ({
-            id: division.divisionId,
-            name: division.divisionName,
-            teams: division.teams.map((team) => ({
-              id: team.id,
-              name: team.name,
-              playerCount: team.playerCount ?? 0,
-              leagueId: ls.leagueId,
-              leagueName: ls.leagueName,
-              divisionId: division.divisionId,
-              divisionName: division.divisionName,
-            })),
-            teamCount: division.teamCount,
-            totalPlayers: division.totalPlayers,
-          })),
-          teamCount: ls.totalTeams,
-          totalPlayers: ls.totalPlayers,
-          seasonId: seasonInfo.id,
-          seasonName: seasonInfo.name,
-        }));
-
-        return leagues;
+        return mapped.leagueSeasons;
       },
       {
         operation: 'fetch_leagues',

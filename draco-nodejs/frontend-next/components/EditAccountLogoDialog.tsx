@@ -16,8 +16,11 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import Image from 'next/image';
-import { useAuth } from '../context/AuthContext';
 import { addCacheBuster } from '../utils/addCacheBuster';
+import { uploadAccountLogo, deleteAccountLogo } from '@draco/shared-api-client';
+import { useApiClient } from '../hooks/useApiClient';
+import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
+import { assertNoApiError } from '../utils/apiResult';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
@@ -48,7 +51,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   onClose,
   onLogoUpdated,
 }) => {
-  const { token } = useAuth();
+  const apiClient = useApiClient();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,18 +95,16 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     setSaving(true);
     setError(null);
     try {
-      const formData = new FormData();
-      formData.append('logo', logoFile);
-      const response = await fetch(`/api/accounts/${accountId}/logo`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      const result = await uploadAccountLogo({
+        client: apiClient,
+        path: { accountId },
+        body: { logo: logoFile },
+        throwOnError: false,
+        headers: { 'Content-Type': null },
+        ...formDataBodySerializer,
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to upload logo');
-      }
+
+      assertNoApiError(result, 'Failed to upload logo');
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
       onLogoUpdated();
       onClose();
@@ -118,15 +119,13 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     setDeleting(true);
     setError(null);
     try {
-      const response = await fetch(`/api/accounts/${accountId}/logo`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      const result = await deleteAccountLogo({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to delete logo');
-      }
+
+      assertNoApiError(result, 'Failed to delete logo');
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
       onLogoUpdated();
       onClose();

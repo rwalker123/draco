@@ -36,6 +36,7 @@ import { FieldService } from './fieldService.js';
 import { UmpireService } from './umpireService.js';
 import { ScheduleService } from './scheduleService.js';
 import { LeagueService } from './LeagueService.js';
+import { MonitoringService } from './monitoringService.js';
 import { UserService } from './userService.js';
 
 /**
@@ -71,6 +72,7 @@ export class ServiceFactory {
   private static umpireService: UmpireService;
   private static scheduleService: ScheduleService;
   private static leagueService: LeagueService;
+  private static monitoringService: MonitoringService;
   private static userService: UserService;
 
   static getRoleService(): IRoleService {
@@ -282,6 +284,13 @@ export class ServiceFactory {
       this.scheduleService = new ScheduleService();
     }
     return this.scheduleService;
+  }
+
+  static getMonitoringService(): MonitoringService {
+    if (!this.monitoringService) {
+      this.monitoringService = new MonitoringService();
+    }
+    return this.monitoringService;
   }
 
   static getUserService(): UserService {

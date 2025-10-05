@@ -1,10 +1,13 @@
 import {
   aspnetusers,
-  passwordresettokens,
   playerswantedclassified,
   Prisma,
   teamswantedclassified,
 } from '@prisma/client';
+
+export interface dbMonitoringConnectivityResult {
+  connectivity_test: number;
+}
 
 export interface dbTeamSeasonValidationResult {
   id: bigint;

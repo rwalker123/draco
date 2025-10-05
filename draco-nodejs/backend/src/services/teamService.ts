@@ -1,6 +1,10 @@
-import { NotFoundError } from '../utils/customErrors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
-import { ITeamRepository, ISeasonRepository } from '../repositories/interfaces/index.js';
+import {
+  ITeamRepository,
+  ISeasonRepository,
+  ILeagueRepository,
+} from '../repositories/interfaces/index.js';
 import { ServiceFactory } from './serviceFactory.js';
 import {
   TeamSeasonRecordType,
@@ -11,7 +15,7 @@ import {
 } from '@draco/shared-schemas';
 import { TeamResponseFormatter } from '../responseFormatters/index.js';
 import { Prisma, teamsseason, teams } from '@prisma/client';
-import { dbTeamSeasonValidationResult } from '../repositories/types/dbTypes.js';
+import { dbTeam, dbTeamSeasonValidationResult } from '../repositories/types/dbTypes.js';
 
 export interface TeamValidationOptions {
   includeTeams?: boolean;
@@ -23,12 +27,14 @@ export interface TeamValidationOptions {
 export class TeamService {
   private readonly teamRepository: ITeamRepository;
   private readonly seasonRepository: ISeasonRepository;
+  private readonly leagueRepository: ILeagueRepository;
 
   private contactService = ServiceFactory.getContactService();
 
   constructor() {
     this.teamRepository = RepositoryFactory.getTeamRepository();
     this.seasonRepository = RepositoryFactory.getSeasonRepository();
+    this.leagueRepository = RepositoryFactory.getLeagueRepository();
   }
 
   async getUserTeams(accountId: bigint, userId: string): Promise<TeamSeasonType[]> {
@@ -84,6 +90,97 @@ export class TeamService {
       accountId,
       teamsWithLeaguesAndDivisions,
     );
+  }
+
+  async createTeamSeason(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+    name: string,
+  ): Promise<TeamSeasonType> {
+    const trimmedName = name?.trim();
+
+    if (!trimmedName) {
+      throw new ValidationError('Team name is required');
+    }
+
+    const leagueSeason = await this.leagueRepository.findLeagueSeasonRecord(
+      leagueSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found');
+    }
+
+    const existingTeams = await this.teamRepository.findMany({
+      name: trimmedName,
+      leagueseasonid: leagueSeasonId,
+    });
+
+    if (existingTeams.length > 0) {
+      throw new ConflictError('A team with this name already exists in this league season');
+    }
+
+    const teamDefinition = await this.teamRepository.createTeamDefinition({
+      accountid: accountId,
+      webaddress: '',
+      youtubeuserid: null,
+      defaultvideo: '',
+      autoplayvideo: false,
+    });
+
+    const teamSeason = await this.teamRepository.create({
+      name: trimmedName,
+      leagueseasonid: leagueSeasonId,
+      teamid: teamDefinition.id,
+    });
+
+    const createdTeamSeason = await this.teamRepository.findTeamSeasonForValidation(
+      teamSeason.id,
+      seasonId,
+      accountId,
+      {
+        teams: true,
+        leagueseason: {
+          include: {
+            league: true,
+          },
+        },
+      },
+    );
+
+    if (!createdTeamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    return TeamResponseFormatter.formatTeamSeasonSummary(
+      accountId,
+      createdTeamSeason as unknown as dbTeam,
+    );
+  }
+
+  async removeTeamSeason(accountId: bigint, seasonId: bigint, teamSeasonId: bigint): Promise<void> {
+    await this.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
+
+    await this.teamRepository.delete(teamSeasonId);
+  }
+
+  async deleteTeam(accountId: bigint, teamId: bigint): Promise<void> {
+    const team = await this.teamRepository.findTeamDefinition(teamId);
+
+    if (!team || team.accountid !== accountId) {
+      throw new NotFoundError('Team not found');
+    }
+
+    const seasonsCount = await this.teamRepository.countTeamSeasonsByTeamId(teamId);
+
+    if (seasonsCount > 0) {
+      throw new ConflictError('Team cannot be deleted while assigned to seasons');
+    }
+
+    await this.teamRepository.deleteTeamDefinition(teamId);
   }
 
   async getTeamSeasonDetails(

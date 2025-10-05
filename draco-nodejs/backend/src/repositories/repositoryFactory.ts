@@ -18,6 +18,7 @@ import {
   IEmailTemplateRepository,
   IEmailAttachmentRepository,
   IScheduleRepository,
+  IMonitoringRepository,
   IPasswordResetTokenRepository,
 } from './interfaces/index.js';
 import {
@@ -40,6 +41,7 @@ import {
   PrismaPlayersWantedRepository,
   PrismaEmailAttachmentRepository,
   PrismaScheduleRepository,
+  PrismaMonitoringRepository,
   PrismaPasswordResetTokenRepository,
 } from './implementations/index.js';
 
@@ -69,6 +71,7 @@ export class RepositoryFactory {
   private static emailTemplateRepository: IEmailTemplateRepository;
   private static emailAttachmentRepository: IEmailAttachmentRepository;
   private static scheduleRepository: IScheduleRepository;
+  private static monitoringRepository: IMonitoringRepository;
   private static passwordResetTokenRepository: IPasswordResetTokenRepository;
 
   static getLeagueRepository(): ILeagueRepository {
@@ -201,6 +204,13 @@ export class RepositoryFactory {
       this.scheduleRepository = new PrismaScheduleRepository(prisma);
     }
     return this.scheduleRepository;
+  }
+
+  static getMonitoringRepository(): IMonitoringRepository {
+    if (!this.monitoringRepository) {
+      this.monitoringRepository = new PrismaMonitoringRepository(prisma);
+    }
+    return this.monitoringRepository;
   }
 
   static getPasswordResetTokenRepository(): IPasswordResetTokenRepository {

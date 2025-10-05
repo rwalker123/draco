@@ -2,17 +2,20 @@ import { useState, useEffect, useCallback, useRef, useMemo, useReducer } from 'r
 import { useAuth } from '../context/AuthContext';
 import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
-import {
-  createContextDataService,
-  League,
-  Team,
-  LeagueSeason,
-} from '../services/contextDataService';
+import { createContextDataService } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
 import { Role, UseUserManagementReturn } from '../types/users';
 import { useUserDataManager } from './useUserDataManager';
 import { useUserApiOperations } from './useUserApiOperations';
-import { ContactRoleType, ContactType, RoleWithContactType } from '@draco/shared-schemas';
+import {
+  BaseContactType,
+  ContactRoleType,
+  ContactType,
+  LeagueSeasonType,
+  RoleWithContactType,
+  TeamManagerWithTeamsType,
+  TeamSeasonType,
+} from '@draco/shared-schemas';
 
 // Pagination state for atomic updates
 interface PaginationState {
@@ -123,32 +126,14 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   );
 
   // Context data states
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [leagueSeasons, setLeagueSeasons] = useState<LeagueSeason[]>([]);
+  const [leagues, setLeagues] = useState<LeagueSeasonType[]>([]);
+  const [teams, setTeams] = useState<TeamSeasonType[]>([]);
+  const [leagueSeasons, setLeagueSeasons] = useState<LeagueSeasonType[]>([]);
   const [contextDataLoading, setContextDataLoading] = useState(false);
 
   // Automatic role holders state
-  const [accountOwner, setAccountOwner] = useState<{
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    photoUrl?: string;
-  } | null>(null); // Initialize as null, but will be set once loaded
-  const [teamManagers, setTeamManagers] = useState<
-    Array<{
-      contactId: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      photoUrl?: string;
-      teams: Array<{
-        teamSeasonId: string;
-        teamName: string;
-      }>;
-    }>
-  >([]);
+  const [accountOwner, setAccountOwner] = useState<BaseContactType | null>(null); // Initialize as null, but will be set once loaded
+  const [teamManagers, setTeamManagers] = useState<TeamManagerWithTeamsType[]>([]);
   const [automaticRolesLoading, setAutomaticRolesLoading] = useState(false);
 
   // Service instances
@@ -613,14 +598,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       const contextData = await contextDataService.fetchLeaguesAndTeams(accountId, currentSeasonId);
 
       setLeagueSeasons(contextData.leagueSeasons);
-      setLeagues(
-        contextData.leagueSeasons.map((ls) => ({
-          id: ls.id,
-          leagueId: ls.leagueId,
-          leagueName: ls.leagueName,
-          accountId: ls.accountId,
-        })),
-      );
+      setLeagues(contextData.leagueSeasons);
 
       const teamsData = await contextDataService.fetchTeams(accountId, currentSeasonId);
       setTeams(teamsData);
