@@ -23913,7 +23913,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PlayerBattingStatsBrief"
+                    "$ref": "#/components/schemas/PlayerBattingStats"
                   }
                 }
               }
@@ -23997,7 +23997,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PlayerPitchingStatsBrief"
+                    "$ref": "#/components/schemas/PlayerPitchingStats"
                   }
                 }
               }

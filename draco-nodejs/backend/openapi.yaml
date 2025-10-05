@@ -16091,7 +16091,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PlayerBattingStatsBrief"
+                  $ref: "#/components/schemas/PlayerBattingStats"
         "400":
           description: Invalid parameters provided
           content:
@@ -16144,7 +16144,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PlayerPitchingStatsBrief"
+                  $ref: "#/components/schemas/PlayerPitchingStats"
         "400":
           description: Invalid parameters provided
           content:

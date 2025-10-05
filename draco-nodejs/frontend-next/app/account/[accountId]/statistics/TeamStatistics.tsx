@@ -30,36 +30,7 @@ import {
   listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
   listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
 } from '@draco/shared-api-client';
-import type {
-  PlayerBattingStatsBriefType,
-  PlayerPitchingStatsBriefType,
-} from '@draco/shared-schemas';
-
-interface BattingStatsRow extends PlayerBattingStatsBriefType {
-  teamName?: string;
-  hbp?: number;
-  sb?: number;
-  sf?: number;
-  sh?: number;
-  tb?: number;
-  pa?: number;
-  [key: string]: unknown;
-}
-
-interface PitchingStatsRow extends PlayerPitchingStatsBriefType {
-  teamName?: string;
-  ip2?: number;
-  hr?: number;
-  bf?: number;
-  wp?: number;
-  hbp?: number;
-  k9?: number;
-  bb9?: number;
-  oba?: number;
-  slg?: number;
-  ipDecimal?: number;
-  [key: string]: unknown;
-}
+import type { PlayerBattingStatsType, PlayerPitchingStatsType } from '@draco/shared-schemas';
 
 // Column configurations matching the exact order from BattingStatistics
 const BATTING_COLUMNS = [
@@ -184,8 +155,8 @@ interface TeamStatisticsProps {
 export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsProps) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
-  const [battingStats, setBattingStats] = useState<BattingStatsRow[]>([]);
-  const [pitchingStats, setPitchingStats] = useState<PitchingStatsRow[]>([]);
+  const [battingStats, setBattingStats] = useState<PlayerBattingStatsType[]>([]);
+  const [pitchingStats, setPitchingStats] = useState<PlayerPitchingStatsType[]>([]);
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState({
     teams: false,
@@ -193,9 +164,9 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     pitching: false,
   });
   const [error, setError] = useState<string | null>(null);
-  const [battingSortField, setBattingSortField] = useState<keyof BattingStatsRow>('avg');
+  const [battingSortField, setBattingSortField] = useState<keyof PlayerBattingStatsType>('avg');
   const [battingSortOrder, setBattingSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [pitchingSortField, setPitchingSortField] = useState<keyof PitchingStatsRow>('era');
+  const [pitchingSortField, setPitchingSortField] = useState<keyof PlayerPitchingStatsType>('era');
   const [pitchingSortOrder, setPitchingSortOrder] = useState<'asc' | 'desc'>('asc');
   const apiClient = useApiClient();
 
@@ -251,7 +222,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
         throwOnError: false,
       });
 
-      const data = unwrapApiResult<PlayerBattingStatsBriefType[]>(
+      const data = unwrapApiResult<PlayerBattingStatsType[]>(
         result,
         'Failed to load batting stats',
       );
@@ -277,7 +248,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
         throwOnError: false,
       });
 
-      const data = unwrapApiResult<PlayerPitchingStatsBriefType[]>(
+      const data = unwrapApiResult<PlayerPitchingStatsType[]>(
         result,
         'Failed to load pitching stats',
       );
@@ -313,13 +284,13 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setTabValue(newValue);
   };
 
-  const handleBattingSort = (field: keyof BattingStatsRow) => {
+  const handleBattingSort = (field: keyof PlayerBattingStatsType) => {
     if (field === battingSortField) {
       setBattingSortOrder(battingSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setBattingSortField(field);
       // Default sort order for different types of stats
-      const defaultDescFields: (keyof BattingStatsRow)[] = [
+      const defaultDescFields: (keyof PlayerBattingStatsType)[] = [
         'avg',
         'obp',
         'slg',
@@ -334,13 +305,13 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     }
   };
 
-  const handlePitchingSort = (field: keyof PitchingStatsRow) => {
+  const handlePitchingSort = (field: keyof PlayerPitchingStatsType) => {
     if (field === pitchingSortField) {
       setPitchingSortOrder(pitchingSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setPitchingSortField(field);
       // Default sort order for pitching stats (lower is better for rates)
-      const defaultAscFields: (keyof PitchingStatsRow)[] = [
+      const defaultAscFields: (keyof PlayerPitchingStatsType)[] = [
         'era',
         'whip',
         'bb9',
