@@ -183,3 +183,4 @@ export type GameStatusEnumType = z.infer<typeof GameStatusEnumSchema>;
 export type GameStatusShortEnumType = z.infer<typeof GameStatusShortEnumSchema>;
 export type GameTypeEnumType = z.infer<typeof GameTypeEnumSchema>;
 export type RecentGamesQueryType = z.infer<typeof RecentGamesQuerySchema>;
+export type GameRecapsType = z.infer<typeof GameRecapsSchema>;

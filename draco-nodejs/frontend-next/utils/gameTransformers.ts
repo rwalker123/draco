@@ -1,13 +1,11 @@
 import { listSeasonGames } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
-import type { GamesWithRecapsType, TeamSeasonNameType } from '@draco/shared-schemas';
+import type { GameRecapsType, TeamSeasonNameType } from '@draco/shared-schemas';
 import { Game as ScheduleGame, GameStatus } from '../types/schedule';
 import { Game } from '../components/GameListDisplay';
 import { GameCardData } from '../components/GameCard';
 import { getGameStatusText, getGameStatusShortText } from './gameUtils';
 import { unwrapApiResult } from './apiResult';
-
-type ApiGame = GamesWithRecapsType['games'][number];
 
 const toOptionalString = (value?: string | null): string | undefined => {
   if (typeof value === 'string' && value.trim().length > 0) {
@@ -39,7 +37,7 @@ const normalizeGameType = (value: string | number | undefined): number | undefin
   return Number.isNaN(parsedValue) ? undefined : parsedValue;
 };
 
-const mapRecaps = (game: ApiGame) => {
+const mapRecaps = (game: GameRecapsType) => {
   if (!Array.isArray(game.recaps)) {
     return [] as Game['gameRecaps'];
   }
@@ -50,7 +48,7 @@ const mapRecaps = (game: ApiGame) => {
   }));
 };
 
-const mapField = (game: ApiGame) => {
+const mapField = (game: GameRecapsType) => {
   if (!game.field) {
     return {
       id: null,
@@ -74,7 +72,7 @@ const mapUmpireId = (umpire?: { id: string } | null): string | undefined => {
   return umpire.id;
 };
 
-const mapScheduleFieldDetails = (game: ApiGame): ScheduleGame['field'] | undefined => {
+const mapScheduleFieldDetails = (game: GameRecapsType): ScheduleGame['field'] | undefined => {
   if (!game.field) {
     return undefined;
   }
@@ -89,7 +87,7 @@ const mapScheduleFieldDetails = (game: ApiGame): ScheduleGame['field'] | undefin
   };
 };
 
-const mapApiGameToGameCard = (game: ApiGame): Game => {
+const mapApiGameToGameCard = (game: GameRecapsType): Game => {
   const gameStatus = game.gameStatus ?? GameStatus.Scheduled;
   const recaps = mapRecaps(game);
   const field = mapField(game);
@@ -122,11 +120,11 @@ const mapApiGameToGameCard = (game: ApiGame): Game => {
   };
 };
 
-export const transformGamesFromAPI = (games: ApiGame[]): Game[] => {
+export const transformGamesFromAPI = (games: GameRecapsType[]): Game[] => {
   return games.map(mapApiGameToGameCard);
 };
 
-export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
+export const mapGameResponseToScheduleGame = (game: GameRecapsType): ScheduleGame => {
   const gameStatus = game.gameStatus ?? GameStatus.Scheduled;
   const parsedGameType = normalizeGameType(game.gameType) ?? 0;
 
