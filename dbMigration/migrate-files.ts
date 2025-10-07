@@ -500,7 +500,9 @@ class FileMigrationService {
         }
 
         if (this.isTestMode && processedAccounts >= this.testLimits.accounts) {
-          console.log('🧪 Test mode: reached account directory limit, skipping remaining accounts.');
+          console.log(
+            '🧪 Test mode: reached account directory limit, skipping remaining accounts.',
+          );
           break;
         }
 
@@ -571,15 +573,16 @@ class FileMigrationService {
         } else if (this.isImageFile(fileName)) {
           await this.processLegacyAccountLogo(accountId, remoteFilePath);
         } else {
-          console.log(
-            `ℹ️ Skipping unrecognized account file for ${accountId}: ${fileName}.`,
-          );
+          console.log(`ℹ️ Skipping unrecognized account file for ${accountId}: ${fileName}.`);
         }
       }
     }
   }
 
-  private async processAccountLogoDirectory(accountId: string, remoteDirPath: string): Promise<void> {
+  private async processAccountLogoDirectory(
+    accountId: string,
+    remoteDirPath: string,
+  ): Promise<void> {
     try {
       const logoFiles = await this.listDirectory(remoteDirPath);
       let processedFiles = 0;
@@ -708,7 +711,10 @@ class FileMigrationService {
     }
   }
 
-  private async processAccountPhotoGallery(accountId: string, remoteDirPath: string): Promise<void> {
+  private async processAccountPhotoGallery(
+    accountId: string,
+    remoteDirPath: string,
+  ): Promise<void> {
     try {
       const galleryDirs = await this.listDirectory(remoteDirPath);
       let processedGalleries = 0;
@@ -855,9 +861,7 @@ class FileMigrationService {
 
           try {
             await this.storageService.saveSponsorPhoto(accountId, sponsorId, buffer);
-            console.log(
-              `✅ Uploaded sponsor logo for account ${accountId}, sponsor ${sponsorId}`,
-            );
+            console.log(`✅ Uploaded sponsor logo for account ${accountId}, sponsor ${sponsorId}`);
             this.stats.sponsorLogos.uploaded++;
             this.markFileProcessed(remotePath);
           } catch (error) {
@@ -1450,7 +1454,9 @@ class FileMigrationService {
         }
 
         if (this.isTestMode && processedContacts >= this.testLimits.contacts) {
-          console.log('🧪 Test mode: reached contact directory limit, skipping remaining contacts.');
+          console.log(
+            '🧪 Test mode: reached contact directory limit, skipping remaining contacts.',
+          );
           break;
         }
 
@@ -1501,7 +1507,10 @@ class FileMigrationService {
                   this.stats.contactPhotos.uploaded++;
                   this.markFileProcessed(remotePath);
                 } catch (error) {
-                  console.error(`❌ Failed to upload contact photo for ${accountId}/${contactId}:`, error);
+                  console.error(
+                    `❌ Failed to upload contact photo for ${accountId}/${contactId}:`,
+                    error,
+                  );
                   this.stats.contactPhotos.errors++;
                   this.markFileFailed(remotePath);
                 }
@@ -1541,16 +1550,13 @@ class FileMigrationService {
     this.printCategoryStats('📋 Where Heard Options', this.stats.whereHeardOptions);
     this.printCategoryStats('💬 Message Boards', this.stats.messageBoards);
 
-    const totals = Object.values(this.stats).reduce(
-      (acc, item) => {
-        acc.downloaded += item.downloaded;
-        acc.uploaded += item.uploaded;
-        acc.skipped += item.skipped;
-        acc.errors += item.errors;
-        return acc;
-      },
-      this.createEmptyStats(),
-    );
+    const totals = Object.values(this.stats).reduce((acc, item) => {
+      acc.downloaded += item.downloaded;
+      acc.uploaded += item.uploaded;
+      acc.skipped += item.skipped;
+      acc.errors += item.errors;
+      return acc;
+    }, this.createEmptyStats());
 
     console.log('\n📈 Totals:');
     console.log(`  Total Downloaded: ${totals.downloaded}`);
