@@ -12,7 +12,6 @@
     "dev:debug": "nodemon --exec \"node --inspect=9229 dist/src/server.js\"",
     "build": "prisma generate && tsc",
     "clean": "rm -rf dist",
-    "migrate-passwords": "ts-node scripts/migrate-passwords.ts",
     "prepare": "husky",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
