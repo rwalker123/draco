@@ -9,13 +9,20 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { Client as FTPClient } from 'basic-ftp';
+import { Client as FTPClient, type AccessOptions, type FileInfo as FtpFileInfo } from 'basic-ftp';
 // PrismaClient will be imported dynamically from the backend
 import * as dotenv from 'dotenv';
 
-// Load environment variables from backend .env
-const envPath = path.join(__dirname, '../draco-nodejs/backend/.env');
-dotenv.config({ path: envPath });
+// Load environment variables, preferring migration overrides before backend defaults
+const migrationEnvPath = path.join(__dirname, '.env');
+if (fs.existsSync(migrationEnvPath)) {
+  dotenv.config({ path: migrationEnvPath });
+}
+
+const backendEnvPath = path.join(__dirname, '../draco-nodejs/backend/.env');
+if (fs.existsSync(backendEnvPath)) {
+  dotenv.config({ path: backendEnvPath });
+}
 
 // Types for our migration
 interface MigrationStats {
@@ -34,10 +41,16 @@ class FileMigrationService {
   private prisma: any; // Will import dynamically
   private storageService: any; // Will import dynamically
   private ftpClient: FTPClient;
+  private ftpConfig: AccessOptions | null = null;
   private tempDir: string;
   private stats: MigrationStats;
   private teamToAccountMap: Map<string, string> = new Map();
   private contactToAccountMap: Map<string, string> = new Map();
+  private readonly maxFtpRetries: number;
+  private readonly ftpRetryDelayMs: number;
+  private progressFilePath: string;
+  private processedFiles: Set<string> = new Set();
+  private failedFiles: Set<string> = new Set();
 
   constructor() {
     this.ftpClient = new FTPClient();
@@ -47,6 +60,14 @@ class FileMigrationService {
       teamLogos: { downloaded: 0, uploaded: 0, skipped: 0, errors: 0 },
       contactPhotos: { downloaded: 0, uploaded: 0, skipped: 0, errors: 0 },
     };
+    const retryEnv = Number(process.env.MIGRATION_FTP_MAX_RETRIES);
+    this.maxFtpRetries = Number.isFinite(retryEnv) && retryEnv > 0 ? retryEnv : 3;
+
+    const retryDelayEnv = Number(process.env.MIGRATION_FTP_RETRY_DELAY_MS);
+    this.ftpRetryDelayMs = Number.isFinite(retryDelayEnv) && retryDelayEnv >= 0 ? retryDelayEnv : 2000;
+    this.progressFilePath = path.join(__dirname, 'migration-progress.json');
+
+    this.loadProgress();
   }
 
   async initialize(): Promise<void> {
@@ -60,9 +81,7 @@ class FileMigrationService {
     // Import and create Prisma client from backend
     try {
       console.log(`🔍 DATABASE_URL: ${process.env.DATABASE_URL}`);
-      const { PrismaClient } = await import(
-        '../draco-nodejs/backend/node_modules/@prisma/client/default.js'
-      );
+      const { PrismaClient } = await import('@prisma/client');
       this.prisma = new PrismaClient();
       console.log('✅ Prisma client initialized');
     } catch (error) {
@@ -142,12 +161,14 @@ class FileMigrationService {
     console.log(`🔗 Connecting to FTP server: ${ftpHost}`);
 
     try {
-      await this.ftpClient.access({
+      const config: AccessOptions = {
         host: ftpHost,
         user: ftpUser,
         password: ftpPassword,
         secure: false, // Adjust if needed
-      });
+      };
+      this.ftpConfig = config;
+      await this.ftpClient.access(config);
       console.log('✅ Connected to FTP server');
     } catch (error) {
       console.error('❌ Failed to connect to FTP server:', error);
@@ -163,10 +184,14 @@ class FileMigrationService {
         fs.mkdirSync(localDir, { recursive: true });
       }
 
-      await this.ftpClient.downloadTo(localPath, remotePath);
+      await this.withFtpRetry(
+        () => this.ftpClient.downloadTo(localPath, remotePath),
+        `download ${remotePath}`,
+      );
       return true;
     } catch (error) {
       console.error(`❌ Failed to download ${remotePath}:`, error);
+      this.markFileFailed(remotePath);
       return false;
     }
   }
@@ -193,12 +218,159 @@ class FileMigrationService {
     }
   }
 
+  private loadProgress(): void {
+    if (!fs.existsSync(this.progressFilePath)) {
+      return;
+    }
+
+    try {
+      const raw = fs.readFileSync(this.progressFilePath, 'utf-8');
+      if (!raw) {
+        return;
+      }
+
+      const data = JSON.parse(raw) as {
+        processedFiles?: unknown;
+        failedFiles?: unknown;
+      };
+
+      if (Array.isArray(data.processedFiles)) {
+        for (const item of data.processedFiles) {
+          if (typeof item === 'string') {
+            this.processedFiles.add(item);
+          }
+        }
+      }
+
+      if (Array.isArray(data.failedFiles)) {
+        for (const item of data.failedFiles) {
+          if (typeof item === 'string') {
+            this.failedFiles.add(item);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ Failed to load migration progress file:', error);
+    }
+  }
+
+  private saveProgress(): void {
+    try {
+      const payload = {
+        processedFiles: Array.from(this.processedFiles),
+        failedFiles: Array.from(this.failedFiles),
+        updatedAt: new Date().toISOString(),
+      };
+
+      fs.writeFileSync(this.progressFilePath, JSON.stringify(payload, null, 2));
+    } catch (error) {
+      console.error('⚠️ Failed to persist migration progress:', error);
+    }
+  }
+
+  private isFileAlreadyProcessed(remotePath: string): boolean {
+    return this.processedFiles.has(remotePath);
+  }
+
+  private markFileProcessed(remotePath: string): void {
+    if (!this.processedFiles.has(remotePath)) {
+      this.processedFiles.add(remotePath);
+      this.failedFiles.delete(remotePath);
+      this.saveProgress();
+    }
+  }
+
+  private markFileFailed(remotePath: string): void {
+    this.failedFiles.add(remotePath);
+    this.saveProgress();
+  }
+
+  private async delay(ms: number): Promise<void> {
+    if (ms <= 0) {
+      return;
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  private isRecoverableFtpError(error: unknown): error is NodeJS.ErrnoException {
+    if (!error || typeof error !== 'object') {
+      return false;
+    }
+
+    const err = error as NodeJS.ErrnoException & { message?: string };
+    const message = (err.message ?? '').toLowerCase();
+    const code = err.code ?? '';
+
+    return (
+      code === 'ETIMEDOUT' ||
+      code === 'ECONNRESET' ||
+      code === 'EPIPE' ||
+      code === 'ECONNABORTED' ||
+      message.includes('client is closed') ||
+      message.includes('socket') ||
+      message.includes('timed out')
+    );
+  }
+
+  private async reconnectToFTP(): Promise<void> {
+    if (!this.ftpConfig) {
+      throw new Error('Missing FTP configuration for reconnection');
+    }
+
+    try {
+      this.ftpClient.close();
+    } catch (error) {
+      console.warn('⚠️ Error while closing FTP client during reconnect:', error);
+    }
+
+    this.ftpClient = new FTPClient();
+    console.log('🔁 Attempting to reconnect to FTP server...');
+    await this.ftpClient.access(this.ftpConfig);
+    console.log('✅ Reconnected to FTP server');
+  }
+
+  private async withFtpRetry<T>(operation: () => Promise<T>, description: string): Promise<T> {
+    let attempt = 0;
+
+    while (true) {
+      try {
+        return await operation();
+      } catch (error) {
+        attempt += 1;
+
+        if (!this.isRecoverableFtpError(error) || attempt > this.maxFtpRetries) {
+          throw error;
+        }
+
+        console.warn(
+          `⚠️ FTP ${description} failed (attempt ${attempt} of ${this.maxFtpRetries}). Retrying...`,
+        );
+
+        try {
+          await this.reconnectToFTP();
+        } catch (reconnectError) {
+          console.error('❌ Failed to reconnect to FTP server:', reconnectError);
+          throw error;
+        }
+
+        await this.delay(this.ftpRetryDelayMs);
+      }
+    }
+  }
+
+  private async listDirectory(remotePath: string): Promise<FtpFileInfo[]> {
+    return this.withFtpRetry(() => this.ftpClient.list(remotePath), `list ${remotePath}`);
+  }
+
   async migrateAccountLogos(): Promise<void> {
     console.log('📁 Migrating account logos from /Uploads/Accounts...');
 
     try {
       // List account directories
-      const accountDirs = await this.ftpClient.list('/Uploads/Accounts');
+      const accountDirs = await this.listDirectory('/Uploads/Accounts');
 
       for (const dir of accountDirs) {
         if (dir.isDirectory) {
@@ -207,7 +379,7 @@ class FileMigrationService {
 
           try {
             // List files in this account directory
-            const accountFiles = await this.ftpClient.list(`/Uploads/Accounts/${accountId}`);
+            const accountFiles = await this.listDirectory(`/Uploads/Accounts/${accountId}`);
 
             for (const file of accountFiles) {
               if (file.isFile && this.isImageFile(file.name)) {
@@ -215,6 +387,12 @@ class FileMigrationService {
                 const localPath = path.join(this.tempDir, 'accounts', accountId, file.name);
 
                 console.log(`⬇️ Downloading account logo: ${accountId}/${file.name}`);
+
+                if (this.isFileAlreadyProcessed(remotePath)) {
+                  console.log(`⏭️ Account logo already migrated: ${remotePath}`);
+                  this.stats.accountLogos.skipped++;
+                  continue;
+                }
 
                 if (await this.downloadFile(remotePath, localPath)) {
                   this.stats.accountLogos.downloaded++;
@@ -225,9 +403,11 @@ class FileMigrationService {
                       await this.storageService.saveAccountLogo(accountId, buffer);
                       console.log(`✅ Uploaded account logo for account ${accountId}`);
                       this.stats.accountLogos.uploaded++;
+                      this.markFileProcessed(remotePath);
                     } catch (error) {
                       console.error(`❌ Failed to upload account logo for ${accountId}:`, error);
                       this.stats.accountLogos.errors++;
+                      this.markFileFailed(remotePath);
                     }
                   }
 
@@ -253,7 +433,7 @@ class FileMigrationService {
 
     try {
       // List team directories
-      const teamDirs = await this.ftpClient.list('/Uploads/Teams');
+      const teamDirs = await this.listDirectory('/Uploads/Teams');
 
       for (const dir of teamDirs) {
         if (dir.isDirectory) {
@@ -270,7 +450,7 @@ class FileMigrationService {
 
           try {
             // List files in this team directory
-            const teamFiles = await this.ftpClient.list(`/Uploads/Teams/${teamId}`);
+            const teamFiles = await this.listDirectory(`/Uploads/Teams/${teamId}`);
 
             for (const file of teamFiles) {
               if (file.isFile && this.isImageFile(file.name)) {
@@ -278,6 +458,12 @@ class FileMigrationService {
                 const localPath = path.join(this.tempDir, 'teams', teamId, file.name);
 
                 console.log(`⬇️ Downloading team logo: ${teamId}/${file.name}`);
+
+                if (this.isFileAlreadyProcessed(remotePath)) {
+                  console.log(`⏭️ Team logo already migrated: ${remotePath}`);
+                  this.stats.teamLogos.skipped++;
+                  continue;
+                }
 
                 if (await this.downloadFile(remotePath, localPath)) {
                   this.stats.teamLogos.downloaded++;
@@ -288,12 +474,14 @@ class FileMigrationService {
                       await this.storageService.saveLogo(accountId, teamId, buffer);
                       console.log(`✅ Uploaded team logo for account ${accountId}, team ${teamId}`);
                       this.stats.teamLogos.uploaded++;
+                      this.markFileProcessed(remotePath);
                     } catch (error) {
                       console.error(
                         `❌ Failed to upload team logo for ${accountId}/${teamId}:`,
                         error,
                       );
                       this.stats.teamLogos.errors++;
+                      this.markFileFailed(remotePath);
                     }
                   }
 
@@ -319,7 +507,7 @@ class FileMigrationService {
 
     try {
       // List contact directories
-      const contactDirs = await this.ftpClient.list('/Uploads/Contacts');
+      const contactDirs = await this.listDirectory('/Uploads/Contacts');
 
       for (const dir of contactDirs) {
         if (dir.isDirectory) {
@@ -336,7 +524,7 @@ class FileMigrationService {
 
           try {
             // List files in this contact directory
-            const contactFiles = await this.ftpClient.list(`/Uploads/Contacts/${contactId}`);
+            const contactFiles = await this.listDirectory(`/Uploads/Contacts/${contactId}`);
 
             for (const file of contactFiles) {
               if (file.isFile && this.isImageFile(file.name)) {
@@ -344,6 +532,12 @@ class FileMigrationService {
                 const localPath = path.join(this.tempDir, 'contacts', contactId, file.name);
 
                 console.log(`⬇️ Downloading contact photo: ${contactId}/${file.name}`);
+
+                if (this.isFileAlreadyProcessed(remotePath)) {
+                  console.log(`⏭️ Contact photo already migrated: ${remotePath}`);
+                  this.stats.contactPhotos.skipped++;
+                  continue;
+                }
 
                 if (await this.downloadFile(remotePath, localPath)) {
                   this.stats.contactPhotos.downloaded++;
@@ -356,12 +550,14 @@ class FileMigrationService {
                         `✅ Uploaded contact photo for account ${accountId}, contact ${contactId}`,
                       );
                       this.stats.contactPhotos.uploaded++;
+                      this.markFileProcessed(remotePath);
                     } catch (error) {
                       console.error(
                         `❌ Failed to upload contact photo for ${accountId}/${contactId}:`,
                         error,
                       );
                       this.stats.contactPhotos.errors++;
+                      this.markFileFailed(remotePath);
                     }
                   }
 
@@ -444,16 +640,30 @@ class FileMigrationService {
       console.log('\n✅ File migration completed!');
     } catch (error) {
       console.error('❌ Migration failed:', error);
+      this.saveProgress();
       process.exit(1);
     } finally {
       // Cleanup
-      await this.prisma.$disconnect();
-      this.ftpClient.close();
+      if (this.prisma?.$disconnect) {
+        try {
+          await this.prisma.$disconnect();
+        } catch (error) {
+          console.error('⚠️ Failed to disconnect Prisma client:', error);
+        }
+      }
+
+      try {
+        this.ftpClient.close();
+      } catch (error) {
+        console.error('⚠️ Failed to close FTP client:', error);
+      }
 
       // Remove temp directory
       if (fs.existsSync(this.tempDir)) {
         fs.rmSync(this.tempDir, { recursive: true, force: true });
       }
+
+      this.saveProgress();
     }
   }
 }

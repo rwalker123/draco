@@ -77,17 +77,6 @@ if [ -z "$DATABASE_URL" ]; then
     echo "Setting DATABASE_URL: $DATABASE_URL"
 fi
 
-# Generate Prisma client with latest schema
-echo "Generating Prisma client..."
-npx prisma generate
-
-if [ $? -eq 0 ]; then
-    echo "✓ Prisma client generated successfully"
-else
-    echo "✗ Prisma client generation failed"
-    exit 1
-fi
-
 # Detect if this is development (no migration files) or production/repeat (migration files exist)
 MIGRATIONS_DIR="$SCRIPT_DIR/../draco-nodejs/backend/prisma/migrations"
 
@@ -118,6 +107,28 @@ else
         echo "✗ Schema push failed"
         exit 1
     fi
+fi
+
+# Keep Prisma schema in sync with migrated database
+echo "Pulling Prisma schema from database..."
+npx prisma db pull
+
+if [ $? -eq 0 ]; then
+    echo "✓ Prisma schema pulled successfully"
+else
+    echo "✗ Prisma schema pull failed"
+    exit 1
+fi
+
+# Generate Prisma client with latest schema
+echo "Generating Prisma client..."
+npx prisma generate
+
+if [ $? -eq 0 ]; then
+    echo "✓ Prisma client generated successfully"
+else
+    echo "✗ Prisma client generation failed"
+    exit 1
 fi
 
 # Step 3: Verify the updates

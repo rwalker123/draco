@@ -222,7 +222,7 @@ model contacts {
   city                                                      String?                    @db.VarChar(25)
   state                                                     String?                    @db.VarChar(25)
   zip                                                       String?                    @db.VarChar(15)
-  dateofbirth                                               DateTime                   @db.Timestamp(6)
+  dateofbirth                                               DateTime                   @db.Date
   isfemale                                                  Boolean?                   @default(false)
   email                                                     String?                    @db.VarChar(50)
   contactroles                                              contactroles[]
@@ -472,7 +472,7 @@ model golfleaguesetup {
   secretaryid                                        BigInt
   treasurerid                                        BigInt
   leagueday                                          Int
-  firstteetime                                       DateTime @db.Timestamp(6)
+  firstteetime                                       DateTime @db.Timestamptz(6)
   timebetweenteetimes                                Int
   holespermatch                                      Int
   teeoffformat                                       Int
@@ -515,8 +515,8 @@ model golfmatch {
   team1                                    BigInt
   team2                                    BigInt
   leagueid                                 BigInt
-  matchdate                                DateTime          @db.Timestamp(6)
-  matchtime                                DateTime          @db.Timestamp(6)
+  matchdate                                DateTime          @db.Timestamptz(6)
+  matchtime                                DateTime          @db.Timestamptz(6)
   courseid                                 BigInt?
   matchstatus                              Int
   matchtype                                Int
@@ -560,7 +560,7 @@ model golfscore {
   courseid           BigInt
   contactid          BigInt
   teeid              BigInt
-  dateplayed         DateTime           @db.Timestamp(6)
+  dateplayed         DateTime           @db.Timestamptz(6)
   holesplayed        Int
   totalscore         Int
   totalsonly         Boolean
@@ -682,7 +682,7 @@ model league {
 
 model leagueevents {
   id             BigInt       @id @default(autoincrement())
-  eventdate      DateTime     @db.Timestamp(6)
+  eventdate      DateTime     @db.Timestamptz(6)
   description    String       @db.VarChar(25)
   leagueseasonid BigInt
   leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_leagueevents_leagueseason")
@@ -699,7 +699,7 @@ model leaguefaq {
 model leaguenews {
   id              BigInt   @id @default(autoincrement())
   accountid       BigInt
-  date            DateTime @db.Timestamp(6)
+  date            DateTime @db.Timestamptz(6)
   title           String   @db.VarChar(100)
   text            String
   specialannounce Boolean
@@ -708,7 +708,7 @@ model leaguenews {
 
 model leagueschedule {
   id                                                  BigInt           @id @default(autoincrement())
-  gamedate                                            DateTime         @db.Timestamp(6)
+  gamedate                                            DateTime         @db.Timestamptz(6)
   hteamid                                             BigInt
   vteamid                                             BigInt
   hscore                                              Int              @default(0)
@@ -727,8 +727,8 @@ model leagueschedule {
   gameejections                                       gameejections[]
   gamerecap                                           gamerecap[]
   availablefields                                     availablefields? @relation(fields: [fieldid], references: [id], map: "fk_leagueschedule_fieldid")
-  leagueseason                                        leagueseason     @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueschedule_leagueseason")
   hometeam                                            teamsseason      @relation("leagueschedule_hteamidToteamsseason", fields: [hteamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leagueschedule_hometeam")
+  leagueseason                                        leagueseason     @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueschedule_leagueseason")
   leagueumpires_leagueschedule_umpire1Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire1Toleagueumpires", fields: [umpire1], references: [id], map: "fk_leagueschedule_umpire1")
   leagueumpires_leagueschedule_umpire2Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire2Toleagueumpires", fields: [umpire2], references: [id], map: "fk_leagueschedule_umpire2")
   leagueumpires_leagueschedule_umpire3Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire3Toleagueumpires", fields: [umpire3], references: [id], map: "fk_leagueschedule_umpire3")
@@ -805,9 +805,9 @@ model messagepost {
   topicid          BigInt
   postorder        Int
   contactcreatorid BigInt
-  postdate         DateTime        @db.Timestamp(6)
+  postdate         DateTime        @db.Timestamptz(6)
   posttext         String
-  editdate         DateTime        @db.Timestamp(6)
+  editdate         DateTime        @db.Timestamptz(6)
   postsubject      String          @db.VarChar(255)
   categoryid       BigInt
   contacts         contacts        @relation(fields: [contactcreatorid], references: [id], onDelete: Cascade, map: "fk_messagepost_contacts")
@@ -819,7 +819,7 @@ model messagetopic {
   id               BigInt          @id @default(autoincrement())
   categoryid       BigInt
   contactcreatorid BigInt
-  topiccreatedate  DateTime        @db.Timestamp(6)
+  topiccreatedate  DateTime        @db.Timestamptz(6)
   topic            String          @db.VarChar(255)
   stickytopic      Boolean
   numberofviews    BigInt
@@ -941,8 +941,8 @@ model playoffgame {
   id              BigInt           @id @default(autoincrement())
   bracketid       BigInt
   fieldid         BigInt?
-  gamedate        DateTime         @db.Timestamp(6)
-  gametime        DateTime         @db.Timestamp(6)
+  gamedate        DateTime         @db.Date
+  gametime        DateTime         @db.Timestamptz(6)
   gameid          BigInt
   playoffid       BigInt
   seriesgameno    Int
@@ -1007,7 +1007,7 @@ model rosterseason {
   playernumber    Int
   inactive        Boolean
   submittedwaiver Boolean
-  dateadded       DateTime?       @db.Timestamp(6)
+  dateadded       DateTime?       @db.Timestamptz(6)
   batstatsum      batstatsum[]
   fieldstatsum    fieldstatsum[]
   gameejections   gameejections[]
@@ -1056,7 +1056,7 @@ model teamhandouts {
 model teamnews {
   id              BigInt   @id @default(autoincrement())
   teamid          BigInt
-  date            DateTime @db.Timestamp(6)
+  date            DateTime @db.Timestamptz(6)
   text            String
   title           String   @db.VarChar(100)
   specialannounce Boolean
@@ -1165,7 +1165,7 @@ model workoutannouncement {
   id                  BigInt                @id @default(autoincrement())
   accountid           BigInt
   workoutdesc         String
-  workoutdate         DateTime              @db.Timestamp(6)
+  workoutdate         DateTime              @db.Timestamptz(6)
   fieldid             BigInt?
   comments            String
   accounts            accounts              @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_workoutannouncement_accounts")
@@ -1185,7 +1185,7 @@ model workoutregistration {
   positions           String              @db.VarChar(50)
   ismanager           Boolean
   workoutid           BigInt
-  dateregistered      DateTime            @db.Timestamp(6)
+  dateregistered      DateTime            @db.Timestamptz(6)
   whereheard          String              @db.VarChar(25)
   workoutannouncement workoutannouncement @relation(fields: [workoutid], references: [id], onDelete: Cascade, map: "fk_workoutregistration_workoutannouncement")
 }

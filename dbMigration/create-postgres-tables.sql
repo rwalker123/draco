@@ -183,7 +183,7 @@ CREATE TABLE leagueseason (
     seasonid bigint NOT NULL,
     FOREIGN KEY (leagueid) REFERENCES league(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (seasonid) REFERENCES season(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT league_season UNIQUE (leagueid, seasonid);
+    CONSTRAINT league_season UNIQUE (leagueid, seasonid)
 );
 
 -- Table: leagueumpires
@@ -213,7 +213,7 @@ CREATE TABLE leagueschedule (
     umpire3 bigint,
     umpire4 bigint,
     --FOREIGN KEY (fieldid) REFERENCES availablefields(id) ON UPDATE CASCADE ON DELETE SET DEFAULT,
-    FOREIGN KEY (leagueid) REFERENCES leagueseason(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (leagueid) REFERENCES leagueseason(id) ON UPDATE CASCADE ON DELETE CASCADE
     --FOREIGN KEY (umpire1) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET DEFAULT,
     --FOREIGN KEY (umpire2) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET DEFAULT,
     --FOREIGN KEY (umpire3) REFERENCES leagueumpires(id) ON UPDATE CASCADE ON DELETE SET DEFAULT,
@@ -255,7 +255,7 @@ CREATE TABLE teamsseason (
     name varchar(25) NOT NULL,
     divisionseasonid bigint,
     FOREIGN KEY (leagueseasonid) REFERENCES leagueseason(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (teamid) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (teamid) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     --FOREIGN KEY (divisionseasonid) REFERENCES divisionseason(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
@@ -608,7 +608,7 @@ CREATE TABLE golfleaguecourses (
 
 -- Table: golfleaguesetup
 CREATE TABLE golfleaguesetup (
-    id bigint PRIMARY KEY,
+    id bigserial PRIMARY KEY,
     accountid bigint NOT NULL,
     presidentid bigint NOT NULL,
     vicepresidentid bigint NOT NULL,
@@ -832,7 +832,7 @@ CREATE TABLE photogallery (
     title varchar(50) NOT NULL,
     caption varchar(255) NOT NULL,
     albumid bigint,
-    FOREIGN KEY (accountid) REFERENCES accounts(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (accountid) REFERENCES accounts(id) ON UPDATE CASCADE ON DELETE CASCADE
     --FOREIGN KEY (albumid) REFERENCES photogalleryalbum(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -999,7 +999,7 @@ CREATE TABLE sponsors (
     fax varchar(14) NOT NULL,
     website varchar(100) NOT NULL,
     teamid bigint,
-    FOREIGN KEY (accountid) REFERENCES accounts(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (accountid) REFERENCES accounts(id) ON UPDATE CASCADE ON DELETE CASCADE
     --FOREIGN KEY (teamid) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
