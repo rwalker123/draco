@@ -2,11 +2,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useRole } from './RoleContext';
+import { DEFAULT_TIMEZONE } from '../utils/timezones';
 
 interface Account {
   id: string;
   name: string;
   accountType?: string;
+  timeZone?: string;
 }
 
 export interface AccountContextType {
@@ -40,6 +42,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       setCurrentAccount({
         id: userRoles.accountId,
         name: `Account ${userRoles.accountId}`, // You might want to fetch the actual account name
+        timeZone: DEFAULT_TIMEZONE,
       });
       setLoading(false);
       setInitialized(true);
@@ -83,4 +86,9 @@ export const useAccount = () => {
     throw new Error('useAccount must be used within an AccountProvider');
   }
   return context;
+};
+
+export const useAccountTimezone = (): string => {
+  const { currentAccount } = useAccount();
+  return currentAccount?.timeZone ?? DEFAULT_TIMEZONE;
 };

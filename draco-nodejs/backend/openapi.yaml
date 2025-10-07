@@ -2515,7 +2515,7 @@ components:
             firstYear:
               type: integer
               nullable: true
-            timezoneId:
+            timeZone:
               type: string
               nullable: true
             affiliation:
@@ -2721,7 +2721,7 @@ components:
                 firstYear:
                   type: integer
                   nullable: true
-                timezoneId:
+                timeZone:
                   type: string
                   nullable: true
                 affiliation:
@@ -3146,7 +3146,7 @@ components:
             firstYear:
               type: integer
               nullable: true
-            timezoneId:
+            timeZone:
               type: string
               nullable: true
             affiliation:
@@ -7468,7 +7468,7 @@ paths:
                     firstYear:
                       type: integer
                       nullable: true
-                    timezoneId:
+                    timeZone:
                       type: string
                       nullable: true
                     affiliation:

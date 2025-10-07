@@ -105,7 +105,7 @@ export const AccountTwitterSettingsSchema = z.object({
 export const AccountConfigurationSchema = z.object({
   accountType: AccountTypeSchema.optional(),
   firstYear: z.number().int().nullable().optional(),
-  timezoneId: z.string().nullable().optional(),
+  timeZone: z.string().nullable().optional(),
   affiliation: AccountAffiliationSchema.nullable().optional(),
 });
 

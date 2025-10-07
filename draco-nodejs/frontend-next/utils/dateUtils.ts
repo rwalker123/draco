@@ -98,6 +98,29 @@ export function formatDateTime(dateValue: unknown): string {
   });
 }
 
+export function formatDateTimeInTimezone(
+  dateValue: string | number | Date,
+  timeZone: string,
+  options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  },
+): string {
+  try {
+    const date = new Date(dateValue as string | number | Date);
+    if (isNaN(date.getTime())) {
+      return 'N/A';
+    }
+
+    return new Intl.DateTimeFormat(undefined, { ...options, timeZone }).format(date);
+  } catch {
+    return 'N/A';
+  }
+}
+
 /**
  * Checks if a date value is valid
  * @param dateValue - Date value to validate

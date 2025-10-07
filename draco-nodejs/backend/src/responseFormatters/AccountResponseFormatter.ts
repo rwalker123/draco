@@ -65,7 +65,7 @@ export class AccountResponseFormatter {
             }
           : undefined,
         firstYear: account.firstyear,
-        timezoneId: account.timezoneid,
+        timeZone: account.timezoneid,
       },
       socials: {
         autoPlayVideo: account.autoplayvideo,

@@ -95,7 +95,7 @@ const AccountHome: React.FC = () => {
           accountTypeId: accountData.configuration?.accountType?.id,
           firstYear: accountData.configuration?.firstYear ?? null,
           affiliation: accountData.configuration?.affiliation?.name ?? undefined,
-          timezoneId: accountData.configuration?.timezoneId ?? undefined,
+          timezoneId: accountData.configuration?.timeZone ?? undefined,
           twitterAccountName: accountData.socials?.twitterAccountName ?? undefined,
           facebookFanPage: accountData.socials?.facebookFanPage ?? undefined,
           urls: accountData.urls ?? [],

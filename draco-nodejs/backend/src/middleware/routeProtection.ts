@@ -3,11 +3,15 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { IRoleMiddleware } from '../services/interfaces/roleInterfaces.js';
-import { PrismaClient } from '@prisma/client';
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleContextData } from '../services/interfaces/roleInterfaces.js';
 import { RoleNamesType } from '../types/roles.js';
 import { UserRolesType } from '@draco/shared-schemas';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { AuthenticationError, AuthorizationError, ValidationError } from '../utils/customErrors.js';
+import { ContactService } from '../services/contactService.js';
+import { UserService } from '../services/userService.js';
+import { ServiceFactory } from '../services/serviceFactory.js';
 
 // Extend the Request interface to include user and role information
 declare global {
@@ -29,397 +33,300 @@ declare global {
 
 export class RouteProtection {
   private roleService: IRoleMiddleware;
-  private prisma: PrismaClient;
+  private contactService: ContactService;
+  private userService: UserService;
 
-  constructor(roleService: IRoleMiddleware, prisma: PrismaClient) {
-    this.roleService = roleService;
-    this.prisma = prisma;
+  constructor() {
+    this.roleService = ServiceFactory.getRoleService();
+    this.contactService = ServiceFactory.getContactService();
+    this.userService = ServiceFactory.getUserService();
   }
 
   /**
    * Middleware to require authentication
    */
   requireAuth = () => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
       if (!req.user?.id) {
-        res.status(401).json({
-          success: false,
-          message: 'Authentication required',
-        });
-        return;
+        throw new AuthenticationError('Authentication required');
       }
       next();
-    };
+    });
   };
 
   /**
    * Middleware to require a specific role
    */
   requireRole = (requiredRole: string) => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        if (!req.user?.id) {
-          res.status(401).json({
-            success: false,
-            message: 'Authentication required',
-          });
-          return;
-        }
-
-        const roleContext: RoleContextData = {
-          accountId: this.extractAccountId(req) || BigInt(0),
-          teamId: this.extractTeamId(req),
-          leagueId: this.extractLeagueId(req),
-          seasonId: this.extractSeasonId(req),
-        };
-
-        const roleCheck = await this.roleService.hasRole(req.user.id, requiredRole, roleContext);
-
-        if (!roleCheck.hasRole) {
-          res.status(403).json({
-            success: false,
-            message: `Role '${requiredRole}' required`,
-            requiredRole,
-            context: roleContext,
-          });
-          return;
-        }
-
-        // Add role information to request for downstream use
-        req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
-
-        next();
-      } catch (error) {
-        console.error('Role middleware error:', error);
-        res.status(500).json({
-          success: false,
-          message: 'Internal server error',
-        });
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
       }
-    };
+
+      const roleContext: RoleContextData = {
+        accountId: this.extractAccountId(req) || BigInt(0),
+        teamId: this.extractTeamId(req),
+        leagueId: this.extractLeagueId(req),
+        seasonId: this.extractSeasonId(req),
+      };
+
+      const roleCheck = await this.roleService.hasRole(req.user.id, requiredRole, roleContext);
+
+      if (!roleCheck.hasRole) {
+        throw new AuthorizationError(`Role '${requiredRole}' required`);
+      }
+
+      req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
+
+      next();
+    });
   };
 
   /**
    * Middleware to require a specific permission
    */
   requirePermission = (requiredPermission: string, context?: Partial<RoleContextData>) => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        if (!req.user?.id) {
-          res.status(401).json({
-            success: false,
-            message: 'Authentication required',
-          });
-          return;
-        }
-
-        const roleContext: RoleContextData = {
-          accountId: context?.accountId || this.extractAccountId(req) || BigInt(0),
-          teamId: context?.teamId || this.extractTeamId(req),
-          leagueId: context?.leagueId || this.extractLeagueId(req),
-          seasonId: context?.seasonId || this.extractSeasonId(req),
-        };
-
-        const hasPermission = await this.roleService.hasPermission(
-          req.user.id,
-          requiredPermission,
-          roleContext,
-        );
-
-        if (!hasPermission) {
-          res.status(403).json({
-            success: false,
-            message: `Permission '${requiredPermission}' required`,
-            requiredPermission,
-            context: roleContext,
-          });
-          return;
-        }
-
-        // Add role information to request for downstream use
-        req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
-
-        next();
-      } catch (error) {
-        console.error('Permission middleware error:', error);
-        res.status(500).json({
-          success: false,
-          message: 'Internal server error',
-        });
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
       }
-    };
+
+      const roleContext: RoleContextData = {
+        accountId: context?.accountId || this.extractAccountId(req) || BigInt(0),
+        teamId: context?.teamId || this.extractTeamId(req),
+        leagueId: context?.leagueId || this.extractLeagueId(req),
+        seasonId: context?.seasonId || this.extractSeasonId(req),
+      };
+
+      const hasPermission = await this.roleService.hasPermission(
+        req.user.id,
+        requiredPermission,
+        roleContext,
+      );
+
+      if (!hasPermission) {
+        throw new AuthorizationError(`Permission '${requiredPermission}' required`);
+      }
+
+      req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
+
+      next();
+    });
   };
 
   requirePollManagerAccess = () => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        if (!req.user?.id) {
-          res.status(401).json({
-            success: false,
-            message: 'Authentication required',
-          });
-          return;
-        }
-
-        const accountId = req.accountBoundary?.accountId ?? this.extractAccountId(req);
-
-        if (!accountId) {
-          res.status(400).json({
-            success: false,
-            message: 'Account ID required',
-          });
-          return;
-        }
-
-        const roleContext: RoleContextData = {
-          accountId,
-          teamId: this.extractTeamId(req),
-          leagueId: this.extractLeagueId(req),
-          seasonId: this.extractSeasonId(req),
-        };
-
-        const hasPermission = await this.roleService.hasPermission(
-          req.user.id,
-          'account.polls.manage',
-          roleContext,
-        );
-
-        if (hasPermission) {
-          if (!req.userRoles) {
-            req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-          }
-          return next();
-        }
-
-        const userRoles =
-          req.userRoles ?? (await this.roleService.getUserRoles(req.user.id, accountId));
-
-        const hasTeamAdminRole = userRoles.contactRoles.some(
-          (contactRole) => contactRole.roleId === ROLE_IDS[RoleNamesType.TEAM_ADMIN],
-        );
-
-        if (hasTeamAdminRole) {
-          req.userRoles = userRoles;
-          return next();
-        }
-
-        res.status(403).json({
-          success: false,
-          message: "Permission 'account.polls.manage' or TeamAdmin role required",
-          requiredPermission: 'account.polls.manage',
-          requiredRole: ROLE_IDS[RoleNamesType.TEAM_ADMIN],
-        });
-      } catch (error) {
-        console.error('Poll management access middleware error:', error);
-        res.status(500).json({
-          success: false,
-          message: 'Internal server error',
-        });
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
       }
-    };
+
+      const accountId = req.accountBoundary?.accountId ?? this.extractAccountId(req);
+
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
+      const roleContext: RoleContextData = {
+        accountId,
+        teamId: this.extractTeamId(req),
+        leagueId: this.extractLeagueId(req),
+        seasonId: this.extractSeasonId(req),
+      };
+
+      const hasPermission = await this.roleService.hasPermission(
+        req.user.id,
+        'account.polls.manage',
+        roleContext,
+      );
+
+      if (hasPermission) {
+        if (!req.userRoles) {
+          req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+        }
+        next();
+        return;
+      }
+
+      const userRoles =
+        req.userRoles ?? (await this.roleService.getUserRoles(req.user.id, accountId));
+
+      const hasTeamAdminRole = userRoles.contactRoles.some(
+        (contactRole) => contactRole.roleId === ROLE_IDS[RoleNamesType.TEAM_ADMIN],
+      );
+
+      if (hasTeamAdminRole) {
+        req.userRoles = userRoles;
+        next();
+        return;
+      }
+
+      throw new AuthorizationError("Permission 'account.polls.manage' or TeamAdmin role required");
+    });
   };
 
   /**
    * Middleware to enforce account boundary (user can only access their account's data)
    */
   enforceAccountBoundary = () => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        if (!req.user?.id) {
-          res.status(401).json({
-            success: false,
-            message: 'Authentication required',
-          });
-          return;
-        }
-
-        const accountId = this.extractAccountId(req);
-        if (!accountId) {
-          res.status(400).json({
-            success: false,
-            message: 'Account ID required',
-          });
-          return;
-        }
-
-        // Get the user's contact record for this account
-        const userContactId = await this.checkUserAccount(req.user.id, accountId);
-
-        if (!userContactId) {
-          res.status(403).json({
-            success: false,
-            message: 'Access denied to this account',
-          });
-          return;
-        }
-
-        // First check account boundary
-        req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-        req.accountBoundary = { contactId: userContactId, accountId, enforced: true };
-
-        return next();
-      } catch (error) {
-        console.error('Account boundary middleware error:', error);
-        res.status(500).json({
-          success: false,
-          message: 'Internal server error',
-        });
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
       }
-    };
+
+      const accountId = this.extractAccountId(req);
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
+      const userContactId = await this.checkUserAccount(req.user.id, accountId);
+
+      if (!userContactId) {
+        throw new AuthorizationError('Access denied to this account');
+      }
+
+      req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+      req.accountBoundary = { contactId: userContactId, accountId, enforced: true };
+
+      next();
+    });
+  };
+
+  /**
+   * Middleware to enforce account owner
+   * @returns Middleware to enforce account owner
+   */
+  enforceAccountOwner = () => {
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
+      }
+
+      const accountId = this.extractAccountId(req);
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
+      const accountOwner = await this.userService.isAccountOwner(req.user.id, accountId);
+      const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+      if (!accountOwner) {
+        // check to see if administrator
+        if (!userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
+          throw new AuthorizationError('Access denied');
+        }
+      }
+
+      req.userRoles = userRoles;
+      const userContactId = await this.checkUserAccount(req.user.id, accountId);
+      req.accountBoundary = { contactId: userContactId || BigInt(0), accountId, enforced: true };
+
+      next();
+    });
   };
 
   /**
    * Middleware to enforce team boundary
    */
   enforceTeamBoundary = () => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        if (!req.user?.id) {
-          res.status(401).json({
-            success: false,
-            message: 'Authentication required',
-          });
-          return;
-        }
-
-        const teamId = this.extractTeamId(req);
-        if (!teamId) {
-          res.status(400).json({
-            success: false,
-            message: 'Team ID required',
-          });
-          return;
-        }
-
-        const accountId = this.extractAccountId(req);
-        if (!accountId) {
-          res.status(400).json({
-            success: false,
-            message: 'Account ID required',
-          });
-          return;
-        }
-
-        // First check account boundary
-        const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-
-        // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
-          req.userRoles = userRoles;
-          return next();
-        }
-
-        // Allow if user has account admin role
-        if (
-          userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
-          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
-        ) {
-          req.userRoles = userRoles;
-          return next();
-        }
-
-        // Check if user has team-specific roles
-        const teamContext: RoleContextData = { accountId: accountId, teamId: teamId };
-        const hasTeamRole = await this.roleService.hasRole(
-          req.user.id,
-          ROLE_IDS[RoleNamesType.TEAM_ADMIN],
-          teamContext,
-        );
-
-        if (hasTeamRole.hasRole) {
-          req.userRoles = userRoles;
-          return next();
-        }
-
-        res.status(403).json({
-          success: false,
-          message: 'Access denied to this team',
-        });
-      } catch (error) {
-        console.error('Team boundary middleware error:', error);
-        res.status(500).json({
-          success: false,
-          message: 'Internal server error',
-        });
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
       }
-    };
+
+      const teamId = this.extractTeamId(req);
+      if (!teamId) {
+        throw new ValidationError('Team ID required');
+      }
+
+      const accountId = this.extractAccountId(req);
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
+      const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+
+      if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
+        req.userRoles = userRoles;
+        next();
+        return;
+      }
+
+      if (
+        userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
+        userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
+      ) {
+        req.userRoles = userRoles;
+        next();
+        return;
+      }
+
+      const teamContext: RoleContextData = { accountId: accountId, teamId: teamId };
+      const hasTeamRole = await this.roleService.hasRole(
+        req.user.id,
+        ROLE_IDS[RoleNamesType.TEAM_ADMIN],
+        teamContext,
+      );
+
+      if (hasTeamRole.hasRole) {
+        req.userRoles = userRoles;
+        next();
+        return;
+      }
+
+      throw new AuthorizationError('Access denied to this team');
+    });
   };
 
   /**
    * Middleware to enforce league boundary
    */
   enforceLeagueBoundary = () => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        if (!req.user?.id) {
-          res.status(401).json({
-            success: false,
-            message: 'Authentication required',
-          });
-          return;
-        }
-
-        const leagueId = this.extractLeagueId(req);
-        if (!leagueId) {
-          res.status(400).json({
-            success: false,
-            message: 'League ID required',
-          });
-          return;
-        }
-
-        const accountId = this.extractAccountId(req);
-        if (!accountId) {
-          res.status(400).json({
-            success: false,
-            message: 'Account ID required',
-          });
-          return;
-        }
-
-        // First check account boundary
-        const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-
-        // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
-          req.userRoles = userRoles;
-          return next();
-        }
-
-        // Allow if user has account admin role
-        if (
-          userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
-          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
-        ) {
-          req.userRoles = userRoles;
-          return next();
-        }
-
-        // Check if user has league-specific roles
-        const leagueContext: RoleContextData = { accountId: accountId, leagueId: leagueId };
-        const hasLeagueRole = await this.roleService.hasRole(
-          req.user.id,
-          ROLE_IDS[RoleNamesType.LEAGUE_ADMIN],
-          leagueContext,
-        );
-
-        if (hasLeagueRole.hasRole) {
-          req.userRoles = userRoles;
-          return next();
-        }
-
-        res.status(403).json({
-          success: false,
-          message: 'Access denied to this league',
-        });
-      } catch (error) {
-        console.error('League boundary middleware error:', error);
-        res.status(500).json({
-          success: false,
-          message: 'Internal server error',
-        });
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
       }
-    };
+
+      const leagueId = this.extractLeagueId(req);
+      if (!leagueId) {
+        throw new ValidationError('League ID required');
+      }
+
+      const accountId = this.extractAccountId(req);
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
+      const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+
+      if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
+        req.userRoles = userRoles;
+        next();
+        return;
+      }
+
+      if (
+        userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
+        userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
+      ) {
+        req.userRoles = userRoles;
+        next();
+        return;
+      }
+
+      const leagueContext: RoleContextData = { accountId: accountId, leagueId: leagueId };
+      const hasLeagueRole = await this.roleService.hasRole(
+        req.user.id,
+        ROLE_IDS[RoleNamesType.LEAGUE_ADMIN],
+        leagueContext,
+      );
+
+      if (hasLeagueRole.hasRole) {
+        req.userRoles = userRoles;
+        next();
+        return;
+      }
+
+      throw new AuthorizationError('Access denied to this league');
+    });
   };
 
   /**
@@ -507,15 +414,8 @@ export class RouteProtection {
    */
   private async checkUserAccount(userId: string, accountId: bigint): Promise<bigint | undefined> {
     try {
-      const contact = await this.prisma.contacts.findFirst({
-        where: {
-          userid: userId,
-          creatoraccountid: accountId,
-        },
-        select: { id: true },
-      });
-
-      return contact?.id;
+      const contact = await this.contactService.getContactByUserId(userId, accountId);
+      return contact ? BigInt(contact.id) : undefined;
     } catch (error) {
       console.error('Error checking account membership:', error);
       return undefined;

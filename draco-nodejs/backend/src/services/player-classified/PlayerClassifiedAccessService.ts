@@ -14,6 +14,8 @@ import {
 import { ServiceFactory } from '../serviceFactory.js';
 import { AccountsService } from '../accountsService.js';
 import { TeamsWantedResponseFormatter } from '../../responseFormatters/index.js';
+import { ROLE_IDS } from '../../config/roles.js';
+import { RoleNamesType } from '../../types/roles.js';
 
 /**
  * PlayerClassifiedAccessService
@@ -201,7 +203,9 @@ export class PlayerClassifiedAccessService {
     const hasAccountAdminRole = userRoles.contactRoles.some(
       (role) => role.roleId === 'AccountAdmin',
     );
-    const hasGlobalAdminRole = userRoles.globalRoles.includes('Administrator');
+    const hasGlobalAdminRole = userRoles.globalRoles.includes(
+      ROLE_IDS[RoleNamesType.ADMINISTRATOR],
+    );
 
     return hasAccountAdminRole || hasGlobalAdminRole;
   }

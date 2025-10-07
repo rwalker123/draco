@@ -6,6 +6,7 @@ import { useAccount } from '../../context/AccountContext';
 import Login from './Login';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
+import { DEFAULT_TIMEZONE } from '../../utils/timezones';
 
 export default function LoginClientWrapper() {
   const searchParams = useSearchParams();
@@ -38,7 +39,14 @@ export default function LoginClientWrapper() {
         }
 
         const data = unwrapApiResult(result, 'Failed to fetch account');
-        setCurrentAccount(data.account);
+        const account = data.account;
+
+        setCurrentAccount({
+          id: account.id,
+          name: account.name,
+          accountType: account.configuration?.accountType?.name ?? undefined,
+          timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+        });
       } catch (error) {
         console.error('Failed to fetch account:', error);
       }

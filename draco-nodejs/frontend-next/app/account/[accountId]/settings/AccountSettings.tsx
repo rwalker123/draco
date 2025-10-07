@@ -200,7 +200,7 @@ const AccountSettings: React.FC = () => {
                 <br />
                 <strong>Affiliation:</strong> {account.configuration?.affiliation?.name || 'None'}
                 <br />
-                <strong>Timezone:</strong> {account.configuration?.timezoneId || 'Not set'}
+                <strong>Timezone:</strong> {account.configuration?.timeZone || 'Not set'}
               </Typography>
             </Box>
           </TabPanel>

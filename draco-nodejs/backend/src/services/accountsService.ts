@@ -221,7 +221,7 @@ export class AccountsService {
       accounttypeid: BigInt(accountTypeId),
       owneruserid: accountOwnerUserId,
       affiliationid: BigInt(affiliationId),
-      timezoneid: payload.configuration?.timezoneId ?? 'UTC',
+      timezoneid: payload.configuration?.timeZone ?? 'UTC',
       firstyear: payload.configuration?.firstYear ?? new Date().getFullYear(),
       twitteraccountname: payload.socials?.twitterAccountName ?? '',
       twitteroauthtoken: '',
@@ -277,8 +277,8 @@ export class AccountsService {
       }
     }
 
-    if (payload.configuration?.timezoneId !== undefined) {
-      updateData.timezoneid = payload.configuration?.timezoneId ?? '';
+    if (payload.configuration?.timeZone !== undefined) {
+      updateData.timezoneid = payload.configuration?.timeZone ?? '';
     }
 
     if (payload.configuration?.firstYear !== undefined) {
