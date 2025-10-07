@@ -84,3 +84,5 @@ Thumbs.db
 # Database backups
 draco-nodejs/backend/db_dump.bak
 draco-nodejs/shared/shared-api-client/generated/
+migration-progress.json
+**/temp-migration/
