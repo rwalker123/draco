@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { dracoTheme } from '../theme';
 import Layout from './Layout';
 import React, { useState, createContext, useContext, Suspense } from 'react';
+import EmotionCacheProvider from './EmotionCacheProvider';
 
 // Create context for theme management
 interface ThemeContextType {
@@ -36,13 +37,15 @@ export default function ThemeClientProvider({ children }: { children: React.Reac
   };
 
   return (
-    <ThemeContext.Provider value={value}>
-      <ThemeProvider theme={currentTheme}>
-        <CssBaseline />
-        <Suspense fallback={null}>
-          <Layout>{children}</Layout>
-        </Suspense>
-      </ThemeProvider>
-    </ThemeContext.Provider>
+    <EmotionCacheProvider>
+      <ThemeContext.Provider value={value}>
+        <ThemeProvider theme={currentTheme}>
+          <CssBaseline />
+          <Suspense fallback={<div />}>
+            <Layout>{children}</Layout>
+          </Suspense>
+        </ThemeProvider>
+      </ThemeContext.Provider>
+    </EmotionCacheProvider>
   );
 }
