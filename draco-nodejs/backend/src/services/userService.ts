@@ -114,7 +114,12 @@ export class UserService {
     if (!account) {
       throw new ValidationError('Account not found');
     }
-    return account.account.accountOwner?.user?.userId !== userId;
+
+    if (!userId) {
+      return false;
+    }
+
+    return account.account.accountOwner?.user?.userId === userId;
   }
 
   private generateResetToken(): string {
