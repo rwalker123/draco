@@ -25,16 +25,43 @@ if (fs.existsSync(backendEnvPath)) {
 }
 
 // Types for our migration
+interface CategoryStats {
+  downloaded: number;
+  uploaded: number;
+  skipped: number;
+  errors: number;
+}
+
 interface MigrationStats {
-  accountLogos: { downloaded: number; uploaded: number; skipped: number; errors: number };
-  teamLogos: { downloaded: number; uploaded: number; skipped: number; errors: number };
-  contactPhotos: { downloaded: number; uploaded: number; skipped: number; errors: number };
+  accountLogos: CategoryStats;
+  teamLogos: CategoryStats;
+  contactPhotos: CategoryStats;
+  sponsorLogos: CategoryStats;
+  handouts: CategoryStats;
+  galleryPhotos: CategoryStats;
+  whereHeardOptions: CategoryStats;
+  messageBoards: CategoryStats;
 }
 
 interface FileInfo {
   remotePath: string;
   localPath: string;
   fileName: string;
+}
+
+interface FileMigrationOptions {
+  testMode?: boolean;
+  testAccounts?: number;
+  testTeams?: number;
+  testContacts?: number;
+  testFilesPerDirectory?: number;
+}
+
+interface TestLimits {
+  accounts: number;
+  teams: number;
+  contacts: number;
+  filesPerDirectory: number;
 }
 
 class FileMigrationService {
@@ -51,15 +78,100 @@ class FileMigrationService {
   private progressFilePath: string;
   private processedFiles: Set<string> = new Set();
   private failedFiles: Set<string> = new Set();
+  private readonly isTestMode: boolean;
+  private readonly testLimits: TestLimits;
 
-  constructor() {
+  constructor(options: FileMigrationOptions = {}) {
     this.ftpClient = new FTPClient();
     this.tempDir = path.join(process.cwd(), 'temp-migration');
     this.stats = {
-      accountLogos: { downloaded: 0, uploaded: 0, skipped: 0, errors: 0 },
-      teamLogos: { downloaded: 0, uploaded: 0, skipped: 0, errors: 0 },
-      contactPhotos: { downloaded: 0, uploaded: 0, skipped: 0, errors: 0 },
+      accountLogos: this.createEmptyStats(),
+      teamLogos: this.createEmptyStats(),
+      contactPhotos: this.createEmptyStats(),
+      sponsorLogos: this.createEmptyStats(),
+      handouts: this.createEmptyStats(),
+      galleryPhotos: this.createEmptyStats(),
+      whereHeardOptions: this.createEmptyStats(),
+      messageBoards: this.createEmptyStats(),
     };
+
+    const resolveBooleanEnv = (raw?: string): boolean | undefined => {
+      if (!raw) {
+        return undefined;
+      }
+
+      const normalized = raw.trim().toLowerCase();
+
+      if (['true', '1', 'yes', 'y'].includes(normalized)) {
+        return true;
+      }
+
+      if (['false', '0', 'no', 'n'].includes(normalized)) {
+        return false;
+      }
+
+      return undefined;
+    };
+
+    const resolveTestModeFromEnv = (): boolean | undefined => {
+      const explicit = resolveBooleanEnv(process.env.MIGRATION_TEST_MODE);
+      if (typeof explicit === 'boolean') {
+        return explicit;
+      }
+
+      const migrationMode = process.env.MIGRATION_MODE?.trim().toLowerCase();
+      if (migrationMode === 'test') {
+        return true;
+      }
+
+      return undefined;
+    };
+
+    const parsePositiveInt = (raw: string | number | undefined, fallback: number): number => {
+      if (typeof raw === 'number') {
+        return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : fallback;
+      }
+
+      if (typeof raw === 'string') {
+        const parsed = Number.parseInt(raw, 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+      }
+
+      return fallback;
+    };
+
+    const defaultSampleLimit = parsePositiveInt(process.env.MIGRATION_TEST_SAMPLE_LIMIT, 2);
+    const defaultFileLimit = parsePositiveInt(
+      process.env.MIGRATION_TEST_FILES_PER_DIRECTORY,
+      defaultSampleLimit,
+    );
+
+    this.isTestMode = options.testMode ?? resolveTestModeFromEnv() ?? false;
+    this.testLimits = {
+      accounts: parsePositiveInt(
+        options.testAccounts ?? process.env.MIGRATION_TEST_ACCOUNTS,
+        defaultSampleLimit,
+      ),
+      teams: parsePositiveInt(
+        options.testTeams ?? process.env.MIGRATION_TEST_TEAMS,
+        defaultSampleLimit,
+      ),
+      contacts: parsePositiveInt(
+        options.testContacts ?? process.env.MIGRATION_TEST_CONTACTS,
+        defaultSampleLimit,
+      ),
+      filesPerDirectory: parsePositiveInt(
+        options.testFilesPerDirectory ?? process.env.MIGRATION_TEST_FILES_PER_DIRECTORY,
+        defaultFileLimit,
+      ),
+    };
+
+    if (this.isTestMode) {
+      console.log(
+        `🧪 Test mode enabled. Limits -> accounts: ${this.testLimits.accounts}, teams: ${this.testLimits.teams}, contacts: ${this.testLimits.contacts}, files per directory: ${this.testLimits.filesPerDirectory}`,
+      );
+    }
+
     const retryEnv = Number(process.env.MIGRATION_FTP_MAX_RETRIES);
     this.maxFtpRetries = Number.isFinite(retryEnv) && retryEnv > 0 ? retryEnv : 3;
 
@@ -69,6 +181,10 @@ class FileMigrationService {
     this.progressFilePath = path.join(__dirname, 'migration-progress.json');
 
     this.loadProgress();
+  }
+
+  private createEmptyStats(): CategoryStats {
+    return { downloaded: 0, uploaded: 0, skipped: 0, errors: 0 };
   }
 
   async initialize(): Promise<void> {
@@ -366,140 +482,948 @@ class FileMigrationService {
     return this.withFtpRetry(() => this.ftpClient.list(remotePath), `list ${remotePath}`);
   }
 
-  async migrateAccountLogos(): Promise<void> {
-    console.log('📁 Migrating account logos from /Uploads/Accounts...');
+  async migrateAccountAssets(): Promise<void> {
+    console.log('📁 Migrating account assets from /Uploads/Accounts...');
 
     try {
-      // List account directories
       const accountDirs = await this.listDirectory('/Uploads/Accounts');
+      let processedAccounts = 0;
 
       for (const dir of accountDirs) {
-        if (dir.isDirectory) {
-          const accountId = dir.name;
-          console.log(`📂 Processing account ${accountId}...`);
+        if (!dir.isDirectory) {
+          continue;
+        }
 
-          try {
-            // List files in this account directory
-            const accountFiles = await this.listDirectory(`/Uploads/Accounts/${accountId}`);
+        const accountId = dir.name;
+        if (!accountId || accountId === '.' || accountId === '..') {
+          continue;
+        }
 
-            for (const file of accountFiles) {
-              if (file.isFile && this.isImageFile(file.name)) {
-                const remotePath = `/Uploads/Accounts/${accountId}/${file.name}`;
-                const localPath = path.join(this.tempDir, 'accounts', accountId, file.name);
+        if (this.isTestMode && processedAccounts >= this.testLimits.accounts) {
+          console.log(
+            '🧪 Test mode: reached account directory limit, skipping remaining accounts.',
+          );
+          break;
+        }
 
-                console.log(`⬇️ Downloading account logo: ${accountId}/${file.name}`);
+        processedAccounts += 1;
 
-                if (this.isFileAlreadyProcessed(remotePath)) {
-                  console.log(`⏭️ Account logo already migrated: ${remotePath}`);
-                  this.stats.accountLogos.skipped++;
-                  continue;
-                }
+        console.log(`📂 Processing account ${accountId}...`);
 
-                if (await this.downloadFile(remotePath, localPath)) {
-                  this.stats.accountLogos.downloaded++;
-
-                  const buffer = await this.getFileBuffer(localPath);
-                  if (buffer) {
-                    try {
-                      await this.storageService.saveAccountLogo(accountId, buffer);
-                      console.log(`✅ Uploaded account logo for account ${accountId}`);
-                      this.stats.accountLogos.uploaded++;
-                      this.markFileProcessed(remotePath);
-                    } catch (error) {
-                      console.error(`❌ Failed to upload account logo for ${accountId}:`, error);
-                      this.stats.accountLogos.errors++;
-                      this.markFileFailed(remotePath);
-                    }
-                  }
-
-                  await this.cleanupTempFile(localPath);
-                } else {
-                  this.stats.accountLogos.errors++;
-                }
-              }
-            }
-          } catch (error) {
-            console.error(`❌ Error processing account ${accountId}:`, error);
-            this.stats.accountLogos.errors++;
-          }
+        try {
+          await this.processAccountDirectory(accountId);
+        } catch (error) {
+          console.error(`❌ Error processing account ${accountId}:`, error);
+          this.stats.accountLogos.errors++;
         }
       }
     } catch (error) {
-      console.error('❌ Error migrating account logos:', error);
+      console.error('❌ Error migrating account assets:', error);
     }
   }
 
-  async migrateTeamLogos(): Promise<void> {
-    console.log('📁 Migrating team logos from /Uploads/Teams...');
+  private async processAccountDirectory(accountId: string): Promise<void> {
+    const accountBasePath = `/Uploads/Accounts/${accountId}`;
+    const entries = await this.listDirectory(accountBasePath);
+    let rootFileCount = 0;
 
+    for (const entry of entries) {
+      if (entry.isDirectory) {
+        const dirName = entry.name;
+        const normalizedDirName = dirName.toLowerCase();
+        const remoteDirPath = `${accountBasePath}/${dirName}`;
+
+        switch (normalizedDirName) {
+          case 'logo':
+            await this.processAccountLogoDirectory(accountId, remoteDirPath);
+            break;
+          case 'handouts':
+            await this.processAccountHandouts(accountId, remoteDirPath);
+            break;
+          case 'photogallery':
+            await this.processAccountPhotoGallery(accountId, remoteDirPath);
+            break;
+          case 'sponsors':
+            await this.processAccountSponsors(accountId, remoteDirPath);
+            break;
+          default:
+            console.log(
+              `ℹ️ Unhandled subdirectory for account ${accountId}: ${dirName}. Skipping for now.`,
+            );
+            break;
+        }
+      } else if (entry.isFile) {
+        if (this.isTestMode && rootFileCount >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached root file limit for account ${accountId}, skipping remaining files.`,
+          );
+          break;
+        }
+
+        rootFileCount += 1;
+
+        const fileName = entry.name;
+        const normalizedFileName = fileName.toLowerCase();
+        const remoteFilePath = `${accountBasePath}/${fileName}`;
+
+        if (normalizedFileName === 'whereheardoptions.xml') {
+          await this.processWhereHeardOptions(accountId, remoteFilePath);
+        } else if (normalizedFileName === 'messageboard.xml') {
+          await this.processMessageBoard(accountId, remoteFilePath);
+        } else if (this.isImageFile(fileName)) {
+          await this.processLegacyAccountLogo(accountId, remoteFilePath);
+        } else {
+          console.log(`ℹ️ Skipping unrecognized account file for ${accountId}: ${fileName}.`);
+        }
+      }
+    }
+  }
+
+  private async processAccountLogoDirectory(
+    accountId: string,
+    remoteDirPath: string,
+  ): Promise<void> {
     try {
-      // List team directories
-      const teamDirs = await this.listDirectory('/Uploads/Teams');
+      const logoFiles = await this.listDirectory(remoteDirPath);
+      let processedFiles = 0;
+      let uploadedPrimaryLogo = false;
 
-      for (const dir of teamDirs) {
-        if (dir.isDirectory) {
-          const teamId = dir.name;
-          const accountId = this.teamToAccountMap.get(teamId);
+      for (const file of logoFiles) {
+        if (!file.isFile) {
+          continue;
+        }
 
-          if (!accountId) {
-            console.log(`⚠️ Team ${teamId} not found in database, skipping...`);
-            this.stats.teamLogos.skipped++;
+        if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached logo file limit for account ${accountId}, skipping remaining logo files.`,
+          );
+          break;
+        }
+
+        processedFiles += 1;
+
+        const remotePath = `${remoteDirPath}/${file.name}`;
+        const localPath = path.join(this.tempDir, 'accounts', accountId, 'Logo', file.name);
+
+        console.log(`⬇️ Downloading account logo asset: ${accountId}/Logo/${file.name}`);
+
+        if (this.isFileAlreadyProcessed(remotePath)) {
+          console.log(`⏭️ Account logo asset already migrated: ${remotePath}`);
+          this.stats.accountLogos.skipped++;
+          continue;
+        }
+
+        if (!(await this.downloadFile(remotePath, localPath))) {
+          this.stats.accountLogos.errors++;
+          continue;
+        }
+
+        this.stats.accountLogos.downloaded++;
+
+        const buffer = await this.getFileBuffer(localPath);
+        const normalizedName = file.name.toLowerCase();
+        const isSmallVariant = normalizedName.includes('small') || normalizedName.includes('thumb');
+
+        if (!buffer) {
+          this.stats.accountLogos.errors++;
+          await this.cleanupTempFile(localPath);
+          continue;
+        }
+
+        if (isSmallVariant) {
+          console.log(
+            `📝 Small account logo detected for account ${accountId}; upload not implemented yet.`,
+          );
+          this.stats.accountLogos.skipped++;
+          this.markFileProcessed(remotePath);
+        } else if (!uploadedPrimaryLogo) {
+          try {
+            await this.storageService.saveAccountLogo(accountId, buffer);
+            console.log(`✅ Uploaded primary account logo for account ${accountId}`);
+            this.stats.accountLogos.uploaded++;
+            this.markFileProcessed(remotePath);
+            uploadedPrimaryLogo = true;
+          } catch (error) {
+            console.error(`❌ Failed to upload account logo for ${accountId}:`, error);
+            this.stats.accountLogos.errors++;
+            this.markFileFailed(remotePath);
+          }
+        } else {
+          console.log(
+            `📝 Additional account logo variant found for account ${accountId}; retaining for future processing.`,
+          );
+          this.stats.accountLogos.skipped++;
+          this.markFileProcessed(remotePath);
+        }
+
+        await this.cleanupTempFile(localPath);
+      }
+    } catch (error) {
+      console.error(`❌ Error processing logo directory for account ${accountId}:`, error);
+      this.stats.accountLogos.errors++;
+    }
+  }
+
+  private async processAccountHandouts(accountId: string, remoteDirPath: string): Promise<void> {
+    try {
+      const handoutFiles = await this.listDirectory(remoteDirPath);
+      let processedFiles = 0;
+
+      for (const file of handoutFiles) {
+        if (!file.isFile) {
+          console.log(
+            `ℹ️ Nested directory found under Handouts for account ${accountId}: ${file.name}. Skipping.`,
+          );
+          continue;
+        }
+
+        if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached handout file limit for account ${accountId}, skipping remaining handouts.`,
+          );
+          break;
+        }
+
+        processedFiles += 1;
+
+        const remotePath = `${remoteDirPath}/${file.name}`;
+        const localPath = path.join(this.tempDir, 'accounts', accountId, 'Handouts', file.name);
+
+        console.log(`⬇️ Downloading handout (stub) for account ${accountId}: ${file.name}`);
+
+        if (!(await this.downloadFile(remotePath, localPath))) {
+          this.stats.handouts.errors++;
+          continue;
+        }
+
+        this.stats.handouts.downloaded++;
+        this.stats.handouts.skipped++;
+        console.log(
+          `📝 Handout migration not yet implemented. File retained for future upload: ${remotePath}`,
+        );
+        this.markFileProcessed(remotePath);
+
+        await this.cleanupTempFile(localPath);
+      }
+    } catch (error) {
+      console.error(`❌ Error processing handouts for account ${accountId}:`, error);
+      this.stats.handouts.errors++;
+    }
+  }
+
+  private async processAccountPhotoGallery(
+    accountId: string,
+    remoteDirPath: string,
+  ): Promise<void> {
+    try {
+      const galleryDirs = await this.listDirectory(remoteDirPath);
+      let processedGalleries = 0;
+
+      for (const galleryDir of galleryDirs) {
+        if (!galleryDir.isDirectory) {
+          continue;
+        }
+
+        if (this.isTestMode && processedGalleries >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached gallery folder limit for account ${accountId}, skipping remaining galleries.`,
+          );
+          break;
+        }
+
+        processedGalleries += 1;
+
+        const galleryId = galleryDir.name;
+        const galleryPath = `${remoteDirPath}/${galleryId}`;
+        const galleryFiles = await this.listDirectory(galleryPath);
+        let processedFiles = 0;
+
+        for (const file of galleryFiles) {
+          if (!file.isFile) {
             continue;
           }
 
-          console.log(`📂 Processing team ${teamId} (account ${accountId})...`);
-
-          try {
-            // List files in this team directory
-            const teamFiles = await this.listDirectory(`/Uploads/Teams/${teamId}`);
-
-            for (const file of teamFiles) {
-              if (file.isFile && this.isImageFile(file.name)) {
-                const remotePath = `/Uploads/Teams/${teamId}/${file.name}`;
-                const localPath = path.join(this.tempDir, 'teams', teamId, file.name);
-
-                console.log(`⬇️ Downloading team logo: ${teamId}/${file.name}`);
-
-                if (this.isFileAlreadyProcessed(remotePath)) {
-                  console.log(`⏭️ Team logo already migrated: ${remotePath}`);
-                  this.stats.teamLogos.skipped++;
-                  continue;
-                }
-
-                if (await this.downloadFile(remotePath, localPath)) {
-                  this.stats.teamLogos.downloaded++;
-
-                  const buffer = await this.getFileBuffer(localPath);
-                  if (buffer) {
-                    try {
-                      await this.storageService.saveLogo(accountId, teamId, buffer);
-                      console.log(`✅ Uploaded team logo for account ${accountId}, team ${teamId}`);
-                      this.stats.teamLogos.uploaded++;
-                      this.markFileProcessed(remotePath);
-                    } catch (error) {
-                      console.error(
-                        `❌ Failed to upload team logo for ${accountId}/${teamId}:`,
-                        error,
-                      );
-                      this.stats.teamLogos.errors++;
-                      this.markFileFailed(remotePath);
-                    }
-                  }
-
-                  await this.cleanupTempFile(localPath);
-                } else {
-                  this.stats.teamLogos.errors++;
-                }
-              }
-            }
-          } catch (error) {
-            console.error(`❌ Error processing team ${teamId}:`, error);
-            this.stats.teamLogos.errors++;
+          if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+            console.log(
+              `🧪 Test mode: reached photo limit for gallery ${galleryId}, skipping remaining files.`,
+            );
+            break;
           }
+
+          processedFiles += 1;
+
+          const remotePath = `${galleryPath}/${file.name}`;
+          const localPath = path.join(
+            this.tempDir,
+            'accounts',
+            accountId,
+            'PhotoGallery',
+            galleryId,
+            file.name,
+          );
+
+          console.log(
+            `⬇️ Downloading gallery asset (stub) for account ${accountId}, gallery ${galleryId}: ${file.name}`,
+          );
+
+          if (!(await this.downloadFile(remotePath, localPath))) {
+            this.stats.galleryPhotos.errors++;
+            continue;
+          }
+
+          this.stats.galleryPhotos.downloaded++;
+          this.stats.galleryPhotos.skipped++;
+          console.log(
+            `📝 Gallery upload not yet implemented. File retained for future processing: ${remotePath}`,
+          );
+          this.markFileProcessed(remotePath);
+
+          await this.cleanupTempFile(localPath);
         }
       }
     } catch (error) {
-      console.error('❌ Error migrating team logos:', error);
+      console.error(`❌ Error processing photo gallery for account ${accountId}:`, error);
+      this.stats.galleryPhotos.errors++;
+    }
+  }
+
+  private async processAccountSponsors(accountId: string, remoteDirPath: string): Promise<void> {
+    try {
+      const sponsorDirs = await this.listDirectory(remoteDirPath);
+      let processedSponsors = 0;
+
+      for (const sponsorDir of sponsorDirs) {
+        if (!sponsorDir.isDirectory) {
+          continue;
+        }
+
+        if (this.isTestMode && processedSponsors >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached sponsor directory limit for account ${accountId}, skipping remaining sponsors.`,
+          );
+          break;
+        }
+
+        processedSponsors += 1;
+
+        const sponsorId = sponsorDir.name;
+        const sponsorPath = `${remoteDirPath}/${sponsorId}`;
+        const sponsorFiles = await this.listDirectory(sponsorPath);
+        let processedFiles = 0;
+
+        for (const file of sponsorFiles) {
+          if (!file.isFile || !this.isImageFile(file.name)) {
+            continue;
+          }
+
+          if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+            console.log(
+              `🧪 Test mode: reached sponsor logo limit for sponsor ${sponsorId}, skipping remaining files.`,
+            );
+            break;
+          }
+
+          processedFiles += 1;
+
+          const remotePath = `${sponsorPath}/${file.name}`;
+          const localPath = path.join(
+            this.tempDir,
+            'accounts',
+            accountId,
+            'Sponsors',
+            sponsorId,
+            file.name,
+          );
+
+          console.log(
+            `⬇️ Downloading sponsor logo for account ${accountId}, sponsor ${sponsorId}: ${file.name}`,
+          );
+
+          if (this.isFileAlreadyProcessed(remotePath)) {
+            console.log(`⏭️ Sponsor logo already migrated: ${remotePath}`);
+            this.stats.sponsorLogos.skipped++;
+            continue;
+          }
+
+          if (!(await this.downloadFile(remotePath, localPath))) {
+            this.stats.sponsorLogos.errors++;
+            continue;
+          }
+
+          this.stats.sponsorLogos.downloaded++;
+
+          const buffer = await this.getFileBuffer(localPath);
+          if (!buffer) {
+            this.stats.sponsorLogos.errors++;
+            await this.cleanupTempFile(localPath);
+            continue;
+          }
+
+          try {
+            await this.storageService.saveSponsorPhoto(accountId, sponsorId, buffer);
+            console.log(`✅ Uploaded sponsor logo for account ${accountId}, sponsor ${sponsorId}`);
+            this.stats.sponsorLogos.uploaded++;
+            this.markFileProcessed(remotePath);
+          } catch (error) {
+            console.error(
+              `❌ Failed to upload sponsor logo for account ${accountId}/${sponsorId}:`,
+              error,
+            );
+            this.stats.sponsorLogos.errors++;
+            this.markFileFailed(remotePath);
+          }
+
+          await this.cleanupTempFile(localPath);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error processing sponsors for account ${accountId}:`, error);
+      this.stats.sponsorLogos.errors++;
+    }
+  }
+
+  private async processTeamDirectory(teamId: string, accountId: string): Promise<void> {
+    const teamBasePath = `/Uploads/Teams/${teamId}`;
+    const entries = await this.listDirectory(teamBasePath);
+    let rootFileCount = 0;
+
+    for (const entry of entries) {
+      if (entry.isDirectory) {
+        const dirName = entry.name;
+        const normalizedDirName = dirName.toLowerCase();
+        const remoteDirPath = `${teamBasePath}/${dirName}`;
+
+        switch (normalizedDirName) {
+          case 'logo':
+            await this.processTeamLogoDirectory(teamId, accountId, remoteDirPath);
+            break;
+          case 'handouts':
+            await this.processTeamHandouts(teamId, remoteDirPath);
+            break;
+          case 'photogallery':
+            await this.processTeamPhotoGallery(teamId, remoteDirPath);
+            break;
+          case 'sponsors':
+            await this.processTeamSponsors(teamId, accountId, remoteDirPath);
+            break;
+          default:
+            console.log(
+              `ℹ️ Unhandled subdirectory for team ${teamId}: ${dirName}. Skipping for now.`,
+            );
+            break;
+        }
+      } else if (entry.isFile) {
+        if (this.isTestMode && rootFileCount >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached root file limit for team ${teamId}, skipping remaining files.`,
+          );
+          break;
+        }
+
+        rootFileCount += 1;
+
+        const fileName = entry.name;
+        const normalizedFileName = fileName.toLowerCase();
+        const remoteFilePath = `${teamBasePath}/${fileName}`;
+
+        if (this.isImageFile(fileName)) {
+          await this.processTeamLegacyLogo(teamId, accountId, remoteFilePath);
+        } else {
+          console.log(`ℹ️ Skipping unrecognized team file for ${teamId}: ${fileName}.`);
+        }
+      }
+    }
+  }
+
+  private async processTeamLogoDirectory(
+    teamId: string,
+    accountId: string,
+    remoteDirPath: string,
+  ): Promise<void> {
+    try {
+      const logoFiles = await this.listDirectory(remoteDirPath);
+      let processedFiles = 0;
+      let uploadedPrimaryLogo = false;
+
+      for (const file of logoFiles) {
+        if (!file.isFile) {
+          continue;
+        }
+
+        if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached logo file limit for team ${teamId}, skipping remaining logo files.`,
+          );
+          break;
+        }
+
+        processedFiles += 1;
+
+        const remotePath = `${remoteDirPath}/${file.name}`;
+        const localPath = path.join(this.tempDir, 'teams', teamId, 'Logo', file.name);
+
+        console.log(`⬇️ Downloading team logo asset: ${teamId}/Logo/${file.name}`);
+
+        if (this.isFileAlreadyProcessed(remotePath)) {
+          console.log(`⏭️ Team logo asset already migrated: ${remotePath}`);
+          this.stats.teamLogos.skipped++;
+          continue;
+        }
+
+        if (!(await this.downloadFile(remotePath, localPath))) {
+          this.stats.teamLogos.errors++;
+          continue;
+        }
+
+        this.stats.teamLogos.downloaded++;
+
+        const buffer = await this.getFileBuffer(localPath);
+        const normalizedName = file.name.toLowerCase();
+        const isSmallVariant = normalizedName.includes('small') || normalizedName.includes('thumb');
+
+        if (!buffer) {
+          this.stats.teamLogos.errors++;
+          await this.cleanupTempFile(localPath);
+          continue;
+        }
+
+        if (isSmallVariant) {
+          console.log(
+            `📝 Small team logo detected for team ${teamId}; upload not implemented yet.`,
+          );
+          this.stats.teamLogos.skipped++;
+          this.markFileProcessed(remotePath);
+        } else if (!uploadedPrimaryLogo) {
+          try {
+            await this.storageService.saveLogo(accountId, teamId, buffer);
+            console.log(`✅ Uploaded primary team logo for account ${accountId}, team ${teamId}`);
+            this.stats.teamLogos.uploaded++;
+            this.markFileProcessed(remotePath);
+            uploadedPrimaryLogo = true;
+          } catch (error) {
+            console.error(`❌ Failed to upload team logo for ${accountId}/${teamId}:`, error);
+            this.stats.teamLogos.errors++;
+            this.markFileFailed(remotePath);
+          }
+        } else {
+          console.log(
+            `📝 Additional team logo variant found for team ${teamId}; retaining for future processing.`,
+          );
+          this.stats.teamLogos.skipped++;
+          this.markFileProcessed(remotePath);
+        }
+
+        await this.cleanupTempFile(localPath);
+      }
+    } catch (error) {
+      console.error(`❌ Error processing logo directory for team ${teamId}:`, error);
+      this.stats.teamLogos.errors++;
+    }
+  }
+
+  private async processTeamHandouts(teamId: string, remoteDirPath: string): Promise<void> {
+    try {
+      const handoutFiles = await this.listDirectory(remoteDirPath);
+      let processedFiles = 0;
+
+      for (const file of handoutFiles) {
+        if (!file.isFile) {
+          console.log(
+            `ℹ️ Nested directory found under Handouts for team ${teamId}: ${file.name}. Skipping.`,
+          );
+          continue;
+        }
+
+        if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached handout file limit for team ${teamId}, skipping remaining handouts.`,
+          );
+          break;
+        }
+
+        processedFiles += 1;
+
+        const remotePath = `${remoteDirPath}/${file.name}`;
+        const localPath = path.join(this.tempDir, 'teams', teamId, 'Handouts', file.name);
+
+        console.log(`⬇️ Downloading handout (stub) for team ${teamId}: ${file.name}`);
+
+        if (!(await this.downloadFile(remotePath, localPath))) {
+          this.stats.handouts.errors++;
+          continue;
+        }
+
+        this.stats.handouts.downloaded++;
+        this.stats.handouts.skipped++;
+        console.log(
+          `📝 Team handout migration not yet implemented. File retained for future upload: ${remotePath}`,
+        );
+        this.markFileProcessed(remotePath);
+
+        await this.cleanupTempFile(localPath);
+      }
+    } catch (error) {
+      console.error(`❌ Error processing handouts for team ${teamId}:`, error);
+      this.stats.handouts.errors++;
+    }
+  }
+
+  private async processTeamPhotoGallery(teamId: string, remoteDirPath: string): Promise<void> {
+    try {
+      const galleryDirs = await this.listDirectory(remoteDirPath);
+      let processedGalleries = 0;
+
+      for (const galleryDir of galleryDirs) {
+        if (!galleryDir.isDirectory) {
+          continue;
+        }
+
+        if (this.isTestMode && processedGalleries >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached gallery folder limit for team ${teamId}, skipping remaining galleries.`,
+          );
+          break;
+        }
+
+        processedGalleries += 1;
+
+        const galleryId = galleryDir.name;
+        const galleryPath = `${remoteDirPath}/${galleryId}`;
+        const galleryFiles = await this.listDirectory(galleryPath);
+        let processedFiles = 0;
+
+        for (const file of galleryFiles) {
+          if (!file.isFile) {
+            continue;
+          }
+
+          if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+            console.log(
+              `🧪 Test mode: reached photo limit for team gallery ${galleryId}, skipping remaining files.`,
+            );
+            break;
+          }
+
+          processedFiles += 1;
+
+          const remotePath = `${galleryPath}/${file.name}`;
+          const localPath = path.join(
+            this.tempDir,
+            'teams',
+            teamId,
+            'PhotoGallery',
+            galleryId,
+            file.name,
+          );
+
+          console.log(
+            `⬇️ Downloading team gallery asset (stub) for team ${teamId}, gallery ${galleryId}: ${file.name}`,
+          );
+
+          if (!(await this.downloadFile(remotePath, localPath))) {
+            this.stats.galleryPhotos.errors++;
+            continue;
+          }
+
+          this.stats.galleryPhotos.downloaded++;
+          this.stats.galleryPhotos.skipped++;
+          console.log(
+            `📝 Team gallery upload not yet implemented. File retained for future processing: ${remotePath}`,
+          );
+          this.markFileProcessed(remotePath);
+
+          await this.cleanupTempFile(localPath);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error processing photo gallery for team ${teamId}:`, error);
+      this.stats.galleryPhotos.errors++;
+    }
+  }
+
+  private async processTeamSponsors(
+    teamId: string,
+    accountId: string,
+    remoteDirPath: string,
+  ): Promise<void> {
+    try {
+      const sponsorDirs = await this.listDirectory(remoteDirPath);
+      let processedSponsors = 0;
+
+      for (const sponsorDir of sponsorDirs) {
+        if (!sponsorDir.isDirectory) {
+          continue;
+        }
+
+        if (this.isTestMode && processedSponsors >= this.testLimits.filesPerDirectory) {
+          console.log(
+            `🧪 Test mode: reached sponsor directory limit for team ${teamId}, skipping remaining sponsors.`,
+          );
+          break;
+        }
+
+        processedSponsors += 1;
+
+        const sponsorId = sponsorDir.name;
+        const sponsorPath = `${remoteDirPath}/${sponsorId}`;
+        const sponsorFiles = await this.listDirectory(sponsorPath);
+        let processedFiles = 0;
+
+        for (const file of sponsorFiles) {
+          if (!file.isFile || !this.isImageFile(file.name)) {
+            continue;
+          }
+
+          if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+            console.log(
+              `🧪 Test mode: reached sponsor logo limit for team ${teamId}, sponsor ${sponsorId}, skipping remaining files.`,
+            );
+            break;
+          }
+
+          processedFiles += 1;
+
+          const remotePath = `${sponsorPath}/${file.name}`;
+          const localPath = path.join(
+            this.tempDir,
+            'teams',
+            teamId,
+            'Sponsors',
+            sponsorId,
+            file.name,
+          );
+
+          console.log(
+            `⬇️ Downloading team sponsor logo for team ${teamId}, sponsor ${sponsorId}: ${file.name}`,
+          );
+
+          if (this.isFileAlreadyProcessed(remotePath)) {
+            console.log(`⏭️ Team sponsor logo already migrated: ${remotePath}`);
+            this.stats.sponsorLogos.skipped++;
+            continue;
+          }
+
+          if (!(await this.downloadFile(remotePath, localPath))) {
+            this.stats.sponsorLogos.errors++;
+            continue;
+          }
+
+          this.stats.sponsorLogos.downloaded++;
+
+          const buffer = await this.getFileBuffer(localPath);
+          if (!buffer) {
+            this.stats.sponsorLogos.errors++;
+            await this.cleanupTempFile(localPath);
+            continue;
+          }
+
+          try {
+            await this.storageService.saveSponsorPhoto(accountId, sponsorId, buffer);
+            console.log(
+              `✅ Uploaded team sponsor logo for account ${accountId}, team ${teamId}, sponsor ${sponsorId}`,
+            );
+            this.stats.sponsorLogos.uploaded++;
+            this.markFileProcessed(remotePath);
+          } catch (error) {
+            console.error(
+              `❌ Failed to upload team sponsor logo for account ${accountId}, team ${teamId}, sponsor ${sponsorId}:`,
+              error,
+            );
+            this.stats.sponsorLogos.errors++;
+            this.markFileFailed(remotePath);
+          }
+
+          await this.cleanupTempFile(localPath);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error processing sponsors for team ${teamId}:`, error);
+      this.stats.sponsorLogos.errors++;
+    }
+  }
+
+  private async processTeamLegacyLogo(
+    teamId: string,
+    accountId: string,
+    remoteFilePath: string,
+  ): Promise<void> {
+    console.log(`⬇️ Processing legacy team logo location for team ${teamId}`);
+
+    if (this.isFileAlreadyProcessed(remoteFilePath)) {
+      console.log(`⏭️ Legacy team logo already migrated: ${remoteFilePath}`);
+      this.stats.teamLogos.skipped++;
+      return;
+    }
+
+    const fileName = remoteFilePath.split('/').pop() ?? 'logo';
+    const localPath = path.join(this.tempDir, 'teams', teamId, `legacy-${fileName}`);
+
+    if (!(await this.downloadFile(remoteFilePath, localPath))) {
+      this.stats.teamLogos.errors++;
+      return;
+    }
+
+    this.stats.teamLogos.downloaded++;
+
+    const buffer = await this.getFileBuffer(localPath);
+    if (!buffer) {
+      this.stats.teamLogos.errors++;
+      await this.cleanupTempFile(localPath);
+      return;
+    }
+
+    try {
+      await this.storageService.saveLogo(accountId, teamId, buffer);
+      console.log(`✅ Uploaded legacy team logo for account ${accountId}, team ${teamId}`);
+      this.stats.teamLogos.uploaded++;
+      this.markFileProcessed(remoteFilePath);
+    } catch (error) {
+      console.error(
+        `❌ Failed to upload legacy team logo for account ${accountId}, team ${teamId}:`,
+        error,
+      );
+      this.stats.teamLogos.errors++;
+      this.markFileFailed(remoteFilePath);
+    }
+
+    await this.cleanupTempFile(localPath);
+  }
+
+  private async processWhereHeardOptions(accountId: string, remoteFilePath: string): Promise<void> {
+    console.log(`⬇️ Downloading whereheard options (stub) for account ${accountId}`);
+
+    if (this.isFileAlreadyProcessed(remoteFilePath)) {
+      console.log(`⏭️ Where heard options already processed: ${remoteFilePath}`);
+      this.stats.whereHeardOptions.skipped++;
+      return;
+    }
+
+    const localPath = path.join(this.tempDir, 'accounts', accountId, 'whereheardoptions.xml');
+
+    if (!(await this.downloadFile(remoteFilePath, localPath))) {
+      this.stats.whereHeardOptions.errors++;
+      return;
+    }
+
+    this.stats.whereHeardOptions.downloaded++;
+    this.stats.whereHeardOptions.skipped++;
+    console.log(
+      `📝 Where heard options upload not yet implemented. File retained for future migration: ${remoteFilePath}`,
+    );
+    this.markFileProcessed(remoteFilePath);
+
+    await this.cleanupTempFile(localPath);
+  }
+
+  private async processMessageBoard(accountId: string, remoteFilePath: string): Promise<void> {
+    console.log(`⬇️ Downloading message board (stub) for account ${accountId}`);
+
+    if (this.isFileAlreadyProcessed(remoteFilePath)) {
+      console.log(`⏭️ Message board already processed: ${remoteFilePath}`);
+      this.stats.messageBoards.skipped++;
+      return;
+    }
+
+    const localPath = path.join(this.tempDir, 'accounts', accountId, 'messageboard.xml');
+
+    if (!(await this.downloadFile(remoteFilePath, localPath))) {
+      this.stats.messageBoards.errors++;
+      return;
+    }
+
+    this.stats.messageBoards.downloaded++;
+    this.stats.messageBoards.skipped++;
+    console.log(
+      `📝 Message board migration not yet implemented. File retained for future processing: ${remoteFilePath}`,
+    );
+    this.markFileProcessed(remoteFilePath);
+
+    await this.cleanupTempFile(localPath);
+  }
+
+  private async processLegacyAccountLogo(accountId: string, remoteFilePath: string): Promise<void> {
+    console.log(`⬇️ Processing legacy account logo location for account ${accountId}`);
+
+    if (this.isFileAlreadyProcessed(remoteFilePath)) {
+      console.log(`⏭️ Legacy account logo already migrated: ${remoteFilePath}`);
+      this.stats.accountLogos.skipped++;
+      return;
+    }
+
+    const fileName = remoteFilePath.split('/').pop() ?? 'logo';
+    const localPath = path.join(this.tempDir, 'accounts', accountId, `legacy-${fileName}`);
+
+    if (!(await this.downloadFile(remoteFilePath, localPath))) {
+      this.stats.accountLogos.errors++;
+      return;
+    }
+
+    this.stats.accountLogos.downloaded++;
+
+    const buffer = await this.getFileBuffer(localPath);
+    if (!buffer) {
+      this.stats.accountLogos.errors++;
+      await this.cleanupTempFile(localPath);
+      return;
+    }
+
+    try {
+      await this.storageService.saveAccountLogo(accountId, buffer);
+      console.log(`✅ Uploaded legacy account logo for account ${accountId}`);
+      this.stats.accountLogos.uploaded++;
+      this.markFileProcessed(remoteFilePath);
+    } catch (error) {
+      console.error(`❌ Failed to upload legacy account logo for ${accountId}:`, error);
+      this.stats.accountLogos.errors++;
+      this.markFileFailed(remoteFilePath);
+    }
+
+    await this.cleanupTempFile(localPath);
+  }
+
+  async migrateTeamAssets(): Promise<void> {
+    console.log('📁 Migrating team assets from /Uploads/Teams...');
+
+    try {
+      const teamDirs = await this.listDirectory('/Uploads/Teams');
+      let processedTeams = 0;
+
+      for (const dir of teamDirs) {
+        if (!dir.isDirectory) {
+          continue;
+        }
+
+        const teamId = dir.name;
+        if (!teamId || teamId === '.' || teamId === '..') {
+          continue;
+        }
+
+        const accountId = this.teamToAccountMap.get(teamId);
+
+        if (!accountId) {
+          console.log(`⚠️ Team ${teamId} not found in database, skipping...`);
+          this.stats.teamLogos.skipped++;
+          continue;
+        }
+
+        if (this.isTestMode && processedTeams >= this.testLimits.teams) {
+          console.log('🧪 Test mode: reached team directory limit, skipping remaining teams.');
+          break;
+        }
+
+        processedTeams += 1;
+
+        console.log(`📂 Processing team ${teamId} (account ${accountId})...`);
+
+        try {
+          await this.processTeamDirectory(teamId, accountId);
+        } catch (error) {
+          console.error(`❌ Error processing team ${teamId}:`, error);
+          this.stats.teamLogos.errors++;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error migrating team assets:', error);
     }
   }
 
@@ -509,69 +1433,97 @@ class FileMigrationService {
     try {
       // List contact directories
       const contactDirs = await this.listDirectory('/Uploads/Contacts');
+      let processedContacts = 0;
 
       for (const dir of contactDirs) {
-        if (dir.isDirectory) {
-          const contactId = dir.name;
-          const accountId = this.contactToAccountMap.get(contactId);
+        if (!dir.isDirectory) {
+          continue;
+        }
 
-          if (!accountId) {
-            console.log(`⚠️ Contact ${contactId} not found in database, skipping...`);
-            this.stats.contactPhotos.skipped++;
-            continue;
-          }
+        const contactId = dir.name;
+        if (!contactId || contactId === '.' || contactId === '..') {
+          continue;
+        }
 
-          console.log(`📂 Processing contact ${contactId} (account ${accountId})...`);
+        const accountId = this.contactToAccountMap.get(contactId);
 
-          try {
-            // List files in this contact directory
-            const contactFiles = await this.listDirectory(`/Uploads/Contacts/${contactId}`);
+        if (!accountId) {
+          console.log(`⚠️ Contact ${contactId} not found in database, skipping...`);
+          this.stats.contactPhotos.skipped++;
+          continue;
+        }
 
-            for (const file of contactFiles) {
-              if (file.isFile && this.isImageFile(file.name)) {
-                const remotePath = `/Uploads/Contacts/${contactId}/${file.name}`;
-                const localPath = path.join(this.tempDir, 'contacts', contactId, file.name);
+        if (this.isTestMode && processedContacts >= this.testLimits.contacts) {
+          console.log(
+            '🧪 Test mode: reached contact directory limit, skipping remaining contacts.',
+          );
+          break;
+        }
 
-                console.log(`⬇️ Downloading contact photo: ${contactId}/${file.name}`);
+        processedContacts += 1;
 
-                if (this.isFileAlreadyProcessed(remotePath)) {
-                  console.log(`⏭️ Contact photo already migrated: ${remotePath}`);
-                  this.stats.contactPhotos.skipped++;
-                  continue;
-                }
+        console.log(`📂 Processing contact ${contactId} (account ${accountId})...`);
 
-                if (await this.downloadFile(remotePath, localPath)) {
-                  this.stats.contactPhotos.downloaded++;
+        try {
+          // List files in this contact directory
+          const contactFiles = await this.listDirectory(`/Uploads/Contacts/${contactId}`);
+          let processedFiles = 0;
 
-                  const buffer = await this.getFileBuffer(localPath);
-                  if (buffer) {
-                    try {
-                      await this.storageService.saveContactPhoto(accountId, contactId, buffer);
-                      console.log(
-                        `✅ Uploaded contact photo for account ${accountId}, contact ${contactId}`,
-                      );
-                      this.stats.contactPhotos.uploaded++;
-                      this.markFileProcessed(remotePath);
-                    } catch (error) {
-                      console.error(
-                        `❌ Failed to upload contact photo for ${accountId}/${contactId}:`,
-                        error,
-                      );
-                      this.stats.contactPhotos.errors++;
-                      this.markFileFailed(remotePath);
-                    }
-                  }
+          for (const file of contactFiles) {
+            if (!file.isFile || !this.isImageFile(file.name)) {
+              continue;
+            }
 
-                  await this.cleanupTempFile(localPath);
-                } else {
+            if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
+              console.log(
+                `🧪 Test mode: reached file limit for contact ${contactId}, skipping remaining files.`,
+              );
+              break;
+            }
+
+            processedFiles += 1;
+
+            const remotePath = `/Uploads/Contacts/${contactId}/${file.name}`;
+            const localPath = path.join(this.tempDir, 'contacts', contactId, file.name);
+
+            console.log(`⬇️ Downloading contact photo: ${contactId}/${file.name}`);
+
+            if (this.isFileAlreadyProcessed(remotePath)) {
+              console.log(`⏭️ Contact photo already migrated: ${remotePath}`);
+              this.stats.contactPhotos.skipped++;
+              continue;
+            }
+
+            if (await this.downloadFile(remotePath, localPath)) {
+              this.stats.contactPhotos.downloaded++;
+
+              const buffer = await this.getFileBuffer(localPath);
+              if (buffer) {
+                try {
+                  await this.storageService.saveContactPhoto(accountId, contactId, buffer);
+                  console.log(
+                    `✅ Uploaded contact photo for account ${accountId}, contact ${contactId}`,
+                  );
+                  this.stats.contactPhotos.uploaded++;
+                  this.markFileProcessed(remotePath);
+                } catch (error) {
+                  console.error(
+                    `❌ Failed to upload contact photo for ${accountId}/${contactId}:`,
+                    error,
+                  );
                   this.stats.contactPhotos.errors++;
+                  this.markFileFailed(remotePath);
                 }
               }
+
+              await this.cleanupTempFile(localPath);
+            } else {
+              this.stats.contactPhotos.errors++;
             }
-          } catch (error) {
-            console.error(`❌ Error processing contact ${contactId}:`, error);
-            this.stats.contactPhotos.errors++;
           }
+        } catch (error) {
+          console.error(`❌ Error processing contact ${contactId}:`, error);
+          this.stats.contactPhotos.errors++;
         }
       }
     } catch (error) {
@@ -589,41 +1541,36 @@ class FileMigrationService {
     console.log('\n📊 Migration Statistics:');
     console.log('========================');
 
-    console.log('\n👥 Account Logos:');
-    console.log(`  Downloaded: ${this.stats.accountLogos.downloaded}`);
-    console.log(`  Uploaded: ${this.stats.accountLogos.uploaded}`);
-    console.log(`  Skipped: ${this.stats.accountLogos.skipped}`);
-    console.log(`  Errors: ${this.stats.accountLogos.errors}`);
+    this.printCategoryStats('👥 Account Logos', this.stats.accountLogos);
+    this.printCategoryStats('🏆 Team Logos', this.stats.teamLogos);
+    this.printCategoryStats('👤 Contact Photos', this.stats.contactPhotos);
+    this.printCategoryStats('🤝 Sponsor Logos', this.stats.sponsorLogos);
+    this.printCategoryStats('📄 Handouts', this.stats.handouts);
+    this.printCategoryStats('🖼️ Gallery Photos', this.stats.galleryPhotos);
+    this.printCategoryStats('📋 Where Heard Options', this.stats.whereHeardOptions);
+    this.printCategoryStats('💬 Message Boards', this.stats.messageBoards);
 
-    console.log('\n🏆 Team Logos:');
-    console.log(`  Downloaded: ${this.stats.teamLogos.downloaded}`);
-    console.log(`  Uploaded: ${this.stats.teamLogos.uploaded}`);
-    console.log(`  Skipped: ${this.stats.teamLogos.skipped}`);
-    console.log(`  Errors: ${this.stats.teamLogos.errors}`);
-
-    console.log('\n👤 Contact Photos:');
-    console.log(`  Downloaded: ${this.stats.contactPhotos.downloaded}`);
-    console.log(`  Uploaded: ${this.stats.contactPhotos.uploaded}`);
-    console.log(`  Skipped: ${this.stats.contactPhotos.skipped}`);
-    console.log(`  Errors: ${this.stats.contactPhotos.errors}`);
-
-    const totalDownloaded =
-      this.stats.accountLogos.downloaded +
-      this.stats.teamLogos.downloaded +
-      this.stats.contactPhotos.downloaded;
-    const totalUploaded =
-      this.stats.accountLogos.uploaded +
-      this.stats.teamLogos.uploaded +
-      this.stats.contactPhotos.uploaded;
-    const totalErrors =
-      this.stats.accountLogos.errors +
-      this.stats.teamLogos.errors +
-      this.stats.contactPhotos.errors;
+    const totals = Object.values(this.stats).reduce((acc, item) => {
+      acc.downloaded += item.downloaded;
+      acc.uploaded += item.uploaded;
+      acc.skipped += item.skipped;
+      acc.errors += item.errors;
+      return acc;
+    }, this.createEmptyStats());
 
     console.log('\n📈 Totals:');
-    console.log(`  Total Downloaded: ${totalDownloaded}`);
-    console.log(`  Total Uploaded: ${totalUploaded}`);
-    console.log(`  Total Errors: ${totalErrors}`);
+    console.log(`  Total Downloaded: ${totals.downloaded}`);
+    console.log(`  Total Uploaded: ${totals.uploaded}`);
+    console.log(`  Total Skipped: ${totals.skipped}`);
+    console.log(`  Total Errors: ${totals.errors}`);
+  }
+
+  private printCategoryStats(label: string, stats: CategoryStats): void {
+    console.log(`\n${label}:`);
+    console.log(`  Downloaded: ${stats.downloaded}`);
+    console.log(`  Uploaded: ${stats.uploaded}`);
+    console.log(`  Skipped: ${stats.skipped}`);
+    console.log(`  Errors: ${stats.errors}`);
   }
 
   async run(): Promise<void> {
@@ -632,8 +1579,8 @@ class FileMigrationService {
 
       console.log('🎯 Starting file migration...\n');
 
-      await this.migrateAccountLogos();
-      await this.migrateTeamLogos();
+      await this.migrateAccountAssets();
+      await this.migrateTeamAssets();
       await this.migrateContactPhotos();
 
       this.printStats();
@@ -671,7 +1618,64 @@ class FileMigrationService {
 
 // Run the migration if this file is executed directly
 if (require.main === module) {
-  const migration = new FileMigrationService();
+  const args = process.argv.slice(2);
+  const options: FileMigrationOptions = {};
+
+  const hasTestFlag = args.some((arg) => arg === '--test' || arg === '--test-mode');
+  if (hasTestFlag) {
+    options.testMode = true;
+  }
+
+  const parseNumericArg = (name: string): number | undefined => {
+    const prefix = `${name}=`;
+    const match = args.find((arg) => arg.startsWith(prefix));
+    if (!match) {
+      return undefined;
+    }
+
+    const rawValue = match.slice(prefix.length);
+    const value = Number.parseInt(rawValue, 10);
+
+    if (Number.isFinite(value) && value > 0) {
+      return value;
+    }
+
+    console.warn(`⚠️ Ignoring invalid value for ${name}: '${rawValue}'`);
+    return undefined;
+  };
+
+  let testLimitArgProvided = false;
+
+  const testAccounts = parseNumericArg('--test-accounts');
+  if (typeof testAccounts === 'number') {
+    options.testAccounts = testAccounts;
+    testLimitArgProvided = true;
+  }
+
+  const testTeams = parseNumericArg('--test-teams');
+  if (typeof testTeams === 'number') {
+    options.testTeams = testTeams;
+    testLimitArgProvided = true;
+  }
+
+  const testContacts = parseNumericArg('--test-contacts');
+  if (typeof testContacts === 'number') {
+    options.testContacts = testContacts;
+    testLimitArgProvided = true;
+  }
+
+  const testFiles =
+    parseNumericArg('--test-files') ?? parseNumericArg('--test-files-per-directory');
+  if (typeof testFiles === 'number') {
+    options.testFilesPerDirectory = testFiles;
+    testLimitArgProvided = true;
+  }
+
+  if (testLimitArgProvided && options.testMode === undefined) {
+    options.testMode = true;
+  }
+
+  const migration = new FileMigrationService(options);
   migration.run().catch(console.error);
 }
 

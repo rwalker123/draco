@@ -109,26 +109,28 @@ setup_dependencies() {
 
 # Function to run the migration
 run_migration() {
+    local script_args=("$@")
+
     print_status "Starting file migration..."
-    
+
     # Environment variables will be loaded by dotenv in the TypeScript file
     # No need to export them here
-    
+
     # Run the TypeScript migration script using tsx
     if command_exists tsx; then
-        tsx "$SCRIPT_DIR/migrate-files.ts"
+        tsx "$SCRIPT_DIR/migrate-files.ts" "${script_args[@]}"
         return
     fi
 
     # Fall back to npx which will locate the workspace tsx binary without requiring a global install
     if command_exists npx; then
-        if npx --yes --no-install tsx "$SCRIPT_DIR/migrate-files.ts"; then
+        if npx --yes --no-install tsx "$SCRIPT_DIR/migrate-files.ts" "${script_args[@]}"; then
             return
         fi
     fi
 
     if command_exists ts-node; then
-        ts-node "$SCRIPT_DIR/migrate-files.ts"
+        ts-node "$SCRIPT_DIR/migrate-files.ts" "${script_args[@]}"
         return
     fi
 
@@ -136,7 +138,7 @@ run_migration() {
     if command_exists tsc; then
         print_status "Compiling TypeScript..."
         npx tsc "$SCRIPT_DIR/migrate-files.ts" --target es2022 --module es2022 --moduleResolution node --outDir "$SCRIPT_DIR/dist"
-        node "$SCRIPT_DIR/dist/migrate-files.js"
+        node "$SCRIPT_DIR/dist/migrate-files.js" "${script_args[@]}"
         return
     fi
 
@@ -168,6 +170,7 @@ show_usage() {
     echo "  -h, --help          Show this help message"
     echo "  --dry-run           Show what would be migrated without actually doing it"
     echo "  --check-only        Only check prerequisites and credentials"
+    echo "  --test              Run a limited sample migration (2 accounts/teams/contacts)"
     echo ""
     echo "Prerequisites:"
     echo "  - Node.js 18+ and npm"
@@ -186,7 +189,9 @@ show_usage() {
 main() {
     local dry_run=false
     local check_only=false
-    
+    local test_mode=false
+    local -a migration_args=()
+
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -200,6 +205,10 @@ main() {
                 ;;
             --check-only)
                 check_only=true
+                shift
+                ;;
+            --test|--test-mode)
+                test_mode=true
                 shift
                 ;;
             *)
@@ -227,7 +236,12 @@ main() {
         print_warning "DRY RUN MODE - No files will actually be migrated"
         export DRY_RUN=true
     fi
-    
+
+    if [ "$test_mode" = true ]; then
+        print_status "Test mode enabled: limiting migration to 5 accounts, teams, and contacts"
+        migration_args=(--test --test-accounts=5 --test-teams=5 --test-contacts=5)
+    fi
+
     setup_dependencies
     
     # Confirm before proceeding (unless dry run)
@@ -246,7 +260,7 @@ main() {
     echo ""
     
     # Run the migration
-    if ! run_migration; then
+    if ! run_migration "${migration_args[@]:-}"; then
         print_error "File migration failed"
         exit 1
     fi
