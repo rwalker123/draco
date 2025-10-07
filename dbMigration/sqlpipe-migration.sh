@@ -10,11 +10,15 @@ SQLSERVER_DB="${SQLSERVER_DB:-}"
 SQLSERVER_USER="${SQLSERVER_USER:-}"
 SQLSERVER_PASS="${SQLSERVER_PASS:-}"
 
-POSTGRES_HOST="${POSTGRES_HOST:-host.docker.internal}"
+POSTGRES_HOST="host.docker.internal"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_DB="${POSTGRES_DB:-ezrecsports}"
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
 POSTGRES_PASS="${POSTGRES_PASS:-}"
+
+echo "Starting database migration using sqlpipe..."
+echo "SQL Server: $SQLSERVER_USER@$SQLSERVER_HOST:$SQLSERVER_PORT/$SQLSERVER_DB"
+echo "PostgreSQL: $POSTGRES_USER@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB"
 
 # Check that required SQL Server variables are set
 if [ -z "$SQLSERVER_HOST" ] || [ -z "$SQLSERVER_DB" ] || [ -z "$SQLSERVER_USER" ] || [ -z "$SQLSERVER_PASS" ]; then

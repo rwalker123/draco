@@ -107,36 +107,6 @@ setup_dependencies() {
     print_success "Dependencies ready"
 }
 
-# Function to check FTP credentials
-check_credentials() {
-    print_status "Checking FTP credentials..."
-    
-    local env_file="$BACKEND_DIR/.env"
-    if [ ! -f "$env_file" ]; then
-        print_error ".env file not found: $env_file"
-        exit 1
-    fi
-    
-    # Source the .env file properly, handling special characters
-    set -a  # automatically export all variables
-    while IFS= read -r line; do
-        # Skip comments and empty lines
-        [[ $line =~ ^[[:space:]]*# ]] && continue
-        [[ $line =~ ^[[:space:]]*$ ]] && continue
-        # Export the variable
-        export "$line"
-    done < "$env_file"
-    set +a  # turn off automatic export
-    
-    if [ -z "${FTP_HOST:-}" ] || [ -z "${FTP_USER:-}" ] || [ -z "${FTP_PASSWORD:-}" ]; then
-        print_error "FTP credentials not found in .env file"
-        print_error "Please ensure FTP_HOST, FTP_USER, and FTP_PASSWORD are set"
-        exit 1
-    fi
-    
-    print_success "FTP credentials found"
-}
-
 # Function to run the migration
 run_migration() {
     print_status "Starting file migration..."
@@ -147,22 +117,31 @@ run_migration() {
     # Run the TypeScript migration script using tsx
     if command_exists tsx; then
         tsx "$SCRIPT_DIR/migrate-files.ts"
-    elif [ -f "$SCRIPT_DIR/node_modules/.bin/tsx" ]; then
-        npx tsx "$SCRIPT_DIR/migrate-files.ts"
-    elif command_exists ts-node; then
-        ts-node "$SCRIPT_DIR/migrate-files.ts"
-    else
-        # Fallback: compile and run
-        print_status "Compiling TypeScript..."
-        if command_exists tsc; then
-            npx tsc "$SCRIPT_DIR/migrate-files.ts" --target es2022 --module es2022 --moduleResolution node --outDir "$SCRIPT_DIR/dist"
-            node "$SCRIPT_DIR/dist/migrate-files.js"
-        else
-            print_error "No TypeScript runtime found. Please install tsx, ts-node, or tsc"
-            print_error "npm install -g tsx"
-            exit 1
+        return
+    fi
+
+    # Fall back to npx which will locate the workspace tsx binary without requiring a global install
+    if command_exists npx; then
+        if npx --yes --no-install tsx "$SCRIPT_DIR/migrate-files.ts"; then
+            return
         fi
     fi
+
+    if command_exists ts-node; then
+        ts-node "$SCRIPT_DIR/migrate-files.ts"
+        return
+    fi
+
+    # Fallback: compile and run using tsc if a runtime wasn't found
+    if command_exists tsc; then
+        print_status "Compiling TypeScript..."
+        npx tsc "$SCRIPT_DIR/migrate-files.ts" --target es2022 --module es2022 --moduleResolution node --outDir "$SCRIPT_DIR/dist"
+        node "$SCRIPT_DIR/dist/migrate-files.js"
+        return
+    fi
+
+    print_error "No TypeScript runtime found. Please install tsx, ts-node, or ensure TypeScript is available"
+    exit 1
 }
 
 # Function to cleanup
@@ -238,7 +217,6 @@ main() {
     
     # Always check prerequisites and credentials
     check_prerequisites
-    check_credentials
     
     if [ "$check_only" = true ]; then
         print_success "All checks passed. Ready for migration."

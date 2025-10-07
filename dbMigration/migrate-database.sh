@@ -16,6 +16,22 @@ NC='\033[0m' # No Color
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Load environment overrides if present in dbMigration/.env
+ENV_FILE="$SCRIPT_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo -e "${BLUE}[INFO]${NC} Loading environment variables from $ENV_FILE"
+    # Export each variable defined in the env file
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+fi
+
+# Support alternate variable names from legacy env files
+SQLSERVER_DB="${SQLSERVER_DB:-${SQLSERVER_DATABASE:-}}"
+SQLSERVER_USER="${SQLSERVER_USER:-${SQLSERVER_USERNAME:-}}"
+SQLSERVER_PASS="${SQLSERVER_PASS:-${SQLSERVER_PASSWORD:-}}"
+
 # Default values
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
@@ -213,13 +229,13 @@ validate_migration() {
     
     # Check if key tables exist and have data
     local validation_query="
-    SELECT 
+    SELECT
         schemaname,
-        tablename,
-        n_tup_ins as row_count
-    FROM pg_stat_user_tables 
-    WHERE schemaname = 'public' 
-    ORDER BY tablename;
+        relname AS table_name,
+        n_live_tup AS estimated_rows
+    FROM pg_stat_user_tables
+    WHERE schemaname = 'public'
+    ORDER BY relname;
     "
     
     print_status "Table row counts:"

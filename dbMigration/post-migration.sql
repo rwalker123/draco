@@ -167,7 +167,7 @@ where (lastname = 'Brimm' and firstname = 'Alex' and middlename is null and crea
       (lastname = 'Jones' and firstname = 'Eddie' and middlename is null and creatoraccountid = 1) OR
       (lastname = 'Davis' and firstname = 'Mike' and middlename is null and creatoraccountid = 1) OR
       (lastname = 'Powers' and firstname = 'Jeff' and middlename is null and creatoraccountid = 1) OR
-      (lastname = 'Mick' and firstname = 'Spencer' and middlename is null and creatoraccountid = 1) 
+      (lastname = 'Mick' and firstname = 'Spencer' and middlename is null and creatoraccountid = 1);
 
 UPDATE public.contacts
 	SET middlename=''
@@ -194,3 +194,87 @@ ALTER COLUMN accesscode TYPE VARCHAR(255);
 CREATE INDEX IF NOT EXISTS idx_teamseasonmanager_teamseasonid ON teamseasonmanager(teamseasonid);
 CREATE INDEX IF NOT EXISTS idx_teamseasonmanager_contactid ON teamseasonmanager(contactid);
 CREATE INDEX IF NOT EXISTS idx_teamseasonmanager_composite ON teamseasonmanager(teamseasonid, contactid);
+
+-- Convert legacy timestamp columns to timestamptz (assumes legacy data stored in America/Detroit).
+ALTER TABLE contacts
+  ALTER COLUMN dateofbirth
+  TYPE date;
+
+ALTER TABLE leagueschedule
+  ALTER COLUMN gamedate
+  TYPE timestamptz
+  USING (gamedate AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE rosterseason
+  ALTER COLUMN dateadded
+  TYPE timestamptz
+  USING (dateadded AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE golfscore
+  ALTER COLUMN dateplayed
+  TYPE timestamptz
+  USING (dateplayed AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE golfleaguesetup
+  ALTER COLUMN firstteetime
+  TYPE timestamptz
+  USING (firstteetime AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE golfmatch
+  ALTER COLUMN matchdate
+  TYPE timestamptz
+  USING (matchdate AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE golfmatch
+  ALTER COLUMN matchtime
+  TYPE timestamptz
+  USING (matchtime AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE leagueevents
+  ALTER COLUMN eventdate
+  TYPE timestamptz
+  USING (eventdate AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE leaguenews
+  ALTER COLUMN date
+  TYPE timestamptz
+  USING (date AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE messagetopic
+  ALTER COLUMN topiccreatedate
+  TYPE timestamptz
+  USING (topiccreatedate AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE messagepost
+  ALTER COLUMN postdate
+  TYPE timestamptz
+  USING (postdate AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE messagepost
+  ALTER COLUMN editdate
+  TYPE timestamptz
+  USING (editdate AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE playoffgame
+  ALTER COLUMN gamedate
+  TYPE date;
+
+ALTER TABLE playoffgame
+  ALTER COLUMN gametime
+  TYPE timestamptz
+  USING (gametime AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE teamnews
+  ALTER COLUMN date
+  TYPE timestamptz
+  USING (date AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE workoutannouncement
+  ALTER COLUMN workoutdate
+  TYPE timestamptz
+  USING (workoutdate AT TIME ZONE 'America/Detroit');
+
+ALTER TABLE workoutregistration
+  ALTER COLUMN dateregistered
+  TYPE timestamptz
+  USING (dateregistered AT TIME ZONE 'America/Detroit');
