@@ -64,7 +64,8 @@ class FileMigrationService {
     this.maxFtpRetries = Number.isFinite(retryEnv) && retryEnv > 0 ? retryEnv : 3;
 
     const retryDelayEnv = Number(process.env.MIGRATION_FTP_RETRY_DELAY_MS);
-    this.ftpRetryDelayMs = Number.isFinite(retryDelayEnv) && retryDelayEnv >= 0 ? retryDelayEnv : 2000;
+    this.ftpRetryDelayMs =
+      Number.isFinite(retryDelayEnv) && retryDelayEnv >= 0 ? retryDelayEnv : 2000;
     this.progressFilePath = path.join(__dirname, 'migration-progress.json');
 
     this.loadProgress();
