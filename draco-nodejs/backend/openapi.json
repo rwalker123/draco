@@ -18574,9 +18574,6 @@
                   "email": {
                     "type": "string",
                     "minLength": 1
-                  },
-                  "testMode": {
-                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -18588,7 +18585,7 @@
         },
         "responses": {
           "200": {
-            "description": "Password reset token generated (email is sent or test token returned).",
+            "description": "Password reset token generated and email sent when the account exists.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18612,25 +18609,6 @@
                       "required": [
                         "success",
                         "message"
-                      ]
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "token": {
-                          "type": "string"
-                        },
-                        "userId": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "token",
-                        "userId",
-                        "email"
                       ]
                     }
                   ]

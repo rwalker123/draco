@@ -10,7 +10,6 @@ export const registerPasswordResetEndpoints = ({ registry, schemaRefs, z }: Regi
 
   const passwordResetRequestBodySchema = z.object({
     email: z.string().trim().min(1),
-    testMode: z.boolean().optional(),
   });
 
   const passwordResetRequestResponseSchema = z.union([
@@ -18,11 +17,6 @@ export const registerPasswordResetEndpoints = ({ registry, schemaRefs, z }: Regi
     z.object({
       success: z.boolean(),
       message: z.string(),
-    }),
-    z.object({
-      token: z.string(),
-      userId: z.string(),
-      email: z.string(),
     }),
   ]);
 
@@ -45,7 +39,7 @@ export const registerPasswordResetEndpoints = ({ registry, schemaRefs, z }: Regi
     },
     responses: {
       200: {
-        description: 'Password reset token generated (email is sent or test token returned).',
+        description: 'Password reset token generated and email sent when the account exists.',
         content: {
           'application/json': {
             schema: passwordResetRequestResponseSchema,
