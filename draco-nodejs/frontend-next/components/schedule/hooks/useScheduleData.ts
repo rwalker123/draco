@@ -43,6 +43,7 @@ interface UseScheduleDataReturn {
   loadStaticData: () => Promise<void>;
   loadGamesData: () => Promise<void>;
   loadLeagueTeams: (leagueSeasonId: string) => void;
+  loadUmpires: () => Promise<void>;
   clearLeagueTeams: () => void;
   setSuccess: (message: string | null) => void;
   setError: (message: string | null) => void;
@@ -58,7 +59,7 @@ export const useScheduleData = ({
   filterType,
   filterDate,
 }: UseScheduleDataProps): UseScheduleDataReturn => {
-  const { token, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const { fetchCurrentSeason } = useCurrentSeason(accountId);
   const apiClient = useApiClient();
 
@@ -207,41 +208,15 @@ export const useScheduleData = ({
         setFields([]);
       }
 
-      if (token) {
-        try {
-          const umpiresResult = await listAccountUmpires({
-            client: apiClient,
-            path: { accountId },
-            throwOnError: false,
-          });
+      setUmpires([]);
 
-          const umpireData = unwrapApiResult(umpiresResult, 'Failed to load umpires');
-          const mappedUmpires: Umpire[] = umpireData.umpires.map((umpire) => ({
-            id: umpire.id,
-            contactId: umpire.contactId,
-            firstName: umpire.firstName,
-            lastName: umpire.lastName,
-            email: umpire.email ?? '',
-            displayName: umpire.displayName,
-          }));
-          setUmpires(mappedUmpires);
-        } catch (umpiresError) {
-          if (umpiresError instanceof ApiClientError && umpiresError.status === 401) {
-            setUmpires([]);
-          } else {
-            console.warn('Failed to load umpires:', umpiresError);
-            setUmpires([]);
-          }
-        }
-      } else {
-        setUmpires([]);
-      }
+      setUmpires([]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load static data');
     } finally {
       setLoadingStaticData(false);
     }
-  }, [accountId, apiClient, token, fetchCurrentSeason]);
+  }, [accountId, apiClient, fetchCurrentSeason]);
 
   // Load games data
   const loadGamesData = useCallback(async () => {
@@ -305,6 +280,35 @@ export const useScheduleData = ({
     [leagueTeamsCache],
   );
 
+  const loadUmpires = useCallback(async () => {
+    try {
+      const result = await listAccountUmpires({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
+      });
+
+      const data = unwrapApiResult(result, 'Failed to load umpires');
+      const mapped: Umpire[] = data.umpires.map((umpire) => ({
+        id: umpire.id,
+        contactId: umpire.contactId,
+        firstName: umpire.firstName,
+        lastName: umpire.lastName,
+        email: umpire.email ?? '',
+        displayName: umpire.displayName,
+      }));
+      setUmpires(mapped);
+    } catch (error) {
+      if (error instanceof ApiClientError && error.status === 401) {
+        setUmpires([]);
+        return;
+      }
+
+      console.warn('Failed to load umpires:', error);
+      setUmpires([]);
+    }
+  }, [accountId, apiClient]);
+
   // Clear league teams
   const clearLeagueTeams = useCallback(() => {
     setLeagueTeams([]);
@@ -349,6 +353,7 @@ export const useScheduleData = ({
     loadStaticData,
     loadGamesData,
     loadLeagueTeams,
+    loadUmpires,
     clearLeagueTeams,
     setSuccess,
     setError,

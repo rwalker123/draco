@@ -14,13 +14,12 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import {
-  getReadOnlyInputProps,
-  getReadOnlyDatePickerInputProps,
-} from '../../../../utils/formUtils';
-import { useGameFormContext } from '../../../../components/schedule/contexts/GameFormContext';
+import { getReadOnlyInputProps, getReadOnlyDatePickerInputProps } from '../../../utils/formUtils';
+import { useGameFormContext } from '../contexts/GameFormContext';
 import { Controller, useFormContext } from 'react-hook-form';
-import type { GameDialogFormValues } from '../../../../components/schedule/dialogs/GameDialog';
+import type { GameDialogFormValues } from '../dialogs/GameDialog';
+
+const EMPTY_LABEL = 'None';
 
 const GameFormFields: React.FC = () => {
   const {
@@ -165,14 +164,14 @@ const GameFormFields: React.FC = () => {
                     value={field.value ?? ''}
                     renderValue={(selected) => {
                       if (!selected) {
-                        return 'None';
+                        return EMPTY_LABEL;
                       }
                       const option = fields.find((item) => item.id === selected);
                       return option?.name ?? 'Unknown';
                     }}
                   >
                     <MenuItem value="">
-                      <em>None</em>
+                      <em>{EMPTY_LABEL}</em>
                     </MenuItem>
                     {fields.map((fieldOption) => (
                       <MenuItem key={fieldOption.id} value={fieldOption.id}>
@@ -235,14 +234,14 @@ const GameFormFields: React.FC = () => {
                       value={field.value ?? ''}
                       renderValue={(selected) => {
                         if (!selected) {
-                          return 'None';
+                          return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
                         return option?.displayName ?? 'Unknown';
                       }}
                     >
                       <MenuItem value="">
-                        <em>None</em>
+                        <em>{EMPTY_LABEL}</em>
                       </MenuItem>
                       {getAvailableUmpires('umpire1', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
@@ -259,7 +258,7 @@ const GameFormFields: React.FC = () => {
                     value={
                       field.value
                         ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
-                        : 'None'
+                        : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}
                   />
@@ -280,14 +279,14 @@ const GameFormFields: React.FC = () => {
                       value={field.value ?? ''}
                       renderValue={(selected) => {
                         if (!selected) {
-                          return 'None';
+                          return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
                         return option?.displayName ?? 'Unknown';
                       }}
                     >
                       <MenuItem value="">
-                        <em>None</em>
+                        <em>{EMPTY_LABEL}</em>
                       </MenuItem>
                       {getAvailableUmpires('umpire2', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
@@ -304,7 +303,7 @@ const GameFormFields: React.FC = () => {
                     value={
                       field.value
                         ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
-                        : 'None'
+                        : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}
                   />
@@ -331,14 +330,14 @@ const GameFormFields: React.FC = () => {
                       value={field.value ?? ''}
                       renderValue={(selected) => {
                         if (!selected) {
-                          return 'None';
+                          return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
                         return option?.displayName ?? 'Unknown';
                       }}
                     >
                       <MenuItem value="">
-                        <em>None</em>
+                        <em>{EMPTY_LABEL}</em>
                       </MenuItem>
                       {getAvailableUmpires('umpire3', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
@@ -355,7 +354,7 @@ const GameFormFields: React.FC = () => {
                     value={
                       field.value
                         ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
-                        : 'None'
+                        : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}
                   />
@@ -376,14 +375,14 @@ const GameFormFields: React.FC = () => {
                       value={field.value ?? ''}
                       renderValue={(selected) => {
                         if (!selected) {
-                          return 'None';
+                          return EMPTY_LABEL;
                         }
                         const option = umpires.find((umpire) => umpire.id === selected);
                         return option?.displayName ?? 'Unknown';
                       }}
                     >
                       <MenuItem value="">
-                        <em>None</em>
+                        <em>{EMPTY_LABEL}</em>
                       </MenuItem>
                       {getAvailableUmpires('umpire4', field.value ?? '').map((umpire) => (
                         <MenuItem key={umpire.id} value={umpire.id}>
@@ -400,7 +399,7 @@ const GameFormFields: React.FC = () => {
                     value={
                       field.value
                         ? umpires.find((u) => u.id === field.value)?.displayName || 'Unknown'
-                        : 'None'
+                        : EMPTY_LABEL
                     }
                     InputProps={getReadOnlyInputProps()}
                   />

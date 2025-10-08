@@ -21,7 +21,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { TeamSeasonType, UpsertGameSchema } from '@draco/shared-schemas';
 import { Game, GameType, League, Field, Umpire, GameStatus } from '@/types/schedule';
 import { GameFormProvider } from '../contexts/GameFormContext';
-import GameFormFields from '../../../app/account/[accountId]/schedule/GameFormFields';
+import GameFormFields from '../forms/GameFormFields';
 import { useGameOperations, GameFormValues } from '../hooks/useGameOperations';
 import { convertUTCToZonedDate, formatGameDateTime } from '../../../utils/dateUtils';
 

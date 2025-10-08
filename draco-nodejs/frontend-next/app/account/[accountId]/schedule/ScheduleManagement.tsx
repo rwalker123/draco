@@ -82,6 +82,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     success,
     loadGamesData,
     loadLeagueTeams,
+    loadUmpires,
     clearLeagueTeams,
     setSuccess,
     setError,
@@ -175,15 +176,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       leagueSeasonId: filterLeagueSeasonId || undefined,
       gameDate: initialDate,
     });
+    loadUmpires().catch(console.error);
     openCreateDialog();
-  }, [computeInitialGameDate, filterLeagueSeasonId, openCreateDialog]);
+  }, [computeInitialGameDate, filterLeagueSeasonId, loadUmpires, openCreateDialog]);
 
   // Handle edit game
   const handleEditGame = useCallback(
     (game: Game) => {
+      loadUmpires().catch(console.error);
       openEditDialog(game);
     },
-    [openEditDialog],
+    [loadUmpires, openEditDialog],
   );
 
   // Handle game results
