@@ -158,7 +158,7 @@ const AccountHome: React.FC = () => {
   }
 
   // Render baseball-specific home page for baseball accounts
-  if (account.configuration?.accountType?.name.toLowerCase() === 'baseball') {
+  if (account.configuration?.accountType?.name?.toLowerCase() === 'baseball') {
     return <BaseballAccountHome />;
   }
 
