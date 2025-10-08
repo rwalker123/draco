@@ -14,6 +14,7 @@ import {
 } from '../responseFormatters/userResponseFormatter.js';
 import { InternalServerError, ValidationError } from '../utils/customErrors.js';
 import { EmailService } from './emailService.js';
+import { AccountsService } from './accountsService.js';
 
 const RESET_TOKEN_BYTES = 32;
 const PASSWORD_SALT_ROUNDS = 12;
@@ -34,6 +35,7 @@ export class UserService {
   private readonly userRepository: IUserRepository;
   private readonly passwordResetTokenRepository: IPasswordResetTokenRepository;
   private readonly emailService: EmailService;
+  private accountService: AccountsService;
   private readonly tokenExpiryHours: number;
 
   constructor(dependencies: UserServiceDependencies = {}) {
@@ -42,6 +44,8 @@ export class UserService {
       dependencies.passwordResetTokenRepository ??
       RepositoryFactory.getPasswordResetTokenRepository();
     this.emailService = dependencies.emailService ?? new EmailService();
+    this.accountService = new AccountsService();
+
     this.tokenExpiryHours = dependencies.tokenExpiryHours ?? 24;
   }
 
@@ -103,6 +107,19 @@ export class UserService {
 
   async cleanupExpiredPasswordResetTokens(): Promise<number> {
     return this.passwordResetTokenRepository.deleteExpiredTokens(new Date());
+  }
+
+  async isAccountOwner(userId: string, accountId: bigint): Promise<boolean> {
+    const account = await this.accountService.getAccountById(accountId); // Ensure account exists
+    if (!account) {
+      throw new ValidationError('Account not found');
+    }
+
+    if (!userId) {
+      return false;
+    }
+
+    return account.account.accountOwner?.user?.userId === userId;
   }
 
   private generateResetToken(): string {

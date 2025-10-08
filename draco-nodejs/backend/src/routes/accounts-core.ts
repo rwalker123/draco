@@ -149,8 +149,7 @@ router.put(
 router.delete(
   '/:accountId',
   authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAdministrator(),
+  routeProtection.enforceAccountOwner(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     await accountsService.deleteAccount(accountId);

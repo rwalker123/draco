@@ -3381,7 +3381,7 @@
                 "type": "integer",
                 "nullable": true
               },
-              "timezoneId": {
+              "timeZone": {
                 "type": "string",
                 "nullable": true
               },
@@ -3664,7 +3664,7 @@
                     "type": "integer",
                     "nullable": true
                   },
-                  "timezoneId": {
+                  "timeZone": {
                     "type": "string",
                     "nullable": true
                   },
@@ -4241,7 +4241,7 @@
                 "type": "integer",
                 "nullable": true
               },
-              "timezoneId": {
+              "timeZone": {
                 "type": "string",
                 "nullable": true
               },
@@ -10182,7 +10182,7 @@
                         "type": "integer",
                         "nullable": true
                       },
-                      "timezoneId": {
+                      "timeZone": {
                         "type": "string",
                         "nullable": true
                       },

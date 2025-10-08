@@ -124,8 +124,7 @@ export class ServiceFactory {
 
   static getRouteProtection(): RouteProtection {
     if (!this.routeProtection) {
-      const roleService = this.getRoleMiddleware();
-      this.routeProtection = new RouteProtection(roleService, prisma);
+      this.routeProtection = new RouteProtection();
     }
     return this.routeProtection;
   }

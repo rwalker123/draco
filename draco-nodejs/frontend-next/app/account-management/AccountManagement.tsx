@@ -39,8 +39,12 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useAccount } from '../../context/AccountContext';
-import ContactAutocomplete from '../../components/ContactAutocomplete';
-import { US_TIMEZONES, getTimezoneLabel } from '../../utils/timezones';
+import {
+  US_TIMEZONES,
+  getTimezoneLabel,
+  detectUserTimezone,
+  DEFAULT_TIMEZONE,
+} from '../../utils/timezones';
 import EditAccountLogoDialog from '../../components/EditAccountLogoDialog';
 import type {
   AccountType as SharedAccountType,
@@ -80,23 +84,25 @@ const AccountManagement: React.FC = () => {
   type AccountFormState = {
     name: string;
     accountTypeId: string;
-    ownerUserId: string;
     affiliationId: string;
     timezoneId: string;
     firstYear: number;
   };
 
-  const initialFormState: AccountFormState = {
-    name: '',
-    accountTypeId: '',
-    ownerUserId: '',
-    affiliationId: '1',
-    timezoneId: 'Eastern Standard Time',
-    firstYear: new Date().getFullYear(),
-  };
+  const [defaultTimezone] = useState(() => detectUserTimezone());
+
+  const buildInitialFormState = useCallback((): AccountFormState => {
+    return {
+      name: '',
+      accountTypeId: '',
+      affiliationId: '1',
+      timezoneId: defaultTimezone,
+      firstYear: new Date().getFullYear(),
+    };
+  }, [defaultTimezone]);
 
   // Form states
-  const [formData, setFormData] = useState<AccountFormState>(initialFormState);
+  const [formData, setFormData] = useState<AccountFormState>(buildInitialFormState);
 
   // Add state for logo dialog
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
@@ -129,7 +135,7 @@ const AccountManagement: React.FC = () => {
       }
 
       if (state.timezoneId) {
-        configuration.timezoneId = state.timezoneId;
+        configuration.timeZone = state.timezoneId;
       }
 
       if (state.firstYear) {
@@ -182,11 +188,6 @@ const AccountManagement: React.FC = () => {
     return 'Unknown Owner';
   }, []);
 
-  const getOwnerUserId = useCallback(
-    (account: SharedAccountType) => account.accountOwner?.user?.userId ?? '',
-    [],
-  );
-
   const getAccountTypeId = useCallback(
     (account: SharedAccountType) => account.configuration?.accountType?.id ?? '',
     [],
@@ -198,7 +199,7 @@ const AccountManagement: React.FC = () => {
   );
 
   const getTimezoneId = useCallback(
-    (account: SharedAccountType) => account.configuration?.timezoneId ?? 'Eastern Standard Time',
+    (account: SharedAccountType) => account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
     [],
   );
 
@@ -272,7 +273,7 @@ const AccountManagement: React.FC = () => {
       unwrapApiResult(result, 'Failed to create account');
 
       setCreateDialogOpen(false);
-      setFormData(initialFormState);
+      setFormData(buildInitialFormState());
       loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account');
@@ -303,7 +304,7 @@ const AccountManagement: React.FC = () => {
 
       setEditDialogOpen(false);
       setSelectedAccount(null);
-      setFormData(initialFormState);
+      setFormData(buildInitialFormState());
       loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update account');
@@ -335,7 +336,6 @@ const AccountManagement: React.FC = () => {
     setFormData({
       name: account.name,
       accountTypeId: getAccountTypeId(account),
-      ownerUserId: getOwnerUserId(account),
       affiliationId: getAffiliationId(account),
       timezoneId: getTimezoneId(account),
       firstYear: getFirstYearValue(account),
@@ -353,19 +353,20 @@ const AccountManagement: React.FC = () => {
       id: account.id,
       name: account.name,
       accountType: account.configuration?.accountType?.name || undefined,
+      timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
     });
     // Navigate to account details or dashboard
     window.location.href = `/account/${account.id}`;
   };
 
   const handleCreateClick = () => {
-    setFormData(initialFormState);
+    setFormData(buildInitialFormState());
     setCreateDialogOpen(true);
   };
 
   const handleCreateDialogClose = () => {
     setCreateDialogOpen(false);
-    setFormData(initialFormState);
+    setFormData(buildInitialFormState());
   };
 
   // Helper to get logo URL (with refresh key to force reload)
@@ -516,13 +517,6 @@ const AccountManagement: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
-            <ContactAutocomplete
-              key={`create-owner-${createDialogOpen}`}
-              label="Owner"
-              value={formData.ownerUserId}
-              onChange={(value) => setFormData({ ...formData, ownerUserId: value })}
-              required
-            />
             <FormControl fullWidth>
               <InputLabel>Affiliation</InputLabel>
               <Select
@@ -599,13 +593,6 @@ const AccountManagement: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
-            <ContactAutocomplete
-              key={`edit-owner-${selectedAccount?.id || 'none'}`}
-              label="Owner"
-              value={formData.ownerUserId}
-              onChange={(value) => setFormData({ ...formData, ownerUserId: value })}
-              required
-            />
             <FormControl fullWidth>
               <InputLabel>Affiliation</InputLabel>
               <Select
@@ -669,8 +656,8 @@ const AccountManagement: React.FC = () => {
         <DialogTitle>Delete Account</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the account @quote;{selectedAccount?.name}@quote;? This
-            action cannot be undone.
+            Are you sure you want to delete the account {`'${selectedAccount?.name}'`} ? This action
+            cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
