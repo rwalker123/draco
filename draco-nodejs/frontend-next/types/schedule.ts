@@ -1,5 +1,4 @@
 import { GameCardData } from '@/components/GameCard';
-import { TeamSeasonType } from '@draco/shared-schemas';
 
 // Core data types
 export interface Game {
@@ -149,35 +148,6 @@ export interface ErrorState {
 }
 
 // GameDialog grouped prop types
-export interface GameDialogData {
-  leagues: League[];
-  fields: Field[];
-  umpires: Umpire[];
-  leagueTeamsCache: Map<string, TeamSeasonType[]>;
-  currentSeasonName?: string;
-}
-
-export interface GameDialogState {
-  dialogLeagueSeason: string;
-  keepDialogOpen: boolean;
-}
-
-export interface GameDialogCallbacks {
-  onClose: () => void;
-  onSubmit: () => void;
-  onDelete?: () => void;
-  onErrorClear: () => void;
-  getTeamName: (teamId: string) => string;
-  getFieldName: (fieldId?: string) => string;
-  getGameTypeText: (gameType: number | string) => string;
-  getAvailableUmpires: (currentPosition: string, currentValue: string) => Umpire[];
-}
-
-export interface GameDialogPermissions {
-  canEditSchedule: boolean;
-  isAccountAdmin: boolean;
-}
-
 // Component prop types
 export interface ScheduleManagementProps {
   accountId: string;
@@ -189,6 +159,7 @@ export interface ViewComponentProps {
   onEditGame: (game: Game) => void;
   onGameResults: (game: Game) => void;
   convertGameToGameCardData: (game: Game) => GameCardData;
+  timeZone: string;
   filterType: FilterType;
   filterDate: Date;
   setFilterType: (type: FilterType) => void;

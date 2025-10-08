@@ -280,3 +280,19 @@ ALTER TABLE workoutregistration
   USING (dateregistered AT TIME ZONE 'America/Detroit');
 
 update accounts set timezoneid = 'America/New_York';
+
+ALTER TABLE leagueschedule
+  ALTER COLUMN gametype TYPE smallint USING gametype::smallint,
+  ALTER COLUMN gametype SET NOT NULL;
+
+ALTER TABLE leagueschedule
+  ADD CONSTRAINT leagueschedule_gametype_check
+  CHECK (gametype IN (0, 1, 2));
+
+ALTER TABLE leagueschedule
+  ALTER COLUMN gamestatus TYPE smallint USING gamestatus::smallint,
+  ALTER COLUMN gamestatus SET NOT NULL;
+
+ALTER TABLE leagueschedule
+  ADD CONSTRAINT leagueschedule_gamestatus_check
+  CHECK (gamestatus BETWEEN 0 AND 5);

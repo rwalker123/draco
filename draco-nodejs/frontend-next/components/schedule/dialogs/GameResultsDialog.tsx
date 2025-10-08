@@ -28,6 +28,7 @@ interface GameResultsDialogProps {
   onClose: () => void;
   onSave: (gameId: string, results: unknown) => void;
   getTeamName: (teamId: string) => string;
+  timeZone: string;
 }
 
 const GameResultsDialog: React.FC<GameResultsDialogProps> = ({
@@ -36,6 +37,7 @@ const GameResultsDialog: React.FC<GameResultsDialogProps> = ({
   onClose,
   onSave,
   getTeamName,
+  timeZone,
 }) => {
   if (!selectedGame) return null;
 
@@ -54,6 +56,7 @@ const GameResultsDialog: React.FC<GameResultsDialogProps> = ({
       game={convertedGame}
       onClose={onClose}
       onSave={handleSave}
+      timeZone={timeZone}
     />
   );
 };

@@ -1,14 +1,25 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from 'react';
 import { useAuth } from './AuthContext';
 import { useRole } from './RoleContext';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
+import { useApiClient } from '../hooks/useApiClient';
+import { getAccountById } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../utils/apiResult';
 
 interface Account {
   id: string;
   name: string;
   accountType?: string;
   timeZone?: string;
+  timeZoneSource?: 'account' | 'fallback';
 }
 
 export interface AccountContextType {
@@ -26,26 +37,91 @@ const AccountContext = createContext<AccountContextType | undefined>(undefined);
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const { token, loading: authLoading } = useAuth();
   const { userRoles, loading: roleLoading } = useRole();
+  const apiClient = useApiClient();
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [userAccounts, setUserAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizeAccount = useCallback(
+    (account: Account): Account => ({
+      ...account,
+      timeZone:
+        account.timeZone && account.timeZone.trim().length > 0
+          ? account.timeZone
+          : DEFAULT_TIMEZONE,
+      timeZoneSource:
+        account.timeZoneSource ??
+        (account.timeZone && account.timeZone.trim().length > 0
+          ? 'account'
+          : 'fallback'),
+    }),
+    [],
+  );
+
+  const fetchAccountDetails = useCallback(
+    async (accountId: string) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const result = await getAccountById({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to fetch account');
+        const account = data.account;
+
+        setCurrentAccount({
+          id: account.id,
+          name: account.name,
+          accountType: account.configuration?.accountType?.name ?? undefined,
+          timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+          timeZoneSource: 'account',
+        });
+
+        setLoading(false);
+        setInitialized(true);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch account');
+        setLoading(false);
+        setInitialized(true);
+      }
+    },
+    [apiClient],
+  );
+
+  const handleSetCurrentAccount = useCallback(
+    (account: Account) => {
+      setCurrentAccount(normalizeAccount(account));
+    },
+    [normalizeAccount],
+  );
+
   // Manage loading state based on dependencies
   useEffect(() => {
     if (authLoading || roleLoading) {
       setLoading(true);
       setInitialized(false);
-    } else if (token && userRoles && !currentAccount && userRoles.contactRoles.length > 0) {
-      setLoading(true);
-      setCurrentAccount({
-        id: userRoles.accountId,
-        name: `Account ${userRoles.accountId}`, // You might want to fetch the actual account name
-        timeZone: DEFAULT_TIMEZONE,
-      });
-      setLoading(false);
-      setInitialized(true);
+    } else if (token && userRoles && (userRoles.contactRoles?.length ?? 0) > 0) {
+      const primaryAccountId = userRoles.accountId;
+      if (
+        !currentAccount ||
+        currentAccount.id !== primaryAccountId ||
+        currentAccount.timeZoneSource !== 'account'
+      ) {
+        if (primaryAccountId) {
+          fetchAccountDetails(primaryAccountId).catch(() => {
+            // Error state handled in fetchAccountDetails
+          });
+        }
+      } else {
+        setLoading(false);
+        setInitialized(true);
+      }
     } else if (!token || !userRoles) {
       setLoading(false);
       setCurrentAccount(null);
@@ -54,7 +130,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       setInitialized(true);
     }
-  }, [authLoading, roleLoading, token, userRoles, currentAccount]);
+  }, [authLoading, roleLoading, token, userRoles, currentAccount, fetchAccountDetails]);
 
   const clearAccounts = () => {
     setCurrentAccount(null);
@@ -71,7 +147,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         loading,
         initialized,
         error,
-        setCurrentAccount,
+        setCurrentAccount: handleSetCurrentAccount,
         clearAccounts,
       }}
     >

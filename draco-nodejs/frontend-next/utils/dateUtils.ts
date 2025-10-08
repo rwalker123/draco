@@ -1,21 +1,162 @@
+import { DEFAULT_TIMEZONE } from './timezones';
+
 /**
  * Date formatting utilities for game data and general date handling
  */
 
-/**
- * Creates a formatted date-time string for game data
- * @param gameDate - The game date
- * @param gameTime - The game time
- * @returns A formatted ISO string without timezone manipulation
- */
-export const formatGameDateTime = (gameDate: Date, gameTime: Date): string => {
-  const gameYear = gameDate.getFullYear();
-  const gameMonth = String(gameDate.getMonth() + 1).padStart(2, '0');
-  const gameDay = String(gameDate.getDate()).padStart(2, '0');
-  const gameHours = String(gameTime.getHours()).padStart(2, '0');
-  const gameMinutes = String(gameTime.getMinutes()).padStart(2, '0');
+const DEFAULT_LOCALE = undefined;
 
-  return `${gameYear}-${gameMonth}-${gameDay}T${gameHours}:${gameMinutes}:00`;
+type DateTimeParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+} | null;
+
+type CompleteDateTimeParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
+
+const padNumber = (value: number): string => String(value).padStart(2, '0');
+
+const getDateTimePartsInTimezone = (
+  dateValue: string | number | Date,
+  timeZone: string,
+): DateTimeParts => {
+  const date = new Date(dateValue as string | number | Date);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== 'literal') {
+      acc[part.type] = part.value;
+    }
+    return acc;
+  }, {});
+
+  const requiredParts = ['year', 'month', 'day', 'hour', 'minute', 'second'] as const;
+  const hasAllParts = requiredParts.every((part) => parts[part] !== undefined);
+
+  if (!hasAllParts) {
+    return null;
+  }
+
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
+  };
+};
+
+const buildDateFromParts = (parts: CompleteDateTimeParts): Date => {
+  return new Date(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+    0,
+  );
+};
+
+const convertZonedPartsToUTCDate = (parts: CompleteDateTimeParts, timeZone: string): Date => {
+  let naiveUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  );
+
+  for (let i = 0; i < 3; i++) {
+    const zonedParts = getDateTimePartsInTimezone(new Date(naiveUtc), timeZone);
+    if (!zonedParts) {
+      break;
+    }
+
+    const matchesTarget =
+      zonedParts.year === parts.year &&
+      zonedParts.month === parts.month &&
+      zonedParts.day === parts.day &&
+      zonedParts.hour === parts.hour &&
+      zonedParts.minute === parts.minute &&
+      zonedParts.second === parts.second;
+
+    if (matchesTarget) {
+      break;
+    }
+
+    const zonedUtc = Date.UTC(
+      zonedParts.year,
+      zonedParts.month - 1,
+      zonedParts.day,
+      zonedParts.hour,
+      zonedParts.minute,
+      zonedParts.second,
+    );
+
+    const diff = naiveUtc - zonedUtc;
+    naiveUtc += diff;
+  }
+
+  return new Date(naiveUtc);
+};
+
+/**
+ * Creates a formatted UTC date-time string for game data based on the provided timezone
+ * @param gameDate - The selected game date (interpreted in the provided timezone)
+ * @param gameTime - The selected game time (interpreted in the provided timezone)
+ * @param timeZone - The account timezone to interpret the date/time
+ * @returns A formatted UTC string (YYYY-MM-DDTHH:MM:SS) suitable for backend APIs
+ */
+export const formatGameDateTime = (
+  gameDate: Date,
+  gameTime: Date,
+  timeZone: string = DEFAULT_TIMEZONE,
+): string => {
+  const parts: CompleteDateTimeParts = {
+    year: gameDate.getFullYear(),
+    month: gameDate.getMonth() + 1,
+    day: gameDate.getDate(),
+    hour: gameTime.getHours(),
+    minute: gameTime.getMinutes(),
+    second: 0,
+  };
+
+  const utcDate = convertZonedPartsToUTCDate(parts, timeZone);
+
+  const year = utcDate.getUTCFullYear();
+  const month = padNumber(utcDate.getUTCMonth() + 1);
+  const day = padNumber(utcDate.getUTCDate());
+  const hours = padNumber(utcDate.getUTCHours());
+  const minutes = padNumber(utcDate.getUTCMinutes());
+  const seconds = padNumber(utcDate.getUTCSeconds());
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`;
 };
 
 /**
@@ -23,12 +164,10 @@ export const formatGameDateTime = (gameDate: Date, gameTime: Date): string => {
  * @param dateString - The game date string
  * @returns Formatted time string or 'TBD' if invalid
  */
-export const formatGameTime = (dateString: string): string => {
+export const formatGameTime = (dateString: string, timeZone: string = DEFAULT_TIMEZONE): string => {
   try {
     if (dateString) {
-      const localDateString = dateString.replace('Z', '');
-      const dateObj = new Date(localDateString);
-      return dateObj.toLocaleTimeString('en-US', {
+      return formatTimeInTimezone(dateString, timeZone, {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
@@ -40,6 +179,18 @@ export const formatGameTime = (dateString: string): string => {
     return 'TBD';
   }
 };
+
+export function convertUTCToZonedDate(
+  dateValue: string | number | Date,
+  timeZone: string,
+): Date | null {
+  const parts = getDateTimePartsInTimezone(dateValue, timeZone);
+  if (!parts) {
+    return null;
+  }
+
+  return buildDateFromParts(parts);
+}
 
 /**
  * Safely formats a date value to a locale string with error handling
@@ -115,10 +266,72 @@ export function formatDateTimeInTimezone(
       return 'N/A';
     }
 
-    return new Intl.DateTimeFormat(undefined, { ...options, timeZone }).format(date);
+    return new Intl.DateTimeFormat(DEFAULT_LOCALE, { ...options, timeZone }).format(date);
   } catch {
     return 'N/A';
   }
+}
+
+export function formatDateInTimezone(
+  dateValue: string | number | Date,
+  timeZone: string,
+  options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  },
+): string {
+  return formatDateTimeInTimezone(dateValue, timeZone, options);
+}
+
+export function formatTimeInTimezone(
+  dateValue: string | number | Date,
+  timeZone: string,
+  options: Intl.DateTimeFormatOptions = {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  },
+): string {
+  try {
+    const date = new Date(dateValue as string | number | Date);
+    if (isNaN(date.getTime())) {
+      return 'N/A';
+    }
+
+    return new Intl.DateTimeFormat(DEFAULT_LOCALE, { ...options, timeZone }).format(date);
+  } catch {
+    return 'N/A';
+  }
+}
+
+export function getDateKeyInTimezone(
+  dateValue: string | number | Date,
+  timeZone: string,
+): string | null {
+  const parts = getDateTimePartsInTimezone(dateValue, timeZone);
+  if (!parts) {
+    return null;
+  }
+
+  const month = String(parts.month).padStart(2, '0');
+  const day = String(parts.day).padStart(2, '0');
+  return `${parts.year}-${month}-${day}`;
+}
+
+export function isSameDayInTimezone(
+  dateA: string | number | Date,
+  dateB: string | number | Date,
+  timeZone: string,
+): boolean {
+  const partsA = getDateTimePartsInTimezone(dateA, timeZone);
+  const partsB = getDateTimePartsInTimezone(dateB, timeZone);
+
+  if (!partsA || !partsB) {
+    return false;
+  }
+
+  return partsA.year === partsB.year && partsA.month === partsB.month && partsA.day === partsB.day;
 }
 
 /**

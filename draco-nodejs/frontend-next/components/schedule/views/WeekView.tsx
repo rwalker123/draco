@@ -11,6 +11,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
   onEditGame,
   onGameResults,
   convertGameToGameCardData,
+  timeZone,
   filterType,
   startDate,
   endDate,
@@ -90,6 +91,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
         convertGameToGameCardData={convertGameToGameCardData}
         canEditSchedule={canEditSchedule}
         isNavigating={isNavigating}
+        timeZone={timeZone}
       />
     </Box>
   );

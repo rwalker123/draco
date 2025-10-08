@@ -177,7 +177,7 @@ export class ScheduleService {
       comment: payload.comment ?? '',
       leagueid: leagueSeasonId,
       gamestatus: 0,
-      gametype: BigInt(payload.gameType),
+      gametype: payload.gameType,
     };
 
     if (fieldId !== undefined) {
@@ -284,7 +284,7 @@ export class ScheduleService {
       updateData.gamestatus = payload.gameStatus;
     }
 
-    updateData.gametype = BigInt(payload.gameType);
+    updateData.gametype = payload.gameType;
 
     const updatedUmpire1 = this.mapOptionalContact(payload.umpire1);
     if (updatedUmpire1 !== undefined) {
@@ -413,23 +413,13 @@ export class ScheduleService {
   }
 
   private parseGameDate(dateString: string): Date {
-    const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/);
-    if (!match) {
-      throw new ValidationError('Invalid date format. Expected YYYY-MM-DDTHH:MM:SS');
+    const parsed = new Date(dateString);
+    const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(dateString);
+    if (Number.isNaN(parsed.getTime()) || !hasTimezone) {
+      throw new ValidationError('Invalid date format. Expected ISO 8601 datetime with timezone');
     }
 
-    const [, year, month, day, hours, minutes, seconds] = match;
-
-    return new Date(
-      Date.UTC(
-        Number(year),
-        Number(month) - 1,
-        Number(day),
-        Number(hours),
-        Number(minutes),
-        Number(seconds),
-      ),
-    );
+    return parsed;
   }
 
   private async userHasTeamRecapRights(

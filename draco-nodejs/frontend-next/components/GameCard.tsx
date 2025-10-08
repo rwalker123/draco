@@ -3,8 +3,8 @@ import { Box, Typography, Card, CardContent, IconButton, Tooltip } from '@mui/ma
 import EditIcon from '@mui/icons-material/Edit';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { getGameStatusShortText } from '../utils/gameUtils';
-import { format, parseISO } from 'date-fns';
-import { formatGameTime } from '../utils/dateUtils';
+import { formatDateInTimezone, formatGameTime } from '../utils/dateUtils';
+import { DEFAULT_TIMEZONE } from '../utils/timezones';
 import RecapButton from './RecapButton';
 import { GameStatus, GameType } from '../types/schedule';
 
@@ -54,6 +54,7 @@ export interface GameCardProps {
    * - `true`: Card fits content width (min: 280px, max: 500px)
    */
   fitContent?: boolean;
+  timeZone?: string;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -70,8 +71,14 @@ const GameCard: React.FC<GameCardProps> = ({
   calendar = false,
   showDate = false,
   fitContent = false,
+  timeZone = DEFAULT_TIMEZONE,
 }) => {
-  const localTime = formatGameTime(game.date);
+  const localTime = formatGameTime(game.date, timeZone);
+  const formattedDateLabel = formatDateInTimezone(game.date, timeZone, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
 
   const handleCardClick = () => {
     if (onClick) {
@@ -138,7 +145,7 @@ const GameCard: React.FC<GameCardProps> = ({
       >
         {layout === 'vertical' && showDate && game.date && (
           <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 1 }}>
-            {format(parseISO(game.date), 'EEE MMM d')}
+            {formattedDateLabel}
           </Typography>
         )}
         {layout === 'horizontal' ? (

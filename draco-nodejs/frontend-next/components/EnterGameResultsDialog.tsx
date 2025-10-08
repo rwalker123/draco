@@ -24,6 +24,8 @@ import {
   Twitter as TwitterIcon,
 } from '@mui/icons-material';
 import { GameStatus } from '../types/schedule';
+import { formatDateTimeInTimezone } from '../utils/dateUtils';
+import { DEFAULT_TIMEZONE } from '../utils/timezones';
 
 interface GameRecap {
   teamId: string;
@@ -54,6 +56,7 @@ interface EnterGameResultsDialogProps {
   onClose: () => void;
   game: Game | null;
   onSave: (gameData: GameResultData) => Promise<void>;
+  timeZone?: string;
 }
 
 export interface GameResultData {
@@ -81,6 +84,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   onClose,
   game,
   onSave,
+  timeZone = DEFAULT_TIMEZONE,
 }) => {
   const [formData, setFormData] = useState<GameResultData>({
     gameId: '',
@@ -153,20 +157,14 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   };
 
   const formatGameTime = (dateString: string) => {
-    try {
-      const localDateString = dateString.replace('Z', '');
-      const dateObj = new Date(localDateString);
-      return dateObj.toLocaleString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    } catch {
-      return 'TBD';
-    }
+    return formatDateTimeInTimezone(dateString, timeZone, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   const getDisplayFieldName = (game: Game) => {
