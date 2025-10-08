@@ -91,6 +91,10 @@ const createGameDialogSchema = (gameStatus: number, timeZone: string) =>
         });
       }
 
+      if (!data.gameDate || !data.gameTime) {
+        return;
+      }
+
       const gameDateTime = formatGameDateTime(data.gameDate, data.gameTime, timeZone);
       const validationResult = UpsertGameSchema.safeParse({
         leagueSeasonId: data.leagueSeasonId,

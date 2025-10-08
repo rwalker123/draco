@@ -37,11 +37,13 @@ export default function ResetPasswordClientWrapper() {
 
         const data = unwrapApiResult(result, 'Failed to fetch account');
         const account = data.account;
+        const resolvedTimeZone = account.configuration?.timeZone;
         setCurrentAccount({
           id: account.id,
           name: account.name,
           accountType: account.configuration?.accountType?.name ?? undefined,
-          timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+          timeZone: resolvedTimeZone ?? DEFAULT_TIMEZONE,
+          timeZoneSource: 'account',
         });
       } catch (error) {
         console.error('Failed to fetch account:', error);

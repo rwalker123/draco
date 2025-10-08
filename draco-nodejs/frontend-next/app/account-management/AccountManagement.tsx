@@ -354,6 +354,7 @@ const AccountManagement: React.FC = () => {
       name: account.name,
       accountType: account.configuration?.accountType?.name || undefined,
       timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+      timeZoneSource: 'account',
     });
     // Navigate to account details or dashboard
     window.location.href = `/account/${account.id}`;

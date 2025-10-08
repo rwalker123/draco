@@ -19,6 +19,7 @@ interface Account {
   name: string;
   accountType?: string;
   timeZone?: string;
+  timeZoneSource?: 'account' | 'fallback';
 }
 
 export interface AccountContextType {
@@ -46,7 +47,15 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const normalizeAccount = useCallback(
     (account: Account): Account => ({
       ...account,
-      timeZone: account.timeZone ?? DEFAULT_TIMEZONE,
+      timeZone:
+        account.timeZone && account.timeZone.trim().length > 0
+          ? account.timeZone
+          : DEFAULT_TIMEZONE,
+      timeZoneSource:
+        account.timeZoneSource ??
+        (account.timeZone && account.timeZone.trim().length > 0
+          ? 'account'
+          : 'fallback'),
     }),
     [],
   );
@@ -71,6 +80,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
           name: account.name,
           accountType: account.configuration?.accountType?.name ?? undefined,
           timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+          timeZoneSource: 'account',
         });
 
         setLoading(false);
@@ -101,8 +111,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       if (
         !currentAccount ||
         currentAccount.id !== primaryAccountId ||
-        !currentAccount.timeZone ||
-        currentAccount.timeZone === DEFAULT_TIMEZONE
+        currentAccount.timeZoneSource !== 'account'
       ) {
         if (primaryAccountId) {
           fetchAccountDetails(primaryAccountId).catch(() => {
