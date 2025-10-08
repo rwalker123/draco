@@ -25,29 +25,11 @@ import BaseballAccountHome from '../BaseballAccountHome';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
-
-interface Account {
-  id: string;
-  name: string;
-  accountType?: string;
-  accountTypeId?: string;
-  firstYear: number | null;
-  affiliation?: string;
-  timezoneId?: string;
-  twitterAccountName?: string;
-  facebookFanPage?: string;
-  urls: Array<{ id: string; url: string }>;
-}
-
-interface Season {
-  id: string;
-  name: string;
-  isCurrent: boolean;
-}
+import { AccountType, AccountSeasonWithStatusType } from '@draco/shared-schemas';
 
 const AccountHome: React.FC = () => {
-  const [account, setAccount] = useState<Account | null>(null);
-  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [account, setAccount] = useState<AccountType | null>(null);
+  const [seasons, setSeasons] = useState<AccountSeasonWithStatusType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -83,24 +65,13 @@ const AccountHome: React.FC = () => {
           return;
         }
 
-        const { account: accountData, seasons: seasonList } = unwrapApiResult(
+        const accountWithSeasons = unwrapApiResult(
           result,
           'Account not found or not publicly accessible',
         );
 
-        setAccount({
-          id: accountData.id,
-          name: accountData.name,
-          accountType: accountData.configuration?.accountType?.name,
-          accountTypeId: accountData.configuration?.accountType?.id,
-          firstYear: accountData.configuration?.firstYear ?? null,
-          affiliation: accountData.configuration?.affiliation?.name ?? undefined,
-          timezoneId: accountData.configuration?.timeZone ?? undefined,
-          twitterAccountName: accountData.socials?.twitterAccountName ?? undefined,
-          facebookFanPage: accountData.socials?.facebookFanPage ?? undefined,
-          urls: accountData.urls ?? [],
-        });
-        setSeasons(seasonList ?? []);
+        setAccount(accountWithSeasons.account as AccountType);
+        setSeasons(accountWithSeasons.seasons ?? []);
       } catch (err) {
         if (!isMounted) {
           return;
@@ -187,14 +158,14 @@ const AccountHome: React.FC = () => {
   }
 
   // Render baseball-specific home page for baseball accounts
-  if (account.accountType?.toLowerCase() === 'baseball') {
+  if (account.configuration?.accountType?.name.toLowerCase() === 'baseball') {
     return <BaseballAccountHome />;
   }
 
   const currentSeason = seasons.find((s) => s.isCurrent);
   const yearsActive =
-    typeof account.firstYear === 'number'
-      ? new Date().getFullYear() - account.firstYear + 1
+    typeof account.configuration?.firstYear === 'number'
+      ? new Date().getFullYear() - account.configuration?.firstYear + 1
       : 'N/A';
 
   return (
@@ -206,17 +177,22 @@ const AccountHome: React.FC = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
           <Chip
-            label={account.accountType ?? 'Account'}
+            label={account.configuration?.accountType?.name ?? 'Account'}
             color="primary"
             variant="outlined"
             icon={<Business />}
           />
-          {account.affiliation && (
-            <Chip label={account.affiliation} variant="outlined" icon={<Group />} />
+          {account.configuration?.affiliation && (
+            <Chip
+              label={account.configuration?.affiliation?.name ?? ''}
+              variant="outlined"
+              icon={<Group />}
+            />
           )}
         </Box>
         <Typography variant="body1" color="text.secondary">
-          Established in {account.firstYear ?? 'N/A'} • {account.timezoneId ?? 'Unknown timezone'}
+          Established in {account.configuration?.firstYear ?? 'N/A'} •{' '}
+          {account.configuration?.timeZone ?? 'Unknown timezone'}
         </Typography>
       </Box>
 
@@ -320,20 +296,20 @@ const AccountHome: React.FC = () => {
               Visit Website
             </Button>
           )}
-          {account.twitterAccountName && (
+          {account.socials?.twitterAccountName && (
             <Button
               variant="outlined"
-              href={`https://twitter.com/${account.twitterAccountName.replace('@', '')}`}
+              href={`https://twitter.com/${account.socials?.twitterAccountName.replace('@', '')}`}
               target="_blank"
               rel="noopener noreferrer"
             >
               Twitter
             </Button>
           )}
-          {account.facebookFanPage && (
+          {account.socials?.facebookFanPage && (
             <Button
               variant="outlined"
-              href={account.facebookFanPage}
+              href={account.socials?.facebookFanPage}
               target="_blank"
               rel="noopener noreferrer"
             >
