@@ -19,6 +19,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
   onEditGame: _onEditGame,
   onGameResults,
   convertGameToGameCardData,
+  timeZone,
   filterType,
   filterDate,
   setFilterDate,
@@ -103,6 +104,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
         convertGameToGameCardData={convertGameToGameCardData}
         canEditSchedule={canEditSchedule}
         isNavigating={isNavigating || false}
+        timeZone={timeZone}
       />
     </Box>
   );

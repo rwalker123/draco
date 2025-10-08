@@ -43,10 +43,12 @@ export const GameSchema = z.object({
   visitorScore: z.number().min(0).max(99),
   comment: z.string().max(255).optional(),
   field: FieldSchema.optional(),
-  gameStatus: z.number(),
+  gameStatus: z
+    .number()
+    .describe('0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report'),
   gameStatusText: GameStatusEnumSchema.optional(),
   gameStatusShortText: GameStatusShortEnumSchema.optional(),
-  gameType: bigintToStringSchema,
+  gameType: z.number().describe('0=Regular, 1=Playoff, 2=Exhibition'),
   hasGameRecap: z.boolean().optional(),
   umpire1: ContactIdSchema.optional(),
   umpire2: ContactIdSchema.optional(),
@@ -121,8 +123,8 @@ export const UpdateGameResultsSchema = GameSchema.pick({
 
 export const UpsertGameSchema = GameSchema.pick({
   gameDate: true,
-  gameType: true,
   gameStatus: true,
+  gameType: true,
   comment: true,
 })
   .extend({
@@ -147,9 +149,30 @@ export const UpsertGameSchema = GameSchema.pick({
       .nullable()
       .optional(),
   })
-  .refine((data) => data.homeTeam.id !== data.visitorTeam.id, {
-    message: 'Home and visitor teams must be different',
-    path: ['homeTeam'],
+  .superRefine((data, ctx) => {
+    if (data.homeTeam.id === data.visitorTeam.id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['homeTeam'],
+        message: 'Home and visitor teams must be different',
+      });
+    }
+
+    if (data.gameStatus < 0 || data.gameStatus > 5) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['gameStatus'],
+        message: 'Game status must be between 0 and 5',
+      });
+    }
+
+    if (data.gameType < 0 || data.gameType > 2) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['gameType'],
+        message: 'Game type must be between 0 and 2',
+      });
+    }
   });
 
 export const UpsertGameRecapSchema = GameRecapSchema.omit({

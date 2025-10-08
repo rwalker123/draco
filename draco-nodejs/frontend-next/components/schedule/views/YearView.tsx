@@ -1,17 +1,13 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import {
-  format,
-  parseISO,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  isSameDay,
-  addYears,
-  subYears,
-} from 'date-fns';
+import { startOfWeek, endOfWeek, eachDayOfInterval, addYears, subYears } from 'date-fns';
 import { ViewComponentProps } from '@/types/schedule';
 import HierarchicalHeader from '../components/HierarchicalHeader';
+import {
+  formatDateInTimezone,
+  getDateKeyInTimezone,
+  isSameDayInTimezone,
+} from '../../../utils/dateUtils';
 
 const YearView: React.FC<ViewComponentProps> = ({
   filteredGames,
@@ -19,6 +15,7 @@ const YearView: React.FC<ViewComponentProps> = ({
   onEditGame: _onEditGame,
   onGameResults: _onGameResults,
   convertGameToGameCardData: _convertGameToGameCardData,
+  timeZone,
   filterDate,
   setFilterDate,
   setFilterType,
@@ -55,27 +52,26 @@ const YearView: React.FC<ViewComponentProps> = ({
 
     for (let month = 0; month < 12; month++) {
       const monthStart = new Date(year, month, 1);
-      const monthEnd = new Date(year, month + 1, 0);
-      const monthName = format(monthStart, 'MMMM');
+      const monthName = formatDateInTimezone(monthStart, timeZone, { month: 'long' });
+      const monthKeyPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
 
       // Get games for this month
       const monthGames = filteredGames.filter((game) => {
-        if (!game.gameDate) return false;
-        const gameDate = parseISO(game.gameDate);
-        return gameDate >= monthStart && gameDate <= monthEnd;
+        const key = getDateKeyInTimezone(game.gameDate, timeZone);
+        return key ? key.startsWith(monthKeyPrefix) : false;
       });
 
       // Group games by day
-      const gamesByDay = new Map<number, typeof filteredGames>();
+      const gamesByDay = new Map<string, typeof filteredGames>();
       monthGames.forEach((game) => {
-        if (game.gameDate) {
-          const gameDate = new Date(game.gameDate);
-          const day = gameDate.getDate();
-          if (!gamesByDay.has(day)) {
-            gamesByDay.set(day, []);
-          }
-          gamesByDay.get(day)!.push(game);
+        const dateKey = getDateKeyInTimezone(game.gameDate, timeZone);
+        if (!dateKey) {
+          return;
         }
+        if (!gamesByDay.has(dateKey)) {
+          gamesByDay.set(dateKey, []);
+        }
+        gamesByDay.get(dateKey)!.push(game);
       });
 
       // Create calendar days for this month
@@ -91,10 +87,18 @@ const YearView: React.FC<ViewComponentProps> = ({
       });
 
       calendarDays.forEach((day, index) => {
-        const isCurrentMonth = day.getMonth() === month;
-        const dayNumber = day.getDate();
-        const dayGames = isCurrentMonth ? gamesByDay.get(dayNumber) || [] : [];
+        const dateKey = getDateKeyInTimezone(day, timeZone);
+        const isCurrentMonth = dateKey ? dateKey.startsWith(monthKeyPrefix) : false;
+        const dayGames = dateKey ? gamesByDay.get(dateKey) || [] : [];
         const gameCount = dayGames.length;
+        const isToday = isSameDayInTimezone(day, new Date(), timeZone);
+        const dayNumberLabel = formatDateInTimezone(day, timeZone, { day: 'numeric' });
+        const dayTitle = formatDateInTimezone(day, timeZone, {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        });
 
         days.push(
           <Box
@@ -128,20 +132,18 @@ const YearView: React.FC<ViewComponentProps> = ({
                   }
                 : undefined
             }
-            title={
-              canEditSchedule ? `View ${format(day, 'EEEE, MMMM d, yyyy')} in day view` : undefined
-            }
+            title={canEditSchedule ? `View ${dayTitle} in day view` : undefined}
           >
             <Typography
               variant="body2"
               sx={{
                 color: isCurrentMonth ? 'text.primary' : 'text.disabled',
-                fontWeight: isSameDay(day, new Date()) ? 'bold' : 'normal',
+                fontWeight: isToday ? 'bold' : 'normal',
                 fontSize: '0.75rem',
                 mt: 0.5,
               }}
             >
-              {dayNumber}
+              {dayNumberLabel}
             </Typography>
             {gameCount > 0 && (
               <Box

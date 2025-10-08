@@ -18,6 +18,7 @@ import { useRole } from '../../../../context/RoleContext';
 import { useAuth } from '../../../../context/AuthContext';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
+import { useAccountTimezone } from '../../../../context/AccountContext';
 import { GameCardData } from '../../../../components/GameCard';
 import { getGameTypeText } from '../../../../utils/gameUtils';
 import { convertGameToGameCardData } from '../../../../utils/gameTransformers';
@@ -45,6 +46,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const { hasRole } = useRole();
   const { user } = useAuth();
   const { currentSeasonName, fetchCurrentSeason } = useCurrentSeason(accountId);
+  const timeZone = useAccountTimezone();
 
   // Fetch current season when component mounts
   useEffect(() => {
@@ -110,53 +112,35 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   });
 
   const {
-    // Dialog states
     createDialogOpen,
     editDialogOpen,
     deleteDialogOpen,
     gameResultsDialogOpen,
-    keepDialogOpen,
-
-    // Selected games
     selectedGame,
     selectedGameForResults,
-    dialogLeagueSeason,
-
-    // Form state
-    formState,
-
-    // Error states
-    editDialogError,
-    createDialogError,
-
-    // Actions
     setCreateDialogOpen,
     setEditDialogOpen,
     setDeleteDialogOpen,
-    setKeepDialogOpen,
     setGameResultsDialogOpen,
-    setDialogLeagueSeason,
-    setFormState,
-    setEditDialogError,
-    setCreateDialogError,
-
-    // CRUD operations
-    handleCreateGame,
-    handleUpdateGame,
     handleDeleteGame,
     handleSaveGameResults,
-
-    // Dialog management
+    setSelectedGame,
+    setSelectedGameForResults,
+    openCreateDialog,
     openEditDialog,
+    openDeleteDialog,
     openGameResultsDialog,
-    initializeCreateForm,
   } = useGameManagement({
     accountId,
     loadGamesData,
     setSuccess,
     setError,
-    clearLeagueTeams,
   });
+
+  const [createDialogDefaults, setCreateDialogDefaults] = useState<{
+    leagueSeasonId?: string;
+    gameDate: Date;
+  } | null>(null);
 
   // Convert Game to GameCardData for display using the unified transformer
   const convertGameToGameCardDataWithTeams = useCallback(
@@ -166,11 +150,33 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     [teams],
   );
 
+  const getFieldNameById = useCallback(
+    (fieldId?: string) => fields.find((field) => field.id === fieldId)?.name || '',
+    [fields],
+  );
+
+  const computeInitialGameDate = useCallback((): Date => {
+    switch (filterType) {
+      case 'day':
+        return new Date(filterDate);
+      case 'week':
+      case 'month':
+      case 'year':
+        return new Date(startDate);
+      default:
+        return new Date();
+    }
+  }, [filterType, filterDate, startDate]);
+
   // Handle create game button click
   const handleAddGameClick = useCallback(() => {
-    initializeCreateForm(filterType, filterDate, startDate);
-    setCreateDialogOpen(true);
-  }, [initializeCreateForm, filterType, filterDate, startDate, setCreateDialogOpen]);
+    const initialDate = computeInitialGameDate();
+    setCreateDialogDefaults({
+      leagueSeasonId: filterLeagueSeasonId || undefined,
+      gameDate: initialDate,
+    });
+    openCreateDialog();
+  }, [computeInitialGameDate, filterLeagueSeasonId, openCreateDialog]);
 
   // Handle edit game
   const handleEditGame = useCallback(
@@ -355,6 +361,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           filterType={filterType}
           loadingGames={loadingGames}
           filteredGames={filteredGames}
+          timeZone={timeZone}
           canEditSchedule={!!canEditSchedule}
           onEditGame={handleEditGame}
           onGameResults={handleGameResults}
@@ -376,105 +383,62 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           open={createDialogOpen}
           mode="create"
           title="Add Game"
-          error={createDialogError}
-          formState={formState}
-          setFormState={setFormState}
-          data={{
-            leagues,
-            fields,
-            umpires,
-            leagueTeamsCache,
-            currentSeasonName: currentSeasonName || undefined,
+          accountId={accountId}
+          timeZone={timeZone}
+          leagues={leagues}
+          fields={fields}
+          umpires={umpires}
+          leagueTeamsCache={leagueTeamsCache}
+          currentSeasonName={currentSeasonName || undefined}
+          canEditSchedule={!!canEditSchedule}
+          isAccountAdmin={!!canEditSchedule}
+          defaultLeagueSeasonId={createDialogDefaults?.leagueSeasonId}
+          defaultGameDate={createDialogDefaults?.gameDate}
+          onClose={() => {
+            setCreateDialogOpen(false);
+            setCreateDialogDefaults(null);
           }}
-          state={{
-            dialogLeagueSeason,
-            keepDialogOpen,
+          onSuccess={({ message }) => {
+            setSuccess(message);
+            loadGamesData();
           }}
-          setState={(newState) => {
-            if ('dialogLeagueSeason' in newState)
-              setDialogLeagueSeason(newState.dialogLeagueSeason!);
-            if ('keepDialogOpen' in newState) setKeepDialogOpen(newState.keepDialogOpen!);
-          }}
-          callbacks={{
-            onClose: () => setCreateDialogOpen(false),
-            onSubmit: handleCreateGame,
-            onErrorClear: () => setCreateDialogError(null),
-            getTeamName,
-            getFieldName: (fieldId?: string) => fields.find((f) => f.id === fieldId)?.name || '',
-            getGameTypeText,
-            getAvailableUmpires: (currentPosition: string, _currentValue: string) => {
-              // Get list of umpire IDs that are selected in OTHER positions
-              const selectedUmpires: string[] = [];
-              if (currentPosition !== 'umpire1' && formState.umpire1)
-                selectedUmpires.push(formState.umpire1);
-              if (currentPosition !== 'umpire2' && formState.umpire2)
-                selectedUmpires.push(formState.umpire2);
-              if (currentPosition !== 'umpire3' && formState.umpire3)
-                selectedUmpires.push(formState.umpire3);
-              if (currentPosition !== 'umpire4' && formState.umpire4)
-                selectedUmpires.push(formState.umpire4);
-
-              // Return umpires that are not selected in other positions
-              return umpires.filter((umpire) => !selectedUmpires.includes(umpire.id));
-            },
-          }}
-          permissions={{
-            canEditSchedule: !!canEditSchedule,
-            isAccountAdmin: !!canEditSchedule,
-          }}
+          onError={(message) => setError(message)}
+          getTeamName={getTeamName}
+          getFieldName={getFieldNameById}
+          getGameTypeText={getGameTypeText}
         />
 
         <GameDialog
           open={editDialogOpen}
           mode="edit"
           title="Edit Game"
-          selectedGame={selectedGame}
-          error={editDialogError}
-          formState={formState}
-          setFormState={setFormState}
-          data={{
-            leagues,
-            fields,
-            umpires,
-            leagueTeamsCache,
-            currentSeasonName: currentSeasonName || undefined,
+          accountId={accountId}
+          timeZone={timeZone}
+          selectedGame={selectedGame || undefined}
+          leagues={leagues}
+          fields={fields}
+          umpires={umpires}
+          leagueTeamsCache={leagueTeamsCache}
+          currentSeasonName={currentSeasonName || undefined}
+          canEditSchedule={!!canEditSchedule}
+          isAccountAdmin={!!canEditSchedule}
+          onClose={() => {
+            setEditDialogOpen(false);
+            setSelectedGame(null);
           }}
-          state={{
-            dialogLeagueSeason,
-            keepDialogOpen: false,
+          onSuccess={({ message }) => {
+            setSuccess(message);
+            loadGamesData();
           }}
-          setState={(newState) => {
-            if ('dialogLeagueSeason' in newState)
-              setDialogLeagueSeason(newState.dialogLeagueSeason!);
+          onError={(message) => setError(message)}
+          onDelete={() => {
+            if (selectedGame) {
+              openDeleteDialog(selectedGame);
+            }
           }}
-          callbacks={{
-            onClose: () => setEditDialogOpen(false),
-            onSubmit: handleUpdateGame,
-            onDelete: handleDeleteGame,
-            onErrorClear: () => setEditDialogError(null),
-            getTeamName,
-            getFieldName: (fieldId?: string) => fields.find((f) => f.id === fieldId)?.name || '',
-            getGameTypeText,
-            getAvailableUmpires: (currentPosition: string, _currentValue: string) => {
-              // Get list of umpire IDs that are selected in OTHER positions
-              const selectedUmpires: string[] = [];
-              if (currentPosition !== 'umpire1' && formState.umpire1)
-                selectedUmpires.push(formState.umpire1);
-              if (currentPosition !== 'umpire2' && formState.umpire2)
-                selectedUmpires.push(formState.umpire2);
-              if (currentPosition !== 'umpire3' && formState.umpire3)
-                selectedUmpires.push(formState.umpire3);
-              if (currentPosition !== 'umpire4' && formState.umpire4)
-                selectedUmpires.push(formState.umpire4);
-
-              // Return umpires that are not selected in other positions
-              return umpires.filter((umpire) => !selectedUmpires.includes(umpire.id));
-            },
-          }}
-          permissions={{
-            canEditSchedule: !!canEditSchedule,
-            isAccountAdmin: !!canEditSchedule,
-          }}
+          getTeamName={getTeamName}
+          getFieldName={getFieldNameById}
+          getGameTypeText={getGameTypeText}
         />
 
         <DeleteGameDialog
@@ -487,7 +451,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
         <GameResultsDialog
           open={gameResultsDialogOpen}
-          onClose={() => setGameResultsDialogOpen(false)}
+          onClose={() => {
+            setGameResultsDialogOpen(false);
+            setSelectedGameForResults(null);
+          }}
           selectedGame={selectedGameForResults}
           onSave={async (gameId, results) => {
             await handleSaveGameResults(
@@ -503,6 +470,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             );
           }}
           getTeamName={getTeamName}
+          timeZone={timeZone}
         />
       </main>
     </LocalizationProvider>

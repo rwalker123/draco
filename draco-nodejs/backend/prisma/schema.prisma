@@ -716,8 +716,8 @@ model leagueschedule {
   comment                                             String           @default("") @db.VarChar(255)
   fieldid                                             BigInt?
   leagueid                                            BigInt
-  gamestatus                                          Int
-  gametype                                            BigInt
+  gamestatus                                          Int              @db.SmallInt
+  gametype                                            Int              @db.SmallInt
   umpire1                                             BigInt?
   umpire2                                             BigInt?
   umpire3                                             BigInt?

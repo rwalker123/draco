@@ -66,7 +66,7 @@ export class ScheduleResponseFormatter {
       gameStatus: game.gamestatus,
       gameStatusText: getGameStatusText(game.gamestatus) as GameStatusEnumType,
       gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
-      gameType: game.gametype.toString(),
+      gameType: game.gametype,
       hasGameRecap: options.hasRecap,
       umpire1: game.umpire1 ? { id: game.umpire1.toString() } : undefined,
       umpire2: game.umpire2 ? { id: game.umpire2.toString() } : undefined,

@@ -4,6 +4,7 @@ import EventIcon from '@mui/icons-material/Event';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import GameCard, { GameCardData } from './GameCard';
+import { DEFAULT_TIMEZONE } from '../utils/timezones';
 
 export interface GameRecap {
   teamId: string;
@@ -29,6 +30,7 @@ export interface GameListDisplayProps {
   onEditRecap?: (game: Game) => void;
   onViewRecap?: (game: Game) => void;
   layout?: 'vertical' | 'horizontal';
+  timeZone?: string;
 }
 
 const GameListDisplay: React.FC<GameListDisplayProps> = ({
@@ -40,6 +42,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   onEditRecap,
   onViewRecap,
   layout = 'vertical',
+  timeZone = DEFAULT_TIMEZONE,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -197,6 +200,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                         onEditRecap={onEditRecap}
                         onViewRecap={onViewRecap}
                         fitContent={true}
+                        timeZone={timeZone}
                       />
                     ))
                   : section.games.map((game, index) => (
@@ -209,6 +213,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           canEditRecap={canEditRecap}
                           onEditRecap={onEditRecap}
                           onViewRecap={onViewRecap}
+                          timeZone={timeZone}
                         />
                       </Box>
                     ))}

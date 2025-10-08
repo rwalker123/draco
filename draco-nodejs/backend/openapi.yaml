@@ -6290,6 +6290,8 @@ components:
             - shortName
         gameStatus:
           type: number
+          description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
+            Report
         gameStatusText:
           type: string
           enum:
@@ -6309,8 +6311,8 @@ components:
             - R
             - DNR
         gameType:
-          type: string
-          pattern: ^d+$
+          type: number
+          description: 0=Regular, 1=Playoff, 2=Exhibition
         hasGameRecap:
           type: boolean
         umpire1:
@@ -6371,6 +6373,8 @@ components:
           maximum: 99
         gameStatus:
           type: number
+          description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
+            Report
       required:
         - id
         - homeScore
@@ -6482,6 +6486,8 @@ components:
                   - shortName
               gameStatus:
                 type: number
+                description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
+                  Report
               gameStatusText:
                 type: string
                 enum:
@@ -6501,8 +6507,8 @@ components:
                   - R
                   - DNR
               gameType:
-                type: string
-                pattern: ^d+$
+                type: number
+                description: 0=Regular, 1=Playoff, 2=Exhibition
               hasGameRecap:
                 type: boolean
               umpire1:
@@ -6650,6 +6656,8 @@ components:
                   - shortName
               gameStatus:
                 type: number
+                description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
+                  Report
               gameStatusText:
                 type: string
                 enum:
@@ -6669,8 +6677,8 @@ components:
                   - R
                   - DNR
               gameType:
-                type: string
-                pattern: ^d+$
+                type: number
+                description: 0=Regular, 1=Playoff, 2=Exhibition
               hasGameRecap:
                 type: boolean
               umpire1:
@@ -6824,6 +6832,8 @@ components:
                   - shortName
               gameStatus:
                 type: number
+                description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
+                  Report
               gameStatusText:
                 type: string
                 enum:
@@ -6843,8 +6853,8 @@ components:
                   - R
                   - DNR
               gameType:
-                type: string
-                pattern: ^d+$
+                type: number
+                description: 0=Regular, 1=Playoff, 2=Exhibition
               hasGameRecap:
                 type: boolean
               umpire1:
@@ -6941,6 +6951,8 @@ components:
           maximum: 99
         gameStatus:
           type: number
+          description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
+            Report
         emailPlayers:
           type: boolean
         postToTwitter:
@@ -6963,11 +6975,13 @@ components:
         gameDate:
           type: string
           format: date-time
-        gameType:
-          type: string
-          pattern: ^d+$
         gameStatus:
           type: number
+          description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
+            Report
+        gameType:
+          type: number
+          description: 0=Regular, 1=Playoff, 2=Exhibition
         comment:
           type: string
           maxLength: 255
@@ -7037,8 +7051,8 @@ components:
             - id
       required:
         - gameDate
-        - gameType
         - gameStatus
+        - gameType
         - leagueSeasonId
         - homeTeam
         - visitorTeam

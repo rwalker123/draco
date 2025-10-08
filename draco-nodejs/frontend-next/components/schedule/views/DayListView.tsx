@@ -1,9 +1,14 @@
 import React from 'react';
 import { Box, Typography, Paper } from '@mui/material';
-import { format, addDays, subDays, isToday as isTodayFn, isSameDay } from 'date-fns';
+import { addDays, subDays } from 'date-fns';
 import { ViewComponentProps } from '@/types/schedule';
 import GameCard from '../../GameCard';
 import HierarchicalHeader from '../components/HierarchicalHeader';
+import {
+  formatDateInTimezone,
+  getDateKeyInTimezone,
+  isSameDayInTimezone,
+} from '../../../utils/dateUtils';
 
 interface DayListViewProps extends ViewComponentProps {
   viewMode: 'calendar' | 'list';
@@ -15,6 +20,7 @@ const DayListView: React.FC<DayListViewProps> = ({
   onEditGame: _onEditGame,
   onGameResults,
   convertGameToGameCardData,
+  timeZone,
   filterType,
   filterDate,
   setFilterDate,
@@ -64,9 +70,14 @@ const DayListView: React.FC<DayListViewProps> = ({
 
   // For day view: get games for the current day
   const getGamesForDay = () => {
+    const currentDayKey = getDateKeyInTimezone(currentDate, timeZone);
+    if (!currentDayKey) {
+      return [];
+    }
+
     return filteredGames.filter((game) => {
-      const gameDate = new Date(game.gameDate);
-      return isSameDay(gameDate, currentDate);
+      const gameKey = getDateKeyInTimezone(game.gameDate, timeZone);
+      return gameKey === currentDayKey;
     });
   };
 
@@ -74,8 +85,10 @@ const DayListView: React.FC<DayListViewProps> = ({
   const getGamesByDate = () => {
     return filteredGames.reduce(
       (acc, game) => {
-        const gameDate = new Date(game.gameDate);
-        const dateKey = format(gameDate, 'yyyy-MM-dd');
+        const dateKey = getDateKeyInTimezone(game.gameDate, timeZone);
+        if (!dateKey) {
+          return acc;
+        }
 
         if (!acc[dateKey]) {
           acc[dateKey] = [];
@@ -91,7 +104,8 @@ const DayListView: React.FC<DayListViewProps> = ({
   const dayGames = isDayView ? getGamesForDay() : [];
   const gamesByDate = isDayView ? null : getGamesByDate();
   const sortedDates = isDayView ? null : Object.keys(gamesByDate!).sort();
-  const isToday = isDayView ? isTodayFn(currentDate) : false;
+  const isToday = isDayView ? isSameDayInTimezone(currentDate, new Date(), timeZone) : false;
+  const todayKey = React.useMemo(() => getDateKeyInTimezone(new Date(), timeZone), [timeZone]);
 
   const renderDayContent = () => {
     if (dayGames.length === 0) {
@@ -115,6 +129,7 @@ const DayListView: React.FC<DayListViewProps> = ({
             canEditGames={canEditSchedule}
             onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
             onClick={canEditSchedule ? () => _onEditGame(game) : undefined}
+            timeZone={timeZone}
           />
         ))}
       </Box>
@@ -134,8 +149,14 @@ const DayListView: React.FC<DayListViewProps> = ({
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {sortedDates!.map((dateKey) => {
           const games = gamesByDate![dateKey];
-          const gameDate = new Date(dateKey);
-          const isTodayDate = format(gameDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+          const isTodayDate = todayKey === dateKey;
+          const labelSource = games[0]?.gameDate ?? dateKey;
+          const formattedDate = formatDateInTimezone(labelSource, timeZone, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          });
 
           return (
             <Paper
@@ -155,7 +176,7 @@ const DayListView: React.FC<DayListViewProps> = ({
                   color: isTodayDate ? 'primary.contrastText' : 'text.primary',
                 }}
               >
-                {format(gameDate, 'EEEE, MMMM d, yyyy')}
+                {formattedDate}
                 {isTodayDate && (
                   <Typography
                     component="span"
@@ -179,6 +200,7 @@ const DayListView: React.FC<DayListViewProps> = ({
                     canEditGames={canEditSchedule}
                     onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
                     onClick={canEditSchedule ? () => _onEditGame(game) : undefined}
+                    timeZone={timeZone}
                   />
                 ))}
               </Box>

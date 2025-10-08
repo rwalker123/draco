@@ -168,7 +168,7 @@ export class StatsResponseFormatter {
           }
         : undefined,
       hasGameRecap: Boolean(game._count?.gamerecap),
-      gameType: game.gametype.toString(),
+      gameType: game.gametype,
     };
   }
 
@@ -207,7 +207,7 @@ export class StatsResponseFormatter {
           }
         : undefined,
       hasGameRecap: Boolean(game._count?.gamerecap),
-      gameType: game.gametype.toString(),
+      gameType: game.gametype,
     };
   }
 

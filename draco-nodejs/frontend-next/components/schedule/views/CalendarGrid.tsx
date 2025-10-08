@@ -1,10 +1,14 @@
 import React from 'react';
 import { Box, Typography, IconButton, Tooltip } from '@mui/material';
 import { ZoomIn as ZoomInIcon } from '@mui/icons-material';
-import { format, isSameDay } from 'date-fns';
 import { Game } from '@/types/schedule';
 import GameCard from '../../GameCard';
 import { GameCardData } from '../../GameCard';
+import {
+  formatDateInTimezone,
+  getDateKeyInTimezone,
+  isSameDayInTimezone,
+} from '../../../utils/dateUtils';
 
 export interface CalendarGridProps {
   // Grid configuration
@@ -33,6 +37,8 @@ export interface CalendarGridProps {
 
   // Navigation state
   isNavigating?: boolean;
+
+  timeZone: string;
 }
 
 const CalendarGrid: React.FC<CalendarGridProps> = ({
@@ -49,6 +55,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   convertGameToGameCardData,
   canEditSchedule,
   isNavigating = false,
+  timeZone,
 }) => {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const columns = showZoomColumn ? `40px repeat(7, 1fr)` : `repeat(7, 1fr)`;
@@ -96,11 +103,28 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
       : {},
   };
 
-  const getGamesForDay = (day: Date) => {
-    return filteredGames.filter((game) => {
-      const gameDate = new Date(game.gameDate);
-      return isSameDay(gameDate, day);
+  const gamesByDateKey = React.useMemo(() => {
+    const map = new Map<string, Game[]>();
+    filteredGames.forEach((game) => {
+      const key = getDateKeyInTimezone(game.gameDate, timeZone);
+      if (!key) {
+        return;
+      }
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(game);
     });
+    return map;
+  }, [filteredGames, timeZone]);
+
+  const getGamesForDay = (day: Date) => {
+    const dayKey = getDateKeyInTimezone(day, timeZone);
+    if (!dayKey) {
+      return [];
+    }
+
+    return gamesByDateKey.get(dayKey) ?? [];
   };
 
   return (
@@ -158,6 +182,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
               const weekStart = weekIndex * 7;
               const weekDays = days.slice(weekStart, weekStart + 7);
               const weekStartDate = weekDays[0];
+              const weekEndDate = (() => {
+                const date = new Date(weekStartDate);
+                date.setDate(date.getDate() + 6);
+                return date;
+              })();
 
               return (
                 <React.Fragment key={weekIndex}>
@@ -176,7 +205,14 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     }}
                   >
                     <Tooltip
-                      title={`View week of ${format(weekStartDate, 'MMM dd')} - ${format(weekStartDate.getTime() + 6 * 24 * 60 * 60 * 1000, 'MMM dd, yyyy')} in week view`}
+                      title={`View week of ${formatDateInTimezone(weekStartDate, timeZone, {
+                        month: 'short',
+                        day: '2-digit',
+                      })} - ${formatDateInTimezone(weekEndDate, timeZone, {
+                        month: 'short',
+                        day: '2-digit',
+                        year: 'numeric',
+                      })} in week view`}
                     >
                       <IconButton
                         size="small"
@@ -198,16 +234,23 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                         borderRightColor: 'grey.300',
                         borderBottom: '1px solid',
                         borderBottomColor: 'grey.300',
-                        backgroundColor: isSameDay(day, new Date())
+                        backgroundColor: isSameDayInTimezone(day, new Date(), timeZone)
                           ? 'primary.light'
                           : 'background.paper',
-                        border: isSameDay(day, new Date()) ? 2 : 1,
-                        borderColor: isSameDay(day, new Date()) ? 'primary.main' : 'grey.300',
+                        border: isSameDayInTimezone(day, new Date(), timeZone) ? 2 : 1,
+                        borderColor: isSameDayInTimezone(day, new Date(), timeZone)
+                          ? 'primary.main'
+                          : 'grey.300',
                       }}
                       onClick={() => onDayClick?.(day)}
                       title={
                         onDayClick
-                          ? `View ${format(day, 'EEEE, MMMM d, yyyy')} in day view`
+                          ? `View ${formatDateInTimezone(day, timeZone, {
+                              weekday: 'long',
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })} in day view`
                           : undefined
                       }
                     >
@@ -229,10 +272,10 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                             color: 'primary.main',
                           }}
                         >
-                          {format(day, 'd')}
+                          {formatDateInTimezone(day, timeZone, { day: 'numeric' })}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          {format(day, 'MMM')}
+                          {formatDateInTimezone(day, timeZone, { month: 'short' })}
                         </Typography>
                       </Box>
 
@@ -268,6 +311,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                                 }
                                 showActions={canEditSchedule}
                                 onClick={() => onGameClick?.(game)}
+                                timeZone={timeZone}
                               />
                             </Box>
                           ))
@@ -296,15 +340,24 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                   borderRightColor: 'grey.300',
                   borderBottom: '1px solid',
                   borderBottomColor: 'grey.300',
-                  backgroundColor: isSameDay(day, new Date())
+                  backgroundColor: isSameDayInTimezone(day, new Date(), timeZone)
                     ? 'primary.light'
                     : 'background.paper',
-                  border: isSameDay(day, new Date()) ? 2 : 1,
-                  borderColor: isSameDay(day, new Date()) ? 'primary.main' : 'grey.300',
+                  border: isSameDayInTimezone(day, new Date(), timeZone) ? 2 : 1,
+                  borderColor: isSameDayInTimezone(day, new Date(), timeZone)
+                    ? 'primary.main'
+                    : 'grey.300',
                 }}
                 onClick={() => onDayClick?.(day)}
                 title={
-                  onDayClick ? `View ${format(day, 'EEEE, MMMM d, yyyy')} in day view` : undefined
+                  onDayClick
+                    ? `View ${formatDateInTimezone(day, timeZone, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })} in day view`
+                    : undefined
                 }
               >
                 {/* Day Number */}
@@ -325,10 +378,10 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                       color: 'primary.main',
                     }}
                   >
-                    {format(day, 'd')}
+                    {formatDateInTimezone(day, timeZone, { day: 'numeric' })}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {format(day, 'MMM')}
+                    {formatDateInTimezone(day, timeZone, { month: 'short' })}
                   </Typography>
                 </Box>
 
@@ -364,6 +417,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           }
                           showActions={canEditSchedule}
                           onClick={() => onGameClick?.(game)}
+                          timeZone={timeZone}
                         />
                       </Box>
                     ))

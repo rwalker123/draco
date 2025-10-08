@@ -8523,7 +8523,8 @@
             ]
           },
           "gameStatus": {
-            "type": "number"
+            "type": "number",
+            "description": "0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report"
           },
           "gameStatusText": {
             "type": "string",
@@ -8548,8 +8549,8 @@
             ]
           },
           "gameType": {
-            "type": "string",
-            "pattern": "^d+$"
+            "type": "number",
+            "description": "0=Regular, 1=Playoff, 2=Exhibition"
           },
           "hasGameRecap": {
             "type": "boolean"
@@ -8633,7 +8634,8 @@
             "maximum": 99
           },
           "gameStatus": {
-            "type": "number"
+            "type": "number",
+            "description": "0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report"
           }
         },
         "required": [
@@ -8783,7 +8785,8 @@
                   ]
                 },
                 "gameStatus": {
-                  "type": "number"
+                  "type": "number",
+                  "description": "0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report"
                 },
                 "gameStatusText": {
                   "type": "string",
@@ -8808,8 +8811,8 @@
                   ]
                 },
                 "gameType": {
-                  "type": "string",
-                  "pattern": "^d+$"
+                  "type": "number",
+                  "description": "0=Regular, 1=Playoff, 2=Exhibition"
                 },
                 "hasGameRecap": {
                   "type": "boolean"
@@ -9013,7 +9016,8 @@
                   ]
                 },
                 "gameStatus": {
-                  "type": "number"
+                  "type": "number",
+                  "description": "0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report"
                 },
                 "gameStatusText": {
                   "type": "string",
@@ -9038,8 +9042,8 @@
                   ]
                 },
                 "gameType": {
-                  "type": "string",
-                  "pattern": "^d+$"
+                  "type": "number",
+                  "description": "0=Regular, 1=Playoff, 2=Exhibition"
                 },
                 "hasGameRecap": {
                   "type": "boolean"
@@ -9252,7 +9256,8 @@
                   ]
                 },
                 "gameStatus": {
-                  "type": "number"
+                  "type": "number",
+                  "description": "0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report"
                 },
                 "gameStatusText": {
                   "type": "string",
@@ -9277,8 +9282,8 @@
                   ]
                 },
                 "gameType": {
-                  "type": "string",
-                  "pattern": "^d+$"
+                  "type": "number",
+                  "description": "0=Regular, 1=Playoff, 2=Exhibition"
                 },
                 "hasGameRecap": {
                   "type": "boolean"
@@ -9417,7 +9422,8 @@
             "maximum": 99
           },
           "gameStatus": {
-            "type": "number"
+            "type": "number",
+            "description": "0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report"
           },
           "emailPlayers": {
             "type": "boolean"
@@ -9449,12 +9455,13 @@
             "type": "string",
             "format": "date-time"
           },
-          "gameType": {
-            "type": "string",
-            "pattern": "^d+$"
-          },
           "gameStatus": {
-            "type": "number"
+            "type": "number",
+            "description": "0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not Report"
+          },
+          "gameType": {
+            "type": "number",
+            "description": "0=Regular, 1=Playoff, 2=Exhibition"
           },
           "comment": {
             "type": "string",
@@ -9556,8 +9563,8 @@
         },
         "required": [
           "gameDate",
-          "gameType",
           "gameStatus",
+          "gameType",
           "leagueSeasonId",
           "homeTeam",
           "visitorTeam",
