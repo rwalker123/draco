@@ -60,7 +60,6 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
         client: apiClient,
         body: {
           email: trimmedEmail,
-          testMode: true,
         },
         throwOnError: false,
       });
@@ -69,14 +68,6 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
 
       if (data === true) {
         setSuccess('If an account with that email exists, a password reset link has been sent.');
-        setActiveStep(1);
-        return;
-      }
-
-      if (typeof data === 'object' && data !== null && 'token' in data) {
-        const tokenData = data as { token: string; userId?: string; email?: string };
-        setSuccess(`Password reset token generated (TEST MODE): ${tokenData.token}`);
-        setToken(tokenData.token);
         setActiveStep(1);
         return;
       }

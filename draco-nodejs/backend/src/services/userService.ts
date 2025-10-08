@@ -1,4 +1,4 @@
-import { RegisteredUserType, SignInUserNameType } from '@draco/shared-schemas';
+import { SignInUserNameType } from '@draco/shared-schemas';
 import bcrypt from 'bcrypt';
 import { randomBytes } from 'node:crypto';
 import {
@@ -26,10 +26,7 @@ interface UserServiceDependencies {
   tokenExpiryHours?: number;
 }
 
-export type PasswordResetRequestResult =
-  | { kind: 'user-not-found' }
-  | { kind: 'test-token'; user: RegisteredUserType }
-  | { kind: 'email-sent' };
+export type PasswordResetRequestResult = { kind: 'user-not-found' } | { kind: 'email-sent' };
 
 export class UserService {
   private readonly userRepository: IUserRepository;
@@ -51,10 +48,8 @@ export class UserService {
 
   async requestPasswordReset({
     email,
-    testMode = false,
   }: {
     email: SignInUserNameType;
-    testMode?: boolean;
   }): Promise<PasswordResetRequestResult> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.userRepository.findByUsername(normalizedEmail);
@@ -66,11 +61,6 @@ export class UserService {
     const resetToken = this.generateResetToken();
     await this.invalidateExistingTokens(user.id);
     await this.createResetToken(user.id, resetToken);
-
-    if (testMode) {
-      const formattedUser = UserResponseFormatter.formatRegisteredUserWithToken(user, resetToken);
-      return { kind: 'test-token', user: formattedUser };
-    }
 
     const emailSent = await this.emailService.sendPasswordResetEmail(
       normalizedEmail,
