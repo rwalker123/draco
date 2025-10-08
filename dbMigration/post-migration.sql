@@ -278,3 +278,5 @@ ALTER TABLE workoutregistration
   ALTER COLUMN dateregistered
   TYPE timestamptz
   USING (dateregistered AT TIME ZONE 'America/Detroit');
+
+update accounts set timezoneid = 'America/New_York';
