@@ -12727,14 +12727,12 @@ paths:
                 email:
                   type: string
                   minLength: 1
-                testMode:
-                  type: boolean
               required:
                 - email
       responses:
         "200":
-          description: Password reset token generated (email is sent or test token
-            returned).
+          description: Password reset token generated and email sent when the account
+            exists.
           content:
             application/json:
               schema:
@@ -12751,18 +12749,6 @@ paths:
                     required:
                       - success
                       - message
-                  - type: object
-                    properties:
-                      token:
-                        type: string
-                      userId:
-                        type: string
-                      email:
-                        type: string
-                    required:
-                      - token
-                      - userId
-                      - email
         "400":
           description: Invalid request payload.
           content:

@@ -16,18 +16,6 @@ const userService = ServiceFactory.getUserService();
 const PASSWORD_RESET_ACKNOWLEDGEMENT =
   'If an account with that email exists, a password reset link has been sent.';
 
-function parseTestModeFlag(value: unknown): boolean {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    return value.toLowerCase() === 'true';
-  }
-
-  return false;
-}
-
 /**
  * Request password reset
  * POST /api/password-reset/request
@@ -42,11 +30,9 @@ router.post(
     }
 
     const parsedEmail = SignInUserNameSchema.parse(email);
-    const testMode = parseTestModeFlag(req.body?.testMode);
 
     const result = await userService.requestPasswordReset({
       email: parsedEmail,
-      testMode,
     });
 
     if (result.kind === 'user-not-found') {
@@ -54,11 +40,6 @@ router.post(
         success: true,
         message: PASSWORD_RESET_ACKNOWLEDGEMENT,
       });
-      return;
-    }
-
-    if (result.kind === 'test-token') {
-      res.status(200).json(result.user);
       return;
     }
 
