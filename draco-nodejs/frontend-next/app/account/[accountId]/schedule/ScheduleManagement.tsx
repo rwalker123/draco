@@ -80,12 +80,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     loadingStaticData,
     error,
     success,
-    loadGamesData,
     loadLeagueTeams,
     loadUmpires,
     clearLeagueTeams,
     setSuccess,
     setError,
+    upsertGameInCache,
+    removeGameFromCache,
     startDate,
     endDate,
   } = useScheduleData({
@@ -133,7 +134,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     openGameResultsDialog,
   } = useGameManagement({
     accountId,
-    loadGamesData,
+    upsertGameInCache,
+    removeGameFromCache,
     setSuccess,
     setError,
   });
@@ -205,6 +207,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     },
     [teams],
   );
+
+  const editDialogTitle = canEditSchedule ? 'Edit Game' : 'View Game';
 
   if (loadingStaticData) {
     return (
@@ -401,9 +405,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             setCreateDialogOpen(false);
             setCreateDialogDefaults(null);
           }}
-          onSuccess={({ message }) => {
+          onSuccess={({ message, game }) => {
             setSuccess(message);
-            loadGamesData();
+            if (game) {
+              upsertGameInCache(game);
+            }
           }}
           onError={(message) => setError(message)}
           getTeamName={getTeamName}
@@ -414,7 +420,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         <GameDialog
           open={editDialogOpen}
           mode="edit"
-          title="Edit Game"
+          title={editDialogTitle}
           accountId={accountId}
           timeZone={timeZone}
           selectedGame={selectedGame || undefined}
@@ -429,9 +435,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             setEditDialogOpen(false);
             setSelectedGame(null);
           }}
-          onSuccess={({ message }) => {
+          onSuccess={({ message, game }) => {
             setSuccess(message);
-            loadGamesData();
+            if (game) {
+              upsertGameInCache(game);
+            }
           }}
           onError={(message) => setError(message)}
           onDelete={() => {

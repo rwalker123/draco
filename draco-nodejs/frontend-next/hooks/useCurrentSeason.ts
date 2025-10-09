@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { getCurrentSeason } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
 import { useApiClient } from './useApiClient';
@@ -21,34 +21,49 @@ export const useCurrentSeason = (accountId: string): UseCurrentSeasonReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
+  const fetchPromiseRef = useRef<Promise<string> | null>(null);
 
   const fetchCurrentSeason = useCallback(async (): Promise<string> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await getCurrentSeason({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
-
-      const season = unwrapApiResult(result, 'Failed to load current season');
-      const seasonId = season.id;
-      const seasonName = season.name;
-
-      setCurrentSeasonId(seasonId);
-      setCurrentSeasonName(seasonName);
-
-      return seasonId;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load current season';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    if (currentSeasonId) {
+      return currentSeasonId;
     }
-  }, [accountId, apiClient]);
+
+    if (fetchPromiseRef.current) {
+      return fetchPromiseRef.current;
+    }
+
+    const request = (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const result = await getCurrentSeason({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        const season = unwrapApiResult(result, 'Failed to load current season');
+        const seasonId = season.id;
+        const seasonName = season.name;
+
+        setCurrentSeasonId(seasonId);
+        setCurrentSeasonName(seasonName);
+
+        return seasonId;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load current season';
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      } finally {
+        setLoading(false);
+        fetchPromiseRef.current = null;
+      }
+    })();
+
+    fetchPromiseRef.current = request;
+    return request;
+  }, [accountId, apiClient, currentSeasonId]);
 
   return {
     currentSeasonId,

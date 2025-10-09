@@ -7,6 +7,7 @@ import { unwrapApiResult } from '../../../utils/apiResult';
 import type { UpsertGameType } from '@draco/shared-schemas';
 import type { Game } from '@/types/schedule';
 import { GameStatus } from '@/types/schedule';
+import { mapGameResponseToScheduleGame } from '../../../utils/gameTransformers';
 
 export interface BuildGamePayloadOptions {
   leagueSeasonId: string;
@@ -51,6 +52,7 @@ export interface GameFormValues {
 
 export interface GameOperationResult {
   message: string;
+  game?: Game;
 }
 
 export const buildUpsertGamePayload = ({
@@ -117,9 +119,12 @@ export const useGameOperations = ({ accountId, timeZone }: UseGameOperationsArgs
           throwOnError: false,
         });
 
-        unwrapApiResult(result, 'Failed to create game');
+        const createdGame = unwrapApiResult(result, 'Failed to create game');
 
-        return { message: 'Game created successfully' };
+        return {
+          message: 'Game created successfully',
+          game: mapGameResponseToScheduleGame(createdGame),
+        };
       } finally {
         setLoading(false);
       }
@@ -160,9 +165,12 @@ export const useGameOperations = ({ accountId, timeZone }: UseGameOperationsArgs
           throwOnError: false,
         });
 
-        unwrapApiResult(result, 'Failed to update game');
+        const updatedGame = unwrapApiResult(result, 'Failed to update game');
 
-        return { message: 'Game updated successfully' };
+        return {
+          message: 'Game updated successfully',
+          game: mapGameResponseToScheduleGame(updatedGame),
+        };
       } finally {
         setLoading(false);
       }

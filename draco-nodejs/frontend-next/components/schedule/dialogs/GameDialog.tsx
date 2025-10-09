@@ -42,7 +42,7 @@ interface GameDialogProps {
   defaultLeagueSeasonId?: string;
   defaultGameDate?: Date;
   onClose: () => void;
-  onSuccess?: (result: { message: string }) => void;
+  onSuccess?: (result: { message: string; game?: Game }) => void;
   onError?: (error: string) => void;
   onDelete?: () => void;
   getTeamName: (teamId: string) => string;
@@ -326,7 +326,7 @@ const GameDialog: React.FC<GameDialogProps> = ({
           ? await createGame(payload)
           : await updateGame(selectedGame as Game, payload);
 
-      onSuccess?.({ message: result.message });
+      onSuccess?.({ message: result.message, game: result.game });
 
       if (mode === 'create' && keepDialogOpen) {
         const preservedDate = values.gameDate;

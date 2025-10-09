@@ -1,9 +1,17 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { Game, Field, Umpire, League, FilterType } from '@/types/schedule';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import {
+  eachMonthOfInterval,
+  endOfMonth,
+  endOfWeek,
+  endOfYear,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
+} from 'date-fns';
 import {
   listAccountFields,
   listAccountUmpires,
@@ -22,7 +30,6 @@ interface UseScheduleDataProps {
 }
 
 interface UseScheduleDataReturn {
-  // Data
   games: Game[];
   teams: TeamSeasonType[];
   fields: Field[];
@@ -30,16 +37,10 @@ interface UseScheduleDataReturn {
   leagues: League[];
   leagueTeams: TeamSeasonType[];
   leagueTeamsCache: Map<string, TeamSeasonType[]>;
-
-  // Loading states
   loadingGames: boolean;
   loadingStaticData: boolean;
-
-  // Error states
   error: string | null;
   success: string | null;
-
-  // Actions
   loadStaticData: () => Promise<void>;
   loadGamesData: () => Promise<void>;
   loadLeagueTeams: (leagueSeasonId: string) => void;
@@ -47,12 +48,22 @@ interface UseScheduleDataReturn {
   clearLeagueTeams: () => void;
   setSuccess: (message: string | null) => void;
   setError: (message: string | null) => void;
-
-  // Computed values
+  upsertGameInCache: (game: Game) => void;
+  removeGameFromCache: (gameId: string) => void;
   filteredGames: Game[];
   startDate: Date;
   endDate: Date;
 }
+
+const API_PAGE_LIMIT = 100;
+
+const sortGamesAscending = (a: Game, b: Game): number => {
+  const diff = new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
+  if (diff !== 0) {
+    return diff;
+  }
+  return a.id.localeCompare(b.id);
+};
 
 export const useScheduleData = ({
   accountId,
@@ -63,8 +74,6 @@ export const useScheduleData = ({
   const { fetchCurrentSeason } = useCurrentSeason(accountId);
   const apiClient = useApiClient();
 
-  // Data states
-  const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<TeamSeasonType[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
   const [umpires, setUmpires] = useState<Umpire[]>([]);
@@ -74,54 +83,133 @@ export const useScheduleData = ({
     new Map(),
   );
 
-  // Loading states
+  const [games, setGames] = useState<Game[]>([]);
+  const isMountedRef = useRef(false);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  const gamesCacheRef = useRef<Map<string, Game[]>>(new Map());
+  const gamesRequestCacheRef = useRef<Map<string, Promise<Game[]>>>(new Map());
+  const lastRangeRef = useRef<{ start: number; end: number } | null>(null);
+
   const [loadingGames, setLoadingGames] = useState(false);
   const [loadingStaticData, setLoadingStaticData] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  // Error states
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Calculate date range based on filter type
-  const getDateRange = useCallback(() => {
-    let startDate: Date;
-    let endDate: Date;
+  const { startDate, endDate } = useMemo(() => {
+    let start: Date;
+    let end: Date;
 
     switch (filterType) {
       case 'day':
-        startDate = new Date(filterDate);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(filterDate);
-        endDate.setHours(23, 59, 59, 999);
+        start = new Date(filterDate);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(filterDate);
+        end.setHours(23, 59, 59, 999);
         break;
       case 'week':
-        startDate = startOfWeek(filterDate);
-        endDate = endOfWeek(filterDate);
+        start = startOfWeek(filterDate);
+        end = endOfWeek(filterDate);
         break;
       case 'month':
-        startDate = startOfMonth(filterDate);
-        endDate = endOfMonth(filterDate);
+        start = startOfMonth(filterDate);
+        end = endOfMonth(filterDate);
         break;
       case 'year':
-        startDate = startOfYear(filterDate);
-        endDate = endOfYear(filterDate);
+        start = startOfYear(filterDate);
+        end = endOfYear(filterDate);
         break;
       default:
-        startDate = startOfMonth(filterDate);
-        endDate = endOfMonth(filterDate);
+        start = startOfMonth(filterDate);
+        end = endOfMonth(filterDate);
     }
 
-    return { startDate, endDate };
+    return { startDate: start, endDate: end };
   }, [filterType, filterDate]);
 
-  const { startDate, endDate } = getDateRange();
+  const getMonthKeyFromDate = useCallback((date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  }, []);
 
-  // Load static data (leagues, fields, umpires)
+  const getMonthRangeForKey = useCallback((monthKey: string): { start: Date; end: Date } => {
+    const [yearStr, monthStr] = monthKey.split('-');
+    const year = Number(yearStr);
+    const monthIndex = Number(monthStr) - 1;
+    const start = new Date(year, monthIndex, 1);
+    const end = endOfMonth(start);
+    return { start, end };
+  }, []);
+
+  const getMonthKeysForRange = useCallback(
+    (rangeStart: Date, rangeEnd: Date): string[] => {
+      const months = eachMonthOfInterval({
+        start: startOfMonth(rangeStart),
+        end: startOfMonth(rangeEnd),
+      });
+      return months.map((monthDate) => getMonthKeyFromDate(monthDate));
+    },
+    [getMonthKeyFromDate],
+  );
+
+  const collectGamesForRange = useCallback(
+    (rangeStart: Date, rangeEnd: Date): Game[] => {
+      const monthKeys = getMonthKeysForRange(rangeStart, rangeEnd);
+      const startTime = rangeStart.getTime();
+      const endTime = rangeEnd.getTime();
+
+      const aggregated = new Map<string, Game>();
+      monthKeys.forEach((monthKey) => {
+        const monthGames = gamesCacheRef.current.get(monthKey);
+        if (!monthGames) {
+          return;
+        }
+
+        monthGames.forEach((game) => {
+          const gameTime = new Date(game.gameDate).getTime();
+          if (gameTime >= startTime && gameTime <= endTime) {
+            aggregated.set(game.id, game);
+          }
+        });
+      });
+
+      return Array.from(aggregated.values()).sort(sortGamesAscending);
+    },
+    [getMonthKeysForRange],
+  );
+
+  const refreshGamesForLastRange = useCallback(() => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    const range = lastRangeRef.current;
+    if (!range) {
+      return;
+    }
+
+    const start = new Date(range.start);
+    const end = new Date(range.end);
+    const nextGames = collectGamesForRange(start, end);
+    setGames(nextGames);
+  }, [collectGamesForRange]);
+
+  useEffect(() => {
+    gamesCacheRef.current.clear();
+    gamesRequestCacheRef.current.clear();
+    lastRangeRef.current = null;
+    setGames([]);
+  }, [accountId]);
+
   const loadStaticData = useCallback(async () => {
     try {
       setLoadingStaticData(true);
-      setError('');
+      setError(null);
 
       const currentSeasonId = await fetchCurrentSeason();
 
@@ -141,19 +229,19 @@ export const useScheduleData = ({
 
         const newLeagueTeamsCache = new Map<string, TeamSeasonType[]>();
         const processedLeagues = mapped.leagueSeasons.map((leagueSeason) => {
-          const leagueTeams: TeamSeasonType[] = [];
+          const leagueTeamsForSeason: TeamSeasonType[] = [];
 
           leagueSeason.divisions?.forEach((division) => {
             division.teams.forEach((team) => {
-              leagueTeams.push(team);
+              leagueTeamsForSeason.push(team);
             });
           });
 
           leagueSeason.unassignedTeams?.forEach((team) => {
-            leagueTeams.push(team);
+            leagueTeamsForSeason.push(team);
           });
 
-          newLeagueTeamsCache.set(leagueSeason.id, leagueTeams);
+          newLeagueTeamsCache.set(leagueSeason.id, leagueTeamsForSeason);
 
           return {
             id: leagueSeason.id,
@@ -165,8 +253,8 @@ export const useScheduleData = ({
         setLeagueTeamsCache(newLeagueTeamsCache);
 
         const uniqueTeams = new Map<string, TeamSeasonType>();
-        newLeagueTeamsCache.forEach((teams) => {
-          teams.forEach((team) => {
+        newLeagueTeamsCache.forEach((teamsForSeason) => {
+          teamsForSeason.forEach((team) => {
             if (!uniqueTeams.has(team.id)) {
               uniqueTeams.set(team.id, team);
             }
@@ -209,8 +297,6 @@ export const useScheduleData = ({
       }
 
       setUmpires([]);
-
-      setUmpires([]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load static data');
     } finally {
@@ -218,58 +304,114 @@ export const useScheduleData = ({
     }
   }, [accountId, apiClient, fetchCurrentSeason]);
 
-  // Load games data
   const loadGamesData = useCallback(async () => {
     try {
-      // Only show loading spinner on initial load
-      if (isInitialLoad) {
+      if (isMountedRef.current) {
         setLoadingGames(true);
+        setError(null);
       }
-      setError('');
 
-      // Get current season first using the hook
-      const currentSeasonId = await fetchCurrentSeason();
+      const seasonId = await fetchCurrentSeason();
+      const monthKeys = getMonthKeysForRange(startDate, endDate);
 
-      // Calculate date range for this specific call
-      const { startDate: currentStartDate, endDate: currentEndDate } = getDateRange();
+      if (monthKeys.length === 0) {
+        if (isMountedRef.current) {
+          setGames([]);
+          lastRangeRef.current = { start: startDate.getTime(), end: endDate.getTime() };
+        }
+        return;
+      }
 
-      const gamesResult = await listSeasonGames({
-        client: apiClient,
-        path: { accountId, seasonId: currentSeasonId },
-        query: {
-          startDate: currentStartDate.toISOString(),
-          endDate: currentEndDate.toISOString(),
-          sortOrder: 'asc',
-        },
-        throwOnError: false,
+      const fetchPromises = monthKeys.map((monthKey) => {
+        if (gamesCacheRef.current.has(monthKey)) {
+          return Promise.resolve(gamesCacheRef.current.get(monthKey)!);
+        }
+
+        let requestPromise = gamesRequestCacheRef.current.get(monthKey);
+        if (!requestPromise) {
+          const { start, end } = getMonthRangeForKey(monthKey);
+
+          requestPromise = (async () => {
+            const aggregated = new Map<string, Game>();
+            let page = 1;
+
+            while (true) {
+              const gamesResult = await listSeasonGames({
+                client: apiClient,
+                path: { accountId, seasonId },
+                query: {
+                  startDate: start.toISOString(),
+                  endDate: end.toISOString(),
+                  sortOrder: 'asc',
+                  page,
+                  limit: API_PAGE_LIMIT,
+                },
+                throwOnError: false,
+              });
+
+              const gamesData = unwrapApiResult(gamesResult, 'Failed to load games');
+              const mappedGames = gamesData.games.map(mapGameResponseToScheduleGame);
+
+              mappedGames.forEach((game) => {
+                aggregated.set(game.id, game);
+              });
+
+              const { total, limit } = gamesData.pagination;
+              if (limit === 0 || page * limit >= total) {
+                break;
+              }
+              page += 1;
+            }
+
+            const sortedGames = Array.from(aggregated.values()).sort(sortGamesAscending);
+            gamesCacheRef.current.set(monthKey, sortedGames);
+            return sortedGames;
+          })();
+
+          gamesRequestCacheRef.current.set(monthKey, requestPromise);
+          requestPromise.finally(() => {
+            gamesRequestCacheRef.current.delete(monthKey);
+          });
+        }
+
+        return requestPromise;
       });
 
-      const gamesData = unwrapApiResult(gamesResult, 'Failed to load games');
-      const transformedGames = gamesData.games.map(mapGameResponseToScheduleGame);
+      await Promise.all(fetchPromises);
 
-      setGames(transformedGames);
-
-      // Mark initial load as complete
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
+      if (isMountedRef.current) {
+        const nextGames = collectGamesForRange(startDate, endDate);
+        setGames(nextGames);
+        setError(null);
+        lastRangeRef.current = { start: startDate.getTime(), end: endDate.getTime() };
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load games');
+    } catch (err) {
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to load games');
+      }
     } finally {
-      setLoadingGames(false);
+      if (isMountedRef.current) {
+        setLoadingGames(false);
+      }
     }
-  }, [accountId, apiClient, fetchCurrentSeason, getDateRange, isInitialLoad]);
+  }, [
+    accountId,
+    apiClient,
+    collectGamesForRange,
+    endDate,
+    fetchCurrentSeason,
+    getMonthKeysForRange,
+    getMonthRangeForKey,
+    startDate,
+  ]);
 
-  // Load league teams (from cache)
   const loadLeagueTeams = useCallback(
     (leagueSeasonId: string) => {
-      // Clear teams if no league season ID is provided
       if (!leagueSeasonId) {
         setLeagueTeams([]);
         return;
       }
 
-      // Use cached teams instead of making an API call
       const cachedTeams = leagueTeamsCache.get(leagueSeasonId);
       if (cachedTeams) {
         setLeagueTeams(cachedTeams);
@@ -298,41 +440,91 @@ export const useScheduleData = ({
         displayName: umpire.displayName,
       }));
       setUmpires(mapped);
-    } catch (error) {
-      if (error instanceof ApiClientError && error.status === 401) {
+    } catch (err) {
+      if (err instanceof ApiClientError && err.status === 401) {
         setUmpires([]);
         return;
       }
 
-      console.warn('Failed to load umpires:', error);
+      console.warn('Failed to load umpires:', err);
       setUmpires([]);
     }
   }, [accountId, apiClient]);
 
-  // Clear league teams
   const clearLeagueTeams = useCallback(() => {
     setLeagueTeams([]);
   }, []);
 
-  // Load static data on mount, but wait for auth to be ready
   useEffect(() => {
     if (!authLoading) {
       loadStaticData();
     }
-  }, [loadStaticData, authLoading]);
+  }, [authLoading, loadStaticData]);
 
-  // Load games data when filter changes
   useEffect(() => {
-    if (filterType && filterDate) {
-      loadGamesData();
+    if (authLoading) {
+      return;
     }
-  }, [filterType, filterDate, loadGamesData]);
 
-  // For now, return all games as filtered games (filtering will be handled by useScheduleFilters)
+    loadGamesData().catch((err) => {
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to load games');
+      }
+    });
+  }, [authLoading, loadGamesData]);
+
+  const pruneGameFromCache = useCallback((gameId: string): boolean => {
+    if (!gameId) {
+      return false;
+    }
+
+    let removed = false;
+    gamesCacheRef.current.forEach((monthGames, monthKey) => {
+      const filtered = monthGames.filter((game) => game.id !== gameId);
+      if (filtered.length !== monthGames.length) {
+        gamesCacheRef.current.set(monthKey, filtered);
+        removed = true;
+      }
+    });
+
+    return removed;
+  }, []);
+
+  const upsertGameInCache = useCallback(
+    (game: Game) => {
+      if (!game) {
+        return;
+      }
+
+      pruneGameFromCache(game.id);
+
+      const gameMonthKey = getMonthKeyFromDate(new Date(game.gameDate));
+      const monthGames = gamesCacheRef.current.get(gameMonthKey) ?? [];
+      const updatedMonthGames = monthGames.filter((existing) => existing.id !== game.id);
+      updatedMonthGames.push(game);
+      updatedMonthGames.sort(sortGamesAscending);
+      gamesCacheRef.current.set(gameMonthKey, updatedMonthGames);
+
+      refreshGamesForLastRange();
+    },
+    [getMonthKeyFromDate, pruneGameFromCache, refreshGamesForLastRange],
+  );
+
+  const removeGameFromCache = useCallback(
+    (gameId: string) => {
+      const removed = pruneGameFromCache(gameId);
+      if (!removed) {
+        return;
+      }
+
+      refreshGamesForLastRange();
+    },
+    [pruneGameFromCache, refreshGamesForLastRange],
+  );
+
   const filteredGames = games;
 
   return {
-    // Data
     games,
     teams,
     fields,
@@ -340,16 +532,10 @@ export const useScheduleData = ({
     leagues,
     leagueTeams,
     leagueTeamsCache,
-
-    // Loading states
     loadingGames,
     loadingStaticData,
-
-    // Error states
     error,
     success,
-
-    // Actions
     loadStaticData,
     loadGamesData,
     loadLeagueTeams,
@@ -357,8 +543,8 @@ export const useScheduleData = ({
     clearLeagueTeams,
     setSuccess,
     setError,
-
-    // Computed values
+    upsertGameInCache,
+    removeGameFromCache,
     filteredGames,
     startDate,
     endDate,
