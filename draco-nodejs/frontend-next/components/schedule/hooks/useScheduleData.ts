@@ -473,11 +473,30 @@ export const useScheduleData = ({
     });
   }, [authLoading, loadGamesData]);
 
+  const pruneGameFromCache = useCallback((gameId: string): boolean => {
+    if (!gameId) {
+      return false;
+    }
+
+    let removed = false;
+    gamesCacheRef.current.forEach((monthGames, monthKey) => {
+      const filtered = monthGames.filter((game) => game.id !== gameId);
+      if (filtered.length !== monthGames.length) {
+        gamesCacheRef.current.set(monthKey, filtered);
+        removed = true;
+      }
+    });
+
+    return removed;
+  }, []);
+
   const upsertGameInCache = useCallback(
     (game: Game) => {
       if (!game) {
         return;
       }
+
+      pruneGameFromCache(game.id);
 
       const gameMonthKey = getMonthKeyFromDate(new Date(game.gameDate));
       const monthGames = gamesCacheRef.current.get(gameMonthKey) ?? [];
@@ -488,29 +507,19 @@ export const useScheduleData = ({
 
       refreshGamesForLastRange();
     },
-    [getMonthKeyFromDate, refreshGamesForLastRange],
+    [getMonthKeyFromDate, pruneGameFromCache, refreshGamesForLastRange],
   );
 
   const removeGameFromCache = useCallback(
     (gameId: string) => {
-      if (!gameId) {
+      const removed = pruneGameFromCache(gameId);
+      if (!removed) {
         return;
       }
 
-      let cacheUpdated = false;
-      gamesCacheRef.current.forEach((monthGames, monthKey) => {
-        const filtered = monthGames.filter((game) => game.id !== gameId);
-        if (filtered.length !== monthGames.length) {
-          gamesCacheRef.current.set(monthKey, filtered);
-          cacheUpdated = true;
-        }
-      });
-
-      if (cacheUpdated) {
-        refreshGamesForLastRange();
-      }
+      refreshGamesForLastRange();
     },
-    [refreshGamesForLastRange],
+    [pruneGameFromCache, refreshGamesForLastRange],
   );
 
   const filteredGames = games;
