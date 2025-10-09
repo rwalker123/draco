@@ -50,10 +50,10 @@ export class RoleService implements IRoleService {
     // Get global roles from aspnetuserroles
     const globalRoles: string[] = await this.getGlobalRoles(userId);
 
-    // Get contact roles if accountId is provided
+    // Get contact roles if accountId is provided, otherwise aggregate across managed accounts
     const contactRoles: RoleWithContactType[] = accountId
       ? await this.getContactRoles(userId, accountId)
-      : [];
+      : await this.getManagedAccountContactRoles(userId);
 
     return {
       globalRoles,
@@ -135,6 +135,32 @@ export class RoleService implements IRoleService {
       dbContactRoles,
     );
     return response;
+  }
+
+  private async getManagedAccountContactRoles(userId: string): Promise<RoleWithContactType[]> {
+    const managedRoleIds = [
+      ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN],
+      ROLE_IDS[RoleNamesType.ADMINISTRATOR],
+    ].filter((roleId): roleId is string => Boolean(roleId));
+
+    if (!managedRoleIds.length) {
+      return [];
+    }
+
+    const managedAccountIds = await this.roleRepository.findAccountIdsForUserRoles(
+      userId,
+      managedRoleIds,
+    );
+
+    if (!managedAccountIds.length) {
+      return [];
+    }
+
+    const contactRolesByAccount = await Promise.all(
+      managedAccountIds.map((managedAccountId) => this.getContactRoles(userId, managedAccountId)),
+    );
+
+    return contactRolesByAccount.flat();
   }
 
   /**
