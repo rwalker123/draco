@@ -3,10 +3,12 @@ import { useApiClient } from '../../../hooks/useApiClient';
 import { Game } from '@/types/schedule';
 import { deleteGame, updateGameResults } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../../../utils/apiResult';
+import { getGameStatusShortText, getGameStatusText } from '../../../utils/gameUtils';
 
 interface UseGameManagementProps {
   accountId: string;
-  loadGamesData: () => Promise<void>;
+  upsertGameInCache: (game: Game) => void;
+  removeGameFromCache: (gameId: string) => void;
   setSuccess: (message: string | null) => void;
   setError: (message: string | null) => void;
 }
@@ -48,7 +50,8 @@ interface GameResultData {
 
 export const useGameManagement = ({
   accountId,
-  loadGamesData,
+  upsertGameInCache,
+  removeGameFromCache,
   setSuccess,
   setError,
 }: UseGameManagementProps): UseGameManagementReturn => {
@@ -81,12 +84,24 @@ export const useGameManagement = ({
       setEditDialogOpen(false);
       setDeleteDialogOpen(false);
       setSelectedGame(null);
-      loadGamesData();
+      if (selectedGameForResults?.id === selectedGame.id) {
+        setGameResultsDialogOpen(false);
+        setSelectedGameForResults(null);
+      }
+      removeGameFromCache(selectedGame.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete game');
       setDeleteDialogOpen(false);
     }
-  }, [selectedGame, accountId, apiClient, loadGamesData, setSuccess, setError]);
+  }, [
+    selectedGame,
+    selectedGameForResults,
+    accountId,
+    apiClient,
+    removeGameFromCache,
+    setSuccess,
+    setError,
+  ]);
 
   const handleSaveGameResults = useCallback(
     async (gameResultData: GameResultData) => {
@@ -113,14 +128,27 @@ export const useGameManagement = ({
         throwOnError: false,
       });
 
-      unwrapApiResult(result, 'Failed to save game results');
+      const updatedResult = unwrapApiResult(result, 'Failed to save game results');
+      const updatedGame: Game = {
+        ...selectedGameForResults,
+        homeScore: updatedResult.homeScore,
+        visitorScore: updatedResult.visitorScore,
+        gameStatus: updatedResult.gameStatus,
+        gameStatusText: getGameStatusText(updatedResult.gameStatus),
+        gameStatusShortText: getGameStatusShortText(updatedResult.gameStatus),
+      };
+
+      upsertGameInCache(updatedGame);
+      setSelectedGameForResults(updatedGame);
+      if (selectedGame && selectedGame.id === updatedGame.id) {
+        setSelectedGame(updatedGame);
+      }
 
       setSuccess('Game results saved successfully');
       setGameResultsDialogOpen(false);
       setSelectedGameForResults(null);
-      loadGamesData();
     },
-    [selectedGameForResults, accountId, apiClient, loadGamesData, setSuccess],
+    [selectedGame, selectedGameForResults, accountId, apiClient, upsertGameInCache, setSuccess],
   );
 
   const openCreateDialog = useCallback(() => {

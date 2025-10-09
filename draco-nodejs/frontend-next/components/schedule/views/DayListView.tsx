@@ -128,7 +128,7 @@ const DayListView: React.FC<DayListViewProps> = ({
             showDate={false}
             canEditGames={canEditSchedule}
             onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
-            onClick={canEditSchedule ? () => _onEditGame(game) : undefined}
+            onClick={() => _onEditGame(game)}
             timeZone={timeZone}
           />
         ))}
@@ -199,7 +199,7 @@ const DayListView: React.FC<DayListViewProps> = ({
                     showDate={false}
                     canEditGames={canEditSchedule}
                     onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
-                    onClick={canEditSchedule ? () => _onEditGame(game) : undefined}
+                    onClick={() => _onEditGame(game)}
                     timeZone={timeZone}
                   />
                 ))}

@@ -11,7 +11,6 @@ import {
 
 const YearView: React.FC<ViewComponentProps> = ({
   filteredGames,
-  canEditSchedule,
   onEditGame: _onEditGame,
   onGameResults: _onGameResults,
   convertGameToGameCardData: _convertGameToGameCardData,
@@ -114,25 +113,19 @@ const YearView: React.FC<ViewComponentProps> = ({
               justifyContent: 'flex-start',
               bgcolor: isCurrentMonth ? 'white' : 'grey.100',
               position: 'relative',
-              cursor: canEditSchedule ? 'pointer' : 'default',
-              '&:hover': canEditSchedule
-                ? {
-                    bgcolor: isCurrentMonth ? 'primary.50' : 'grey.200',
-                    '& .game-count': {
-                      transform: 'scale(1.1)',
-                    },
-                  }
-                : {},
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: isCurrentMonth ? 'primary.50' : 'grey.200',
+                '& .game-count': {
+                  transform: 'scale(1.1)',
+                },
+              },
             }}
-            onClick={
-              canEditSchedule
-                ? () => {
-                    setFilterType('day');
-                    setFilterDate(day);
-                  }
-                : undefined
-            }
-            title={canEditSchedule ? `View ${dayTitle} in day view` : undefined}
+            onClick={() => {
+              setFilterType('day');
+              setFilterDate(day);
+            }}
+            title={`View ${dayTitle} in day view`}
           >
             <Typography
               variant="body2"
@@ -181,24 +174,18 @@ const YearView: React.FC<ViewComponentProps> = ({
               mb: 2,
               textAlign: 'center',
               fontWeight: 'bold',
-              cursor: canEditSchedule ? 'pointer' : 'default',
+              cursor: 'pointer',
               color: 'primary.main',
-              '&:hover': canEditSchedule
-                ? {
-                    color: 'primary.dark',
-                    textDecoration: 'underline',
-                  }
-                : {},
+              '&:hover': {
+                color: 'primary.dark',
+                textDecoration: 'underline',
+              },
             }}
-            onClick={
-              canEditSchedule
-                ? () => {
-                    setFilterType('month');
-                    setFilterDate(new Date(year, month, 1));
-                  }
-                : undefined
-            }
-            title={canEditSchedule ? `View ${monthName} ${year} in month view` : undefined}
+            onClick={() => {
+              setFilterType('month');
+              setFilterDate(new Date(year, month, 1));
+            }}
+            title={`View ${monthName} ${year} in month view`}
           >
             {monthName}
           </Typography>
