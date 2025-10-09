@@ -201,7 +201,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     const actualRoleId = normalizeRoleId(ROLE_NAME_TO_ID[roleId] || roleId);
 
     const matchesContext = (contactRole: RoleWithContactType) => {
-      if (context?.accountId && userRoles.accountId !== context.accountId) {
+      if (context?.accountId && contactRole.accountId !== context.accountId) {
         return false;
       }
       if (context?.teamId && contactRole.roleData !== context.teamId) {
@@ -303,7 +303,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     // Check contact roles
     for (const contactRole of userRoles.contactRoles) {
       // Validate context if provided
-      if (context?.accountId && userRoles.accountId !== context.accountId) {
+      if (context?.accountId && contactRole.accountId !== context.accountId) {
         continue;
       }
       if (context?.teamId && contactRole.roleData !== context.teamId) {
