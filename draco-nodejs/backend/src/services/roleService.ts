@@ -64,7 +64,7 @@ export class RoleService implements IRoleService {
       if (isAccountOwner) {
         const ownerContact = await this.contactRepository.findByUserId(userId, accountId);
         const ownerRole: RoleWithContactType = {
-          id: 'owner-role',
+          id: BigInt(0).toString(),
           roleId: ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN],
           roleName: RoleNamesType.ACCOUNT_ADMIN,
           roleData: accountId.toString(),
