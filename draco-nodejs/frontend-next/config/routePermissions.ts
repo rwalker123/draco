@@ -12,7 +12,7 @@ export const routePermissions: Record<string, RoutePermission> = {
     checkAccountBoundary: false,
   },
   '/account-management': {
-    roles: ['Administrator'],
+    roles: ['Administrator', 'AccountAdmin'],
     checkAccountBoundary: false,
   },
 

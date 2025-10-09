@@ -138,10 +138,9 @@ export class RoleService implements IRoleService {
   }
 
   private async getManagedAccountContactRoles(userId: string): Promise<RoleWithContactType[]> {
-    const managedRoleIds = [
-      ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN],
-      ROLE_IDS[RoleNamesType.ADMINISTRATOR],
-    ].filter((roleId): roleId is string => Boolean(roleId));
+    const managedRoleIds = [ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]].filter(
+      (roleId): roleId is string => Boolean(roleId),
+    );
 
     if (!managedRoleIds.length) {
       return [];
