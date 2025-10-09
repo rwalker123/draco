@@ -27,6 +27,8 @@ import {
 import { RoleResponseFormatter } from '../responseFormatters/index.js';
 import { RoleContextData } from './interfaces/roleInterfaces.js';
 import { ValidationError } from '../utils/customErrors.js';
+import { UserService } from './userService.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class RoleService implements IRoleService {
   private contactRepository: IContactRepository;
@@ -34,6 +36,7 @@ export class RoleService implements IRoleService {
   private seasonRepository: ISeasonRepository;
   private teamRepository: ITeamRepository;
   private leagueRepository: ILeagueRepository;
+  private userService: UserService;
 
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
@@ -41,6 +44,7 @@ export class RoleService implements IRoleService {
     this.seasonRepository = RepositoryFactory.getSeasonRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
     this.leagueRepository = RepositoryFactory.getLeagueRepository();
+    this.userService = ServiceFactory.getUserService();
   }
 
   /**
@@ -54,6 +58,24 @@ export class RoleService implements IRoleService {
     const contactRoles: RoleWithContactType[] = accountId
       ? await this.getContactRoles(userId, accountId)
       : [];
+
+    if (accountId) {
+      const isAccountOwner = await this.userService.isAccountOwner(userId, accountId);
+      if (isAccountOwner) {
+        const ownerContact = await this.contactRepository.findByUserId(userId, accountId);
+        const ownerRole: RoleWithContactType = {
+          id: BigInt(0).toString(),
+          roleId: ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN],
+          roleName: RoleNamesType.ACCOUNT_ADMIN,
+          roleData: accountId.toString(),
+          accountId: accountId.toString(),
+          contact: {
+            id: ownerContact ? ownerContact.id.toString() : 'unknown',
+          },
+        };
+        contactRoles.push(ownerRole);
+      }
+    }
 
     return {
       globalRoles,
