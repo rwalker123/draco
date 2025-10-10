@@ -3250,16 +3250,13 @@ components:
                   type: string
                   nullable: true
                   default: ""
-            photo:
-              type: string
-              format: binary
-              description: Contact photo file
           required:
             - firstName
             - lastName
       required:
         - name
         - accountLogoUrl
+        - ownerContact
     AccountName:
       type: object
       properties:
@@ -7651,10 +7648,6 @@ paths:
                           type: string
                           nullable: true
                           default: ""
-                    photo:
-                      type: string
-                      format: binary
-                      description: Contact photo file
                   required:
                     - firstName
                     - lastName

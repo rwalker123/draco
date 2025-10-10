@@ -144,7 +144,7 @@ export const CreateAccountSchema = AccountSchema.omit({
   accountOwner: true,
 }).extend({
   urls: z.array(CreateAccountUrlSchema).default([]),
-  ownerContact: CreateContactSchema.optional(),
+  ownerContact: CreateContactSchema.omit({ photo: true }),
 });
 
 export const AccountWithSeasonsSchema = z.object({

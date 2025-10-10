@@ -4380,11 +4380,6 @@
                     "default": ""
                   }
                 }
-              },
-              "photo": {
-                "type": "string",
-                "format": "binary",
-                "description": "Contact photo file"
               }
             },
             "required": [
@@ -4395,7 +4390,8 @@
         },
         "required": [
           "name",
-          "accountLogoUrl"
+          "accountLogoUrl",
+          "ownerContact"
         ]
       },
       "AccountName": {
@@ -10411,11 +10407,6 @@
                             "default": ""
                           }
                         }
-                      },
-                      "photo": {
-                        "type": "string",
-                        "format": "binary",
-                        "description": "Contact photo file"
                       }
                     },
                     "required": [
