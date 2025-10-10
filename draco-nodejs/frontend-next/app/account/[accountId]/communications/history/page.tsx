@@ -1,6 +1,6 @@
+import { redirect } from 'next/navigation';
 import { getAccountBranding } from '../../../../../lib/metadataFetchers';
 import { buildSeoMetadata } from '../../../../../lib/seoMetadata';
-import HistoryClientWrapper from './HistoryClientWrapper';
 
 // Dynamically set the page title to "{Account Name} Email History"
 export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
@@ -16,6 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ accountId
   });
 }
 
-export default function Page() {
-  return <HistoryClientWrapper />;
+export default async function Page({ params }: { params: Promise<{ accountId: string }> }) {
+  const { accountId } = await params;
+  redirect(`/account/${accountId}/communications`);
 }

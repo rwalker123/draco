@@ -97,6 +97,11 @@ export default function ComposeSidebar({
     new Set(['templates', 'recipients']),
   );
 
+  const hasTemplates = templates.length > 0;
+  const shouldRenderTemplatesSection =
+    showTemplates &&
+    (loadingTemplates || !!templatesError || hasTemplates || !!state.selectedTemplate);
+
   const loadTemplates = useCallback(async () => {
     if (!token) return;
 
@@ -201,7 +206,7 @@ export default function ComposeSidebar({
         spacing={compact ? SPACING_CONSTANTS.COMPACT_SPACING : SPACING_CONSTANTS.SECTION_SPACING}
       >
         {/* Templates Section */}
-        {showTemplates && (
+        {shouldRenderTemplatesSection && (
           <ErrorBoundary
             componentName="TemplatesSection"
             fallback={
