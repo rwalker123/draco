@@ -365,6 +365,7 @@ const EmailComposeContext = createContext<EmailComposeContextValue | null>(null)
 export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
   children,
   accountId,
+  seasonId,
   initialData,
   config: userConfig = {},
   onSendComplete,
@@ -477,6 +478,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
           templateId: state.selectedTemplate?.id,
           attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
+          seasonId,
         };
 
         // TODO: Implement draft saving in EmailService
@@ -526,7 +528,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
 
       return false;
     }
-  }, [state, accountId, token, onDraftSaved, onError]);
+  }, [state, accountId, token, onDraftSaved, onError, seasonId]);
 
   // Auto-save drafts
   useEffect(() => {
@@ -746,6 +748,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
           templateId: state.selectedTemplate?.id,
           attachments: state.attachments.filter((a) => a.status === 'uploaded').map((a) => a.url!),
           scheduledSend: state.isScheduled ? state.scheduledDate : undefined,
+          seasonId,
         };
 
         // Send email with progress updates
@@ -798,7 +801,7 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
       dispatch({ type: 'SET_SENDING', payload: { isSending: false, progress: undefined } });
       return false;
     }
-  }, [state, accountId, token, validateCompose, clearDraft, onSendComplete, editorRef]);
+  }, [state, accountId, token, validateCompose, clearDraft, onSendComplete, editorRef, seasonId]);
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });

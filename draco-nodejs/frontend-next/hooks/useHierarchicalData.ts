@@ -26,7 +26,7 @@ export function useHierarchicalData() {
           path: { accountId, seasonId },
           query: {
             includeTeams: true,
-            includeUnassignedTeams: true,
+            includeUnassignedTeams: false,
             includePlayerCounts: true,
             includeManagerCounts: true,
           },

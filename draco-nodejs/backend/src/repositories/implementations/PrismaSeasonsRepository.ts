@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import {
-  dbCurrentSeason,
+  dbContactEmailOnly,
   dbLeagueSeasonBasic,
   dbSeason,
   dbSeasonWithLeagues,
@@ -172,13 +172,15 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
     });
   }
 
-  async findCurrentSeasonRecord(accountId: bigint): Promise<dbCurrentSeason | null> {
-    return this.prisma.currentseason.findUnique({
+  async findCurrentSeason(accountId: bigint): Promise<dbSeason | null> {
+    const currentSeason = await this.prisma.currentseason.findFirst({
       where: { accountid: accountId },
-      select: {
-        accountid: true,
-        seasonid: true,
-      },
+    });
+    if (!currentSeason) {
+      return null;
+    }
+    return await this.prisma.season.findUnique({
+      where: { id: currentSeason.seasonid },
     });
   }
 
@@ -226,6 +228,32 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         },
         creatoraccountid: accountId,
       },
+    });
+  }
+
+  async findSeasonParticipants(accountId: bigint, seasonId: bigint): Promise<dbContactEmailOnly[]> {
+    return this.prisma.contacts.findMany({
+      where: {
+        roster: {
+          rosterseason: {
+            some: {
+              teamsseason: {
+                leagueseason: {
+                  seasonid: seasonId,
+                },
+              },
+            },
+          },
+        },
+        creatoraccountid: accountId,
+      },
+      select: {
+        id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+      },
+      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
     });
   }
 }

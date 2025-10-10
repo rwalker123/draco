@@ -1,7 +1,7 @@
 import { PrismaClient, teamsseason, teams, teamseasonmanager, Prisma } from '@prisma/client';
 import { ITeamRepository } from '../interfaces/index.js';
 import {
-  dbTeam,
+  dbTeamWithLeague,
   dbTeamSeason,
   dbTeamSeasonLeague,
   dbTeamSeasonManagerContact,
@@ -12,6 +12,7 @@ import {
   dbUserManagerTeams,
   dbUserTeams,
   dbTeamSeasonValidationResult,
+  dbTeam,
 } from '../types/dbTypes.js';
 import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
 import { BatchQueryHelper } from './batchQueries.js';
@@ -70,6 +71,54 @@ export class PrismaTeamRepository implements ITeamRepository {
             divisionseason: true,
           },
         },
+      },
+    });
+  }
+
+  async findTeamsByLeagueId(
+    leagueSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeam[]> {
+    return this.prisma.teamsseason.findMany({
+      where: {
+        leagueseasonid: leagueSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: {
+            accountid: accountId,
+          },
+        },
+      },
+      include: {
+        teams: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  }
+
+  async findTeamsByDivisionId(
+    divisionSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeam[]> {
+    return this.prisma.teamsseason.findMany({
+      where: {
+        divisionseasonid: divisionSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: {
+            accountid: accountId,
+          },
+        },
+      },
+      include: {
+        teams: true,
+      },
+      orderBy: {
+        name: 'asc',
       },
     });
   }
@@ -409,7 +458,7 @@ export class PrismaTeamRepository implements ITeamRepository {
     accountId: bigint,
     updateData?: Partial<teamsseason>,
     teamUpdateData?: Partial<teams>,
-  ): Promise<dbTeam> {
+  ): Promise<dbTeamWithLeague> {
     // Verify the team season exists and belongs to this account and season
     const teamSeason = await this.prisma.teamsseason.findFirst({
       where: {

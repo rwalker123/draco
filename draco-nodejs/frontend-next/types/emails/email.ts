@@ -15,6 +15,7 @@ export interface EmailComposeRequest {
   templateId?: string;
   attachments?: string[];
   scheduledSend?: Date;
+  seasonId?: string;
 }
 
 export interface EmailTemplate {

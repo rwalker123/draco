@@ -2,7 +2,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../utils/customEr
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   ITeamRepository,
-  ISeasonRepository,
+  ISeasonsRepository,
   ILeagueRepository,
 } from '../repositories/interfaces/index.js';
 import { ServiceFactory } from './serviceFactory.js';
@@ -15,7 +15,7 @@ import {
 } from '@draco/shared-schemas';
 import { TeamResponseFormatter } from '../responseFormatters/index.js';
 import { Prisma, teamsseason, teams } from '@prisma/client';
-import { dbTeam, dbTeamSeasonValidationResult } from '../repositories/types/dbTypes.js';
+import { dbTeamWithLeague, dbTeamSeasonValidationResult } from '../repositories/types/dbTypes.js';
 
 export interface TeamValidationOptions {
   includeTeams?: boolean;
@@ -26,14 +26,14 @@ export interface TeamValidationOptions {
 
 export class TeamService {
   private readonly teamRepository: ITeamRepository;
-  private readonly seasonRepository: ISeasonRepository;
+  private readonly seasonRepository: ISeasonsRepository;
   private readonly leagueRepository: ILeagueRepository;
 
   private contactService = ServiceFactory.getContactService();
 
   constructor() {
     this.teamRepository = RepositoryFactory.getTeamRepository();
-    this.seasonRepository = RepositoryFactory.getSeasonRepository();
+    this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.leagueRepository = RepositoryFactory.getLeagueRepository();
   }
 
@@ -48,7 +48,7 @@ export class TeamService {
       throw new NotFoundError('Current season not set for account');
     }
 
-    const season = await this.seasonRepository.findById(currentSeason.id);
+    const season = await this.seasonRepository.findSeasonById(accountId, currentSeason.id);
 
     if (!season) {
       throw new NotFoundError('Current season not found');
@@ -75,7 +75,7 @@ export class TeamService {
   }
 
   async getTeamsBySeasonId(seasonId: bigint, accountId: bigint): Promise<TeamSeasonType[]> {
-    const season = await this.seasonRepository.findById(seasonId);
+    const season = await this.seasonRepository.findSeasonById(accountId, seasonId);
 
     if (!season) {
       throw new NotFoundError('Current season not found');
@@ -92,6 +92,48 @@ export class TeamService {
     );
   }
 
+  async getTeamsByLeagueSeasonId(
+    leagueSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<TeamSeasonType[]> {
+    const leagueSeason = await this.leagueRepository.findById(leagueSeasonId);
+
+    if (!leagueSeason || leagueSeason.seasonid !== seasonId) {
+      throw new NotFoundError('League season not found');
+    }
+
+    const leagueTeams = await this.teamRepository.findTeamsByLeagueId(
+      leagueSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    return TeamResponseFormatter.formatTeamsResponse(accountId, leagueTeams);
+  }
+
+  async getTeamsByDivisionSeasonId(
+    divisionSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<TeamSeasonType[]> {
+    const divisionTeams = await this.teamRepository.findTeamsByDivisionId(
+      divisionSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    return TeamResponseFormatter.formatTeamsResponse(accountId, divisionTeams);
+  }
+
+  /**
+   * Create a new team season
+   * @param accountId
+   * @param seasonId
+   * @param leagueSeasonId
+   * @param name
+   * @returns
+   */
   async createTeamSeason(
     accountId: bigint,
     seasonId: bigint,
@@ -157,7 +199,7 @@ export class TeamService {
 
     return TeamResponseFormatter.formatTeamSeasonSummary(
       accountId,
-      createdTeamSeason as unknown as dbTeam,
+      createdTeamSeason as dbTeamWithLeague,
     );
   }
 

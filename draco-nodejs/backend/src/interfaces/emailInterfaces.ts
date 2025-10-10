@@ -1,8 +1,6 @@
 // Email Interfaces for Draco Sports Manager
 // Follows ISP - segregated interfaces for different concerns
 
-import { EmailComposeType, EmailRecipientGroupsType } from '@draco/shared-schemas';
-
 // Core email sending interface
 export interface IEmailProvider {
   sendEmail(options: EmailOptions): Promise<EmailResult>;
@@ -102,23 +100,6 @@ export interface EmailAnalytics {
   bounceRate: number;
 }
 
-// Email validation interface
-export interface IEmailValidator {
-  validateComposeRequest(request: EmailComposeType): ValidationResult;
-  validateEmailAddress(email: string): boolean;
-  validateRecipientSelection(selection: EmailRecipientGroupsType): ValidationResult;
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: ValidationError[];
-}
-
-export interface ValidationError {
-  field: string;
-  message: string;
-}
-
 // Email tracking interface
 export interface IEmailTracker {
   trackSent(recipientId: bigint): Promise<void>;
@@ -136,37 +117,11 @@ export interface ResolvedRecipient {
   recipientType: string;
 }
 
-export interface IRecipientResolver {
-  resolveRecipients(
-    accountId: bigint,
-    selection: EmailRecipientGroupsType,
-  ): Promise<ResolvedRecipient[]>;
-}
-
-// Database type interfaces for Prisma results
-export interface EmailTemplateDbRecord {
-  id: bigint;
-  account_id: bigint;
-  name: string;
-  description: string | null;
-  subject_template: string | null;
-  body_template: string;
-  created_by_user_id: string | null;
-  created_at: Date;
-  updated_at: Date;
-  is_active: boolean;
-}
-
 export interface EmailSettings {
   fromEmail: string;
   fromName: string;
   replyTo?: string;
   provider: 'sendgrid' | 'ethereal';
-}
-
-export interface EmailQueryFilter {
-  account_id: bigint;
-  status?: string;
 }
 
 export interface EtherealTestAccount {

@@ -18,16 +18,17 @@ import {
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
+import { EmailSendSchema } from '@draco/shared-schemas';
 import type {
   AttachmentUploadResultType,
   EmailAttachmentType,
-  EmailComposeType,
   EmailDetailRecipientType,
   EmailDetailType,
   EmailListItemType,
   EmailListPagedType,
   EmailRecipientGroupsType,
   EmailTemplateType,
+  EmailSendType,
 } from '@draco/shared-schemas';
 import { createApiClient } from '../lib/apiClientFactory';
 import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
@@ -218,16 +219,23 @@ const mapRecipients = (recipients: EmailComposeRequest['recipients']): EmailReci
   return groups;
 };
 
-const buildComposePayload = (request: EmailComposeRequest): EmailComposeType => ({
-  id: DEFAULT_COMPOSE_EMAIL_ID,
-  recipients: mapRecipients(request.recipients),
-  subject: request.subject,
-  body: request.body,
-  templateId: request.templateId,
-  attachments: request.attachments?.length ? request.attachments : undefined,
-  scheduledSend: toOptionalIsoString(request.scheduledSend),
-  status: request.scheduledSend ? 'scheduled' : 'sending',
-});
+const buildComposePayload = (request: EmailComposeRequest): EmailSendType => {
+  const payload: EmailSendType = {
+    id: DEFAULT_COMPOSE_EMAIL_ID,
+    recipients: mapRecipients(request.recipients),
+    subject: request.subject,
+    body: request.body,
+    templateId: request.templateId,
+    attachments: request.attachments?.length ? request.attachments : undefined,
+    scheduledSend: toOptionalIsoString(request.scheduledSend),
+    status: request.scheduledSend ? 'scheduled' : 'sending',
+    seasonId: request.seasonId,
+  };
+
+  EmailSendSchema.parse(payload);
+
+  return payload;
+};
 
 // Email service class
 export class EmailService {

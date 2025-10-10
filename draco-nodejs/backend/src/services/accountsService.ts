@@ -21,7 +21,7 @@ import {
   IUserRepository,
   IRoleRepository,
   dbGlobalRoles,
-  ISeasonRepository,
+  ISeasonsRepository,
 } from '../repositories/index.js';
 import {
   AccountOwnerDetailsByAccount,
@@ -42,14 +42,14 @@ export class AccountsService {
   private readonly contactRepository: IContactRepository;
   private readonly userRepository: IUserRepository;
   private readonly roleRepository: IRoleRepository;
-  private readonly seasonRepository: ISeasonRepository;
+  private readonly seasonRepository: ISeasonsRepository;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.userRepository = RepositoryFactory.getUserRepository();
     this.roleRepository = RepositoryFactory.getRoleRepository();
-    this.seasonRepository = RepositoryFactory.getSeasonRepository();
+    this.seasonRepository = RepositoryFactory.getSeasonsRepository();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {

@@ -2572,6 +2572,89 @@
           "body"
         ]
       },
+      "EmailSend": {
+        "type": "object",
+        "properties": {
+          "recipients": {
+            "type": "object",
+            "properties": {
+              "season": {
+                "type": "boolean",
+                "description": "Includes all contacts associated with the current season."
+              },
+              "leagues": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Includes all contacts associated with the specified leagues."
+              },
+              "divisions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Includes all contacts associated with the specified divisions."
+              },
+              "teams": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Includes all contacts associated with the specified teams."
+              },
+              "contacts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Includes the specified contact IDs."
+              },
+              "teamManagers": {
+                "type": "boolean",
+                "description": "Includes only team managers."
+              }
+            }
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "templateId": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scheduledSend": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "sending"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "seasonId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipients",
+          "subject",
+          "body"
+        ]
+      },
       "EmailDetail": {
         "type": "object",
         "properties": {
@@ -14132,7 +14215,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EmailCompose"
+                "$ref": "#/components/schemas/EmailSend"
               }
             }
           }
