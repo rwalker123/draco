@@ -9,8 +9,10 @@ import {
   AccountWithSeasonsType,
   CreateAccountType,
   CreateAccountUrlType,
+  CreateContactSchema,
+  CreateContactType,
 } from '@draco/shared-schemas';
-import { accounts } from '@prisma/client';
+import { accounts, contacts } from '@prisma/client';
 import {
   RepositoryFactory,
   IAccountRepository,
@@ -32,6 +34,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../utils/customEr
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 type OwnerSummary = AccountOwnerSummary;
 
@@ -216,6 +219,12 @@ export class AccountsService {
 
     const affiliationId = payload.configuration?.affiliation?.id ?? '1';
 
+    if (!payload.ownerContact) {
+      throw new ValidationError('Owner contact information is required');
+    }
+
+    const ownerContact = CreateContactSchema.parse(payload.ownerContact);
+
     const accountCreateData: Partial<accounts> = {
       name: payload.name,
       accounttypeid: BigInt(accountTypeId),
@@ -234,6 +243,8 @@ export class AccountsService {
 
     const accountRecord = await this.accountRepository.create(accountCreateData);
 
+    await this.createOwnerContact(accountRecord.id, accountOwnerUserId, ownerContact);
+
     const normalizedUrls = Array.from(
       new Set(
         payload.urls
@@ -247,11 +258,15 @@ export class AccountsService {
       await this.accountRepository.createAccountUrl(accountRecord.id, url);
     }
 
-    const { account, affiliationMap, ownerContact, ownerUser } = await this.loadAccountContext(
-      accountRecord.id,
-    );
+    const { account, affiliationMap, ownerContact: ownerContactRecord, ownerUser } =
+      await this.loadAccountContext(accountRecord.id);
 
-    return AccountResponseFormatter.formatAccount(account, affiliationMap, ownerContact, ownerUser);
+    return AccountResponseFormatter.formatAccount(
+      account,
+      affiliationMap,
+      ownerContactRecord,
+      ownerUser,
+    );
   }
 
   async updateAccount(accountId: bigint, payload: CreateAccountType): Promise<AccountType> {
@@ -596,5 +611,34 @@ export class AccountsService {
 
   private normalizeAccountUrl(url: string): string {
     return url.trim().toLowerCase();
+  }
+
+  private async createOwnerContact(
+    accountId: bigint,
+    ownerUserId: string,
+    contact: CreateContactType,
+  ): Promise<void> {
+    const contactDetails = contact.contactDetails;
+
+    const contactRecord: Partial<contacts> = {
+      firstname: contact.firstName,
+      lastname: contact.lastName,
+      middlename: contact.middleName ?? '',
+      email: contact.email ?? null,
+      phone1: contactDetails?.phone1 || null,
+      phone2: contactDetails?.phone2 || null,
+      phone3: contactDetails?.phone3 || null,
+      creatoraccountid: accountId,
+      userid: ownerUserId,
+      streetaddress: contactDetails?.streetAddress || null,
+      city: contactDetails?.city || null,
+      state: contactDetails?.state || null,
+      zip: contactDetails?.zip || null,
+      dateofbirth: contactDetails?.dateOfBirth
+        ? DateUtils.parseDateOfBirthForDatabase(contactDetails.dateOfBirth)
+        : new Date('1900-01-01'),
+    };
+
+    await this.contactRepository.create(contactRecord);
   }
 }

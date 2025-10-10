@@ -51,6 +51,7 @@ import type {
   AccountTypeReference,
   AccountAffiliationType,
   CreateAccountType,
+  CreateContactType,
 } from '@draco/shared-schemas';
 import {
   getManagedAccounts,
@@ -87,6 +88,8 @@ const AccountManagement: React.FC = () => {
     affiliationId: string;
     timezoneId: string;
     firstYear: number;
+    ownerFirstName: string;
+    ownerLastName: string;
   };
 
   const [defaultTimezone] = useState(() => detectUserTimezone());
@@ -98,6 +101,8 @@ const AccountManagement: React.FC = () => {
       affiliationId: '1',
       timezoneId: defaultTimezone,
       firstYear: new Date().getFullYear(),
+      ownerFirstName: '',
+      ownerLastName: '',
     };
   }, [defaultTimezone]);
 
@@ -253,6 +258,28 @@ const AccountManagement: React.FC = () => {
 
   useEffect(() => {}, [accounts]);
 
+  const getDefaultOwnerName = useCallback((): Pick<
+    AccountFormState,
+    'ownerFirstName' | 'ownerLastName'
+  > => {
+    if (!accounts.length) {
+      return { ownerFirstName: '', ownerLastName: '' };
+    }
+
+    const firstAccountWithOwner = accounts.find(
+      (account) => account.accountOwner?.contact?.firstName && account.accountOwner?.contact?.lastName,
+    );
+
+    if (firstAccountWithOwner?.accountOwner?.contact) {
+      return {
+        ownerFirstName: firstAccountWithOwner.accountOwner.contact.firstName,
+        ownerLastName: firstAccountWithOwner.accountOwner.contact.lastName,
+      };
+    }
+
+    return { ownerFirstName: '', ownerLastName: '' };
+  }, [accounts]);
+
   const handleCreateAccount = async () => {
     try {
       if (!formData.accountTypeId) {
@@ -260,13 +287,28 @@ const AccountManagement: React.FC = () => {
         return;
       }
 
+      if (!formData.ownerFirstName.trim() || !formData.ownerLastName.trim()) {
+        setError('Account owner first and last name are required');
+        return;
+      }
+
       setError(null);
 
       const payload = buildAccountPayload(formData);
 
+      const ownerContact: CreateContactType = {
+        firstName: formData.ownerFirstName.trim(),
+        lastName: formData.ownerLastName.trim(),
+      };
+
+      const requestPayload = {
+        ...payload,
+        ownerContact,
+      } as CreateAccountType;
+
       const result = await createAccount({
         client: apiClient,
-        body: payload as CreateAccountType,
+        body: requestPayload,
         throwOnError: false,
       });
 
@@ -339,6 +381,8 @@ const AccountManagement: React.FC = () => {
       affiliationId: getAffiliationId(account),
       timezoneId: getTimezoneId(account),
       firstYear: getFirstYearValue(account),
+      ownerFirstName: account.accountOwner?.contact?.firstName ?? '',
+      ownerLastName: account.accountOwner?.contact?.lastName ?? '',
     });
     setEditDialogOpen(true);
   };
@@ -361,7 +405,10 @@ const AccountManagement: React.FC = () => {
   };
 
   const handleCreateClick = () => {
-    setFormData(buildInitialFormState());
+    const baseState = buildInitialFormState();
+    const ownerPrefill = getDefaultOwnerName();
+
+    setFormData({ ...baseState, ...ownerPrefill });
     setCreateDialogOpen(true);
   };
 
@@ -501,6 +548,22 @@ const AccountManagement: React.FC = () => {
               label="Account Name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Owner First Name"
+              value={formData.ownerFirstName}
+              onChange={(e) =>
+                setFormData({ ...formData, ownerFirstName: e.target.value })
+              }
+              fullWidth
+              required
+            />
+            <TextField
+              label="Owner Last Name"
+              value={formData.ownerLastName}
+              onChange={(e) => setFormData({ ...formData, ownerLastName: e.target.value })}
               fullWidth
               required
             />
