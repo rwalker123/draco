@@ -18,7 +18,7 @@ import {
   RepositoryFactory,
   IContactRepository,
   IRoleRepository,
-  ISeasonRepository,
+  ISeasonsRepository,
   dbAspnetRolesId,
   dbAspnetRoleName,
   ITeamRepository,
@@ -33,7 +33,7 @@ import { ServiceFactory } from './serviceFactory.js';
 export class RoleService implements IRoleService {
   private contactRepository: IContactRepository;
   private roleRepository: IRoleRepository;
-  private seasonRepository: ISeasonRepository;
+  private seasonRepository: ISeasonsRepository;
   private teamRepository: ITeamRepository;
   private leagueRepository: ILeagueRepository;
   private userService: UserService;
@@ -41,7 +41,7 @@ export class RoleService implements IRoleService {
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.roleRepository = RepositoryFactory.getRoleRepository();
-    this.seasonRepository = RepositoryFactory.getSeasonRepository();
+    this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
     this.leagueRepository = RepositoryFactory.getLeagueRepository();
     this.userService = ServiceFactory.getUserService();

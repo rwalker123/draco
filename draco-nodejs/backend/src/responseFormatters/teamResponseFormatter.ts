@@ -6,6 +6,7 @@ import {
   dbTeamSeasonRecord,
   dbTeamSeasonWithLeaguesAndTeams,
   dbTeamsWithLeaguesAndDivisions,
+  dbTeamWithLeague,
   dbUserManagerTeams,
   dbUserTeams,
 } from '../repositories/index.js';
@@ -151,7 +152,7 @@ export class TeamResponseFormatter {
       name: teamSeason.name,
     };
   }
-  static formatTeamSeasonSummary(accountId: bigint, team: dbTeam): TeamSeasonType {
+  static formatTeamSeasonSummary(accountId: bigint, team: dbTeamWithLeague): TeamSeasonType {
     return {
       id: team.id.toString(),
       name: team.name,
@@ -169,5 +170,22 @@ export class TeamResponseFormatter {
         name: team.leagueseason.league.name,
       },
     };
+  }
+
+  static formatTeamsResponse(accountId: bigint, teams: dbTeam[]): TeamSeasonType[] {
+    return teams.map((team) => ({
+      id: team.id.toString(),
+      name: team.name,
+      team: {
+        id: team.teamid.toString(),
+        webAddress: team.teams?.webaddress || null,
+        youtubeUserId: team.teams?.youtubeuserid || null,
+        defaultVideo: team.teams?.defaultvideo || null,
+        autoPlayVideo: team.teams?.autoplayvideo || false,
+        logoUrl: getLogoUrl(accountId.toString(), team.teamid.toString()),
+      },
+      division: undefined, // Not included in this response
+      league: undefined, // Not included in this response
+    }));
   }
 }

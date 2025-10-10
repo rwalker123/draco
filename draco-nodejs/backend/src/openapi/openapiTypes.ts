@@ -44,6 +44,7 @@ import {
   UpdatePollSchema,
   ExperienceLevelSchema,
   EmailComposeSchema,
+  EmailSendSchema,
   EmailDetailSchema,
   EmailListPagedSchema,
   EmailTemplateSchema,
@@ -197,6 +198,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreateContactRoleSchema,
   );
   const EmailComposeSchemaRef = registry.register('EmailCompose', EmailComposeSchema);
+  const EmailSendSchemaRef = registry.register('EmailSend', EmailSendSchema);
   const EmailDetailSchemaRef = registry.register('EmailDetail', EmailDetailSchema);
   const EmailListPagedSchemaRef = registry.register('EmailListPaged', EmailListPagedSchema);
   const EmailTemplateSchemaRef = registry.register('EmailTemplate', EmailTemplateSchema);
@@ -481,6 +483,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreateContactSchemaRef,
     CreateContactRoleSchemaRef,
     EmailComposeSchemaRef,
+    EmailSendSchemaRef,
     EmailDetailSchemaRef,
     EmailListPagedSchemaRef,
     EmailTemplateSchemaRef,

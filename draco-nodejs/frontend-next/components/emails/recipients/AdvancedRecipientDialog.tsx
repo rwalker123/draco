@@ -447,7 +447,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         const searchResult = await emailRecipientService.searchContacts(accountId, token, query, {
           roles: true,
           contactDetails: true,
-          page: page - 1, // Backend uses 0-based pagination
+          page: page, // Backend uses 0-based pagination
           limit: limit,
         });
 
@@ -641,12 +641,12 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         if (isInSearchMode()) {
           // Handle search pagination
           if (searchPaginationState.hasPrev && !paginationLoading && searchCurrentPage > 1) {
-            handleSearchWithPagination(lastSearchQuery, searchCurrentPage - 1, rowsPerPage);
+            handleSearchWithPagination(lastSearchQuery, searchCurrentPage, rowsPerPage);
           }
         } else {
           // Handle regular pagination
           if (serverPaginationState.hasPrev && !paginationLoading && currentPage > 1) {
-            fetchContactsPage(currentPage - 1, rowsPerPage);
+            fetchContactsPage(currentPage, rowsPerPage);
           }
         }
       },

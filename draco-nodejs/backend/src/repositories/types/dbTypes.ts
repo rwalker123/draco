@@ -146,6 +146,15 @@ export type dbBaseContact = Prisma.contactsGetPayload<{
   };
 }>;
 
+export type dbContactEmailOnly = Prisma.contactsGetPayload<{
+  select: {
+    id: true;
+    firstname: true;
+    lastname: true;
+    email: true;
+  };
+}>;
+
 export type dbTeamSeason = Prisma.teamsseasonGetPayload<{
   select: { id: true; name: true };
 }>;
@@ -1282,7 +1291,7 @@ export type dbTeamsWithLeaguesAndDivisions = Prisma.teamsseasonGetPayload<{
   };
 }>;
 
-export type dbTeam = Prisma.teamsseasonGetPayload<{
+export type dbTeamWithLeague = Prisma.teamsseasonGetPayload<{
   include: {
     teams: true;
     leagueseason: {
@@ -1290,6 +1299,12 @@ export type dbTeam = Prisma.teamsseasonGetPayload<{
         league: true;
       };
     };
+  };
+}>;
+
+export type dbTeam = Prisma.teamsseasonGetPayload<{
+  include: {
+    teams: true;
   };
 }>;
 

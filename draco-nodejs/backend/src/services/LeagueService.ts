@@ -40,7 +40,7 @@ interface LeagueSeasonGameOptions {
 
 export class LeagueService {
   private readonly leagueRepository = RepositoryFactory.getLeagueRepository();
-  private readonly seasonRepository = RepositoryFactory.getSeasonRepository();
+  private readonly seasonRepository = RepositoryFactory.getSeasonsRepository();
   private readonly teamRepository = RepositoryFactory.getTeamRepository();
 
   async listAccountLeagues(accountId: bigint): Promise<LeagueType[]> {
@@ -518,7 +518,7 @@ export class LeagueService {
   }
 
   private async ensureSeasonInAccount(accountId: bigint, seasonId: bigint): Promise<dbSeason> {
-    const season = await this.seasonRepository.findById(seasonId);
+    const season = await this.seasonRepository.findSeasonById(accountId, seasonId);
 
     if (!season || season.accountid !== accountId) {
       throw new NotFoundError('Season not found');

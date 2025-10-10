@@ -44,14 +44,16 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   [RoleNamesType.ACCOUNT_ADMIN]: {
     roleId: RoleNamesType.ACCOUNT_ADMIN,
     permissions: [
-      'account.manage',
+      'account.communications.manage',
       'account.contacts.manage',
-      'account.roles.manage',
-      'account.umpires.manage',
       'account.fields.manage',
       'account.games.manage',
-      'account.sponsors.manage',
+      'account.manage',
+      'account.photos.manage',
       'account.polls.manage',
+      'account.roles.manage',
+      'account.sponsors.manage',
+      'account.umpires.manage',
       'league.manage',
       'team.manage',
       'player.manage',
@@ -66,7 +68,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   },
   [RoleNamesType.ACCOUNT_PHOTO_ADMIN]: {
     roleId: RoleNamesType.ACCOUNT_PHOTO_ADMIN,
-    permissions: ['account.photos.manage', 'account.photos.view'],
+    permissions: ['account.photos.manage'],
     context: 'account',
   },
   [RoleNamesType.LEAGUE_ADMIN]: {

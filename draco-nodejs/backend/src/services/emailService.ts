@@ -14,17 +14,22 @@ import { EmailAttachmentService } from './emailAttachmentService.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import {
-  EmailComposeType,
   EmailListPagedType,
   EmailRecipientGroupsType,
+  EmailSendType,
   PagingType,
 } from '@draco/shared-schemas';
 import {
   RepositoryFactory,
   IEmailRepository,
+  ISeasonsRepository,
   dbCreateEmailRecipientInput,
 } from '../repositories/index.js';
 import { EmailResponseFormatter } from '../responseFormatters/index.js';
+import { RosterService } from './rosterService.js';
+import { ServiceFactory } from './serviceFactory.js';
+import validator from 'validator';
+import { TeamService } from './teamService.js';
 
 // Email queue management interfaces
 interface EmailQueueJob {
@@ -36,10 +41,19 @@ interface EmailQueueJob {
   bodyHtml: string;
   settings: EmailSettings;
   retryCount: number;
+  rateLimitRetries: number;
   scheduledAt: Date;
   createdAt: Date;
   attachments?: ServerEmailAttachment[];
 }
+
+type ProviderConfig = {
+  MAX_EMAILS_PER_SECOND: number;
+  MAX_EMAILS_PER_MINUTE: number;
+  RATE_LIMIT_ENABLED: boolean;
+  EMAIL_DELAY_MS: number;
+  PROCESS_INTERVAL_MS: number;
+};
 
 interface QueueMetrics {
   pending: number;
@@ -80,6 +94,9 @@ export class EmailService {
   };
   private attachmentService: EmailAttachmentService;
   private emailRepository: IEmailRepository;
+  private seasonRepository: ISeasonsRepository;
+  private rosterService: RosterService;
+  private teamService: TeamService;
 
   // Provider-specific queue configuration
   private readonly PROVIDER_CONFIGS = {
@@ -91,17 +108,19 @@ export class EmailService {
       PROCESS_INTERVAL_MS: 100,
     },
     ethereal: {
-      MAX_EMAILS_PER_SECOND: 1000, // No real limits for test email
-      MAX_EMAILS_PER_MINUTE: 60000,
-      RATE_LIMIT_ENABLED: false, // No rate limiting for development
-      EMAIL_DELAY_MS: 1, // Very fast for development
-      PROCESS_INTERVAL_MS: 10, // Faster processing for dev
+      MAX_EMAILS_PER_SECOND: 100, // No real limits for test email
+      MAX_EMAILS_PER_MINUTE: 6000,
+      RATE_LIMIT_ENABLED: true, // No rate limiting for development
+      EMAIL_DELAY_MS: 12, // Very fast for development
+      PROCESS_INTERVAL_MS: 100, // Faster processing for dev
     },
   } as const;
 
   private readonly BATCH_SIZE = 100;
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAYS = [1000, 5000, 15000]; // ms delays for retries
+  private readonly MAX_RATE_LIMIT_RETRIES = 5;
+  private readonly RATE_LIMIT_BACKOFF_MS = [5000, 10000, 20000, 35000, 55000];
   private currentProviderType: 'sendgrid' | 'ethereal' | null = null;
 
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
@@ -109,6 +128,9 @@ export class EmailService {
     this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
     this.attachmentService = new EmailAttachmentService();
     this.emailRepository = RepositoryFactory.getEmailRepository();
+    this.seasonRepository = RepositoryFactory.getSeasonsRepository();
+    this.rosterService = ServiceFactory.getRosterService();
+    this.teamService = ServiceFactory.getTeamService();
 
     // Start queue processor
     this.startQueueProcessor();
@@ -207,7 +229,7 @@ export class EmailService {
   async composeAndSendEmail(
     accountId: bigint,
     createdByUserId: string,
-    request: EmailComposeType,
+    request: EmailSendType,
   ): Promise<bigint> {
     const scheduledDateRaw = request.scheduledSend ? new Date(request.scheduledSend) : null;
     const scheduledDate =
@@ -240,7 +262,7 @@ export class EmailService {
    */
   async sendBulkEmail(
     emailId: bigint,
-    request: EmailComposeType,
+    request: EmailSendType,
     options?: { queueImmediately?: boolean },
   ): Promise<void> {
     try {
@@ -252,7 +274,11 @@ export class EmailService {
       }
 
       // Resolve recipients
-      const recipients = await this.resolveRecipients(email.account_id, request.recipients);
+      const recipients = await this.resolveRecipients(
+        email.account_id,
+        request.seasonId ? BigInt(request.seasonId) : null,
+        request.recipients,
+      );
 
       if (recipients.length === 0) {
         throw new Error('No valid recipients found');
@@ -362,6 +388,7 @@ export class EmailService {
         bodyHtml,
         settings,
         retryCount: 0,
+        rateLimitRetries: 0,
         scheduledAt: now,
         createdAt: now,
         attachments,
@@ -616,16 +643,21 @@ export class EmailService {
     const provider = await this.getProvider();
     let successCount = 0;
     let failureCount = 0;
+    let rateLimitTriggered = false;
+    let rateLimitRequeued = false;
 
-    for (const recipient of job.recipients) {
+    for (let index = 0; index < job.recipients.length; index++) {
+      const recipient = job.recipients[index];
+
       // Check rate limit before each email (only if rate limiting enabled)
       if (config.RATE_LIMIT_ENABLED) {
         const canSend = await this.canSendEmails();
         if (!canSend) {
-          // Re-queue remaining recipients
-          const remainingRecipients = job.recipients.slice(job.recipients.indexOf(recipient));
+          const remainingRecipients = job.recipients.slice(index);
           if (remainingRecipients.length > 0) {
             await this.requeueBatch(job, remainingRecipients);
+            rateLimitTriggered = true;
+            rateLimitRequeued = true;
           }
           break;
         }
@@ -645,55 +677,214 @@ export class EmailService {
 
         const result = await provider.sendEmail(emailOptions);
 
-        // Update rate limit counter (only if rate limiting enabled)
-        if (config.RATE_LIMIT_ENABLED) {
+        if (!result.success && this.isRateLimitError(undefined, result.error)) {
+          const rateLimitResult = await this.handleRateLimitBackoff(
+            job,
+            index,
+            config,
+            undefined,
+            result.error,
+          );
+          rateLimitTriggered = true;
+          rateLimitRequeued = rateLimitResult.requeued;
+          failureCount += rateLimitResult.failedCount;
+          break;
+        }
+
+        if (config.RATE_LIMIT_ENABLED && result.success) {
           this.rateLimitWindow.count++;
         }
 
-        // Update recipient status
         if (result.success) {
           await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
             status: 'sent',
             sent_at: new Date(),
             error_message: null,
           });
-        } else {
-          await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
-            status: 'failed',
-            error_message: result.error || null,
-          });
-        }
-
-        if (result.success) {
           successCount++;
           if (result.previewUrl) {
             console.log(`📧 Email preview for ${recipient.emailAddress}: ${result.previewUrl}`);
           }
         } else {
+          await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
+            status: 'failed',
+            error_message: result.error || null,
+          });
           failureCount++;
           console.warn(`❌ Email failed for ${recipient.emailAddress}: ${result.error}`);
         }
       } catch (error) {
+        if (this.isRateLimitError(error)) {
+          const rateLimitResult = await this.handleRateLimitBackoff(job, index, config, error);
+          rateLimitTriggered = true;
+          rateLimitRequeued = rateLimitResult.requeued;
+          failureCount += rateLimitResult.failedCount;
+          break;
+        }
+
         failureCount++;
         console.error(`💥 Error sending email to ${recipient.emailAddress}:`, error);
 
-        // Update recipient status to failed
         await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
           status: 'failed',
           error_message: error instanceof Error ? error.message : 'Unknown error',
         });
       }
 
-      // Provider-specific delay between emails
       await this.sleep(config.EMAIL_DELAY_MS);
     }
 
-    console.log(
-      `✅ Batch job ${job.id} completed: ${successCount} success, ${failureCount} failed`,
+    if (rateLimitTriggered) {
+      if (rateLimitRequeued) {
+        console.log(
+          `⏳ Batch job ${job.id} paused after ${successCount} success, ${failureCount} failed due to provider rate limiting`,
+        );
+      } else {
+        console.warn(
+          `⚠️ Batch job ${job.id} exhausted rate limit retries. ${successCount} success, ${failureCount} failed`,
+        );
+      }
+    } else {
+      console.log(
+        `✅ Batch job ${job.id} completed: ${successCount} success, ${failureCount} failed`,
+      );
+    }
+
+    await this.checkAndUpdateEmailStatus(job.emailId);
+  }
+
+  private isRateLimitError(error: unknown, explicitMessage?: string): boolean {
+    const candidateMessages: string[] = [];
+
+    if (typeof explicitMessage === 'string') {
+      candidateMessages.push(explicitMessage);
+    }
+
+    if (error && typeof error === 'object') {
+      const errObj = error as {
+        message?: string;
+        response?: string;
+        responseCode?: number;
+        statusCode?: number;
+        code?: string;
+      };
+
+      if (typeof errObj.message === 'string') {
+        candidateMessages.push(errObj.message);
+      }
+
+      if (typeof errObj.response === 'string') {
+        candidateMessages.push(errObj.response);
+      }
+
+      if (errObj.responseCode === 429 || errObj.statusCode === 429) {
+        return true;
+      }
+
+      if (
+        typeof errObj.code === 'string' &&
+        errObj.code.toLowerCase() === 'eenvelope' &&
+        typeof errObj.response === 'string' &&
+        errObj.response.includes('429')
+      ) {
+        return true;
+      }
+    }
+
+    return candidateMessages.some((message) => {
+      const normalized = message.toLowerCase();
+      return (
+        normalized.includes('429') ||
+        normalized.includes('rate limit') ||
+        normalized.includes('too many requests')
+      );
+    });
+  }
+
+  private getRateLimitErrorMessage(error: unknown, explicitMessage?: string): string {
+    if (typeof explicitMessage === 'string' && explicitMessage.trim().length > 0) {
+      return explicitMessage;
+    }
+
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof (error as { message?: string }).message === 'string'
+    ) {
+      return (error as { message: string }).message;
+    }
+
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      typeof (error as { response?: string }).response === 'string'
+    ) {
+      return (error as { response: string }).response;
+    }
+
+    return 'Rate limit exceeded';
+  }
+
+  private async handleRateLimitBackoff(
+    job: EmailQueueJob,
+    startIndex: number,
+    config: ProviderConfig,
+    error: unknown,
+    explicitMessage?: string,
+  ): Promise<{ requeued: boolean; failedCount: number }> {
+    const remainingRecipients = job.recipients.slice(startIndex);
+    if (remainingRecipients.length === 0) {
+      return { requeued: false, failedCount: 0 };
+    }
+
+    const attempt = job.rateLimitRetries + 1;
+    const message = this.getRateLimitErrorMessage(error, explicitMessage);
+
+    if (attempt > this.MAX_RATE_LIMIT_RETRIES) {
+      console.error(
+        `Job ${job.id} rate limit exceeded after ${this.MAX_RATE_LIMIT_RETRIES} attempts. Marking ${remainingRecipients.length} recipients as failed.`,
+      );
+
+      for (const recipient of remainingRecipients) {
+        await this.emailRepository.updateRecipientStatus(job.emailId, recipient.contactId, {
+          status: 'failed',
+          error_message: `Rate limit exceeded: ${message}`,
+        });
+      }
+
+      return { requeued: false, failedCount: remainingRecipients.length };
+    }
+
+    const delay =
+      this.RATE_LIMIT_BACKOFF_MS[attempt - 1] ??
+      this.RATE_LIMIT_BACKOFF_MS[this.RATE_LIMIT_BACKOFF_MS.length - 1];
+
+    const requeueJob: EmailQueueJob = {
+      ...job,
+      id: `${job.emailId}-${job.batchIndex}-ratelimit-${Date.now()}`,
+      recipients: remainingRecipients,
+      rateLimitRetries: attempt,
+      scheduledAt: new Date(Date.now() + delay),
+    };
+
+    this.jobQueue.set(requeueJob.id, requeueJob);
+
+    this.rateLimitWindow = {
+      startTime: new Date(),
+      count: config.MAX_EMAILS_PER_SECOND,
+    };
+
+    console.warn(
+      `⏳ Rate limit encountered for job ${job.id}. Re-queued ${remainingRecipients.length} recipients in ${delay}ms (attempt ${attempt}/${this.MAX_RATE_LIMIT_RETRIES}). Message: ${message}`,
     );
 
-    // Update email status if this was the last batch
-    await this.checkAndUpdateEmailStatus(job.emailId);
+    return { requeued: true, failedCount: 0 };
   }
 
   /**
@@ -701,6 +892,7 @@ export class EmailService {
    */
   private async handleJobFailure(job: EmailQueueJob, error: unknown): Promise<void> {
     job.retryCount++;
+    job.rateLimitRetries = 0;
 
     if (job.retryCount <= this.MAX_RETRIES) {
       // Schedule retry with exponential backoff
@@ -830,6 +1022,7 @@ export class EmailService {
    */
   private async resolveRecipients(
     accountId: bigint,
+    seasonId: bigint | null,
     selection: EmailRecipientGroupsType,
   ): Promise<ResolvedRecipient[]> {
     // Placeholder implementation - will be enhanced
@@ -850,7 +1043,121 @@ export class EmailService {
       );
     }
 
-    return recipients;
+    if (seasonId && selection.season) {
+      const seasonContacts = await this.seasonRepository.findSeasonParticipants(
+        accountId,
+        seasonId,
+      );
+
+      recipients.push(
+        ...seasonContacts.map((contact) => ({
+          contactId: contact.id,
+          emailAddress: contact.email!,
+          contactName: `${contact.firstname} ${contact.lastname}`.trim(),
+          recipientType: 'season',
+        })),
+      );
+    }
+
+    // add league members
+    if (seasonId && selection.leagues && selection.leagues.length > 0) {
+      const leagueIds = selection.leagues.map((id: string) => BigInt(id));
+      for (const id of leagueIds) {
+        // get the teams in a league for the season
+        const leagueTeams = await this.teamService.getTeamsByLeagueSeasonId(
+          id,
+          seasonId,
+          accountId,
+        );
+        for (const team of leagueTeams) {
+          // for each team, get the roster members
+          const teamMembers = await this.rosterService.getTeamRosterMembers(
+            BigInt(team.id),
+            seasonId,
+            accountId,
+          );
+
+          recipients.push(
+            ...teamMembers.rosterMembers.map((rosterMember) => ({
+              contactId: BigInt(rosterMember.player.contact.id),
+              emailAddress: rosterMember.player.contact.email!,
+              contactName:
+                `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
+              recipientType: 'league',
+            })),
+          );
+        }
+      }
+    }
+
+    if (seasonId && selection.divisions && selection.divisions.length > 0) {
+      const divisionIds = selection.divisions.map((id: string) => BigInt(id));
+      for (const id of divisionIds) {
+        // get the teams in a division for the season
+        const divisionTeams = await this.teamService.getTeamsByDivisionSeasonId(
+          id,
+          seasonId,
+          accountId,
+        );
+        for (const team of divisionTeams) {
+          // for each team, get the roster members
+          const teamMembers = await this.rosterService.getTeamRosterMembers(
+            BigInt(team.id),
+            seasonId,
+            accountId,
+          );
+
+          recipients.push(
+            ...teamMembers.rosterMembers.map((rosterMember) => ({
+              contactId: BigInt(rosterMember.player.contact.id),
+              emailAddress: rosterMember.player.contact.email!,
+              contactName:
+                `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
+              recipientType: 'division',
+            })),
+          );
+        }
+      }
+    }
+
+    // add team members
+    if (seasonId && selection.teams && selection.teams.length > 0) {
+      const teamIds = selection.teams.map((id: string) => BigInt(id));
+      for (const id of teamIds) {
+        const teamMembers = await this.rosterService.getTeamRosterMembers(id, seasonId, accountId);
+
+        recipients.push(
+          ...teamMembers.rosterMembers.map((rosterMember) => ({
+            contactId: BigInt(rosterMember.player.contact.id),
+            emailAddress: rosterMember.player.contact.email!,
+            contactName:
+              `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`.trim(),
+            recipientType: 'team',
+          })),
+        );
+      }
+    }
+
+    // remove duplicates and invalid emails
+    const uniqueMap = new Map<string, ResolvedRecipient>();
+    for (const recipient of recipients) {
+      if (this.hasValidEmail(recipient.emailAddress) && !uniqueMap.has(recipient.emailAddress)) {
+        uniqueMap.set(recipient.emailAddress, recipient);
+      }
+    }
+
+    const uniqueRecipients = Array.from(uniqueMap.values());
+
+    // Log summary
+    console.log(
+      `Resolved ${uniqueRecipients.length} unique recipients (from ${recipients.length} total)`,
+    );
+
+    return uniqueRecipients;
+  }
+
+  private hasValidEmail(email: string | null): boolean {
+    return !!email && validator.isEmail(email);
   }
 
   /**

@@ -23,17 +23,17 @@ export class SeasonService {
   ): Promise<LeagueSeasonWithDivisionType[]> {
     const [seasons, currentSeasonRecord] = await Promise.all([
       this.seasonsRepository.findAccountSeasons(accountId, includeDivisions),
-      this.seasonsRepository.findCurrentSeasonRecord(accountId),
+      this.seasonsRepository.findCurrentSeason(accountId),
     ]);
 
     return SeasonResponseFormatter.formatSeasonsWithLeagues(seasons, {
       includeDivisions,
-      currentSeasonId: currentSeasonRecord?.seasonid ?? null,
+      currentSeasonId: currentSeasonRecord?.id ?? null,
     });
   }
 
   async getCurrentSeason(accountId: bigint): Promise<LeagueSeasonWithDivisionType> {
-    const currentSeasonRecord = await this.seasonsRepository.findCurrentSeasonRecord(accountId);
+    const currentSeasonRecord = await this.seasonsRepository.findCurrentSeason(accountId);
 
     if (!currentSeasonRecord) {
       throw new NotFoundError('No current season set for this account');
@@ -41,7 +41,7 @@ export class SeasonService {
 
     const season = await this.seasonsRepository.findSeasonWithLeagues(
       accountId,
-      currentSeasonRecord.seasonid,
+      currentSeasonRecord.id,
       false,
     );
 
@@ -51,7 +51,7 @@ export class SeasonService {
 
     return SeasonResponseFormatter.formatSeasonWithLeagues(season, {
       includeDivisions: false,
-      currentSeasonId: currentSeasonRecord.seasonid,
+      currentSeasonId: currentSeasonRecord.id,
       forceCurrent: true,
     });
   }
@@ -59,7 +59,7 @@ export class SeasonService {
   async getSeason(accountId: bigint, seasonId: bigint): Promise<LeagueSeasonWithDivisionType> {
     const [season, currentSeasonRecord] = await Promise.all([
       this.seasonsRepository.findSeasonWithLeagues(accountId, seasonId, false),
-      this.seasonsRepository.findCurrentSeasonRecord(accountId),
+      this.seasonsRepository.findCurrentSeason(accountId),
     ]);
 
     if (!season) {
@@ -68,7 +68,7 @@ export class SeasonService {
 
     return SeasonResponseFormatter.formatSeasonWithLeagues(season, {
       includeDivisions: false,
-      currentSeasonId: currentSeasonRecord?.seasonid ?? null,
+      currentSeasonId: currentSeasonRecord?.id ?? null,
     });
   }
 
@@ -124,10 +124,10 @@ export class SeasonService {
     }
 
     const updatedSeason = await this.seasonsRepository.updateSeasonName(seasonId, name);
-    const currentSeasonRecord = await this.seasonsRepository.findCurrentSeasonRecord(accountId);
+    const currentSeasonRecord = await this.seasonsRepository.findCurrentSeason(accountId);
 
     return SeasonResponseFormatter.formatSeason(updatedSeason, {
-      isCurrent: currentSeasonRecord?.seasonid === updatedSeason.id,
+      isCurrent: currentSeasonRecord?.id === updatedSeason.id,
     });
   }
 
@@ -187,9 +187,9 @@ export class SeasonService {
       throw new NotFoundError('Season not found');
     }
 
-    const currentSeasonRecord = await this.seasonsRepository.findCurrentSeasonRecord(accountId);
+    const currentSeasonRecord = await this.seasonsRepository.findCurrentSeason(accountId);
 
-    if (currentSeasonRecord?.seasonid === seasonId) {
+    if (currentSeasonRecord?.id === seasonId) {
       throw new ValidationError(
         'Cannot delete the current season. Set a different season as current first.',
       );

@@ -1,5 +1,5 @@
 import {
-  dbCurrentSeason,
+  dbContactEmailOnly,
   dbLeagueSeasonBasic,
   dbSeason,
   dbSeasonWithLeagues,
@@ -21,8 +21,9 @@ export interface ISeasonsRepository {
   createSeason(data: { name: string; accountid: bigint }): Promise<dbSeason>;
   updateSeasonName(seasonId: bigint, name: string): Promise<dbSeason>;
   deleteSeason(seasonId: bigint): Promise<dbSeason>;
-  findCurrentSeasonRecord(accountId: bigint): Promise<dbCurrentSeason | null>;
+  findCurrentSeason(accountId: bigint): Promise<dbSeason | null>;
   upsertCurrentSeason(accountId: bigint, seasonId: bigint): Promise<void>;
   createLeagueSeason(seasonId: bigint, leagueId: bigint): Promise<dbLeagueSeasonBasic>;
   countSeasonParticipants(accountId: bigint, seasonId: bigint): Promise<number>;
+  findSeasonParticipants(accountId: bigint, seasonId: bigint): Promise<dbContactEmailOnly[]>;
 }

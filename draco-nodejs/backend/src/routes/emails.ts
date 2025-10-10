@@ -4,7 +4,7 @@ import multer from 'multer';
 
 import { ATTACHMENT_CONFIG } from '../config/attachments.js';
 import { EmailStatus } from '../interfaces/emailInterfaces.js';
-import { EmailComposeSchema, UpsertEmailTemplateSchema } from '@draco/shared-schemas';
+import { EmailSendSchema, UpsertEmailTemplateSchema } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -44,7 +44,7 @@ router.post(
       throw new ValidationError('User ID is required');
     }
 
-    const request = EmailComposeSchema.parse(req.body);
+    const request = EmailSendSchema.parse(req.body);
 
     if (!request.subject || !request.body || !request.recipients) {
       throw new ValidationError('Subject, body, and recipients are required');
@@ -67,7 +67,7 @@ router.post(
 router.get(
   '/accounts/:accountId/emails',
   authenticateToken,
-  routeProtection.requirePermission('account.view'),
+  routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { page = '1', limit = '20', status } = req.query;
@@ -89,7 +89,7 @@ router.get(
 router.get(
   '/accounts/:accountId/emails/:emailId',
   authenticateToken,
-  routeProtection.requirePermission('account.view'),
+  routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const emailId = BigInt(req.params.emailId);
@@ -139,7 +139,7 @@ router.post(
 router.get(
   '/accounts/:accountId/email-templates',
   authenticateToken,
-  routeProtection.requirePermission('account.view'),
+  routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { activeOnly = 'false' } = req.query;
@@ -158,7 +158,7 @@ router.get(
 router.get(
   '/accounts/:accountId/email-templates/:templateId',
   authenticateToken,
-  routeProtection.requirePermission('account.view'),
+  routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const templateId = BigInt(req.params.templateId);
@@ -220,7 +220,7 @@ router.delete(
 router.post(
   '/accounts/:accountId/email-templates/:templateId/preview',
   authenticateToken,
-  routeProtection.requirePermission('account.view'),
+  routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const templateId = BigInt(req.params.templateId);
@@ -279,7 +279,7 @@ router.post(
 router.get(
   '/accounts/:accountId/emails/:emailId/attachments',
   authenticateToken,
-  routeProtection.requirePermission('account.view'),
+  routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { emailId } = req.params;
@@ -298,7 +298,7 @@ router.get(
 router.get(
   '/accounts/:accountId/emails/:emailId/attachments/:attachmentId',
   authenticateToken,
-  routeProtection.requirePermission('account.view'),
+  routeProtection.requirePermission('account.communications.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { emailId, attachmentId } = req.params;

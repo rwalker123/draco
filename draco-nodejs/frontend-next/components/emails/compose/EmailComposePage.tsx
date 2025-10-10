@@ -701,6 +701,7 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   return (
     <EmailComposeProvider
       accountId={accountId}
+      seasonId={seasonId}
       initialData={initialData}
       onSendComplete={handleProviderSendComplete}
       onDraftSaved={handleProviderDraftSaved}

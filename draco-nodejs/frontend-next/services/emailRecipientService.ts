@@ -664,7 +664,7 @@ export class EmailRecipientService {
           path: { accountId, seasonId },
           query: {
             includeTeams: true,
-            includeUnassignedTeams: true,
+            includeUnassignedTeams: false,
             includePlayerCounts: includePlayerCounts || includeManagerCounts ? true : undefined,
             includeManagerCounts: includeManagerCounts || undefined,
           },

@@ -16,18 +16,18 @@ import {
   RepositoryFactory,
   IContactRepository,
   dbRosterPlayer,
-  ISeasonRepository,
+  ISeasonsRepository,
   ITeamRepository,
 } from '../repositories/index.js';
 
 export class ContactService {
   private contactRepository: IContactRepository;
-  private seasonRepository: ISeasonRepository;
+  private seasonRepository: ISeasonsRepository;
   private teamRepository: ITeamRepository;
 
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
-    this.seasonRepository = RepositoryFactory.getSeasonRepository();
+    this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
   }
 

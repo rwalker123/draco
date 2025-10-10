@@ -37,6 +37,13 @@ export const EmailComposeSchema = z.object({
   status: z.enum(['scheduled', 'sending']).optional(),
 });
 
+export const EmailSendSchema = EmailComposeSchema.omit({
+  id: true,
+}).extend({
+  id: z.string().optional(),
+  seasonId: z.string().optional(),
+});
+
 export const UpsertEmailTemplateSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2).max(100).optional(),
@@ -156,3 +163,4 @@ export type EmailListItemType = z.infer<typeof EmailListItemSchema>;
 export type EmailListPagedType = z.infer<typeof EmailListPagedSchema>;
 export type EmailTemplatesListType = z.infer<typeof EmailTemplatesListSchema>;
 export type AttachmentUploadResultType = z.infer<typeof AttachmentUploadResult>;
+export type EmailSendType = z.infer<typeof EmailSendSchema>;

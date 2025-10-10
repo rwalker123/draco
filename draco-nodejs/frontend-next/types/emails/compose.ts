@@ -152,6 +152,7 @@ export interface EmailComposeContextValue {
 export interface EmailComposeProviderProps {
   children: React.ReactNode;
   accountId: string;
+  seasonId?: string;
   initialData?: Partial<EmailComposeRequest>;
   config?: Partial<EmailComposeConfig>;
   onSendComplete?: (emailId: string) => void;

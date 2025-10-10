@@ -7,7 +7,7 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     ValidationErrorSchemaRef,
-    EmailComposeSchemaRef,
+    EmailSendSchemaRef,
     EmailListPagedSchemaRef,
     EmailDetailSchemaRef,
     EmailTemplateSchemaRef,
@@ -44,7 +44,7 @@ export const registerEmailsEndpoints = ({ registry, schemaRefs, z }: RegisterCon
       body: {
         content: {
           'application/json': {
-            schema: EmailComposeSchemaRef,
+            schema: EmailSendSchemaRef,
           },
         },
       },
