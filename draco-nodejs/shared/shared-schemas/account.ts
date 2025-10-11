@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { NamedContactSchema, RegisteredUserSchema } from './contact.js';
+import { CreateContactSchema, NamedContactSchema, RegisteredUserSchema } from './contact.js';
 
 const queryValueSchema = z
   .string()
@@ -144,6 +144,7 @@ export const CreateAccountSchema = AccountSchema.omit({
   accountOwner: true,
 }).extend({
   urls: z.array(CreateAccountUrlSchema).default([]),
+  ownerContact: CreateContactSchema.omit({ photo: true }),
 });
 
 export const AccountWithSeasonsSchema = z.object({

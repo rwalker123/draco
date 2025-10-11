@@ -111,6 +111,10 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const createRequest = CreateAccountSchema.parse(req.body);
 
+    if (!createRequest.ownerContact) {
+      throw new ValidationError('Owner contact information is required');
+    }
+
     const createdAccount = await accountsService.createAccount(req!.user!.id, createRequest);
 
     res.status(201).json(createdAccount);
