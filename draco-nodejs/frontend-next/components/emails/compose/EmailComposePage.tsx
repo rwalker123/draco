@@ -357,7 +357,7 @@ const EmailComposePageInternal: React.FC<
     }, [isMobile]);
 
     return (
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Global Error Banner */}
         {!componentState.isOnline && (
           <Alert severity="warning" icon={<OfflineIcon />} sx={{ borderRadius: 0 }}>
@@ -416,7 +416,7 @@ const EmailComposePageInternal: React.FC<
         )}
 
         {/* Main Content Area */}
-        <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, display: 'flex' }}>
           <Box
             sx={{
               height: '100%',
@@ -432,13 +432,19 @@ const EmailComposePageInternal: React.FC<
             <Box
               sx={{
                 height: '100%',
-                overflow: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
               }}
             >
-              <Box sx={{ flex: 1, p: isMobile ? 2 : 3 }}>
-                <Stack spacing={3} sx={{ height: '100%' }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  p: isMobile ? 2 : 3,
+                  pb: isMobile ? 12 : 8,
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <Stack spacing={3}>
                   {/* Compose Header */}
                   <ComposeHeader
                     showFromField={!isMobile}

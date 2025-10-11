@@ -7,6 +7,7 @@ import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
 import { EmailComposePage } from '../../../../../components/emails/compose';
 import { useEmailRecipients, useCurrentSeason } from '../../../../../hooks/useEmailRecipients';
 import { EmailComposeRequest } from '../../../../../types/emails/email';
+import AccountPageHeader from '@/components/AccountPageHeader';
 
 export default function EmailCompose() {
   const { accountId } = useParams();
@@ -106,6 +107,22 @@ export default function EmailCompose() {
     return (
       <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
         <main className="min-h-screen bg-background">
+          {/* Account Header */}
+          <AccountPageHeader accountId={accountId as string}>
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              sx={{ position: 'relative' }}
+            >
+              <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
+                <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  Compose Email
+                </Typography>
+              </Box>
+            </Box>
+          </AccountPageHeader>
+
           <Box sx={{ p: 3 }}>
             <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
               Back to Communications
@@ -134,6 +151,22 @@ export default function EmailCompose() {
   return (
     <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
       <main className="min-h-screen bg-background">
+        {/* Account Header */}
+        <AccountPageHeader accountId={accountId as string}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            sx={{ position: 'relative' }}
+          >
+            <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
+              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                Compose Email
+              </Typography>
+            </Box>
+          </Box>
+        </AccountPageHeader>
+
         <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
           {/* Navigation Header */}
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
