@@ -367,7 +367,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const administratorRoleId = normalizeRoleId(ROLE_NAME_TO_ID['Administrator']);
   const accountAdminRoleId = normalizeRoleId(ROLE_NAME_TO_ID['AccountAdmin']);
 
-  const isAdministrator = useMemo(() => {
+  const computeIsAdministrator = useCallback((): boolean => {
     if (!userRoles || !administratorRoleId) {
       return false;
     }
@@ -385,9 +385,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return result;
-  }, [userRoles, administratorRoleId, roleMetadata]);
+  }, [userRoles, administratorRoleId, roleMetadata, getHierarchyForRole]);
 
-  const manageableAccountIds = useMemo(() => {
+  const isAdministrator = useMemo(() => computeIsAdministrator(), [computeIsAdministrator]);
+
+  const computeManageableAccountIds = useCallback((): string[] => {
     if (!userRoles || !accountAdminRoleId) {
       return [];
     }
@@ -415,9 +417,14 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
     const ids = Array.from(accountIds);
     return ids;
-  }, [userRoles, accountAdminRoleId, roleMetadata]);
+  }, [userRoles, accountAdminRoleId, roleMetadata, getHierarchyForRole]);
 
-  const hasAccountAdminRole = useMemo(() => {
+  const manageableAccountIds = useMemo(
+    () => computeManageableAccountIds(),
+    [computeManageableAccountIds],
+  );
+
+  const computeHasAccountAdminRole = useCallback((): boolean => {
     if (!userRoles || !accountAdminRoleId) {
       return false;
     }
@@ -437,7 +444,12 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return result;
-  }, [userRoles, accountAdminRoleId, roleMetadata]);
+  }, [userRoles, accountAdminRoleId, roleMetadata, getHierarchyForRole]);
+
+  const hasAccountAdminRole = useMemo(
+    () => computeHasAccountAdminRole(),
+    [computeHasAccountAdminRole],
+  );
 
   const hasManageableAccount = useMemo(() => {
     const result = isAdministrator || manageableAccountIds.length > 0 || hasAccountAdminRole;
