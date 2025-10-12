@@ -3,6 +3,7 @@
 
 // Existing hooks
 export { useAccountMembership } from './useAccountMembership';
+export { useAccountManagementService } from './useAccountManagementService';
 export { useContactSearch } from './useContactSearch';
 export { useContactSelection } from './useContactSelection';
 export { useCurrentSeason } from './useCurrentSeason';
