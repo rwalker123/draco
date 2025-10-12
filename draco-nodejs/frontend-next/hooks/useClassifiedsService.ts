@@ -305,8 +305,7 @@ export function useTeamsWantedClassifieds(accountId: string) {
       return runOperation<TeamsWantedContactInfoType>({
         defaultError: 'Failed to fetch Teams Wanted contact information',
         operation: async () => {
-          const query =
-            !token && options?.accessCode ? { accessCode: options.accessCode } : undefined;
+          const query = options?.accessCode ? { accessCode: options.accessCode } : undefined;
 
           const result = await getTeamsWantedContactInfo({
             client: apiClient,
