@@ -32,6 +32,10 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment Variables
+
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` – Cloudflare Turnstile site key used to render the human-verification challenge for account creation and new user registration. Leave unset in local environments to disable the challenge.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

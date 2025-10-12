@@ -8,7 +8,12 @@ import { RoleContextData } from '../services/interfaces/roleInterfaces.js';
 import { RoleNamesType } from '../types/roles.js';
 import { UserRolesType } from '@draco/shared-schemas';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { AuthenticationError, AuthorizationError, ValidationError } from '../utils/customErrors.js';
+import {
+  AuthenticationError,
+  AuthorizationError,
+  ValidationError,
+  NotFoundError,
+} from '../utils/customErrors.js';
 import { ContactService } from '../services/contactService.js';
 import { UserService } from '../services/userService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
@@ -208,16 +213,27 @@ export class RouteProtection {
 
       const accountOwner = await this.userService.isAccountOwner(req.user.id, accountId);
       const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+
       if (!accountOwner) {
-        // check to see if administrator
-        if (!userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
+        const administratorRoleId =
+          ROLE_IDS[RoleNamesType.ADMINISTRATOR] ?? RoleNamesType.ADMINISTRATOR;
+
+        const isAdministrator = userRoles.globalRoles.includes(administratorRoleId);
+
+        if (!isAdministrator) {
           throw new AuthorizationError('Access denied');
         }
       }
 
       req.userRoles = userRoles;
-      const userContactId = await this.checkUserAccount(req.user.id, accountId);
-      req.accountBoundary = { contactId: userContactId || BigInt(0), accountId, enforced: true };
+      const userContactId = accountOwner
+        ? await this.checkUserAccount(req.user.id, accountId)
+        : undefined;
+      req.accountBoundary = {
+        contactId: userContactId ?? BigInt(0),
+        accountId,
+        enforced: true,
+      };
 
       next();
     });
@@ -417,7 +433,9 @@ export class RouteProtection {
       const contact = await this.contactService.getContactByUserId(userId, accountId);
       return contact ? BigInt(contact.id) : undefined;
     } catch (error) {
-      console.error('Error checking account membership:', error);
+      if (!(error instanceof NotFoundError)) {
+        console.error('Error checking account membership:', error);
+      }
       return undefined;
     }
   }

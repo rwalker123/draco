@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   TextField,
@@ -16,6 +16,7 @@ import AccountPageHeader from '../../components/AccountPageHeader';
 import { registerUser } from '@draco/shared-api-client';
 import { createApiClient } from '../../lib/apiClientFactory';
 import { unwrapApiResult } from '../../utils/apiResult';
+import TurnstileChallenge from '../../components/security/TurnstileChallenge';
 
 const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [formData, setFormData] = useState({
@@ -26,7 +27,26 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const requireCaptcha = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (requireCaptcha) {
+      setCaptchaToken(null);
+      setCaptchaResetKey((key) => key + 1);
+      setCaptchaError(null);
+    }
+  }, [requireCaptcha]);
+
+  const handleCaptchaTokenChange = useCallback((token: string | null) => {
+    setCaptchaToken(token);
+    if (token) {
+      setCaptchaError(null);
+    }
+  }, []);
 
   const handleInputChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -66,6 +86,12 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
   const handleSignup = async () => {
     if (!validateForm()) return;
 
+    if (requireCaptcha && !captchaToken) {
+      setCaptchaError('Please verify that you are human before continuing.');
+      setCaptchaResetKey((key) => key + 1);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -74,6 +100,9 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
       const result = await registerUser({
         client,
         throwOnError: false,
+        headers: {
+          ...(requireCaptcha && captchaToken ? { 'cf-turnstile-token': captchaToken } : {}),
+        },
         body: {
           userName: formData.email.trim(),
           password: formData.password,
@@ -83,11 +112,19 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
       unwrapApiResult(result, 'Failed to sign up');
 
       setSuccess(true);
+      if (requireCaptcha) {
+        setCaptchaToken(null);
+        setCaptchaResetKey((key) => key + 1);
+      }
       setTimeout(() => {
         router.push(next || '/login');
       }, 2000);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to sign up. Please try again.');
+      if (requireCaptcha) {
+        setCaptchaToken(null);
+        setCaptchaResetKey((key) => key + 1);
+      }
     } finally {
       setLoading(false);
     }
@@ -189,6 +226,21 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
           autoComplete="new-password"
           required
         />
+
+        {requireCaptcha && (
+          <Box sx={{ mt: 2 }}>
+            {captchaError && (
+              <Alert severity="error" onClose={() => setCaptchaError(null)} sx={{ mb: 2 }}>
+                {captchaError}
+              </Alert>
+            )}
+            <TurnstileChallenge
+              onTokenChange={handleCaptchaTokenChange}
+              resetSignal={captchaResetKey}
+              loading={loading}
+            />
+          </Box>
+        )}
 
         <Button
           fullWidth

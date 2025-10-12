@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -23,6 +23,7 @@ import {
   SelfRegisterInput,
 } from '../../services/accountRegistrationService';
 import { useAuth } from '../../context/AuthContext';
+import TurnstileChallenge from '../security/TurnstileChallenge';
 
 interface Props {
   open: boolean;
@@ -55,6 +56,10 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requireCaptcha = !user && Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
 
   const resetForm = () => {
     setEmail('');
@@ -66,6 +71,9 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
     setStreetAddress('');
     setDateOfBirth('');
     setError(null);
+    setCaptchaToken(null);
+    setCaptchaResetKey((key) => key + 1);
+    setCaptchaError(null);
   };
 
   const handleClose = () => {
@@ -73,10 +81,26 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
     onClose();
   };
 
+  useEffect(() => {
+    if (requireCaptcha) {
+      setCaptchaToken(null);
+      setCaptchaResetKey((key) => key + 1);
+      setCaptchaError(null);
+    }
+  }, [requireCaptcha, mode, open]);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+
+    if (!user && requireCaptcha && mode === 'newUser' && !captchaToken) {
+      setCaptchaError('Please verify that you are human before continuing.');
+      setCaptchaResetKey((key) => key + 1);
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    const usedCaptcha = !user && requireCaptcha && mode === 'newUser';
 
     try {
       if (user && token) {
@@ -123,6 +147,7 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
         const { token: newToken } = await AccountRegistrationService.combinedRegister(
           accountId,
           payload,
+          usedCaptcha ? (captchaToken ?? undefined) : undefined,
         );
         if (newToken) {
           setAuthToken(newToken);
@@ -140,6 +165,10 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
       setError(errorMessage);
     } finally {
       setLoading(false);
+      if (usedCaptcha) {
+        setCaptchaToken(null);
+        setCaptchaResetKey((key) => key + 1);
+      }
     }
   };
 
@@ -188,6 +217,22 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
                     autoComplete="new-password"
                     required
                   />
+                  {requireCaptcha && (
+                    <Box sx={{ mt: 2 }}>
+                      <TurnstileChallenge
+                        onTokenChange={(token) => {
+                          setCaptchaToken(token);
+                          setCaptchaError(null);
+                        }}
+                        resetSignal={captchaResetKey}
+                      />
+                    </Box>
+                  )}
+                  {requireCaptcha && captchaError && (
+                    <Alert severity="error" onClose={() => setCaptchaError(null)} sx={{ mt: 2 }}>
+                      {captchaError}
+                    </Alert>
+                  )}
                 </>
               ) : (
                 <>

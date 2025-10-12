@@ -46,6 +46,8 @@ import {
   DEFAULT_TIMEZONE,
 } from '../../utils/timezones';
 import EditAccountLogoDialog from '../../components/EditAccountLogoDialog';
+import CreateAccountDialog from '../../components/account/dialogs/CreateAccountDialog';
+import DeleteAccountDialog from '../../components/account/dialogs/DeleteAccountDialog';
 import type {
   AccountType as SharedAccountType,
   AccountTypeReference,
@@ -56,12 +58,10 @@ import {
   getManagedAccounts,
   getAccountAffiliations,
   getAccountTypes,
-  createAccount,
   updateAccount,
-  deleteAccount,
 } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
-import { assertNoApiError, unwrapApiResult } from '../../utils/apiResult';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
@@ -81,7 +81,7 @@ const AccountManagement: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<SharedAccountType | null>(null);
 
-  type AccountFormState = {
+  type AccountEditFormState = {
     name: string;
     accountTypeId: string;
     affiliationId: string;
@@ -91,7 +91,7 @@ const AccountManagement: React.FC = () => {
 
   const [defaultTimezone] = useState(() => detectUserTimezone());
 
-  const buildInitialFormState = useCallback((): AccountFormState => {
+  const buildInitialEditFormState = useCallback((): AccountEditFormState => {
     return {
       name: '',
       accountTypeId: '',
@@ -102,7 +102,7 @@ const AccountManagement: React.FC = () => {
   }, [defaultTimezone]);
 
   // Form states
-  const [formData, setFormData] = useState<AccountFormState>(buildInitialFormState);
+  const [editFormData, setEditFormData] = useState<AccountEditFormState>(buildInitialEditFormState);
 
   // Add state for logo dialog
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
@@ -111,7 +111,7 @@ const AccountManagement: React.FC = () => {
 
   const buildAccountPayload = useCallback(
     (
-      state: AccountFormState,
+      state: AccountEditFormState,
       existingAccount?: SharedAccountType | null,
     ): Partial<CreateAccountType> => {
       const accountType = accountTypes.find((type) => type.id === state.accountTypeId);
@@ -251,47 +251,18 @@ const AccountManagement: React.FC = () => {
     }
   }, [token, loadData]);
 
-  useEffect(() => {}, [accounts]);
-
-  const handleCreateAccount = async () => {
-    try {
-      if (!formData.accountTypeId) {
-        setError('Account type is required');
-        return;
-      }
-
-      setError(null);
-
-      const payload = buildAccountPayload(formData);
-
-      const result = await createAccount({
-        client: apiClient,
-        body: payload as CreateAccountType,
-        throwOnError: false,
-      });
-
-      unwrapApiResult(result, 'Failed to create account');
-
-      setCreateDialogOpen(false);
-      setFormData(buildInitialFormState());
-      loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create account');
-    }
-  };
-
   const handleEditAccount = async () => {
     if (!selectedAccount) return;
 
     try {
-      if (!formData.accountTypeId) {
+      if (!editFormData.accountTypeId) {
         setError('Account type is required');
         return;
       }
 
       setError(null);
 
-      const payload = buildAccountPayload(formData, selectedAccount);
+      const payload = buildAccountPayload(editFormData, selectedAccount);
 
       const result = await updateAccount({
         client: apiClient,
@@ -304,36 +275,16 @@ const AccountManagement: React.FC = () => {
 
       setEditDialogOpen(false);
       setSelectedAccount(null);
-      setFormData(buildInitialFormState());
+      setEditFormData(buildInitialEditFormState());
       loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update account');
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!selectedAccount) return;
-
-    try {
-      const result = await deleteAccount({
-        client: apiClient,
-        path: { accountId: selectedAccount.id },
-        throwOnError: false,
-      });
-
-      assertNoApiError(result, 'Failed to delete account');
-
-      setDeleteDialogOpen(false);
-      setSelectedAccount(null);
-      loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete account');
-    }
-  };
-
   const openEditDialog = (account: SharedAccountType) => {
     setSelectedAccount(account);
-    setFormData({
+    setEditFormData({
       name: account.name,
       accountTypeId: getAccountTypeId(account),
       affiliationId: getAffiliationId(account),
@@ -361,13 +312,11 @@ const AccountManagement: React.FC = () => {
   };
 
   const handleCreateClick = () => {
-    setFormData(buildInitialFormState());
     setCreateDialogOpen(true);
   };
 
   const handleCreateDialogClose = () => {
     setCreateDialogOpen(false);
-    setFormData(buildInitialFormState());
   };
 
   // Helper to get logo URL (with refresh key to force reload)
@@ -492,76 +441,15 @@ const AccountManagement: React.FC = () => {
         </TableContainer>
       </Paper>
 
-      {/* Create Account Dialog */}
-      <Dialog open={createDialogOpen} onClose={handleCreateDialogClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New Account</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Account Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              fullWidth
-              required
-            />
-            <FormControl fullWidth required>
-              <InputLabel>Account Type</InputLabel>
-              <Select
-                value={formData.accountTypeId}
-                onChange={(e) => setFormData({ ...formData, accountTypeId: e.target.value })}
-                label="Account Type"
-              >
-                {accountTypes.map((type) => (
-                  <MenuItem key={type.id} value={type.id}>
-                    {type.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Affiliation</InputLabel>
-              <Select
-                value={formData.affiliationId}
-                onChange={(e) => setFormData({ ...formData, affiliationId: e.target.value })}
-                label="Affiliation"
-              >
-                {affiliations.map((affiliation) => (
-                  <MenuItem key={affiliation.id} value={affiliation.id}>
-                    {affiliation.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Timezone</InputLabel>
-              <Select
-                value={formData.timezoneId}
-                onChange={(e) => setFormData({ ...formData, timezoneId: e.target.value })}
-                label="Timezone"
-              >
-                {US_TIMEZONES.map((timezone) => (
-                  <MenuItem key={timezone.value} value={timezone.value}>
-                    {timezone.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label="First Year"
-              type="number"
-              value={formData.firstYear}
-              onChange={(e) => setFormData({ ...formData, firstYear: parseInt(e.target.value) })}
-              fullWidth
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCreateDialogClose}>Cancel</Button>
-          <Button onClick={handleCreateAccount} variant="contained">
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <CreateAccountDialog
+        open={createDialogOpen}
+        onClose={handleCreateDialogClose}
+        onSuccess={() => {
+          setError(null);
+          loadData();
+        }}
+        onError={(message) => setError(message)}
+      />
 
       {/* Edit Account Dialog */}
       <Dialog
@@ -575,16 +463,18 @@ const AccountManagement: React.FC = () => {
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Account Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={editFormData.name}
+              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
               fullWidth
               required
             />
             <FormControl fullWidth required>
               <InputLabel>Account Type</InputLabel>
               <Select
-                value={formData.accountTypeId}
-                onChange={(e) => setFormData({ ...formData, accountTypeId: e.target.value })}
+                value={editFormData.accountTypeId}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, accountTypeId: e.target.value })
+                }
                 label="Account Type"
               >
                 {accountTypes.map((type) => (
@@ -597,8 +487,10 @@ const AccountManagement: React.FC = () => {
             <FormControl fullWidth>
               <InputLabel>Affiliation</InputLabel>
               <Select
-                value={formData.affiliationId}
-                onChange={(e) => setFormData({ ...formData, affiliationId: e.target.value })}
+                value={editFormData.affiliationId}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, affiliationId: e.target.value })
+                }
                 label="Affiliation"
               >
                 {affiliations.map((affiliation) => (
@@ -611,8 +503,8 @@ const AccountManagement: React.FC = () => {
             <FormControl fullWidth>
               <InputLabel>Timezone</InputLabel>
               <Select
-                value={formData.timezoneId}
-                onChange={(e) => setFormData({ ...formData, timezoneId: e.target.value })}
+                value={editFormData.timezoneId}
+                onChange={(e) => setEditFormData({ ...editFormData, timezoneId: e.target.value })}
                 label="Timezone"
               >
                 {US_TIMEZONES.map((timezone) => (
@@ -625,8 +517,10 @@ const AccountManagement: React.FC = () => {
             <TextField
               label="First Year"
               type="number"
-              value={formData.firstYear}
-              onChange={(e) => setFormData({ ...formData, firstYear: parseInt(e.target.value) })}
+              value={editFormData.firstYear}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, firstYear: parseInt(e.target.value, 10) })
+              }
               fullWidth
             />
           </Stack>
@@ -652,22 +546,19 @@ const AccountManagement: React.FC = () => {
         }}
       />
 
-      {/* Delete Account Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Account</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete the account {`'${selectedAccount?.name}'`} ? This action
-            cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteAccount} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteAccountDialog
+        open={deleteDialogOpen}
+        account={selectedAccount}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setSelectedAccount(null);
+        }}
+        onSuccess={() => {
+          setDeleteDialogOpen(false);
+          setSelectedAccount(null);
+          loadData();
+        }}
+      />
     </main>
   );
 };

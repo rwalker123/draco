@@ -1,6 +1,6 @@
+import './config/loadEnv.js';
 import { initializeRoleIds } from './config/roles.js';
 import prisma from './lib/prisma.js';
-import dotenv from 'dotenv';
 import fs from 'node:fs';
 import https from 'node:https';
 
@@ -12,8 +12,6 @@ async function bootstrap() {
 
   // Now import and start the app
   const { default: app } = await import('./app.js'); // or wherever your Next.js app lives
-  // Load environment variables
-  dotenv.config();
 
   const PORT = process.env.PORT || 3001;
 
