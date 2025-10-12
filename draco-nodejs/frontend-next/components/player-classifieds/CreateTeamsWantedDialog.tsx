@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -24,16 +24,27 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { formatPhoneNumber } from '../../utils/phoneNumber';
 import { isValidEmailFormat } from '../../utils/emailValidation';
-import { UpsertTeamsWantedClassifiedType } from '@draco/shared-schemas';
+import {
+  TeamsWantedOwnerClassifiedType,
+  UpsertTeamsWantedClassifiedType,
+} from '@draco/shared-schemas';
+import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
+
+export interface TeamsWantedDialogSuccessEvent {
+  action: 'create' | 'update';
+  message: string;
+  data: TeamsWantedOwnerClassifiedType;
+}
 
 interface CreateTeamsWantedDialogProps {
+  accountId: string;
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: UpsertTeamsWantedClassifiedType) => Promise<void>;
-  loading?: boolean;
   editMode?: boolean;
   initialData?: UpsertTeamsWantedClassifiedType | null;
-  _classifiedId?: string;
+  accessCode?: string;
+  onSuccess?: (event: TeamsWantedDialogSuccessEvent) => void;
+  onError?: (message: string) => void;
 }
 
 // Available positions for teams wanted - using IDs that match backend validation
@@ -68,14 +79,22 @@ const POSITION_LABELS: Record<string, string> = {
 // Experience level is now a free-form text input
 
 const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
+  accountId,
   open,
   onClose,
-  onSubmit,
-  loading = false,
   editMode = false,
   initialData,
-  _classifiedId,
+  accessCode,
+  onSuccess,
+  onError,
 }) => {
+  const {
+    createTeamsWanted,
+    updateTeamsWanted,
+    loading: operationLoading,
+    error: serviceError,
+    resetError,
+  } = useTeamsWantedClassifieds(accountId);
   // Form state
   const [formData, setFormData] = useState<UpsertTeamsWantedClassifiedType>(
     initialData || {
@@ -103,6 +122,12 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (serviceError) {
+      setSubmitError(serviceError);
+    }
+  }, [serviceError]);
+
   // Update form data when initialData changes (for edit mode)
   React.useEffect(() => {
     if (initialData) {
@@ -115,7 +140,19 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     field: keyof UpsertTeamsWantedClassifiedType,
     value: string | Date | string[] | null,
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    let nextValue: string | undefined = typeof value === 'string' ? value : undefined;
+
+    if (field === 'birthDate') {
+      if (value instanceof Date) {
+        nextValue = value.toISOString().split('T')[0];
+      } else if (!value) {
+        nextValue = '';
+      }
+    } else if (typeof value !== 'string' && value !== null) {
+      nextValue = value?.toString();
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: nextValue ?? '' }));
 
     // Clear error for this field when user starts typing
     if (errors[field]) {
@@ -191,23 +228,50 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
+    resetError();
 
     if (!validateForm()) {
       return;
     }
 
-    try {
-      await onSubmit(formData);
-      // Close dialog immediately on success
-      handleClose();
-    } catch (error) {
-      // The service layer now handles parsing detailed server errors
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`,
-      );
+    if (editMode && !formData.id) {
+      const message = 'Missing classified identifier for update.';
+      setSubmitError(message);
+      onError?.(message);
+      return;
     }
+
+    const normalizedPayload: UpsertTeamsWantedClassifiedType = {
+      ...(formData.id ? { id: formData.id } : {}),
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      experience: formData.experience.trim(),
+      positionsPlayed: selectedPositions.join(','),
+      birthDate: formData.birthDate || '',
+    };
+
+    const result = editMode
+      ? await updateTeamsWanted(formData.id as string, normalizedPayload, {
+          accessCode,
+        })
+      : await createTeamsWanted(normalizedPayload);
+
+    if (result.success && result.data) {
+      const successMessage =
+        result.message ?? `Teams Wanted ad ${editMode ? 'updated' : 'created'} successfully`;
+      onSuccess?.({
+        action: editMode ? 'update' : 'create',
+        message: successMessage,
+        data: result.data,
+      });
+      handleClose();
+      return;
+    }
+
+    const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`;
+    setSubmitError(message);
+    onError?.(message);
   };
 
   // Handle dialog close
@@ -225,6 +289,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     );
     setErrors({});
     setSubmitError(null);
+    resetError();
     onClose();
   };
 
@@ -416,11 +481,11 @@ Examples:
         </LocalizationProvider>
 
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
+          <Button onClick={handleClose} disabled={operationLoading}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading
+          <Button type="submit" variant="contained" disabled={operationLoading}>
+            {operationLoading
               ? editMode
                 ? 'Updating...'
                 : 'Creating...'
