@@ -943,7 +943,9 @@ export class EmailService {
    */
   private async checkAndUpdateEmailStatus(emailId: bigint): Promise<void> {
     // Check if there are any pending jobs for this email
-    const pendingJobs = Array.from(this.jobQueue.values()).filter((job) => job.emailId === emailId);
+    const pendingJobs = Array.from(this.jobQueue.entries()).filter(
+      ([jobId, job]) => job.emailId === emailId && !this.processingQueue.has(jobId),
+    );
     if (pendingJobs.length > 0) {
       return; // Still have pending batches
     }
