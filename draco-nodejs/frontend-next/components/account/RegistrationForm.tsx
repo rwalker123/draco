@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -19,6 +19,7 @@ import {
   CombinedRegistrationPayload,
   SelfRegisterInput,
 } from '../../services/accountRegistrationService';
+import TurnstileChallenge from '../security/TurnstileChallenge';
 
 type ValidationType = 'streetAddress' | 'dateOfBirth';
 
@@ -30,11 +31,13 @@ interface BaseProps {
 interface AuthenticatedProps extends BaseProps {
   isAuthenticated: true;
   onSubmit: (input: SelfRegisterInput) => Promise<void>;
+  requireCaptcha?: false;
 }
 
 interface UnauthenticatedProps extends BaseProps {
   isAuthenticated: false;
-  onSubmit: (payload: CombinedRegistrationPayload) => Promise<void>;
+  onSubmit: (payload: CombinedRegistrationPayload, captchaToken?: string | null) => Promise<void>;
+  requireCaptcha?: boolean;
 }
 
 type Props = AuthenticatedProps | UnauthenticatedProps;
@@ -57,9 +60,30 @@ export const RegistrationForm: React.FC<Props> = (props) => {
   const [validationType, setValidationType] = useState<ValidationType>('streetAddress');
   const [streetAddress, setStreetAddress] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const requiresCaptcha =
+    !isAuthenticated && Boolean((props as UnauthenticatedProps).requireCaptcha);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (requiresCaptcha) {
+      setCaptchaToken(null);
+      setCaptchaResetKey((key) => key + 1);
+      setCaptchaError(null);
+    }
+  }, [requiresCaptcha, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isAuthenticated && requiresCaptcha && mode === 'newUser' && !captchaToken) {
+      setCaptchaError('Please verify that you are human before continuing.');
+      setCaptchaResetKey((key) => key + 1);
+      return;
+    }
+
+    let usedCaptcha = false;
 
     if (isAuthenticated) {
       const input: SelfRegisterInput = {
@@ -96,7 +120,22 @@ export const RegistrationForm: React.FC<Props> = (props) => {
               streetAddress: validationType === 'streetAddress' ? streetAddress : undefined,
               dateOfBirth: validationType === 'dateOfBirth' ? dateOfBirth : undefined,
             };
-      await (onSubmit as (payload: CombinedRegistrationPayload) => Promise<void>)(payload);
+      const submit = onSubmit as (
+        payload: CombinedRegistrationPayload,
+        captchaToken?: string | null,
+      ) => Promise<void>;
+      const tokenForSubmit =
+        requiresCaptcha && mode === 'newUser' ? (captchaToken ?? undefined) : undefined;
+      usedCaptcha = Boolean(tokenForSubmit);
+      await submit(payload, tokenForSubmit);
+      if (requiresCaptcha) {
+        setCaptchaError(null);
+      }
+    }
+
+    if (usedCaptcha) {
+      setCaptchaToken(null);
+      setCaptchaResetKey((key) => key + 1);
     }
   };
 
@@ -146,6 +185,22 @@ export const RegistrationForm: React.FC<Props> = (props) => {
                   autoComplete="new-password"
                   required
                 />
+                {requiresCaptcha && (
+                  <Box sx={{ mt: 1 }}>
+                    <TurnstileChallenge
+                      onTokenChange={(token) => {
+                        setCaptchaToken(token);
+                        setCaptchaError(null);
+                      }}
+                      resetSignal={captchaResetKey}
+                    />
+                  </Box>
+                )}
+                {requiresCaptcha && captchaError && (
+                  <Alert severity="error" onClose={() => setCaptchaError(null)}>
+                    {captchaError}
+                  </Alert>
+                )}
               </>
             ) : (
               <>

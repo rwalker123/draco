@@ -54,6 +54,23 @@ export class ValidationError extends ApiError {
   }
 }
 
+export class HumanVerificationError extends ApiError {
+  public readonly statusCode = 422 as const;
+  public readonly isRetryable = true as const;
+
+  constructor(message = 'Human verification failed. Please try again.') {
+    super(message, 422, true, true);
+  }
+
+  toErrorResponse(): ApiErrorType {
+    return {
+      message: this.message,
+      statusCode: this.statusCode,
+      isRetryable: this.isRetryable,
+    };
+  }
+}
+
 export class NotFoundError extends ApiError {
   public readonly statusCode = 404 as const;
   public readonly isRetryable = false as const;

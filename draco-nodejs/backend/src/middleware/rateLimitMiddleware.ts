@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { Request, Response } from 'express';
 
 interface RateLimitOptions {
@@ -73,6 +73,17 @@ export const authRateLimit = createRateLimit({
 });
 
 /**
+ * Signup rate limiting for new user registration
+ * 3 attempts per hour per IP
+ */
+export const signupRateLimit = createRateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  message: 'Too many signup attempts. Please try again later.',
+  skipSuccessfulRequests: false,
+});
+
+/**
  * More lenient rate limiting for password-related endpoints
  * 3 attempts per 15 minutes per IP
  */
@@ -102,6 +113,31 @@ export const teamsWantedRateLimit = createRateLimit({
   max: 20, // 20 posts per hour
   message: 'Rate limit exceeded: Maximum 20 teams wanted posts per hour per IP',
   skipSuccessfulRequests: false,
+});
+
+/**
+ * Account creation rate limiting for organization provisioning
+ * 3 creations per hour per authenticated user (or IP if unauthenticated)
+ */
+export const accountCreationRateLimit = createRateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 attempts per hour
+  message: 'Too many account creation attempts. Please try again later.',
+  keyGenerator: (req) => {
+    if (req.user?.id) {
+      return `user:${req.user.id}`;
+    }
+    const forwarded = req.get('x-forwarded-for');
+    if (forwarded) {
+      const first = forwarded.split(',')[0]?.trim();
+      if (first) {
+        return `ip:${ipKeyGenerator(first)}`;
+      }
+    }
+
+    const ipKey = ipKeyGenerator(req.ip ?? '');
+    return `ip:${ipKey}`;
+  },
 });
 
 /**

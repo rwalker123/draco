@@ -40,6 +40,7 @@ import { MonitoringService } from './monitoringService.js';
 import { UserService } from './userService.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { SeasonService } from './seasonService.js';
+import { TurnstileService } from './turnstileService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -77,6 +78,7 @@ export class ServiceFactory {
   private static leagueService: LeagueService;
   private static monitoringService: MonitoringService;
   private static userService: UserService;
+  private static turnstileService: TurnstileService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -323,5 +325,13 @@ export class ServiceFactory {
     }
 
     return this.userService;
+  }
+
+  static getTurnstileService(): TurnstileService {
+    if (!this.turnstileService) {
+      this.turnstileService = new TurnstileService();
+    }
+
+    return this.turnstileService;
   }
 }

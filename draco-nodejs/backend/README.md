@@ -12,6 +12,11 @@ This is the backend API for Draco Sports Manager, built with Node.js, Express.js
 - **Security-First Design** - Untrusted route layer with account boundary enforcement
 - **Global Exception Handling** - Consistent error responses across all endpoints
 
+## Environment Variables
+
+- `TURNSTILE_SECRET_KEY` – Cloudflare Turnstile secret used to verify human-verification tokens for account creation and new user sign-up routes. Leave unset in local development to disable verification.
+- `TURNSTILE_VERIFY_ENDPOINT` *(optional)* – Override the default Turnstile verification URL (useful for testing without hitting the public API).
+
 ## Local HTTPS Development with mkcert
 
 To ensure secure communication between the frontend and backend during local development, the backend is configured to use HTTPS with a trusted, locally-generated certificate. This setup closely matches production and prevents mixed content issues.

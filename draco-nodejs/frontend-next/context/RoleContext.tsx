@@ -6,6 +6,7 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
+  useMemo,
 } from 'react';
 import { useAuth } from './AuthContext';
 import { ROLE_NAME_TO_ID } from '../utils/roleUtils';
@@ -26,6 +27,9 @@ export interface RoleContextType {
   loading: boolean;
   initialized: boolean;
   error: string | null;
+  isAdministrator: boolean;
+  manageableAccountIds: string[];
+  hasManageableAccount: boolean;
   hasRole: (roleId: string, context?: RoleContext) => boolean;
   hasPermission: (permission: string, context?: RoleContext) => boolean;
   hasRoleInAccount: (roleId: string, accountId: string) => boolean;
@@ -63,18 +67,21 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   const normalizeRoleId = (roleId?: string | null) => (roleId ? roleId.toLowerCase() : undefined);
 
-  const getHierarchyForRole = (roleId?: string | null): string[] => {
-    if (!roleMetadata || !roleId) return [];
+  const getHierarchyForRole = useCallback(
+    (roleId?: string | null): string[] => {
+      if (!roleMetadata || !roleId) return [];
 
-    const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
-    for (const candidate of candidates) {
-      const hierarchy = roleMetadata.hierarchy[candidate];
-      if (hierarchy) {
-        return hierarchy.map((id) => id.toLowerCase());
+      const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
+      for (const candidate of candidates) {
+        const hierarchy = roleMetadata.hierarchy[candidate];
+        if (hierarchy) {
+          return hierarchy.map((id) => id.toLowerCase());
+        }
       }
-    }
-    return [];
-  };
+      return [];
+    },
+    [roleMetadata],
+  );
 
   const getPermissionsForRole = (
     roleId?: string | null,
@@ -140,7 +147,9 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserRoles = useCallback(
     async (accountId?: string) => {
-      if (!token) return;
+      if (!token) {
+        return;
+      }
 
       setLoading(true);
       setInitialized(false);
@@ -161,11 +170,29 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
         const data = unwrapApiResult(result, 'Failed to fetch user roles');
 
-        setUserRoles((previous) => ({
-          accountId: data.contactRoles?.[0]?.accountId ?? accountId ?? previous?.accountId ?? '',
-          globalRoles: data.globalRoles ?? [],
-          contactRoles: data.contactRoles ?? [],
-        }));
+        setUserRoles((previous) => {
+          let nextAccountId = previous?.accountId ?? '';
+
+          if (accountId) {
+            const contactAccountMatch = data.contactRoles?.find(
+              (role) => role.accountId === accountId,
+            )?.accountId;
+
+            nextAccountId =
+              contactAccountMatch ??
+              data.contactRoles?.[0]?.accountId ??
+              accountId ??
+              previous?.accountId ??
+              '';
+          }
+
+          const nextRoles = {
+            accountId: nextAccountId,
+            globalRoles: data.globalRoles ?? [],
+            contactRoles: data.contactRoles ?? [],
+          };
+          return nextRoles;
+        });
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to fetch user roles');
         setUserRoles(null);
@@ -340,6 +367,98 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     return hasRole(roleId, { leagueId });
   };
 
+  const administratorRoleId = normalizeRoleId(ROLE_NAME_TO_ID['Administrator']);
+  const accountAdminRoleId = normalizeRoleId(ROLE_NAME_TO_ID['AccountAdmin']);
+
+  const computeIsAdministrator = useCallback((): boolean => {
+    if (!userRoles || !administratorRoleId) {
+      return false;
+    }
+
+    const result = userRoles.globalRoles.some((role) => {
+      const normalizedRoleId = normalizeRoleId(ROLE_NAME_TO_ID[role] || role);
+      if (!normalizedRoleId) {
+        return false;
+      }
+      if (normalizedRoleId === administratorRoleId) {
+        return true;
+      }
+      const inheritedRoles = getHierarchyForRole(normalizedRoleId);
+      return inheritedRoles.includes(administratorRoleId);
+    });
+
+    return result;
+  }, [userRoles, administratorRoleId, getHierarchyForRole]);
+
+  const isAdministrator = useMemo(() => computeIsAdministrator(), [computeIsAdministrator]);
+
+  const computeManageableAccountIds = useCallback((): string[] => {
+    if (!userRoles || !accountAdminRoleId) {
+      return [];
+    }
+
+    const accountIds = new Set<string>();
+
+    userRoles.contactRoles.forEach((role) => {
+      const normalizedRoleId = normalizeRoleId(ROLE_NAME_TO_ID[role.roleId] || role.roleId);
+      if (!normalizedRoleId) {
+        return;
+      }
+
+      if (normalizedRoleId === accountAdminRoleId) {
+        if (role.accountId) {
+          accountIds.add(role.accountId);
+        }
+        return;
+      }
+
+      const inheritedRoles = getHierarchyForRole(normalizedRoleId);
+      if (inheritedRoles.includes(accountAdminRoleId) && role.accountId) {
+        accountIds.add(role.accountId);
+      }
+    });
+
+    const ids = Array.from(accountIds);
+    return ids;
+  }, [userRoles, accountAdminRoleId, getHierarchyForRole]);
+
+  const manageableAccountIds = useMemo(
+    () => computeManageableAccountIds(),
+    [computeManageableAccountIds],
+  );
+
+  const computeHasAccountAdminRole = useCallback((): boolean => {
+    if (!userRoles || !accountAdminRoleId) {
+      return false;
+    }
+
+    const result = userRoles.contactRoles.some((role) => {
+      const normalizedRoleId = normalizeRoleId(ROLE_NAME_TO_ID[role.roleId] || role.roleId);
+      if (!normalizedRoleId) {
+        return false;
+      }
+
+      if (normalizedRoleId === accountAdminRoleId) {
+        return true;
+      }
+
+      const inheritedRoles = getHierarchyForRole(normalizedRoleId);
+      return inheritedRoles.includes(accountAdminRoleId);
+    });
+
+    return result;
+  }, [userRoles, accountAdminRoleId, getHierarchyForRole]);
+
+  const hasAccountAdminRole = useMemo(
+    () => computeHasAccountAdminRole(),
+    [computeHasAccountAdminRole],
+  );
+
+  const hasManageableAccount = useMemo(() => {
+    const result = isAdministrator || manageableAccountIds.length > 0 || hasAccountAdminRole;
+    return result;
+  }, [isAdministrator, manageableAccountIds, hasAccountAdminRole]);
+
   return (
     <RoleContext.Provider
       value={{
@@ -347,6 +466,9 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         loading,
         initialized,
         error,
+        isAdministrator,
+        manageableAccountIds,
+        hasManageableAccount,
         hasRole,
         hasPermission,
         hasRoleInAccount,

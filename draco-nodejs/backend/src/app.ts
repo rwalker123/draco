@@ -1,8 +1,8 @@
+import './config/loadEnv.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import dotenv from 'dotenv';
 import { bigIntSerializer } from './middleware/bigint-serializer.js';
 import { specs } from './openapi/openapi.js';
 import { globalErrorHandler } from './utils/globalErrorHandler.js';
@@ -34,9 +34,6 @@ import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
-
-// Load environment variables
-dotenv.config();
 
 // Start cleanup service
 const cleanupService = ServiceFactory.getCleanupService();
