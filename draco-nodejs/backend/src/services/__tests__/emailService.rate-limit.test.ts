@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
 
-vi.mock('@draco/shared-schemas', () => ({
-  EmailListPagedType: {},
-  EmailRecipientGroupsType: {},
-  EmailSendType: {},
-  PagingType: {},
-}));
+vi.mock(
+  '@draco/shared-schemas',
+  () => ({
+    EmailListPagedType: {},
+    EmailRecipientGroupsType: {},
+    EmailSendType: {},
+    PagingType: {},
+  }),
+  { virtual: true },
+);
 
 import { EmailService } from '../emailService.js';
 import type { EmailSettings, ResolvedRecipient } from '../../interfaces/emailInterfaces.js';
