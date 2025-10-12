@@ -67,18 +67,21 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   const normalizeRoleId = (roleId?: string | null) => (roleId ? roleId.toLowerCase() : undefined);
 
-  const getHierarchyForRole = (roleId?: string | null): string[] => {
-    if (!roleMetadata || !roleId) return [];
+  const getHierarchyForRole = useCallback(
+    (roleId?: string | null): string[] => {
+      if (!roleMetadata || !roleId) return [];
 
-    const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
-    for (const candidate of candidates) {
-      const hierarchy = roleMetadata.hierarchy[candidate];
-      if (hierarchy) {
-        return hierarchy.map((id) => id.toLowerCase());
+      const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
+      for (const candidate of candidates) {
+        const hierarchy = roleMetadata.hierarchy[candidate];
+        if (hierarchy) {
+          return hierarchy.map((id) => id.toLowerCase());
+        }
       }
-    }
-    return [];
-  };
+      return [];
+    },
+    [roleMetadata],
+  );
 
   const getPermissionsForRole = (
     roleId?: string | null,
