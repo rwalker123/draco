@@ -13,11 +13,12 @@ import { Search } from '@mui/icons-material';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
 import { useRouter } from 'next/navigation';
-import { playerClassifiedService } from '../../services/playerClassifiedService';
 import { PlayersWantedDetailDialog } from '../player-classifieds';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 import CreatePlayersWantedDialog from '../player-classifieds/CreatePlayersWantedDialog';
 import { useAuth } from '../../context/AuthContext';
+import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
+import type { PlayersWantedDialogSuccessEvent } from '../player-classifieds/CreatePlayersWantedDialog';
 
 interface PlayersWantedPreviewProps {
   accountId: string;
@@ -42,20 +43,26 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
   const { token } = useAuth();
+  const { listPlayersWanted } = usePlayersWantedClassifieds(accountId);
 
   const loadPlayersWanted = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await playerClassifiedService.getPlayersWanted(accountId);
-      setPlayersWanted(response.data.slice(0, maxDisplay));
+      const response = await listPlayersWanted();
+      if (response.success && response.data) {
+        setPlayersWanted(response.data.data.slice(0, maxDisplay));
+      } else {
+        const message = response.error || 'Failed to load player opportunities';
+        setError(message);
+      }
     } catch (err) {
       console.error('Failed to fetch players wanted:', err);
       setError('Failed to load player opportunities');
     } finally {
       setLoading(false);
     }
-  }, [accountId, maxDisplay]);
+  }, [listPlayersWanted, maxDisplay]);
 
   useEffect(() => {
     loadPlayersWanted();
@@ -89,10 +96,10 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
   };
 
   const handleCreateSuccess = useCallback(
-    async (_classified: PlayersWantedClassifiedType) => {
+    async (_event: PlayersWantedDialogSuccessEvent) => {
       setCreateDialogOpen(false);
       setCreateError(null);
-      setSuccessMessage('Players Wanted ad created successfully!');
+      setSuccessMessage(_event.message);
       await loadPlayersWanted();
     },
     [loadPlayersWanted],

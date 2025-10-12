@@ -24,3 +24,4 @@ export { usePlayerClassifieds } from './usePlayerClassifieds';
 export { useClassifiedsPagination } from './useClassifiedsPagination';
 export { useClassifiedsSearch } from './useClassifiedsSearch';
 export { useClassifiedsPermissions } from './useClassifiedsPermissions';
+export { usePlayersWantedClassifieds, useTeamsWantedClassifieds } from './useClassifiedsService';
