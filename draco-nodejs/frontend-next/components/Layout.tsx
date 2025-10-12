@@ -51,7 +51,7 @@ const getAccountIdFromPath = (pathname: string): string | null => {
 
 const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) => {
   const { user, clearAllContexts } = useAuth();
-  const { hasRole, hasManageableAccount, isAdministrator } = useRole();
+  const { hasRole, hasManageableAccount } = useRole();
   const { currentAccount: contextAccount } = useAccount();
   const router = useRouter();
   const pathname = usePathname();
@@ -65,6 +65,10 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
   // Check if user can access account management features
   const hasAccountManagementPrivileges = Boolean(user && hasManageableAccount);
+  const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
+  const shouldShowAdminMenuIcon =
+    hasAccountManagementPrivileges ||
+    Boolean(user && currentAccountId && hasRole('AccountAdmin', { accountId: currentAccountId }));
 
   // Custom admin menu icon component
   const AdminMenuIcon = () => (
@@ -219,7 +223,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
               sx={{ mr: 2 }}
               onClick={handleMenuOpen}
             >
-              {isAdministrator ? <AdminMenuIcon /> : <MenuIcon />}
+              {shouldShowAdminMenuIcon ? <AdminMenuIcon /> : <MenuIcon />}
             </IconButton>
             <Box
               onClick={handleHomeClick}
