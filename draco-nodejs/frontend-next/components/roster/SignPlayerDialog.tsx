@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { PersonAdd as PersonAddIcon, SportsBasketball as SportsIcon } from '@mui/icons-material';
 import { BaseContactType, RosterPlayerType, SignRosterMemberType } from '@draco/shared-schemas';
+import { useRosterPlayer, RosterPlayerMutationResult } from '../../hooks/roster/useRosterPlayer';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useDelayedLoading } from '../../hooks/useDelayedLoading';
 import { getContactDisplayName } from '../../utils/contactUtils';
@@ -25,34 +26,33 @@ import { getContactDisplayName } from '../../utils/contactUtils';
 interface SignPlayerDialogProps {
   open: boolean;
   onClose: () => void;
-  onSignPlayer: (contactId: string, rosterData: SignRosterMemberType) => Promise<void>;
-  onUpdateRosterMember: (rosterMemberId: string, updates: SignRosterMemberType) => Promise<void>;
-  getContactRoster: (contactId: string) => Promise<RosterPlayerType | undefined>;
-  fetchAvailablePlayers: (firstName?: string, lastName?: string) => Promise<BaseContactType[]>;
-  isSigningNewPlayer: boolean;
-  selectedPlayer: BaseContactType | RosterPlayerType | null;
+  accountId: string;
+  seasonId: string;
+  teamSeasonId: string;
+  mode: 'sign' | 'edit';
+  rosterMemberId?: string | null;
+  initialPlayer?: BaseContactType | RosterPlayerType | null;
   initialRosterData?: SignRosterMemberType;
-  error?: string | null;
-  onClearError: () => void;
+  onSuccess?: (result: RosterPlayerMutationResult) => Promise<void> | void;
 }
 
 const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   open,
   onClose,
-  onSignPlayer,
-  onUpdateRosterMember,
-  getContactRoster,
-  fetchAvailablePlayers,
-  isSigningNewPlayer,
-  selectedPlayer: initialSelectedPlayer,
+  accountId,
+  seasonId,
+  teamSeasonId,
+  mode,
+  rosterMemberId,
+  initialPlayer,
   initialRosterData,
-  error,
-  onClearError,
+  onSuccess,
 }) => {
   // Search states - contained within this component
   const [searchInput, setSearchInput] = useState('');
   const [availablePlayers, setAvailablePlayers] = useState<BaseContactType[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Use custom hooks for debouncing and delayed loading
   const debouncedSearchInput = useDebouncedValue(searchInput, 400);
@@ -68,6 +68,11 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   const [loadingPlayerRoster, setLoadingPlayerRoster] = useState(false);
   const [isSigningPlayer, setIsSigningPlayer] = useState(false);
   const [signMultiplePlayers, setSignMultiplePlayers] = useState(false);
+
+  const isSigningNewPlayer = mode === 'sign';
+
+  const { searchAvailablePlayers, loadContactRoster, signRosterPlayer, updateRosterPlayer } =
+    useRosterPlayer({ accountId, seasonId, teamSeasonId });
 
   // Form data state
   const [rosterFormData, setRosterFormData] = useState<SignRosterMemberType>({
@@ -85,6 +90,8 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   // Initialize form data when dialog opens or initial data changes
   useEffect(() => {
     if (open) {
+      setError(null);
+
       if (initialRosterData) {
         setRosterFormData(initialRosterData);
       } else {
@@ -101,13 +108,13 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
         });
       }
 
-      if (initialSelectedPlayer) {
-        setSelectedPlayer(initialSelectedPlayer);
+      if (initialPlayer) {
+        setSelectedPlayer(initialPlayer);
       } else {
         setSelectedPlayer(null);
       }
     }
-  }, [open, initialRosterData, initialSelectedPlayer]);
+  }, [open, initialRosterData, initialPlayer]);
 
   // Search execution with AbortController for proper cancellation
   useEffect(() => {
@@ -166,16 +173,18 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
         }
 
         // Execute the search
-        const players = await fetchAvailablePlayers(firstName, lastName);
+        const players = await searchAvailablePlayers(firstName, lastName);
 
         // Only update state if this search wasn't cancelled
         if (!abortControllerRef.current?.signal.aborted) {
           setAvailablePlayers(players);
+          setError(null);
         }
       } catch (error) {
         // Only log error if it wasn't due to cancellation
         if (!abortControllerRef.current?.signal.aborted) {
           console.error('Search failed:', error);
+          setError(error instanceof Error ? error.message : 'Failed to search for players');
           setAvailablePlayers([]);
         }
       } finally {
@@ -196,7 +205,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
         abortControllerRef.current.abort();
       }
     };
-  }, [debouncedSearchInput, open, isSigningNewPlayer, fetchAvailablePlayers]);
+  }, [debouncedSearchInput, open, isSigningNewPlayer, searchAvailablePlayers]);
 
   // Clear search state when dialog closes
   useEffect(() => {
@@ -208,6 +217,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
       setLoadingPlayerRoster(false);
       setIsSigningPlayer(false);
       setSignMultiplePlayers(false);
+      setError(null);
 
       // Cancel any ongoing search
       if (abortControllerRef.current) {
@@ -225,9 +235,9 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
         setLoadingPlayerRoster(true);
 
         try {
-          const playerRosterData = await getContactRoster(newValue.id);
-          setRosterFormData({
-            ...rosterFormData,
+          const playerRosterData = await loadContactRoster(newValue.id);
+          setRosterFormData((current) => ({
+            ...current,
             player: {
               firstYear: playerRosterData?.firstYear || new Date().getFullYear(),
               submittedDriversLicense: playerRosterData?.submittedDriversLicense || false,
@@ -235,12 +245,18 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                 id: newValue.id,
               },
             },
-          });
+          }));
+          setError(null);
         } catch (error) {
           // Fall back to defaults if fetch fails
           console.warn('Failed to load player roster data:', error);
-          setRosterFormData({
-            ...rosterFormData,
+          setError(
+            error instanceof Error
+              ? error.message
+              : 'Failed to load existing roster information for this player',
+          );
+          setRosterFormData((current) => ({
+            ...current,
             player: {
               firstYear: new Date().getFullYear(),
               submittedDriversLicense: false,
@@ -248,15 +264,15 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                 id: newValue.id,
               },
             },
-          });
+          }));
         } finally {
           setLoadingPlayerRoster(false);
         }
       } else {
         setSelectedPlayer(null);
         setLoadingPlayerRoster(false);
-        setRosterFormData({
-          ...rosterFormData,
+        setRosterFormData((current) => ({
+          ...current,
           player: {
             firstYear: new Date().getFullYear(),
             submittedDriversLicense: false,
@@ -264,10 +280,10 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
               id: '',
             },
           },
-        });
+        }));
       }
     },
-    [getContactRoster, rosterFormData],
+    [loadContactRoster],
   );
 
   // Reset form for next player (used in multiple sign mode)
@@ -276,6 +292,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     setSearchInput('');
     setAvailablePlayers([]);
     setLoadingPlayerRoster(false);
+    setError(null);
     setRosterFormData({
       playerNumber: undefined,
       submittedWaiver: false,
@@ -295,34 +312,54 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
       if (!selectedPlayer) {
         return;
       }
-      setIsSigningPlayer(true);
-      await onSignPlayer(selectedPlayer.id, rosterFormData);
 
-      if (signMultiplePlayers) {
-        // Keep dialog open and reset form for next player
-        resetFormForNextPlayer();
-      } else {
-        // Close dialog as usual
-        onClose();
+      setIsSigningPlayer(true);
+
+      try {
+        const member = await signRosterPlayer(selectedPlayer.id, rosterFormData);
+        setError(null);
+        await onSuccess?.({ type: 'sign', member });
+
+        if (signMultiplePlayers) {
+          resetFormForNextPlayer();
+        } else {
+          onClose();
+        }
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to sign player');
+      } finally {
+        setIsSigningPlayer(false);
+      }
+    } else {
+      if (!rosterMemberId) {
+        setError('Unable to update roster member: missing roster member identifier');
+        return;
       }
 
-      setIsSigningPlayer(false);
-    } else {
-      // Handle roster update - always close dialog
-      if (selectedPlayer && 'id' in selectedPlayer) {
-        await onUpdateRosterMember(selectedPlayer.id, rosterFormData);
+      setIsSigningPlayer(true);
+
+      try {
+        const member = await updateRosterPlayer(rosterMemberId, rosterFormData);
+        setError(null);
+        await onSuccess?.({ type: 'update', member });
         onClose();
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to update roster information');
+      } finally {
+        setIsSigningPlayer(false);
       }
     }
   }, [
     isSigningNewPlayer,
-    selectedPlayer,
-    rosterFormData,
-    onSignPlayer,
-    onUpdateRosterMember,
     onClose,
-    signMultiplePlayers,
+    onSuccess,
     resetFormForNextPlayer,
+    rosterFormData,
+    rosterMemberId,
+    selectedPlayer,
+    signMultiplePlayers,
+    signRosterPlayer,
+    updateRosterPlayer,
   ]);
 
   return (
@@ -334,7 +371,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
         <Box sx={{ pt: 1 }}>
           {/* Error Alert */}
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={onClearError}>
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
@@ -478,7 +515,9 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
           onClick={handleSubmit}
           variant="contained"
           disabled={
-            isSigningNewPlayer ? !selectedPlayer || isSigningPlayer || loadingPlayerRoster : false
+            isSigningNewPlayer
+              ? !selectedPlayer || isSigningPlayer || loadingPlayerRoster
+              : isSigningPlayer
           }
           startIcon={
             isSigningPlayer ? (
