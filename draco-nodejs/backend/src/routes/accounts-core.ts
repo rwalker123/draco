@@ -3,7 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { authRateLimit } from '../middleware/rateLimitMiddleware.js';
+import { accountCreationRateLimit, signupRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import {
   AccountDomainLookupHeadersSchema,
@@ -20,6 +20,7 @@ const router = Router({ mergeParams: true });
 const accountsService = ServiceFactory.getAccountsService();
 const routeProtection = ServiceFactory.getRouteProtection();
 const registrationService = ServiceFactory.getRegistrationService();
+const turnstileService = ServiceFactory.getTurnstileService();
 
 /**
  * GET /api/accounts/search
@@ -107,8 +108,10 @@ router.get(
 router.post(
   '/',
   authenticateToken,
-  routeProtection.requireAdministrator(),
+  accountCreationRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    await turnstileService.assertValid(req.get(turnstileService.getHeaderName()), req.ip);
+
     const createRequest = CreateAccountSchema.parse(req.body);
 
     if (!createRequest.ownerContact) {
@@ -199,7 +202,7 @@ router.get(
  */
 router.post(
   '/:accountId/registration',
-  authRateLimit,
+  signupRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { mode } = req.query || {};
@@ -211,6 +214,7 @@ router.post(
     const input = ContactValidationWithSignInSchema.parse(req.body);
 
     if (mode === 'newUser') {
+      await turnstileService.assertValid(req.get(turnstileService.getHeaderName()), req.ip);
       const result = await registrationService.registerAndCreateContactNewUser(accountId, input);
       res.status(201).json(result);
     } else {

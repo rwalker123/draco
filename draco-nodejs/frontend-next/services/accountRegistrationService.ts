@@ -181,6 +181,7 @@ export const AccountRegistrationService = {
   async combinedRegister(
     accountId: string,
     payload: CombinedRegistrationPayload,
+    captchaToken?: string,
   ): Promise<{ token?: string; user?: unknown; contact: ContactType }> {
     const client = createApiClient();
 
@@ -189,7 +190,10 @@ export const AccountRegistrationService = {
       client,
       path: { accountId },
       query: { mode: payload.mode },
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(captchaToken ? { 'cf-turnstile-token': captchaToken } : {}),
+      },
       body: registrationPayload,
       throwOnError: false,
     });

@@ -51,7 +51,7 @@ const getAccountIdFromPath = (pathname: string): string | null => {
 
 const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) => {
   const { user, clearAllContexts } = useAuth();
-  const { hasRole } = useRole();
+  const { hasRole, hasManageableAccount, isAdministrator } = useRole();
   const { currentAccount: contextAccount } = useAccount();
   const router = useRouter();
   const pathname = usePathname();
@@ -63,11 +63,8 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const [currentAccount, setCurrentAccount] = React.useState<AccountType | null>(null);
   const [registrationOpen, setRegistrationOpen] = React.useState(false);
 
-  // Check if user has admin role
-  const isAdmin =
-    user &&
-    (hasRole('Administrator') ||
-      (currentAccount?.id && hasRole('AccountAdmin', { accountId: String(currentAccount.id) })));
+  // Check if user can access account management features
+  const hasAccountManagementPrivileges = Boolean(user && hasManageableAccount);
 
   // Custom admin menu icon component
   const AdminMenuIcon = () => (
@@ -222,7 +219,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
               sx={{ mr: 2 }}
               onClick={handleMenuOpen}
             >
-              {isAdmin ? <AdminMenuIcon /> : <MenuIcon />}
+              {isAdministrator ? <AdminMenuIcon /> : <MenuIcon />}
             </IconButton>
             <Box
               onClick={handleHomeClick}
@@ -317,24 +314,14 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             <ListItemText>Admin Dashboard</ListItemText>
           </MenuItem>
         )}
-        {(() => {
-          if (
-            user &&
-            (hasRole('Administrator') ||
-              (currentAccount?.id &&
-                hasRole('AccountAdmin', { accountId: String(currentAccount.id) })))
-          ) {
-            return (
-              <MenuItem onClick={() => handleNavigation('/account-management')}>
-                <ListItemIcon>
-                  <BusinessIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Account Management</ListItemText>
-              </MenuItem>
-            );
-          }
-          return null;
-        })()}
+        {hasAccountManagementPrivileges && (
+          <MenuItem onClick={() => handleNavigation('/account-management')}>
+            <ListItemIcon>
+              <BusinessIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Account Management</ListItemText>
+          </MenuItem>
+        )}
         {(() => {
           if (
             user &&

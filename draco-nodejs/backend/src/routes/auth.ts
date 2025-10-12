@@ -1,6 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { authRateLimit, passwordRateLimit } from '../middleware/rateLimitMiddleware.js';
+import {
+  authRateLimit,
+  passwordRateLimit,
+  signupRateLimit,
+} from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
@@ -9,6 +13,7 @@ import { SignInCredentialsSchema } from '@draco/shared-schemas';
 const router = Router();
 const authService = ServiceFactory.getAuthService();
 const roleService = ServiceFactory.getRoleVerification();
+const turnstileService = ServiceFactory.getTurnstileService();
 
 /**
  * POST /api/auth/login
@@ -30,8 +35,10 @@ router.post(
  */
 router.post(
   '/register',
-  authRateLimit,
+  signupRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
+    await turnstileService.assertValid(req.get(turnstileService.getHeaderName()), req.ip);
+
     const registerCredentials = SignInCredentialsSchema.parse(req.body);
     const result = await authService.register(registerCredentials);
 

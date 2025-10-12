@@ -1,20 +1,23 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import type { FC } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import OrganizationsWidget from '../../components/OrganizationsWidget';
 import { searchAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
-import { AccountType } from '@draco/shared-schemas';
+import { AccountType as SharedAccountType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
+import CreateAccountDialog from '../../components/account/dialogs/CreateAccountDialog';
 
-const Accounts: React.FC = () => {
+const Accounts: FC = () => {
   const [showSignup, setShowSignup] = useState(false);
-  const [searchResults, setSearchResults] = useState<AccountType[]>([]);
+  const [searchResults, setSearchResults] = useState<SharedAccountType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -22,7 +25,7 @@ const Accounts: React.FC = () => {
   const apiClient = useApiClient();
 
   // If accountId is provided, redirect to that account's home page
-  React.useEffect(() => {
+  useEffect(() => {
     if (accountId) {
       router.push(`/account/${accountId}/home`);
     }
@@ -42,7 +45,7 @@ const Accounts: React.FC = () => {
         });
 
         const data = unwrapApiResult(result, 'Failed to search accounts');
-        setSearchResults((data as AccountType[]) ?? []);
+        setSearchResults((data as SharedAccountType[]) ?? []);
       } catch (error) {
         console.error('Account search failed:', error);
         setSearchResults([]);
@@ -53,13 +56,25 @@ const Accounts: React.FC = () => {
     [apiClient],
   );
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = useCallback(() => {
     if (user) {
-      router.push('/account-management');
+      setCreateDialogOpen(true);
     } else {
       setShowSignup(true);
     }
-  };
+  }, [user]);
+
+  const handleCloseCreateDialog = useCallback(() => {
+    setCreateDialogOpen(false);
+  }, []);
+
+  const handleCreateDialogSuccess = useCallback(
+    (_result: { account: SharedAccountType; message: string }) => {
+      setCreateDialogOpen(false);
+      router.push('/account-management');
+    },
+    [router],
+  );
 
   const handleSignup = () => {
     router.push('/signup');
@@ -136,6 +151,12 @@ const Accounts: React.FC = () => {
           </Box>
         </Paper>
       )}
+
+      <CreateAccountDialog
+        open={createDialogOpen}
+        onClose={handleCloseCreateDialog}
+        onSuccess={handleCreateDialogSuccess}
+      />
     </main>
   );
 };

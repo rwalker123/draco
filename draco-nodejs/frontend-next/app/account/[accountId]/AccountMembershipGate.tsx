@@ -81,13 +81,14 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
   );
 
   const handleCombinedRegister = useCallback(
-    async (payload: CombinedRegistrationPayload) => {
+    async (payload: CombinedRegistrationPayload, captchaToken?: string | null) => {
       setLoading(true);
       setError(null);
       try {
         const { token: newToken } = await AccountRegistrationService.combinedRegister(
           accountId,
           payload,
+          captchaToken ?? undefined,
         );
         if (newToken) {
           // Persist token and refresh user
@@ -139,6 +140,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
             onSubmit={handleCombinedRegister}
             loading={loading}
             error={error}
+            requireCaptcha={Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)}
           />
         )}
       </Container>

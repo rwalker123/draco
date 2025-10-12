@@ -101,15 +101,27 @@ export class AccountsService {
       const accountAdminRoleId =
         ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] || RoleNamesType.ACCOUNT_ADMIN;
 
-      const managedAccountIds = await this.roleRepository.findAccountIdsForUserRoles(userId, [
-        accountAdminRoleId,
+      const [managedAccountIds, ownedAccountRecords] = await Promise.all([
+        this.roleRepository.findAccountIdsForUserRoles(userId, [accountAdminRoleId]),
+        this.accountRepository.findMany({ owneruserid: userId }),
       ]);
 
-      if (managedAccountIds.length === 0) {
+      const managedAccountIdMap = new Map<string, bigint>();
+      for (const managedAccountId of managedAccountIds) {
+        managedAccountIdMap.set(managedAccountId.toString(), managedAccountId);
+      }
+
+      for (const ownedAccount of ownedAccountRecords) {
+        managedAccountIdMap.set(ownedAccount.id.toString(), ownedAccount.id);
+      }
+
+      if (!managedAccountIdMap.size) {
         return [];
       }
 
-      accounts = await this.accountRepository.findAccountsWithRelations(managedAccountIds);
+      accounts = await this.accountRepository.findAccountsWithRelations(
+        Array.from(managedAccountIdMap.values()),
+      );
     }
 
     if (!accounts.length) {
@@ -258,8 +270,12 @@ export class AccountsService {
       await this.accountRepository.createAccountUrl(accountRecord.id, url);
     }
 
-    const { account, affiliationMap, ownerContact: ownerContactRecord, ownerUser } =
-      await this.loadAccountContext(accountRecord.id);
+    const {
+      account,
+      affiliationMap,
+      ownerContact: ownerContactRecord,
+      ownerUser,
+    } = await this.loadAccountContext(accountRecord.id);
 
     return AccountResponseFormatter.formatAccount(
       account,
@@ -332,6 +348,14 @@ export class AccountsService {
 
   async deleteAccount(accountId: bigint): Promise<void> {
     await this.ensureAccountExists(accountId);
+    const contacts = await this.contactRepository.findMany({
+      creatoraccountid: accountId,
+    });
+
+    for (const contact of contacts) {
+      await this.contactRepository.delete(contact.id);
+    }
+
     await this.accountRepository.delete(accountId);
   }
 

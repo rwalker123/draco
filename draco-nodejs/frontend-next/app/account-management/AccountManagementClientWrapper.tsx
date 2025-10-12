@@ -5,7 +5,7 @@ import AccountManagement from './AccountManagement';
 
 export default function AccountManagementClientWrapper() {
   return (
-    <ProtectedRoute requiredRole={['Administrator', 'AccountAdmin']} checkAccountBoundary={false}>
+    <ProtectedRoute checkAccountBoundary={false}>
       <AccountManagement />
     </ProtectedRoute>
   );

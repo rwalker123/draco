@@ -304,6 +304,10 @@ For account-level pages, call `getAccountBranding(accountId)` instead. When you 
 
 Reusable dialogs such as `SponsorFormDialog` live in `components/` and embed the service-hook pattern described above. They accept `onSuccess`/`onError` callbacks, manage internal form state, and reset their local state when closed. Parent pages open the dialog, handle callbacks, and refresh their local caches.
 
+### Human Verification
+
+Account creation and combined registration dialogs enforce Cloudflare Turnstile verification when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is configured. The dialog component loads the challenge, keeps the token in local state, and forwards it to the API via the `cf-turnstile-token` header. Parents should not manage captcha state directly—stick with the self-contained dialog pattern.
+
 ### State Management Pattern
 
 Use consistent state management patterns throughout the application.

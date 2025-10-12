@@ -29,6 +29,7 @@ import { RoleContextData } from './interfaces/roleInterfaces.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { UserService } from './userService.js';
 import { ServiceFactory } from './serviceFactory.js';
+import { AccountsService } from './accountsService.js';
 
 export class RoleService implements IRoleService {
   private contactRepository: IContactRepository;
@@ -37,6 +38,7 @@ export class RoleService implements IRoleService {
   private teamRepository: ITeamRepository;
   private leagueRepository: ILeagueRepository;
   private userService: UserService;
+  private accountsService: AccountsService;
 
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
@@ -45,6 +47,7 @@ export class RoleService implements IRoleService {
     this.teamRepository = RepositoryFactory.getTeamRepository();
     this.leagueRepository = RepositoryFactory.getLeagueRepository();
     this.userService = ServiceFactory.getUserService();
+    this.accountsService = ServiceFactory.getAccountsService();
   }
 
   /**
@@ -74,6 +77,53 @@ export class RoleService implements IRoleService {
           },
         };
         contactRoles.push(ownerRole);
+      }
+    } else {
+      const accountAdminRoleId = ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN];
+      if (accountAdminRoleId) {
+        const ownedAccounts = await this.accountsService.getAccountsForUser(userId);
+
+        for (const ownedAccount of ownedAccounts) {
+          if (ownedAccount.accountOwner?.user?.userId !== userId) {
+            continue;
+          }
+
+          const accountIdStr = ownedAccount.id;
+          const alreadyHasRole = contactRoles.some(
+            (role) => role.roleId === accountAdminRoleId && role.accountId === accountIdStr,
+          );
+
+          if (alreadyHasRole) {
+            continue;
+          }
+
+          let contactId = ownedAccount.accountOwner?.contact?.id;
+
+          if (!contactId) {
+            try {
+              const contactRecord = await this.contactRepository.findByUserId(
+                userId,
+                BigInt(accountIdStr),
+              );
+              contactId = contactRecord ? contactRecord.id.toString() : undefined;
+            } catch {
+              contactId = undefined;
+            }
+          }
+
+          const ownerRole: RoleWithContactType = {
+            id: BigInt(0).toString(),
+            roleId: accountAdminRoleId,
+            roleName: RoleNamesType.ACCOUNT_ADMIN,
+            roleData: accountIdStr,
+            accountId: accountIdStr,
+            contact: {
+              id: contactId ?? 'unknown',
+            },
+          };
+
+          contactRoles.push(ownerRole);
+        }
       }
     }
 
