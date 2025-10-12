@@ -64,13 +64,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  const logDebug = (message: string, details?: Record<string, unknown>) => {
-    if (isDevelopment) {
-      console.debug(`[RoleContext] ${message}`, details);
-    }
-  };
 
   const normalizeRoleId = (roleId?: string | null) => (roleId ? roleId.toLowerCase() : undefined);
 
@@ -127,7 +120,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       if (cachedMetadata && cachedVersion) {
         const parsedMetadata: RoleMetadataSchemaType = JSON.parse(cachedMetadata);
         if (parsedMetadata.version === cachedVersion) {
-          logDebug('Using cached role metadata', { version: cachedVersion });
           return parsedMetadata;
         }
       }
@@ -141,7 +133,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
       localStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
       localStorage.setItem(ROLE_METADATA_VERSION_KEY, metadata.version);
-      logDebug('Fetched role metadata from API', { version: metadata.version });
 
       return metadata;
     } catch (err: unknown) {
@@ -154,7 +145,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserRoles = useCallback(
     async (accountId?: string) => {
       if (!token) {
-        logDebug('Skipping fetchUserRoles - no token');
         return;
       }
 
@@ -176,11 +166,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         });
 
         const data = unwrapApiResult(result, 'Failed to fetch user roles');
-        logDebug('Fetched current user roles', {
-          accountId,
-          responseAccountId: data.contactRoles?.[0]?.accountId ?? null,
-          contactRoleCount: data.contactRoles?.length ?? 0,
-        });
 
         setUserRoles((previous) => {
           let nextAccountId = previous?.accountId ?? '';
@@ -203,22 +188,14 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
             globalRoles: data.globalRoles ?? [],
             contactRoles: data.contactRoles ?? [],
           };
-          logDebug('Updated user roles', nextRoles);
           return nextRoles;
         });
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to fetch user roles');
         setUserRoles(null);
-        logDebug('Failed to fetch user roles', {
-          error: err instanceof Error ? err.message : String(err),
-        });
       } finally {
         setLoading(false);
         setInitialized(true);
-        logDebug('Fetch user roles completed', {
-          accountId,
-          loading: false,
-        });
       }
     },
     [token, apiClient, fetchRoleMetadata],
@@ -239,7 +216,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     setLoading(false);
     setInitialized(true);
-    logDebug('Cleared user roles');
   };
 
   const hasRole = (roleId: string, context?: RoleContext): boolean => {
@@ -393,7 +369,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdministrator = useMemo(() => {
     if (!userRoles || !administratorRoleId) {
-      logDebug('Computed isAdministrator', { result: false, reason: 'missing roles' });
       return false;
     }
 
@@ -409,16 +384,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       return inheritedRoles.includes(administratorRoleId);
     });
 
-    logDebug('Computed isAdministrator', { result, globalRoles: userRoles.globalRoles });
     return result;
   }, [userRoles, administratorRoleId, roleMetadata]);
 
   const manageableAccountIds = useMemo(() => {
     if (!userRoles || !accountAdminRoleId) {
-      logDebug('Computed manageableAccountIds', {
-        ids: [],
-        reason: 'missing roles',
-      });
       return [];
     }
 
@@ -444,13 +414,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     });
 
     const ids = Array.from(accountIds);
-    logDebug('Computed manageableAccountIds', { ids });
     return ids;
   }, [userRoles, accountAdminRoleId, roleMetadata]);
 
   const hasAccountAdminRole = useMemo(() => {
     if (!userRoles || !accountAdminRoleId) {
-      logDebug('Computed hasAccountAdminRole', { result: false, reason: 'missing roles' });
       return false;
     }
 
@@ -468,24 +436,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       return inheritedRoles.includes(accountAdminRoleId);
     });
 
-    logDebug('Computed hasAccountAdminRole', {
-      result,
-      contactRoles: userRoles.contactRoles.map((role) => ({
-        roleId: role.roleId,
-        accountId: role.accountId,
-      })),
-    });
     return result;
   }, [userRoles, accountAdminRoleId, roleMetadata]);
 
   const hasManageableAccount = useMemo(() => {
     const result = isAdministrator || manageableAccountIds.length > 0 || hasAccountAdminRole;
-    logDebug('Computed hasManageableAccount', {
-      result,
-      isAdministrator,
-      manageableAccountIds,
-      hasAccountAdminRole,
-    });
     return result;
   }, [isAdministrator, manageableAccountIds, hasAccountAdminRole]);
 
