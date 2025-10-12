@@ -377,10 +377,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
           ? `Player "${contactName}" signed to roster successfully`
           : `Roster information saved for "${contactName}"`;
 
-      setError(null);
+      clearError();
       setSuccessMessage(message);
     },
-    [fetchRosterData, setError, setSuccessMessage],
+    [fetchRosterData, clearError, setSuccessMessage],
   );
 
   // Enhanced contact success handler for new EditContactDialog
