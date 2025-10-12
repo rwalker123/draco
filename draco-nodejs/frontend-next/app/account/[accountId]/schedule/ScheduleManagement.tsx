@@ -124,7 +124,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setEditDialogOpen,
     setDeleteDialogOpen,
     setGameResultsDialogOpen,
-    handleDeleteGame,
+    handleDeleteSuccess,
     handleSaveGameResults,
     setSelectedGame,
     setSelectedGameForResults,
@@ -454,10 +454,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
         <DeleteGameDialog
           open={deleteDialogOpen}
-          onClose={() => setDeleteDialogOpen(false)}
           selectedGame={selectedGame}
-          onConfirm={handleDeleteGame}
+          onClose={() => setDeleteDialogOpen(false)}
+          onSuccess={handleDeleteSuccess}
+          onError={setError}
           getTeamName={getTeamName}
+          accountId={accountId}
         />
 
         <GameResultsDialog
