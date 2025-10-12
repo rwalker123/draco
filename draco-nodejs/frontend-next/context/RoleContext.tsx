@@ -385,7 +385,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return result;
-  }, [userRoles, administratorRoleId, roleMetadata, getHierarchyForRole]);
+  }, [userRoles, administratorRoleId, getHierarchyForRole]);
 
   const isAdministrator = useMemo(() => computeIsAdministrator(), [computeIsAdministrator]);
 
@@ -417,7 +417,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
     const ids = Array.from(accountIds);
     return ids;
-  }, [userRoles, accountAdminRoleId, roleMetadata, getHierarchyForRole]);
+  }, [userRoles, accountAdminRoleId, getHierarchyForRole]);
 
   const manageableAccountIds = useMemo(
     () => computeManageableAccountIds(),
@@ -444,7 +444,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return result;
-  }, [userRoles, accountAdminRoleId, roleMetadata, getHierarchyForRole]);
+  }, [userRoles, accountAdminRoleId, getHierarchyForRole]);
 
   const hasAccountAdminRole = useMemo(
     () => computeHasAccountAdminRole(),
