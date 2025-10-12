@@ -289,4 +289,13 @@ export class PrismaEmailRepository implements IEmailRepository {
       },
     });
   }
+
+  async deleteEmail(emailId: bigint, accountId: bigint): Promise<void> {
+    await this.prisma.emails.deleteMany({
+      where: {
+        id: emailId,
+        account_id: accountId,
+      },
+    });
+  }
 }

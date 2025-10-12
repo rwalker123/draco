@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Chip,
   Dialog,
   DialogActions,
@@ -36,6 +37,7 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import {
   AttachFile as AttachFileIcon,
   Close as CloseIcon,
+  Delete as DeleteIcon,
   ErrorOutline as ErrorOutlineIcon,
   History as HistoryIcon,
   People as PeopleIcon,
@@ -44,9 +46,11 @@ import {
   Search as SearchIcon,
   ShowChart as ShowChartIcon,
   TaskAlt as TaskAltIcon,
+  VisibilityOutlined as ViewDetailsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import { useApiClient } from '../../../hooks/useApiClient';
+import { deleteAccountEmail } from '@draco/shared-api-client';
 import { createEmailService } from '../../../services/emailService';
 import type {
   AttachmentDetails,
@@ -56,6 +60,7 @@ import type {
   EmailStatus,
 } from '../../../types/emails/email';
 import { formatDateTime } from '../../../utils/dateUtils';
+import { assertNoApiError } from '../../../utils/apiResult';
 
 const STATUS_LABELS: Record<EmailStatus, string> = {
   draft: 'Draft',
@@ -434,6 +439,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
   const [emails, setEmails] = useState<EmailRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [paginationInfo, setPaginationInfo] = useState<EmailListResponse['pagination'] | null>(
@@ -447,6 +453,9 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
   const [detailError, setDetailError] = useState<string | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<EmailRecord | null>(null);
   const [emailDetail, setEmailDetail] = useState<EmailRecord | null>(null);
+  const [deletingEmailIds, setDeletingEmailIds] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [emailPendingDelete, setEmailPendingDelete] = useState<EmailRecord | null>(null);
 
   const detailCacheRef = useRef<Map<string, EmailRecord>>(new Map());
 
@@ -456,6 +465,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
     try {
       setLoading(true);
       setLoadError(null);
+      setActionError(null);
 
       const statusQuery = statusFilter === 'all' ? undefined : statusFilter;
       const response = await emailService.listEmails(accountId, page, pageSize, statusQuery);
@@ -599,6 +609,60 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
       openDetail(selectedEmail);
     }
   };
+
+  const closeDeleteDialog = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setEmailPendingDelete(null);
+  }, []);
+
+  const handleDeleteEmail = useCallback(
+    async (email: EmailRecord) => {
+      if (!accountId || deletingEmailIds.has(email.id)) {
+        return;
+      }
+
+      setActionError(null);
+      setDeletingEmailIds((prev) => {
+        const next = new Set(prev);
+        next.add(email.id);
+        return next;
+      });
+
+      try {
+        const result = await deleteAccountEmail({
+          client: apiClient,
+          path: { accountId, emailId: email.id },
+          throwOnError: false,
+        });
+
+        assertNoApiError(result, 'Failed to delete email.');
+
+        setEmails((prev) => prev.filter((item) => item.id !== email.id));
+        detailCacheRef.current.delete(email.id);
+
+        if (selectedEmail?.id === email.id) {
+          setDetailOpen(false);
+          setDetailLoading(false);
+          setDetailError(null);
+          setSelectedEmail(null);
+          setEmailDetail(null);
+        }
+
+        await fetchEmails();
+      } catch (err) {
+        console.error('Failed to delete email:', err);
+        setActionError('Unable to delete email. Please try again.');
+      } finally {
+        setDeletingEmailIds((prev) => {
+          const next = new Set(prev);
+          next.delete(email.id);
+          return next;
+        });
+        closeDeleteDialog();
+      }
+    },
+    [accountId, apiClient, closeDeleteDialog, deletingEmailIds, fetchEmails, selectedEmail],
+  );
 
   const handleDownloadAttachment = async (attachment: AttachmentDetails) => {
     if (!selectedEmail) {
@@ -759,6 +823,12 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
             </Alert>
           )}
 
+          {actionError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {actionError}
+            </Alert>
+          )}
+
           {filteredEmails.length === 0 && !loading && !loadError ? (
             <Box sx={{ py: 6, textAlign: 'center' }}>
               <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
@@ -796,6 +866,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
                       email.totalRecipients > 0
                         ? (email.clickCount / email.totalRecipients) * 100
                         : 0;
+                    const isDeleting = deletingEmailIds.has(email.id);
 
                     return (
                       <TableRow key={email.id} hover>
@@ -827,9 +898,34 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
                         <TableCell align="right">{formatRate(openRate)}</TableCell>
                         <TableCell align="right">{formatRate(clickRate)}</TableCell>
                         <TableCell align="right">
-                          <Button size="small" onClick={() => openDetail(email)}>
-                            View details
-                          </Button>
+                          <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                            <Tooltip title="View details">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => openDetail(email)}
+                                  disabled={isDeleting}
+                                >
+                                  <ViewDetailsIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title="Delete email">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => {
+                                    setEmailPendingDelete(email);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  disabled={isDeleting}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </Stack>
                         </TableCell>
                       </TableRow>
                     );
@@ -865,6 +961,39 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
         onRetry={retryDetail}
         onDownloadAttachment={handleDownloadAttachment}
       />
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete Email</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete{' '}
+            <Typography component="span" sx={{ fontWeight: 600 }}>
+              {emailPendingDelete?.subject ?? 'this email'}
+            </Typography>
+            ? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={closeDeleteDialog}
+            disabled={emailPendingDelete ? deletingEmailIds.has(emailPendingDelete.id) : false}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => emailPendingDelete && handleDeleteEmail(emailPendingDelete)}
+            disabled={!emailPendingDelete || deletingEmailIds.has(emailPendingDelete.id)}
+            startIcon={
+              emailPendingDelete && deletingEmailIds.has(emailPendingDelete.id) ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : undefined
+            }
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
