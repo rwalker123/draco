@@ -56,6 +56,11 @@ const CreateAccountFormSchema = z.object({
     .max(CURRENT_YEAR + 10, 'First year is too far in the future'),
   ownerFirstName: z.string().trim().min(1, 'Owner first name is required'),
   ownerLastName: z.string().trim().min(1, 'Owner last name is required'),
+  seasonName: z
+    .string()
+    .trim()
+    .min(1, 'Season name is required')
+    .max(25, 'Season name must be 25 characters or fewer'),
 });
 
 type CreateAccountFormValues = z.infer<typeof CreateAccountFormSchema>;
@@ -75,6 +80,7 @@ const defaultFormValues: CreateAccountFormValues = {
   firstYear: CURRENT_YEAR,
   ownerFirstName: '',
   ownerLastName: '',
+  seasonName: '',
 };
 
 const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
@@ -259,6 +265,7 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
         accountLogoUrl: '',
         configuration,
         urls: [],
+        seasonName: values.seasonName.trim(),
         ownerContact: {
           firstName: values.ownerFirstName.trim(),
           lastName: values.ownerLastName.trim(),
@@ -434,6 +441,15 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
               {...register('firstYear', { valueAsNumber: true })}
               error={Boolean(errors.firstYear)}
               helperText={errors.firstYear?.message}
+            />
+            <TextField
+              label="Season Name"
+              fullWidth
+              required
+              disabled={disableForm}
+              {...register('seasonName')}
+              error={Boolean(errors.seasonName)}
+              helperText={errors.seasonName?.message}
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <Controller

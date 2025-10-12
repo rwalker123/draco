@@ -118,7 +118,11 @@ router.post(
       throw new ValidationError('Owner contact information is required');
     }
 
-    const createdAccount = await accountsService.createAccount(req!.user!.id, createRequest);
+    const createdAccount = await accountsService.createAccount(
+      req!.user!.id,
+      req!.user!.username,
+      createRequest,
+    );
 
     res.status(201).json(createdAccount);
   }),

@@ -218,10 +218,15 @@ export class AccountsService {
 
   async createAccount(
     accountOwnerUserId: string,
+    accountOwnerUserName: string,
     payload: CreateAccountType,
   ): Promise<AccountType> {
     if (!accountOwnerUserId) {
       throw new ValidationError('Account owner user ID is required');
+    }
+
+    if (!accountOwnerUserName) {
+      throw new ValidationError('Account owner username is required');
     }
 
     const accountTypeId = payload.configuration?.accountType?.id;
@@ -233,6 +238,10 @@ export class AccountsService {
 
     if (!payload.ownerContact) {
       throw new ValidationError('Owner contact information is required');
+    }
+
+    if (!payload.seasonName || payload.seasonName.trim().length === 0) {
+      throw new ValidationError('Season name is required');
     }
 
     const ownerContact = CreateContactSchema.parse(payload.ownerContact);
@@ -255,7 +264,12 @@ export class AccountsService {
 
     const accountRecord = await this.accountRepository.create(accountCreateData);
 
-    await this.createOwnerContact(accountRecord.id, accountOwnerUserId, ownerContact);
+    await this.createOwnerContact(
+      accountRecord.id,
+      accountOwnerUserId,
+      accountOwnerUserName,
+      ownerContact,
+    );
 
     const normalizedUrls = Array.from(
       new Set(
@@ -269,6 +283,13 @@ export class AccountsService {
     for (const url of normalizedUrls) {
       await this.accountRepository.createAccountUrl(accountRecord.id, url);
     }
+
+    const season = await this.seasonRepository.createSeason({
+      accountid: accountRecord.id,
+      name: payload.seasonName.trim(),
+    });
+
+    await this.seasonRepository.upsertCurrentSeason(accountRecord.id, season.id);
 
     const {
       account,
@@ -640,15 +661,17 @@ export class AccountsService {
   private async createOwnerContact(
     accountId: bigint,
     ownerUserId: string,
+    ownerUserName: string,
     contact: CreateContactType,
   ): Promise<void> {
     const contactDetails = contact.contactDetails;
+    const normalizedOwnerEmail = ownerUserName.trim();
 
     const contactRecord: Partial<contacts> = {
       firstname: contact.firstName,
       lastname: contact.lastName,
       middlename: contact.middleName ?? '',
-      email: contact.email ?? null,
+      email: normalizedOwnerEmail.length > 0 ? normalizedOwnerEmail : (contact.email ?? null),
       phone1: contactDetails?.phone1 || null,
       phone2: contactDetails?.phone2 || null,
       phone3: contactDetails?.phone3 || null,

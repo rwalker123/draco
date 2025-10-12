@@ -14,7 +14,7 @@ export const ContactIdSchema = z.object({
 export const NamedContactSchema = ContactIdSchema.extend({
   firstName: nameSchema,
   lastName: nameSchema,
-  middleName: nameSchema.optional(),
+  middleName: z.string().trim().max(50).optional(),
 });
 
 export const PhoneNumberSchema = z

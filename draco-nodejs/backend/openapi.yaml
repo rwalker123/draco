@@ -63,8 +63,7 @@ components:
                   maxLength: 100
                 middleName:
                   type: string
-                  minLength: 1
-                  maxLength: 100
+                  maxLength: 50
                 email:
                   type: string
                   maxLength: 100
@@ -157,8 +156,7 @@ components:
               maxLength: 100
             middleName:
               type: string
-              minLength: 1
-              maxLength: 100
+              maxLength: 50
             email:
               type: string
               maxLength: 100
@@ -256,8 +254,7 @@ components:
                       maxLength: 100
                     middleName:
                       type: string
-                      minLength: 1
-                      maxLength: 100
+                      maxLength: 50
                     email:
                       type: string
                       maxLength: 100
@@ -331,8 +328,7 @@ components:
           maxLength: 100
         middleName:
           type: string
-          minLength: 1
-          maxLength: 100
+          maxLength: 50
         email:
           type: string
           maxLength: 100
@@ -430,8 +426,7 @@ components:
           maxLength: 100
         middleName:
           type: string
-          minLength: 1
-          maxLength: 100
+          maxLength: 50
         email:
           type: string
           maxLength: 100
@@ -501,8 +496,7 @@ components:
           maxLength: 100
         middleName:
           type: string
-          minLength: 1
-          maxLength: 100
+          maxLength: 50
       required:
         - id
         - firstName
@@ -523,8 +517,7 @@ components:
           maxLength: 100
         middleName:
           type: string
-          minLength: 1
-          maxLength: 100
+          maxLength: 50
         email:
           type: string
           maxLength: 100
@@ -728,8 +721,7 @@ components:
           maxLength: 100
         middleName:
           type: string
-          minLength: 1
-          maxLength: 100
+          maxLength: 50
         email:
           type: string
           maxLength: 100
@@ -825,8 +817,7 @@ components:
               maxLength: 100
             middleName:
               type: string
-              minLength: 1
-              maxLength: 100
+              maxLength: 50
             email:
               type: string
               maxLength: 100
@@ -954,8 +945,7 @@ components:
               maxLength: 100
             middleName:
               type: string
-              minLength: 1
-              maxLength: 100
+              maxLength: 50
             email:
               type: string
               maxLength: 100
@@ -1249,8 +1239,7 @@ components:
               maxLength: 100
             middleName:
               type: string
-              minLength: 1
-              maxLength: 100
+              maxLength: 50
             email:
               type: string
               maxLength: 100
@@ -1410,8 +1399,7 @@ components:
               maxLength: 100
             middleName:
               type: string
-              minLength: 1
-              maxLength: 100
+              maxLength: 50
             email:
               type: string
               maxLength: 100
@@ -1535,8 +1523,7 @@ components:
                         maxLength: 100
                       middleName:
                         type: string
-                        minLength: 1
-                        maxLength: 100
+                        maxLength: 50
                       email:
                         type: string
                         maxLength: 100
@@ -1800,8 +1787,7 @@ components:
           maxLength: 100
         middleName:
           type: string
-          minLength: 1
-          maxLength: 100
+          maxLength: 50
         email:
           type: string
           maxLength: 100
@@ -2326,8 +2312,7 @@ components:
                 maxLength: 100
               middleName:
                 type: string
-                minLength: 1
-                maxLength: 100
+                maxLength: 50
               email:
                 type: string
                 maxLength: 100
@@ -2634,8 +2619,7 @@ components:
                       maxLength: 100
                     middleName:
                       type: string
-                      minLength: 1
-                      maxLength: 100
+                      maxLength: 50
                     email:
                       type: string
                       maxLength: 100
@@ -2708,8 +2692,7 @@ components:
                   maxLength: 100
                 middleName:
                   type: string
-                  minLength: 1
-                  maxLength: 100
+                  maxLength: 50
               required:
                 - id
                 - firstName
@@ -2840,8 +2823,7 @@ components:
                           maxLength: 100
                         middleName:
                           type: string
-                          minLength: 1
-                          maxLength: 100
+                          maxLength: 50
                         email:
                           type: string
                           maxLength: 100
@@ -2914,8 +2896,7 @@ components:
                       maxLength: 100
                     middleName:
                       type: string
-                      minLength: 1
-                      maxLength: 100
+                      maxLength: 50
                   required:
                     - id
                     - firstName
@@ -2996,8 +2977,7 @@ components:
               maxLength: 100
             middleName:
               type: string
-              minLength: 1
-              maxLength: 100
+              maxLength: 50
             email:
               type: string
               maxLength: 100
@@ -3069,8 +3049,7 @@ components:
                 maxLength: 100
               middleName:
                 type: string
-                minLength: 1
-                maxLength: 100
+                maxLength: 50
               email:
                 type: string
                 maxLength: 100
@@ -3263,8 +3242,7 @@ components:
               maxLength: 100
             middleName:
               type: string
-              minLength: 1
-              maxLength: 100
+              maxLength: 50
             email:
               type: string
               maxLength: 100
@@ -3311,6 +3289,10 @@ components:
           required:
             - firstName
             - lastName
+        seasonName:
+          type: string
+          maxLength: 25
+          default: ""
       required:
         - name
         - accountLogoUrl
@@ -7661,8 +7643,7 @@ paths:
                       maxLength: 100
                     middleName:
                       type: string
-                      minLength: 1
-                      maxLength: 100
+                      maxLength: 50
                     email:
                       type: string
                       maxLength: 100
@@ -7709,6 +7690,10 @@ paths:
                   required:
                     - firstName
                     - lastName
+                seasonName:
+                  type: string
+                  maxLength: 25
+                  default: ""
       responses:
         "200":
           description: Account updated
@@ -9424,8 +9409,7 @@ paths:
                   maxLength: 100
                 middleName:
                   type: string
-                  minLength: 1
-                  maxLength: 100
+                  maxLength: 50
                 email:
                   type: string
                   maxLength: 100
@@ -9487,8 +9471,7 @@ paths:
                   maxLength: 100
                 middleName:
                   type: string
-                  minLength: 1
-                  maxLength: 100
+                  maxLength: 50
                 email:
                   type: string
                   maxLength: 100
@@ -9665,8 +9648,7 @@ paths:
                   maxLength: 100
                 middleName:
                   type: string
-                  minLength: 1
-                  maxLength: 100
+                  maxLength: 50
                 email:
                   type: string
                   maxLength: 100
@@ -9728,8 +9710,7 @@ paths:
                   maxLength: 100
                 middleName:
                   type: string
-                  minLength: 1
-                  maxLength: 100
+                  maxLength: 50
                 email:
                   type: string
                   maxLength: 100
@@ -14627,8 +14608,7 @@ paths:
                           maxLength: 100
                         middleName:
                           type: string
-                          minLength: 1
-                          maxLength: 100
+                          maxLength: 50
                         email:
                           type: string
                           maxLength: 100

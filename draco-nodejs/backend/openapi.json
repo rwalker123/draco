@@ -87,8 +87,7 @@
                   },
                   "middleName": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
+                    "maxLength": 50
                   },
                   "email": {
                     "type": "string",
@@ -209,8 +208,7 @@
               },
               "middleName": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 100
+                "maxLength": 50
               },
               "email": {
                 "type": "string",
@@ -339,8 +337,7 @@
                       },
                       "middleName": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 100
+                        "maxLength": 50
                       },
                       "email": {
                         "type": "string",
@@ -441,8 +438,7 @@
           },
           "middleName": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 100
+            "maxLength": 50
           },
           "email": {
             "type": "string",
@@ -570,8 +566,7 @@
           },
           "middleName": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 100
+            "maxLength": 50
           },
           "email": {
             "type": "string",
@@ -661,8 +656,7 @@
           },
           "middleName": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 100
+            "maxLength": 50
           }
         },
         "required": [
@@ -690,8 +684,7 @@
           },
           "middleName": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 100
+            "maxLength": 50
           },
           "email": {
             "type": "string",
@@ -964,8 +957,7 @@
           },
           "middleName": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 100
+            "maxLength": 50
           },
           "email": {
             "type": "string",
@@ -1088,8 +1080,7 @@
               },
               "middleName": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 100
+                "maxLength": 50
               },
               "email": {
                 "type": "string",
@@ -1259,8 +1250,7 @@
               },
               "middleName": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 100
+                "maxLength": 50
               },
               "email": {
                 "type": "string",
@@ -1659,8 +1649,7 @@
               },
               "middleName": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 100
+                "maxLength": 50
               },
               "email": {
                 "type": "string",
@@ -1875,8 +1864,7 @@
               },
               "middleName": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 100
+                "maxLength": 50
               },
               "email": {
                 "type": "string",
@@ -2036,8 +2024,7 @@
                         },
                         "middleName": {
                           "type": "string",
-                          "minLength": 1,
-                          "maxLength": 100
+                          "maxLength": 50
                         },
                         "email": {
                           "type": "string",
@@ -2401,8 +2388,7 @@
           },
           "middleName": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 100
+            "maxLength": 50
           },
           "email": {
             "type": "string",
@@ -3126,8 +3112,7 @@
                 },
                 "middleName": {
                   "type": "string",
-                  "minLength": 1,
-                  "maxLength": 100
+                  "maxLength": 50
                 },
                 "email": {
                   "type": "string",
@@ -3546,8 +3531,7 @@
                       },
                       "middleName": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 100
+                        "maxLength": 50
                       },
                       "email": {
                         "type": "string",
@@ -3643,8 +3627,7 @@
                   },
                   "middleName": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
+                    "maxLength": 50
                   }
                 },
                 "required": [
@@ -3829,8 +3812,7 @@
                           },
                           "middleName": {
                             "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
+                            "maxLength": 50
                           },
                           "email": {
                             "type": "string",
@@ -3926,8 +3908,7 @@
                       },
                       "middleName": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 100
+                        "maxLength": 50
                       }
                     },
                     "required": [
@@ -4045,8 +4026,7 @@
               },
               "middleName": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 100
+                "maxLength": 50
               },
               "email": {
                 "type": "string",
@@ -4138,8 +4118,7 @@
                 },
                 "middleName": {
                   "type": "string",
-                  "minLength": 1,
-                  "maxLength": 100
+                  "maxLength": 50
                 },
                 "email": {
                   "type": "string",
@@ -4407,8 +4386,7 @@
               },
               "middleName": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 100
+                "maxLength": 50
               },
               "email": {
                 "type": "string",
@@ -4469,6 +4447,11 @@
               "firstName",
               "lastName"
             ]
+          },
+          "seasonName": {
+            "type": "string",
+            "maxLength": 25,
+            "default": ""
           }
         },
         "required": [
@@ -10434,8 +10417,7 @@
                       },
                       "middleName": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 100
+                        "maxLength": 50
                       },
                       "email": {
                         "type": "string",
@@ -10496,6 +10478,11 @@
                       "firstName",
                       "lastName"
                     ]
+                  },
+                  "seasonName": {
+                    "type": "string",
+                    "maxLength": 25,
+                    "default": ""
                   }
                 }
               }
@@ -13286,8 +13273,7 @@
                   },
                   "middleName": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
+                    "maxLength": 50
                   },
                   "email": {
                     "type": "string",
@@ -13367,8 +13353,7 @@
                   },
                   "middleName": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
+                    "maxLength": 50
                   },
                   "email": {
                     "type": "string",
@@ -13638,8 +13623,7 @@
                   },
                   "middleName": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
+                    "maxLength": 50
                   },
                   "email": {
                     "type": "string",
@@ -13719,8 +13703,7 @@
                   },
                   "middleName": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
+                    "maxLength": 50
                   },
                   "email": {
                     "type": "string",
@@ -21556,8 +21539,7 @@
                           },
                           "middleName": {
                             "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
+                            "maxLength": 50
                           },
                           "email": {
                             "type": "string",
