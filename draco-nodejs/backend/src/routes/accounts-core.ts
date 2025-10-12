@@ -103,7 +103,7 @@ router.get(
 
 /**
  * POST /api/accounts
- * Create new account (Administrator only)
+ * Create new account (public access with Turnstile verification)
  */
 router.post(
   '/',
