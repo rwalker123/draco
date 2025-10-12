@@ -69,7 +69,6 @@ const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
   affiliations,
   onClose,
   onSuccess,
-  onError,
 }) => {
   const { updateAccount } = useAccountManagementService();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -177,7 +176,6 @@ const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update account';
       setSubmitError(message);
-      onError?.(message);
     }
   });
 

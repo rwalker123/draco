@@ -156,15 +156,10 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
         const accounts = managedAccountsResult.data;
 
         let owner = { firstName: '', lastName: '' };
-        const preferredAccount = accounts.find(
+        const ownedAccount = accounts.find(
           (account) => account.accountOwner?.user?.userId === user?.userId,
         );
-        const fallbackAccount = accounts.find(
-          (account) =>
-            account.accountOwner?.contact?.firstName && account.accountOwner?.contact?.lastName,
-        );
-        const contact =
-          preferredAccount?.accountOwner?.contact ?? fallbackAccount?.accountOwner?.contact;
+        const contact = ownedAccount?.accountOwner?.contact;
 
         if (contact?.firstName && contact?.lastName) {
           owner = {

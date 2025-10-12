@@ -3296,7 +3296,6 @@ components:
       required:
         - name
         - accountLogoUrl
-        - ownerContact
     AccountName:
       type: object
       properties:
