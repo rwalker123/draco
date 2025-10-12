@@ -36,7 +36,7 @@ const EditAccountFormSchema = z.object({
   affiliationId: z.string().trim().min(1, 'Affiliation is required'),
   timezoneId: z.string().trim().min(1, 'Timezone is required'),
   firstYear: z
-    .number({ invalid_type_error: 'First year is required' })
+    .number({ message: 'First year is required' })
     .int('First year must be a whole number')
     .min(1800, 'First year must be 1800 or later')
     .max(CURRENT_YEAR + 10, 'First year is too far in the future'),
