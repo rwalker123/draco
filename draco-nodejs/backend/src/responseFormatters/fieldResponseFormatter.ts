@@ -18,15 +18,30 @@ export class FieldResponseFormatter {
     };
   }
 
+  private static normalize(value?: string | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const trimmed = value.trim();
+
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
   static formatField(field: dbAvailableField): FieldType {
     return {
       id: field.id.toString(),
       name: field.name,
-      address: field.address ?? null,
-      city: field.city ?? null,
-      state: field.state ?? null,
-      zip: field.zipcode ?? null,
+      address: this.normalize(field.address),
+      city: this.normalize(field.city),
+      state: this.normalize(field.state),
+      zip: this.normalize(field.zipcode),
       shortName: field.shortname,
+      comment: this.normalize(field.comment),
+      directions: this.normalize(field.directions),
+      rainoutNumber: this.normalize(field.rainoutnumber),
+      latitude: this.normalize(field.latitude),
+      longitude: this.normalize(field.longitude),
     };
   }
 

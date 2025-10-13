@@ -21,6 +21,7 @@ export { useSmoothTransition } from './useSmoothTransition';
 export { useSchedulePermissions } from './useSchedulePermissions';
 export { useGameResults } from './useGameResults';
 export { useTeamManagement } from './useTeamManagement';
+export { useFieldService } from './useFieldService';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';
