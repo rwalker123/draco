@@ -1,6 +1,5 @@
 import React from 'react';
 import { Game, GameStatus } from '@/types/schedule';
-import { GameResultSchema, UpdateGameResultsSchema } from '@draco/shared-schemas';
 import {
   EnterGameResultsDialogGame,
   GameResultsSuccessPayload,
