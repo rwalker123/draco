@@ -1,9 +1,6 @@
 import { useState, useCallback } from 'react';
-import { useApiClient } from '../../../hooks/useApiClient';
 import { Game } from '@/types/schedule';
-import { updateGameResults } from '@draco/shared-api-client';
-import { unwrapApiResult } from '../../../utils/apiResult';
-import { getGameStatusShortText, getGameStatusText } from '../../../utils/gameUtils';
+import { ScheduleGameResultsSuccessPayload } from '../dialogs/GameResultsDialog';
 import type { DeleteGameResult } from './useGameDeletion';
 
 interface UseGameManagementProps {
@@ -31,7 +28,7 @@ interface UseGameManagementReturn {
   setSelectedGameForResults: (game: Game | null) => void;
 
   handleDeleteSuccess: (result: DeleteGameResult) => void;
-  handleSaveGameResults: (gameResultData: GameResultData) => Promise<void>;
+  handleGameResultsSuccess: (payload: ScheduleGameResultsSuccessPayload) => void;
 
   openCreateDialog: () => void;
   openEditDialog: (game: Game) => void;
@@ -39,25 +36,12 @@ interface UseGameManagementReturn {
   openGameResultsDialog: (game: Game) => void;
 }
 
-interface GameResultData {
-  homeScore: number;
-  awayScore: number;
-  gameStatus: number;
-  emailPlayers: boolean;
-  postToTwitter: boolean;
-  postToBluesky: boolean;
-  postToFacebook: boolean;
-}
-
 export const useGameManagement = ({
-  accountId,
   upsertGameInCache,
   removeGameFromCache,
   setSuccess,
   setError,
 }: UseGameManagementProps): UseGameManagementReturn => {
-  const apiClient = useApiClient();
-
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -86,40 +70,9 @@ export const useGameManagement = ({
     [removeGameFromCache, selectedGame, selectedGameForResults, setSuccess, setError],
   );
 
-  const handleSaveGameResults = useCallback(
-    async (gameResultData: GameResultData) => {
-      if (!selectedGameForResults) {
-        throw new Error('No game selected for results');
-      }
-
-      const result = await updateGameResults({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId: selectedGameForResults.season.id,
-          gameId: selectedGameForResults.id,
-        },
-        body: {
-          homeScore: gameResultData.homeScore,
-          visitorScore: gameResultData.awayScore,
-          gameStatus: gameResultData.gameStatus,
-          emailPlayers: gameResultData.emailPlayers,
-          postToTwitter: gameResultData.postToTwitter,
-          postToBluesky: gameResultData.postToBluesky,
-          postToFacebook: gameResultData.postToFacebook,
-        },
-        throwOnError: false,
-      });
-
-      const updatedResult = unwrapApiResult(result, 'Failed to save game results');
-      const updatedGame: Game = {
-        ...selectedGameForResults,
-        homeScore: updatedResult.homeScore,
-        visitorScore: updatedResult.visitorScore,
-        gameStatus: updatedResult.gameStatus,
-        gameStatusText: getGameStatusText(updatedResult.gameStatus),
-        gameStatusShortText: getGameStatusShortText(updatedResult.gameStatus),
-      };
+  const handleGameResultsSuccess = useCallback(
+    (payload: ScheduleGameResultsSuccessPayload) => {
+      const { updatedGame } = payload;
 
       upsertGameInCache(updatedGame);
       setSelectedGameForResults(updatedGame);
@@ -131,7 +84,7 @@ export const useGameManagement = ({
       setGameResultsDialogOpen(false);
       setSelectedGameForResults(null);
     },
-    [selectedGame, selectedGameForResults, accountId, apiClient, upsertGameInCache, setSuccess],
+    [selectedGame, upsertGameInCache, setSuccess],
   );
 
   const openCreateDialog = useCallback(() => {
@@ -171,7 +124,7 @@ export const useGameManagement = ({
     setSelectedGameForResults,
 
     handleDeleteSuccess,
-    handleSaveGameResults,
+    handleGameResultsSuccess,
 
     openCreateDialog,
     openEditDialog,

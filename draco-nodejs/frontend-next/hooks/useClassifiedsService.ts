@@ -219,7 +219,6 @@ interface TeamsWantedOperationOptions {
 }
 
 export function useTeamsWantedClassifieds(accountId: string) {
-  const { token } = useAuth();
   const apiClient = useApiClient();
   const { runOperation, loading, error, resetError } = useRunOperation();
 
@@ -321,7 +320,7 @@ export function useTeamsWantedClassifieds(accountId: string) {
         },
       });
     },
-    [accountId, apiClient, runOperation, token],
+    [accountId, apiClient, runOperation],
   );
 
   return {
