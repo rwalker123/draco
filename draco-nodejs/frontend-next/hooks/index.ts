@@ -3,6 +3,7 @@
 
 // Existing hooks
 export { useAccountMembership } from './useAccountMembership';
+export { useAccountManagementService } from './useAccountManagementService';
 export { useContactSearch } from './useContactSearch';
 export { useContactSelection } from './useContactSelection';
 export { useCurrentSeason } from './useCurrentSeason';
@@ -24,3 +25,4 @@ export { usePlayerClassifieds } from './usePlayerClassifieds';
 export { useClassifiedsPagination } from './useClassifiedsPagination';
 export { useClassifiedsSearch } from './useClassifiedsSearch';
 export { useClassifiedsPermissions } from './useClassifiedsPermissions';
+export { usePlayersWantedClassifieds, useTeamsWantedClassifieds } from './useClassifiedsService';

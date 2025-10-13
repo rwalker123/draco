@@ -117,8 +117,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     if (!token) return null;
 
     try {
-      const cachedMetadata = localStorage.getItem(ROLE_METADATA_CACHE_KEY);
-      const cachedVersion = localStorage.getItem(ROLE_METADATA_VERSION_KEY);
+      const cachedMetadata = sessionStorage.getItem(ROLE_METADATA_CACHE_KEY);
+      const cachedVersion = sessionStorage.getItem(ROLE_METADATA_VERSION_KEY);
 
       if (cachedMetadata && cachedVersion) {
         const parsedMetadata: RoleMetadataSchemaType = JSON.parse(cachedMetadata);
@@ -134,8 +134,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
       const metadata = unwrapApiResult(result, 'Failed to fetch role metadata');
 
-      localStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
-      localStorage.setItem(ROLE_METADATA_VERSION_KEY, metadata.version);
+      sessionStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
+      sessionStorage.setItem(ROLE_METADATA_VERSION_KEY, metadata.version);
 
       return metadata;
     } catch (err: unknown) {

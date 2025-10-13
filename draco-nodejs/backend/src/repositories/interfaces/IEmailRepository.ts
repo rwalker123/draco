@@ -36,4 +36,5 @@ export interface IEmailRepository {
   updateRecipientsStatus(emailId: bigint, data: dbEmailRecipientBulkUpdateData): Promise<void>;
   getRecipientStatusCounts(emailId: bigint): Promise<dbRecipientStatusCount[]>;
   findContactsByIds(accountId: bigint, contactIds: bigint[]): Promise<dbBaseContact[]>;
+  deleteEmail(emailId: bigint, accountId: bigint): Promise<void>;
 }

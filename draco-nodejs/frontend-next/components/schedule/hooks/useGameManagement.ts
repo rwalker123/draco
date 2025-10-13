@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { Game } from '@/types/schedule';
-import { deleteGame } from '@draco/shared-api-client';
+import { updateGameResults, deleteGame } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { ScheduleGameResultsSuccessPayload } from '../dialogs/GameResultsDialog';
+import type { DeleteGameResult } from './useGameDeletion';
 
 interface UseGameManagementProps {
   accountId: string;
@@ -29,7 +30,7 @@ interface UseGameManagementReturn {
   setSelectedGame: (game: Game | null) => void;
   setSelectedGameForResults: (game: Game | null) => void;
 
-  handleDeleteGame: () => Promise<void>;
+  handleDeleteSuccess: (result: DeleteGameResult) => void;
   handleGameResultsSuccess: (payload: ScheduleGameResultsSuccessPayload) => void;
 
   openCreateDialog: () => void;
@@ -54,44 +55,26 @@ export const useGameManagement = ({
 
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [selectedGameForResults, setSelectedGameForResults] = useState<Game | null>(null);
-  const handleDeleteGame = useCallback(async () => {
-    try {
-      if (!selectedGame) return;
-
-      const result = await deleteGame({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId: selectedGame.season.id,
-          gameId: selectedGame.id,
-        },
-        throwOnError: false,
-      });
-
-      unwrapApiResult(result, 'Failed to delete game');
-
-      setSuccess('Game deleted successfully');
+  const handleDeleteSuccess = useCallback(
+    ({ message, gameId }: DeleteGameResult) => {
+      setSuccess(message);
+      setError(null);
       setEditDialogOpen(false);
       setDeleteDialogOpen(false);
-      setSelectedGame(null);
-      if (selectedGameForResults?.id === selectedGame.id) {
+
+      if (selectedGame?.id === gameId) {
+        setSelectedGame(null);
+      }
+
+      if (selectedGameForResults?.id === gameId) {
         setGameResultsDialogOpen(false);
         setSelectedGameForResults(null);
       }
-      removeGameFromCache(selectedGame.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete game');
-      setDeleteDialogOpen(false);
-    }
-  }, [
-    selectedGame,
-    selectedGameForResults,
-    accountId,
-    apiClient,
-    removeGameFromCache,
-    setSuccess,
-    setError,
-  ]);
+
+      removeGameFromCache(gameId);
+    },
+    [removeGameFromCache, selectedGame, selectedGameForResults, setSuccess, setError],
+  );
 
   const handleGameResultsSuccess = useCallback(
     (payload: ScheduleGameResultsSuccessPayload) => {
@@ -146,7 +129,7 @@ export const useGameManagement = ({
     setSelectedGame,
     setSelectedGameForResults,
 
-    handleDeleteGame,
+    handleDeleteSuccess,
     handleGameResultsSuccess,
 
     openCreateDialog,
