@@ -19,6 +19,8 @@ const DayListView: React.FC<DayListViewProps> = ({
   canEditSchedule,
   onEditGame: _onEditGame,
   onGameResults,
+  onEditRecap,
+  onViewRecap,
   convertGameToGameCardData,
   timeZone,
   filterType,
@@ -33,6 +35,7 @@ const DayListView: React.FC<DayListViewProps> = ({
   navigate,
   isNavigating,
   viewMode,
+  canEditRecap,
 }) => {
   const [currentDate, setCurrentDate] = React.useState(filterDate);
 
@@ -118,20 +121,31 @@ const DayListView: React.FC<DayListViewProps> = ({
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {dayGames.map((game) => (
-          <GameCard
-            key={game.id}
-            game={convertGameToGameCardData(game)}
-            layout="horizontal"
-            compact={false}
-            calendar={false}
-            showDate={false}
-            canEditGames={canEditSchedule}
-            onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
-            onClick={() => _onEditGame(game)}
-            timeZone={timeZone}
-          />
-        ))}
+        {dayGames.map((game) => {
+          const gameCardData = convertGameToGameCardData(game);
+          const showActions = canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+
+          return (
+            <GameCard
+              key={game.id}
+              game={gameCardData}
+              layout="horizontal"
+              compact={false}
+              calendar={false}
+              showDate={false}
+              canEditGames={canEditSchedule}
+              onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
+              onClick={() => _onEditGame(game)}
+              canEditRecap={canEditRecap}
+              onEditRecap={canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined}
+              onViewRecap={
+                onViewRecap && gameCardData.hasGameRecap ? () => onViewRecap(game) : undefined
+              }
+              showActions={showActions}
+              timeZone={timeZone}
+            />
+          );
+        })}
       </Box>
     );
   };
@@ -189,20 +203,35 @@ const DayListView: React.FC<DayListViewProps> = ({
               </Typography>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {games.map((game) => (
-                  <GameCard
-                    key={game.id}
-                    game={convertGameToGameCardData(game)}
-                    layout="horizontal"
-                    compact={true}
-                    calendar={false}
-                    showDate={false}
-                    canEditGames={canEditSchedule}
-                    onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
-                    onClick={() => _onEditGame(game)}
-                    timeZone={timeZone}
-                  />
-                ))}
+                {games.map((game) => {
+                  const gameCardData = convertGameToGameCardData(game);
+                  const showActions = canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+
+                  return (
+                    <GameCard
+                      key={game.id}
+                      game={gameCardData}
+                      layout="horizontal"
+                      compact={true}
+                      calendar={false}
+                      showDate={false}
+                      canEditGames={canEditSchedule}
+                      onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
+                      onClick={() => _onEditGame(game)}
+                      canEditRecap={canEditRecap}
+                      onEditRecap={
+                        canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined
+                      }
+                      onViewRecap={
+                        onViewRecap && gameCardData.hasGameRecap
+                          ? () => onViewRecap(game)
+                          : undefined
+                      }
+                      showActions={showActions}
+                      timeZone={timeZone}
+                    />
+                  );
+                })}
               </Box>
             </Paper>
           );

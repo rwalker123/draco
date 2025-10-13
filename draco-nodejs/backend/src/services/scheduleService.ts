@@ -24,6 +24,8 @@ import { ServiceFactory } from './serviceFactory.js';
 import { IRoleQuery } from './interfaces/roleInterfaces.js';
 import { ContactService } from './contactService.js';
 import { ITeamRepository } from '../repositories/interfaces/index.js';
+import { ROLE_IDS } from '../config/roles.js';
+import { RoleNamesType } from '../types/roles.js';
 import {
   dbScheduleGameForAccount,
   dbScheduleGameWithDetails,
@@ -360,7 +362,7 @@ export class ScheduleService {
 
     this.ensureTeamInGame(game, teamSeasonId);
 
-    const hasRights = await this.userHasTeamRecapRights(userId, accountId, teamSeasonId, seasonId);
+    const hasRights = await this.userHasTeamAdminRights(userId, accountId, teamSeasonId, seasonId);
     if (!hasRights) {
       throw new AuthorizationError('Not authorized for this team in this game');
     }
@@ -422,16 +424,33 @@ export class ScheduleService {
     return parsed;
   }
 
-  private async userHasTeamRecapRights(
+  private async userHasTeamAdminRights(
     userId: string,
     accountId: bigint,
     teamSeasonId: bigint,
     seasonId: bigint,
   ): Promise<boolean> {
     const userRoles = await this.roleService.getUserRoles(userId, accountId);
+    const administratorRoleId =
+      ROLE_IDS[RoleNamesType.ADMINISTRATOR] || RoleNamesType.ADMINISTRATOR;
+    const accountAdminRoleId = ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] || RoleNamesType.ACCOUNT_ADMIN;
+    const teamAdminRoleId = ROLE_IDS[RoleNamesType.TEAM_ADMIN] || RoleNamesType.TEAM_ADMIN;
+
+    const isAdministrator = userRoles.globalRoles.includes(administratorRoleId);
+    if (isAdministrator) {
+      return true;
+    }
+
+    const isAccountAdmin =
+      userRoles.globalRoles.includes(accountAdminRoleId) ||
+      userRoles.contactRoles.some((role) => role.roleId === accountAdminRoleId);
+    if (isAccountAdmin) {
+      return true;
+    }
+
     const isTeamAdmin = userRoles.contactRoles.some(
       (role) =>
-        role.roleId === 'TeamAdmin' && role.roleData?.toString() === teamSeasonId.toString(),
+        role.roleId === teamAdminRoleId && role.roleData?.toString() === teamSeasonId.toString(),
     );
     if (isTeamAdmin) {
       return true;

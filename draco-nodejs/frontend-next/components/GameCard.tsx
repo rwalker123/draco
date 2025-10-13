@@ -13,11 +13,11 @@ export interface GameCardData {
   id: string;
   date: string;
   homeTeamId: string;
-  awayTeamId: string;
+  visitorTeamId: string;
   homeTeamName: string;
-  awayTeamName: string;
+  visitorTeamName: string;
   homeScore: number;
-  awayScore: number;
+  visitorScore: number;
   gameStatus: number;
   gameStatusText: string;
   gameStatusShortText?: string;
@@ -217,7 +217,7 @@ const GameCard: React.FC<GameCardProps> = ({
                   sx={{ color: 'text.primary', mb: 0.5 }}
                   noWrap
                 >
-                  {game.awayTeamName}
+                  {game.visitorTeamName}
                 </Typography>
                 <Typography variant="body1" fontWeight={700} sx={{ color: 'text.primary' }} noWrap>
                   {game.homeTeamName}
@@ -232,15 +232,15 @@ const GameCard: React.FC<GameCardProps> = ({
                   <Typography
                     variant="body1"
                     fontWeight={700}
-                    color={game.awayScore > game.homeScore ? 'success.main' : 'text.primary'}
+                    color={game.visitorScore > game.homeScore ? 'success.main' : 'text.primary'}
                     sx={{ mb: 0.5 }}
                   >
-                    {game.awayScore}
+                    {game.visitorScore}
                   </Typography>
                   <Typography
                     variant="body1"
                     fontWeight={700}
-                    color={game.homeScore > game.awayScore ? 'success.main' : 'text.primary'}
+                    color={game.homeScore > game.visitorScore ? 'success.main' : 'text.primary'}
                   >
                     {game.homeScore}
                   </Typography>
@@ -293,38 +293,24 @@ const GameCard: React.FC<GameCardProps> = ({
                     </Tooltip>
                   )}
                 </Box>
-                {showActions && (
-                  <>
-                    {canEditGames && onEnterGameResults && (
-                      <Tooltip title="Enter Game Results">
-                        <IconButton
-                          size="small"
-                          onClick={handleGameResultsClick}
-                          sx={{
-                            color: 'primary.main',
-                            mt: 1,
-                            p: 0.5,
-                            '&:hover': {
-                              color: 'primary.dark',
-                              bgcolor: 'action.hover',
-                            },
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    <RecapButton
-                      game={game}
-                      onRecapClick={handleRecapClick}
-                      sx={{ mt: 1, ml: 1 }}
-                      {...(canEditRecap && onEditRecap
-                        ? { recapMode: 'edit' as const, canEditRecap, onEditRecap }
-                        : onViewRecap
-                          ? { recapMode: 'view' as const, onViewRecap }
-                          : { recapMode: 'none' as const })}
-                    />
-                  </>
+                {showActions && canEditGames && onEnterGameResults && (
+                  <Tooltip title="Enter Game Results">
+                    <IconButton
+                      size="small"
+                      onClick={handleGameResultsClick}
+                      sx={{
+                        color: 'primary.main',
+                        mt: 1,
+                        p: 0.5,
+                        '&:hover': {
+                          color: 'primary.dark',
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 )}
               </Box>
               <Box sx={{ minWidth: 0 }}>
@@ -334,7 +320,7 @@ const GameCard: React.FC<GameCardProps> = ({
                   sx={{ color: 'text.primary', mb: 0.5 }}
                   noWrap
                 >
-                  {game.awayTeamName}
+                  {game.visitorTeamName}
                 </Typography>
                 <Typography variant="body1" fontWeight={700} sx={{ color: 'text.primary' }} noWrap>
                   {game.homeTeamName}
@@ -348,15 +334,15 @@ const GameCard: React.FC<GameCardProps> = ({
                   <Typography
                     variant="body1"
                     fontWeight={700}
-                    color={game.awayScore > game.homeScore ? 'success.main' : 'text.primary'}
+                    color={game.visitorScore > game.homeScore ? 'success.main' : 'text.primary'}
                     sx={{ mb: 0.5 }}
                   >
-                    {game.awayScore}
+                    {game.visitorScore}
                   </Typography>
                   <Typography
                     variant="body1"
                     fontWeight={700}
-                    color={game.homeScore > game.awayScore ? 'success.main' : 'text.primary'}
+                    color={game.homeScore > game.visitorScore ? 'success.main' : 'text.primary'}
                   >
                     {game.homeScore}
                   </Typography>
@@ -403,24 +389,36 @@ const GameCard: React.FC<GameCardProps> = ({
                 )}
               </Box>
 
-              {/* Game status on the right side of bottom row */}
-              {game.gameStatus !== GameStatus.Scheduled &&
-                game.gameStatus !== GameStatus.Completed && (
-                  <Box
-                    sx={{
-                      display: 'inline-block',
-                      background: 'primary.main',
-                      color: 'text.secondary',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 700,
-                      padding: '4px 12px',
-                      margin: 0,
-                    }}
-                  >
-                    {game.gameStatusShortText || getGameStatusShortText(game.gameStatus)}
-                  </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {game.gameStatus !== GameStatus.Scheduled &&
+                  game.gameStatus !== GameStatus.Completed && (
+                    <Box
+                      sx={{
+                        display: 'inline-block',
+                        background: 'primary.main',
+                        color: 'text.secondary',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        padding: '4px 12px',
+                        margin: 0,
+                      }}
+                    >
+                      {game.gameStatusShortText || getGameStatusShortText(game.gameStatus)}
+                    </Box>
+                  )}
+                {showActions && (
+                  <RecapButton
+                    game={game}
+                    onRecapClick={handleRecapClick}
+                    {...(canEditRecap && onEditRecap
+                      ? { recapMode: 'edit' as const, canEditRecap, onEditRecap }
+                      : onViewRecap
+                        ? { recapMode: 'view' as const, onViewRecap }
+                        : { recapMode: 'none' as const })}
+                  />
                 )}
+              </Box>
             </Box>
           </Box>
         )}

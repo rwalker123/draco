@@ -85,7 +85,6 @@ app.use(
       }
       return compression.filter(req, res);
     },
-    windowBits: 16, // Window size for gzip
     memLevel: 8, // Memory usage level
   }),
 );

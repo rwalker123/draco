@@ -10,6 +10,8 @@ const WeekView: React.FC<ViewComponentProps> = ({
   canEditSchedule,
   onEditGame,
   onGameResults,
+  onEditRecap,
+  onViewRecap,
   convertGameToGameCardData,
   timeZone,
   filterType,
@@ -23,6 +25,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
   isNavigating,
   navigateToWeek,
   navigate,
+  canEditRecap,
 }) => {
   const weekDays =
     startDate && endDate ? eachDayOfInterval({ start: startDate, end: endDate }) : [];
@@ -88,8 +91,11 @@ const WeekView: React.FC<ViewComponentProps> = ({
         }}
         onGameClick={onEditGame}
         onGameResults={onGameResults}
+        onEditRecap={onEditRecap}
+        onViewRecap={onViewRecap}
         convertGameToGameCardData={convertGameToGameCardData}
         canEditSchedule={canEditSchedule}
+        canEditRecap={canEditRecap}
         isNavigating={isNavigating}
         timeZone={timeZone}
       />
