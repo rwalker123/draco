@@ -15,22 +15,40 @@ import { PhotoCamera as PhotoCameraIcon, Save as SaveIcon } from '@mui/icons-mat
 import Image from 'next/image';
 import { getLogoSize, validateLogoFile } from '../config/teams';
 import { TeamSeasonType } from '@draco/shared-schemas';
+import {
+  useTeamManagement,
+  type UpdateTeamMetadataResult,
+} from '../hooks/useTeamManagement';
 
 interface EditTeamDialogProps {
   open: boolean;
+  accountId: string;
+  seasonId: string;
   teamSeason: TeamSeasonType | null;
   onClose: () => void;
-  onSave: (updatedName: string, logoFile: File | null) => Promise<void>;
+  onSuccess?: (result: UpdateTeamMetadataResult) => void;
+  onError?: (error: string) => void;
 }
 
-const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClose, onSave }) => {
+const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
+  open,
+  accountId,
+  seasonId,
+  teamSeason,
+  onClose,
+  onSuccess,
+  onError,
+}) => {
   const LOGO_SIZE = getLogoSize();
   const [editingTeamName, setEditingTeamName] = useState<string>('');
   const [editingLogoFile, setEditingLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [editDialogError, setEditDialogError] = useState<string | null>(null);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { updateTeamMetadata, loading, error, clearError } = useTeamManagement({
+    accountId,
+    seasonId,
+  });
 
   useEffect(() => {
     if (teamSeason) {
@@ -46,7 +64,8 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClo
       setEditDialogError(null);
       setLogoPreviewError(false);
     }
-  }, [teamSeason, open]);
+    clearError();
+  }, [teamSeason, open, clearError]);
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -58,6 +77,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClo
       }
       setEditingLogoFile(file);
       setEditDialogError(null);
+      clearError();
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
@@ -67,29 +87,47 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClo
   };
 
   const handleSave = async () => {
-    if (!editingTeamName.trim()) {
+    if (!teamSeason) {
+      return;
+    }
+
+    const trimmedName = editingTeamName.trim();
+    if (!trimmedName) {
       setEditDialogError('Team name is required');
       return;
     }
-    setSaving(true);
+
     setEditDialogError(null);
+    clearError();
+
     try {
-      await onSave(editingTeamName.trim(), editingLogoFile);
+      const result = await updateTeamMetadata({
+        teamSeasonId: teamSeason.id,
+        name: trimmedName,
+        logoFile: editingLogoFile,
+      });
+      onSuccess?.(result);
       onClose();
     } catch (err) {
-      setEditDialogError(err instanceof Error ? err.message : 'Failed to update team');
-    } finally {
-      setSaving(false);
+      const message = err instanceof Error ? err.message : 'Failed to update team';
+      if (message === 'Team name is required') {
+        setEditDialogError(message);
+      }
+      onError?.(message);
     }
   };
 
   const handleCancel = () => {
+    setEditDialogError(null);
+    clearError();
     onClose();
   };
 
   useEffect(() => {
     setLogoPreviewError(false);
   }, [logoPreview]);
+
+  const displayedError = editDialogError ?? error;
 
   if (!teamSeason) {
     return null;
@@ -100,17 +138,31 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClo
       <DialogTitle>Edit Team</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-          {editDialogError && (
-            <Alert severity="error" onClose={() => setEditDialogError(null)}>
-              {editDialogError}
+          {displayedError && (
+            <Alert
+              severity="error"
+              onClose={() => {
+                setEditDialogError(null);
+                clearError();
+              }}
+            >
+              {displayedError}
             </Alert>
           )}
           <TextField
             fullWidth
             label="Team Name"
             value={editingTeamName}
-            onChange={(e) => setEditingTeamName(e.target.value)}
-            disabled={saving}
+            onChange={(e) => {
+              setEditingTeamName(e.target.value);
+              if (editDialogError) {
+                setEditDialogError(null);
+              }
+              if (error) {
+                clearError();
+              }
+            }}
+            disabled={loading}
           />
           <Box>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
@@ -149,7 +201,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClo
                 variant="outlined"
                 component="label"
                 startIcon={<PhotoCameraIcon />}
-                disabled={saving}
+                disabled={loading}
               >
                 Upload Logo
                 <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
@@ -162,16 +214,16 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, teamSeason, onClo
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancel} disabled={saving}>
+        <Button onClick={handleCancel} disabled={loading}>
           Cancel
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
-          startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-          disabled={saving}
+          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+          disabled={loading}
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {loading ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
     </Dialog>
