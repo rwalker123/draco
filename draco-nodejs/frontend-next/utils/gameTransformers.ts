@@ -1,4 +1,8 @@
-import { listSeasonGames } from '@draco/shared-api-client';
+import {
+  listSeasonGames,
+  type Game as ApiClientGame,
+  type GamesWithRecaps as ApiClientGamesWithRecaps,
+} from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import type {
   GameRecapsType,
@@ -11,7 +15,11 @@ import { GameCardData } from '../components/GameCard';
 import { getGameStatusText, getGameStatusShortText } from './gameUtils';
 import { unwrapApiResult } from './apiResult';
 
-type ApiGame = GameRecapsType | ApiGameType;
+type ApiGame =
+  | GameRecapsType
+  | ApiGameType
+  | ApiClientGame
+  | ApiClientGamesWithRecaps['games'][number];
 
 const toOptionalString = (value?: string | null): string | undefined => {
   if (typeof value === 'string' && value.trim().length > 0) {
@@ -126,7 +134,7 @@ const mapApiGameToGameCard = (game: ApiGame): Game => {
   };
 };
 
-export const transformGamesFromAPI = (games: GameRecapsType[]): Game[] => {
+export const transformGamesFromAPI = (games: ApiGame[]): Game[] => {
   return games.map(mapApiGameToGameCard);
 };
 

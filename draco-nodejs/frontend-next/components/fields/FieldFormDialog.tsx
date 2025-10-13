@@ -10,17 +10,17 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { useForm } from 'react-hook-form';
+import Grid from '@mui/material/Grid';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { FieldType, UpsertFieldType } from '@draco/shared-schemas';
 import { UpsertFieldSchema } from '@draco/shared-schemas';
 import { FieldLocationMap } from './FieldLocationMap';
-import { useFieldService } from '../../hooks/useFieldService';
+import { useFieldService, type FieldService } from '../../hooks/useFieldService';
 
 interface FieldFormDialogProps {
   accountId: string;
@@ -98,6 +98,16 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
     };
   }, [field]);
 
+  const formResolver = useMemo(
+    () =>
+      zodResolver(UpsertFieldSchema) as Resolver<
+        FieldFormValues,
+        Record<string, never>,
+        FieldFormValues
+      >,
+    [],
+  );
+
   const {
     register,
     handleSubmit,
@@ -108,7 +118,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FieldFormValues>({
-    resolver: zodResolver(UpsertFieldSchema),
+    resolver: formResolver,
     defaultValues: DEFAULT_VALUES,
   });
 
@@ -195,19 +205,29 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
     setSubmitError(null);
 
     try {
-      const action =
-        mode === 'create'
-          ? await createField(values)
-          : field?.id
-            ? await updateField(field.id, values)
-            : { success: false, error: 'Field information is missing' };
+      if (mode === 'edit' && !field?.id) {
+        const missingMessage = 'Field information is missing';
+        setSubmitError(missingMessage);
+        onError?.(missingMessage);
+        return;
+      }
+
+      let action: Awaited<ReturnType<FieldService['createField']>>;
+
+      if (mode === 'create') {
+        action = await createField(values);
+      } else {
+        action = await updateField(field!.id, values);
+      }
 
       if (action.success) {
-        onSuccess?.({ message: action.message, field: action.data });
+        const { message, data } = action;
+        onSuccess?.({ message, field: data });
         onClose();
       } else {
-        setSubmitError(action.error);
-        onError?.(action.error);
+        const errorMessage = action.error;
+        setSubmitError(errorMessage);
+        onError?.(errorMessage);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save field';
@@ -225,7 +245,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
         <Stack spacing={3}>
           {submitError ? <Alert severity="error">{submitError}</Alert> : null}
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 label="Field Name"
                 fullWidth
@@ -236,7 +256,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.name?.message}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 label="Short Name"
                 fullWidth
@@ -249,7 +269,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 }
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 label="Address"
                 fullWidth
@@ -258,7 +278,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.address?.message}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 label="City"
                 fullWidth
@@ -267,7 +287,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.city?.message}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 label="State"
                 fullWidth
@@ -276,7 +296,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.state?.message}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 label="Zip Code"
                 fullWidth
@@ -285,7 +305,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.zip?.message}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 label="Directions"
                 fullWidth
@@ -296,7 +316,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.directions?.message}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 label="Comments"
                 fullWidth
@@ -307,7 +327,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.comment?.message}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 label="Rainout Number"
                 fullWidth
@@ -316,7 +336,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.rainoutNumber?.message}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 label="Latitude"
                 fullWidth
@@ -325,7 +345,7 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                 helperText={errors.latitude?.message}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 label="Longitude"
                 fullWidth

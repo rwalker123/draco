@@ -83,7 +83,8 @@ export function useFieldService(accountId: string): FieldService {
   const apiClient = useApiClient();
 
   const listFields = useCallback<FieldService['listFields']>(
-    async ({ page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = {}) => {
+    async (params: ListFieldParams = {}) => {
+      const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = params;
       try {
         const result = await listAccountFields({
           client: apiClient,

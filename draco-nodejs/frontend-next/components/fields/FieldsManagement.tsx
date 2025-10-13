@@ -239,7 +239,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
 
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Paper elevation={3} sx={{ overflow: 'hidden' }}>
               <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6">Field Directory</Typography>
@@ -362,7 +362,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
               />
             </Paper>
           </Grid>
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Card elevation={3}>
               <CardHeader
                 title={selectedField?.name ?? 'Select a field'}
@@ -482,7 +482,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
           >
             {dialogError}
           </Alert>
-        ) : null}
+        ) : undefined}
       </Snackbar>
     </Box>
   );
