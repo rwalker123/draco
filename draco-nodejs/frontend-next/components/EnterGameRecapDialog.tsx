@@ -1,111 +1,165 @@
+'use client';
+
 // TODO: Replace the plain text/textarea input with a WYSIWYG editor (e.g., react-quill, TinyMCE, Slate) for game recaps once React 19 support is available.
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Alert,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   TextField,
   Typography,
 } from '@mui/material';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { UpsertGameRecapSchema, UpsertGameRecapType } from '@draco/shared-schemas';
+import { useGameRecap } from '../hooks/useGameRecap';
 
-interface EnterGameSummaryDialogProps {
+interface EnterGameRecapDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (summary: string) => void;
-  initialSummary?: string;
+  accountId: string;
+  seasonId: string;
+  gameId: string;
+  teamSeasonId: string;
+  initialRecap?: string;
   teamName?: string;
-  gameDate?: string; // ISO string
+  gameDate?: string;
   homeScore?: number;
   awayScore?: number;
   homeTeamName?: string;
   awayTeamName?: string;
-  loading?: boolean;
-  error?: string | null;
   readOnly?: boolean;
+  onSuccess?: (recap: UpsertGameRecapType) => void;
+  onError?: (message: string) => void;
 }
 
-const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
+const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   open,
   onClose,
-  onSave,
-  initialSummary = '',
+  accountId,
+  seasonId,
+  gameId,
+  teamSeasonId,
+  initialRecap = '',
   teamName,
   gameDate,
   homeScore,
   awayScore,
   homeTeamName,
   awayTeamName,
-  loading = false,
-  error = null,
   readOnly = false,
+  onSuccess,
+  onError,
 }) => {
-  const [summary, setSummary] = useState(initialSummary);
+  const { saveRecap, loading } = useGameRecap({
+    accountId,
+    seasonId,
+    gameId,
+    teamSeasonId,
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isDirty, isSubmitting },
+  } = useForm<UpsertGameRecapType>({
+    resolver: zodResolver(UpsertGameRecapSchema),
+    defaultValues: { recap: initialRecap },
+    mode: 'onChange',
+  });
+
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSummary(initialSummary);
-  }, [initialSummary, open]);
+    if (open) {
+      reset({ recap: initialRecap });
+      setSubmitError(null);
+    }
+  }, [initialRecap, open, reset]);
 
-  const handleSave = () => {
-    onSave(summary);
-  };
+  const formattedGameDate = useMemo(() => {
+    if (!gameDate) {
+      return null;
+    }
 
-  // Show loading spinner or error message if needed
-  if (loading) {
-    return (
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Enter Game Summary for {teamName}</DialogTitle>
-        <DialogContent>
-          <Typography>Loading...</Typography>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+    const date = new Date(gameDate);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+    }
 
-  if (error) {
-    return (
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Enter Game Summary for {teamName}</DialogTitle>
-        <DialogContent>
-          <Typography color="error">{error}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} color="secondary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    );
-  }
+    return gameDate;
+  }, [gameDate]);
+
+  const scoreboardLine = useMemo(() => {
+    if (
+      homeScore === undefined ||
+      awayScore === undefined ||
+      !homeTeamName ||
+      !awayTeamName
+    ) {
+      return null;
+    }
+
+    return `${awayTeamName} ${awayScore} at ${homeTeamName} ${homeScore}`;
+  }, [awayScore, awayTeamName, homeScore, homeTeamName]);
+
+  const recapValue = watch('recap') ?? '';
+  const trimmedRecap = recapValue.trim();
+
+  const handleClose = useCallback(() => {
+    if (isSubmitting || loading) {
+      return;
+    }
+
+    setSubmitError(null);
+    onClose();
+  }, [isSubmitting, loading, onClose]);
+
+  const onSubmit = handleSubmit(async (values) => {
+    if (readOnly) {
+      return;
+    }
+
+    setSubmitError(null);
+
+    const result = await saveRecap(values);
+
+    if (result.success) {
+      onSuccess?.(result.data);
+      onClose();
+      return;
+    }
+
+    setSubmitError(result.error);
+    onError?.(result.error);
+  });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {readOnly ? 'Game Summary for' : 'Enter Game Summary for'} {teamName}
+        {readOnly ? 'Game Recap for' : 'Enter Game Recap for'} {teamName}
       </DialogTitle>
       <DialogContent>
-        {gameDate && (
+        {formattedGameDate && (
           <Typography variant="body2" color="textSecondary" gutterBottom>
-            {(() => {
-              const date = new Date(gameDate);
-              if (!isNaN(date.getTime())) {
-                return date.toLocaleDateString(undefined, {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                });
-              }
-              return gameDate;
-            })()}
+            {formattedGameDate}
           </Typography>
         )}
-        {homeScore !== undefined && awayScore !== undefined && homeTeamName && awayTeamName && (
+        {scoreboardLine && (
           <Typography variant="body2" color="textSecondary" gutterBottom>
-            {`${awayTeamName} ${awayScore} at ${homeTeamName} ${homeScore}`}
+            {scoreboardLine}
           </Typography>
         )}
-        {/* Game Summary Field or Read-Only Display */}
+
         {readOnly ? (
           <div
             style={{
@@ -113,38 +167,52 @@ const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
               color: 'inherit',
               fontSize: '1rem',
               padding: '12px 0',
-              minHeight: '96px', // match minRows=4 of TextField
+              minHeight: '96px',
             }}
             data-testid="game-summary-readonly"
           >
-            {summary || <span style={{ color: '#888' }}>(No summary provided)</span>}
+            {trimmedRecap || (
+              <span style={{ color: '#888' }}>(No recap provided)</span>
+            )}
           </div>
         ) : (
           <TextField
-            label="Game Summary"
+            {...register('recap')}
+            label="Game Recap"
             multiline
             minRows={4}
             fullWidth
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
             variant="outlined"
             sx={{ mt: 2 }}
+            error={Boolean(errors.recap)}
+            helperText={errors.recap?.message}
             disabled={readOnly}
           />
         )}
+
+        {submitError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {submitError}
+          </Alert>
+        )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="secondary">
+        <Button onClick={handleClose} color="secondary" disabled={isSubmitting || loading}>
           Close
         </Button>
         {!readOnly && (
           <Button
-            onClick={handleSave}
+            onClick={onSubmit}
             color="primary"
             variant="contained"
-            disabled={!summary.trim()}
+            disabled={
+              isSubmitting ||
+              loading ||
+              trimmedRecap.length === 0 ||
+              !isDirty
+            }
           >
-            Save
+            {isSubmitting || loading ? 'Saving…' : 'Save'}
           </Button>
         )}
       </DialogActions>
@@ -152,4 +220,4 @@ const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
   );
 };
 
-export default EnterGameSummaryDialog;
+export default EnterGameRecapDialog;
