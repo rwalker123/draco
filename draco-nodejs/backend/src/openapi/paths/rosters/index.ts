@@ -10,6 +10,7 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
     ValidationErrorSchemaRef,
     RosterMemberSchemaRef,
     SignRosterMemberSchemaRef,
+    UpdateRosterMemberSchemaRef,
     TeamRosterMembersSchemaRef,
   } = schemaRefs;
 
@@ -643,7 +644,7 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
       body: {
         content: {
           'application/json': {
-            schema: RosterMemberSchemaRef.partial(),
+            schema: UpdateRosterMemberSchemaRef,
           },
         },
       },

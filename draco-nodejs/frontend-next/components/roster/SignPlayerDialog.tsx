@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,11 +17,19 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { PersonAdd as PersonAddIcon, SportsBasketball as SportsIcon } from '@mui/icons-material';
-import { BaseContactType, RosterPlayerType, SignRosterMemberType } from '@draco/shared-schemas';
+import {
+  BaseContactType,
+  RosterPlayerType,
+  SignRosterMemberSchema,
+  SignRosterMemberType,
+  UpdateRosterMemberType,
+} from '@draco/shared-schemas';
 import { useRosterPlayer, RosterPlayerMutationResult } from '../../hooks/roster/useRosterPlayer';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useDelayedLoading } from '../../hooks/useDelayedLoading';
 import { getContactDisplayName } from '../../utils/contactUtils';
+import { Controller, Resolver, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface SignPlayerDialogProps {
   open: boolean;
@@ -35,6 +43,12 @@ interface SignPlayerDialogProps {
   initialRosterData?: SignRosterMemberType;
   onSuccess?: (result: RosterPlayerMutationResult) => Promise<void> | void;
 }
+
+const isRosterPlayer = (
+  player: BaseContactType | RosterPlayerType | null,
+): player is RosterPlayerType => {
+  return Boolean(player && 'firstYear' in player && 'submittedDriversLicense' in player);
+};
 
 const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   open,
@@ -66,7 +80,6 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     null,
   );
   const [loadingPlayerRoster, setLoadingPlayerRoster] = useState(false);
-  const [isSigningPlayer, setIsSigningPlayer] = useState(false);
   const [signMultiplePlayers, setSignMultiplePlayers] = useState(false);
 
   const isSigningNewPlayer = mode === 'sign';
@@ -74,47 +87,68 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   const { searchAvailablePlayers, loadContactRoster, signRosterPlayer, updateRosterPlayer } =
     useRosterPlayer({ accountId, seasonId, teamSeasonId });
 
-  // Form data state
-  const [rosterFormData, setRosterFormData] = useState<SignRosterMemberType>({
-    playerNumber: undefined,
-    submittedWaiver: false,
-    player: {
-      submittedDriversLicense: false,
-      firstYear: 0,
-      contact: {
-        id: '',
+  const getDefaultFormValues = useCallback(
+    (): SignRosterMemberType => ({
+      playerNumber: undefined,
+      submittedWaiver: false,
+      player: {
+        submittedDriversLicense: false,
+        firstYear: new Date().getFullYear(),
+        contact: {
+          id: '',
+        },
       },
-    },
+    }),
+    [],
+  );
+
+  const defaultFormValues = useMemo(() => getDefaultFormValues(), [getDefaultFormValues]);
+
+  const formResolver = useMemo(
+    () =>
+      zodResolver(SignRosterMemberSchema) as Resolver<
+        SignRosterMemberType,
+        Record<string, never>,
+        SignRosterMemberType
+      >,
+    [],
+  );
+
+  const {
+    control,
+    handleSubmit: submitForm,
+    reset,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<SignRosterMemberType>({
+    resolver: formResolver,
+    defaultValues: defaultFormValues,
   });
 
   // Initialize form data when dialog opens or initial data changes
   useEffect(() => {
-    if (open) {
-      setError(null);
-
-      if (initialRosterData) {
-        setRosterFormData(initialRosterData);
-      } else {
-        setRosterFormData({
-          playerNumber: undefined,
-          submittedWaiver: false,
-          player: {
-            submittedDriversLicense: false,
-            firstYear: new Date().getFullYear(),
-            contact: {
-              id: '',
-            },
-          },
-        });
-      }
-
-      if (initialPlayer) {
-        setSelectedPlayer(initialPlayer);
-      } else {
-        setSelectedPlayer(null);
-      }
+    if (!open) {
+      return;
     }
-  }, [open, initialRosterData, initialPlayer]);
+
+    setError(null);
+
+    if (initialRosterData) {
+      reset(initialRosterData);
+    } else {
+      reset(getDefaultFormValues());
+    }
+
+    if (initialPlayer) {
+      setSelectedPlayer(initialPlayer);
+      const contactId =
+        'contact' in initialPlayer ? initialPlayer.contact.id : (initialPlayer.id ?? '');
+      setValue('player.contact', { id: contactId }, { shouldValidate: false, shouldDirty: false });
+    } else {
+      setSelectedPlayer(null);
+      setValue('player.contact', { id: '' }, { shouldValidate: false, shouldDirty: false });
+    }
+  }, [open, initialRosterData, initialPlayer, reset, getDefaultFormValues, setValue]);
 
   // Search execution with AbortController for proper cancellation
   useEffect(() => {
@@ -209,23 +243,24 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
 
   // Clear search state when dialog closes
   useEffect(() => {
-    if (!open) {
-      setSearchInput('');
-      setAvailablePlayers([]);
-      setSearchLoading(false);
-      setSelectedPlayer(null);
-      setLoadingPlayerRoster(false);
-      setIsSigningPlayer(false);
-      setSignMultiplePlayers(false);
-      setError(null);
-
-      // Cancel any ongoing search
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
+    if (open) {
+      return;
     }
-  }, [open]);
+
+    setSearchInput('');
+    setAvailablePlayers([]);
+    setSearchLoading(false);
+    setSelectedPlayer(null);
+    setLoadingPlayerRoster(false);
+    setSignMultiplePlayers(false);
+    setError(null);
+    reset(getDefaultFormValues());
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }, [open, reset, getDefaultFormValues]);
 
   // Handle player selection
   const handlePlayerSelect = useCallback(
@@ -236,16 +271,16 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
 
         try {
           const playerRosterData = await loadContactRoster(newValue.id);
-          setRosterFormData((current) => ({
-            ...current,
-            player: {
-              firstYear: playerRosterData?.firstYear || new Date().getFullYear(),
-              submittedDriversLicense: playerRosterData?.submittedDriversLicense || false,
-              contact: {
-                id: newValue.id,
-              },
-            },
-          }));
+          setValue('player.contact', { id: newValue.id }, { shouldDirty: true, shouldTouch: true });
+          setValue('player.firstYear', playerRosterData?.firstYear ?? new Date().getFullYear(), {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+          setValue(
+            'player.submittedDriversLicense',
+            playerRosterData?.submittedDriversLicense ?? false,
+            { shouldDirty: true, shouldTouch: true },
+          );
           setError(null);
         } catch (error) {
           // Fall back to defaults if fetch fails
@@ -255,35 +290,25 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
               ? error.message
               : 'Failed to load existing roster information for this player',
           );
-          setRosterFormData((current) => ({
-            ...current,
-            player: {
-              firstYear: new Date().getFullYear(),
-              submittedDriversLicense: false,
-              contact: {
-                id: newValue.id,
-              },
-            },
-          }));
+          setValue('player.contact', { id: newValue.id }, { shouldDirty: true, shouldTouch: true });
+          setValue('player.firstYear', new Date().getFullYear(), {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+          setValue('player.submittedDriversLicense', false, {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
         } finally {
           setLoadingPlayerRoster(false);
         }
       } else {
         setSelectedPlayer(null);
         setLoadingPlayerRoster(false);
-        setRosterFormData((current) => ({
-          ...current,
-          player: {
-            firstYear: new Date().getFullYear(),
-            submittedDriversLicense: false,
-            contact: {
-              id: '',
-            },
-          },
-        }));
+        reset(getDefaultFormValues());
       }
     },
-    [loadContactRoster],
+    [getDefaultFormValues, loadContactRoster, reset, setValue],
   );
 
   // Reset form for next player (used in multiple sign mode)
@@ -293,77 +318,113 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     setAvailablePlayers([]);
     setLoadingPlayerRoster(false);
     setError(null);
-    setRosterFormData({
-      playerNumber: undefined,
-      submittedWaiver: false,
-      player: {
-        submittedDriversLicense: false,
-        firstYear: new Date().getFullYear(),
-        contact: {
-          id: '',
-        },
-      },
-    });
-  }, []);
+    reset(getDefaultFormValues());
+  }, [getDefaultFormValues, reset]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async () => {
-    if (isSigningNewPlayer) {
-      if (!selectedPlayer) {
+  const onValidSubmit = useCallback(
+    async (values: SignRosterMemberType) => {
+      if (isSigningNewPlayer) {
+        if (!selectedPlayer) {
+          setError('Select a player before signing them to the roster');
+          return;
+        }
+
+        const formContactId = 'id' in values.player.contact ? values.player.contact.id : '';
+        const contactId =
+          'contact' in selectedPlayer
+            ? selectedPlayer.contact.id
+            : (selectedPlayer.id ?? formContactId);
+
+        if (!contactId) {
+          setError('Selected player is missing a contact identifier');
+          return;
+        }
+
+        try {
+          setError(null);
+          const payload: SignRosterMemberType = {
+            ...values,
+            player: {
+              ...values.player,
+              contact: { id: contactId },
+            },
+          };
+          const member = await signRosterPlayer(contactId, payload);
+          await onSuccess?.({ type: 'sign', member });
+
+          if (signMultiplePlayers) {
+            resetFormForNextPlayer();
+          } else {
+            onClose();
+          }
+        } catch (error) {
+          setError(error instanceof Error ? error.message : 'Failed to sign player');
+        }
         return;
       }
 
-      setIsSigningPlayer(true);
-
-      try {
-        const member = await signRosterPlayer(selectedPlayer.id, rosterFormData);
-        setError(null);
-        await onSuccess?.({ type: 'sign', member });
-
-        if (signMultiplePlayers) {
-          resetFormForNextPlayer();
-        } else {
-          onClose();
-        }
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to sign player');
-      } finally {
-        setIsSigningPlayer(false);
-      }
-    } else {
       if (!rosterMemberId) {
         setError('Unable to update roster member: missing roster member identifier');
         return;
       }
 
-      setIsSigningPlayer(true);
-
       try {
-        const member = await updateRosterPlayer(rosterMemberId, rosterFormData);
+        if (!isRosterPlayer(selectedPlayer)) {
+          setError('Unable to update roster member: missing existing player details');
+          return;
+        }
+
         setError(null);
+
+        const rosterUpdate: UpdateRosterMemberType = {};
+
+        if (values.playerNumber !== undefined) {
+          rosterUpdate.playerNumber = values.playerNumber;
+        }
+
+        if (values.submittedWaiver !== undefined) {
+          rosterUpdate.submittedWaiver = values.submittedWaiver;
+        }
+
+        const playerUpdates: NonNullable<UpdateRosterMemberType['player']> = {};
+
+        if (values.player?.submittedDriversLicense !== undefined) {
+          playerUpdates.submittedDriversLicense = values.player.submittedDriversLicense;
+        }
+
+        if (values.player?.firstYear !== undefined) {
+          playerUpdates.firstYear = values.player.firstYear;
+        }
+
+        if (Object.keys(playerUpdates).length > 0) {
+          rosterUpdate.player = playerUpdates;
+        }
+
+        const member = await updateRosterPlayer(rosterMemberId, rosterUpdate);
         await onSuccess?.({ type: 'update', member });
         onClose();
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to update roster information');
-      } finally {
-        setIsSigningPlayer(false);
       }
-    }
-  }, [
-    isSigningNewPlayer,
-    onClose,
-    onSuccess,
-    resetFormForNextPlayer,
-    rosterFormData,
-    rosterMemberId,
-    selectedPlayer,
-    signMultiplePlayers,
-    signRosterPlayer,
-    updateRosterPlayer,
-  ]);
+    },
+    [
+      isSigningNewPlayer,
+      onClose,
+      onSuccess,
+      resetFormForNextPlayer,
+      rosterMemberId,
+      selectedPlayer,
+      signMultiplePlayers,
+      signRosterPlayer,
+      updateRosterPlayer,
+    ],
+  );
+
+  const handleDialogSubmit = submitForm(onValidSubmit);
 
   return (
-    <Dialog open={open} onClose={isSigningPlayer ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isSubmitting ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         {isSigningNewPlayer ? 'Sign Player to Roster' : 'Edit Roster Information'}
       </DialogTitle>
@@ -431,96 +492,127 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
           )}
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="Player Number"
-              type="number"
-              value={rosterFormData.playerNumber || ''}
-              onChange={(e) => {
-                const value = parseInt(e.target.value) || undefined;
-                setRosterFormData({
-                  ...rosterFormData,
-                  playerNumber: value ? Math.max(0, value) : undefined,
-                });
-              }}
-              inputProps={{ min: 0 }}
-              fullWidth
-              variant="outlined"
-              helperText="Enter the player's jersey number"
-              disabled={isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)}
-            />
+            <Controller
+              name="playerNumber"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Player Number"
+                  type="number"
+                  value={field.value ?? ''}
+                  onChange={(event) => {
+                    const { value } = event.target;
+                    if (value === '') {
+                      field.onChange(undefined);
+                      return;
+                    }
 
-            <TextField
-              label="First Year"
-              type="number"
-              value={rosterFormData.player.firstYear}
-              onChange={(e) => {
-                const value = parseInt(e.target.value) || 0;
-                setRosterFormData({
-                  ...rosterFormData,
-                  player: {
-                    ...rosterFormData.player,
-                    firstYear: Math.max(0, value),
-                  },
-                });
-              }}
-              inputProps={{ min: 0 }}
-              fullWidth
-              variant="outlined"
-              helperText="Enter the player's first year in the league"
-              error={
-                rosterFormData.player.firstYear !== undefined && rosterFormData.player.firstYear < 0
-              }
-              disabled={isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)}
-            />
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={rosterFormData.submittedWaiver}
-                  onChange={(e) =>
-                    setRosterFormData({ ...rosterFormData, submittedWaiver: e.target.checked })
+                    const parsed = Number.parseInt(value, 10);
+                    field.onChange(Number.isNaN(parsed) ? undefined : parsed);
+                  }}
+                  inputProps={{ min: 0, max: 99 }}
+                  fullWidth
+                  variant="outlined"
+                  helperText={errors.playerNumber?.message ?? "Enter the player's jersey number"}
+                  error={Boolean(errors.playerNumber)}
+                  disabled={
+                    (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) || isSubmitting
                   }
-                  disabled={isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)}
                 />
-              }
-              label="Submitted Waiver"
+              )}
             />
 
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={rosterFormData.player.submittedDriversLicense}
-                  onChange={(e) =>
-                    setRosterFormData({
-                      ...rosterFormData,
-                      player: {
-                        ...rosterFormData.player,
-                        submittedDriversLicense: e.target.checked,
-                      },
-                    })
+            <Controller
+              name="player.firstYear"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="First Year"
+                  type="number"
+                  value={field.value ?? ''}
+                  onChange={(event) => {
+                    const { value } = event.target;
+                    if (value === '') {
+                      field.onChange(undefined);
+                      return;
+                    }
+
+                    const parsed = Number.parseInt(value, 10);
+                    field.onChange(Number.isNaN(parsed) ? undefined : parsed);
+                  }}
+                  inputProps={{ min: 1900, max: new Date().getFullYear() }}
+                  fullWidth
+                  variant="outlined"
+                  helperText={
+                    errors.player?.firstYear?.message ??
+                    "Enter the player's first year in the league"
                   }
-                  disabled={isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)}
+                  error={Boolean(errors.player?.firstYear)}
+                  disabled={
+                    (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) || isSubmitting
+                  }
                 />
-              }
-              label="Submitted Driver's License"
+              )}
+            />
+
+            <Controller
+              name="submittedWaiver"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={field.value ?? false}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={
+                        (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
+                        isSubmitting
+                      }
+                    />
+                  }
+                  label="Submitted Waiver"
+                />
+              )}
+            />
+
+            <Controller
+              name="player.submittedDriversLicense"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={field.value ?? false}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={
+                        (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
+                        isSubmitting
+                      }
+                    />
+                  }
+                  label="Submitted Driver's License"
+                />
+              )}
             />
           </Box>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={isSigningPlayer}>
+        <Button onClick={onClose} disabled={isSubmitting}>
           Cancel
         </Button>
         <Button
-          onClick={handleSubmit}
+          onClick={handleDialogSubmit}
           variant="contained"
           disabled={
             isSigningNewPlayer
-              ? !selectedPlayer || isSigningPlayer || loadingPlayerRoster
-              : isSigningPlayer
+              ? !selectedPlayer || isSubmitting || loadingPlayerRoster
+              : isSubmitting
           }
           startIcon={
-            isSigningPlayer ? (
+            isSubmitting ? (
               <CircularProgress size={20} />
             ) : isSigningNewPlayer ? (
               <PersonAddIcon />
@@ -529,7 +621,13 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
             )
           }
         >
-          {isSigningPlayer ? 'Signing...' : isSigningNewPlayer ? 'Sign Player' : 'Save Roster Info'}
+          {isSubmitting
+            ? isSigningNewPlayer
+              ? 'Signing...'
+              : 'Saving...'
+            : isSigningNewPlayer
+              ? 'Sign Player'
+              : 'Save Roster Info'}
         </Button>
       </DialogActions>
     </Dialog>

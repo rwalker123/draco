@@ -4,6 +4,15 @@ import { BaseContactSchema, CreateContactSchema } from './contact.js';
 
 extendZodWithOpenApi(z);
 
+const isoDateStringSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => !Number.isNaN(Date.parse(value)),
+    'dateAdded must be a valid ISO 8601 date-time string',
+  )
+  .openapi({ format: 'date-time' });
+
 export const RosterPlayerSchema = z
   .object({
     id: z.bigint().transform((val) => val.toString()),
@@ -22,7 +31,7 @@ export const RosterMemberSchema = z
     playerNumber: z.number().min(0).max(99).optional(),
     inactive: z.boolean().default(false),
     submittedWaiver: z.boolean().optional(),
-    dateAdded: z.date().nullable().default(null),
+    dateAdded: isoDateStringSchema.nullable().default(null),
     player: RosterPlayerSchema,
     // todo: add team season summary info here eventually?
   })
@@ -45,6 +54,22 @@ export const CreateRosterMemberSchema = RosterMemberSchema.omit({
 }).openapi({
   description: 'Schema for creating or updating a roster member',
 });
+
+export const UpdateRosterMemberSchema = z
+  .object({
+    playerNumber: z.number().min(0).max(99).optional(),
+    submittedWaiver: z.boolean().optional(),
+    player: z
+      .object({
+        submittedDriversLicense: z.boolean().optional(),
+        firstYear: z.number().min(1900).max(new Date().getFullYear()).optional(),
+      })
+      .optional(),
+  })
+  .strict()
+  .openapi({
+    description: 'Schema for updating a roster member',
+  });
 
 export const SignRosterMemberSchema = RosterMemberSchema.omit({
   id: true,
@@ -72,5 +97,6 @@ export const SignRosterMemberSchema = RosterMemberSchema.omit({
 export type RosterPlayerType = z.infer<typeof RosterPlayerSchema>;
 export type RosterMemberType = z.infer<typeof RosterMemberSchema>;
 export type CreateRosterMemberType = z.infer<typeof CreateRosterMemberSchema>;
+export type UpdateRosterMemberType = z.infer<typeof UpdateRosterMemberSchema>;
 export type SignRosterMemberType = z.infer<typeof SignRosterMemberSchema>;
 export type TeamRosterMembersType = z.infer<typeof TeamRosterMembersSchema>;

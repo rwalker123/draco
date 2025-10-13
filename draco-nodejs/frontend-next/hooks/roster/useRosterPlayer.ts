@@ -4,6 +4,7 @@ import {
   RosterMemberType,
   RosterPlayerType,
   SignRosterMemberType,
+  UpdateRosterMemberType,
 } from '@draco/shared-schemas';
 import {
   getContactRoster as apiGetContactRoster,
@@ -124,17 +125,9 @@ export const useRosterPlayer = ({ accountId, seasonId, teamSeasonId }: UseRoster
         throw new Error('Missing roster context for signing player');
       }
 
-      const payload: SignRosterMemberType = {
-        ...rosterData,
-        player: {
-          ...rosterData.player,
-          contact: { id: contactId },
-        },
-      };
-
       const result = await apiSignPlayer({
         path: { accountId, seasonId, teamSeasonId },
-        body: payload,
+        body: { ...rosterData, player: { ...rosterData.player, contact: { id: contactId } } },
         client: apiClient,
         throwOnError: false,
       });
@@ -146,14 +139,40 @@ export const useRosterPlayer = ({ accountId, seasonId, teamSeasonId }: UseRoster
   );
 
   const updateRosterPlayer = useCallback(
-    async (rosterMemberId: string, updates: SignRosterMemberType): Promise<RosterMemberType> => {
+    async (rosterMemberId: string, updates: UpdateRosterMemberType): Promise<RosterMemberType> => {
       if (!accountId || !seasonId || !teamSeasonId) {
         throw new Error('Missing roster context for roster update');
       }
 
+      const sanitizedUpdates: UpdateRosterMemberType = {};
+
+      if (updates.playerNumber !== undefined) {
+        sanitizedUpdates.playerNumber = updates.playerNumber;
+      }
+
+      if (updates.submittedWaiver !== undefined) {
+        sanitizedUpdates.submittedWaiver = updates.submittedWaiver;
+      }
+
+      if (updates.player) {
+        const playerUpdates: NonNullable<UpdateRosterMemberType['player']> = {};
+
+        if (updates.player.submittedDriversLicense !== undefined) {
+          playerUpdates.submittedDriversLicense = updates.player.submittedDriversLicense;
+        }
+
+        if (updates.player.firstYear !== undefined) {
+          playerUpdates.firstYear = updates.player.firstYear;
+        }
+
+        if (Object.keys(playerUpdates).length > 0) {
+          sanitizedUpdates.player = playerUpdates;
+        }
+      }
+
       const result = await apiUpdateRosterMember({
         path: { accountId, seasonId, teamSeasonId, rosterMemberId },
-        body: updates,
+        body: sanitizedUpdates,
         client: apiClient,
         throwOnError: false,
       });
