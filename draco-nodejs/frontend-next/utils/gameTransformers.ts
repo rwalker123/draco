@@ -111,11 +111,11 @@ const mapApiGameToGameCard = (game: ApiGame): Game => {
     id: String(game.id),
     date: game.gameDate,
     homeTeamId: String(game.homeTeam?.id ?? ''),
-    awayTeamId: String(game.visitorTeam?.id ?? ''),
+    visitorTeamId: String(game.visitorTeam?.id ?? ''),
     homeTeamName: game.homeTeam?.name ?? 'Unknown Team',
-    awayTeamName: game.visitorTeam?.name ?? 'Unknown Team',
+    visitorTeamName: game.visitorTeam?.name ?? 'Unknown Team',
     homeScore: Number(game.homeScore ?? 0),
-    awayScore: Number(game.visitorScore ?? 0),
+    visitorScore: Number(game.visitorScore ?? 0),
     gameStatus,
     gameStatusText: parseGameStatusText(gameStatus, game.gameStatusText),
     gameStatusShortText: parseGameStatusShortText(gameStatus, game.gameStatusShortText),
@@ -150,6 +150,7 @@ export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
     homeScore: Number(game.homeScore ?? 0),
     visitorScore: Number(game.visitorScore ?? 0),
     comment: game.comment ?? '',
+    hasGameRecap: Boolean((game as { hasGameRecap?: boolean }).hasGameRecap),
     fieldId: toOptionalString(game.field?.id),
     field: mapScheduleFieldDetails(game),
     gameStatus,
@@ -175,60 +176,51 @@ export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
  * Converts Game objects to GameCardData for display components
  * Handles both Game types (from GameListDisplay and from types/schedule)
  */
-export function convertGameToGameCardData(
-  game: Game,
-  teams?: Array<TeamSeasonNameType>,
-): GameCardData;
-export function convertGameToGameCardData(
-  game: ScheduleGame,
-  teams: Array<TeamSeasonNameType>,
-): GameCardData;
+const isDisplayGame = (game: Game | ScheduleGame): game is Game => 'gameRecaps' in game;
+
 export function convertGameToGameCardData(
   game: Game | ScheduleGame,
   teams: Array<TeamSeasonNameType> = [],
 ): GameCardData {
-  // Check if this is a Game from GameListDisplay (has hasGameRecap property)
-  if ('hasGameRecap' in game) {
-    // Update team names if provided
+  if (isDisplayGame(game)) {
     const homeTeam = teams.find((team) => team.id === game.homeTeamId);
-    const awayTeam = teams.find((team) => team.id === game.awayTeamId);
+    const visitorTeam = teams.find((team) => team.id === game.visitorTeamId);
 
     return {
       ...game,
       homeTeamName: homeTeam?.name || game.homeTeamName,
-      awayTeamName: awayTeam?.name || game.awayTeamName,
-    };
-  } else {
-    // This is a ScheduleGame, convert to GameCardData
-    const homeTeam = teams.find((team) => team.id === game.homeTeamId);
-    const awayTeam = teams.find((team) => team.id === game.visitorTeamId);
-
-    return {
-      id: game.id,
-      date: game.gameDate,
-      homeTeamId: game.homeTeamId,
-      awayTeamId: game.visitorTeamId,
-      homeTeamName: homeTeam?.name || 'Unknown Team',
-      awayTeamName: awayTeam?.name || 'Unknown Team',
-      homeScore: game.homeScore,
-      awayScore: game.visitorScore,
-      gameStatus: game.gameStatus,
-      gameStatusText: game.gameStatusText,
-      gameStatusShortText: game.gameStatusShortText,
-      leagueName: game.league.name,
-      fieldId: game.fieldId || null,
-      fieldName: game.field?.name || null,
-      fieldShortName: game.field?.shortName || null,
-      hasGameRecap: false, // TODO: Implement game recaps
-      gameRecaps: [],
-      comment: game.comment,
-      gameType: game.gameType,
-      umpire1: game.umpire1,
-      umpire2: game.umpire2,
-      umpire3: game.umpire3,
-      umpire4: game.umpire4,
+      visitorTeamName: visitorTeam?.name || game.visitorTeamName,
     };
   }
+
+  const homeTeam = teams.find((team) => team.id === game.homeTeamId);
+  const visitorTeam = teams.find((team) => team.id === game.visitorTeamId);
+
+  return {
+    id: game.id,
+    date: game.gameDate,
+    homeTeamId: game.homeTeamId,
+    visitorTeamId: game.visitorTeamId,
+    homeTeamName: homeTeam?.name || 'Unknown Team',
+    visitorTeamName: visitorTeam?.name || 'Unknown Team',
+    homeScore: game.homeScore,
+    visitorScore: game.visitorScore,
+    gameStatus: game.gameStatus,
+    gameStatusText: game.gameStatusText,
+    gameStatusShortText: game.gameStatusShortText,
+    leagueName: game.league.name,
+    fieldId: game.fieldId || null,
+    fieldName: game.field?.name || null,
+    fieldShortName: game.field?.shortName || null,
+    hasGameRecap: Boolean(game.hasGameRecap),
+    gameRecaps: [],
+    comment: game.comment,
+    gameType: game.gameType,
+    umpire1: game.umpire1,
+    umpire2: game.umpire2,
+    umpire3: game.umpire3,
+    umpire4: game.umpire4,
+  };
 }
 
 export const createGamesLoader = (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -20,6 +20,7 @@ import './GameRecapsWidget.css';
 import { listSeasonGames } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
+import { sanitizeRichContent } from '../utils/sanitization';
 
 interface GameRecapFlat {
   id: string; // game id
@@ -182,6 +183,24 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     void fetchRecaps();
   }, [accountId, apiClient, seasonId, teamSeasonId, maxRecaps]);
 
+  const sanitizedRecapHtml = useMemo(() => {
+    if (!recapList.length) {
+      return '<span style="color:#888;">(No recap provided)</span>';
+    }
+
+    const clampedIndex = Math.min(currentIndex, recapList.length - 1);
+    const recap = recapList[clampedIndex]?.recap ?? '';
+    const sanitized = sanitizeRichContent(recap);
+    const plainText = sanitized
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!plainText.length) {
+      return '<span style="color:#888;">(No recap provided)</span>';
+    }
+    return sanitized;
+  }, [currentIndex, recapList]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 180 }}>
@@ -197,7 +216,8 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   }
 
   // Show the current recap
-  const recapItem = recapList[currentIndex];
+  const clampedIndex = Math.min(currentIndex, recapList.length - 1);
+  const recapItem = recapList[clampedIndex];
 
   // Animation variants for slide and fade
   const variants = {
@@ -299,9 +319,35 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
             >
               {recapItem.teamName}
             </Typography>
-            <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
-              {recapItem.recap}
-            </Typography>
+            <Typography
+              variant="body2"
+              component="div"
+              sx={{
+                mb: 2,
+                '& p': { margin: '0 0 8px' },
+                '& ul, & ol': { margin: '0 0 8px 20px' },
+                '& li': { marginBottom: '4px' },
+                '& .editor-text-bold, & strong, & b': { fontWeight: 700 },
+                '& .editor-text-italic, & em, & i': { fontStyle: 'italic' },
+                '& .editor-text-underline, & u': { textDecoration: 'underline' },
+                '& .editor-heading-h1, & h1': {
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  margin: '16px 0 8px',
+                },
+                '& .editor-heading-h2, & h2': {
+                  fontSize: '1.3rem',
+                  fontWeight: 700,
+                  margin: '14px 0 6px',
+                },
+                '& .editor-heading-h3, & h3': {
+                  fontSize: '1.15rem',
+                  fontWeight: 600,
+                  margin: '12px 0 6px',
+                },
+              }}
+              dangerouslySetInnerHTML={{ __html: sanitizedRecapHtml }}
+            />
           </CardContent>
           {recapList.length > 1 && (
             <Box

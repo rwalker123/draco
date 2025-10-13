@@ -536,7 +536,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <EmailIcon fontSize="small" />
                       <Typography variant="body2" color="text.primary">
-                        Email game results to players
+                        Email to players
                       </Typography>
                     </Box>
                   }

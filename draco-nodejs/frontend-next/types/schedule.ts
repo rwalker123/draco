@@ -22,6 +22,7 @@ export interface Game {
   gameStatusText: string;
   gameStatusShortText: string;
   gameType: number;
+  hasGameRecap?: boolean;
   umpire1?: string;
   umpire2?: string;
   umpire3?: string;
@@ -158,6 +159,8 @@ export interface ViewComponentProps {
   canEditSchedule: boolean;
   onEditGame: (game: Game) => void;
   onGameResults: (game: Game) => void;
+  onEditRecap?: (game: Game) => void;
+  onViewRecap?: (game: Game) => void;
   convertGameToGameCardData: (game: Game) => GameCardData;
   timeZone: string;
   filterType: FilterType;
@@ -172,6 +175,7 @@ export interface ViewComponentProps {
   navigateToWeek?: (direction: 'prev' | 'next') => void;
   navigate?: (direction: NavigationDirection, type?: FilterType) => void;
   loadingGames: boolean;
+  canEditRecap?: (game: GameCardData) => boolean;
 }
 
 export interface DialogComponentProps {

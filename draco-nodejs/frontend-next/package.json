@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" dotenv -e .env.local -- next dev --turbopack",
+    "dev": "dotenv -e .env.local -- sh -c 'HOST_VALUE=\"${HOST:-localhost}\"; NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next dev --hostname \"$HOST_VALUE\" --turbopack'",
     "build": "next build",
-    "start": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" dotenv -e .env.local -- next start",
+    "start": "dotenv -e .env.local -- sh -c 'HOST_VALUE=\"${HOST:-localhost}\"; NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next start --hostname \"$HOST_VALUE\"'",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "type-check": "tsc --noEmit",
