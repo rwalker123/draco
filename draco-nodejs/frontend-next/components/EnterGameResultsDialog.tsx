@@ -23,51 +23,48 @@ import {
   Email as EmailIcon,
   Twitter as TwitterIcon,
 } from '@mui/icons-material';
+import type { GameRecapType, GameResultType, UpdateGameResultsType } from '@draco/shared-schemas';
 import { GameStatus } from '../types/schedule';
 import { formatDateTimeInTimezone } from '../utils/dateUtils';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
+import { useGameResults } from '../hooks/useGameResults';
 
-interface GameRecap {
-  teamId: string;
-  recap: string;
+type TeamSummary = {
+  id: string;
+  name?: string | null;
+};
+
+export interface EnterGameResultsDialogGame {
+  id: string;
+  seasonId: string;
+  gameDate: string;
+  homeTeam: TeamSummary;
+  visitorTeam: TeamSummary;
+  homeScore: number;
+  visitorScore: number;
+  gameStatus: number;
+  gameStatusText?: string;
+  leagueName?: string;
+  fieldId?: string | null;
+  fieldName?: string | null;
+  fieldShortName?: string | null;
+  recaps?: GameRecapType[];
 }
 
-interface Game {
-  id: string;
-  date: string;
-  homeTeamId: string;
-  awayTeamId: string;
-  homeTeamName: string;
-  awayTeamName: string;
-  homeScore: number;
-  awayScore: number;
-  gameStatus: number;
-  gameStatusText: string;
-  leagueName: string;
-  fieldId: string | null;
-  fieldName: string | null;
-  fieldShortName: string | null;
-  hasGameRecap: boolean;
-  gameRecaps: GameRecap[];
+export interface GameResultsSuccessPayload {
+  gameId: string;
+  seasonId: string;
+  result: GameResultType;
+  request: UpdateGameResultsType;
 }
 
 interface EnterGameResultsDialogProps {
   open: boolean;
   onClose: () => void;
-  game: Game | null;
-  onSave: (gameData: GameResultData) => Promise<void>;
+  accountId: string;
+  game: EnterGameResultsDialogGame | null;
+  onSuccess?: (payload: GameResultsSuccessPayload) => void;
   timeZone?: string;
-}
-
-export interface GameResultData {
-  gameId: string;
-  homeScore: number;
-  awayScore: number;
-  gameStatus: number;
-  emailPlayers: boolean;
-  postToTwitter: boolean;
-  postToBluesky: boolean;
-  postToFacebook: boolean;
 }
 
 const gameStatusOptions = [
@@ -82,41 +79,63 @@ const gameStatusOptions = [
 const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   open,
   onClose,
+  accountId,
   game,
-  onSave,
+  onSuccess,
   timeZone = DEFAULT_TIMEZONE,
 }) => {
-  const [formData, setFormData] = useState<GameResultData>({
-    gameId: '',
+  const [formData, setFormData] = useState<UpdateGameResultsType>({
     homeScore: 0,
-    awayScore: 0,
+    visitorScore: 0,
     gameStatus: GameStatus.Scheduled,
     emailPlayers: false,
     postToTwitter: false,
     postToBluesky: false,
     postToFacebook: false,
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState<string>('');
+  const { submitResults, loading, error, resetError } = useGameResults({
+    accountId,
+    seasonId: game?.seasonId ?? '',
+  });
 
   // Initialize form data when game changes
   React.useEffect(() => {
-    if (game) {
+    if (!game) {
+      setSelectedGameId('');
       setFormData({
-        gameId: game.id,
-        homeScore: game.homeScore,
-        awayScore: game.awayScore,
-        gameStatus: game.gameStatus,
+        homeScore: 0,
+        visitorScore: 0,
+        gameStatus: GameStatus.Scheduled,
         emailPlayers: false,
         postToTwitter: false,
         postToBluesky: false,
         postToFacebook: false,
       });
-      setError(null);
+      setFormError(null);
+      resetError();
+      return;
     }
-  }, [game]);
 
-  const handleInputChange = (field: keyof GameResultData, value: string | number | boolean) => {
+    setSelectedGameId(game.id);
+    setFormData({
+      homeScore: game.homeScore,
+      visitorScore: game.visitorScore,
+      gameStatus: game.gameStatus,
+      emailPlayers: false,
+      postToTwitter: false,
+      postToBluesky: false,
+      postToFacebook: false,
+    });
+    setFormError(null);
+    resetError();
+  }, [game, resetError]);
+
+  const handleInputChange = (
+    field: keyof UpdateGameResultsType,
+    value: string | number | boolean,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -124,35 +143,48 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   };
 
   const handleSave = async () => {
-    if (!game) return;
+    if (!game || !selectedGameId) {
+      return;
+    }
+
+    if (!game.seasonId) {
+      setFormError('Missing season information for the selected game.');
+      return;
+    }
 
     // Validate forfeit scores
     if (formData.gameStatus === GameStatus.Forfeit) {
-      // Forfeit
-      if (formData.homeScore === 0 && formData.awayScore === 0) {
-        setError(
+      if (formData.homeScore === 0 && formData.visitorScore === 0) {
+        setFormError(
           'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
         );
         return;
       }
-      if (formData.homeScore > 0 && formData.awayScore > 0) {
-        setError(
+      if (formData.homeScore > 0 && formData.visitorScore > 0) {
+        setFormError(
           'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
         );
         return;
       }
     }
 
-    setLoading(true);
-    setError(null);
+    setFormError(null);
+
+    const payload: UpdateGameResultsType = { ...formData };
 
     try {
-      await onSave(formData);
+      const result = await submitResults(selectedGameId, payload);
+
+      onSuccess?.({
+        gameId: selectedGameId,
+        seasonId: game.seasonId,
+        result,
+        request: payload,
+      });
+
       onClose();
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to save game results');
-    } finally {
-      setLoading(false);
+    } catch {
+      // Error state is managed by the service hook; no additional handling required.
     }
   };
 
@@ -167,8 +199,16 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     });
   };
 
-  const getDisplayFieldName = (game: Game) => {
-    return game.fieldName;
+  const getDisplayFieldName = (gameDetails: EnterGameResultsDialogGame) => {
+    if (gameDetails.fieldName) {
+      return gameDetails.fieldName;
+    }
+
+    if (gameDetails.fieldShortName) {
+      return gameDetails.fieldShortName;
+    }
+
+    return null;
   };
 
   if (!game) return null;
@@ -218,9 +258,9 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ pt: 4, pb: 2, px: 3 }}>
-        {error && (
+        {(formError || error) && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {formError ?? error}
           </Alert>
         )}
 
@@ -241,7 +281,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 Date/Time:
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {formatGameTime(game.date)}
+                {formatGameTime(game.gameDate)}
               </Typography>
             </Box>
             <Box>
@@ -257,7 +297,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 League:
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {game.leagueName}
+                {game.leagueName ?? 'Unknown League'}
               </Typography>
             </Box>
           </Box>
@@ -354,14 +394,14 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 fontWeight={600}
                 sx={{ minWidth: '150px' }}
               >
-                {game.awayTeamName}
+                {game.visitorTeam.name ?? 'Away Team'}
               </Typography>
               <TextField
                 type="number"
-                value={formData.awayScore}
+                value={formData.visitorScore}
                 onChange={(e) => {
                   const value = e.target.value === '' ? 0 : Number(e.target.value);
-                  handleInputChange('awayScore', isNaN(value) ? 0 : value);
+                  handleInputChange('visitorScore', isNaN(value) ? 0 : value);
                 }}
                 inputProps={{ min: 0 }}
                 size="medium"
@@ -407,7 +447,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 fontWeight={600}
                 sx={{ minWidth: '150px' }}
               >
-                {game.homeTeamName}
+                {game.homeTeam.name ?? 'Home Team'}
               </Typography>
               <TextField
                 type="number"

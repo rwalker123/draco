@@ -17,6 +17,7 @@ export { useUserDataManager } from './useUserDataManager';
 export { useUserManagement } from './useUserManagement';
 export { useSmoothTransition } from './useSmoothTransition';
 export { useSchedulePermissions } from './useSchedulePermissions';
+export { useGameResults } from './useGameResults';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';
