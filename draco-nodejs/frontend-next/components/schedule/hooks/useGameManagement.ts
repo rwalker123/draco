@@ -1,8 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useApiClient } from '../../../hooks/useApiClient';
 import { Game } from '@/types/schedule';
-import { updateGameResults, deleteGame } from '@draco/shared-api-client';
-import { unwrapApiResult } from '../../../utils/apiResult';
 import { ScheduleGameResultsSuccessPayload } from '../dialogs/GameResultsDialog';
 import type { DeleteGameResult } from './useGameDeletion';
 
@@ -40,14 +37,11 @@ interface UseGameManagementReturn {
 }
 
 export const useGameManagement = ({
-  accountId,
   upsertGameInCache,
   removeGameFromCache,
   setSuccess,
   setError,
 }: UseGameManagementProps): UseGameManagementReturn => {
-  const apiClient = useApiClient();
-
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
