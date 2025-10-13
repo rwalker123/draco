@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -10,35 +10,87 @@ import {
   Typography,
   Box,
   Chip,
+  Alert,
 } from '@mui/material';
 import { format } from 'date-fns';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
+import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
+
+export interface DeletePlayersWantedSuccessEvent {
+  message: string;
+  id: string;
+}
 
 interface DeletePlayersWantedDialogProps {
+  accountId: string;
   open: boolean;
   classified: PlayersWantedClassifiedType | null;
   onClose: () => void;
-  onConfirm: () => void;
-  loading?: boolean;
+  onSuccess?: (event: DeletePlayersWantedSuccessEvent) => void;
+  onError?: (message: string) => void;
 }
 
 const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
+  accountId,
   open,
   classified,
   onClose,
-  onConfirm,
-  loading = false,
+  onSuccess,
+  onError,
 }) => {
+  const {
+    deletePlayersWanted,
+    loading: operationLoading,
+    error: serviceError,
+    resetError,
+  } = usePlayersWantedClassifieds(accountId);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (serviceError) {
+      setLocalError(serviceError);
+    }
+  }, [serviceError]);
+
   if (!classified) return null;
+
+  const handleClose = () => {
+    setLocalError(null);
+    resetError();
+    onClose();
+  };
+
+  const handleConfirm = async () => {
+    setLocalError(null);
+    resetError();
+
+    const result = await deletePlayersWanted(classified.id.toString());
+
+    if (result.success) {
+      const successMessage = result.message ?? 'Players Wanted ad deleted successfully';
+      onSuccess?.({ message: successMessage, id: classified.id.toString() });
+      handleClose();
+      return;
+    }
+
+    const message = result.error ?? 'Failed to delete Players Wanted ad';
+    setLocalError(message);
+    onError?.(message);
+  };
 
   const createdDate = classified.dateCreated ? new Date(classified.dateCreated) : null;
   const positionsNeeded = classified.positionsNeeded.split(',').map((pos) => pos.trim());
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Delete Players Wanted Ad</DialogTitle>
 
       <DialogContent>
+        {localError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>
+            {localError}
+          </Alert>
+        )}
         <Typography variant="body1" sx={{ mb: 2 }}>
           Are you sure you want to delete this Players Wanted ad?
         </Typography>
@@ -92,11 +144,16 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+        <Button onClick={handleClose} disabled={operationLoading}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} color="error" variant="contained" disabled={loading}>
-          {loading ? 'Deleting...' : 'Delete'}
+        <Button
+          onClick={handleConfirm}
+          color="error"
+          variant="contained"
+          disabled={operationLoading}
+        >
+          {operationLoading ? 'Deleting...' : 'Delete'}
         </Button>
       </DialogActions>
     </Dialog>

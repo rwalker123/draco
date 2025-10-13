@@ -29,17 +29,10 @@ import {
 } from '@draco/shared-schemas';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  createAccount,
-  getAccountAffiliations,
-  getAccountTypes,
-  getManagedAccounts,
-} from '@draco/shared-api-client';
-import { useApiClient } from '../../../hooks/useApiClient';
-import { unwrapApiResult } from '../../../utils/apiResult';
 import { detectUserTimezone, US_TIMEZONES } from '../../../utils/timezones';
 import { useAuth } from '../../../context/AuthContext';
 import TurnstileChallenge from '../../security/TurnstileChallenge';
+import { useAccountManagementService } from '../../../hooks/useAccountManagementService';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -89,8 +82,13 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const apiClient = useApiClient();
   const { user } = useAuth();
+  const {
+    fetchAccountTypes,
+    fetchAccountAffiliations,
+    fetchManagedAccounts,
+    createAccount: createAccountOperation,
+  } = useAccountManagementService();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [accountTypes, setAccountTypes] = React.useState<AccountTypeReference[]>([]);
   const [affiliations, setAffiliations] = React.useState<AccountAffiliationType[]>([]);
@@ -131,37 +129,37 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
       setOptionsError(null);
       try {
         const [typesResult, affiliationsResult, managedAccountsResult] = await Promise.all([
-          getAccountTypes({ client: apiClient, throwOnError: false }),
-          getAccountAffiliations({ client: apiClient, throwOnError: false }),
-          getManagedAccounts({ client: apiClient, throwOnError: false }),
+          fetchAccountTypes(),
+          fetchAccountAffiliations(),
+          fetchManagedAccounts(),
         ]);
 
         if (!isActive) {
           return;
         }
 
-        const types = unwrapApiResult(typesResult, 'Failed to load account types');
-        const affiliationsData = unwrapApiResult(affiliationsResult, 'Failed to load affiliations');
-        const managedAccountsData = unwrapApiResult(
-          managedAccountsResult,
-          'Failed to load managed accounts',
-        );
+        if (!typesResult.success) {
+          throw new Error(typesResult.error);
+        }
 
-        setAccountTypes((types as AccountTypeReference[]) ?? []);
-        setAffiliations((affiliationsData as AccountAffiliationType[]) ?? []);
+        if (!affiliationsResult.success) {
+          throw new Error(affiliationsResult.error);
+        }
 
-        const accounts = (managedAccountsData as SharedAccountType[] | undefined) ?? [];
+        if (!managedAccountsResult.success) {
+          throw new Error(managedAccountsResult.error);
+        }
+
+        setAccountTypes(typesResult.data);
+        setAffiliations(affiliationsResult.data);
+
+        const accounts = managedAccountsResult.data;
 
         let owner = { firstName: '', lastName: '' };
-        const preferredAccount = accounts.find(
+        const ownedAccount = accounts.find(
           (account) => account.accountOwner?.user?.userId === user?.userId,
         );
-        const fallbackAccount = accounts.find(
-          (account) =>
-            account.accountOwner?.contact?.firstName && account.accountOwner?.contact?.lastName,
-        );
-        const contact =
-          preferredAccount?.accountOwner?.contact ?? fallbackAccount?.accountOwner?.contact;
+        const contact = ownedAccount?.accountOwner?.contact;
 
         if (contact?.firstName && contact?.lastName) {
           owner = {
@@ -190,7 +188,15 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
     return () => {
       isActive = false;
     };
-  }, [open, apiClient, user?.userId, onError, optionsReloadToken]);
+  }, [
+    open,
+    fetchAccountTypes,
+    fetchAccountAffiliations,
+    fetchManagedAccounts,
+    user?.userId,
+    onError,
+    optionsReloadToken,
+  ]);
 
   React.useEffect(() => {
     if (!open) {
@@ -295,29 +301,25 @@ const CreateAccountDialog: React.FC<CreateAccountDialogProps> = ({
       setSubmitError(null);
 
       const payload = buildPayload(formValues);
-      const result = await createAccount({
-        client: apiClient,
-        body: payload,
-        headers: captchaToken ? { 'cf-turnstile-token': captchaToken } : undefined,
-        throwOnError: false,
+      const result = await createAccountOperation({
+        payload,
+        captchaToken,
       });
 
-      const createdAccount = unwrapApiResult(
-        result,
-        'Failed to create account',
-      ) as SharedAccountType;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       onSuccess?.({
-        account: createdAccount,
-        message: 'Account created successfully',
+        account: result.data,
+        message: result.message ?? 'Account created successfully',
       });
       onClose();
-      setCaptchaToken(null);
-      setCaptchaResetKey((key) => key + 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create account';
       setSubmitError(message);
       onError?.(message);
+    } finally {
       setCaptchaToken(null);
       setCaptchaResetKey((key) => key + 1);
     }

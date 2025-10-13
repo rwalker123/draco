@@ -124,8 +124,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setEditDialogOpen,
     setDeleteDialogOpen,
     setGameResultsDialogOpen,
-    handleDeleteGame,
-    handleSaveGameResults,
+    handleDeleteSuccess,
+    handleGameResultsSuccess,
     setSelectedGame,
     setSelectedGameForResults,
     openCreateDialog,
@@ -454,31 +454,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
         <DeleteGameDialog
           open={deleteDialogOpen}
-          onClose={() => setDeleteDialogOpen(false)}
           selectedGame={selectedGame}
-          onConfirm={handleDeleteGame}
+          onClose={() => setDeleteDialogOpen(false)}
+          onSuccess={handleDeleteSuccess}
+          onError={setError}
           getTeamName={getTeamName}
+          accountId={accountId}
         />
 
         <GameResultsDialog
           open={gameResultsDialogOpen}
+          accountId={accountId}
           onClose={() => {
             setGameResultsDialogOpen(false);
             setSelectedGameForResults(null);
           }}
           selectedGame={selectedGameForResults}
-          onSave={async (gameId, results) => {
-            await handleSaveGameResults(
-              results as {
-                homeScore: number;
-                awayScore: number;
-                gameStatus: number;
-                emailPlayers: boolean;
-                postToTwitter: boolean;
-                postToBluesky: boolean;
-                postToFacebook: boolean;
-              },
-            );
+          onSuccess={(payload) => {
+            handleGameResultsSuccess(payload);
           }}
           getTeamName={getTeamName}
           timeZone={timeZone}

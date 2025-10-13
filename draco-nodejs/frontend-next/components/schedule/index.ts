@@ -2,6 +2,8 @@
 export { useScheduleData } from './hooks/useScheduleData';
 export { useScheduleFilters } from './hooks/useScheduleFilters';
 export { useGameManagement } from './hooks/useGameManagement';
+export { useGameDeletion } from './hooks/useGameDeletion';
+export type { DeleteGameResult } from './hooks/useGameDeletion';
 
 // Views
 export { default as ViewFactory } from './views/ViewFactory';

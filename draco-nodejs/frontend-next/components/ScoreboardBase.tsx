@@ -1,12 +1,13 @@
 import React from 'react';
 import { Box, CircularProgress, Paper } from '@mui/material';
 import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
-import EnterGameResultsDialog, { GameResultData } from './EnterGameResultsDialog';
+import EnterGameResultsDialog, {
+  EnterGameResultsDialogGame,
+  GameResultsSuccessPayload,
+} from './EnterGameResultsDialog';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
-import { useApiClient } from '../hooks/useApiClient';
-import { updateGameResults } from '@draco/shared-api-client';
-import { unwrapApiResult } from '../utils/apiResult';
+import { getGameStatusShortText, getGameStatusText } from '../utils/gameUtils';
 
 interface ScoreboardBaseProps {
   accountId: string;
@@ -37,49 +38,56 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
 
   const { hasRole } = useRole();
   const canEditGames = isAccountAdministrator(hasRole, accountId);
-  const apiClient = useApiClient();
-
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });
   };
 
-  const handleSaveGameResults = async (gameData: GameResultData) => {
-    if (!editGameDialog.game) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await updateGameResults({
-        client: apiClient,
-        path: {
-          accountId,
-          seasonId: currentSeasonId,
-          gameId: gameData.gameId,
-        },
-        body: {
-          homeScore: gameData.homeScore,
-          visitorScore: gameData.awayScore,
-          gameStatus: gameData.gameStatus,
-          emailPlayers: gameData.emailPlayers,
-          postToTwitter: gameData.postToTwitter,
-          postToBluesky: gameData.postToBluesky,
-          postToFacebook: gameData.postToFacebook,
-        },
-        throwOnError: false,
+  const mapGameToDialogGame = (gameData: Game): EnterGameResultsDialogGame => ({
+    id: gameData.id,
+    seasonId: currentSeasonId,
+    gameDate: gameData.date,
+    homeTeam: { id: gameData.homeTeamId, name: gameData.homeTeamName },
+    visitorTeam: { id: gameData.awayTeamId, name: gameData.awayTeamName },
+    homeScore: gameData.homeScore,
+    visitorScore: gameData.awayScore,
+    gameStatus: gameData.gameStatus,
+    gameStatusText: gameData.gameStatusText,
+    leagueName: gameData.leagueName,
+    fieldId: gameData.fieldId,
+    fieldName: gameData.fieldName,
+    fieldShortName: gameData.fieldShortName,
+    recaps:
+      gameData.gameRecaps?.map((recap) => ({
+        team: { id: recap.teamId },
+        recap: recap.recap,
+      })) ?? [],
+  });
+
+  const handleDialogSuccess = (payload: GameResultsSuccessPayload) => {
+    setGames((prevGames) => {
+      const updatedGames = prevGames.map((gameItem) => {
+        if (gameItem.id !== payload.gameId) {
+          return gameItem;
+        }
+
+        return {
+          ...gameItem,
+          homeScore: payload.result.homeScore,
+          awayScore: payload.result.visitorScore,
+          gameStatus: payload.result.gameStatus,
+          gameStatusText: getGameStatusText(payload.result.gameStatus),
+          gameStatusShortText: getGameStatusShortText(payload.result.gameStatus),
+        };
       });
 
-      unwrapApiResult(result, 'Failed to save game results');
-      setEditGameDialog({ open: false, game: null });
-      // Reload scoreboard data
-      await loadGames().then(setGames);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to save game results');
+      if (onGamesLoaded) {
+        onGamesLoaded(updatedGames);
       }
-    } finally {
-      setLoading(false);
-    }
+
+      return updatedGames;
+    });
+
+    setEditGameDialog({ open: false, game: null });
   };
 
   React.useEffect(() => {
@@ -140,13 +148,10 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
       {canEditGames && (
         <EnterGameResultsDialog
           open={editGameDialog.open}
+          accountId={accountId}
           onClose={() => setEditGameDialog({ open: false, game: null })}
-          game={
-            editGameDialog.game
-              ? { ...editGameDialog.game, gameRecaps: editGameDialog.game.gameRecaps ?? [] }
-              : null
-          }
-          onSave={handleSaveGameResults}
+          game={editGameDialog.game ? mapGameToDialogGame(editGameDialog.game) : null}
+          onSuccess={handleDialogSuccess}
         />
       )}
     </>

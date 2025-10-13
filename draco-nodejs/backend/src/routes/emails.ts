@@ -100,6 +100,25 @@ router.get(
   }),
 );
 
+/**
+ * @route DELETE /api/accounts/:accountId/emails/:emailId
+ * @desc Delete an email and its history
+ * @access Private - requires ContactAdmin or higher permissions
+ */
+router.delete(
+  '/accounts/:accountId/emails/:emailId',
+  authenticateToken,
+  routeProtection.requirePermission('account.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const emailId = BigInt(req.params.emailId);
+
+    await emailService.deleteEmail(accountId, emailId);
+
+    res.status(204).send();
+  }),
+);
+
 // Email Template Routes
 
 /**

@@ -361,6 +361,23 @@ export class EmailService {
     return EmailResponseFormatter.formatEmailList(emails, paginationInfo);
   }
 
+  async deleteEmail(accountId: bigint, emailId: bigint): Promise<void> {
+    const email = await this.emailRepository.findEmailWithAccount(emailId);
+
+    if (!email || email.account_id !== accountId) {
+      throw new NotFoundError('Email not found');
+    }
+
+    this.clearQueuedJobsForEmail(emailId);
+
+    await this.attachmentService.deleteAllEmailAttachments(
+      email.account_id.toString(),
+      emailId.toString(),
+    );
+
+    await this.emailRepository.deleteEmail(emailId, accountId);
+  }
+
   /**
    * Queue email batches for background processing
    */
@@ -395,6 +412,21 @@ export class EmailService {
       };
 
       this.jobQueue.set(job.id, job);
+    }
+  }
+
+  private clearQueuedJobsForEmail(emailId: bigint): void {
+    const jobsToRemove: string[] = [];
+
+    for (const [jobId, job] of this.jobQueue) {
+      if (job.emailId === emailId) {
+        jobsToRemove.push(jobId);
+      }
+    }
+
+    for (const jobId of jobsToRemove) {
+      this.jobQueue.delete(jobId);
+      this.processingQueue.delete(jobId);
     }
   }
 

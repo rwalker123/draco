@@ -49,7 +49,7 @@
           "dateAdded": {
             "type": "string",
             "nullable": true,
-            "format": "date",
+            "format": "date-time",
             "default": null
           },
           "player": {
@@ -418,6 +418,34 @@
           "player"
         ],
         "description": "Schema for signing a contact to a roster and providing player details"
+      },
+      "UpdateRosterMember": {
+        "type": "object",
+        "properties": {
+          "playerNumber": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 99
+          },
+          "submittedWaiver": {
+            "type": "boolean"
+          },
+          "player": {
+            "type": "object",
+            "properties": {
+              "submittedDriversLicense": {
+                "type": "boolean"
+              },
+              "firstYear": {
+                "type": "number",
+                "minimum": 1900,
+                "maximum": 2025
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "description": "Schema for updating a roster member"
       },
       "Contact": {
         "type": "object",
@@ -1986,7 +2014,7 @@
                 "dateAdded": {
                   "type": "string",
                   "nullable": true,
-                  "format": "date",
+                  "format": "date-time",
                   "default": null
                 },
                 "player": {
@@ -4456,8 +4484,7 @@
         },
         "required": [
           "name",
-          "accountLogoUrl",
-          "ownerContact"
+          "accountLogoUrl"
         ]
       },
       "AccountName": {
@@ -14640,6 +14667,84 @@
             }
           }
         }
+      },
+      "delete": {
+        "summary": "Delete email",
+        "description": "Deletes an email and all associated data for an account.",
+        "operationId": "deleteAccountEmail",
+        "tags": [
+          "Emails"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "emailId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Email deleted successfully"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to delete email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/accounts/{accountId}/email-templates": {
@@ -21480,145 +21585,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "pattern": "^d+$"
-                  },
-                  "playerNumber": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 99
-                  },
-                  "inactive": {
-                    "type": "boolean",
-                    "default": false
-                  },
-                  "submittedWaiver": {
-                    "type": "boolean"
-                  },
-                  "dateAdded": {
-                    "type": "string",
-                    "nullable": true,
-                    "format": "date",
-                    "default": null
-                  },
-                  "player": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "pattern": "^d+$"
-                      },
-                      "submittedDriversLicense": {
-                        "type": "boolean",
-                        "default": false
-                      },
-                      "firstYear": {
-                        "type": "number",
-                        "minimum": 1900,
-                        "maximum": 2025
-                      },
-                      "contact": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "pattern": "^d+$"
-                          },
-                          "firstName": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
-                          },
-                          "lastName": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
-                          },
-                          "middleName": {
-                            "type": "string",
-                            "maxLength": 50
-                          },
-                          "email": {
-                            "type": "string",
-                            "maxLength": 100,
-                            "format": "email"
-                          },
-                          "userId": {
-                            "type": "string",
-                            "maxLength": 50
-                          },
-                          "photoUrl": {
-                            "type": "string",
-                            "format": "uri"
-                          },
-                          "contactDetails": {
-                            "type": "object",
-                            "properties": {
-                              "phone1": {
-                                "type": "string",
-                                "nullable": true,
-                                "default": ""
-                              },
-                              "phone2": {
-                                "type": "string",
-                                "nullable": true,
-                                "default": ""
-                              },
-                              "phone3": {
-                                "type": "string",
-                                "nullable": true,
-                                "default": ""
-                              },
-                              "streetAddress": {
-                                "type": "string",
-                                "nullable": true,
-                                "maxLength": 100,
-                                "default": ""
-                              },
-                              "city": {
-                                "type": "string",
-                                "nullable": true,
-                                "maxLength": 50,
-                                "default": ""
-                              },
-                              "state": {
-                                "type": "string",
-                                "nullable": true,
-                                "maxLength": 50,
-                                "default": ""
-                              },
-                              "zip": {
-                                "type": "string",
-                                "nullable": true,
-                                "maxLength": 10,
-                                "default": ""
-                              },
-                              "dateOfBirth": {
-                                "type": "string",
-                                "nullable": true,
-                                "default": ""
-                              }
-                            }
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "firstName",
-                          "lastName"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "firstYear",
-                      "contact"
-                    ],
-                    "description": "Schema for a player who is or was on a team roster. This contains details that only ever need to be supplied once"
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateRosterMember"
               }
             }
           }
