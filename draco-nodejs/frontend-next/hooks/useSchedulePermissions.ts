@@ -47,7 +47,7 @@ export const useSchedulePermissions = (
     if (context.teamSeasonId) {
       const isTeamAdmin = hasRoleInTeam('TeamAdmin', context.teamSeasonId);
       const isTeamGame =
-        game.homeTeamId === context.teamSeasonId || game.awayTeamId === context.teamSeasonId;
+        game.homeTeamId === context.teamSeasonId || game.visitorTeamId === context.teamSeasonId;
       return isTeamAdmin && isTeamGame;
     }
 

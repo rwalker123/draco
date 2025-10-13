@@ -339,14 +339,11 @@ function ContentChangePlugin({ onChange }: { onChange?: (html: string) => void }
   useEffect(() => {
     if (!onChange) return;
 
-    // Use registerTextContentListener to avoid cursor jumping
-    // This listener only fires when text content actually changes
-    const unregister = editor.registerTextContentListener(() => {
-      // Get the HTML content when text changes
-      const htmlContent = editor.getEditorState().read(() => {
-        return $generateHtmlFromNodes(editor);
+    const unregister = editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const htmlContent = $generateHtmlFromNodes(editor);
+        onChange(htmlContent);
       });
-      onChange(htmlContent);
     });
 
     return unregister;

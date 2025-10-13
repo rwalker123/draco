@@ -77,7 +77,7 @@ export const sanitizeRichContent = (text: string): string => {
   return DOMPurify.sanitize(text, {
     USE_PROFILES: { html: true }, // Allow only safe HTML elements
     FORBID_TAGS: ['svg', 'math'], // Explicitly forbid SVG and MathML for security
-    FORBID_ATTR: ['style'], // Remove style attributes to prevent CSS injection
+    ALLOWED_ATTR: ['class', 'href', 'target', 'rel', 'style'], // Preserve formatting hooks and safe inline styles
     KEEP_CONTENT: true, // Preserve text content when removing tags
     RETURN_DOM: false, // Return string, not DOM object
     SANITIZE_DOM: true, // Enable DOM clobbering protection

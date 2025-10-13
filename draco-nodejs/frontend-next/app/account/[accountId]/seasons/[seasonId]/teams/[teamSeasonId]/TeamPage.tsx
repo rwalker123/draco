@@ -75,11 +75,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       id: game.id,
       date: game.gameDate,
       homeTeamId: game.homeTeam.id ?? '',
-      awayTeamId: game.visitorTeam.id ?? '',
+      visitorTeamId: game.visitorTeam.id ?? '',
       homeTeamName: game.homeTeam.name ?? '',
-      awayTeamName: game.visitorTeam.name ?? '',
+      visitorTeamName: game.visitorTeam.name ?? '',
       homeScore: game.homeScore,
-      awayScore: game.visitorScore,
+      visitorScore: game.visitorScore,
       gameStatus: game.gameStatus,
       gameStatusText: game.gameStatusText ?? '',
       gameStatusShortText: game.gameStatusShortText,
@@ -530,13 +530,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           teamName={
             selectedGame.homeTeamId === teamSeasonId
               ? selectedGame.homeTeamName
-              : selectedGame.awayTeamName
+              : selectedGame.visitorTeamName
           }
           gameDate={selectedGame.date}
           homeScore={selectedGame.homeScore}
-          awayScore={selectedGame.awayScore}
+          visitorScore={selectedGame.visitorScore}
           homeTeamName={selectedGame.homeTeamName}
-          awayTeamName={selectedGame.awayTeamName}
+          visitorTeamName={selectedGame.visitorTeamName}
           readOnly={summaryReadOnly}
           onSuccess={handleRecapSuccess}
           onError={setSummaryError}

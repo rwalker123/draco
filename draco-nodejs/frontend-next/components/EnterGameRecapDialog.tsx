@@ -1,7 +1,7 @@
 'use client';
 
 // TODO: Replace the plain text/textarea input with a WYSIWYG editor (e.g., react-quill, TinyMCE, Slate) for game recaps once React 19 support is available.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -9,13 +9,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField,
   Typography,
+  Box,
 } from '@mui/material';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { UpsertGameRecapSchema, UpsertGameRecapType } from '@draco/shared-schemas';
 import { useGameRecap } from '../hooks/useGameRecap';
+import RichTextEditor from './email/RichTextEditor';
+import { sanitizeRichContent } from '../utils/sanitization';
 
 interface EnterGameRecapDialogProps {
   open: boolean;
@@ -28,13 +28,22 @@ interface EnterGameRecapDialogProps {
   teamName?: string;
   gameDate?: string;
   homeScore?: number;
-  awayScore?: number;
+  visitorScore?: number;
   homeTeamName?: string;
-  awayTeamName?: string;
+  visitorTeamName?: string;
   readOnly?: boolean;
   onSuccess?: (recap: UpsertGameRecapType) => void;
   onError?: (message: string) => void;
 }
+
+const extractPlainText = (html: string): string => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return html;
+  }
+  const container = document.createElement('div');
+  container.innerHTML = html || '';
+  return container.textContent?.replace(/\u00A0/g, ' ').trim() ?? '';
+};
 
 const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   open,
@@ -47,9 +56,9 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   teamName,
   gameDate,
   homeScore,
-  awayScore,
+  visitorScore,
   homeTeamName,
-  awayTeamName,
+  visitorTeamName,
   readOnly = false,
   onSuccess,
   onError,
@@ -61,26 +70,24 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
     teamSeasonId,
   });
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    formState: { errors, isDirty, isSubmitting },
-  } = useForm<UpsertGameRecapType>({
-    resolver: zodResolver(UpsertGameRecapSchema),
-    defaultValues: { recap: initialRecap },
-    mode: 'onChange',
-  });
-
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const editorResetKeyRef = useRef(0);
+  const [editorContent, setEditorContent] = useState<string>(initialRecap ?? '');
+  const [plainTextContent, setPlainTextContent] = useState<string>(
+    extractPlainText(initialRecap ?? ''),
+  );
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
-      reset({ recap: initialRecap });
+      editorResetKeyRef.current += 1;
+      setEditorContent(initialRecap ?? '');
+      setPlainTextContent(extractPlainText(initialRecap ?? ''));
+      setIsDirty(false);
       setSubmitError(null);
     }
-  }, [initialRecap, open, reset]);
+  }, [initialRecap, open]);
 
   const formattedGameDate = useMemo(() => {
     if (!gameDate) {
@@ -102,18 +109,24 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   const scoreboardLine = useMemo(() => {
     if (
       homeScore === undefined ||
-      awayScore === undefined ||
+      visitorScore === undefined ||
       !homeTeamName ||
-      !awayTeamName
+      !visitorTeamName
     ) {
       return null;
     }
 
-    return `${awayTeamName} ${awayScore} at ${homeTeamName} ${homeScore}`;
-  }, [awayScore, awayTeamName, homeScore, homeTeamName]);
+    return `${visitorTeamName} ${visitorScore} at ${homeTeamName} ${homeScore}`;
+  }, [homeScore, homeTeamName, visitorScore, visitorTeamName]);
 
-  const recapValue = watch('recap') ?? '';
-  const trimmedRecap = recapValue.trim();
+  const handleEditorChange = useCallback((html: string) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[RecapEditor] onChange raw HTML:', html);
+    }
+    setEditorContent(html);
+    setPlainTextContent(extractPlainText(html));
+    setIsDirty(true);
+  }, []);
 
   const handleClose = useCallback(() => {
     if (isSubmitting || loading) {
@@ -124,24 +137,49 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
     onClose();
   }, [isSubmitting, loading, onClose]);
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = useCallback(async () => {
     if (readOnly) {
       return;
     }
 
     setSubmitError(null);
 
-    const result = await saveRecap(values);
+    const sanitizedContent = sanitizeRichContent(editorContent ?? '');
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[RecapEditor] sanitized HTML:', sanitizedContent);
+    }
+    const plainText = extractPlainText(sanitizedContent);
+
+    if (!plainText.length) {
+      setSubmitError('Game recap cannot be empty.');
+      return;
+    }
+
+    // Validate against schema to ensure parity with backend expectations
+    try {
+      UpsertGameRecapSchema.parse({ recap: sanitizedContent });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Invalid recap content.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[RecapEditor] payload sent to upsertGameRecap:', {
+        recap: sanitizedContent,
+      });
+    }
+    const result = await saveRecap({ recap: sanitizedContent });
+    setIsSubmitting(false);
 
     if (result.success) {
       onSuccess?.(result.data);
       onClose();
-      return;
+    } else {
+      setSubmitError(result.error);
+      onError?.(result.error);
     }
-
-    setSubmitError(result.error);
-    onError?.(result.error);
-  });
+  }, [editorContent, onClose, onError, onSuccess, readOnly, saveRecap]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -161,32 +199,54 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
         )}
 
         {readOnly ? (
-          <div
-            style={{
-              whiteSpace: 'pre-line',
-              color: 'inherit',
-              fontSize: '1rem',
-              padding: '12px 0',
-              minHeight: '96px',
-            }}
-            data-testid="game-summary-readonly"
-          >
-            {trimmedRecap || (
-              <span style={{ color: '#888' }}>(No recap provided)</span>
-            )}
-          </div>
+          (() => {
+            const sanitizedContent = sanitizeRichContent(editorContent ?? '');
+            const hasContent = extractPlainText(sanitizedContent).length > 0;
+            const displayContent = hasContent
+              ? sanitizedContent
+              : '<span style="color:#888;">(No recap provided)</span>';
+            return (
+              <Box
+                sx={{
+                  color: 'inherit',
+                  fontSize: '1rem',
+                  padding: '12px 0',
+                  minHeight: 200,
+                  '& p': { margin: '0 0 8px' },
+                  '& ul, & ol': { margin: '0 0 8px 20px' },
+                  '& li': { marginBottom: '4px' },
+                  '& .editor-text-bold, & strong, & b': { fontWeight: 700 },
+                  '& .editor-text-italic, & em, & i': { fontStyle: 'italic' },
+                  '& .editor-text-underline, & u': { textDecoration: 'underline' },
+                  '& .editor-heading-h1, & h1': {
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                    margin: '16px 0 8px',
+                  },
+                  '& .editor-heading-h2, & h2': {
+                    fontSize: '1.3rem',
+                    fontWeight: 700,
+                    margin: '14px 0 6px',
+                  },
+                  '& .editor-heading-h3, & h3': {
+                    fontSize: '1.15rem',
+                    fontWeight: 600,
+                    margin: '12px 0 6px',
+                  },
+                }}
+                data-testid="game-summary-readonly"
+                dangerouslySetInnerHTML={{ __html: displayContent }}
+              />
+            );
+          })()
         ) : (
-          <TextField
-            {...register('recap')}
-            label="Game Recap"
-            multiline
-            minRows={4}
-            fullWidth
-            variant="outlined"
-            sx={{ mt: 2 }}
-            error={Boolean(errors.recap)}
-            helperText={errors.recap?.message}
-            disabled={readOnly}
+          <RichTextEditor
+            key={`game-recap-editor-${editorResetKeyRef.current}`}
+            initialValue={initialRecap ?? ''}
+            onChange={handleEditorChange}
+            placeholder="Enter the game recap..."
+            disabled={loading || isSubmitting}
+            minHeight={260}
           />
         )}
 
@@ -205,12 +265,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
             onClick={onSubmit}
             color="primary"
             variant="contained"
-            disabled={
-              isSubmitting ||
-              loading ||
-              trimmedRecap.length === 0 ||
-              !isDirty
-            }
+            disabled={isSubmitting || loading || plainTextContent.length === 0 || !isDirty}
           >
             {isSubmitting || loading ? 'Saving…' : 'Save'}
           </Button>

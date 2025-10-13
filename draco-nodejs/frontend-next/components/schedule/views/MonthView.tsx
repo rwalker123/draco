@@ -18,6 +18,8 @@ const MonthView: React.FC<ViewComponentProps> = ({
   canEditSchedule,
   onEditGame: _onEditGame,
   onGameResults,
+  onEditRecap,
+  onViewRecap,
   convertGameToGameCardData,
   timeZone,
   filterType,
@@ -26,6 +28,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
   setFilterType,
   navigate,
   isNavigating,
+  canEditRecap,
 }) => {
   const [currentMonth, setCurrentMonth] = React.useState(filterDate);
 
@@ -97,12 +100,15 @@ const MonthView: React.FC<ViewComponentProps> = ({
         }}
         onGameClick={_onEditGame}
         onGameResults={onGameResults}
+        onEditRecap={onEditRecap}
+        onViewRecap={onViewRecap}
         onZoomClick={(weekStartDate) => {
           setFilterType('week');
           setFilterDate(weekStartDate);
         }}
         convertGameToGameCardData={convertGameToGameCardData}
         canEditSchedule={canEditSchedule}
+        canEditRecap={canEditRecap}
         isNavigating={isNavigating || false}
         timeZone={timeZone}
       />

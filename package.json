@@ -20,6 +20,7 @@
     "stop": "bash scripts/stop-processes.sh",
     "stop:backend": "bash scripts/stop-backend.sh",
     "stop:frontend": "bash scripts/stop-frontend.sh",
+    "machine:ip": "node -e \"const os=require('os'); const interfaces=os.networkInterfaces(); const ips=Object.values(interfaces).flatMap(list=>list||[]).filter(iface=>iface&&iface.family==='IPv4'&&!iface.internal).map(iface=>iface.address); if(!ips.length){console.error('No IPv4 address found'); process.exit(1);} console.log(ips[0]);\"",
     "backend:start": "npm start -w @draco/backend",
     "backend:build": "npm run build -w @draco/backend",
     "backend:dev": "npm run dev -w @draco/backend",
