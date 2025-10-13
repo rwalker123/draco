@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,12 +15,22 @@ import {
 } from '@mui/material';
 import { PhotoCamera as PhotoCameraIcon, Save as SaveIcon } from '@mui/icons-material';
 import Image from 'next/image';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { getLogoSize, validateLogoFile } from '../config/teams';
-import { TeamSeasonType } from '@draco/shared-schemas';
-import {
-  useTeamManagement,
-  type UpdateTeamMetadataResult,
-} from '../hooks/useTeamManagement';
+import { TeamSeasonType, nameSchema } from '@draco/shared-schemas';
+import { useTeamManagement, type UpdateTeamMetadataResult } from '../hooks/useTeamManagement';
+
+const TeamMetadataFormSchema = z.object({
+  name: nameSchema.min(1, 'Team name is required'),
+});
+
+type TeamMetadataFormValues = z.infer<typeof TeamMetadataFormSchema>;
+
+const DEFAULT_VALUES: TeamMetadataFormValues = {
+  name: '',
+};
 
 interface EditTeamDialogProps {
   open: boolean;
@@ -40,85 +52,131 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
   onError,
 }) => {
   const LOGO_SIZE = getLogoSize();
-  const [editingTeamName, setEditingTeamName] = useState<string>('');
-  const [editingLogoFile, setEditingLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [editDialogError, setEditDialogError] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(teamSeason?.team.logoUrl ?? null);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const { updateTeamMetadata, loading, error, clearError } = useTeamManagement({
     accountId,
     seasonId,
   });
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<TeamMetadataFormValues>({
+    resolver: zodResolver(TeamMetadataFormSchema),
+    defaultValues: DEFAULT_VALUES,
+  });
 
   useEffect(() => {
-    if (teamSeason) {
-      setEditingTeamName(teamSeason.name || '');
-      setLogoPreview(teamSeason.team.logoUrl || null);
-      setEditingLogoFile(null);
-      setEditDialogError(null);
+    if (!open) {
+      reset(DEFAULT_VALUES, { keepErrors: false, keepDirty: false, keepTouched: false });
+      setLogoPreview(teamSeason?.team.logoUrl ?? null);
+      setLogoFile(null);
+      setLogoError(null);
       setLogoPreviewError(false);
-    } else {
-      setEditingTeamName('');
-      setLogoPreview(null);
-      setEditingLogoFile(null);
-      setEditDialogError(null);
-      setLogoPreviewError(false);
+      clearError();
+      return;
     }
+
+    if (teamSeason) {
+      reset(
+        {
+          name: teamSeason.name ?? '',
+        },
+        { keepErrors: false, keepDirty: false, keepTouched: false },
+      );
+      setLogoPreview(teamSeason.team.logoUrl ?? null);
+      setLogoFile(null);
+    } else {
+      reset(DEFAULT_VALUES, { keepErrors: false, keepDirty: false, keepTouched: false });
+      setLogoPreview(null);
+      setLogoFile(null);
+    }
+
+    setLogoPreviewError(false);
+    setLogoError(null);
     clearError();
-  }, [teamSeason, open, clearError]);
+  }, [open, teamSeason, reset, clearError]);
+
+  const watchedName = watch('name', teamSeason?.name ?? '');
+  const isBusy = loading || isSubmitting;
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (file) {
+      setLogoPreviewError(false);
+      setLogoError(null);
+      setLogoFile(file);
+      clearError();
+
       const validationError = validateLogoFile(file);
       if (validationError) {
-        setEditDialogError(validationError);
+        setLogoError(validationError);
+        setLogoFile(null);
         return;
       }
-      setEditingLogoFile(file);
-      setEditDialogError(null);
-      clearError();
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      setLogoFile(null);
+      setLogoPreview(teamSeason?.team.logoUrl ?? null);
+      setLogoPreviewError(false);
+      setLogoError(null);
+      clearError();
     }
   };
 
-  const handleSave = async () => {
+  const handleFormSubmit = handleSubmit(async (values) => {
     if (!teamSeason) {
       return;
     }
 
-    const trimmedName = editingTeamName.trim();
-    if (!trimmedName) {
-      setEditDialogError('Team name is required');
-      return;
-    }
-
-    setEditDialogError(null);
     clearError();
 
     try {
       const result = await updateTeamMetadata({
         teamSeasonId: teamSeason.id,
-        name: trimmedName,
-        logoFile: editingLogoFile,
+        name: values.name.trim(),
+        logoFile: logoFile ?? undefined,
       });
+      reset(
+        {
+          name: result.teamSeason.name ?? '',
+        },
+        { keepErrors: false, keepDirty: false, keepTouched: false },
+      );
+      setLogoFile(null);
+      setLogoError(null);
       onSuccess?.(result);
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update team';
-      if (message === 'Team name is required') {
-        setEditDialogError(message);
-      }
       onError?.(message);
     }
-  };
+  });
 
   const handleCancel = () => {
-    setEditDialogError(null);
+    reset(
+      teamSeason
+        ? {
+            name: teamSeason.name ?? '',
+          }
+        : DEFAULT_VALUES,
+      { keepErrors: false, keepDirty: false, keepTouched: false },
+    );
+    setLogoPreview(teamSeason?.team.logoUrl ?? null);
+    setLogoPreviewError(false);
+    setLogoFile(null);
+    setLogoError(null);
     clearError();
     onClose();
   };
@@ -127,11 +185,16 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     setLogoPreviewError(false);
   }, [logoPreview]);
 
-  const displayedError = editDialogError ?? error;
+  const displayedError = error;
 
   if (!teamSeason) {
     return null;
   }
+
+  const fallbackInitial =
+    watchedName?.trim().charAt(0).toUpperCase() ||
+    teamSeason.name?.trim().charAt(0).toUpperCase() ||
+    '?';
 
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
@@ -142,27 +205,31 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
             <Alert
               severity="error"
               onClose={() => {
-                setEditDialogError(null);
                 clearError();
               }}
             >
               {displayedError}
             </Alert>
           )}
-          <TextField
-            fullWidth
-            label="Team Name"
-            value={editingTeamName}
-            onChange={(e) => {
-              setEditingTeamName(e.target.value);
-              if (editDialogError) {
-                setEditDialogError(null);
-              }
-              if (error) {
-                clearError();
-              }
-            }}
-            disabled={loading}
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="Team Name"
+                disabled={isBusy}
+                error={Boolean(errors.name)}
+                helperText={errors.name?.message}
+                onChange={(event) => {
+                  field.onChange(event);
+                  if (error) {
+                    clearError();
+                  }
+                }}
+              />
+            )}
           />
           <Box>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
@@ -185,7 +252,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
                 {logoPreview && !logoPreviewError ? (
                   <Image
                     src={logoPreview}
-                    alt={editingTeamName + ' logo preview'}
+                    alt={`${watchedName || teamSeason.name || 'Team'} logo preview`}
                     fill
                     style={{ objectFit: 'cover' }}
                     unoptimized
@@ -193,7 +260,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
                   />
                 ) : (
                   <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
-                    {editingTeamName ? editingTeamName.charAt(0).toUpperCase() : '?'}
+                    {fallbackInitial}
                   </Typography>
                 )}
               </Box>
@@ -201,12 +268,17 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
                 variant="outlined"
                 component="label"
                 startIcon={<PhotoCameraIcon />}
-                disabled={loading}
+                disabled={isBusy}
               >
                 Upload Logo
                 <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
               </Button>
             </Box>
+            {logoError && (
+              <Typography variant="caption" color="error">
+                {logoError}
+              </Typography>
+            )}
             <Typography variant="caption" color="textSecondary">
               Recommended size: {LOGO_SIZE}x{LOGO_SIZE} pixels. Max file size: 10MB.
             </Typography>
@@ -214,16 +286,16 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancel} disabled={loading}>
+        <Button onClick={handleCancel} disabled={isBusy}>
           Cancel
         </Button>
         <Button
-          onClick={handleSave}
+          onClick={handleFormSubmit}
           variant="contained"
-          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-          disabled={loading}
+          startIcon={isBusy ? <CircularProgress size={20} /> : <SaveIcon />}
+          disabled={isBusy}
         >
-          {loading ? 'Saving...' : 'Save Changes'}
+          {isBusy ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
     </Dialog>
