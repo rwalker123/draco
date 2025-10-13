@@ -11,10 +11,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { deleteAccount } from '@draco/shared-api-client';
 import type { AccountType as SharedAccountType } from '@draco/shared-schemas';
-import { useApiClient } from '../../../hooks/useApiClient';
-import { assertNoApiError } from '../../../utils/apiResult';
+import { useAccountManagementService } from '../../../hooks/useAccountManagementService';
 
 interface DeleteAccountDialogProps {
   open: boolean;
@@ -31,7 +29,7 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const apiClient = useApiClient();
+  const { deleteAccount: deleteAccountOperation } = useAccountManagementService();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -58,17 +56,17 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
     setError(null);
 
     try {
-      const result = await deleteAccount({
-        client: apiClient,
-        path: { accountId: account.id },
-        throwOnError: false,
+      const result = await deleteAccountOperation({
+        accountId: account.id,
       });
 
-      assertNoApiError(result, 'Failed to delete account');
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       onSuccess?.({
         accountId: account.id,
-        message: `Account '${account.name}' was deleted successfully.`,
+        message: result.message ?? `Account '${account.name}' was deleted successfully.`,
       });
 
       onClose();
@@ -79,7 +77,7 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
     } finally {
       setIsDeleting(false);
     }
-  }, [account, apiClient, onClose, onSuccess, onError]);
+  }, [account, deleteAccountOperation, onClose, onSuccess, onError]);
 
   const accountName = account?.name ?? 'this account';
 

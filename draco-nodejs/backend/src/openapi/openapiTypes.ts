@@ -69,6 +69,7 @@ import {
   RosterMemberSchema,
   RosterPlayerSchema,
   SignRosterMemberSchema,
+  UpdateRosterMemberSchema,
   SponsorListSchema,
   SponsorSchema,
   SeasonManagerListSchema,
@@ -135,6 +136,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const RosterMemberSchemaRef = registry.register('RosterMember', RosterMemberSchema);
   const RosterPlayerSchemaRef = registry.register('RosterPlayer', RosterPlayerSchema);
   const SignRosterMemberSchemaRef = registry.register('SignRosterMember', SignRosterMemberSchema);
+  const UpdateRosterMemberSchemaRef = registry.register(
+    'UpdateRosterMember',
+    UpdateRosterMemberSchema,
+  );
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
   const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
   const NamedContactSchemaRef = registry.register('NamedContact', NamedContactSchema);
@@ -462,6 +467,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
     SignRosterMemberSchemaRef,
+    UpdateRosterMemberSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
     NamedContactSchemaRef,

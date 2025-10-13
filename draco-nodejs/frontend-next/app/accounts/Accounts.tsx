@@ -10,7 +10,7 @@ import { searchAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { AccountType as SharedAccountType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
-import CreateAccountDialog from '../../components/account/dialogs/CreateAccountDialog';
+import CreateAccountDialog from '../../components/account-management/dialogs/CreateAccountDialog';
 
 const Accounts: FC = () => {
   const [showSignup, setShowSignup] = useState(false);
