@@ -1,5 +1,6 @@
 import React from 'react';
 import { Game, GameStatus } from '@/types/schedule';
+import { GameResultSchema, UpdateGameResultsSchema } from '@draco/shared-schemas';
 import {
   EnterGameResultsDialogGame,
   GameResultsSuccessPayload,
@@ -53,6 +54,10 @@ const GameResultsDialog: React.FC<GameResultsDialogProps> = ({
   if (!selectedGame) return null;
 
   const handleSuccess = (payload: GameResultsSuccessPayload) => {
+    if (!selectedGame) {
+      return;
+    }
+
     const updatedGame: Game = {
       ...selectedGame,
       homeScore: payload.result.homeScore,
@@ -63,7 +68,10 @@ const GameResultsDialog: React.FC<GameResultsDialogProps> = ({
     };
 
     onSuccess?.({
-      ...payload,
+      gameId: payload.gameId,
+      seasonId: payload.seasonId,
+      request: payload.request,
+      result: payload.result,
       updatedGame,
     });
   };
