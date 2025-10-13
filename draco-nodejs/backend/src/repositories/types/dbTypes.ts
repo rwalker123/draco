@@ -1,9 +1,4 @@
-import {
-  aspnetusers,
-  playerswantedclassified,
-  Prisma,
-  teamswantedclassified,
-} from '@prisma/client';
+import { aspnetusers, playerswantedclassified, Prisma, teamswantedclassified } from '@prisma/client';
 
 export interface dbMonitoringConnectivityResult {
   connectivity_test: number;
@@ -157,6 +152,20 @@ export type dbContactEmailOnly = Prisma.contactsGetPayload<{
 
 export type dbTeamSeason = Prisma.teamsseasonGetPayload<{
   select: { id: true; name: true };
+}>;
+
+export type dbAccountHandout = Prisma.accounthandoutsGetPayload<{
+  select: { id: true; description: true; filename: true; accountid: true };
+}>;
+
+export type dbTeamHandout = Prisma.teamhandoutsGetPayload<{
+  select: {
+    id: true;
+    description: true;
+    filename: true;
+    teamid: true;
+    teams: { select: { id: true; accountid: true } };
+  };
 }>;
 
 export type dbRosterMember = Prisma.rosterseasonGetPayload<{

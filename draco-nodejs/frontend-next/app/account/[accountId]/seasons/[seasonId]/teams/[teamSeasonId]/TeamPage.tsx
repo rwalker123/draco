@@ -29,6 +29,7 @@ import { useAccountMembership } from '../../../../../../../hooks/useAccountMembe
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../utils/apiResult';
 import { listTeamSeasonGames as apiListTeamSeasonGames } from '@draco/shared-api-client';
+import HandoutSection from '@/components/handouts/HandoutSection';
 
 interface TeamPageProps {
   accountId: string;
@@ -55,6 +56,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     accountName: string;
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
+    teamId?: string;
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
@@ -359,7 +361,27 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           canManageSponsors={canManageTeamSponsors}
           showPlayerClassifiedsLink={isAccountMember}
           playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=teams-wanted`}
+          handoutsHref={
+            teamData?.teamId
+              ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts/manage`
+              : undefined
+          }
         />
+      )}
+
+      {teamData?.teamId && (
+        <Box sx={{ maxWidth: { xs: '100%', md: 420 }, mb: 4 }}>
+          <HandoutSection
+            scope={{ type: 'team', accountId, teamId: teamData.teamId }}
+            title="Team Handouts"
+            description="Important documents shared with your roster."
+            allowManage={false}
+            variant="card"
+            maxItems={3}
+            viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts`}
+            emptyMessage="No team handouts have been posted yet."
+          />
+        </Box>
       )}
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}

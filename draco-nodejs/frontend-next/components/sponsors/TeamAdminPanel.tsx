@@ -5,6 +5,7 @@ import { Button, Paper, Stack, Typography } from '@mui/material';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import Link from 'next/link';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 interface TeamAdminPanelProps {
   accountId: string;
@@ -13,6 +14,7 @@ interface TeamAdminPanelProps {
   canManageSponsors?: boolean;
   showPlayerClassifiedsLink?: boolean;
   playerClassifiedsHref?: string;
+  handoutsHref?: string;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -22,8 +24,10 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   canManageSponsors = true,
   showPlayerClassifiedsLink = false,
   playerClassifiedsHref,
+  handoutsHref,
 }) => {
   const shouldShowClassifiedsLink = showPlayerClassifiedsLink && !!playerClassifiedsHref;
+  const shouldShowHandoutsLink = Boolean(handoutsHref);
 
   return (
     <Paper
@@ -72,10 +76,21 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
             Manage Team Sponsors
           </Button>
         )}
-        {shouldShowClassifiedsLink && (
+        {shouldShowHandoutsLink && (
           <Button
             variant={canManageSponsors ? 'outlined' : 'contained'}
-            color={canManageSponsors ? 'primary' : 'secondary'}
+            color={canManageSponsors ? 'secondary' : 'primary'}
+            startIcon={<DescriptionIcon />}
+            component={Link}
+            href={handoutsHref!}
+          >
+            Manage Handouts
+          </Button>
+        )}
+        {shouldShowClassifiedsLink && (
+          <Button
+            variant={canManageSponsors || shouldShowHandoutsLink ? 'outlined' : 'contained'}
+            color={canManageSponsors || shouldShowHandoutsLink ? 'primary' : 'secondary'}
             startIcon={<PersonSearchIcon />}
             component={Link}
             href={playerClassifiedsHref!}

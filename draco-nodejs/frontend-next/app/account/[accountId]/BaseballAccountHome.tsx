@@ -35,6 +35,7 @@ import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
+import HandoutSection from '@/components/handouts/HandoutSection';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -389,6 +390,19 @@ const BaseballAccountHome: React.FC = () => {
         )}
 
         <AccountPollsCard accountId={accountIdStr} />
+
+        <Box sx={{ maxWidth: { xs: '100%', sm: 420 }, alignSelf: 'flex-start', width: '100%' }}>
+          <HandoutSection
+            scope={{ type: 'account', accountId: accountIdStr }}
+            title="Latest Handouts"
+            description="Quick access to recently added documents."
+            allowManage={false}
+            variant="card"
+            maxItems={3}
+            viewAllHref={`/account/${accountIdStr}/handouts`}
+            emptyMessage="No handouts are available yet."
+          />
+        </Box>
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}

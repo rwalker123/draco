@@ -71,6 +71,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     teamName: string;
     leagueName?: string;
     logoUrl?: string;
+    teamId?: string;
   } | null>(null);
 
   const handleTeamDataLoaded = React.useCallback(
@@ -81,11 +82,13 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
       accountName: string;
       logoUrl?: string;
       record?: { wins: number; losses: number; ties: number };
+      teamId?: string;
     }) => {
       setTeamHeaderData({
         teamName: data.teamName,
         leagueName: data.leagueName,
         logoUrl: data.logoUrl,
+        teamId: data.teamId,
       });
     },
     [],
