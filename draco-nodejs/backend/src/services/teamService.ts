@@ -261,7 +261,25 @@ export class TeamService {
     const teamSeasonUpdate: Partial<teamsseason> = {};
     const teamUpdate: Partial<teams> = {};
 
-    teamSeasonUpdate.name = updateData.name;
+    if (updateData.name !== undefined) {
+      const trimmedName = updateData.name.trim();
+
+      if (!trimmedName) {
+        throw new ValidationError('Team name is required');
+      }
+
+      const duplicateTeams = await this.teamRepository.findMany({
+        leagueseasonid: teamSeason.leagueseasonid,
+        name: trimmedName,
+        id: { not: teamSeasonId },
+      });
+
+      if (duplicateTeams.length > 0) {
+        throw new ConflictError('A team with this name already exists in this league season');
+      }
+
+      teamSeasonUpdate.name = trimmedName;
+    }
 
     if (updateData.divisionId !== undefined) {
       teamSeasonUpdate.divisionseasonid =

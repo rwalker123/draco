@@ -20,6 +20,7 @@ export { useUserManagement } from './useUserManagement';
 export { useSmoothTransition } from './useSmoothTransition';
 export { useSchedulePermissions } from './useSchedulePermissions';
 export { useGameResults } from './useGameResults';
+export { useTeamManagement } from './useTeamManagement';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';

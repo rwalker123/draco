@@ -14,18 +14,14 @@ import {
 import { Edit as EditIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { useAuth } from '../../../../../../context/AuthContext';
 import { useRole } from '../../../../../../context/RoleContext';
-import { getLogoSize, addCacheBuster } from '../../../../../../config/teams';
+import { getLogoSize } from '../../../../../../config/teams';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
 import { useApiClient } from '@/hooks/useApiClient';
-import {
-  listSeasonLeagueSeasons,
-  updateTeamSeason as apiUpdateTeamSeason,
-} from '@draco/shared-api-client';
-import type { UpsertTeamSeasonWithLogo } from '@draco/shared-api-client';
-import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
+import { listSeasonLeagueSeasons } from '@draco/shared-api-client';
+import type { UpdateTeamMetadataResult } from '@/hooks/useTeamManagement';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { mapLeagueSetup } from '@/utils/leagueSeasonMapper';
 import {
@@ -43,7 +39,7 @@ interface TeamsProps {
 }
 
 const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const { hasRole } = useRole();
   const apiClient = useApiClient();
 
@@ -257,52 +253,38 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     setSelectedTeam(null);
   };
 
-  const handleSaveTeam = async (updatedName: string, logoFile: File | null) => {
-    if (!selectedTeam) return;
-    if (!updatedName.trim()) throw new Error('Team name is required');
-    if (!token) throw new Error('Authentication required. Please log in again.');
+  const handleTeamUpdateSuccess = useCallback(
+    (result: UpdateTeamMetadataResult) => {
+      setTeamsData((prevData) => {
+        if (!prevData) {
+          return prevData;
+        }
 
-    const payload: UpsertTeamSeasonWithLogo = { name: updatedName.trim() };
-    if (logoFile) {
-      payload.logo = logoFile;
-    }
+        const updatedTeam = result.teamSeason;
 
-    const result = await apiUpdateTeamSeason({
-      client: apiClient,
-      path: { accountId, seasonId, teamSeasonId: selectedTeam.id },
-      body: payload,
-      throwOnError: false,
-      ...(logoFile ? { ...formDataBodySerializer, headers: { 'Content-Type': null } } : {}),
-    });
-
-    const updatedTeam = unwrapApiResult(result, 'Failed to update team');
-
-    const newLogoUrl = updatedTeam.team.logoUrl
-      ? addCacheBuster(updatedTeam.team.logoUrl, Date.now())
-      : undefined;
-    setTeamsData((prevData) => {
-      if (!prevData) return prevData;
-      return {
-        ...prevData,
-        leagueSeasons: prevData.leagueSeasons.map((leagueSeason) => ({
-          ...leagueSeason,
-          divisions: leagueSeason.divisions?.map((division) => ({
-            ...division,
-            teams: division.teams.map((teamSeason) =>
-              teamSeason.id === selectedTeam.id
-                ? {
-                    ...teamSeason,
-                    name: updatedName.trim(),
-                    logoUrl: newLogoUrl ?? teamSeason.team.logoUrl,
-                  }
-                : teamSeason,
+        return {
+          ...prevData,
+          leagueSeasons: prevData.leagueSeasons.map((leagueSeason) => ({
+            ...leagueSeason,
+            divisions: leagueSeason.divisions?.map((division) => ({
+              ...division,
+              teams: division.teams.map((teamSeason) =>
+                teamSeason.id === updatedTeam.id ? updatedTeam : teamSeason,
+              ),
+            })),
+            unassignedTeams: leagueSeason.unassignedTeams?.map((teamSeason) =>
+              teamSeason.id === updatedTeam.id ? updatedTeam : teamSeason,
             ),
           })),
-        })),
-      };
-    });
-    setSuccess('Team updated successfully');
-  };
+        };
+      });
+      setSuccess(result.message);
+      setSelectedTeam((prev) =>
+        prev && prev.id === result.teamSeason.id ? result.teamSeason : prev,
+      );
+    },
+    [setTeamsData, setSuccess, setSelectedTeam],
+  );
 
   const renderTeamCard = (teamSeason: TeamSeasonType) => {
     return (
@@ -544,9 +526,11 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
       <EditTeamDialog
         open={editDialogOpen}
+        accountId={accountId}
+        seasonId={seasonId}
         teamSeason={selectedTeam}
         onClose={handleCloseEditDialog}
-        onSave={handleSaveTeam}
+        onSuccess={handleTeamUpdateSuccess}
       />
 
       {/* Export Menu */}
