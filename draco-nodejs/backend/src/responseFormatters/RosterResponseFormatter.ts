@@ -37,7 +37,7 @@ export class RosterResponseFormatter {
       playerNumber: member.playernumber,
       inactive: member.inactive,
       submittedWaiver: member.submittedwaiver,
-      dateAdded: member.dateadded,
+      dateAdded: member.dateadded ? member.dateadded.toISOString() : null,
       player: {
         id: member.roster.id.toString(),
         submittedDriversLicense: member.roster.submitteddriverslicense,

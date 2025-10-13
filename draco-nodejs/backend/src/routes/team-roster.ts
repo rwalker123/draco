@@ -3,7 +3,7 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { CreateRosterMemberSchema, SignRosterMemberSchema } from '@draco/shared-schemas';
+import { SignRosterMemberSchema, UpdateRosterMemberSchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -100,7 +100,7 @@ router.put(
       'rosterMemberId',
     );
 
-    const updateData = CreateRosterMemberSchema.parse(req.body);
+    const updateData = UpdateRosterMemberSchema.parse(req.body);
 
     const updatedRosterMember = await rosterService.updateRosterMember(
       rosterMemberId,

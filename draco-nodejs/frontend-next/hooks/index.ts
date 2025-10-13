@@ -11,6 +11,7 @@ export { useEmailRecipients } from './useEmailRecipients';
 export { useLogout } from './useLogout';
 export { useNotifications } from './useNotifications';
 export { useRosterDataManager } from './useRosterDataManager';
+export { useRosterPlayer } from './roster/useRosterPlayer';
 export { useScrollPosition } from './useScrollPosition';
 export { useTableLoadingState } from './useTableLoadingState';
 export { useUserApiOperations } from './useUserApiOperations';
