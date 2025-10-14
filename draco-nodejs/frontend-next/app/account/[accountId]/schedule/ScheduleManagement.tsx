@@ -101,25 +101,21 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const prefersListView = useMediaQuery(`(max-width:${CALENDAR_VIEW_BREAKPOINT}px)`);
   const [viewMode, setViewMode] = useState<ViewMode>(() => (prefersListView ? 'list' : 'calendar'));
   const [viewModeManuallySelected, setViewModeManuallySelected] = useState(false);
+  const defaultViewMode = prefersListView ? 'list' : 'calendar';
 
   // Default to list view on narrow screens, but respect any manual user selection.
   useEffect(() => {
-    if (prefersListView) {
-      if (!viewModeManuallySelected && viewMode !== 'list') {
-        setViewMode('list');
+    if (viewMode === defaultViewMode) {
+      if (viewModeManuallySelected) {
+        setViewModeManuallySelected(false);
       }
       return;
     }
 
-    if (viewModeManuallySelected) {
-      setViewModeManuallySelected(false);
-      return;
+    if (!viewModeManuallySelected) {
+      setViewMode(defaultViewMode);
     }
-
-    if (viewMode !== 'calendar') {
-      setViewMode('calendar');
-    }
-  }, [prefersListView, viewModeManuallySelected, viewMode]);
+  }, [defaultViewMode, viewMode, viewModeManuallySelected]);
 
   // Use modular schedule hooks
   const {
@@ -544,10 +540,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     [recapSelectedGame, upsertGameInCache],
   );
 
-  const handleViewModeChange = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-    setViewModeManuallySelected(true);
-  }, []);
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => {
+      setViewMode(mode);
+      setViewModeManuallySelected(mode !== defaultViewMode);
+    },
+    [defaultViewMode],
+  );
 
   const editDialogTitle = canEditSchedule ? 'Edit Game' : 'View Game';
 
