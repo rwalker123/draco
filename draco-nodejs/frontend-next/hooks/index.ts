@@ -4,6 +4,7 @@
 // Existing hooks
 export { useAccountMembership } from './useAccountMembership';
 export { useAccountManagementService } from './useAccountManagementService';
+export { useAccountUrlsService } from './useAccountUrlsService';
 export { useContactSearch } from './useContactSearch';
 export { useContactSelection } from './useContactSelection';
 export { useCurrentSeason } from './useCurrentSeason';
