@@ -15,9 +15,11 @@ import {
   TextField,
 } from '@mui/material';
 import { AccountPollType } from '@draco/shared-schemas';
-import { createAccountPoll, updateAccountPoll } from '@draco/shared-api-client';
-import { useApiClient } from '../../hooks/useApiClient';
-import { unwrapApiResult } from '@/utils/apiResult';
+import {
+  CreatePollPayload,
+  UpdatePollPayload,
+  usePollsService,
+} from '@/hooks/usePollsService';
 
 interface PollOptionForm {
   id?: string;
@@ -75,31 +77,38 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const apiClient = useApiClient();
+  const { createPoll, updatePoll, loading, resetError } = usePollsService(accountId);
   const [formState, setFormState] = useState<PollFormState>(createDefaultFormState);
   const [removedOptionIds, setRemovedOptionIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const isEditMode = useMemo(() => Boolean(poll), [poll]);
 
+  const resetFormState = useCallback(() => {
+    if (poll) {
+      setFormState(buildStateFromPoll(poll));
+    } else {
+      setFormState(createDefaultFormState());
+    }
+    setRemovedOptionIds([]);
+    setFormError(null);
+  }, [poll]);
+
   useEffect(() => {
     if (open) {
-      if (poll) {
-        setFormState(buildStateFromPoll(poll));
-        setRemovedOptionIds([]);
-      } else {
-        setFormState(createDefaultFormState());
-        setRemovedOptionIds([]);
-      }
-      setFormError(null);
-    } else {
+      resetFormState();
+      resetError();
+    }
+  }, [open, resetError, resetFormState]);
+
+  useEffect(() => {
+    if (!open) {
       setFormState(createDefaultFormState());
       setRemovedOptionIds([]);
       setFormError(null);
-      setSaving(false);
+      resetError();
     }
-  }, [open, poll]);
+  }, [open, resetError]);
 
   const handleAddOption = useCallback(() => {
     setFormState((prev) => ({
@@ -174,10 +183,9 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
       return;
     }
 
-    setSaving(true);
     setFormError(null);
 
-    const basePayload = {
+    const basePayload: CreatePollPayload = {
       question: formState.question.trim(),
       active: formState.active,
       options: formState.options.map((option, index) => ({
@@ -188,43 +196,23 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
     };
 
     try {
-      if (isEditMode && poll) {
-        const result = await updateAccountPoll({
-          client: apiClient,
-          path: { accountId, pollId: poll.id },
-          body: {
-            ...basePayload,
-            deletedOptionIds: removedOptionIds.length > 0 ? removedOptionIds : undefined,
-          },
-          throwOnError: false,
-        });
+      const result =
+        isEditMode && poll
+          ? await updatePoll(poll.id, {
+              ...basePayload,
+              deletedOptionIds: removedOptionIds.length > 0 ? removedOptionIds : undefined,
+            } satisfies UpdatePollPayload)
+          : await createPoll(basePayload);
 
-        const updated = unwrapApiResult(result, 'Failed to update poll');
-        onSuccess?.({ message: 'Poll updated successfully.', poll: updated });
-      } else {
-        const result = await createAccountPoll({
-          client: apiClient,
-          path: { accountId },
-          body: basePayload,
-          throwOnError: false,
-        });
-
-        const created = unwrapApiResult(result, 'Failed to create poll');
-        onSuccess?.({ message: 'Poll created successfully.', poll: created });
-      }
-
+      onSuccess?.(result);
       onClose();
     } catch (err) {
       console.error('Failed to save poll:', err);
-      const message = 'Failed to save poll.';
+      const message = err instanceof Error ? err.message : 'Failed to save poll.';
       setFormError(message);
       onError?.(message);
-    } finally {
-      setSaving(false);
     }
   }, [
-    accountId,
-    apiClient,
     formState,
     isEditMode,
     onClose,
@@ -233,6 +221,8 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
     poll,
     removedOptionIds,
     validateForm,
+    createPoll,
+    updatePoll,
   ]);
 
   return (
@@ -295,11 +285,11 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={saving}>
+        <Button onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        <Button onClick={handleSave} variant="contained" disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+        <Button onClick={handleSave} variant="contained" disabled={loading}>
+          {loading ? 'Saving…' : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>
