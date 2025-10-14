@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,10 +19,10 @@ import {
 } from '@mui/icons-material';
 import Image from 'next/image';
 import { addCacheBuster } from '../utils/addCacheBuster';
-import { uploadAccountLogo, deleteAccountLogo } from '@draco/shared-api-client';
-import { useApiClient } from '../hooks/useApiClient';
-import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
-import { assertNoApiError } from '../utils/apiResult';
+import {
+  AccountLogoOperationSuccess,
+  useAccountLogoOperations,
+} from '../hooks/useAccountLogoOperations';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
@@ -31,7 +33,8 @@ interface EditAccountLogoDialogProps {
   accountId: string;
   accountLogoUrl?: string | null;
   onClose: () => void;
-  onLogoUpdated: () => void;
+  onSuccess?: (result: AccountLogoOperationSuccess) => void;
+  onError?: (message: string) => void;
 }
 
 const validateLogoFile = (file: File): string | null => {
@@ -49,36 +52,47 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   accountId,
   accountLogoUrl,
   onClose,
-  onLogoUpdated,
+  onSuccess,
+  onError,
 }) => {
-  const apiClient = useApiClient();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const normalizedAccountId = useMemo(() => accountId?.trim() || null, [accountId]);
+  const { uploadLogo, deleteLogo, uploading, deleting, error, clearError } =
+    useAccountLogoOperations(normalizedAccountId);
+
+  const combinedError = validationError ?? error;
 
   useEffect(() => {
     if (open) {
       setLogoFile(null);
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
-      setError(null);
+      setValidationError(null);
       setLogoPreviewError(false);
+      clearError();
     }
-  }, [open, accountLogoUrl]);
+  }, [open, accountLogoUrl, clearError]);
+
+  useEffect(() => {
+    if (!open) {
+      setConfirmDeleteOpen(false);
+    }
+  }, [open]);
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const validationError = validateLogoFile(file);
       if (validationError) {
-        setError(validationError);
+        setValidationError(validationError);
         return;
       }
       setLogoFile(file);
-      setError(null);
+      setValidationError(null);
+      clearError();
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
@@ -89,52 +103,33 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
 
   const handleSave = async () => {
     if (!logoFile) {
-      setError('Please select a logo to upload.');
+      setValidationError('Please select a logo to upload.');
       return;
     }
-    setSaving(true);
-    setError(null);
-    try {
-      const result = await uploadAccountLogo({
-        client: apiClient,
-        path: { accountId },
-        body: { logo: logoFile },
-        throwOnError: false,
-        headers: { 'Content-Type': null },
-        ...formDataBodySerializer,
-      });
+    clearError();
+    const result = await uploadLogo(logoFile);
 
-      assertNoApiError(result, 'Failed to upload logo');
-      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
-      onLogoUpdated();
+    if (result.success) {
+      onSuccess?.(result);
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload logo');
-    } finally {
-      setSaving(false);
+      return;
     }
+
+    onError?.(result.error);
   };
 
   const handleDelete = async () => {
-    setDeleting(true);
-    setError(null);
-    try {
-      const result = await deleteAccountLogo({
-        client: apiClient,
-        path: { accountId },
-        throwOnError: false,
-      });
+    clearError();
+    const result = await deleteLogo();
 
-      assertNoApiError(result, 'Failed to delete logo');
-      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl) : null);
-      onLogoUpdated();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete logo');
-    } finally {
-      setDeleting(false);
+    if (result.success) {
       setConfirmDeleteOpen(false);
+      onSuccess?.(result);
+      onClose();
+      return;
     }
+
+    onError?.(result.error);
   };
 
   useEffect(() => {
@@ -146,9 +141,15 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
       <DialogTitle>Edit Account Logo</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
+          {combinedError && (
+            <Alert
+              severity="error"
+              onClose={() => {
+                setValidationError(null);
+                clearError();
+              }}
+            >
+              {combinedError}
             </Alert>
           )}
           <Box>
@@ -188,7 +189,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
                 variant="text"
                 component="label"
                 startIcon={<CloudUploadIcon />}
-                disabled={saving || deleting}
+                disabled={uploading || deleting}
               >
                 <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
               </Button>
@@ -198,7 +199,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
                   color="error"
                   startIcon={deleting ? <CircularProgress size={20} /> : <DeleteIcon />}
                   onClick={() => setConfirmDeleteOpen(true)}
-                  disabled={saving || deleting}
+                  disabled={uploading || deleting}
                 ></Button>
               )}
             </Box>
@@ -209,16 +210,16 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={saving || deleting}>
+        <Button onClick={onClose} disabled={uploading || deleting}>
           Cancel
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
-          startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-          disabled={saving || deleting || !logoFile}
+          startIcon={uploading ? <CircularProgress size={20} /> : <SaveIcon />}
+          disabled={uploading || deleting || !logoFile}
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {uploading ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
