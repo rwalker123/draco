@@ -41,6 +41,7 @@ import type {
   AccountAffiliationType,
 } from '@draco/shared-schemas';
 import { useAccountManagementService } from '../../hooks/useAccountManagementService';
+import type { AccountLogoOperationSuccess } from '../../hooks/useAccountLogoOperations';
 
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
@@ -54,6 +55,7 @@ const AccountManagement: React.FC = () => {
   const [affiliations, setAffiliations] = useState<AccountAffiliationType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -98,12 +100,16 @@ const AccountManagement: React.FC = () => {
       }
 
       setError(errors[0] ?? null);
+      if (errors.length > 0) {
+        setSuccess(null);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load account data';
       setError(message);
       setAccounts([]);
       setAccountTypes([]);
       setAffiliations([]);
+      setSuccess(null);
     } finally {
       setLoading(false);
     }
@@ -186,22 +192,41 @@ const AccountManagement: React.FC = () => {
 
   const handleDialogError = useCallback((message: string) => {
     setError(message);
+    setSuccess(null);
   }, []);
 
   const handleCreateSuccess = useCallback(() => {
     setError(null);
+    setSuccess(null);
     void loadData();
   }, [loadData]);
 
   const handleEditSuccess = useCallback(() => {
     setError(null);
+    setSuccess(null);
     void loadData();
   }, [loadData]);
 
   const handleDeleteSuccess = useCallback(() => {
     setError(null);
+    setSuccess(null);
     void loadData();
   }, [loadData]);
+
+  const handleLogoDialogClose = useCallback(() => {
+    setLogoDialogOpen(false);
+    setLogoDialogAccount(null);
+  }, []);
+
+  const handleLogoSuccess = useCallback(
+    (result: AccountLogoOperationSuccess) => {
+      setError(null);
+      setSuccess(result.message);
+      setLogoRefreshKey((k) => k + 1);
+      void loadData();
+    },
+    [loadData],
+  );
 
   const getAccountLogoUrl = useCallback(
     (account: SharedAccountType | null) => {
@@ -235,6 +260,12 @@ const AccountManagement: React.FC = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
         </Alert>
       )}
 
@@ -348,16 +379,9 @@ const AccountManagement: React.FC = () => {
         open={logoDialogOpen}
         accountId={logoDialogAccount?.id || ''}
         accountLogoUrl={getAccountLogoUrl(logoDialogAccount)}
-        onClose={() => {
-          setLogoDialogOpen(false);
-          setLogoDialogAccount(null);
-        }}
-        onLogoUpdated={() => {
-          setLogoDialogOpen(false);
-          setLogoDialogAccount(null);
-          setLogoRefreshKey((k) => k + 1);
-          void loadData();
-        }}
+        onClose={handleLogoDialogClose}
+        onSuccess={handleLogoSuccess}
+        onError={handleDialogError}
       />
 
       <DeleteAccountDialog
