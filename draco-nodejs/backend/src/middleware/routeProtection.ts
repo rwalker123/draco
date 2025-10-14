@@ -183,13 +183,22 @@ export class RouteProtection {
         throw new ValidationError('Account ID required');
       }
 
+      const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+
+      if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
+        req.userRoles = userRoles;
+        req.accountBoundary = { contactId: BigInt(0), accountId, enforced: true };
+        next();
+        return;
+      }
+
       const userContactId = await this.checkUserAccount(req.user.id, accountId);
 
       if (!userContactId) {
         throw new AuthorizationError('Access denied to this account');
       }
 
-      req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+      req.userRoles = userRoles;
       req.accountBoundary = { contactId: userContactId, accountId, enforced: true };
 
       next();
