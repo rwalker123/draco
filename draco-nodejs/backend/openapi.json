@@ -12409,6 +12409,702 @@
         }
       }
     },
+    "/api/admin/analytics/summary": {
+      "get": {
+        "operationId": "getAdminAnalyticsSummary",
+        "summary": "Fetch aggregated administrator analytics for the platform.",
+        "description": "Returns platform-wide metrics covering account storage usage, email delivery outcomes, and current system monitoring status.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Administrator analytics summary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "accounts": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "withEmailActivity": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "topStorageAccounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "accountId": {
+                                "type": "string",
+                                "example": "42"
+                              },
+                              "accountName": {
+                                "type": "string",
+                                "example": "Springfield Tigers"
+                              },
+                              "attachmentBytes": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 1048576
+                              },
+                              "attachmentCount": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 12
+                              }
+                            },
+                            "required": [
+                              "accountId",
+                              "accountName",
+                              "attachmentBytes",
+                              "attachmentCount"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "withEmailActivity",
+                        "topStorageAccounts"
+                      ]
+                    },
+                    "storage": {
+                      "type": "object",
+                      "properties": {
+                        "totalAttachmentBytes": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "totalAttachments": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "byAccount": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "accountId": {
+                                "type": "string",
+                                "example": "42"
+                              },
+                              "accountName": {
+                                "type": "string",
+                                "example": "Springfield Tigers"
+                              },
+                              "attachmentBytes": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 1048576
+                              },
+                              "attachmentCount": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 12
+                              }
+                            },
+                            "required": [
+                              "accountId",
+                              "accountName",
+                              "attachmentBytes",
+                              "attachmentCount"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "totalAttachmentBytes",
+                        "totalAttachments",
+                        "byAccount"
+                      ]
+                    },
+                    "email": {
+                      "type": "object",
+                      "properties": {
+                        "totalEmails": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalRecipients": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "successfulDeliveries": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "failedDeliveries": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "bounceCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "openCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "clickCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "deliverySuccessRate": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "bounceRate": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "openRate": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "clickRate": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "perAccount": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "accountId": {
+                                "type": "string",
+                                "example": "42"
+                              },
+                              "accountName": {
+                                "type": "string",
+                                "example": "Springfield Tigers"
+                              },
+                              "emailCount": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 28
+                              },
+                              "totalRecipients": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 1850
+                              },
+                              "successfulDeliveries": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 1800
+                              },
+                              "failedDeliveries": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 12
+                              },
+                              "bounceCount": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 5
+                              },
+                              "openCount": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 1400
+                              },
+                              "clickCount": {
+                                "type": "number",
+                                "minimum": 0,
+                                "example": 520
+                              },
+                              "lastSentAt": {
+                                "type": "string",
+                                "nullable": true,
+                                "format": "date-time",
+                                "example": "2025-01-15T18:24:00.000Z"
+                              },
+                              "deliverySuccessRate": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100,
+                                "example": 97.3
+                              },
+                              "openRate": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100,
+                                "example": 75.7
+                              },
+                              "clickRate": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100,
+                                "example": 28.1
+                              }
+                            },
+                            "required": [
+                              "accountId",
+                              "accountName",
+                              "emailCount",
+                              "totalRecipients",
+                              "successfulDeliveries",
+                              "failedDeliveries",
+                              "bounceCount",
+                              "openCount",
+                              "clickCount",
+                              "lastSentAt",
+                              "deliverySuccessRate",
+                              "openRate",
+                              "clickRate"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "totalEmails",
+                        "totalRecipients",
+                        "successfulDeliveries",
+                        "failedDeliveries",
+                        "bounceCount",
+                        "openCount",
+                        "clickCount",
+                        "deliverySuccessRate",
+                        "bounceRate",
+                        "openRate",
+                        "clickRate",
+                        "perAccount"
+                      ]
+                    },
+                    "monitoring": {
+                      "type": "object",
+                      "properties": {
+                        "health": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "healthy",
+                                "warning",
+                                "critical"
+                              ]
+                            },
+                            "timestamp": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "uptime": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "database": {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "connected",
+                                    "unavailable"
+                                  ]
+                                },
+                                "latency": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "connectionPool": {
+                                  "type": "object",
+                                  "properties": {
+                                    "activeConnections": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "idleConnections": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "totalConnections": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "pendingRequests": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "configuration": {
+                                      "type": "object",
+                                      "properties": {
+                                        "maxConnections": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "timeout": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "slowQueryThreshold": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "maxConnections",
+                                        "timeout",
+                                        "slowQueryThreshold"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "activeConnections",
+                                    "idleConnections",
+                                    "totalConnections",
+                                    "pendingRequests",
+                                    "configuration"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latency",
+                                "connectionPool"
+                              ]
+                            },
+                            "performance": {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "healthy",
+                                    "warning",
+                                    "critical"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "queries": {
+                                  "type": "object",
+                                  "properties": {
+                                    "totalQueries": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "slowQueries": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "averageDuration": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    },
+                                    "p50Duration": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    },
+                                    "p95Duration": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    },
+                                    "p99Duration": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    },
+                                    "maxDuration": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    },
+                                    "queryPatterns": {
+                                      "type": "object",
+                                      "additionalProperties": {
+                                        "type": "object",
+                                        "properties": {
+                                          "pattern": {
+                                            "type": "string"
+                                          },
+                                          "count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "totalDuration": {
+                                            "type": "number",
+                                            "minimum": 0
+                                          },
+                                          "averageDuration": {
+                                            "type": "number",
+                                            "minimum": 0
+                                          },
+                                          "slowCount": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          }
+                                        },
+                                        "required": [
+                                          "pattern",
+                                          "count",
+                                          "totalDuration",
+                                          "averageDuration",
+                                          "slowCount"
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "totalQueries",
+                                    "slowQueries",
+                                    "averageDuration",
+                                    "p50Duration",
+                                    "p95Duration",
+                                    "p99Duration",
+                                    "maxDuration",
+                                    "queryPatterns"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "message",
+                                "queries"
+                              ]
+                            },
+                            "environment": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "timestamp",
+                            "uptime",
+                            "database",
+                            "performance",
+                            "environment"
+                          ]
+                        },
+                        "performance": {
+                          "type": "object",
+                          "properties": {
+                            "timeWindow": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "summary": {
+                              "type": "object",
+                              "properties": {
+                                "totalQueries": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "slowQueries": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "slowQueryPercentage": {
+                                  "type": "string"
+                                },
+                                "averageDuration": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "totalQueries",
+                                "slowQueries",
+                                "slowQueryPercentage",
+                                "averageDuration"
+                              ]
+                            },
+                            "percentiles": {
+                              "type": "object",
+                              "properties": {
+                                "p50": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "p95": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "p99": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "max": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "p50",
+                                "p95",
+                                "p99",
+                                "max"
+                              ]
+                            },
+                            "connectionPool": {
+                              "type": "object",
+                              "properties": {
+                                "activeConnections": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "idleConnections": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "totalConnections": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "pendingRequests": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "activeConnections",
+                                "idleConnections",
+                                "totalConnections",
+                                "pendingRequests"
+                              ]
+                            },
+                            "slowQueries": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "duration": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  "query": {
+                                    "type": "string"
+                                  },
+                                  "timestamp": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "model": {
+                                    "type": "string"
+                                  },
+                                  "operation": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "duration",
+                                  "query",
+                                  "timestamp"
+                                ]
+                              },
+                              "description": "Slowest queries observed within the time window."
+                            },
+                            "queryPatterns": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                  "pattern": {
+                                    "type": "string"
+                                  },
+                                  "count": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                  },
+                                  "totalDuration": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  "averageDuration": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  "slowCount": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                  }
+                                },
+                                "required": [
+                                  "pattern",
+                                  "count",
+                                  "totalDuration",
+                                  "averageDuration",
+                                  "slowCount"
+                                ]
+                              }
+                            },
+                            "configuration": {
+                              "type": "object",
+                              "properties": {
+                                "slowQueryThreshold": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "loggingEnabled": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "slowQueryThreshold",
+                                "loggingEnabled"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "timeWindow",
+                            "timestamp",
+                            "summary",
+                            "percentiles",
+                            "connectionPool",
+                            "slowQueries",
+                            "queryPatterns",
+                            "configuration"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "health",
+                        "performance"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "generatedAt",
+                    "accounts",
+                    "storage",
+                    "email",
+                    "monitoring"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Administrator privileges are required to access analytics."
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "operationId": "login",
