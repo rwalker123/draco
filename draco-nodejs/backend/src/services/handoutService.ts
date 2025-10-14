@@ -75,10 +75,7 @@ export class HandoutService {
     const normalized = this.normalizePayload(payload, existing.filename);
 
     if (normalized.file) {
-      await this.handoutRepository.updateAccountHandout(handoutId, {
-        description: normalized.description,
-        filename: normalized.file.safeFileName,
-      });
+      const shouldDeleteOldFile = existing.filename !== normalized.file.safeFileName;
 
       await this.storageService.saveHandout(
         accountId.toString(),
@@ -87,7 +84,25 @@ export class HandoutService {
         normalized.file.buffer,
       );
 
-      if (existing.filename !== normalized.file.safeFileName) {
+      try {
+        await this.handoutRepository.updateAccountHandout(handoutId, {
+          description: normalized.description,
+          filename: normalized.file.safeFileName,
+        });
+      } catch (error) {
+        if (shouldDeleteOldFile) {
+          await this.storageService
+            .deleteHandout(
+              accountId.toString(),
+              handoutId.toString(),
+              normalized.file.safeFileName,
+            )
+            .catch(() => {});
+        }
+        throw error;
+      }
+
+      if (shouldDeleteOldFile) {
         await this.storageService.deleteHandout(
           accountId.toString(),
           handoutId.toString(),
@@ -151,10 +166,7 @@ export class HandoutService {
     const normalized = this.normalizePayload(payload, existing.filename);
 
     if (normalized.file) {
-      await this.handoutRepository.updateTeamHandout(handoutId, {
-        description: normalized.description,
-        filename: normalized.file.safeFileName,
-      });
+      const shouldDeleteOldFile = existing.filename !== normalized.file.safeFileName;
 
       await this.storageService.saveHandout(
         accountId.toString(),
@@ -164,7 +176,26 @@ export class HandoutService {
         teamId.toString(),
       );
 
-      if (existing.filename !== normalized.file.safeFileName) {
+      try {
+        await this.handoutRepository.updateTeamHandout(handoutId, {
+          description: normalized.description,
+          filename: normalized.file.safeFileName,
+        });
+      } catch (error) {
+        if (shouldDeleteOldFile) {
+          await this.storageService
+            .deleteHandout(
+              accountId.toString(),
+              handoutId.toString(),
+              normalized.file.safeFileName,
+              teamId.toString(),
+            )
+            .catch(() => {});
+        }
+        throw error;
+      }
+
+      if (shouldDeleteOldFile) {
         await this.storageService.deleteHandout(
           accountId.toString(),
           handoutId.toString(),
