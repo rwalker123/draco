@@ -25,6 +25,7 @@ import {
   Email as EmailIcon,
   FitnessCenter as FitnessCenterIcon,
   Handshake as HandshakeIcon,
+  HowToVote as HowToVoteIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -384,6 +385,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <HandshakeIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Account Sponsors</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/polls/manage`)
+                }
+                key="poll-management"
+              >
+                <ListItemIcon>
+                  <HowToVoteIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Poll Management</ListItemText>
               </MenuItem>
             );
           }

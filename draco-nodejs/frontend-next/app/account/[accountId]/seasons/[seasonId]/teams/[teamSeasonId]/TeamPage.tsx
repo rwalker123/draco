@@ -19,18 +19,16 @@ import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import { SponsorService } from '../../../../../../../services/sponsorService';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
-import {
-  SponsorType,
-  type GameType as SharedGameType,
-  type RecentGamesType,
-  type UpsertGameRecapType,
-} from '@draco/shared-schemas';
+import { SponsorType, UpsertGameRecapType } from '@draco/shared-schemas';
 import { useRole } from '../../../../../../../context/RoleContext';
 import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
 import { useAccountMembership } from '../../../../../../../hooks/useAccountMembership';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../utils/apiResult';
-import { listTeamSeasonGames as apiListTeamSeasonGames } from '@draco/shared-api-client';
+import {
+  listTeamSeasonGames as apiListTeamSeasonGames,
+  type RecentGames,
+} from '@draco/shared-api-client';
 
 interface TeamPageProps {
   accountId: string;
@@ -71,7 +69,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   React.useEffect(() => {
     let isMounted = true;
 
-    const transformGame = (game: SharedGameType): Game => ({
+    type ApiGame = RecentGames['recent'][number];
+
+    const transformGame = (game: ApiGame): Game => ({
       id: game.id,
       date: game.gameDate,
       homeTeamId: game.homeTeam.id ?? '',
@@ -103,14 +103,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           throwOnError: false,
         });
 
-        const data = unwrapApiResult<RecentGamesType>(result, 'Failed to load games');
+        const data = unwrapApiResult(result, 'Failed to load games');
 
         if (!isMounted) {
           return;
         }
 
-        const upcomingMapped = (data.upcoming ?? []).map(transformGame);
-        const recentMapped = (data.recent ?? []).map(transformGame);
+        const upcomingMapped = data.upcoming.map(transformGame);
+        const recentMapped = data.recent.map(transformGame);
 
         setUpcomingGames(upcomingMapped);
         setCompletedGames(recentMapped);

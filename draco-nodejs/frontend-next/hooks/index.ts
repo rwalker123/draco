@@ -4,6 +4,8 @@
 // Existing hooks
 export { useAccountMembership } from './useAccountMembership';
 export { useAccountManagementService } from './useAccountManagementService';
+export { useAccountLogoOperations } from './useAccountLogoOperations';
+export { useAccountUrlsService } from './useAccountUrlsService';
 export { useContactSearch } from './useContactSearch';
 export { useContactSelection } from './useContactSelection';
 export { useCurrentSeason } from './useCurrentSeason';
@@ -14,6 +16,7 @@ export { useRosterDataManager } from './useRosterDataManager';
 export { useRosterPlayer } from './roster/useRosterPlayer';
 export { useScrollPosition } from './useScrollPosition';
 export { useTableLoadingState } from './useTableLoadingState';
+export { usePollsService } from './usePollsService';
 export { useUserApiOperations } from './useUserApiOperations';
 export { useUserDataManager } from './useUserDataManager';
 export { useUserManagement } from './useUserManagement';
@@ -21,6 +24,7 @@ export { useSmoothTransition } from './useSmoothTransition';
 export { useSchedulePermissions } from './useSchedulePermissions';
 export { useGameResults } from './useGameResults';
 export { useTeamManagement } from './useTeamManagement';
+export { useFieldService } from './useFieldService';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   Button,
   Dialog,
@@ -10,9 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AccountPollType } from '@draco/shared-schemas';
-import { deleteAccountPoll } from '@draco/shared-api-client';
-import { useApiClient } from '../../hooks/useApiClient';
-import { assertNoApiError } from '@/utils/apiResult';
+import { usePollsService } from '@/hooks/usePollsService';
 
 export interface PollDeleteDialogProps {
   accountId: string;
@@ -31,41 +29,28 @@ const PollDeleteDialog: React.FC<PollDeleteDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const apiClient = useApiClient();
-  const [deleting, setDeleting] = useState(false);
+  const { deletePoll, loading, resetError } = usePollsService(accountId);
 
   useEffect(() => {
-    if (!open) {
-      setDeleting(false);
-    }
-  }, [open]);
+    resetError();
+  }, [open, resetError]);
 
   const handleDelete = useCallback(async () => {
     if (!poll) {
       return;
     }
 
-    setDeleting(true);
-
     try {
-      const result = await deleteAccountPoll({
-        client: apiClient,
-        path: { accountId, pollId: poll.id },
-        throwOnError: false,
-      });
+      const result = await deletePoll(poll.id);
 
-      assertNoApiError(result, 'Failed to delete poll');
-
-      onSuccess?.({ message: 'Poll deleted successfully.', pollId: poll.id });
+      onSuccess?.(result);
       onClose();
     } catch (err) {
       console.error('Failed to delete poll:', err);
-      const message = 'Failed to delete poll.';
+      const message = err instanceof Error ? err.message : 'Failed to delete poll.';
       onError?.(message);
-    } finally {
-      setDeleting(false);
     }
-  }, [accountId, apiClient, onClose, onError, onSuccess, poll]);
+  }, [deletePoll, onClose, onError, onSuccess, poll]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -77,11 +62,11 @@ const PollDeleteDialog: React.FC<PollDeleteDialogProps> = ({
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={deleting}>
+        <Button onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        <Button onClick={handleDelete} color="error" disabled={deleting}>
-          {deleting ? 'Deleting…' : 'Delete'}
+        <Button onClick={handleDelete} color="error" disabled={loading}>
+          {loading ? 'Deleting…' : 'Delete'}
         </Button>
       </DialogActions>
     </Dialog>

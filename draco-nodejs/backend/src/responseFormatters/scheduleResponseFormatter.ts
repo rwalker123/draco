@@ -8,6 +8,7 @@ import {
 import { dbScheduleGameWithDetails, dbScheduleGameWithRecaps } from '../repositories/index.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameStatus.js';
+import { formatFieldFromAvailableField } from './fieldFormatterUtils.js';
 
 export type ScheduleGameWithRecapsType = GamesWithRecapsType['games'][number];
 
@@ -52,17 +53,7 @@ export class ScheduleResponseFormatter {
       homeScore: game.hscore,
       visitorScore: game.vscore,
       comment: game.comment ?? undefined,
-      field: game.availablefields
-        ? {
-            id: game.availablefields.id.toString(),
-            name: game.availablefields.name,
-            shortName: game.availablefields.shortname,
-            address: game.availablefields.address,
-            city: game.availablefields.city,
-            state: game.availablefields.state,
-            zip: game.availablefields.zipcode,
-          }
-        : undefined,
+      field: formatFieldFromAvailableField(game.availablefields),
       gameStatus: game.gamestatus,
       gameStatusText: getGameStatusText(game.gamestatus) as GameStatusEnumType,
       gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
