@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Alert,
   Box,
@@ -19,7 +20,7 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { FieldType, UpsertFieldType } from '@draco/shared-schemas';
 import { UpsertFieldSchema } from '@draco/shared-schemas';
-import { FieldLocationMap } from './FieldLocationMap';
+import type { FieldLocationMapProps } from './FieldLocationMap';
 import { useFieldService, type FieldService } from '../../hooks/useFieldService';
 
 interface FieldFormDialogProps {
@@ -47,6 +48,25 @@ const DEFAULT_VALUES: FieldFormValues = {
   latitude: '',
   longitude: '',
 };
+
+const FieldLocationMap = dynamic<FieldLocationMapProps>(
+  () => import('./FieldLocationMap').then((module) => module.FieldLocationMap),
+  {
+    ssr: false,
+    loading: () => (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 320,
+        }}
+      >
+        <CircularProgress size={32} />
+      </Box>
+    ),
+  },
+);
 
 const parseCoordinate = (value: string | null | undefined): number | null => {
   if (typeof value !== 'string') {

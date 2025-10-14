@@ -1,12 +1,27 @@
-import React from 'react';
-import { Box, Typography, Card, CardContent, IconButton, Tooltip } from '@mui/material';
+'use client';
+
+import React, { useMemo, useRef, useState } from 'react';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  IconButton,
+  Tooltip,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
 import { getGameStatusShortText } from '../utils/gameUtils';
 import { formatDateInTimezone, formatGameTime } from '../utils/dateUtils';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
 import RecapButton from './RecapButton';
 import { GameStatus, GameType } from '../types/schedule';
+import FieldDetailsCard, { FieldDetails } from './fields/FieldDetailsCard';
 
 // Unified Game interface that works for both ScheduleManagement and GameListDisplay
 export interface GameCardData {
@@ -25,6 +40,7 @@ export interface GameCardData {
   fieldId: string | null;
   fieldName: string | null;
   fieldShortName: string | null;
+  fieldDetails?: FieldDetails | null;
   hasGameRecap: boolean;
   gameRecaps: Array<{ teamId: string; recap: string }>;
   comment?: string;
@@ -73,14 +89,55 @@ const GameCard: React.FC<GameCardProps> = ({
   fitContent = false,
   timeZone = DEFAULT_TIMEZONE,
 }) => {
+  const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
+  const suppressClicksUntilRef = useRef(0);
   const localTime = formatGameTime(game.date, timeZone);
   const formattedDateLabel = formatDateInTimezone(game.date, timeZone, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   });
+  const fieldDisplayName = game.fieldShortName || game.fieldName;
 
-  const handleCardClick = () => {
+  const mergedFieldDetails = useMemo<FieldDetails | null>(() => {
+    const baseDetails = game.fieldDetails ?? null;
+    const name = baseDetails?.name ?? game.fieldName ?? game.fieldShortName ?? null;
+    const shortName = baseDetails?.shortName ?? game.fieldShortName ?? game.fieldName ?? null;
+    const id = baseDetails?.id ?? game.fieldId ?? null;
+
+    if (!name && !shortName) {
+      return id ? { id, name: null, shortName: null } : null;
+    }
+
+    return {
+      id,
+      name,
+      shortName,
+      address: baseDetails?.address ?? null,
+      city: baseDetails?.city ?? null,
+      state: baseDetails?.state ?? null,
+      zip: baseDetails?.zip ?? null,
+      zipCode: baseDetails?.zipCode ?? null,
+      rainoutNumber: baseDetails?.rainoutNumber ?? null,
+      comment: baseDetails?.comment ?? null,
+      directions: baseDetails?.directions ?? null,
+      latitude: baseDetails?.latitude ?? null,
+      longitude: baseDetails?.longitude ?? null,
+    };
+  }, [game.fieldDetails, game.fieldId, game.fieldName, game.fieldShortName]);
+
+  const handleCardClick = (event: React.MouseEvent) => {
+    const now = performance.now();
+    if (now < suppressClicksUntilRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (fieldDialogOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (onClick) {
       onClick(game);
     }
@@ -100,6 +157,45 @@ const GameCard: React.FC<GameCardProps> = ({
     } else if (onViewRecap) {
       onViewRecap(game);
     }
+  };
+
+  const handleFieldLinkClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setFieldDialogOpen(true);
+  };
+
+  const handleFieldDialogClose = () => {
+    setFieldDialogOpen(false);
+    suppressClicksUntilRef.current = performance.now() + 500;
+  };
+
+  const renderFieldLink = () => {
+    if (!fieldDisplayName) {
+      return null;
+    }
+
+    return (
+      <Button
+        variant="outlined"
+        color="primary"
+        size="small"
+        startIcon={<FmdGoodOutlinedIcon fontSize="small" />}
+        onClick={handleFieldLinkClick}
+        sx={{
+          minWidth: 0,
+          px: 1.25,
+          py: 0.25,
+          textTransform: 'none',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          '&:hover': {
+            backgroundColor: (theme) => theme.palette.action.hover,
+          },
+        }}
+      >
+        {fieldDisplayName}
+      </Button>
+    );
   };
 
   return (
@@ -128,14 +224,15 @@ const GameCard: React.FC<GameCardProps> = ({
               : '100%'
             : 'auto',
         flexShrink: calendar ? 1 : layout === 'horizontal' ? 0 : 1,
-        cursor: onClick ? 'pointer' : 'default',
+        cursor: onClick && !fieldDialogOpen ? 'pointer' : 'default',
+        pointerEvents: fieldDialogOpen ? 'none' : 'auto',
         '&:hover': {
-          transform: onClick ? 'translateY(-2px)' : 'none',
-          boxShadow: onClick ? '0 8px 25px rgba(0,0,0,0.12)' : 'none',
-          borderColor: onClick ? 'primary.main' : 'divider',
+          transform: onClick && !fieldDialogOpen ? 'translateY(-2px)' : 'none',
+          boxShadow: onClick && !fieldDialogOpen ? '0 8px 25px rgba(0,0,0,0.12)' : 'none',
+          borderColor: onClick && !fieldDialogOpen ? 'primary.main' : 'divider',
         },
       }}
-      onClick={handleCardClick}
+      onClick={fieldDialogOpen ? undefined : handleCardClick}
     >
       <CardContent
         sx={{
@@ -256,11 +353,7 @@ const GameCard: React.FC<GameCardProps> = ({
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                     {localTime}
                   </Typography>
-                  {(game.fieldName || game.fieldShortName) && (
-                    <Typography variant="body2" color="text.secondary">
-                      {game.fieldName || game.fieldShortName}
-                    </Typography>
-                  )}
+                  {renderFieldLink()}
                 </Box>
               )}
             </Box>
@@ -380,11 +473,7 @@ const GameCard: React.FC<GameCardProps> = ({
                     <Typography variant="body2" color="text.secondary">
                       {localTime}
                     </Typography>
-                    {(game.fieldName || game.fieldShortName) && (
-                      <Typography variant="body2" color="text.secondary">
-                        {game.fieldShortName || game.fieldName}
-                      </Typography>
-                    )}
+                    {renderFieldLink()}
                   </>
                 )}
               </Box>
@@ -423,6 +512,31 @@ const GameCard: React.FC<GameCardProps> = ({
           </Box>
         )}
       </CardContent>
+      <Dialog
+        open={fieldDialogOpen}
+        onClose={handleFieldDialogClose}
+        fullWidth
+        maxWidth="sm"
+        aria-label="Field details"
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <FieldDetailsCard
+            field={mergedFieldDetails}
+            placeholderTitle={fieldDisplayName ?? 'Field details unavailable'}
+            placeholderDescription="Field details are not available for this game."
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={(event) => {
+              event.stopPropagation();
+              handleFieldDialogClose();
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };

@@ -186,9 +186,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   // Convert Game to GameCardData for display using the unified transformer
   const convertGameToGameCardDataWithTeams = useCallback(
     (game: Game): GameCardData => {
-      return convertGameToGameCardData(game, teams);
+      return convertGameToGameCardData(game, teams, fields);
     },
-    [teams],
+    [teams, fields],
   );
 
   const getFieldNameById = useCallback(

@@ -125,7 +125,7 @@ const YearView: React.FC<ViewComponentProps> = ({
               setFilterType('day');
               setFilterDate(day);
             }}
-            title={`View ${dayTitle} in day view`}
+            title={`View ${dayTitle}`}
           >
             <Typography
               variant="body2"

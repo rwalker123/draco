@@ -4,12 +4,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
   CircularProgress,
   Container,
+  Fab,
   Grid,
   IconButton,
   Paper,
@@ -32,7 +29,7 @@ import { useFieldService } from '../../hooks/useFieldService';
 import { useRole } from '../../context/RoleContext';
 import FieldFormDialog from './FieldFormDialog';
 import FieldDeleteDialog from './FieldDeleteDialog';
-import FieldLocationMap from './FieldLocationMap';
+import FieldDetailsCard from './FieldDetailsCard';
 
 interface FieldsManagementProps {
   accountId: string;
@@ -52,22 +49,6 @@ const COLUMNS: ColumnDefinition[] = [
   { id: 'state', label: 'State', sortable: true, sortKey: 'state' },
   { id: 'rainoutNumber', label: 'Rainout Line', sortable: true, sortKey: 'rainoutnumber' },
 ];
-
-const toNumber = (value: string | null | undefined): number | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-
-  if (trimmed.length === 0) {
-    return null;
-  }
-
-  const numeric = Number.parseFloat(trimmed);
-
-  return Number.isNaN(numeric) ? null : numeric;
-};
 
 export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId }) => {
   const { listFields } = useFieldService(accountId);
@@ -206,38 +187,22 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
   return (
     <Box component="main" sx={{ pb: 6 }}>
       <AccountPageHeader accountId={accountId}>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          justifyContent="space-between"
-          alignItems={{ xs: 'flex-start', md: 'center' }}
-          spacing={2}
-        >
+        <Stack alignItems="center" justifyContent="center" spacing={2} textAlign="center">
           <Box>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, textAlign: 'center' }}>
               Fields
             </Typography>
-            <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.85)' }}>
+            <Typography
+              variant="body1"
+              sx={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}
+            >
               Review locations and publish updates so teams always know where to play.
             </Typography>
           </Box>
-          {canManage ? (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreateDialog}
-              sx={{
-                backgroundColor: 'white',
-                color: 'primary.main',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.92)' },
-              }}
-            >
-              Add Field
-            </Button>
-          ) : null}
         </Stack>
       </AccountPageHeader>
 
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 4, px: { xs: 2, md: 3 } }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 7 }}>
             <Paper elevation={3} sx={{ overflow: 'hidden' }}>
@@ -255,102 +220,128 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
                   </Alert>
                 ) : null}
               </Box>
-              {loading ? (
-                <Box
-                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 6 }}
+              <TableContainer
+                sx={{
+                  position: 'relative',
+                  overflowX: 'auto',
+                  overflowY: 'visible',
+                  maxWidth: '100%',
+                  width: '100%',
+                }}
+              >
+                {loading ? (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backdropFilter: 'blur(1px)',
+                      backgroundColor: 'rgba(255,255,255,0.4)',
+                      pointerEvents: 'none',
+                      zIndex: 1,
+                    }}
+                  >
+                    <CircularProgress size={28} />
+                  </Box>
+                ) : null}
+                <Table
+                  size="medium"
+                  aria-busy={loading}
+                  sx={{
+                    minWidth: 680,
+                    opacity: loading ? 0.88 : 1,
+                    transition: 'opacity 120ms ease-in-out',
+                  }}
                 >
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <TableContainer>
-                  <Table size="medium">
-                    <TableHead>
-                      <TableRow>
-                        {COLUMNS.map((column) => {
-                          const sortKey = column.sortKey ?? column.id;
-                          return (
-                            <TableCell
-                              key={column.id}
-                              sortDirection={sortBy === sortKey ? sortOrder : false}
-                            >
-                              {column.sortable ? (
-                                <TableSortLabel
-                                  active={sortBy === sortKey}
-                                  direction={sortBy === sortKey ? sortOrder : 'asc'}
-                                  onClick={() => handleRequestSort(sortKey)}
-                                >
-                                  {column.label}
-                                </TableSortLabel>
-                              ) : (
-                                column.label
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                        {canManage ? <TableCell align="right">Actions</TableCell> : null}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {tableRows.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={canManage ? COLUMNS.length + 1 : COLUMNS.length}>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ py: 3, textAlign: 'center' }}
-                            >
-                              No fields have been added yet.
-                            </Typography>
+                  <TableHead>
+                    <TableRow>
+                      {COLUMNS.map((column) => {
+                        const sortKey = column.sortKey ?? column.id;
+                        return (
+                          <TableCell
+                            key={column.id}
+                            sortDirection={sortBy === sortKey ? sortOrder : false}
+                          >
+                            {column.sortable ? (
+                              <TableSortLabel
+                                active={sortBy === sortKey}
+                                direction={sortBy === sortKey ? sortOrder : 'asc'}
+                                onClick={() => handleRequestSort(sortKey)}
+                              >
+                                {column.label}
+                              </TableSortLabel>
+                            ) : (
+                              column.label
+                            )}
                           </TableCell>
-                        </TableRow>
-                      ) : (
-                        tableRows.map((field) => {
-                          const isSelected = selectedField?.id === field.id;
-                          return (
-                            <TableRow
-                              key={field.id}
-                              hover
-                              selected={isSelected}
-                              onClick={() => setSelectedField(field)}
-                              sx={{ cursor: 'pointer' }}
-                            >
-                              <TableCell>{field.name}</TableCell>
-                              <TableCell>{field.shortName}</TableCell>
-                              <TableCell>{field.city ?? '—'}</TableCell>
-                              <TableCell>{field.state ?? '—'}</TableCell>
-                              <TableCell>{field.rainoutNumber ?? '—'}</TableCell>
-                              {canManage ? (
-                                <TableCell
-                                  align="right"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                    <IconButton
-                                      aria-label="Edit field"
-                                      size="small"
-                                      onClick={() => handleOpenEditDialog(field)}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      aria-label="Delete field"
-                                      size="small"
-                                      color="error"
-                                      onClick={() => handleOpenDeleteDialog(field)}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Stack>
-                                </TableCell>
-                              ) : null}
-                            </TableRow>
-                          );
-                        })
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+                        );
+                      })}
+                      {canManage ? <TableCell align="right">Actions</TableCell> : null}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {tableRows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={canManage ? COLUMNS.length + 1 : COLUMNS.length}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ py: 3, textAlign: 'center' }}
+                          >
+                            No fields have been added yet.
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      tableRows.map((field) => {
+                        const isSelected = selectedField?.id === field.id;
+                        return (
+                          <TableRow
+                            key={field.id}
+                            hover
+                            selected={isSelected}
+                            onClick={() => setSelectedField(field)}
+                            sx={{
+                              cursor: 'pointer',
+                              transition: 'background-color 120ms ease-in-out',
+                              pointerEvents: loading ? 'none' : 'auto',
+                            }}
+                          >
+                            <TableCell>{field.name}</TableCell>
+                            <TableCell>{field.shortName}</TableCell>
+                            <TableCell>{field.city ?? '—'}</TableCell>
+                            <TableCell>{field.state ?? '—'}</TableCell>
+                            <TableCell>{field.rainoutNumber ?? '—'}</TableCell>
+                            {canManage ? (
+                              <TableCell align="right" onClick={(event) => event.stopPropagation()}>
+                                <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                  <IconButton
+                                    aria-label="Edit field"
+                                    size="small"
+                                    onClick={() => handleOpenEditDialog(field)}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton
+                                    aria-label="Delete field"
+                                    size="small"
+                                    color="error"
+                                    onClick={() => handleOpenDeleteDialog(field)}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Stack>
+                              </TableCell>
+                            ) : null}
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               <TablePagination
                 component="div"
                 count={pagination?.total ?? fields.length}
@@ -363,80 +354,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
             </Paper>
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>
-            <Card elevation={3}>
-              <CardHeader
-                title={selectedField?.name ?? 'Select a field'}
-                subheader={
-                  selectedField?.address ?? 'Choose a field to view its location and details.'
-                }
-              />
-              <CardContent>
-                {selectedField ? (
-                  <Stack spacing={2}>
-                    <FieldLocationMap
-                      latitude={toNumber(selectedField.latitude)}
-                      longitude={toNumber(selectedField.longitude)}
-                      readOnly
-                    />
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Location Details
-                      </Typography>
-                      <Typography variant="body2">
-                        {selectedField.address ? selectedField.address : 'Address not provided'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {[selectedField.city, selectedField.state, selectedField.zip]
-                          .filter((part) => part && part.trim().length > 0)
-                          .join(', ') || 'City/state not provided'}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Rainout Line
-                      </Typography>
-                      <Typography variant="body2">
-                        {selectedField.rainoutNumber
-                          ? selectedField.rainoutNumber
-                          : 'No rainout number on file.'}
-                      </Typography>
-                    </Box>
-                    {selectedField.comment ? (
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Comments
-                        </Typography>
-                        <Typography variant="body2">{selectedField.comment}</Typography>
-                      </Box>
-                    ) : null}
-                    {selectedField.directions ? (
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Directions
-                        </Typography>
-                        <Typography variant="body2">{selectedField.directions}</Typography>
-                      </Box>
-                    ) : null}
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Coordinates
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {selectedField.latitude && selectedField.longitude
-                          ? `${selectedField.latitude}, ${selectedField.longitude}`
-                          : 'No coordinates saved yet.'}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Select a field to view its map and details.
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
+            <FieldDetailsCard field={selectedField} />
           </Grid>
         </Grid>
       </Container>
@@ -484,6 +402,21 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
           </Alert>
         ) : undefined}
       </Snackbar>
+      {canManage ? (
+        <Fab
+          color="primary"
+          aria-label="Add field"
+          onClick={handleOpenCreateDialog}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 24, sm: 32 },
+            right: { xs: 24, sm: 32 },
+            zIndex: (theme) => theme.zIndex.snackbar + 1,
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      ) : null}
     </Box>
   );
 };
