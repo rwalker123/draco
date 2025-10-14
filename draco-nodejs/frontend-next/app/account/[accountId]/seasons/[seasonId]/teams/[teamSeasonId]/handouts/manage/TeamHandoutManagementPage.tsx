@@ -1,18 +1,11 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
-import ProtectedRoute from '../../../../../../../components/auth/ProtectedRoute';
-import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
-import TeamAvatar from '../../../../../../../components/TeamAvatar';
+import ProtectedRoute from '../../../../../../../../../components/auth/ProtectedRoute';
+import AccountPageHeader from '../../../../../../../../../components/AccountPageHeader';
+import TeamAvatar from '../../../../../../../../../components/TeamAvatar';
 import HandoutSection from '@/components/handouts/HandoutSection';
 import { useTeamHandoutHeader } from '../TeamHandoutsPage';
 
@@ -87,7 +80,9 @@ const TeamHandoutManagementPage: React.FC = () => {
                   </Typography>
                 )}
                 <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-                  {teamHeader?.teamName ? `${teamHeader.teamName} Handout Management` : 'Team Handout Management'}
+                  {teamHeader?.teamName
+                    ? `${teamHeader.teamName} Handout Management`
+                    : 'Team Handout Management'}
                 </Typography>
               </Stack>
             </Stack>

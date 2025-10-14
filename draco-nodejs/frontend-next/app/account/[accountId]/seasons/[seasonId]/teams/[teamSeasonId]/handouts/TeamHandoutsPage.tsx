@@ -1,21 +1,14 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
 import { getTeamSeasonDetails as apiGetTeamSeasonDetails } from '@draco/shared-api-client';
 import type { TeamSeasonRecordType } from '@draco/shared-schemas';
-import { unwrapApiResult } from '../../../../../../../utils/apiResult';
-import { useApiClient } from '../../../../../../../hooks/useApiClient';
-import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
-import TeamAvatar from '../../../../../../../components/TeamAvatar';
+import { unwrapApiResult } from '../../../../../../../../utils/apiResult';
+import { useApiClient } from '../../../../../../../../hooks/useApiClient';
+import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
+import TeamAvatar from '../../../../../../../../components/TeamAvatar';
 import HandoutSection from '@/components/handouts/HandoutSection';
 
 export interface TeamHeaderData {
@@ -25,11 +18,7 @@ export interface TeamHeaderData {
   teamId: string;
 }
 
-export function useTeamHandoutHeader(
-  accountId?: string,
-  seasonId?: string,
-  teamSeasonId?: string,
-) {
+export function useTeamHandoutHeader(accountId?: string, seasonId?: string, teamSeasonId?: string) {
   const apiClient = useApiClient();
   const [teamHeader, setTeamHeader] = React.useState<TeamHeaderData | null>(null);
   const [loading, setLoading] = React.useState(true);

@@ -26,10 +26,10 @@ import { HandoutInput } from '../../services/handoutService';
 import { HandoutScope, useHandoutOperations } from '../../hooks/useHandoutOperations';
 
 const HandoutFormSchema = UpsertHandoutSchema.extend({
-  file: z.any().optional().nullable(),
+  file: z.instanceof(File).optional().nullable(),
 });
 
-type HandoutFormValues = z.infer<typeof HandoutFormSchema> & { file: File | null };
+type HandoutFormValues = z.infer<typeof HandoutFormSchema>;
 
 interface HandoutFormDialogProps {
   open: boolean;
@@ -128,7 +128,8 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
 
       onSuccess?.({
         handout,
-        message: mode === 'create' ? 'Handout uploaded successfully' : 'Handout updated successfully',
+        message:
+          mode === 'create' ? 'Handout uploaded successfully' : 'Handout updated successfully',
       });
       handleDialogClose();
     } catch (err) {
@@ -140,10 +141,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
 
   const descriptionError = errors.description?.message as string | undefined;
   const descriptionValue = watch('description') ?? '';
-  const remainingCharacters = Math.max(
-    0,
-    HANDOUT_DESCRIPTION_MAX_LENGTH - descriptionValue.length,
-  );
+  const remainingCharacters = Math.max(0, HANDOUT_DESCRIPTION_MAX_LENGTH - descriptionValue.length);
   const fileLabel = (() => {
     if (fileValue instanceof File) {
       return fileValue.name;

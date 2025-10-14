@@ -1,4 +1,4 @@
-import { HandoutType } from '@draco/shared-schemas';
+import { HandoutType, UpsertHandoutType } from '@draco/shared-schemas';
 import {
   listAccountHandouts as apiListAccountHandouts,
   createAccountHandout as apiCreateAccountHandout,
@@ -101,7 +101,7 @@ export class HandoutService {
   }
 
   private async createHandout(context: BaseContext | TeamContext, input: HandoutInput) {
-    const payload = this.buildFormData(input);
+    const payload = this.buildCreatePayload(input);
 
     if ('teamId' in context) {
       const result = await apiCreateTeamHandout({
@@ -133,7 +133,7 @@ export class HandoutService {
     handoutId: string,
     input: HandoutInput,
   ) {
-    const payload = this.buildFormData(input);
+    const payload = this.buildUpdatePayload(input);
 
     if ('teamId' in context) {
       const result = await apiUpdateTeamHandout({
@@ -160,10 +160,27 @@ export class HandoutService {
     return unwrapApiResult(result, 'Failed to update handout');
   }
 
-  private buildFormData(input: HandoutInput) {
+  private buildCreatePayload(input: HandoutInput): UpsertHandoutType & { file: File } {
+    if (!input.file) {
+      throw new Error('Handout file is required');
+    }
+
     return {
       description: input.description,
-      file: input.file ?? undefined,
+      file: input.file,
+    };
+  }
+
+  private buildUpdatePayload(input: HandoutInput): UpsertHandoutType & { file?: File } {
+    if (input.file) {
+      return {
+        description: input.description,
+        file: input.file,
+      };
+    }
+
+    return {
+      description: input.description,
     };
   }
 }
