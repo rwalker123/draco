@@ -23,7 +23,6 @@ const Accounts: FC = () => {
   const params = useParams();
   const accountId = params?.accountId as string | undefined;
   const apiClient = useApiClient();
-
   // If accountId is provided, redirect to that account's home page
   useEffect(() => {
     if (accountId) {
