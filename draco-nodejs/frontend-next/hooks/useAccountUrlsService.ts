@@ -5,7 +5,7 @@ import { createAccountUrl, deleteAccountUrl, updateAccountUrl } from '@draco/sha
 import type { AccountUrlType } from '@draco/shared-schemas';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
-import { unwrapApiResult } from '../utils/apiResult';
+import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 
 export interface AccountUrlCreateResult {
   url: AccountUrlType;
@@ -127,11 +127,13 @@ export function useAccountUrlsService(accountId: string) {
 
       try {
         ensurePreconditions();
-        await deleteAccountUrl({
+        const result = await deleteAccountUrl({
           client: apiClient,
           path: { accountId, urlId },
           throwOnError: false,
         });
+
+        assertNoApiError(result, 'Failed to delete URL');
 
         return {
           urlId,
