@@ -4,16 +4,7 @@ import {
   Typography,
   Paper,
   Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
   CircularProgress,
   Stack,
@@ -36,16 +27,19 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
-import { isValidDomain, getDomainValidationError } from '../utils/validation';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
-import {
-  getAccountUrls,
-  createAccountUrl,
-  updateAccountUrl,
-  deleteAccountUrl,
-} from '@draco/shared-api-client';
-import type { AccountUrlType, CreateAccountUrlType } from '@draco/shared-schemas';
+import { getAccountUrls } from '@draco/shared-api-client';
+import type { AccountUrlType } from '@draco/shared-schemas';
+import { useDialog } from '../hooks/useDialog';
+import AddAccountUrlDialog from './url-management/AddAccountUrlDialog';
+import EditAccountUrlDialog from './url-management/EditAccountUrlDialog';
+import DeleteAccountUrlDialog from './url-management/DeleteAccountUrlDialog';
+import type {
+  AccountUrlCreateResult,
+  AccountUrlDeleteResult,
+  AccountUrlUpdateResult,
+} from '../hooks/useAccountUrlsService';
 
 interface UrlManagementProps {
   accountId: string;
@@ -63,25 +57,13 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Dialog-specific error states
-  const [addDialogError, setAddDialogError] = useState<string | null>(null);
-  const [editDialogError, setEditDialogError] = useState<string | null>(null);
-
   // Use ref to store the callback to avoid dependency issues
   const onUrlsChangeRef = useRef(onUrlsChange);
   onUrlsChangeRef.current = onUrlsChange;
 
-  // Dialog states
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUrl, setSelectedUrl] = useState<AccountUrlType | null>(null);
-
-  // Form states
-  const [formData, setFormData] = useState({
-    protocol: 'https://',
-    domain: '',
-  });
+  const addDialog = useDialog<void>();
+  const editDialog = useDialog<AccountUrlType>();
+  const deleteDialog = useDialog<AccountUrlType>();
 
   const canManageUrls = isAccountAdministrator(hasRole, accountId);
 
@@ -116,127 +98,58 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
     void loadUrls();
   }, [loadUrls]);
 
-  const validateUrl = (domain: string): string | null => {
-    if (!isValidDomain(domain)) {
-      return getDomainValidationError(domain);
-    }
-    return null;
-  };
-
-  const buildUrlPayload = (url: string): CreateAccountUrlType => ({ url });
-
-  const handleAddUrl = async () => {
-    const fullUrl = formData.protocol + formData.domain;
-    const validationError = validateUrl(formData.domain);
-
-    if (validationError) {
-      setAddDialogError(validationError);
-      return;
-    }
-
-    try {
-      setAddDialogError(null); // Clear any previous errors
-
-      const result = await createAccountUrl({
-        client: apiClient,
-        path: { accountId },
-        body: buildUrlPayload(fullUrl),
-        throwOnError: false,
-      });
-
-      unwrapApiResult(result, 'Failed to add URL');
-
-      setSuccess('URL added successfully');
-      setAddDialogOpen(false);
-      setFormData({ protocol: 'https://', domain: '' });
-      setAddDialogError(null);
+  const handleDialogSuccess = useCallback(
+    async (message: string) => {
+      setSuccess(message);
+      setError(null);
       await loadUrls();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      console.error('Failed to add URL', err);
-      setAddDialogError('Failed to add URL');
+    },
+    [loadUrls],
+  );
+
+  const handleCreateSuccess = useCallback(
+    (result: AccountUrlCreateResult) => {
+      void handleDialogSuccess(result.message);
+    },
+    [handleDialogSuccess],
+  );
+
+  const handleUpdateSuccess = useCallback(
+    (result: AccountUrlUpdateResult) => {
+      void handleDialogSuccess(result.message);
+    },
+    [handleDialogSuccess],
+  );
+
+  const handleDeleteSuccess = useCallback(
+    (result: AccountUrlDeleteResult) => {
+      void handleDialogSuccess(result.message);
+    },
+    [handleDialogSuccess],
+  );
+
+  useEffect(() => {
+    if (!success) {
+      return undefined;
     }
-  };
 
-  const handleEditUrl = async () => {
-    if (!selectedUrl) return;
+    const timeout: ReturnType<typeof setTimeout> = setTimeout(() => {
+      setSuccess(null);
+    }, 3000);
 
-    const fullUrl = formData.protocol + formData.domain;
-    const validationError = validateUrl(formData.domain);
-
-    if (validationError) {
-      setEditDialogError(validationError);
-      return;
-    }
-
-    try {
-      setEditDialogError(null); // Clear any previous errors
-
-      const result = await updateAccountUrl({
-        client: apiClient,
-        path: { accountId, urlId: selectedUrl.id },
-        body: buildUrlPayload(fullUrl),
-        throwOnError: false,
-      });
-
-      unwrapApiResult(result, 'Failed to update URL');
-
-      setSuccess('URL updated successfully');
-      setEditDialogOpen(false);
-      setSelectedUrl(null);
-      setFormData({ protocol: 'https://', domain: '' });
-      setEditDialogError(null);
-      await loadUrls();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      console.error('Failed to update URL', err);
-      setEditDialogError('Failed to update URL');
-    }
-  };
-
-  const handleDeleteUrl = async () => {
-    if (!selectedUrl) return;
-
-    try {
-      const result = await deleteAccountUrl({
-        client: apiClient,
-        path: { accountId, urlId: selectedUrl.id },
-        throwOnError: false,
-      });
-
-      unwrapApiResult(result, 'Failed to delete URL');
-
-      setSuccess('URL deleted successfully');
-      setDeleteDialogOpen(false);
-      setSelectedUrl(null);
-      await loadUrls();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      console.error('Failed to delete URL', err);
-      setError('Failed to delete URL');
-    }
-  };
+    return () => clearTimeout(timeout);
+  }, [success]);
 
   const openEditDialog = (url: AccountUrlType) => {
-    setSelectedUrl(url);
-    const urlObj = new URL(url.url);
-    setFormData({
-      protocol: urlObj.protocol + '//',
-      domain: urlObj.host,
-    });
-    setEditDialogError(null); // Clear any previous errors
-    setEditDialogOpen(true);
+    editDialog.open(url);
   };
 
   const openDeleteDialog = (url: AccountUrlType) => {
-    setSelectedUrl(url);
-    setDeleteDialogOpen(true);
+    deleteDialog.open(url);
   };
 
   const handleAddClick = () => {
-    setFormData({ protocol: 'https://', domain: '' });
-    setAddDialogError(null);
-    setAddDialogOpen(true);
+    addDialog.open();
   };
 
   const handleVisitUrl = (url: string) => {
@@ -342,130 +255,29 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
         )}
       </Paper>
 
-      {/* Add URL Dialog */}
-      <Dialog
-        open={addDialogOpen}
-        onClose={() => {
-          setAddDialogOpen(false);
-          setAddDialogError(null);
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Add URL for {accountName}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            {addDialogError && <Alert severity="error">{addDialogError}</Alert>}
-            <FormControl fullWidth>
-              <InputLabel>Protocol</InputLabel>
-              <Select
-                value={formData.protocol}
-                onChange={(e) => setFormData({ ...formData, protocol: e.target.value })}
-                label="Protocol"
-              >
-                <MenuItem value="https://">HTTPS (Recommended)</MenuItem>
-                <MenuItem value="http://">HTTP</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              label="Domain"
-              value={formData.domain}
-              onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-              placeholder="example.com or subdomain.example.com"
-              fullWidth
-              required
-              helperText="Enter the domain name only (e.g., example.com, www.example.com)"
-            />
-            {formData.protocol && formData.domain && (
-              <Alert severity="info">Full URL: {formData.protocol + formData.domain}</Alert>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setAddDialogOpen(false);
-              setAddDialogError(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleAddUrl} variant="contained">
-            Add URL
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AddAccountUrlDialog
+        accountId={accountId}
+        accountName={accountName}
+        open={addDialog.isOpen}
+        onClose={addDialog.close}
+        onSuccess={handleCreateSuccess}
+      />
 
-      {/* Edit URL Dialog */}
-      <Dialog
-        open={editDialogOpen}
-        onClose={() => {
-          setEditDialogOpen(false);
-          setEditDialogError(null);
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Edit URL</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            {editDialogError && <Alert severity="error">{editDialogError}</Alert>}
-            <FormControl fullWidth>
-              <InputLabel>Protocol</InputLabel>
-              <Select
-                value={formData.protocol}
-                onChange={(e) => setFormData({ ...formData, protocol: e.target.value })}
-                label="Protocol"
-              >
-                <MenuItem value="https://">HTTPS (Recommended)</MenuItem>
-                <MenuItem value="http://">HTTP</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              label="Domain"
-              value={formData.domain}
-              onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-              placeholder="example.com or subdomain.example.com"
-              fullWidth
-              required
-              helperText="Enter the domain name only (e.g., example.com, www.example.com)"
-            />
-            {formData.protocol && formData.domain && (
-              <Alert severity="info">Full URL: {formData.protocol + formData.domain}</Alert>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setEditDialogOpen(false);
-              setEditDialogError(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleEditUrl} variant="contained">
-            Update URL
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <EditAccountUrlDialog
+        accountId={accountId}
+        open={editDialog.isOpen}
+        url={editDialog.data ?? null}
+        onClose={editDialog.close}
+        onSuccess={handleUpdateSuccess}
+      />
 
-      {/* Delete URL Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete URL</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete the URL &quot;{selectedUrl?.url}&quot;? This action
-            cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteUrl} color="error" variant="contained">
-            Delete URL
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteAccountUrlDialog
+        accountId={accountId}
+        open={deleteDialog.isOpen}
+        url={deleteDialog.data ?? null}
+        onClose={deleteDialog.close}
+        onSuccess={handleDeleteSuccess}
+      />
 
       <Typography variant="body2" color="text.secondary">
         You can use &quot;URL Management&quot; to update your URLs.

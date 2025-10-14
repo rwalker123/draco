@@ -256,7 +256,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                               month: 'long',
                               day: 'numeric',
                               year: 'numeric',
-                            })} in day view`
+                            })}`
                           : undefined
                       }
                     >

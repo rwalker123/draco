@@ -11,6 +11,8 @@ import {
   updateAccountWorkout,
   updateWorkoutRegistration as apiUpdateWorkoutRegistration,
   updateWorkoutSources as apiUpdateWorkoutSources,
+  type WorkoutSummary as ApiWorkoutSummary,
+  type Workout as ApiWorkout,
 } from '@draco/shared-api-client';
 import type {
   UpsertWorkoutRegistrationType,
@@ -24,6 +26,31 @@ import type {
 import { createApiClient } from '../lib/apiClientFactory';
 
 import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
+import { mapApiFieldToFieldType } from '../utils/fieldMapper';
+
+const mapWorkoutSummaryFromApi = (workout: ApiWorkoutSummary): WorkoutSummaryType => {
+  const field = mapApiFieldToFieldType(workout.field);
+
+  return {
+    id: workout.id,
+    workoutDesc: workout.workoutDesc,
+    workoutDate: workout.workoutDate,
+    ...(field !== undefined ? { field } : {}),
+    ...(workout.registrationCount !== undefined
+      ? { registrationCount: workout.registrationCount }
+      : {}),
+  };
+};
+
+const mapWorkoutFromApi = (workout: ApiWorkout): WorkoutType => {
+  const summary = mapWorkoutSummaryFromApi(workout);
+
+  return {
+    ...summary,
+    accountId: workout.accountId,
+    comments: workout.comments,
+  };
+};
 
 const normalizeFieldId = (fieldId?: string | null): string | null | undefined => {
   if (fieldId === undefined) {
@@ -68,7 +95,8 @@ export async function listWorkouts(
     throwOnError: false,
   });
 
-  return unwrapApiResult(result, 'Failed to fetch workouts');
+  const workouts = unwrapApiResult(result, 'Failed to fetch workouts');
+  return workouts.map(mapWorkoutSummaryFromApi);
 }
 
 export async function getWorkout(
@@ -83,7 +111,8 @@ export async function getWorkout(
     throwOnError: false,
   });
 
-  return unwrapApiResult(result, 'Failed to fetch workout');
+  const workout = unwrapApiResult(result, 'Failed to fetch workout');
+  return mapWorkoutFromApi(workout);
 }
 
 export async function createWorkout(
@@ -100,7 +129,8 @@ export async function createWorkout(
     throwOnError: false,
   });
 
-  return unwrapApiResult(result, 'Failed to create workout');
+  const workout = unwrapApiResult(result, 'Failed to create workout');
+  return mapWorkoutFromApi(workout);
 }
 
 export async function updateWorkout(
@@ -118,7 +148,8 @@ export async function updateWorkout(
     throwOnError: false,
   });
 
-  return unwrapApiResult(result, 'Failed to update workout');
+  const workout = unwrapApiResult(result, 'Failed to update workout');
+  return mapWorkoutFromApi(workout);
 }
 
 export async function deleteWorkout(

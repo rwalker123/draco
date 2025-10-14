@@ -6,23 +6,30 @@ import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import OrganizationsWidget from '../../components/OrganizationsWidget';
-import { searchAccounts } from '@draco/shared-api-client';
-import { useApiClient } from '../../hooks/useApiClient';
 import { AccountType as SharedAccountType } from '@draco/shared-schemas';
-import { unwrapApiResult } from '../../utils/apiResult';
 import CreateAccountDialog from '../../components/account-management/dialogs/CreateAccountDialog';
+import { useAccountManagementService } from '../../hooks/useAccountManagementService';
+
+type SearchState =
+  | { status: 'idle'; results: SharedAccountType[] }
+  | { status: 'searching'; results: SharedAccountType[] }
+  | { status: 'success'; results: SharedAccountType[] }
+  | { status: 'error'; results: SharedAccountType[]; error: string };
+
+type CtaState = 'idle' | 'createAccount' | 'signupPrompt';
 
 const Accounts: FC = () => {
-  const [showSignup, setShowSignup] = useState(false);
-  const [searchResults, setSearchResults] = useState<SharedAccountType[]>([]);
+  const [ctaState, setCtaState] = useState<CtaState>('idle');
+  const [searchState, setSearchState] = useState<SearchState>({
+    status: 'idle',
+    results: [],
+  });
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
   const accountId = params?.accountId as string | undefined;
-  const apiClient = useApiClient();
+  const { searchAccounts: searchAccountsOperation } = useAccountManagementService();
 
   // If accountId is provided, redirect to that account's home page
   useEffect(() => {
@@ -34,49 +41,66 @@ const Accounts: FC = () => {
   const handleSearch = useCallback(
     async (term: string) => {
       const trimmedTerm = term.trim();
-      if (!trimmedTerm) return;
+      if (!trimmedTerm) {
+        setSearchState({ status: 'idle', results: [] });
+        return;
+      }
 
-      setIsSearching(true);
+      setSearchState({ status: 'searching', results: [] });
       try {
-        const result = await searchAccounts({
-          client: apiClient,
-          throwOnError: false,
-          query: { q: trimmedTerm },
-        });
+        const result = await searchAccountsOperation({ query: trimmedTerm });
 
-        const data = unwrapApiResult(result, 'Failed to search accounts');
-        setSearchResults((data as SharedAccountType[]) ?? []);
+        if (result.success) {
+          setSearchState({ status: 'success', results: result.data });
+        } else {
+          setSearchState({ status: 'error', results: [], error: result.error });
+        }
       } catch (error) {
         console.error('Account search failed:', error);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
+        setSearchState({
+          status: 'error',
+          results: [],
+          error: error instanceof Error ? error.message : 'Account search failed',
+        });
       }
     },
-    [apiClient],
+    [searchAccountsOperation],
   );
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setSearchState((previous) => {
+        if (previous.status === 'idle' && previous.results.length === 0) {
+          return previous;
+        }
+
+        return { status: 'idle', results: [] };
+      });
+    }
+  }, [searchTerm]);
 
   const handleCreateAccount = useCallback(() => {
     if (user) {
-      setCreateDialogOpen(true);
+      setCtaState('createAccount');
     } else {
-      setShowSignup(true);
+      setCtaState('signupPrompt');
     }
   }, [user]);
 
   const handleCloseCreateDialog = useCallback(() => {
-    setCreateDialogOpen(false);
+    setCtaState('idle');
   }, []);
 
   const handleCreateDialogSuccess = useCallback(
     (_result: { account: SharedAccountType; message: string }) => {
-      setCreateDialogOpen(false);
+      setCtaState('idle');
       router.push('/account-management');
     },
     [router],
   );
 
   const handleSignup = () => {
+    setCtaState('idle');
     router.push('/signup');
   };
 
@@ -124,15 +148,15 @@ const Accounts: FC = () => {
               : 'Find Organizations'
         }
         showSearch={true}
-        organizations={searchTerm ? searchResults : user ? undefined : []}
-        loading={isSearching}
+        organizations={searchTerm ? searchState.results : user ? undefined : []}
+        loading={searchState.status === 'searching'}
         onSearch={handleSearch}
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
       />
 
       {/* Signup Modal */}
-      {showSignup && (
+      {ctaState === 'signupPrompt' && (
         <Paper sx={{ p: 3, mt: 3 }}>
           <Typography variant="h6" gutterBottom>
             Create Your Account
@@ -145,7 +169,7 @@ const Accounts: FC = () => {
             <Button variant="contained" color="primary" onClick={handleSignup} sx={{ mr: 2 }}>
               Sign Up
             </Button>
-            <Button variant="outlined" onClick={() => setShowSignup(false)}>
+            <Button variant="outlined" onClick={() => setCtaState('idle')}>
               Cancel
             </Button>
           </Box>
@@ -153,7 +177,7 @@ const Accounts: FC = () => {
       )}
 
       <CreateAccountDialog
-        open={createDialogOpen}
+        open={ctaState === 'createAccount'}
         onClose={handleCloseCreateDialog}
         onSuccess={handleCreateDialogSuccess}
       />
