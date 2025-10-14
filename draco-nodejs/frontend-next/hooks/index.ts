@@ -5,6 +5,7 @@
 export { useAccountMembership } from './useAccountMembership';
 export { useAccountManagementService } from './useAccountManagementService';
 export { useAccountLogoOperations } from './useAccountLogoOperations';
+export { useAccountUrlsService } from './useAccountUrlsService';
 export { useContactSearch } from './useContactSearch';
 export { useContactSelection } from './useContactSelection';
 export { useCurrentSeason } from './useCurrentSeason';
