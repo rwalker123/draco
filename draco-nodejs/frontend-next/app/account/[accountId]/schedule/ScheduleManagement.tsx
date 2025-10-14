@@ -17,6 +17,8 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  useMediaQuery,
+  Fab,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -71,6 +73,8 @@ type PendingRecapAction =
       availableRecaps: Array<{ teamId: string; recap: string }>;
     };
 
+const CALENDAR_VIEW_BREAKPOINT = 900;
+
 const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) => {
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { user, token } = useAuth();
@@ -94,7 +98,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   // Initialize filter states
   const [filterType, setFilterType] = useState<FilterType>('month');
   const [filterDate, setFilterDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const prefersListView = useMediaQuery(`(max-width:${CALENDAR_VIEW_BREAKPOINT}px)`);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => (prefersListView ? 'list' : 'calendar'));
+  const [viewModeManuallySelected, setViewModeManuallySelected] = useState(false);
+  const defaultViewMode = prefersListView ? 'list' : 'calendar';
+
+  // Default to list view on narrow screens, but respect any manual user selection.
+  useEffect(() => {
+    if (viewMode === defaultViewMode) {
+      if (viewModeManuallySelected) {
+        setViewModeManuallySelected(false);
+      }
+      return;
+    }
+
+    if (!viewModeManuallySelected) {
+      setViewMode(defaultViewMode);
+    }
+  }, [defaultViewMode, viewMode, viewModeManuallySelected]);
 
   // Use modular schedule hooks
   const {
@@ -519,6 +540,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     [recapSelectedGame, upsertGameInCache],
   );
 
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => {
+      setViewMode(mode);
+      setViewModeManuallySelected(mode !== defaultViewMode);
+    },
+    [defaultViewMode],
+  );
+
   const editDialogTitle = canEditSchedule ? 'Edit Game' : 'View Game';
 
   if (loadingStaticData) {
@@ -572,7 +601,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
         {/* View Mode Tabs */}
         <Paper sx={{ mb: 3 }}>
-          <ViewModeTabs viewMode={viewMode} onViewModeChange={setViewMode} />
+          <ViewModeTabs viewMode={viewMode} onViewModeChange={handleViewModeChange} />
         </Paper>
 
         {/* Filter Controls */}
@@ -659,17 +688,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 </Select>
               </FormControl>
             </Box>
-
-            {canEditSchedule && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddGameClick}
-                sx={{ ml: 'auto' }}
-              >
-                Add Game
-              </Button>
-            )}
           </Box>
         </Paper>
 
@@ -856,6 +874,22 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             {recapErrorMessage}
           </Alert>
         )}
+
+        {canEditSchedule ? (
+          <Fab
+            color="primary"
+            aria-label="Add game"
+            onClick={handleAddGameClick}
+            sx={{
+              position: 'fixed',
+              bottom: { xs: 24, sm: 32 },
+              right: { xs: 24, sm: 32 },
+              zIndex: (theme) => theme.zIndex.snackbar + 1,
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        ) : null}
       </main>
     </LocalizationProvider>
   );

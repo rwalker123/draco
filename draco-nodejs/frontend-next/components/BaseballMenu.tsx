@@ -14,8 +14,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Article as NewsIcon,
-  Score as ScoresIcon,
+  Forum as SocialIcon,
+  SportsBaseball as FieldIcon,
   Schedule as ScheduleIcon,
   TrendingUp as StatsIcon,
   EmojiEvents as StandingsIcon,
@@ -69,14 +69,14 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
 
   const menuItems = [
     {
-      label: 'News',
-      icon: <NewsIcon />,
-      path: `/account/${accountId}/news`,
+      label: 'Socials',
+      icon: <SocialIcon />,
+      path: `/social-hub-test`,
     },
     {
-      label: 'Scores',
-      icon: <ScoresIcon />,
-      path: `/account/${accountId}/scores`,
+      label: 'Fields',
+      icon: <FieldIcon />,
+      path: `/account/${accountId}/fields`,
     },
     {
       label: 'Schedule',
