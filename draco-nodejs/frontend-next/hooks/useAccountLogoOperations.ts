@@ -1,11 +1,8 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import {
-  deleteAccountLogo,
-  formDataBodySerializer,
-  uploadAccountLogo,
-} from '@draco/shared-api-client';
+import { deleteAccountLogo, uploadAccountLogo } from '@draco/shared-api-client';
+import { formDataBodySerializer } from '@draco/shared-api-client/generated/client';
 import { assertNoApiError } from '../utils/apiResult';
 import { useApiClient } from './useApiClient';
 
