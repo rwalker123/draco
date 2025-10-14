@@ -52,8 +52,9 @@ const BaseballAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const { isMember } = useAccountMembership(accountIdStr);
+  const { isMember, contact } = useAccountMembership(accountIdStr);
   const isAccountMember = isMember === true;
+  const hasAccountContact = Boolean(contact);
 
   // Fetch public account data
   useEffect(() => {
@@ -388,7 +389,7 @@ const BaseballAccountHome: React.FC = () => {
           </Box>
         )}
 
-        <AccountPollsCard accountId={accountIdStr} />
+        {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}
