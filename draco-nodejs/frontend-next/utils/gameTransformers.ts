@@ -193,7 +193,7 @@ export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
     homeScore: Number(game.homeScore ?? 0),
     visitorScore: Number(game.visitorScore ?? 0),
     comment: game.comment ?? '',
-    hasGameRecap: Boolean((game as { hasGameRecap?: boolean }).hasGameRecap),
+    hasGameRecap: game.hasGameRecap,
     fieldId: toOptionalString(game.field?.id),
     field: mapScheduleFieldDetails(game),
     gameStatus,

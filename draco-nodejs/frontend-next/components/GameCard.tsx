@@ -98,6 +98,17 @@ const GameCard: React.FC<GameCardProps> = ({
     day: 'numeric',
   });
   const fieldDisplayName = game.fieldShortName || game.fieldName;
+  const canEditRecapForCurrentGame = canEditRecap && onEditRecap ? canEditRecap(game) : false;
+  const recapButtonProps =
+    canEditRecap && onEditRecap && canEditRecapForCurrentGame
+      ? ({
+          recapMode: 'edit' as const,
+          canEditRecap,
+          onEditRecap,
+        } as const)
+      : onViewRecap
+        ? ({ recapMode: 'view' as const, onViewRecap } as const)
+        : ({ recapMode: 'none' as const } as const);
 
   const mergedFieldDetails = useMemo<FieldDetails | null>(() => {
     const baseDetails = game.fieldDetails ?? null;
@@ -152,9 +163,12 @@ const GameCard: React.FC<GameCardProps> = ({
 
   const handleRecapClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onEditRecap) {
+    if (canEditRecapForCurrentGame && onEditRecap) {
       onEditRecap(game);
-    } else if (onViewRecap) {
+      return;
+    }
+
+    if (onViewRecap) {
       onViewRecap(game);
     }
   };
@@ -292,15 +306,7 @@ const GameCard: React.FC<GameCardProps> = ({
                       </IconButton>
                     </Tooltip>
                   )}
-                  <RecapButton
-                    game={game}
-                    onRecapClick={handleRecapClick}
-                    {...(canEditRecap && onEditRecap
-                      ? { recapMode: 'edit' as const, canEditRecap, onEditRecap }
-                      : onViewRecap
-                        ? { recapMode: 'view' as const, onViewRecap }
-                        : { recapMode: 'none' as const })}
-                  />
+                  <RecapButton game={game} onRecapClick={handleRecapClick} {...recapButtonProps} />
                 </Box>
               )}
             </Box>
@@ -497,15 +503,7 @@ const GameCard: React.FC<GameCardProps> = ({
                     </Box>
                   )}
                 {showActions && (
-                  <RecapButton
-                    game={game}
-                    onRecapClick={handleRecapClick}
-                    {...(canEditRecap && onEditRecap
-                      ? { recapMode: 'edit' as const, canEditRecap, onEditRecap }
-                      : onViewRecap
-                        ? { recapMode: 'view' as const, onViewRecap }
-                        : { recapMode: 'none' as const })}
-                  />
+                  <RecapButton game={game} onRecapClick={handleRecapClick} {...recapButtonProps} />
                 )}
               </Box>
             </Box>
