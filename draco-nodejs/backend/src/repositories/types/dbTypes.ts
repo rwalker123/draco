@@ -1,4 +1,9 @@
-import { aspnetusers, playerswantedclassified, Prisma, teamswantedclassified } from '@prisma/client';
+import {
+  aspnetusers,
+  playerswantedclassified,
+  Prisma,
+  teamswantedclassified,
+} from '@prisma/client';
 
 export interface dbMonitoringConnectivityResult {
   connectivity_test: number;
@@ -185,6 +190,11 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
     state: true;
     zipcode: true;
     shortname: true;
+    comment: true;
+    directions: true;
+    rainoutnumber: true;
+    latitude: true;
+    longitude: true;
   };
 }>;
 

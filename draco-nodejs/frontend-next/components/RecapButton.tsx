@@ -1,8 +1,8 @@
 import React from 'react';
 import { IconButton, Tooltip } from '@mui/material';
-import { Edit as EditIcon } from '@mui/icons-material';
 import { GameCardData } from './GameCard';
 import { GameStatus } from '../types/schedule';
+import NewspaperRecapIcon from './icons/NewspaperRecapIcon';
 
 type RecapButtonProps = {
   game: GameCardData;
@@ -47,7 +47,7 @@ const RecapButton: React.FC<RecapButtonProps> = (props) => {
             ...sx,
           }}
         >
-          <EditIcon fontSize="small" />
+          <NewspaperRecapIcon size={18} color="currentColor" />
         </IconButton>
       </Tooltip>
     );
@@ -70,7 +70,7 @@ const RecapButton: React.FC<RecapButtonProps> = (props) => {
             ...sx,
           }}
         >
-          <EditIcon fontSize="small" />
+          <NewspaperRecapIcon size={18} color="currentColor" />
         </IconButton>
       </Tooltip>
     );

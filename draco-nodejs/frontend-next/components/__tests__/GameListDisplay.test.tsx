@@ -22,11 +22,11 @@ const mockGame: Game = {
   id: '1',
   date: '2024-01-15T18:00:00Z',
   homeTeamId: 'home1',
-  awayTeamId: 'away1',
+  visitorTeamId: 'visitor1',
   homeTeamName: 'Home Team',
-  awayTeamName: 'Away Team',
+  visitorTeamName: 'Visitor Team',
   homeScore: 5,
-  awayScore: 3,
+  visitorScore: 3,
   gameStatus: GameStatus.Completed,
   gameStatusText: 'Final',
   leagueName: 'Test League',
@@ -50,7 +50,7 @@ describe('GameListDisplay', () => {
 
     expect(screen.getByText('Test Section')).toBeInTheDocument();
     expect(screen.getByText('Home Team')).toBeInTheDocument();
-    expect(screen.getByText('Away Team')).toBeInTheDocument();
+    expect(screen.getByText('Visitor Team')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -60,7 +60,7 @@ describe('GameListDisplay', () => {
 
     expect(screen.getByText('Test Section')).toBeInTheDocument();
     expect(screen.getByText('Home Team')).toBeInTheDocument();
-    expect(screen.getByText('Away Team')).toBeInTheDocument();
+    expect(screen.getByText('Visitor Team')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -99,7 +99,7 @@ describe('GameListDisplay', () => {
 
     expect(screen.getByText('Scheduled Games')).toBeInTheDocument();
     expect(screen.getByText('Home Team')).toBeInTheDocument();
-    expect(screen.getByText('Away Team')).toBeInTheDocument();
+    expect(screen.getByText('Visitor Team')).toBeInTheDocument();
     expect(screen.getByText('TF')).toBeInTheDocument();
   });
 });

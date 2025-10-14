@@ -836,19 +836,66 @@
           },
           "address": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 255
           },
           "city": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 25
           },
           "state": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 25
           },
           "zip": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 10
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255
+          },
+          "directions": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255
+          },
+          "rainoutNumber": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 15
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25
+              },
+              {
+                "nullable": true
+              },
+              {
+                "nullable": true
+              }
+            ]
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25
+              },
+              {
+                "nullable": true
+              },
+              {
+                "nullable": true
+              }
+            ]
           }
         },
         "required": [
@@ -880,19 +927,66 @@
                 },
                 "address": {
                   "type": "string",
-                  "nullable": true
+                  "nullable": true,
+                  "maxLength": 255
                 },
                 "city": {
                   "type": "string",
-                  "nullable": true
+                  "nullable": true,
+                  "maxLength": 25
                 },
                 "state": {
                   "type": "string",
-                  "nullable": true
+                  "nullable": true,
+                  "maxLength": 25
                 },
                 "zip": {
                   "type": "string",
-                  "nullable": true
+                  "nullable": true,
+                  "maxLength": 10
+                },
+                "comment": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 255
+                },
+                "directions": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 255
+                },
+                "rainoutNumber": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 15
+                },
+                "latitude": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 25
+                    },
+                    {
+                      "nullable": true
+                    },
+                    {
+                      "nullable": true
+                    }
+                  ]
+                },
+                "longitude": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 25
+                    },
+                    {
+                      "nullable": true
+                    },
+                    {
+                      "nullable": true
+                    }
+                  ]
                 }
               },
               "required": [
@@ -950,19 +1044,66 @@
           },
           "address": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 255
           },
           "city": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 25
           },
           "state": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 25
           },
           "zip": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 10
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255
+          },
+          "directions": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255
+          },
+          "rainoutNumber": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 15
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25
+              },
+              {
+                "nullable": true
+              },
+              {
+                "nullable": true
+              }
+            ]
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25
+              },
+              {
+                "nullable": true
+              },
+              {
+                "nullable": true
+              }
+            ]
           }
         },
         "required": [
@@ -6893,19 +7034,66 @@
               },
               "address": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 255
               },
               "city": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 25
               },
               "state": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 25
               },
               "zip": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 10
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 255
+              },
+              "directions": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 255
+              },
+              "rainoutNumber": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 15
+              },
+              "latitude": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 25
+                  },
+                  {
+                    "nullable": true
+                  },
+                  {
+                    "nullable": true
+                  }
+                ]
+              },
+              "longitude": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 25
+                  },
+                  {
+                    "nullable": true
+                  },
+                  {
+                    "nullable": true
+                  }
+                ]
               }
             },
             "required": [
@@ -6961,19 +7149,66 @@
               },
               "address": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 255
               },
               "city": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 25
               },
               "state": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 25
               },
               "zip": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 10
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 255
+              },
+              "directions": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 255
+              },
+              "rainoutNumber": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 15
+              },
+              "latitude": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 25
+                  },
+                  {
+                    "nullable": true
+                  },
+                  {
+                    "nullable": true
+                  }
+                ]
+              },
+              "longitude": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 25
+                  },
+                  {
+                    "nullable": true
+                  },
+                  {
+                    "nullable": true
+                  }
+                ]
               }
             },
             "required": [
@@ -8673,19 +8908,66 @@
               },
               "address": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 255
               },
               "city": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 25
               },
               "state": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 25
               },
               "zip": {
                 "type": "string",
-                "nullable": true
+                "nullable": true,
+                "maxLength": 10
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 255
+              },
+              "directions": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 255
+              },
+              "rainoutNumber": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 15
+              },
+              "latitude": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 25
+                  },
+                  {
+                    "nullable": true
+                  },
+                  {
+                    "nullable": true
+                  }
+                ]
+              },
+              "longitude": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 25
+                  },
+                  {
+                    "nullable": true
+                  },
+                  {
+                    "nullable": true
+                  }
+                ]
               }
             },
             "required": [
@@ -8935,19 +9217,66 @@
                     },
                     "address": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 255
                     },
                     "city": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 25
                     },
                     "state": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 25
                     },
                     "zip": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 10
+                    },
+                    "comment": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 255
+                    },
+                    "directions": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 255
+                    },
+                    "rainoutNumber": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 15
+                    },
+                    "latitude": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 25
+                        },
+                        {
+                          "nullable": true
+                        },
+                        {
+                          "nullable": true
+                        }
+                      ]
+                    },
+                    "longitude": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 25
+                        },
+                        {
+                          "nullable": true
+                        },
+                        {
+                          "nullable": true
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -9166,19 +9495,66 @@
                     },
                     "address": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 255
                     },
                     "city": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 25
                     },
                     "state": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 25
                     },
                     "zip": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 10
+                    },
+                    "comment": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 255
+                    },
+                    "directions": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 255
+                    },
+                    "rainoutNumber": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 15
+                    },
+                    "latitude": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 25
+                        },
+                        {
+                          "nullable": true
+                        },
+                        {
+                          "nullable": true
+                        }
+                      ]
+                    },
+                    "longitude": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 25
+                        },
+                        {
+                          "nullable": true
+                        },
+                        {
+                          "nullable": true
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -9406,19 +9782,66 @@
                     },
                     "address": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 255
                     },
                     "city": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 25
                     },
                     "state": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 25
                     },
                     "zip": {
                       "type": "string",
-                      "nullable": true
+                      "nullable": true,
+                      "maxLength": 10
+                    },
+                    "comment": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 255
+                    },
+                    "directions": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 255
+                    },
+                    "rainoutNumber": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 15
+                    },
+                    "latitude": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 25
+                        },
+                        {
+                          "nullable": true
+                        },
+                        {
+                          "nullable": true
+                        }
+                      ]
+                    },
+                    "longitude": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 25
+                        },
+                        {
+                          "nullable": true
+                        },
+                        {
+                          "nullable": true
+                        }
+                      ]
                     }
                   },
                   "required": [

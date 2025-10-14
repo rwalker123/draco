@@ -280,15 +280,15 @@ export const useScheduleData = ({
           id: field.id,
           name: field.name,
           shortName: field.shortName,
-          comment: '',
+          comment: field.comment ?? '',
           address: field.address ?? '',
           city: field.city ?? '',
           state: field.state ?? '',
           zipCode: field.zip ?? '',
-          directions: '',
-          rainoutNumber: '',
-          latitude: '',
-          longitude: '',
+          directions: field.directions ?? '',
+          rainoutNumber: field.rainoutNumber ?? '',
+          latitude: field.latitude ? String(field.latitude) : '',
+          longitude: field.longitude ? String(field.longitude) : '',
         }));
         setFields(mappedFields);
       } catch (fieldsError) {

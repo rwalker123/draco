@@ -13,7 +13,7 @@ This document summarizes potential improvements to the generated Prisma schema.
 
 ## Security and auditing
 - Sensitive OAuth tokens and other secrets are stored in plain text on the `accounts` table. Moving them to an encrypted store or applying at-rest encryption (and avoiding exposure through Prisma queries) would harden the schema. 【F:draco-nodejs/backend/prisma/schema.prisma†L26-L33】
-- Many tables, including `accounts`, lack standard auditing fields such as `createdAt` and `updatedAt`, making it difficult to trace changes or drive data retention policies. Adding timestamp columns with Prisma's `@default(now())` and `@updatedAt` helpers would improve observability. 【F:draco-nodejs/backend/prisma/schema.prisma†L20-L66】
+- Many tables, including `accounts`, lack standard auditing fields such as `createdAt` and `updatedAt`, making it difficult to trace changes or drive data retention policies. For all edits, would be nice to have that + userId making the change. Adding timestamp columns with Prisma's `@default(now())` and `@updatedAt` helpers would improve observability. 【F:draco-nodejs/backend/prisma/schema.prisma†L20-L66】
 
 ## Query performance
 - Foreign-key columns (for example `accountsettings.accountid` and `availablefields.accountid`) do not have explicit indexes beyond their primary keys. Adding secondary indexes can speed up lookups and joins, especially when tables grow large. 【F:draco-nodejs/backend/prisma/schema.prisma†L69-L166】

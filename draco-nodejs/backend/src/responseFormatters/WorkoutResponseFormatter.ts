@@ -11,6 +11,7 @@ import {
   dbWorkoutRegistration,
 } from '../repositories/types/index.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { formatFieldFromAvailableField } from './fieldFormatterUtils.js';
 
 export class WorkoutResponseFormatter {
   static formatWorkouts(
@@ -76,15 +77,8 @@ export class WorkoutResponseFormatter {
       | dbWorkoutWithField['availablefields']
       | dbWorkoutWithRegistrationCount['availablefields'],
   ): FieldType | null {
-    if (!field) {
-      return null;
-    }
+    const formatted = formatFieldFromAvailableField(field);
 
-    return {
-      id: field.id.toString(),
-      name: field.name,
-      address: field.address,
-      shortName: '',
-    };
+    return formatted ?? null;
   }
 }

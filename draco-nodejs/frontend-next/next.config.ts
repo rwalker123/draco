@@ -1,7 +1,23 @@
+import os from 'os';
 import type { NextConfig } from 'next';
+
+const localIPv4s = Object.values(os.networkInterfaces())
+  .flatMap((networks) => networks ?? [])
+  .filter((iface) => iface && iface.family === 'IPv4' && !iface.internal)
+  .map((iface) => iface.address);
+
+const envAllowedOrigins = (process.env.DEV_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedDevOrigins = Array.from(
+  new Set(['localhost', '127.0.0.1', ...localIPv4s, ...envAllowedOrigins]),
+);
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
+  allowedDevOrigins,
   /* config options here */
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:3001';

@@ -4,6 +4,7 @@
 // Existing hooks
 export { useAccountMembership } from './useAccountMembership';
 export { useAccountManagementService } from './useAccountManagementService';
+export { useAccountLogoOperations } from './useAccountLogoOperations';
 export { useContactSearch } from './useContactSearch';
 export { useContactSelection } from './useContactSelection';
 export { useCurrentSeason } from './useCurrentSeason';
@@ -21,6 +22,7 @@ export { useSmoothTransition } from './useSmoothTransition';
 export { useSchedulePermissions } from './useSchedulePermissions';
 export { useGameResults } from './useGameResults';
 export { useTeamManagement } from './useTeamManagement';
+export { useFieldService } from './useFieldService';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';
