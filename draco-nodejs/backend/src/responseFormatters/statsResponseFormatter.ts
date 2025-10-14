@@ -18,6 +18,7 @@ import {
 } from '../repositories/types/dbTypes.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameStatus.js';
+import { formatFieldFromAvailableField } from './fieldFormatterUtils.js';
 
 export class StatsResponseFormatter {
   static formatLeaderCategories(categories: dbLeaderCategoryConfig[]): LeaderCategoriesType {
@@ -142,6 +143,16 @@ export class StatsResponseFormatter {
   }
 
   static formatGameInfoResponse(game: dbGameInfo): GameTypeShared {
+    const field = game.fieldid
+      ? formatFieldFromAvailableField(
+          game.availablefields ?? {
+            id: game.fieldid,
+            name: '',
+            shortname: '',
+          },
+        )
+      : undefined;
+
     return {
       id: game.id.toString(),
       gameDate: DateUtils.formatDateTimeForResponse(game.gamedate) || '',
@@ -160,13 +171,7 @@ export class StatsResponseFormatter {
       homeScore: game.hscore,
       visitorScore: game.vscore,
       gameStatus: game.gamestatus,
-      field: game.fieldid
-        ? {
-            id: game.fieldid.toString(),
-            name: game.availablefields?.name || '',
-            shortName: game.availablefields?.shortname || '',
-          }
-        : undefined,
+      field,
       hasGameRecap: Boolean(game._count?.gamerecap),
       gameType: game.gametype,
     };
@@ -179,6 +184,16 @@ export class StatsResponseFormatter {
   */
 
   static formatGameResponse(game: dbGameInfo): GameTypeShared {
+    const field = game.fieldid
+      ? formatFieldFromAvailableField(
+          game.availablefields ?? {
+            id: game.fieldid,
+            name: '',
+            shortname: '',
+          },
+        )
+      : undefined;
+
     return {
       id: game.id.toString(),
       gameDate: DateUtils.formatDateTimeForResponse(game.gamedate) || '',
@@ -199,13 +214,7 @@ export class StatsResponseFormatter {
       gameStatus: game.gamestatus || 0,
       gameStatusText: getGameStatusText(game.gamestatus) as GameStatusEnumType,
       gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
-      field: game.fieldid
-        ? {
-            id: game.fieldid.toString(),
-            name: game.availablefields?.name || '',
-            shortName: game.availablefields?.shortname || '',
-          }
-        : undefined,
+      field,
       hasGameRecap: Boolean(game._count?.gamerecap),
       gameType: game.gametype,
     };
