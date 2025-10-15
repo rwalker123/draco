@@ -44,6 +44,16 @@ Expo will display a QR code in the terminal you can scan with the Expo Go app, o
 
 These scaffolds align with the implementation plan so additional scoring features can plug into the existing navigation hierarchy.
 
+## Cross-Platform UI Toolkit Evaluation
+
+While the Milestone 1.1 scope ships with React Native primitives, future scoring flows should reuse a component library that targets both native and web surfaces. Candidates we are exploring include:
+
+- **React Native Paper** – Material-inspired widgets with solid React Native Web support.
+- **React Native Elements** – A broad catalog of themed components and platform awareness.
+- **Gluestack UI** – Utility-first styling with primitives shared between native and web.
+
+Adopting one of these libraries will help us maintain a consistent design system as we expand the Expo workspace and the existing Next.js frontend.
+
 ## Branding Assets
 
 Binary image assets are intentionally omitted from the repository because our PR tooling cannot transmit them. Expo will fall back to the default icon, splash, and favicon while developing locally. When bespoke artwork is ready, drop the files into `draco-mobile/assets/` in your working copy and reference them in `app.config.ts`; just be sure to exclude the binaries from commits (for example by keeping them in `.git/info/exclude`) so CI and the PR assistant remain happy.
