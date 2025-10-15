@@ -15,8 +15,8 @@ import {
   CreateContactRoleSchema,
   CreateContactRoleType,
   RoleWithContactType,
-  ContactValidationWithSignInSchema,
   ContactSearchParamsSchema,
+  ContactValidationSchema,
 } from '@draco/shared-schemas';
 import {
   handlePhotoUploadMiddleware,
@@ -76,13 +76,20 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
-    const existingContact = await contactService.getContactByUserId(req.user!.id, accountId);
-    if (existingContact) {
-      throw new ConflictError('Already registered with this account');
+    try {
+      const existingContact = await contactService.getContactByUserId(req.user!.id, accountId);
+      if (existingContact) {
+        throw new ConflictError('Already registered with this account');
+      }
+    } catch (error) {
+      if (!(error instanceof NotFoundError)) {
+        throw error;
+      }
     }
 
-    const contactValidation = ContactValidationWithSignInSchema.parse(req.body);
-    const registeredUser = await registrationService.registerAndCreateContactNewUser(
+    const contactValidation = ContactValidationSchema.parse(req.body);
+    const registeredUser = await registrationService.selfRegisterContact(
+      req.user!.id,
       accountId,
       contactValidation,
     );

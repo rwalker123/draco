@@ -7685,6 +7685,76 @@ components:
           type: string
       required:
         - hasRole
+    ContactValidation:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        contactDetails:
+          type: object
+          properties:
+            phone1:
+              type: string
+              nullable: true
+              default: ""
+            phone2:
+              type: string
+              nullable: true
+              default: ""
+            phone3:
+              type: string
+              nullable: true
+              default: ""
+            streetAddress:
+              type: string
+              nullable: true
+              maxLength: 100
+              default: ""
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            zip:
+              type: string
+              nullable: true
+              maxLength: 10
+              default: ""
+            dateOfBirth:
+              type: string
+              nullable: true
+              default: ""
+        photo:
+          type: string
+          format: binary
+          description: Contact photo file
+        validationType:
+          type: string
+          enum:
+            - streetAddress
+            - dateOfBirth
+      required:
+        - firstName
+        - lastName
+        - validationType
   securitySchemes:
     bearerAuth:
       type: http
@@ -9465,7 +9535,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContactValidationWithSignIn"
+              $ref: "#/components/schemas/ContactValidation"
       responses:
         "200":
           description: Contact created
