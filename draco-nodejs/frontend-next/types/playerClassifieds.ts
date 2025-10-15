@@ -126,7 +126,8 @@ export interface ICreateTeamsWantedDialogProps {
   open: boolean;
   onClose: () => void;
   editMode?: boolean;
-  initialData?: UpsertTeamsWantedClassifiedType | null;
+  initialData?: (UpsertTeamsWantedClassifiedType & { id?: string }) | null;
+  classifiedId?: string;
   accessCode?: string;
   onSuccess?: (event: {
     action: 'create' | 'update';

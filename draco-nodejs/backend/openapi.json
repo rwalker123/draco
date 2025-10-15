@@ -5485,10 +5485,6 @@
       "UpsertTeamsWantedClassified": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^d+$"
-          },
           "accessCode": {
             "type": "string",
             "minLength": 10,
