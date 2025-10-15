@@ -28,7 +28,6 @@ import type {
   TeamsWantedPublicClassifiedPagedType,
 } from '@draco/shared-schemas';
 import { createApiClient } from '../lib/apiClientFactory';
-import { IEmailVerificationRequest, IEmailVerificationResult } from '../types/playerClassifieds';
 import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 
 const FAILURE_MESSAGES = {
