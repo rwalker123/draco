@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext"],
+    "allowJs": false,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "types": ["vitest/globals", "react", "react-native"],
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/": ["./src/*"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["App.tsx", "src", "vitest.setup.ts"],
+  "exclude": ["node_modules", "dist", "build"]
+}

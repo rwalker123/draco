@@ -116,10 +116,26 @@ draco-nodejs/
    npm run dev
    ```
 
-4. **Access the application**
-   - Frontend: http://localhost:3000
+4. **Set up the mobile scorekeeping app**
+   ```bash
+   cd ../draco-mobile
+   npm install
+
+   # Provide the backend API base URL used for authentication
+   cp .env.example .env
+   ```
+
+   Start the Expo development server from the repository root:
+
+   ```bash
+   npm run mobile:start
+   ```
+
+5. **Access the application**
+   - Frontend (web): http://localhost:3000
    - Backend API: http://localhost:5000
    - API Documentation: http://localhost:5000/docs
+   - Mobile app: run on iOS Simulator, Android emulator, or Expo Go via the QR code shown in the terminal
 
 ### Environment Variables
 
@@ -193,6 +209,14 @@ npm start            # Start development server
 npm run build        # Build for production
 npm test             # Run tests
 npm run eject        # Eject from Create React App
+```
+
+**Mobile (React Native / Expo):**
+```bash
+npm run mobile:start       # Launch Expo development server
+npm run mobile:lint        # Lint the mobile workspace
+npm run mobile:type-check  # Type-check the mobile workspace
+npm run mobile:test        # Run mobile unit tests
 ```
 
 ### Database Management
