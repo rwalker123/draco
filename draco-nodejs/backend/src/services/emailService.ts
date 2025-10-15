@@ -200,7 +200,11 @@ export class EmailService {
     resetToken: string,
   ): Promise<boolean> {
     try {
-      const resetUrl = `${this.baseUrl}/reset-password?token=${resetToken}`;
+      const frontendBaseUrl = process.env.FRONTEND_URL || this.baseUrl;
+      const normalizedBaseUrl = frontendBaseUrl.endsWith('/')
+        ? frontendBaseUrl.replace(/\/+$/, '')
+        : frontendBaseUrl;
+      const resetUrl = `${normalizedBaseUrl}/reset-password?token=${resetToken}`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {

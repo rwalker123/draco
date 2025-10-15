@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   TextField,
@@ -22,13 +22,19 @@ interface PasswordResetProps {
   onResetSuccess?: () => void;
   accountId?: string;
   next?: string;
+  initialToken?: string;
 }
 
-const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId, next }) => {
+const PasswordReset: React.FC<PasswordResetProps> = ({
+  onResetSuccess,
+  accountId,
+  next,
+  initialToken,
+}) => {
   const router = useRouter();
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(initialToken ? 1 : 0);
   const [email, setEmail] = useState('');
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(initialToken?.trim() ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState('');
@@ -36,6 +42,39 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId
     usePasswordResetService();
 
   const steps = ['Request Reset', 'Verify Token', 'Set New Password'];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const autoVerifyTokenFromQuery = async () => {
+      const trimmedToken = initialToken?.trim();
+      if (!trimmedToken) {
+        return;
+      }
+
+      clearError();
+      setSuccess('');
+      setToken(trimmedToken);
+      setActiveStep(1);
+
+      const result = await verifyToken(trimmedToken);
+      if (!isMounted) {
+        return;
+      }
+
+      if (result.valid) {
+        setToken(result.token ?? trimmedToken);
+        setSuccess(result.message);
+        setActiveStep(2);
+      }
+    };
+
+    autoVerifyTokenFromQuery();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialToken, verifyToken, clearError]);
 
   const handleRequestReset = async () => {
     clearError();
