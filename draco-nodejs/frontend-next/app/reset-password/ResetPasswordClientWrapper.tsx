@@ -12,6 +12,7 @@ export default function ResetPasswordClientWrapper() {
   const searchParams = useSearchParams();
   const accountId = searchParams.get('accountId') || undefined;
   const next = searchParams.get('next') || undefined;
+  const token = searchParams.get('token') || undefined;
   const { setCurrentAccount } = useAccount();
   const apiClient = useApiClient();
 
@@ -56,5 +57,5 @@ export default function ResetPasswordClientWrapper() {
     };
   }, [accountId, apiClient, setCurrentAccount]);
 
-  return <PasswordReset accountId={accountId} next={next} />;
+  return <PasswordReset accountId={accountId} next={next} initialToken={token} />;
 }

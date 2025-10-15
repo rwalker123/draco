@@ -29,6 +29,7 @@ import {
   BaseContactSchema,
   NamedContactSchema,
   ContactValidationWithSignInSchema,
+  ContactValidationSchema,
   SignInCredentialsSchema,
   RegisteredUserWithRolesSchema,
   RegisteredUserSchema,
@@ -469,6 +470,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'RoleCheckResponse',
     RoleCheckResponseSchema,
   );
+  const ContactValidationSchemaRef = registry.register(
+    'ContactValidation',
+    ContactValidationSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
@@ -511,6 +516,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RegisteredUserWithRolesSchemaRef,
     SignInCredentialsSchemaRef,
     ContactValidationWithSignInSchemaRef,
+    ContactValidationSchemaRef,
     PagedContactSchemaRef,
     AccountSchemaRef,
     AccountSearchQuerySchemaRef,

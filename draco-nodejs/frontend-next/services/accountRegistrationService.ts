@@ -1,10 +1,13 @@
 import {
   getCurrentUserContact,
   registerContact,
-  type ContactValidationWithSignIn,
-  type RegisteredUser,
+  selfRegisterContact,
 } from '@draco/shared-api-client';
-import { ContactType } from '@draco/shared-schemas';
+import {
+  ContactType,
+  ContactValidationWithSignInType,
+  RegisteredUserType,
+} from '@draco/shared-schemas';
 import { createApiClient } from '../lib/apiClientFactory';
 import { ApiClientError, getApiErrorMessage, unwrapApiResult } from '../utils/apiResult';
 import { ContactTransformationService } from './contactTransformationService';
@@ -50,29 +53,41 @@ const REGISTRATION_ERROR_MESSAGE =
   'Registration failed. Please check your information and try again.';
 const DEFAULT_VALIDATION_TYPE: 'streetAddress' | 'dateOfBirth' = 'streetAddress';
 
-type ContactDetailsPayload = Partial<NonNullable<ContactValidationWithSignIn['contactDetails']>>;
+type ContactDetailsPayload = NonNullable<ContactValidationWithSignInType['contactDetails']>;
 
 const buildContactDetails = (
   validationType: 'streetAddress' | 'dateOfBirth' | undefined,
   streetAddress?: string,
   dateOfBirth?: string,
 ): ContactDetailsPayload | undefined => {
-  const details: ContactDetailsPayload = {};
+  const details: ContactDetailsPayload = {
+    phone1: null,
+    phone2: null,
+    phone3: null,
+    streetAddress: null,
+    city: null,
+    state: null,
+    zip: null,
+    dateOfBirth: null,
+  };
+  let hasValue = false;
 
   if (validationType === 'streetAddress' && streetAddress) {
     details.streetAddress = streetAddress;
+    hasValue = true;
   }
 
   if (validationType === 'dateOfBirth' && dateOfBirth) {
     details.dateOfBirth = dateOfBirth;
+    hasValue = true;
   }
 
-  return Object.keys(details).length > 0 ? details : undefined;
+  return hasValue ? details : undefined;
 };
 
 const buildRegistrationPayload = (
   payload: CombinedRegistrationPayload,
-): ContactValidationWithSignIn => {
+): ContactValidationWithSignInType => {
   const validationType = payload.validationType ?? DEFAULT_VALIDATION_TYPE;
   const contactDetails = buildContactDetails(
     validationType,
@@ -93,7 +108,7 @@ const buildRegistrationPayload = (
 };
 
 const assertRegisteredContact = (
-  registered: RegisteredUser | undefined,
+  registered: RegisteredUserType | undefined,
 ): Record<string, unknown> => {
   if (!registered?.contact) {
     throw new Error(REGISTRATION_ERROR_MESSAGE);
@@ -152,8 +167,8 @@ export const AccountRegistrationService = {
     );
 
     try {
-      const result = await client.post<{ 200: RegisteredUser }, unknown, false>({
-        url: '/api/accounts/{accountId}/contacts/me',
+      const result = await selfRegisterContact({
+        client,
         path: { accountId },
         headers: { 'Content-Type': 'application/json' },
         body: {
@@ -162,11 +177,12 @@ export const AccountRegistrationService = {
           lastName: input.lastName,
           validationType,
           contactDetails,
+          photo: undefined,
         },
         throwOnError: false,
       });
 
-      const registered = unwrapApiResult(result, REGISTRATION_ERROR_MESSAGE) as RegisteredUser;
+      const registered = unwrapApiResult(result, REGISTRATION_ERROR_MESSAGE) as RegisteredUserType;
       const backendContact = assertRegisteredContact(registered);
       return ContactTransformationService.transformBackendContact(backendContact);
     } catch (error) {
@@ -182,8 +198,9 @@ export const AccountRegistrationService = {
     accountId: string,
     payload: CombinedRegistrationPayload,
     captchaToken?: string,
+    authToken?: string,
   ): Promise<{ token?: string; user?: unknown; contact: ContactType }> {
-    const client = createApiClient();
+    const client = createApiClient({ token: authToken });
 
     const registrationPayload = buildRegistrationPayload(payload);
     const result = await registerContact({
@@ -194,11 +211,11 @@ export const AccountRegistrationService = {
         'Content-Type': 'application/json',
         ...(captchaToken ? { 'cf-turnstile-token': captchaToken } : {}),
       },
-      body: registrationPayload,
+      body: { ...registrationPayload, photo: undefined },
       throwOnError: false,
     });
 
-    const registered = unwrapApiResult(result, REGISTRATION_ERROR_MESSAGE) as RegisteredUser;
+    const registered = unwrapApiResult(result, REGISTRATION_ERROR_MESSAGE) as RegisteredUserType;
     const backendContact = assertRegisteredContact(registered);
 
     return {

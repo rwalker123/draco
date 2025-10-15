@@ -13,10 +13,8 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import AccountPageHeader from '../../components/AccountPageHeader';
-import { registerUser } from '@draco/shared-api-client';
-import { createApiClient } from '../../lib/apiClientFactory';
-import { unwrapApiResult } from '../../utils/apiResult';
 import TurnstileChallenge from '../../components/security/TurnstileChallenge';
+import { useSignupService } from '../../hooks/useSignupService';
 
 const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [formData, setFormData] = useState({
@@ -32,6 +30,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const router = useRouter();
+  const { register } = useSignupService();
 
   useEffect(() => {
     if (requireCaptcha) {
@@ -96,34 +95,27 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
     setError(null);
 
     try {
-      const client = createApiClient();
-      const result = await registerUser({
-        client,
-        throwOnError: false,
-        headers: {
-          ...(requireCaptcha && captchaToken ? { 'cf-turnstile-token': captchaToken } : {}),
-        },
-        body: {
-          userName: formData.email.trim(),
-          password: formData.password,
-        },
+      const result = await register({
+        email: formData.email.trim(),
+        password: formData.password,
+        captchaToken: requireCaptcha ? captchaToken : null,
       });
 
-      unwrapApiResult(result, 'Failed to sign up');
-
-      setSuccess(true);
-      if (requireCaptcha) {
-        setCaptchaToken(null);
-        setCaptchaResetKey((key) => key + 1);
-      }
-      setTimeout(() => {
-        router.push(next || '/login');
-      }, 2000);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to sign up. Please try again.');
-      if (requireCaptcha) {
-        setCaptchaToken(null);
-        setCaptchaResetKey((key) => key + 1);
+      if (result.success) {
+        setSuccess(true);
+        if (requireCaptcha) {
+          setCaptchaToken(null);
+          setCaptchaResetKey((key) => key + 1);
+        }
+        setTimeout(() => {
+          router.push(next || '/login');
+        }, 2000);
+      } else {
+        setError(result.error);
+        if (requireCaptcha) {
+          setCaptchaToken(null);
+          setCaptchaResetKey((key) => key + 1);
+        }
       }
     } finally {
       setLoading(false);

@@ -12,10 +12,14 @@ import {
 } from '@draco/shared-schemas';
 import { ServiceFactory } from './serviceFactory.js';
 import { Mutex } from 'async-mutex';
+import type { EmailService } from './emailService.js';
+import type { AccountsService } from './accountsService.js';
 
 export class RegistrationService {
   private readonly authService = ServiceFactory.getAuthService();
   private readonly contactService = ServiceFactory.getContactService();
+  private readonly emailService: EmailService = ServiceFactory.getEmailService();
+  private readonly accountsService: AccountsService = ServiceFactory.getAccountsService();
   private userCreateMutex = new Mutex();
 
   /**
@@ -58,6 +62,14 @@ export class RegistrationService {
       const linkedContact = await this.contactService.registerContactUser(
         registerResult.userId,
         BigInt(validatedContact.id),
+        registerResult.userName || data.userName,
+      );
+
+      await this.sendAccountWelcomeEmail(
+        accountId,
+        linkedContact,
+        data.userName,
+        registerResult.userName,
       );
 
       return {
@@ -85,10 +97,11 @@ export class RegistrationService {
 
     return await this.userCreateMutex.runExclusive(async () => {
       // Step 2: Check if user is already registered in this account
-      const existingContact = await this.contactService.getContactByUserId(
-        authenticatedUser.userId,
-        accountId,
-      );
+      const existingContact = await this.contactService
+        .getContactByUserId(authenticatedUser.userId, accountId)
+        .catch(() => {
+          return null;
+        });
 
       if (existingContact) {
         // User is already registered with this account
@@ -130,20 +143,70 @@ export class RegistrationService {
       let linkedContact = null;
 
       // Step 4: Check userid status and handle appropriately
-      if (contact.userId === null) {
+      if (contact.userId) {
+        // Contact is linked to a different user
+        throw new ConflictError('This contact is already registered to another user.');
+      } else {
         // Contact is unlinked, link it to the authenticated user
         linkedContact = await this.contactService.registerContactUser(
           authenticatedUser.userId,
           BigInt(contact.id),
+          authenticatedUser.userName || data.userName,
         );
-      } else {
-        // Contact is linked to a different user
-        throw new ConflictError('This contact is already registered to another user.');
       }
+
+      const contactForWelcome = linkedContact ?? contact;
+      await this.sendAccountWelcomeEmail(
+        accountId,
+        contactForWelcome,
+        data.userName,
+        authenticatedUser.userName,
+      );
+
       return {
         userId: authenticatedUser.userId,
         userName: authenticatedUser.userName,
         token: authenticatedUser.token,
+        contact: linkedContact,
+      };
+    });
+  }
+
+  /**
+   * Link an authenticated user to an existing contact using validation data
+   * @param userId - Authenticated user's ID
+   * @param accountId - Account to register within
+   * @param data - Validation payload (no credentials)
+   */
+  async selfRegisterContact(
+    userId: string,
+    accountId: bigint,
+    data: ContactValidationType,
+  ): Promise<RegisteredUserType> {
+    return await this.userCreateMutex.runExclusive(async () => {
+      const user = await this.authService.getUserById(userId);
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      const validatedContact = await this.findAndValidateContact(accountId, data);
+      const normalizedUserName = user.userName?.trim() ?? '';
+      const linkedContact = await this.contactService.registerContactUser(
+        userId,
+        BigInt(validatedContact.id),
+        normalizedUserName || undefined,
+      );
+
+      await this.sendAccountWelcomeEmail(
+        accountId,
+        linkedContact,
+        normalizedUserName || undefined,
+        normalizedUserName || undefined,
+      );
+
+      return {
+        userId: user.userId,
+        userName: user.userName,
         contact: linkedContact,
       };
     });
@@ -177,5 +240,36 @@ export class RegistrationService {
     }
 
     return contact;
+  }
+
+  private async sendAccountWelcomeEmail(
+    accountId: bigint,
+    contact: BaseContactType,
+    fallbackEmail?: string,
+    userName?: string,
+  ): Promise<void> {
+    const candidateEmails = [contact.email, fallbackEmail].filter((value): value is string =>
+      Boolean(value?.trim()),
+    );
+    const toEmail = candidateEmails[0];
+
+    if (!toEmail) {
+      return;
+    }
+
+    try {
+      const account = await this.accountsService.getAccountName(accountId);
+      const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ').trim();
+
+      await this.emailService.sendAccountWelcomeEmail({
+        toEmail,
+        accountId: account.id,
+        accountName: account.name,
+        contactName: contactName || undefined,
+        userName,
+      });
+    } catch (error) {
+      console.error('Failed to send account welcome email:', error);
+    }
   }
 }

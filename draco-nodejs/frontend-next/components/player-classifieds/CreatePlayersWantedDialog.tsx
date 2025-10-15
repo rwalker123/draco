@@ -97,7 +97,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   editMode = false,
   initialData,
   onSuccess,
-  onError,
+  onError: _onError,
 }) => {
   const { user, token } = useAuth();
   const isAuthenticated = !!user && !!token;
@@ -219,7 +219,6 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     if (!isAuthenticated || !token) {
       const message = 'You must be signed in to perform this action.';
       setSubmitError(message);
-      onError?.(message);
       return;
     }
 
@@ -227,7 +226,6 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     if (editMode && !payload.id) {
       const message = 'Missing classified identifier for update.';
       setSubmitError(message);
-      onError?.(message);
       return;
     }
 
@@ -251,7 +249,6 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
 
     const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Players Wanted ad`;
     setSubmitError(message);
-    onError?.(message);
   };
 
   const handleClose = () => {

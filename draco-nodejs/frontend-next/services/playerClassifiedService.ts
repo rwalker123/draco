@@ -28,7 +28,6 @@ import type {
   TeamsWantedPublicClassifiedPagedType,
 } from '@draco/shared-schemas';
 import { createApiClient } from '../lib/apiClientFactory';
-import { IEmailVerificationRequest, IEmailVerificationResult } from '../types/playerClassifieds';
 import { assertNoApiError, unwrapApiResult } from '../utils/apiResult';
 
 const FAILURE_MESSAGES = {
@@ -273,18 +272,6 @@ export const playerClassifiedService = {
     });
 
     return unwrapApiResult(result, FAILURE_MESSAGES.verifyAccess);
-  },
-
-  async verifyEmail(request: IEmailVerificationRequest): Promise<IEmailVerificationResult> {
-    const client = createClient();
-    const result = await client.post<unknown, unknown, false>({
-      url: '/api/accounts/verify-email',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-      throwOnError: false,
-    });
-
-    return unwrapApiResult(result, 'Failed to verify email') as IEmailVerificationResult;
   },
 
   async contactPlayersWantedCreator(
