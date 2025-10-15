@@ -3,15 +3,14 @@
 import React from 'react';
 import {
   Box,
-  Typography,
   Button,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
   Alert,
+  Fab,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
@@ -21,11 +20,12 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { StreamPaginationControl } from '../../../../components/pagination';
 import TeamsWantedStateManager from '../../../../components/player-classifieds/TeamsWantedStateManager';
-import CreateTeamsWantedDialog from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
-import type { TeamsWantedDialogSuccessEvent } from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
+import CreateTeamsWantedDialog, {
+  type TeamsWantedDialogSuccessEvent,
+  type TeamsWantedFormInitialData,
+} from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
 import { playerClassifiedService } from '../../../../services/playerClassifiedService';
 import {
-  UpsertTeamsWantedClassifiedType,
   TeamsWantedOwnerClassifiedType,
   TeamsWantedPublicClassifiedType,
 } from '@draco/shared-schemas';
@@ -73,7 +73,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
 
   // State for edit operation
   const [editingClassified, setEditingClassified] =
-    React.useState<UpsertTeamsWantedClassifiedType | null>(null);
+    React.useState<TeamsWantedFormInitialData | null>(null);
+  const [editingClassifiedId, setEditingClassifiedId] = React.useState<string | null>(null);
 
   // State for contact fetching during edit
   const [editContactError, setEditContactError] = React.useState<string | null>(null);
@@ -87,7 +88,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   // Use the main hook for data management with pagination
   const {
     teamsWanted,
-    loading,
     paginationLoading,
     error: hookError,
     paginationInfo,
@@ -162,6 +162,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         };
 
         setEditingClassified(classifiedWithContact);
+        setEditingClassifiedId(classified.id.toString());
         setEditDialogOpen(true);
       } catch (error) {
         const errorMessage =
@@ -176,6 +177,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const closeEditDialog = React.useCallback(() => {
     setEditDialogOpen(false);
     setEditingClassified(null);
+    setEditingClassifiedId(null);
     setEditContactError(null);
   }, []);
 
@@ -251,48 +253,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     closeDeleteDialog();
   };
 
-  // Loading state - only show spinner for initial load, not for pagination
-  if (loading && teamsWanted.length === 0) {
-    return (
-      <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h5" component="h2">
-            Teams Wanted
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-            disabled={!isAccountMember}
-          >
-            Create Ad
-          </Button>
-        </Box>
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
-        </Box>
-      </Box>
-    );
-  }
-
   return (
     <Box>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5" component="h2">
-          Teams Wanted
-        </Typography>
-        <Box display="flex" gap={2}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            Post Teams Wanted
-          </Button>
-        </Box>
-      </Box>
-
       {/* Notifications */}
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
@@ -325,6 +287,20 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         autoVerificationData={autoVerificationData}
         onVerificationProcessed={onVerificationProcessed}
       />
+
+      <Fab
+        color="primary"
+        aria-label="Create Teams Wanted classified"
+        onClick={() => setCreateDialogOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 24, sm: 32 },
+          right: { xs: 24, sm: 32 },
+          zIndex: (theme) => theme.zIndex.snackbar + 1,
+        }}
+      >
+        <AddIcon />
+      </Fab>
 
       {/* Pagination Controls - Only show for authenticated account members */}
       {isAuthenticated && isAccountMember && teamsWanted.length > 0 && (
@@ -379,6 +355,7 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
           open={editDialogOpen}
           onClose={closeEditDialog}
           initialData={editingClassified}
+          classifiedId={editingClassifiedId ?? undefined}
           editMode={true}
           onSuccess={handleEditDialogSuccess}
           onError={handleDialogError}

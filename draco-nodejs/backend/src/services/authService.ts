@@ -5,6 +5,7 @@ import { IUserRepository, RepositoryFactory } from '../repositories/index.js';
 import { BaseContactType, RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 import { ServiceFactory } from './serviceFactory.js';
 import { ContactService } from './contactService.js';
+import type { EmailService } from './emailService.js';
 
 export interface JWTPayload {
   userId: string;
@@ -25,10 +26,12 @@ export class AuthService {
 
   private readonly userRepository: IUserRepository;
   private readonly contactService: ContactService;
+  private readonly emailService: EmailService;
 
   constructor() {
     this.userRepository = RepositoryFactory.getUserRepository();
     this.contactService = ServiceFactory.getContactService();
+    this.emailService = ServiceFactory.getEmailService();
   }
   /**
    * Get user by ID
@@ -159,6 +162,9 @@ export class AuthService {
 
     // Generate JWT token
     const token = this.generateToken(newUser.id, newUser.username || '');
+
+    const welcomeEmailRecipient = newUser.username || userName;
+    void this.emailService.sendGeneralWelcomeEmail(welcomeEmailRecipient);
 
     return {
       token,

@@ -22,6 +22,7 @@ import {
   listAvailableRosterPlayers as apiListAvailableRosterPlayers,
   getAccountSeason,
   getTeamSeasonLeague as apiGetTeamSeasonLeague,
+  listTeamManagers as apiListTeamManagers,
 } from '@draco/shared-api-client';
 import {
   TeamManagerType,
@@ -278,8 +279,8 @@ export const useRosterDataManager = (
     if (!accountId || !seasonId || !teamSeasonId || !token) return;
 
     try {
-      const result = await apiClient.get<{ 200: TeamManagerType[] }, unknown, false>({
-        url: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers',
+      const result = await apiListTeamManagers({
+        client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
         throwOnError: false,
       });

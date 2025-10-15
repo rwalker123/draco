@@ -5485,10 +5485,6 @@
       "UpsertTeamsWantedClassified": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^d+$"
-          },
           "accessCode": {
             "type": "string",
             "minLength": 10,
@@ -10523,6 +10519,96 @@
         "required": [
           "hasRole"
         ]
+      },
+      "ContactValidation": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "middleName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "email"
+          },
+          "contactDetails": {
+            "type": "object",
+            "properties": {
+              "phone1": {
+                "type": "string",
+                "nullable": true,
+                "default": ""
+              },
+              "phone2": {
+                "type": "string",
+                "nullable": true,
+                "default": ""
+              },
+              "phone3": {
+                "type": "string",
+                "nullable": true,
+                "default": ""
+              },
+              "streetAddress": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 100,
+                "default": ""
+              },
+              "city": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 50,
+                "default": ""
+              },
+              "state": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 50,
+                "default": ""
+              },
+              "zip": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 10,
+                "default": ""
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "nullable": true,
+                "default": ""
+              }
+            }
+          },
+          "photo": {
+            "type": "string",
+            "format": "binary",
+            "description": "Contact photo file"
+          },
+          "validationType": {
+            "type": "string",
+            "enum": [
+              "streetAddress",
+              "dateOfBirth"
+            ]
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "validationType"
+        ]
       }
     },
     "securitySchemes": {
@@ -13388,7 +13474,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContactValidationWithSignIn"
+                "$ref": "#/components/schemas/ContactValidation"
               }
             }
           }
@@ -18982,6 +19068,211 @@
         }
       }
     },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers": {
+      "get": {
+        "description": "List managers for the given team and season",
+        "operationId": "listTeamManagers",
+        "tags": [
+          "Managers"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team managers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamManager"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - Account admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Add a manager to the team for the given season",
+        "operationId": "addManager",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Managers"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTeamManager"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Manager added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamManager"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - Account admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Manager not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/seasons/{seasonId}/managers": {
       "get": {
         "description": "List managers for the given season",
@@ -19080,120 +19371,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers": {
-      "post": {
-        "description": "Add a manager to the team for the given season",
-        "operationId": "addManager",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "tags": [
-          "Managers"
-        ],
-        "parameters": [
-          {
-            "name": "accountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "seasonId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          },
-          {
-            "name": "teamSeasonId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTeamManager"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Manager added",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TeamManager"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticationError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Access denied - Account admin required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Manager not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

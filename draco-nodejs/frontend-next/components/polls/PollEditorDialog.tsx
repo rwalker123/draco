@@ -15,11 +15,7 @@ import {
   TextField,
 } from '@mui/material';
 import { AccountPollType } from '@draco/shared-schemas';
-import {
-  CreatePollPayload,
-  UpdatePollPayload,
-  usePollsService,
-} from '@/hooks/usePollsService';
+import { CreatePollPayload, UpdatePollPayload, usePollsService } from '@/hooks/usePollsService';
 
 interface PollOptionForm {
   id?: string;

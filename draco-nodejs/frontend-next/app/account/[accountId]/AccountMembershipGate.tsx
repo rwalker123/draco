@@ -105,6 +105,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
           accountId,
           payload,
           captchaToken ?? undefined,
+          token ?? undefined,
         );
         if (newToken) {
           // Persist token and refresh user
@@ -120,7 +121,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
         setLoading(false);
       }
     },
-    [accountId, fetchUser],
+    [accountId, fetchUser, token],
   );
 
   const content = useMemo(() => {
@@ -147,6 +148,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
         {user ? (
           <RegistrationForm
             isAuthenticated={true}
+            userName={user.userName ?? ''}
             onSubmit={handleSelfRegister}
             loading={loading}
             error={error}

@@ -89,6 +89,14 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
     }
   }, [requireCaptcha, mode, open]);
 
+  useEffect(() => {
+    if (user?.userName) {
+      setEmail(user.userName);
+    } else {
+      setEmail('');
+    }
+  }, [user?.userName, user]);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
 
@@ -148,6 +156,7 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
           accountId,
           payload,
           usedCaptcha ? (captchaToken ?? undefined) : undefined,
+          user ? (token ?? undefined) : undefined,
         );
         if (newToken) {
           setAuthToken(newToken);

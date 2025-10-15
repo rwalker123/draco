@@ -9,6 +9,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     BaseContactSchemaRef,
     NamedContactSchemaRef,
     ContactValidationWithSignInSchemaRef,
+    ContactValidationSchemaRef,
     PagedContactSchemaRef,
     RegisteredUserSchemaRef,
     CreateContactSchemaRef,
@@ -87,7 +88,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       body: {
         content: {
           'application/json': {
-            schema: ContactValidationWithSignInSchemaRef,
+            schema: ContactValidationSchemaRef,
           },
         },
       },

@@ -32,18 +32,52 @@ import {
 import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
 import { useAccountMembership } from '../../hooks/useAccountMembership';
 
+const parseDateOnly = (value: string | null | undefined): Date | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const [datePart] = trimmed.split('T');
+  const segments = datePart.split('-');
+  if (segments.length !== 3) {
+    return undefined;
+  }
+
+  const [yearStr, monthStr, dayStr] = segments;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return undefined;
+  }
+
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
 export interface TeamsWantedDialogSuccessEvent {
   action: 'create' | 'update';
   message: string;
   data: TeamsWantedOwnerClassifiedType;
 }
 
+export type TeamsWantedFormInitialData = UpsertTeamsWantedClassifiedType & {
+  id?: string | number | bigint;
+};
+
 interface CreateTeamsWantedDialogProps {
   accountId: string;
   open: boolean;
   onClose: () => void;
   editMode?: boolean;
-  initialData?: UpsertTeamsWantedClassifiedType | null;
+  initialData?: TeamsWantedFormInitialData | null;
+  classifiedId?: string;
   accessCode?: string;
   onSuccess?: (event: TeamsWantedDialogSuccessEvent) => void;
   onError?: (message: string) => void;
@@ -110,7 +144,6 @@ const PHONE_MAX_LENGTH = 50;
 const EXPERIENCE_MAX_LENGTH = 255;
 
 const TeamsWantedFormSchema = z.object({
-  id: z.string().optional(),
   name: z
     .string()
     .trim()
@@ -175,9 +208,10 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   onClose,
   editMode = false,
   initialData,
+  classifiedId,
   accessCode,
   onSuccess,
-  onError,
+  onError: _onError,
 }) => {
   const {
     createTeamsWanted,
@@ -207,22 +241,30 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     const formattedPhone =
       digitsOnly.length === 10 ? formatPhoneNumber(digitsOnly) : primaryPhone.trim();
 
-    const birthDateString = contact.contactDetails?.dateOfBirth?.trim() ?? '';
-    let birthDate: Date | undefined;
-    if (birthDateString) {
-      const parsed = new Date(birthDateString);
-      if (!Number.isNaN(parsed.getTime())) {
-        birthDate = parsed;
-      }
-    }
-
     return {
       name: nameParts.join(' '),
       email: contact.email?.trim() ?? '',
       phone: formattedPhone,
-      birthDate,
+      birthDate: parseDateOnly(contact.contactDetails?.dateOfBirth),
     };
   }, [contact]);
+
+  const updateClassifiedId = useMemo(() => {
+    if (classifiedId && classifiedId.trim().length > 0) {
+      return classifiedId;
+    }
+
+    if (!initialData?.id) {
+      return undefined;
+    }
+
+    if (typeof initialData.id === 'string') {
+      const trimmed = initialData.id.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }
+
+    return String(initialData.id);
+  }, [classifiedId, initialData]);
 
   const formDefaults = useMemo<DefaultValues<TeamsWantedFormValues>>(() => {
     const positions =
@@ -235,13 +277,7 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
         )
         .slice(0, 3) ?? [];
 
-    let birthDate: Date | undefined;
-    if (initialData?.birthDate) {
-      const parsedBirthDate = new Date(initialData.birthDate);
-      if (!Number.isNaN(parsedBirthDate.getTime())) {
-        birthDate = parsedBirthDate;
-      }
-    }
+    let birthDate = parseDateOnly(initialData?.birthDate);
 
     const shouldPrefill = !editMode;
 
@@ -250,7 +286,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     }
 
     return {
-      id: initialData?.id,
       name: initialData?.name ?? (shouldPrefill ? (contactPrefill?.name ?? '') : ''),
       email: initialData?.email ?? (shouldPrefill ? (contactPrefill?.email ?? '') : ''),
       phone: initialData?.phone ?? (shouldPrefill ? (contactPrefill?.phone ?? '') : ''),
@@ -310,27 +345,33 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     setSubmitError(null);
     resetError();
 
-    if (editMode && !values.id) {
+    if (editMode && !updateClassifiedId) {
       const message = 'Missing classified identifier for update.';
       setSubmitError(message);
-      onError?.(message);
       return;
     }
 
     const normalizedPayload: UpsertTeamsWantedClassifiedType = {
-      ...(values.id ? { id: values.id } : {}),
       name: values.name.trim(),
       email: values.email.trim(),
       phone: values.phone.trim(),
       experience: values.experience.trim(),
       positionsPlayed: values.positionsPlayed.join(','),
-      birthDate: values.birthDate ? values.birthDate.toISOString().split('T')[0] : '',
+      birthDate: values.birthDate
+        ? `${values.birthDate.getFullYear()}-${String(values.birthDate.getMonth() + 1).padStart(
+            2,
+            '0',
+          )}-${String(values.birthDate.getDate()).padStart(2, '0')}`
+        : '',
     };
 
-    const result =
-      editMode && values.id
-        ? await updateTeamsWanted(values.id, normalizedPayload, { accessCode })
-        : await createTeamsWanted(normalizedPayload);
+    let result: Awaited<ReturnType<typeof updateTeamsWanted>>;
+
+    if (editMode) {
+      result = await updateTeamsWanted(updateClassifiedId ?? '', normalizedPayload, { accessCode });
+    } else {
+      result = await createTeamsWanted(normalizedPayload);
+    }
 
     if (result.success && result.data) {
       const successMessage =
@@ -346,7 +387,6 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`;
     setSubmitError(message);
-    onError?.(message);
   });
 
   const handleClose = () => {

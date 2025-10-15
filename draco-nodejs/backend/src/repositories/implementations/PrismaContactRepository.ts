@@ -71,7 +71,7 @@ export class PrismaContactRepository implements IContactRepository {
     return contact.creatoraccountid === contactId;
   }
 
-  async findMany(where?: Record<string, unknown>): Promise<contacts[]> {
+  async findMany(where?: Prisma.contactsWhereInput): Promise<contacts[]> {
     return this.prisma.contacts.findMany({ where });
   }
 
