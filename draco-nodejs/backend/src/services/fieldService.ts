@@ -5,10 +5,51 @@ import { PaginationHelper } from '../utils/pagination.js';
 import { FieldType, FieldsType, UpsertFieldType, PagingType } from '@draco/shared-schemas';
 import { Prisma } from '@prisma/client';
 
-const FIELD_SORT_FIELDS = ['name', 'address', 'id'];
+const FIELD_SORT_FIELDS = [
+  'name',
+  'address',
+  'city',
+  'state',
+  'shortname',
+  'zipcode',
+  'rainoutnumber',
+  'latitude',
+  'longitude',
+  'id',
+];
 
 export class FieldService {
   private readonly fieldRepository = RepositoryFactory.getFieldRepository();
+
+  private sanitizeOptionalString(value: string | null | undefined): string {
+    if (typeof value !== 'string') {
+      return '';
+    }
+
+    const trimmed = value.trim();
+
+    return trimmed.length > 0 ? trimmed : '';
+  }
+
+  private sanitizeCoordinate(value: string | null | undefined): string {
+    if (typeof value !== 'string') {
+      return '';
+    }
+
+    const trimmed = value.trim();
+
+    if (trimmed.length === 0) {
+      return '';
+    }
+
+    const numeric = Number.parseFloat(trimmed);
+
+    if (Number.isNaN(numeric)) {
+      throw new ValidationError('Invalid coordinate value provided');
+    }
+
+    return numeric.toString();
+  }
 
   async listFields(accountId: bigint, paging: PagingType): Promise<FieldsType> {
     const sortBy = PaginationHelper.validateSortField(paging.sortBy, FIELD_SORT_FIELDS);
@@ -36,23 +77,29 @@ export class FieldService {
       throw new ValidationError('A field with this name already exists for this account');
     }
 
-    const address =
-      typeof fieldData.address === 'string' && fieldData.address.length > 0
-        ? fieldData.address
-        : '';
+    const shortName = fieldData.shortName.trim();
+    const address = this.sanitizeOptionalString(fieldData.address);
+    const city = this.sanitizeOptionalString(fieldData.city);
+    const state = this.sanitizeOptionalString(fieldData.state);
+    const zip = this.sanitizeOptionalString(fieldData.zip);
+    const comment = this.sanitizeOptionalString(fieldData.comment);
+    const directions = this.sanitizeOptionalString(fieldData.directions);
+    const rainoutNumber = this.sanitizeOptionalString(fieldData.rainoutNumber);
+    const latitude = this.sanitizeCoordinate(fieldData.latitude);
+    const longitude = this.sanitizeCoordinate(fieldData.longitude);
 
     const newField = await this.fieldRepository.create({
       name,
-      shortname: name.substring(0, 5),
-      comment: '',
+      shortname: shortName.substring(0, 5),
+      comment,
       address,
-      city: '',
-      state: '',
-      zipcode: '',
-      directions: '',
-      rainoutnumber: '',
-      latitude: '',
-      longitude: '',
+      city,
+      state,
+      zipcode: zip,
+      directions,
+      rainoutnumber: rainoutNumber,
+      latitude,
+      longitude,
       accounts: {
         connect: { id: accountId },
       },
@@ -83,14 +130,29 @@ export class FieldService {
       throw new ValidationError('A field with this name already exists for this account');
     }
 
-    const address =
-      typeof fieldData.address === 'string' && fieldData.address.length > 0
-        ? fieldData.address
-        : null;
+    const shortName = fieldData.shortName.trim();
+    const address = this.sanitizeOptionalString(fieldData.address);
+    const city = this.sanitizeOptionalString(fieldData.city);
+    const state = this.sanitizeOptionalString(fieldData.state);
+    const zip = this.sanitizeOptionalString(fieldData.zip);
+    const comment = this.sanitizeOptionalString(fieldData.comment);
+    const directions = this.sanitizeOptionalString(fieldData.directions);
+    const rainoutNumber = this.sanitizeOptionalString(fieldData.rainoutNumber);
+    const latitude = this.sanitizeCoordinate(fieldData.latitude);
+    const longitude = this.sanitizeCoordinate(fieldData.longitude);
 
     const updatedField = await this.fieldRepository.update(fieldId, {
       name,
-      address: address || '',
+      shortname: shortName.substring(0, 5),
+      address,
+      city,
+      state,
+      zipcode: zip,
+      comment,
+      directions,
+      rainoutnumber: rainoutNumber,
+      latitude,
+      longitude,
     });
 
     return FieldResponseFormatter.formatField(updatedField);

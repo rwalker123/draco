@@ -27,8 +27,10 @@ import { useAccountMembership } from '../../hooks/useAccountMembership';
 import { IAccessCodeVerificationResponse } from '../../types/accessCode';
 import AccessCodeInput from './AccessCodeInput';
 import TeamsWantedCardPublic from './TeamsWantedCardPublic';
-import CreateTeamsWantedDialog from './CreateTeamsWantedDialog';
-import type { TeamsWantedDialogSuccessEvent } from './CreateTeamsWantedDialog';
+import CreateTeamsWantedDialog, {
+  type TeamsWantedDialogSuccessEvent,
+  type TeamsWantedFormInitialData,
+} from './CreateTeamsWantedDialog';
 import { accessCodeService } from '../../services/accessCodeService';
 import { calculateAge } from '../../utils/dateUtils';
 import {
@@ -101,8 +103,10 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editingClassified, setEditingClassified] =
-    useState<UpsertTeamsWantedClassifiedType | null>(null);
+  const [editingClassified, setEditingClassified] = useState<TeamsWantedFormInitialData | null>(
+    null,
+  );
+  const [editingClassifiedId, setEditingClassifiedId] = useState<string | null>(null);
 
   // Local state for contact fetching during edit
   const [editContactError, setEditContactError] = useState<string | null>(null);
@@ -250,6 +254,8 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     setEditSuccess(event.message);
     setEditError(null);
     setEditDialogOpen(false);
+    setEditingClassified(null);
+    setEditingClassifiedId(null);
 
     setAccessCodeResult((prev) => {
       if (!prev) {
@@ -272,11 +278,11 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   };
 
   // Handle local edit and delete button clicks for access code users
-  const handleLocalEdit = async (_id: string, _accessCodeRequired: string) => {
+  const handleLocalEdit = async (id: string, _accessCodeRequired: string) => {
     if (!accessCodeResult?.classified) return;
 
     // First, fetch contact information just-in-time
-    const contactInfo = await fetchContactForEdit(accessCodeResult.classified.id.toString());
+    const contactInfo = await fetchContactForEdit(id);
 
     if (!contactInfo && !editContactError) {
       // If no contact info and no error, something went wrong
@@ -286,7 +292,6 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
 
     // Transform ITeamsWantedClassified to ITeamsWantedOwnerResponse with contact info
     const classifiedWithAccount: UpsertTeamsWantedClassifiedType = {
-      id: accessCodeResult.classified.id,
       name: accessCodeResult.classified.name,
       email: contactInfo?.email || accessCodeResult.classified.email,
       phone: contactInfo?.phone || accessCodeResult.classified.phone,
@@ -296,6 +301,7 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
     };
 
     setEditingClassified(classifiedWithAccount);
+    setEditingClassifiedId(id);
     setEditDialogOpen(true);
   };
 
@@ -436,18 +442,11 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
   const renderUnauthenticatedContent = () => {
     return (
       <Box>
-        <Paper sx={{ p: 3, mb: 3, backgroundColor: 'warning.50' }}>
-          <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <LockIcon color="warning" />
-            <Typography variant="h6" color="warning.main">
-              Sign In Required
-            </Typography>
-          </Stack>
-          <Typography variant="body1" color="text.secondary" mb={2}>
+        <Box sx={{ p: 2 }}>
+          <Alert severity="info" sx={{ mb: 3 }}>
             Sign in to your account to see all players looking for a team.
-          </Typography>
-        </Paper>
-
+          </Alert>
+        </Box>
         <Divider sx={{ my: 3 }} />
 
         <Typography variant="h6" gutterBottom textAlign="center">
@@ -605,11 +604,13 @@ const TeamsWantedStateManager: React.FC<ITeamsWantedStateManagerProps> = ({
         onClose={() => {
           setEditDialogOpen(false);
           setEditingClassified(null);
+          setEditingClassifiedId(null);
           setEditError(null);
           setEditContactError(null);
         }}
         editMode={true}
         initialData={editingClassified}
+        classifiedId={editingClassifiedId ?? undefined}
         accessCode={verifiedAccessCode ?? undefined}
         onSuccess={handleAccessCodeDialogSuccess}
         onError={handleAccessCodeDialogError}

@@ -23,17 +23,25 @@ import { unwrapApiResult } from '@/utils/apiResult';
 
 interface AccountPollsCardProps {
   accountId: string;
+  isAuthorizedForAccount?: boolean;
 }
 
-export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId }) => {
+export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
+  accountId,
+  isAuthorizedForAccount,
+}) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
   const [polls, setPolls] = useState<AccountPollType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittingPollId, setSubmittingPollId] = useState<string | null>(null);
+  const hasToken = Boolean(token);
+  const canViewPolls = useMemo(
+    () => hasToken && (isAuthorizedForAccount ?? true),
+    [hasToken, isAuthorizedForAccount],
+  );
 
-  const canViewPolls = useMemo(() => Boolean(token), [token]);
   const cardSx = useMemo(
     () => ({
       alignSelf: 'flex-start',
@@ -46,6 +54,8 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
   const fetchPolls = useCallback(async () => {
     if (!canViewPolls) {
       setPolls([]);
+      setError(null);
+      setLoading(false);
       return;
     }
 
@@ -100,17 +110,10 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
     [accountId, apiClient, canViewPolls],
   );
 
-  if (!canViewPolls) {
-    return (
-      <Card elevation={3} sx={cardSx}>
-        <CardHeader title="Polls" />
-        <CardContent>
-          <Typography color="text.secondary">
-            Sign in and join this organization to view and vote in polls.
-          </Typography>
-        </CardContent>
-      </Card>
-    );
+  const shouldRenderCard = canViewPolls && (polls.length > 0 || Boolean(error));
+
+  if (!shouldRenderCard) {
+    return null;
   }
 
   return (
@@ -125,8 +128,6 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({ accountId })
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
-        ) : polls.length === 0 ? (
-          <Typography color="text.secondary">There are no active polls right now.</Typography>
         ) : (
           <Stack spacing={3}>
             {polls.map((poll) => {

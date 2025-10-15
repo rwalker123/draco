@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
+  Fab,
   IconButton,
   Paper,
   Table,
@@ -17,12 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { AccountPollType } from '@draco/shared-schemas';
 import { listAccountPolls } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
@@ -139,11 +134,6 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
     setSuccess(null);
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    setSuccess(null);
-    void loadPolls();
-  }, [loadPolls]);
-
   if (!canManage) {
     return (
       <main className="min-h-screen bg-background">
@@ -162,24 +152,30 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+        <Box sx={{ textAlign: 'center', color: 'white' }}>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.contrastText' }}>
             Poll Management
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="Refresh polls">
-              <IconButton onClick={handleRefresh} disabled={loading} sx={{ color: 'white' }}>
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
-              New Poll
-            </Button>
-          </Box>
+          <Typography
+            variant="body1"
+            sx={{ mt: 1, maxWidth: 520, mx: 'auto', color: 'rgba(255,255,255,0.85)' }}
+          >
+            Create, edit, and retire polls that keep your members engaged. Results update instantly
+            as votes come in.
+          </Typography>
         </Box>
       </AccountPageHeader>
 
-      <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box
+        sx={{
+          position: 'relative',
+          p: 3,
+          pb: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+        }}
+      >
         {error && <Alert severity="error">{error}</Alert>}
         {success && <Alert severity="success">{success}</Alert>}
 
@@ -189,12 +185,12 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
           </Box>
         ) : (
           <TableContainer component={Paper}>
-            <Table>
+            <Table sx={{ tableLayout: 'auto' }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Question</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell align="right">Total Votes</TableCell>
+                  <TableCell>Results</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -211,9 +207,52 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
                     .sort((a, b) => Number(b.active) - Number(a.active))
                     .map((poll) => (
                       <TableRow key={poll.id} hover>
-                        <TableCell>{poll.question}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal' }}>{poll.question}</TableCell>
                         <TableCell>{poll.active ? 'Active' : 'Inactive'}</TableCell>
-                        <TableCell align="right">{poll.totalVotes}</TableCell>
+                        <TableCell>
+                          {poll.options && poll.options.length > 0 ? (
+                            <Table
+                              size="small"
+                              sx={{
+                                width: 'auto',
+                                border: (theme) => `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                '& td:first-of-type': { pr: 3 },
+                                '& td:last-of-type': { pl: 1.5 },
+                                '& td:not(:last-of-type)': {
+                                  borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+                                },
+                                '& td': {
+                                  borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                                  py: 0.5,
+                                },
+                                '& tbody tr:last-of-type td': { borderBottom: 'none' },
+                              }}
+                            >
+                              <TableBody>
+                                {poll.options.map((option) => (
+                                  <TableRow key={option.id}>
+                                    <TableCell sx={{ pr: 2 }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {option.optionText}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell sx={{ pl: 0 }}>
+                                      <Typography variant="body2" color="text.secondary">
+                                        {option.voteCount ?? 0} votes
+                                      </Typography>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              No options configured.
+                            </Typography>
+                          )}
+                        </TableCell>
                         <TableCell align="right">
                           <Tooltip title="Edit poll">
                             <IconButton onClick={() => handleOpenEdit(poll)}>
@@ -233,6 +272,15 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
             </Table>
           </TableContainer>
         )}
+
+        <Fab
+          color="primary"
+          aria-label="add poll"
+          sx={{ position: 'absolute', bottom: 32, right: 32 }}
+          onClick={handleOpenCreate}
+        >
+          <AddIcon />
+        </Fab>
       </Box>
 
       <PollEditorDialog

@@ -176,6 +176,11 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
     state: true;
     zipcode: true;
     shortname: true;
+    comment: true;
+    directions: true;
+    rainoutnumber: true;
+    latitude: true;
+    longitude: true;
   };
 }>;
 

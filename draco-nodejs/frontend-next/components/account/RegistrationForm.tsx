@@ -30,6 +30,7 @@ interface BaseProps {
 
 interface AuthenticatedProps extends BaseProps {
   isAuthenticated: true;
+  userName: string;
   onSubmit: (input: SelfRegisterInput) => Promise<void>;
   requireCaptcha?: false;
 }
@@ -48,6 +49,9 @@ type Props = AuthenticatedProps | UnauthenticatedProps;
  */
 export const RegistrationForm: React.FC<Props> = (props) => {
   const { isAuthenticated, onSubmit, loading, error } = props;
+  const authenticatedUserName = isAuthenticated
+    ? (props as AuthenticatedProps).userName
+    : undefined;
 
   // Form state
   const [mode, setMode] = useState<'newUser' | 'existingUser'>('newUser');
@@ -65,6 +69,7 @@ export const RegistrationForm: React.FC<Props> = (props) => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [credentialsError, setCredentialsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (requiresCaptcha) {
@@ -73,6 +78,14 @@ export const RegistrationForm: React.FC<Props> = (props) => {
       setCaptchaError(null);
     }
   }, [requiresCaptcha, mode]);
+
+  useEffect(() => {
+    if (isAuthenticated && authenticatedUserName) {
+      setEmail(authenticatedUserName);
+    } else if (!isAuthenticated) {
+      setEmail('');
+    }
+  }, [isAuthenticated, authenticatedUserName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +99,17 @@ export const RegistrationForm: React.FC<Props> = (props) => {
     let usedCaptcha = false;
 
     if (isAuthenticated) {
+      if (!authenticatedUserName) {
+        setCredentialsError('Account email is required to continue.');
+        return;
+      }
+
+      if (!password || password.trim().length < 6) {
+        setCredentialsError('Please enter your password to confirm registration.');
+        return;
+      }
+
+      setCredentialsError(null);
       const input: SelfRegisterInput = {
         firstName,
         middleName: middleName || undefined,
@@ -147,7 +171,7 @@ export const RegistrationForm: React.FC<Props> = (props) => {
         sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
       >
         {/* Tabs for unauthenticated users */}
-        {!isAuthenticated && (
+        {!isAuthenticated ? (
           <ToggleButtonGroup
             value={mode}
             exclusive
@@ -158,10 +182,31 @@ export const RegistrationForm: React.FC<Props> = (props) => {
             <ToggleButton value="newUser">Create login + register</ToggleButton>
             <ToggleButton value="existingUser">I&apos;m already a user</ToggleButton>
           </ToggleButtonGroup>
-        )}
+        ) : null}
 
-        {/* Login credentials for unauthenticated users */}
-        {!isAuthenticated && (
+        {/* Login credentials */}
+        {isAuthenticated ? (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={authenticatedUserName ?? ''}
+              InputProps={{ readOnly: true }}
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              helperText="Enter your password to confirm your identity."
+            />
+          </Stack>
+        ) : (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             {mode === 'newUser' ? (
               <>
@@ -226,6 +271,12 @@ export const RegistrationForm: React.FC<Props> = (props) => {
               </>
             )}
           </Stack>
+        )}
+
+        {isAuthenticated && credentialsError && (
+          <Alert severity="error" onClose={() => setCredentialsError(null)}>
+            {credentialsError}
+          </Alert>
         )}
 
         {/* Name fields */}
