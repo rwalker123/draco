@@ -47,3 +47,9 @@ These scaffolds align with the implementation plan so additional scoring feature
 ## Branding Assets
 
 Binary image assets are intentionally omitted from the repository because our PR tooling cannot transmit them. Expo will fall back to the default icon, splash, and favicon while developing locally. When bespoke artwork is ready, drop the files into `draco-mobile/assets/` in your working copy and reference them in `app.config.ts`; just be sure to exclude the binaries from commits (for example by keeping them in `.git/info/exclude`) so CI and the PR assistant remain happy.
+
+## Troubleshooting Dependency Installs
+
+React Native 0.76 currently depends on React 18.2, so `npm install` will fail if the workspace pulls React 19.
+When you hit `ERESOLVE unable to resolve dependency tree` with `react@19.x` and `react-native@0.76.x`, pin React to 18.2.0 (for example, `npx expo install react@18.2.0 react-dom@18.2.0`) before retrying the install.
+Avoid `--force` or `--legacy-peer-deps` so we do not mask future compatibility issues.
