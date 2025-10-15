@@ -44,4 +44,3 @@ export const useSignupService = () => {
 
   return { register } as const;
 };
-

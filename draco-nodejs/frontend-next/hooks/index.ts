@@ -26,6 +26,7 @@ export { useGameResults } from './useGameResults';
 export { useTeamManagement } from './useTeamManagement';
 export { useFieldService } from './useFieldService';
 export { useSignupService } from './useSignupService';
+export { usePasswordResetService } from './usePasswordResetService';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';

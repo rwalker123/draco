@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   TextField,
@@ -15,191 +15,141 @@ import {
   Link,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import {
-  requestPasswordReset,
-  verifyPasswordResetToken,
-  resetPasswordWithToken,
-} from '@draco/shared-api-client';
 import AccountPageHeader from '../../components/AccountPageHeader';
-import { useApiClient } from '../../hooks/useApiClient';
-import { unwrapApiResult } from '../../utils/apiResult';
+import { usePasswordResetService } from '../../hooks/usePasswordResetService';
 
 interface PasswordResetProps {
   onResetSuccess?: () => void;
   accountId?: string;
   next?: string;
+  initialToken?: string;
 }
 
-const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId, next }) => {
+const PasswordReset: React.FC<PasswordResetProps> = ({
+  onResetSuccess,
+  accountId,
+  next,
+  initialToken,
+}) => {
   const router = useRouter();
-  const apiClient = useApiClient();
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(initialToken ? 1 : 0);
   const [email, setEmail] = useState('');
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(initialToken?.trim() ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { requestReset, verifyToken, resetPassword, loading, error, setErrorMessage, clearError } =
+    usePasswordResetService();
 
   const steps = ['Request Reset', 'Verify Token', 'Set New Password'];
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const autoVerifyTokenFromQuery = async () => {
+      const trimmedToken = initialToken?.trim();
+      if (!trimmedToken) {
+        return;
+      }
+
+      clearError();
+      setSuccess('');
+      setToken(trimmedToken);
+      setActiveStep(1);
+
+      const result = await verifyToken(trimmedToken);
+      if (!isMounted) {
+        return;
+      }
+
+      if (result.valid) {
+        setToken(result.token ?? trimmedToken);
+        setSuccess(result.message);
+        setActiveStep(2);
+      }
+    };
+
+    autoVerifyTokenFromQuery();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialToken, verifyToken, clearError]);
+
   const handleRequestReset = async () => {
+    clearError();
+    setSuccess('');
+
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError('Please enter your email address');
+      setErrorMessage('Please enter your email address');
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const result = await requestPasswordReset({
-        client: apiClient,
-        body: {
-          email: trimmedEmail,
-        },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to request password reset. Please try again.');
-
-      if (data === true) {
-        setSuccess('If an account with that email exists, a password reset link has been sent.');
-        setActiveStep(1);
-        return;
-      }
-
-      if (typeof data === 'object' && data !== null && 'success' in data) {
-        const { success: succeeded, message } = data as { success: boolean; message?: string };
-        if (succeeded) {
-          setSuccess(
-            message ?? 'If an account with that email exists, a password reset link has been sent.',
-          );
-          setActiveStep(1);
-        } else {
-          setError(message ?? 'Failed to request password reset.');
-        }
-        return;
-      }
-
-      setSuccess('Password reset request processed. Check your email for further instructions.');
+    const result = await requestReset(trimmedEmail);
+    if (result.success) {
+      setEmail(trimmedEmail);
+      setSuccess(result.message);
       setActiveStep(1);
-    } catch (caughtError) {
-      console.error('Password reset request failed:', caughtError);
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'An error occurred while requesting a password reset.',
-      );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleVerifyToken = async () => {
+    clearError();
+    setSuccess('');
+
     const trimmedToken = token.trim();
     if (!trimmedToken) {
-      setError('Please enter the reset token');
+      setErrorMessage('Please enter the reset token');
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const result = await verifyPasswordResetToken({
-        client: apiClient,
-        body: { token: trimmedToken },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to verify the reset token. Please try again.');
-
-      if (data.valid) {
-        setToken(trimmedToken);
-        setSuccess('Token verified successfully');
-        setActiveStep(2);
-      } else {
-        setError('Invalid or expired reset token');
-      }
-    } catch (caughtError) {
-      console.error('Password reset token verification failed:', caughtError);
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'An error occurred while verifying the token.',
-      );
-    } finally {
-      setLoading(false);
+    const result = await verifyToken(trimmedToken);
+    if (result.valid) {
+      setToken(result.token ?? trimmedToken);
+      setSuccess(result.message);
+      setActiveStep(2);
     }
   };
 
   const handleResetPassword = async () => {
+    clearError();
+    setSuccess('');
+
     if (!newPassword || !confirmPassword) {
-      setError('Please enter both passwords');
+      setErrorMessage('Please enter both passwords');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setErrorMessage('Passwords do not match');
       return;
     }
 
     if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setErrorMessage('Password must be at least 6 characters long');
       return;
     }
 
     const trimmedToken = token.trim();
     if (!trimmedToken) {
-      setError('Reset token is missing or invalid. Please request a new token.');
+      setErrorMessage('Reset token is missing or invalid. Please request a new token.');
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const result = await resetPasswordWithToken({
-        client: apiClient,
-        body: {
-          token: trimmedToken,
-          newPassword,
-        },
-        throwOnError: false,
-      });
-
-      const data = unwrapApiResult(result, 'Failed to reset password. Please try again.');
-
-      if (data) {
-        setSuccess('Password reset successfully! You can now log in with your new password.');
-        if (onResetSuccess) {
-          onResetSuccess();
-        }
-        setTimeout(() => {
-          router.push(
-            `/login${accountId ? `?accountId=${accountId}` : ''}${
-              next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''
-            }`,
-          );
-        }, 2000);
-      } else {
-        setError('Failed to reset password. Please try again.');
+    const result = await resetPassword(trimmedToken, newPassword);
+    if (result.success) {
+      setSuccess(result.message);
+      if (onResetSuccess) {
+        onResetSuccess();
       }
-    } catch (caughtError) {
-      console.error('Password reset failed:', caughtError);
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'An error occurred while resetting the password.',
-      );
-    } finally {
-      setLoading(false);
+      setTimeout(() => {
+        router.push(
+          `/login${accountId ? `?accountId=${accountId}` : ''}${
+            next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''
+          }`,
+        );
+      }, 2000);
     }
   };
 
