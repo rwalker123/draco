@@ -12,10 +12,14 @@ import {
 } from '@draco/shared-schemas';
 import { ServiceFactory } from './serviceFactory.js';
 import { Mutex } from 'async-mutex';
+import type { EmailService } from './emailService.js';
+import type { AccountsService } from './accountsService.js';
 
 export class RegistrationService {
   private readonly authService = ServiceFactory.getAuthService();
   private readonly contactService = ServiceFactory.getContactService();
+  private readonly emailService: EmailService = ServiceFactory.getEmailService();
+  private readonly accountsService: AccountsService = ServiceFactory.getAccountsService();
   private userCreateMutex = new Mutex();
 
   /**
@@ -58,6 +62,14 @@ export class RegistrationService {
       const linkedContact = await this.contactService.registerContactUser(
         registerResult.userId,
         BigInt(validatedContact.id),
+        registerResult.userName || data.userName,
+      );
+
+      await this.sendAccountWelcomeEmail(
+        accountId,
+        linkedContact,
+        data.userName,
+        registerResult.userName,
       );
 
       return {
@@ -135,11 +147,21 @@ export class RegistrationService {
         linkedContact = await this.contactService.registerContactUser(
           authenticatedUser.userId,
           BigInt(contact.id),
+          authenticatedUser.userName || data.userName,
         );
       } else {
         // Contact is linked to a different user
         throw new ConflictError('This contact is already registered to another user.');
       }
+
+      const contactForWelcome = linkedContact ?? contact;
+      await this.sendAccountWelcomeEmail(
+        accountId,
+        contactForWelcome,
+        data.userName,
+        authenticatedUser.userName,
+      );
+
       return {
         userId: authenticatedUser.userId,
         userName: authenticatedUser.userName,
@@ -177,5 +199,36 @@ export class RegistrationService {
     }
 
     return contact;
+  }
+
+  private async sendAccountWelcomeEmail(
+    accountId: bigint,
+    contact: BaseContactType,
+    fallbackEmail?: string,
+    userName?: string,
+  ): Promise<void> {
+    const candidateEmails = [contact.email, fallbackEmail].filter(
+      (value): value is string => Boolean(value?.trim()),
+    );
+    const toEmail = candidateEmails[0];
+
+    if (!toEmail) {
+      return;
+    }
+
+    try {
+      const account = await this.accountsService.getAccountName(accountId);
+      const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ').trim();
+
+      await this.emailService.sendAccountWelcomeEmail({
+        toEmail,
+        accountId: account.id,
+        accountName: account.name,
+        contactName: contactName || undefined,
+        userName,
+      });
+    } catch (error) {
+      console.error('Failed to send account welcome email:', error);
+    }
   }
 }

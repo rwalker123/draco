@@ -93,10 +93,27 @@ export class ContactService {
    * @param contactId
    * @returns BaseContactType
    */
-  async registerContactUser(userId: string, contactId: bigint): Promise<BaseContactType> {
-    const updatedContact = await this.contactRepository.update(contactId, {
+  async registerContactUser(
+    userId: string,
+    contactId: bigint,
+    userEmail?: string,
+  ): Promise<BaseContactType> {
+    const existingContact = await this.contactRepository.findById(contactId);
+
+    if (!existingContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    const updatePayload: Partial<contacts> = {
       userid: userId,
-    });
+    };
+
+    const candidateEmail = userEmail?.trim();
+    if (!existingContact.email && candidateEmail) {
+      updatePayload.email = candidateEmail;
+    }
+
+    const updatedContact = await this.contactRepository.update(contactId, updatePayload);
 
     return ContactResponseFormatter.formatContactResponse(updatedContact);
   }
@@ -322,9 +339,7 @@ export class ContactService {
       whereClause.dateofbirth = parsedDate;
     }
 
-    const dbContacts = await this.contactRepository.findMany({
-      whereClause,
-    });
+    const dbContacts = await this.contactRepository.findMany(whereClause);
 
     return dbContacts.map((dbContact) => ContactResponseFormatter.formatContactResponse(dbContact));
   }
