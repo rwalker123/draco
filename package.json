@@ -5,11 +5,12 @@
   "private": true,
   "workspaces": {
     "packages": [
+      "dbMigration",
+      "draco-mobile",
       "draco-nodejs/backend",
       "draco-nodejs/frontend-next",
       "draco-nodejs/shared/*",
-      "draco-nodejs/stoplight-assets",
-      "dbMigration"
+      "draco-nodejs/stoplight-assets"
     ]
   },
   "scripts": {
@@ -53,7 +54,12 @@
     "test": "npm run test --workspaces",
     "start": "concurrently \"npm start -w @draco/backend\" \"npm start -w @draco/frontend-next\"",
     "secrets:update-baseline": "node scripts/update-baseline.js",
-    "sync:api": "npm -w @draco/backend run generate:openapi && npm -w @draco/backend run generate:client"
+    "sync:api": "npm -w @draco/backend run generate:openapi && npm -w @draco/backend run generate:client",
+    "mobile:start": "npm run start -w @draco/mobile",
+    "mobile:lint": "npm run lint -w @draco/mobile",
+    "mobile:test": "npm run test -w @draco/mobile",
+    "mobile:type-check": "npm run type-check -w @draco/mobile",
+    "mobile:format": "npm run format -w @draco/mobile"
   },
   "overrides": {
     "react": "19.1.1",
