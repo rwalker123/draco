@@ -13000,6 +13000,132 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
+    get:
+      description: List managers for the given team and season
+      operationId: listTeamManagers
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Team managers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamManager"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Add a manager to the team for the given season
+      operationId: addManager
+      security:
+        - bearerAuth: []
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamManager"
+      responses:
+        "200":
+          description: Manager added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamManager"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/managers:
     get:
       description: List managers for the given season
@@ -13066,75 +13192,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthorizationError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
-    post:
-      description: Add a manager to the team for the given season
-      operationId: addManager
-      security:
-        - bearerAuth: []
-      tags:
-        - Managers
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: seasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: teamSeasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpsertTeamManager"
-      responses:
-        "200":
-          description: Manager added
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TeamManager"
-        "400":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationError"
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied - Account admin required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "404":
-          description: Manager not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Internal server error
           content:
