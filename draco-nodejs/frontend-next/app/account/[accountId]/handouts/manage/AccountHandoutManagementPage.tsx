@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Typography } from '@mui/material';
+import { Box, Container, Fab, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
+import AddIcon from '@mui/icons-material/Add';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import HandoutSection from '@/components/handouts/HandoutSection';
 import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
@@ -21,7 +22,11 @@ const AccountHandoutManagementPage: React.FC = () => {
       <main className="min-h-screen bg-background">
         <AccountPageHeader accountId={accountId}>
           <Box textAlign="center">
-            <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
+            >
               Handout Management
             </Typography>
             <Typography variant="body1" sx={{ color: 'white', opacity: 0.85 }}>
@@ -37,6 +42,22 @@ const AccountHandoutManagementPage: React.FC = () => {
             allowManage
             variant="panel"
             emptyMessage="No handouts have been added yet."
+            renderCreateTrigger={({ openCreate, disabled }) => (
+              <Fab
+                color="primary"
+                aria-label="Add handout"
+                onClick={openCreate}
+                disabled={disabled}
+                sx={{
+                  position: 'fixed',
+                  bottom: { xs: 24, md: 32 },
+                  right: { xs: 24, md: 32 },
+                  zIndex: (theme) => theme.zIndex.tooltip,
+                }}
+              >
+                <AddIcon />
+              </Fab>
+            )}
           />
         </Container>
       </main>

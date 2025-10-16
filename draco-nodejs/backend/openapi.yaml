@@ -11883,6 +11883,8 @@ paths:
       operationId: listAccountHandouts
       tags:
         - Handouts
+      security:
+        - bearerAuth: []
       parameters:
         - name: accountId
           in: path
@@ -12101,6 +12103,8 @@ paths:
       operationId: downloadAccountHandout
       tags:
         - Handouts
+      security:
+        - bearerAuth: []
       parameters:
         - name: accountId
           in: path

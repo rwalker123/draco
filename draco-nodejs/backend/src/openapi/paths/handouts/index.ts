@@ -13,13 +13,11 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
   } = schemaRefs;
 
   const handoutMultipartSchema = UpsertHandoutSchemaRef.extend({
-    file: z
-      .string()
-      .openapi({
-        type: 'string',
-        format: 'binary',
-        description: 'Handout file to upload',
-      }),
+    file: z.string().openapi({
+      type: 'string',
+      format: 'binary',
+      description: 'Handout file to upload',
+    }),
   });
 
   const handoutMultipartOptionalSchema = UpsertHandoutSchemaRef.extend({
@@ -40,6 +38,7 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     description: 'Retrieve all handouts published for an account.',
     operationId: 'listAccountHandouts',
     tags: ['Handouts'],
+    security: [{ bearerAuth: [] }],
     parameters: [
       {
         name: 'accountId',
@@ -140,8 +139,18 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     tags: ['Handouts'],
     security: [{ bearerAuth: [] }],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
-      { name: 'handoutId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'handoutId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
     ],
     request: {
       body: {
@@ -204,8 +213,18 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     tags: ['Handouts'],
     security: [{ bearerAuth: [] }],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
-      { name: 'handoutId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'handoutId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
     ],
     responses: {
       204: {
@@ -245,9 +264,20 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     description: 'Download the binary content of an account handout.',
     operationId: 'downloadAccountHandout',
     tags: ['Handouts'],
+    security: [{ bearerAuth: [] }],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
-      { name: 'handoutId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'handoutId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
     ],
     responses: {
       200: {
@@ -281,7 +311,12 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     operationId: 'listTeamHandouts',
     tags: ['Handouts'],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
       { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
     ],
     responses: {
@@ -316,7 +351,12 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     tags: ['Handouts'],
     security: [{ bearerAuth: [] }],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
       { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
     ],
     request: {
@@ -380,9 +420,19 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     tags: ['Handouts'],
     security: [{ bearerAuth: [] }],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
       { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
-      { name: 'handoutId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'handoutId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
     ],
     request: {
       body: {
@@ -445,9 +495,19 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     tags: ['Handouts'],
     security: [{ bearerAuth: [] }],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
       { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
-      { name: 'handoutId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'handoutId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
     ],
     responses: {
       204: {
@@ -488,9 +548,19 @@ export const registerHandoutsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     operationId: 'downloadTeamHandout',
     tags: ['Handouts'],
     parameters: [
-      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
       { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
-      { name: 'handoutId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      {
+        name: 'handoutId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
     ],
     responses: {
       200: {

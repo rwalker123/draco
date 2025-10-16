@@ -10,6 +10,7 @@ import { useApiClient } from '../../../../../../../../hooks/useApiClient';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import TeamAvatar from '../../../../../../../../components/TeamAvatar';
 import HandoutSection from '@/components/handouts/HandoutSection';
+import { useTeamMembership } from '../../../../../../../../hooks/useTeamMembership';
 
 export interface TeamHeaderData {
   teamName: string;
@@ -90,13 +91,18 @@ const TeamHandoutsPage: React.FC = () => {
   const teamSeasonId = Array.isArray(teamSeasonIdParam) ? teamSeasonIdParam[0] : teamSeasonIdParam;
 
   const { teamHeader, loading, error } = useTeamHandoutHeader(accountId, seasonId, teamSeasonId);
+  const {
+    isMember: isTeamMember,
+    loading: membershipLoading,
+    error: membershipError,
+  } = useTeamMembership(accountId, teamSeasonId, seasonId);
 
   if (!accountId || !seasonId || !teamSeasonId) {
     return null;
   }
 
   const renderContent = () => {
-    if (loading) {
+    if (loading || membershipLoading) {
       return (
         <Box display="flex" justifyContent="center" py={6}>
           <CircularProgress />
@@ -112,12 +118,24 @@ const TeamHandoutsPage: React.FC = () => {
       );
     }
 
+    if (membershipError) {
+      return (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {membershipError}
+        </Alert>
+      );
+    }
+
     if (!teamHeader) {
       return (
         <Alert severity="info" sx={{ mb: 2 }}>
           Team details are unavailable at the moment.
         </Alert>
       );
+    }
+
+    if (!isTeamMember) {
+      return null;
     }
 
     return (
@@ -128,6 +146,7 @@ const TeamHandoutsPage: React.FC = () => {
         allowManage={false}
         variant="panel"
         emptyMessage="No team handouts have been posted yet."
+        hideWhenEmpty
       />
     );
   };

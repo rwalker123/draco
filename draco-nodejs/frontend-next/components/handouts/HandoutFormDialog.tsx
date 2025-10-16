@@ -10,11 +10,10 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -24,9 +23,20 @@ import {
 } from '@draco/shared-schemas';
 import { HandoutInput } from '../../services/handoutService';
 import { HandoutScope, useHandoutOperations } from '../../hooks/useHandoutOperations';
+import RichTextEditor from '../email/RichTextEditor';
+import { sanitizeDisplayText, sanitizeHandoutContent } from '../../utils/sanitization';
 
 const HandoutFormSchema = UpsertHandoutSchema.extend({
   file: z.instanceof(File).optional().nullable(),
+}).superRefine((data, ctx) => {
+  const plainText = sanitizeDisplayText(data.description ?? '').trim();
+  if (!plainText) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['description'],
+      message: 'Description is required',
+    });
+  }
 });
 
 type HandoutFormValues = z.infer<typeof HandoutFormSchema>;
@@ -59,7 +69,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   const [localError, setLocalError] = React.useState<string | null>(null);
 
   const {
-    register,
+    control,
     handleSubmit,
     reset,
     setValue,
@@ -71,26 +81,33 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   });
 
   const fileValue = watch('file');
+  const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
+  const [editorKey, setEditorKey] = React.useState<number>(0);
+
+  const computePlainTextLength = React.useCallback<(html: string) => number>((html) => {
+    return sanitizeDisplayText(html ?? '').trim().length;
+  }, []);
 
   React.useEffect(() => {
     if (!open) {
       reset(defaultValues);
+      setPlainTextLength(0);
       setLocalError(null);
       clearError();
       return;
     }
 
-    if (mode === 'edit' && initialHandout) {
-      reset({
-        description: initialHandout.description,
-        file: null,
-      });
-    } else {
-      reset(defaultValues);
-    }
+    const baseDescription = mode === 'edit' && initialHandout ? initialHandout.description : '';
+    const sanitizedDescription = sanitizeHandoutContent(baseDescription ?? '');
+    reset({
+      description: sanitizedDescription,
+      file: null,
+    });
+    setPlainTextLength(computePlainTextLength(sanitizedDescription));
+    setEditorKey((key) => key + 1);
     setLocalError(null);
     clearError();
-  }, [open, mode, initialHandout, reset, clearError]);
+  }, [open, mode, initialHandout, reset, clearError, computePlainTextLength]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -140,8 +157,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   });
 
   const descriptionError = errors.description?.message as string | undefined;
-  const descriptionValue = watch('description') ?? '';
-  const remainingCharacters = Math.max(0, HANDOUT_DESCRIPTION_MAX_LENGTH - descriptionValue.length);
+  const remainingCharacters = Math.max(0, HANDOUT_DESCRIPTION_MAX_LENGTH - plainTextLength);
   const fileLabel = (() => {
     if (fileValue instanceof File) {
       return fileValue.name;
@@ -169,15 +185,36 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
                 {localError || error}
               </Alert>
             )}
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              minRows={2}
-              {...register('description')}
-              error={Boolean(descriptionError)}
-              helperText={descriptionError ?? `${remainingCharacters} characters remaining`}
-            />
+            <Stack spacing={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Description
+              </Typography>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <RichTextEditor
+                    key={editorKey}
+                    initialValue={field.value ?? ''}
+                    onChange={(html) => {
+                      const sanitizedHtml = sanitizeHandoutContent(html);
+                      field.onChange(sanitizedHtml);
+                      setPlainTextLength(computePlainTextLength(sanitizedHtml));
+                    }}
+                    minHeight={180}
+                    placeholder="Describe the handout..."
+                    disabled={isSubmitting || loading}
+                    error={Boolean(descriptionError)}
+                  />
+                )}
+              />
+              <Typography
+                variant="caption"
+                color={descriptionError ? 'error.main' : 'text.secondary'}
+              >
+                {descriptionError ?? `${remainingCharacters} characters remaining`}
+              </Typography>
+            </Stack>
             <Stack spacing={1}>
               <Button
                 variant="outlined"

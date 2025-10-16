@@ -12,6 +12,8 @@ const handoutService = ServiceFactory.getHandoutService();
 
 router.get(
   '/:accountId/handouts',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const handouts = await handoutService.listAccountHandouts(accountId);
@@ -93,6 +95,8 @@ router.delete(
 
 router.get(
   '/:accountId/handouts/:handoutId/download',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { handoutId } = extractBigIntParams(req.params, 'handoutId');

@@ -17149,6 +17149,11 @@
         "tags": [
           "Handouts"
         ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "accountId",
@@ -17505,6 +17510,11 @@
         "operationId": "downloadAccountHandout",
         "tags": [
           "Handouts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
         "parameters": [
           {

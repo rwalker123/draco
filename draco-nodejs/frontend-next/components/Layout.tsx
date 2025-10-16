@@ -54,7 +54,8 @@ const getAccountIdFromPath = (pathname: string): string | null => {
 const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) => {
   const { user, clearAllContexts } = useAuth();
   const { hasRole, hasManageableAccount } = useRole();
-  const { currentAccount: contextAccount } = useAccount();
+  const { currentAccount: contextAccount, setCurrentAccount: setAccountContext } = useAccount();
+  const lastSyncedAccountIdRef = React.useRef<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -91,10 +92,12 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     </Box>
   );
 
-  // Extract accountId from prop, context, URL path, or query string (in that order of preference)
+  // Extract accountId from prop, URL path, query string, or context (in that order of preference)
   const accountIdFromQuery = searchParams.get('accountId');
+  const accountIdFromPath = getAccountIdFromPath(pathname);
+  const accountIdFromContext = contextAccount?.id ? String(contextAccount.id) : null;
   const accountId =
-    propAccountId ?? contextAccount?.id ?? getAccountIdFromPath(pathname) ?? accountIdFromQuery;
+    propAccountId ?? accountIdFromPath ?? accountIdFromQuery ?? accountIdFromContext;
   const { isMember } = useAccountMembership(accountId);
 
   // Fetch account type and current account info
@@ -123,6 +126,16 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
         const account = data.account;
         setAccountType(account.configuration?.accountType?.name ?? null);
         setCurrentAccount(account as AccountType);
+        if (lastSyncedAccountIdRef.current !== String(account.id)) {
+          setAccountContext({
+            id: String(account.id),
+            name: account.name ?? '',
+            accountType: account.configuration?.accountType?.name ?? undefined,
+            timeZone: account.configuration?.timeZone ?? undefined,
+            timeZoneSource: account.configuration?.timeZone ? 'account' : undefined,
+          });
+          lastSyncedAccountIdRef.current = String(account.id);
+        }
       } catch {
         if (!isMounted) {
           return;
@@ -137,7 +150,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     return () => {
       isMounted = false;
     };
-  }, [accountId, apiClient]);
+  }, [accountId, apiClient, setAccountContext]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

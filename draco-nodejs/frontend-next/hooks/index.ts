@@ -16,6 +16,7 @@ export { useRosterDataManager } from './useRosterDataManager';
 export { useRosterPlayer } from './roster/useRosterPlayer';
 export { useScrollPosition } from './useScrollPosition';
 export { useTableLoadingState } from './useTableLoadingState';
+export { useTeamMembership } from './useTeamMembership';
 export { usePollsService } from './usePollsService';
 export { useUserApiOperations } from './useUserApiOperations';
 export { useUserDataManager } from './useUserDataManager';

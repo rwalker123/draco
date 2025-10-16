@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Fab, Stack, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
 import ProtectedRoute from '../../../../../../../../../components/auth/ProtectedRoute';
 import AccountPageHeader from '../../../../../../../../../components/AccountPageHeader';
 import TeamAvatar from '../../../../../../../../../components/TeamAvatar';
 import HandoutSection from '@/components/handouts/HandoutSection';
 import { useTeamHandoutHeader } from '../TeamHandoutsPage';
+import AddIcon from '@mui/icons-material/Add';
 
 const TeamHandoutManagementPage: React.FC = () => {
   const params = useParams();
@@ -57,6 +58,22 @@ const TeamHandoutManagementPage: React.FC = () => {
         allowManage
         variant="panel"
         emptyMessage="No team handouts have been added yet."
+        renderCreateTrigger={({ openCreate, disabled }) => (
+          <Fab
+            color="primary"
+            aria-label="Add team handout"
+            onClick={openCreate}
+            disabled={disabled}
+            sx={{
+              position: 'fixed',
+              bottom: { xs: 24, md: 32 },
+              right: { xs: 24, md: 32 },
+              zIndex: (theme) => theme.zIndex.tooltip,
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        )}
       />
     );
   };

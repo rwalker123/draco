@@ -14,6 +14,7 @@ interface TeamAdminPanelProps {
   canManageSponsors?: boolean;
   showPlayerClassifiedsLink?: boolean;
   playerClassifiedsHref?: string;
+  onPostPlayersWanted?: () => void;
   handoutsHref?: string;
 }
 
@@ -24,9 +25,11 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   canManageSponsors = true,
   showPlayerClassifiedsLink = false,
   playerClassifiedsHref,
+  onPostPlayersWanted,
   handoutsHref,
 }) => {
-  const shouldShowClassifiedsLink = showPlayerClassifiedsLink && !!playerClassifiedsHref;
+  const shouldShowClassifiedsLink =
+    showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
   const shouldShowHandoutsLink = Boolean(handoutsHref);
 
   return (
@@ -56,7 +59,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         </Typography>
         {shouldShowClassifiedsLink && (
           <Typography variant="body2" color="text.secondary">
-            Need reinforcements? Easily post a Teams Wanted ad to recruit new players.
+            Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
           </Typography>
         )}
       </Stack>
@@ -78,8 +81,8 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         )}
         {shouldShowHandoutsLink && (
           <Button
-            variant={canManageSponsors ? 'outlined' : 'contained'}
-            color={canManageSponsors ? 'secondary' : 'primary'}
+            variant="contained"
+            color="primary"
             startIcon={<DescriptionIcon />}
             component={Link}
             href={handoutsHref!}
@@ -89,13 +92,14 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         )}
         {shouldShowClassifiedsLink && (
           <Button
-            variant={canManageSponsors || shouldShowHandoutsLink ? 'outlined' : 'contained'}
-            color={canManageSponsors || shouldShowHandoutsLink ? 'primary' : 'secondary'}
+            variant="contained"
+            color="primary"
             startIcon={<PersonSearchIcon />}
-            component={Link}
-            href={playerClassifiedsHref!}
+            {...(onPostPlayersWanted
+              ? { onClick: onPostPlayersWanted }
+              : { component: Link, href: playerClassifiedsHref! })}
           >
-            Post Teams Wanted Ad
+            Post Players Wanted Ad
           </Button>
         )}
       </Stack>

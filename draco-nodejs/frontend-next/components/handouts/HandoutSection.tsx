@@ -29,6 +29,8 @@ interface HandoutSectionProps {
   viewAllHref?: string;
   variant?: HandoutListVariant;
   emptyMessage?: string;
+  renderCreateTrigger?: (options: { openCreate: () => void; disabled: boolean }) => React.ReactNode;
+  hideWhenEmpty?: boolean;
 }
 
 type DialogState = {
@@ -51,6 +53,8 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
   viewAllHref,
   variant = 'panel',
   emptyMessage,
+  renderCreateTrigger,
+  hideWhenEmpty = false,
 }) => {
   const {
     listHandouts,
@@ -183,16 +187,31 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     </Stack>
   );
 
-  const headerActions = allowManage ? (
-    <Button
-      variant="contained"
-      startIcon={<AddIcon />}
-      onClick={handleOpenCreate}
-      disabled={mutationLoading || fetching}
-    >
-      Add Handout
-    </Button>
-  ) : null;
+  const shouldHideForEmpty =
+    hideWhenEmpty && !fetching && !fetchError && handouts.length === 0 && !mutationError;
+
+  if (shouldHideForEmpty) {
+    return null;
+  }
+
+  const triggerDisabled = mutationLoading || fetching;
+
+  const customCreateTrigger =
+    allowManage && renderCreateTrigger
+      ? renderCreateTrigger({ openCreate: handleOpenCreate, disabled: triggerDisabled })
+      : null;
+
+  const headerActions =
+    allowManage && !customCreateTrigger ? (
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={handleOpenCreate}
+        disabled={triggerDisabled}
+      >
+        Add Handout
+      </Button>
+    ) : null;
 
   const headerContent = (
     <Box display="flex" flexDirection="column" gap={1}>
@@ -234,6 +253,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
   return (
     <>
       {wrapper}
+      {customCreateTrigger}
       <HandoutFormDialog
         open={dialogState.open}
         onClose={handleDialogClose}
