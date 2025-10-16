@@ -1431,6 +1431,43 @@ export type dbCreateEmailAttachmentInput = {
   storage_path: string;
 };
 
+export type dbPhotoGalleryAlbum = Prisma.photogalleryalbumGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    teamid: true;
+    parentalbumid: true;
+    title: true;
+  };
+}>;
+
+export interface dbCreatePhotoSubmissionInput {
+  accountid: bigint;
+  teamid?: bigint | null;
+  albumid?: bigint | null;
+  submittercontactid: bigint;
+  title: string;
+  caption?: string | null;
+  originalfilename: string;
+  originalfilepath: string;
+  primaryimagepath: string;
+  thumbnailimagepath: string;
+}
+
+export interface dbApprovePhotoSubmissionInput {
+  moderatedbycontactid: bigint;
+  approvedphotoid: bigint;
+  moderatedat: Date;
+  updatedat: Date;
+}
+
+export interface dbDenyPhotoSubmissionInput {
+  moderatedbycontactid: bigint;
+  denialreason: string;
+  moderatedat: Date;
+  updatedat: Date;
+}
+
 export type dbPhotoSubmission = Prisma.photogallerysubmissionGetPayload<{
   select: {
     id: true;

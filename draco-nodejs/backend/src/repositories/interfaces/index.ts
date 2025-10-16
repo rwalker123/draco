@@ -27,3 +27,4 @@ export * from './ILeagueLeadersDisplayRepository.js';
 export * from './IRosterRepository.js';
 export * from './IHandoutRepository.js';
 export * from './IAdminAnalyticsRepository.js';
+export * from './IPhotoSubmissionRepository.js';

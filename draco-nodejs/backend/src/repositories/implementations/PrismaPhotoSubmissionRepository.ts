@@ -1,0 +1,174 @@
+import { PrismaClient } from '@prisma/client';
+import { IPhotoSubmissionRepository } from '../interfaces/IPhotoSubmissionRepository.js';
+import {
+  dbApprovePhotoSubmissionInput,
+  dbCreatePhotoSubmissionInput,
+  dbDenyPhotoSubmissionInput,
+  dbPhotoGalleryAlbum,
+  dbPhotoSubmission,
+  dbPhotoSubmissionWithRelations,
+} from '../types/dbTypes.js';
+
+const submissionSelect = {
+  id: true,
+  accountid: true,
+  teamid: true,
+  albumid: true,
+  submittercontactid: true,
+  moderatedbycontactid: true,
+  approvedphotoid: true,
+  title: true,
+  caption: true,
+  originalfilename: true,
+  originalfilepath: true,
+  primaryimagepath: true,
+  thumbnailimagepath: true,
+  status: true,
+  denialreason: true,
+  submittedat: true,
+  updatedat: true,
+  moderatedat: true,
+} as const;
+
+export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async createSubmission(data: dbCreatePhotoSubmissionInput): Promise<dbPhotoSubmission> {
+    return this.prisma.photogallerysubmission.create({
+      data: {
+        accountid: data.accountid,
+        teamid: data.teamid ?? null,
+        albumid: data.albumid ?? null,
+        submittercontactid: data.submittercontactid,
+        title: data.title,
+        caption: data.caption ?? null,
+        originalfilename: data.originalfilename,
+        originalfilepath: data.originalfilepath,
+        primaryimagepath: data.primaryimagepath,
+        thumbnailimagepath: data.thumbnailimagepath,
+      },
+      select: submissionSelect,
+    });
+  }
+
+  async findSubmissionById(submissionId: bigint): Promise<dbPhotoSubmission | null> {
+    return this.prisma.photogallerysubmission.findUnique({
+      where: { id: submissionId },
+      select: submissionSelect,
+    });
+  }
+
+  async findSubmissionForAccount(
+    accountId: bigint,
+    submissionId: bigint,
+  ): Promise<dbPhotoSubmission | null> {
+    return this.prisma.photogallerysubmission.findFirst({
+      where: {
+        id: submissionId,
+        accountid: accountId,
+      },
+      select: submissionSelect,
+    });
+  }
+
+  async findSubmissionWithRelations(
+    submissionId: bigint,
+  ): Promise<dbPhotoSubmissionWithRelations | null> {
+    return this.prisma.photogallerysubmission.findUnique({
+      where: { id: submissionId },
+      include: {
+        accounts: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        photogalleryalbum: {
+          select: {
+            id: true,
+            title: true,
+            teamid: true,
+          },
+        },
+        photogallery: {
+          select: {
+            id: true,
+            title: true,
+            albumid: true,
+          },
+        },
+        submitter: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+        moderator: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findAlbumForAccount(
+    accountId: bigint,
+    albumId: bigint,
+  ): Promise<dbPhotoGalleryAlbum | null> {
+    return this.prisma.photogalleryalbum.findFirst({
+      where: {
+        id: albumId,
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        accountid: true,
+        teamid: true,
+        parentalbumid: true,
+        title: true,
+      },
+    });
+  }
+
+  async approveSubmission(
+    submissionId: bigint,
+    data: dbApprovePhotoSubmissionInput,
+  ): Promise<dbPhotoSubmission> {
+    return this.prisma.photogallerysubmission.update({
+      where: { id: submissionId },
+      data: {
+        moderatedbycontactid: data.moderatedbycontactid,
+        approvedphotoid: data.approvedphotoid,
+        status: 'Approved',
+        moderatedat: data.moderatedat,
+        updatedat: data.updatedat,
+        denialreason: null,
+      },
+      select: submissionSelect,
+    });
+  }
+
+  async denySubmission(
+    submissionId: bigint,
+    data: dbDenyPhotoSubmissionInput,
+  ): Promise<dbPhotoSubmission> {
+    return this.prisma.photogallerysubmission.update({
+      where: { id: submissionId },
+      data: {
+        moderatedbycontactid: data.moderatedbycontactid,
+        approvedphotoid: null,
+        status: 'Denied',
+        moderatedat: data.moderatedat,
+        updatedat: data.updatedat,
+        denialreason: data.denialreason,
+      },
+      select: submissionSelect,
+    });
+  }
+}
