@@ -1,5 +1,5 @@
 import { Prisma, PrismaClient, contacts } from '@prisma/client';
-import { IContactRepository } from '../interfaces/index.js';
+import { ActiveRosterContactFilters, IContactRepository } from '../interfaces/index.js';
 import {
   dbRosterPlayer,
   dbBaseContact,
@@ -172,6 +172,107 @@ export class PrismaContactRepository implements IContactRepository {
         },
       },
     });
+  }
+
+  async findActiveSeasonRosterContacts(
+    accountId: bigint,
+    seasonId: bigint,
+    filters: ActiveRosterContactFilters = {},
+  ): Promise<dbBaseContact[]> {
+    const { birthdayOn } = filters;
+
+    if (!birthdayOn) {
+      return this.prisma.contacts.findMany({
+        where: {
+          creatoraccountid: accountId,
+          roster: {
+            is: {
+              rosterseason: {
+                some: {
+                  inactive: false,
+                  teamsseason: {
+                    leagueseason: {
+                      seasonid: seasonId,
+                      league: {
+                        accountid: accountId,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          firstname: true,
+          lastname: true,
+          email: true,
+          phone1: true,
+          phone2: true,
+          phone3: true,
+          streetaddress: true,
+          city: true,
+          state: true,
+          zip: true,
+          dateofbirth: true,
+          middlename: true,
+          creatoraccountid: true,
+          userid: true,
+        },
+        orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
+      });
+    }
+
+    return this.prisma.$queryRaw<dbBaseContact[]>(Prisma.sql`
+      SELECT
+        c.id,
+        c.firstname,
+        c.lastname,
+        c.email,
+        c.phone1,
+        c.phone2,
+        c.phone3,
+        c.streetaddress,
+        c.city,
+        c.state,
+        c.zip,
+        c.dateofbirth,
+        c.middlename,
+        c.creatoraccountid,
+        c.userid
+      FROM contacts c
+      INNER JOIN roster r ON r.contactid = c.id
+      INNER JOIN rosterseason rs ON rs.rosterid = r.id AND rs.inactive = false
+      INNER JOIN teamsseason ts ON ts.id = rs.teamsseasonid
+      INNER JOIN leagueseason ls ON ls.id = ts.leagueseasonid
+      INNER JOIN league l ON l.id = ls.leagueid
+      WHERE
+        c.creatoraccountid = ${accountId}
+        AND l.accountid = ${accountId}
+        AND ls.seasonid = ${seasonId}
+        AND c.dateofbirth IS NOT NULL
+        AND c.dateofbirth <> DATE '1900-01-01'
+        AND EXTRACT(MONTH FROM c.dateofbirth) = ${birthdayOn.month}
+        AND EXTRACT(DAY FROM c.dateofbirth) = ${birthdayOn.day}
+      GROUP BY
+        c.id,
+        c.firstname,
+        c.lastname,
+        c.email,
+        c.phone1,
+        c.phone2,
+        c.phone3,
+        c.streetaddress,
+        c.city,
+        c.state,
+        c.zip,
+        c.dateofbirth,
+        c.middlename,
+        c.creatoraccountid,
+        c.userid
+      ORDER BY c.lastname ASC, c.firstname ASC
+    `);
   }
 
   async searchContactsWithRoles(

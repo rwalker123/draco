@@ -30,12 +30,164 @@ import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
-import { getAccountById, getAccountUserTeams } from '@draco/shared-api-client';
+import {
+  getAccountById,
+  getAccountTodaysBirthdays,
+  getAccountUserTeams,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
-import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
+import {
+  AccountSeasonWithStatusType,
+  AccountType,
+  BaseContactType,
+  SponsorType,
+} from '@draco/shared-schemas';
 import HandoutSection from '@/components/handouts/HandoutSection';
+
+type TodaysBirthdaysCardProps = {
+  accountId: string;
+  hasActiveSeason: boolean;
+};
+
+const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
+  accountId,
+  hasActiveSeason,
+}) => {
+  const apiClient = useApiClient();
+  const [birthdays, setBirthdays] = useState<BaseContactType[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!accountId) {
+      setBirthdays([]);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchBirthdays = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getAccountTodaysBirthdays({
+          client: apiClient,
+          path: { accountId },
+          throwOnError: false,
+        });
+
+        if (ignore) {
+          return;
+        }
+
+        const birthdaysResponse = unwrapApiResult(result, 'Birthdays are currently unavailable.');
+        setBirthdays(Array.isArray(birthdaysResponse) ? birthdaysResponse : []);
+      } catch (err) {
+        if (!ignore) {
+          console.error("Failed to fetch today's birthdays:", err);
+          setError('Birthdays are currently unavailable.');
+          setBirthdays([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchBirthdays();
+
+    return () => {
+      ignore = true;
+    };
+  }, [accountId, apiClient]);
+
+  return (
+    <Paper
+      sx={{
+        p: 3,
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      }}
+    >
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+        Today&apos;s Birthdays
+      </Typography>
+      {!hasActiveSeason && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Birthdays will appear once an active season is selected.
+        </Alert>
+      )}
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress size={28} />
+        </Box>
+      ) : error ? (
+        <Alert severity="warning">{error}</Alert>
+      ) : birthdays.length > 0 ? (
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          {birthdays.map((contact) => (
+            <Box
+              key={contact.id}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                p: 1,
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                minWidth: 220,
+                flex: '1 1 220px',
+              }}
+            >
+              <Box
+                component="img"
+                src={contact.photoUrl ?? ''}
+                alt={`${contact.firstName} ${contact.lastName}`}
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid',
+                  borderColor: 'primary.light',
+                  bgcolor: 'grey.100',
+                }}
+                onError={(event) => {
+                  (event.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                }}
+              />
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  {contact.firstName} {contact.lastName}
+                </Typography>
+                {contact.contactDetails?.dateOfBirth && (
+                  <Typography variant="body2" color="text.secondary">
+                    Born {contact.contactDetails.dateOfBirth}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      ) : (
+        <Typography variant="body2" color="text.secondary">
+          No players are celebrating a birthday today.
+        </Typography>
+      )}
+    </Paper>
+  );
+};
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -389,6 +541,8 @@ const BaseballAccountHome: React.FC = () => {
             />
           </Box>
         )}
+
+        <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
 

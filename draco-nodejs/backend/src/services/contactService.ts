@@ -233,6 +233,31 @@ export class ContactService {
     );
   }
 
+  async getTodaysBirthdays(accountId: bigint): Promise<BaseContactType[]> {
+    const currentSeason = await this.seasonRepository.findCurrentSeason(accountId);
+
+    if (!currentSeason) {
+      return [];
+    }
+
+    const today = new Date();
+    const todayMonth = today.getUTCMonth() + 1;
+    const todayDate = today.getUTCDate();
+
+    const birthdays = await this.contactRepository.findActiveSeasonRosterContacts(
+      accountId,
+      currentSeason.id,
+      {
+        birthdayOn: {
+          month: todayMonth,
+          day: todayDate,
+        },
+      },
+    );
+
+    return birthdays.map((contact) => ContactResponseFormatter.formatContactResponse(contact));
+  }
+
   /**
    * Simple contact query without roles using Prisma ORM
    */
