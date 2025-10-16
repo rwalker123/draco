@@ -13,5 +13,15 @@ export default defineConfig({
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
+  },
+  esbuild: {
+    tsconfigRaw: {
+      compilerOptions: {
+        jsx: 'react-jsx',
+        target: 'esnext',
+        module: 'esnext',
+        moduleResolution: 'bundler'
+      }
+    }
   }
 });
