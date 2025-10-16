@@ -159,6 +159,20 @@ export type dbTeamSeason = Prisma.teamsseasonGetPayload<{
   select: { id: true; name: true };
 }>;
 
+export type dbAccountHandout = Prisma.accounthandoutsGetPayload<{
+  select: { id: true; description: true; filename: true; accountid: true };
+}>;
+
+export type dbTeamHandout = Prisma.teamhandoutsGetPayload<{
+  select: {
+    id: true;
+    description: true;
+    filename: true;
+    teamid: true;
+    teams: { select: { id: true; accountid: true } };
+  };
+}>;
+
 export type dbRosterMember = Prisma.rosterseasonGetPayload<{
   include: { roster: { include: { contacts: true } } };
 }>;
@@ -1485,4 +1499,34 @@ export type dbTeamSeasonRecord = {
   wins: number;
   losses: number;
   ties: number;
+};
+
+export type dbAdminAccountStorageUsage = {
+  accountId: bigint;
+  accountName: string;
+  attachmentBytes: bigint;
+  attachmentCount: number;
+};
+
+export type dbAdminEmailSummary = {
+  totalEmails: number;
+  totalRecipients: number;
+  successfulDeliveries: number;
+  failedDeliveries: number;
+  bounceCount: number;
+  openCount: number;
+  clickCount: number;
+};
+
+export type dbAdminAccountEmailActivity = {
+  accountId: bigint;
+  accountName: string;
+  emailCount: number;
+  totalRecipients: number;
+  successfulDeliveries: number;
+  failedDeliveries: number;
+  bounceCount: number;
+  openCount: number;
+  clickCount: number;
+  lastSentAt: Date | null;
 };

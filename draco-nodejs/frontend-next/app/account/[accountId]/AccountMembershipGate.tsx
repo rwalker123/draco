@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Box, Typography, Container } from '@mui/material';
 import { isPublicRoute } from '../../../config/routePermissions';
 import { useAuth } from '../../../context/AuthContext';
+import { useRole } from '../../../context/RoleContext';
 import {
   AccountRegistrationService,
   SelfRegisterInput,
@@ -18,6 +19,7 @@ interface Props {
 
 export default function AccountMembershipGate({ accountId, children }: Props) {
   const { user, token, fetchUser } = useAuth();
+  const { hasRole } = useRole();
   const [isMember, setIsMember] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +29,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
   const showRegistration = (searchParams?.get('register') || '') === '1';
   const currentPath = (pathname as string) || '';
   const isPublic = isPublicRoute(currentPath);
+  const isGlobalAdministrator = hasRole('Administrator');
 
   useEffect(() => {
     let mounted = true;
@@ -34,6 +37,10 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
       try {
         if (isPublic) {
           // No gating for public routes
+          setIsMember(true);
+          return;
+        }
+        if (isGlobalAdministrator) {
           setIsMember(true);
           return;
         }
@@ -59,7 +66,16 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
     return () => {
       mounted = false;
     };
-  }, [accountId, token, user, router, currentPath, showRegistration, isPublic]);
+  }, [
+    accountId,
+    token,
+    user,
+    router,
+    currentPath,
+    showRegistration,
+    isPublic,
+    isGlobalAdministrator,
+  ]);
 
   const handleSelfRegister = useCallback(
     async (input: SelfRegisterInput) => {
@@ -89,6 +105,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
           accountId,
           payload,
           captchaToken ?? undefined,
+          token ?? undefined,
         );
         if (newToken) {
           // Persist token and refresh user
@@ -104,11 +121,12 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
         setLoading(false);
       }
     },
-    [accountId, fetchUser],
+    [accountId, fetchUser, token],
   );
 
   const content = useMemo(() => {
     if (isPublic) return <>{children}</>; // Never gate public routes
+    if (isGlobalAdministrator) return <>{children}</>;
     if (isMember === null) return null; // initial
     if (isMember) return <>{children}</>;
 
@@ -130,6 +148,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
         {user ? (
           <RegistrationForm
             isAuthenticated={true}
+            userName={user.userName ?? ''}
             onSubmit={handleSelfRegister}
             loading={loading}
             error={error}
@@ -148,6 +167,7 @@ export default function AccountMembershipGate({ accountId, children }: Props) {
   }, [
     isPublic,
     isMember,
+    isGlobalAdministrator,
     user,
     children,
     loading,

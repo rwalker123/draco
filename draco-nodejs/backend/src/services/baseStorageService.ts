@@ -23,6 +23,25 @@ export interface StorageService {
   getAttachment(accountId: string, emailId: string, filename: string): Promise<Buffer | null>;
   deleteAttachment(accountId: string, emailId: string, filename: string): Promise<void>;
   deleteAllAttachments(accountId: string, emailId: string): Promise<void>;
+  saveHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    buffer: Buffer,
+    teamId?: string,
+  ): Promise<void>;
+  getHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<Buffer | null>;
+  deleteHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<void>;
 }
 
 export abstract class BaseStorageService implements StorageService {
@@ -66,6 +85,19 @@ export abstract class BaseStorageService implements StorageService {
     return `${accountId}/email-attachments/${emailId}/${filename}`;
   }
 
+  protected getHandoutKey(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): string {
+    if (teamId) {
+      return `${accountId}/team-handouts/${teamId}/${handoutId}/${filename}`;
+    }
+
+    return `${accountId}/handouts/${handoutId}/${filename}`;
+  }
+
   protected handleStorageError(error: unknown, operation: string): never {
     console.error(`Error during ${operation}:`, error);
 
@@ -101,4 +133,23 @@ export abstract class BaseStorageService implements StorageService {
   ): Promise<Buffer | null>;
   abstract deleteAttachment(accountId: string, emailId: string, filename: string): Promise<void>;
   abstract deleteAllAttachments(accountId: string, emailId: string): Promise<void>;
+  abstract saveHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    buffer: Buffer,
+    teamId?: string,
+  ): Promise<void>;
+  abstract getHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<Buffer | null>;
+  abstract deleteHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<void>;
 }

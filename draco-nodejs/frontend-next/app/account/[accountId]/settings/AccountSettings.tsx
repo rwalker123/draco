@@ -54,7 +54,9 @@ const AccountSettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canManageAccountSettings = isAccountAdministrator(hasRole, accountIdStr);
+  const isGlobalAdministrator = hasRole('Administrator');
+  const canManageAccountSettings =
+    isGlobalAdministrator || isAccountAdministrator(hasRole, accountIdStr);
 
   const loadAccountData = useCallback(async () => {
     try {

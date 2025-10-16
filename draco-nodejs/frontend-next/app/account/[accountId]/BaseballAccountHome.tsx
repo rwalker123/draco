@@ -35,6 +35,7 @@ import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
+import HandoutSection from '@/components/handouts/HandoutSection';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -52,8 +53,9 @@ const BaseballAccountHome: React.FC = () => {
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const { isMember } = useAccountMembership(accountIdStr);
+  const { isMember, contact } = useAccountMembership(accountIdStr);
   const isAccountMember = isMember === true;
+  const hasAccountContact = Boolean(contact);
 
   // Fetch public account data
   useEffect(() => {
@@ -388,7 +390,30 @@ const BaseballAccountHome: React.FC = () => {
           </Box>
         )}
 
-        <AccountPollsCard accountId={accountIdStr} />
+        {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
+
+        {hasAccountContact && (
+          <Box
+            sx={{
+              maxWidth: { xs: '100%', sm: 420 },
+              alignSelf: 'flex-start',
+              width: '100%',
+              '&:empty': { display: 'none' },
+            }}
+          >
+            <HandoutSection
+              scope={{ type: 'account', accountId: accountIdStr }}
+              title="Latest Handouts"
+              description="Quick access to recently added documents."
+              allowManage={false}
+              variant="card"
+              maxItems={3}
+              viewAllHref={`/account/${accountIdStr}/handouts`}
+              emptyMessage="No handouts are available yet."
+              hideWhenEmpty
+            />
+          </Box>
+        )}
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}

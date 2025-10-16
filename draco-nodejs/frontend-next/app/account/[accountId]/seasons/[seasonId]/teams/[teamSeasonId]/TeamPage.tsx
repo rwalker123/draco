@@ -19,16 +19,23 @@ import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import { SponsorService } from '../../../../../../../services/sponsorService';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
-import { SponsorType, UpsertGameRecapType } from '@draco/shared-schemas';
+import {
+  SponsorType,
+  UpsertGameRecapType,
+  UpsertPlayersWantedClassifiedType,
+} from '@draco/shared-schemas';
 import { useRole } from '../../../../../../../context/RoleContext';
 import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
 import { useAccountMembership } from '../../../../../../../hooks/useAccountMembership';
+import { useTeamMembership } from '../../../../../../../hooks/useTeamMembership';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../utils/apiResult';
 import {
   listTeamSeasonGames as apiListTeamSeasonGames,
   type RecentGames,
 } from '@draco/shared-api-client';
+import HandoutSection from '@/components/handouts/HandoutSection';
+import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePlayersWantedDialog';
 
 interface TeamPageProps {
   accountId: string;
@@ -53,9 +60,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     accountName: string;
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
+    teamId?: string;
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
+  const [playersWantedDialogOpen, setPlayersWantedDialogOpen] = React.useState(false);
+  const [playersWantedInitialData, setPlayersWantedInitialData] = React.useState<
+    UpsertPlayersWantedClassifiedType | undefined
+  >(undefined);
   const { token } = useAuth();
   const { canEditRecap } = useSchedulePermissions({
     accountId,
@@ -64,6 +76,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { isMember } = useAccountMembership(accountId);
   const isAccountMember = isMember === true;
+  const { isMember: isTeamMember, error: teamMembershipError } = useTeamMembership(
+    isAccountMember ? accountId : null,
+    teamSeasonId,
+    seasonId,
+  );
   const apiClient = useApiClient();
 
   React.useEffect(() => {
@@ -264,6 +281,26 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
+  const handleOpenPlayersWantedDialog = React.useCallback(() => {
+    const parts = [teamData?.leagueName, teamData?.teamName]
+      .map((part) => part?.trim())
+      .filter((part): part is string => Boolean(part && part.length > 0));
+
+    const teamEventName = parts.join(' ').trim();
+
+    setPlayersWantedInitialData({
+      teamEventName,
+      description: '',
+      positionsNeeded: '',
+    });
+    setPlayersWantedDialogOpen(true);
+  }, [teamData]);
+
+  const handleClosePlayersWantedDialog = React.useCallback(() => {
+    setPlayersWantedDialogOpen(false);
+    setPlayersWantedInitialData(undefined);
+  }, []);
+
   return (
     <main className="min-h-screen bg-background">
       {/* Account Header with Team Information */}
@@ -333,8 +370,42 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           teamSeasonId={teamSeasonId}
           canManageSponsors={canManageTeamSponsors}
           showPlayerClassifiedsLink={isAccountMember}
-          playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=teams-wanted`}
+          playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=players-wanted`}
+          onPostPlayersWanted={handleOpenPlayersWantedDialog}
+          handoutsHref={
+            teamData?.teamId
+              ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts/manage`
+              : undefined
+          }
         />
+      )}
+
+      {teamData?.teamId && teamMembershipError && (
+        <Alert severity="error" sx={{ mb: 4 }}>
+          {teamMembershipError}
+        </Alert>
+      )}
+
+      {teamData?.teamId && isTeamMember && (
+        <Box
+          sx={{
+            maxWidth: { xs: '100%', md: 420 },
+            mb: 4,
+            '&:empty': { display: 'none', marginBottom: 0 },
+          }}
+        >
+          <HandoutSection
+            scope={{ type: 'team', accountId, teamId: teamData.teamId }}
+            title="Team Handouts"
+            description="Important documents shared with your roster."
+            allowManage={false}
+            variant="card"
+            maxItems={3}
+            viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts`}
+            emptyMessage="No team handouts have been posted yet."
+            hideWhenEmpty
+          />
+        </Box>
       )}
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}
@@ -555,6 +626,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           {summaryError}
         </Alert>
       )}
+
+      <CreatePlayersWantedDialog
+        accountId={accountId}
+        open={playersWantedDialogOpen}
+        onClose={handleClosePlayersWantedDialog}
+        initialData={playersWantedInitialData}
+      />
     </main>
   );
 };

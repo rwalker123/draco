@@ -31,42 +31,47 @@ const TurnstileChallenge: React.FC<TurnstileChallengeProps> = ({
 }) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const widgetIdRef = React.useRef<TurnstileWidgetHandle>(null);
-
-  const renderWidget = React.useCallback(() => {
-    if (!window.turnstile || !containerRef.current || !SITE_KEY) {
-      return;
-    }
-
-    if (widgetIdRef.current) {
-      window.turnstile.remove(widgetIdRef.current);
-      widgetIdRef.current = null;
-    }
-
-    widgetIdRef.current = window.turnstile.render(containerRef.current, {
-      sitekey: SITE_KEY,
-      size,
-      theme,
-      callback: (token: string) => {
-        onTokenChange(token);
-      },
-      'expired-callback': () => {
-        onTokenChange(null);
-      },
-      'error-callback': () => {
-        onTokenChange(null);
-      },
-      'timeout-callback': () => {
-        onTokenChange(null);
-      },
-    });
-  }, [onTokenChange, size, theme]);
+  const onTokenChangeRef = React.useRef(onTokenChange);
 
   React.useEffect(() => {
-    onTokenChange(null);
+    onTokenChangeRef.current = onTokenChange;
+  }, [onTokenChange]);
+
+  React.useEffect(() => {
+    onTokenChangeRef.current(null);
 
     if (!SITE_KEY) {
       return;
     }
+
+    const renderWidget = () => {
+      if (!window.turnstile || !containerRef.current) {
+        return;
+      }
+
+      if (widgetIdRef.current) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: SITE_KEY,
+        size,
+        theme,
+        callback: (token: string) => {
+          onTokenChangeRef.current(token);
+        },
+        'expired-callback': () => {
+          onTokenChangeRef.current(null);
+        },
+        'error-callback': () => {
+          onTokenChangeRef.current(null);
+        },
+        'timeout-callback': () => {
+          onTokenChangeRef.current(null);
+        },
+      });
+    };
 
     const handleScriptLoad = () => {
       renderWidget();
@@ -98,8 +103,7 @@ const TurnstileChallenge: React.FC<TurnstileChallengeProps> = ({
         widgetIdRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [renderWidget, resetSignal]);
+  }, [resetSignal, size, theme]);
 
   if (!SITE_KEY) {
     return (

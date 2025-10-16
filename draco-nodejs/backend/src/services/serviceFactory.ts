@@ -41,6 +41,8 @@ import { UserService } from './userService.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { SeasonService } from './seasonService.js';
 import { TurnstileService } from './turnstileService.js';
+import { HandoutService } from './handoutService.js';
+import { AdminAnalyticsService } from './adminAnalyticsService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -79,6 +81,8 @@ export class ServiceFactory {
   private static monitoringService: MonitoringService;
   private static userService: UserService;
   private static turnstileService: TurnstileService;
+  private static handoutService: HandoutService;
+  private static adminAnalyticsService: AdminAnalyticsService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -317,6 +321,15 @@ export class ServiceFactory {
     return this.monitoringService;
   }
 
+  static getAdminAnalyticsService(): AdminAnalyticsService {
+    if (!this.adminAnalyticsService) {
+      const monitoringService = this.getMonitoringService();
+      this.adminAnalyticsService = new AdminAnalyticsService(monitoringService);
+    }
+
+    return this.adminAnalyticsService;
+  }
+
   static getUserService(): UserService {
     if (!this.userService) {
       this.userService = new UserService({
@@ -333,5 +346,13 @@ export class ServiceFactory {
     }
 
     return this.turnstileService;
+  }
+
+  static getHandoutService(): HandoutService {
+    if (!this.handoutService) {
+      this.handoutService = new HandoutService();
+    }
+
+    return this.handoutService;
   }
 }

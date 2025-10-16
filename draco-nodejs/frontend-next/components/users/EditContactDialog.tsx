@@ -36,6 +36,29 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContactOperations } from '../../hooks/useContactOperations';
 
+const parseDateOnly = (value: string): Date | null => {
+  if (!value) {
+    return null;
+  }
+
+  const [datePart] = value.split('T');
+  const segments = datePart.split('-');
+  if (segments.length !== 3) {
+    return null;
+  }
+
+  const [yearStr, monthStr, dayStr] = segments;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+};
+
 interface EditContactDialogProps {
   open: boolean;
   contact: BaseContactType | null;
@@ -376,9 +399,15 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
                   render={({ field, fieldState }) => (
                     <DatePicker
                       label="Date of Birth"
-                      value={field.value ? new Date(field.value) : null}
+                      value={field.value ? parseDateOnly(field.value) : null}
                       onChange={(date) => {
-                        field.onChange(date ? date.toISOString().split('T')[0] : '');
+                        field.onChange(
+                          date
+                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+                                date.getDate(),
+                              ).padStart(2, '0')}`
+                            : '',
+                        );
                         // Clear save error when user makes changes
                         if (saveError) {
                           setSaveError('');

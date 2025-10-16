@@ -4027,9 +4027,6 @@ components:
     UpsertTeamsWantedClassified:
       type: object
       properties:
-        id:
-          type: string
-          pattern: ^d+$
         accessCode:
           type: string
           minLength: 10
@@ -7311,6 +7308,92 @@ components:
       required:
         - games
         - pagination
+    Handout:
+      type: object
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+        id:
+          type: string
+          pattern: ^d+$
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Original file name associated with the handout
+        accountId:
+          type: string
+          pattern: ^d+$
+        teamId:
+          type: string
+          pattern: ^d+$
+        downloadUrl:
+          type: string
+          format: uri
+          description: API endpoint to download the handout file
+      required:
+        - description
+        - id
+        - fileName
+        - accountId
+        - downloadUrl
+      title: Handout
+      description: Represents a downloadable handout file for an account or team
+    HandoutList:
+      type: object
+      properties:
+        handouts:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                minLength: 1
+                maxLength: 255
+              id:
+                type: string
+                pattern: ^d+$
+              fileName:
+                type: string
+                minLength: 1
+                maxLength: 255
+                description: Original file name associated with the handout
+              accountId:
+                type: string
+                pattern: ^d+$
+              teamId:
+                type: string
+                pattern: ^d+$
+              downloadUrl:
+                type: string
+                format: uri
+                description: API endpoint to download the handout file
+            required:
+              - description
+              - id
+              - fileName
+              - accountId
+              - downloadUrl
+            title: Handout
+            description: Represents a downloadable handout file for an account or team
+      required:
+        - handouts
+      title: HandoutList
+      description: List of handouts available in the requested context
+    UpsertHandout:
+      type: object
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+        - description
+      title: UpsertHandout
+      description: Payload for creating or updating a handout record
     UpdateGameResults:
       type: object
       properties:
@@ -7685,6 +7768,76 @@ components:
           type: string
       required:
         - hasRole
+    ContactValidation:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 100
+          format: email
+        contactDetails:
+          type: object
+          properties:
+            phone1:
+              type: string
+              nullable: true
+              default: ""
+            phone2:
+              type: string
+              nullable: true
+              default: ""
+            phone3:
+              type: string
+              nullable: true
+              default: ""
+            streetAddress:
+              type: string
+              nullable: true
+              maxLength: 100
+              default: ""
+            city:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            state:
+              type: string
+              nullable: true
+              maxLength: 50
+              default: ""
+            zip:
+              type: string
+              nullable: true
+              maxLength: 10
+              default: ""
+            dateOfBirth:
+              type: string
+              nullable: true
+              default: ""
+        photo:
+          type: string
+          format: binary
+          description: Contact photo file
+        validationType:
+          type: string
+          enum:
+            - streetAddress
+            - dateOfBirth
+      required:
+        - firstName
+        - lastName
+        - validationType
   securitySchemes:
     bearerAuth:
       type: http
@@ -9139,6 +9292,526 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+  /api/admin/analytics/summary:
+    get:
+      operationId: getAdminAnalyticsSummary
+      summary: Fetch aggregated administrator analytics for the platform.
+      description: Returns platform-wide metrics covering account storage usage, email
+        delivery outcomes, and current system monitoring status.
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Administrator analytics summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generatedAt:
+                    type: string
+                    format: date-time
+                  accounts:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        minimum: 0
+                      withEmailActivity:
+                        type: integer
+                        minimum: 0
+                      topStorageAccounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            accountId:
+                              type: string
+                              example: "42"
+                            accountName:
+                              type: string
+                              example: Springfield Tigers
+                            attachmentBytes:
+                              type: number
+                              minimum: 0
+                              example: 1048576
+                            attachmentCount:
+                              type: number
+                              minimum: 0
+                              example: 12
+                          required:
+                            - accountId
+                            - accountName
+                            - attachmentBytes
+                            - attachmentCount
+                    required:
+                      - total
+                      - withEmailActivity
+                      - topStorageAccounts
+                  storage:
+                    type: object
+                    properties:
+                      totalAttachmentBytes:
+                        type: number
+                        minimum: 0
+                      totalAttachments:
+                        type: integer
+                        minimum: 0
+                      byAccount:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            accountId:
+                              type: string
+                              example: "42"
+                            accountName:
+                              type: string
+                              example: Springfield Tigers
+                            attachmentBytes:
+                              type: number
+                              minimum: 0
+                              example: 1048576
+                            attachmentCount:
+                              type: number
+                              minimum: 0
+                              example: 12
+                          required:
+                            - accountId
+                            - accountName
+                            - attachmentBytes
+                            - attachmentCount
+                    required:
+                      - totalAttachmentBytes
+                      - totalAttachments
+                      - byAccount
+                  email:
+                    type: object
+                    properties:
+                      totalEmails:
+                        type: integer
+                        minimum: 0
+                      totalRecipients:
+                        type: integer
+                        minimum: 0
+                      successfulDeliveries:
+                        type: integer
+                        minimum: 0
+                      failedDeliveries:
+                        type: integer
+                        minimum: 0
+                      bounceCount:
+                        type: integer
+                        minimum: 0
+                      openCount:
+                        type: integer
+                        minimum: 0
+                      clickCount:
+                        type: integer
+                        minimum: 0
+                      deliverySuccessRate:
+                        type: number
+                        minimum: 0
+                        maximum: 100
+                      bounceRate:
+                        type: number
+                        minimum: 0
+                        maximum: 100
+                      openRate:
+                        type: number
+                        minimum: 0
+                        maximum: 100
+                      clickRate:
+                        type: number
+                        minimum: 0
+                        maximum: 100
+                      perAccount:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            accountId:
+                              type: string
+                              example: "42"
+                            accountName:
+                              type: string
+                              example: Springfield Tigers
+                            emailCount:
+                              type: number
+                              minimum: 0
+                              example: 28
+                            totalRecipients:
+                              type: number
+                              minimum: 0
+                              example: 1850
+                            successfulDeliveries:
+                              type: number
+                              minimum: 0
+                              example: 1800
+                            failedDeliveries:
+                              type: number
+                              minimum: 0
+                              example: 12
+                            bounceCount:
+                              type: number
+                              minimum: 0
+                              example: 5
+                            openCount:
+                              type: number
+                              minimum: 0
+                              example: 1400
+                            clickCount:
+                              type: number
+                              minimum: 0
+                              example: 520
+                            lastSentAt:
+                              type: string
+                              nullable: true
+                              format: date-time
+                              example: 2025-01-15T18:24:00.000Z
+                            deliverySuccessRate:
+                              type: number
+                              minimum: 0
+                              maximum: 100
+                              example: 97.3
+                            openRate:
+                              type: number
+                              minimum: 0
+                              maximum: 100
+                              example: 75.7
+                            clickRate:
+                              type: number
+                              minimum: 0
+                              maximum: 100
+                              example: 28.1
+                          required:
+                            - accountId
+                            - accountName
+                            - emailCount
+                            - totalRecipients
+                            - successfulDeliveries
+                            - failedDeliveries
+                            - bounceCount
+                            - openCount
+                            - clickCount
+                            - lastSentAt
+                            - deliverySuccessRate
+                            - openRate
+                            - clickRate
+                    required:
+                      - totalEmails
+                      - totalRecipients
+                      - successfulDeliveries
+                      - failedDeliveries
+                      - bounceCount
+                      - openCount
+                      - clickCount
+                      - deliverySuccessRate
+                      - bounceRate
+                      - openRate
+                      - clickRate
+                      - perAccount
+                  monitoring:
+                    type: object
+                    properties:
+                      health:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - healthy
+                              - warning
+                              - critical
+                          timestamp:
+                            type: string
+                            format: date-time
+                          uptime:
+                            type: number
+                            minimum: 0
+                          database:
+                            type: object
+                            properties:
+                              status:
+                                type: string
+                                enum:
+                                  - connected
+                                  - unavailable
+                              latency:
+                                type: number
+                                minimum: 0
+                              connectionPool:
+                                type: object
+                                properties:
+                                  activeConnections:
+                                    type: integer
+                                    minimum: 0
+                                  idleConnections:
+                                    type: integer
+                                    minimum: 0
+                                  totalConnections:
+                                    type: integer
+                                    minimum: 0
+                                  pendingRequests:
+                                    type: integer
+                                    minimum: 0
+                                  configuration:
+                                    type: object
+                                    properties:
+                                      maxConnections:
+                                        type: integer
+                                        minimum: 0
+                                      timeout:
+                                        type: integer
+                                        minimum: 0
+                                      slowQueryThreshold:
+                                        type: integer
+                                        minimum: 0
+                                    required:
+                                      - maxConnections
+                                      - timeout
+                                      - slowQueryThreshold
+                                required:
+                                  - activeConnections
+                                  - idleConnections
+                                  - totalConnections
+                                  - pendingRequests
+                                  - configuration
+                            required:
+                              - status
+                              - latency
+                              - connectionPool
+                          performance:
+                            type: object
+                            properties:
+                              status:
+                                type: string
+                                enum:
+                                  - healthy
+                                  - warning
+                                  - critical
+                              message:
+                                type: string
+                              queries:
+                                type: object
+                                properties:
+                                  totalQueries:
+                                    type: integer
+                                    minimum: 0
+                                  slowQueries:
+                                    type: integer
+                                    minimum: 0
+                                  averageDuration:
+                                    type: number
+                                    minimum: 0
+                                  p50Duration:
+                                    type: number
+                                    minimum: 0
+                                  p95Duration:
+                                    type: number
+                                    minimum: 0
+                                  p99Duration:
+                                    type: number
+                                    minimum: 0
+                                  maxDuration:
+                                    type: number
+                                    minimum: 0
+                                  queryPatterns:
+                                    type: object
+                                    additionalProperties:
+                                      type: object
+                                      properties:
+                                        pattern:
+                                          type: string
+                                        count:
+                                          type: integer
+                                          minimum: 0
+                                        totalDuration:
+                                          type: number
+                                          minimum: 0
+                                        averageDuration:
+                                          type: number
+                                          minimum: 0
+                                        slowCount:
+                                          type: integer
+                                          minimum: 0
+                                      required:
+                                        - pattern
+                                        - count
+                                        - totalDuration
+                                        - averageDuration
+                                        - slowCount
+                                required:
+                                  - totalQueries
+                                  - slowQueries
+                                  - averageDuration
+                                  - p50Duration
+                                  - p95Duration
+                                  - p99Duration
+                                  - maxDuration
+                                  - queryPatterns
+                            required:
+                              - status
+                              - message
+                              - queries
+                          environment:
+                            type: string
+                        required:
+                          - status
+                          - timestamp
+                          - uptime
+                          - database
+                          - performance
+                          - environment
+                      performance:
+                        type: object
+                        properties:
+                          timeWindow:
+                            type: string
+                          timestamp:
+                            type: string
+                            format: date-time
+                          summary:
+                            type: object
+                            properties:
+                              totalQueries:
+                                type: integer
+                                minimum: 0
+                              slowQueries:
+                                type: integer
+                                minimum: 0
+                              slowQueryPercentage:
+                                type: string
+                              averageDuration:
+                                type: number
+                                minimum: 0
+                            required:
+                              - totalQueries
+                              - slowQueries
+                              - slowQueryPercentage
+                              - averageDuration
+                          percentiles:
+                            type: object
+                            properties:
+                              p50:
+                                type: number
+                                minimum: 0
+                              p95:
+                                type: number
+                                minimum: 0
+                              p99:
+                                type: number
+                                minimum: 0
+                              max:
+                                type: number
+                                minimum: 0
+                            required:
+                              - p50
+                              - p95
+                              - p99
+                              - max
+                          connectionPool:
+                            type: object
+                            properties:
+                              activeConnections:
+                                type: integer
+                                minimum: 0
+                              idleConnections:
+                                type: integer
+                                minimum: 0
+                              totalConnections:
+                                type: integer
+                                minimum: 0
+                              pendingRequests:
+                                type: integer
+                                minimum: 0
+                            required:
+                              - activeConnections
+                              - idleConnections
+                              - totalConnections
+                              - pendingRequests
+                          slowQueries:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                duration:
+                                  type: number
+                                  minimum: 0
+                                query:
+                                  type: string
+                                timestamp:
+                                  type: string
+                                  format: date-time
+                                model:
+                                  type: string
+                                operation:
+                                  type: string
+                              required:
+                                - duration
+                                - query
+                                - timestamp
+                            description: Slowest queries observed within the time window.
+                          queryPatterns:
+                            type: object
+                            additionalProperties:
+                              type: object
+                              properties:
+                                pattern:
+                                  type: string
+                                count:
+                                  type: integer
+                                  minimum: 0
+                                totalDuration:
+                                  type: number
+                                  minimum: 0
+                                averageDuration:
+                                  type: number
+                                  minimum: 0
+                                slowCount:
+                                  type: integer
+                                  minimum: 0
+                              required:
+                                - pattern
+                                - count
+                                - totalDuration
+                                - averageDuration
+                                - slowCount
+                          configuration:
+                            type: object
+                            properties:
+                              slowQueryThreshold:
+                                type: number
+                                minimum: 0
+                              loggingEnabled:
+                                type: boolean
+                            required:
+                              - slowQueryThreshold
+                              - loggingEnabled
+                        required:
+                          - timeWindow
+                          - timestamp
+                          - summary
+                          - percentiles
+                          - connectionPool
+                          - slowQueries
+                          - queryPatterns
+                          - configuration
+                    required:
+                      - health
+                      - performance
+                required:
+                  - generatedAt
+                  - accounts
+                  - storage
+                  - email
+                  - monitoring
+        "401":
+          description: Authentication required.
+        "403":
+          description: Administrator privileges are required to access analytics.
   /api/auth/login:
     post:
       operationId: login
@@ -9465,7 +10138,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContactValidationWithSignIn"
+              $ref: "#/components/schemas/ContactValidation"
       responses:
         "200":
           description: Contact created
@@ -11723,6 +12396,567 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/handouts:
+    get:
+      summary: List account handouts
+      description: Retrieve all handouts published for an account.
+      operationId: listAccountHandouts
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Handouts available to the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HandoutList"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      summary: Create account handout
+      description: Upload a new handout for the account. Requires account handout
+        management permissions.
+      operationId: createAccountHandout
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UpsertHandout"
+                - type: object
+                  properties:
+                    file:
+                      type: string
+                      format: binary
+                      description: Handout file to upload
+                  required:
+                    - file
+              title: UpsertHandout
+              description: Payload for creating or updating a handout record
+            encoding:
+              file:
+                contentType: application/octet-stream
+      responses:
+        "201":
+          description: Handout created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Handout"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/handouts/{handoutId}:
+    put:
+      summary: Update account handout
+      description: Update the description or replace the file for an existing account
+        handout.
+      operationId: updateAccountHandout
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: handoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UpsertHandout"
+                - type: object
+                  properties:
+                    file:
+                      type: string
+                      format: binary
+                      description: Optional replacement file for the handout
+              title: UpsertHandout
+              description: Payload for creating or updating a handout record
+            encoding:
+              file:
+                contentType: application/octet-stream
+      responses:
+        "200":
+          description: Updated handout metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Handout"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Handout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete account handout
+      description: Remove an account handout and its associated file.
+      operationId: deleteAccountHandout
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: handoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Handout deleted successfully.
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Handout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/handouts/{handoutId}/download:
+    get:
+      summary: Download account handout
+      description: Download the binary content of an account handout.
+      operationId: downloadAccountHandout
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: handoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Handout file stream.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Handout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/teams/{teamId}/handouts:
+    get:
+      summary: List team handouts
+      description: Retrieve all handouts shared with a team.
+      operationId: listTeamHandouts
+      tags:
+        - Handouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Handouts available to the team.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HandoutList"
+        "404":
+          description: Team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      summary: Create team handout
+      description: Upload a handout that will be available to a specific team.
+        Requires team handout management permissions.
+      operationId: createTeamHandout
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UpsertHandout"
+                - type: object
+                  properties:
+                    file:
+                      type: string
+                      format: binary
+                      description: Handout file to upload
+                  required:
+                    - file
+              title: UpsertHandout
+              description: Payload for creating or updating a handout record
+            encoding:
+              file:
+                contentType: application/octet-stream
+      responses:
+        "201":
+          description: Handout created for the team.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Handout"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/teams/{teamId}/handouts/{handoutId}:
+    put:
+      summary: Update team handout
+      description: Update metadata or replace the file for a team handout.
+      operationId: updateTeamHandout
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: handoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UpsertHandout"
+                - type: object
+                  properties:
+                    file:
+                      type: string
+                      format: binary
+                      description: Optional replacement file for the handout
+              title: UpsertHandout
+              description: Payload for creating or updating a handout record
+            encoding:
+              file:
+                contentType: application/octet-stream
+      responses:
+        "200":
+          description: Updated handout metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Handout"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Handout or team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete team handout
+      description: Remove a team handout and its associated file.
+      operationId: deleteTeamHandout
+      tags:
+        - Handouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: handoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Handout deleted successfully.
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Handout or team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/teams/{teamId}/handouts/{handoutId}/download:
+    get:
+      summary: Download team handout
+      description: Download the binary content of a team handout.
+      operationId: downloadTeamHandout
+      tags:
+        - Handouts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: handoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Handout file stream.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Handout or team not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/leagues:
     get:
       operationId: listSeasonLeagueSeasons
@@ -13000,6 +14234,132 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
+    get:
+      description: List managers for the given team and season
+      operationId: listTeamManagers
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Team managers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamManager"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Add a manager to the team for the given season
+      operationId: addManager
+      security:
+        - bearerAuth: []
+      tags:
+        - Managers
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTeamManager"
+      responses:
+        "200":
+          description: Manager added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamManager"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - Account admin required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/managers:
     get:
       description: List managers for the given season
@@ -13066,75 +14426,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthorizationError"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers:
-    post:
-      description: Add a manager to the team for the given season
-      operationId: addManager
-      security:
-        - bearerAuth: []
-      tags:
-        - Managers
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: seasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: teamSeasonId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpsertTeamManager"
-      responses:
-        "200":
-          description: Manager added
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TeamManager"
-        "400":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationError"
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthenticationError"
-        "403":
-          description: Access denied - Account admin required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthorizationError"
-        "404":
-          description: Manager not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Internal server error
           content:

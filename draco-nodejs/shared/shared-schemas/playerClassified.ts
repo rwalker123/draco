@@ -154,7 +154,6 @@ const positionsSchema = z.string().trim().min(1).max(255);
 
 export const UpsertTeamsWantedClassifiedSchema = z
   .object({
-    id: bigintToStringSchema.optional(),
     accessCode: z.string().trim().min(10).max(1000).optional(),
     name: nonEmptyString.max(50),
     email: emailSchema,

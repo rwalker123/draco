@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useCallback } from 'react';
-import { Box, Typography, CircularProgress, Button, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Fab } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPermissions } from '../../../../hooks/useClassifiedsPermissions';
@@ -195,19 +195,24 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
           <EmptyState
             title="No Players Wanted"
             subtitle="No players are currently looking for teams."
-          >
-            {isAccountMember && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={openCreateDialog}
-                sx={{ mt: 2 }}
-              >
-                Post Players Wanted
-              </Button>
-            )}
-          </EmptyState>
+          />
         </Box>
+
+        {isAccountMember && (
+          <Fab
+            color="primary"
+            aria-label="Create Players Wanted classified"
+            onClick={openCreateDialog}
+            sx={{
+              position: 'fixed',
+              bottom: { xs: 24, sm: 32 },
+              right: { xs: 24, sm: 32 },
+              zIndex: (theme) => theme.zIndex.snackbar + 1,
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        )}
 
         {/* Render dialogs for empty state */}
         {renderDialogs}
@@ -242,11 +247,6 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
         <Typography variant="h6" component="h2">
           Teams Looking for Players ({playersWanted.length})
         </Typography>
-        {isAccountMember && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
-            Post Players Wanted
-          </Button>
-        )}
       </Box>
 
       {/* Players Wanted Grid */}
@@ -268,6 +268,22 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
           />
         ))}
       </Box>
+
+      {isAccountMember && (
+        <Fab
+          color="primary"
+          aria-label="Create Players Wanted classified"
+          onClick={openCreateDialog}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 24, sm: 32 },
+            right: { xs: 24, sm: 32 },
+            zIndex: (theme) => theme.zIndex.snackbar + 1,
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
 
       {/* Render dialogs for main state */}
       {renderDialogs}
