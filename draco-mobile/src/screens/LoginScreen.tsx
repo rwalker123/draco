@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { CSSProperties, FormEvent } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,14 +13,16 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../theme/colors';
 
-export function LoginScreen(): JSX.Element {
+const webFormStyle: CSSProperties = Platform.OS === 'web' ? { width: '100%' } : {};
+
+export function LoginScreen() {
   const { login, error, status } = useAuth();
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [accountId, setAccountId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const onSubmit = async () => {
+  const submit = async () => {
     if (!userName || !password) {
       Alert.alert('Missing credentials', 'Enter both username and password.');
       return;
@@ -43,68 +46,91 @@ export function LoginScreen(): JSX.Element {
     }
   };
 
+  const handleSubmit = async (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    await submit();
+  };
+
+  const cardContent = (
+    <View style={styles.card}>
+      <Text style={styles.heading}>Scorekeeper Login</Text>
+      <Text style={styles.subtitle}>
+        Sign in with your Draco Sports Manager credentials to access assignments and scorecards.
+      </Text>
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Username</Text>
+        <TextInput
+          value={userName}
+          onChangeText={setUserName}
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="scorekeeper@example.com"
+          placeholderTextColor={colors.mutedText}
+          style={styles.input}
+          textContentType="username"
+          returnKeyType="next"
+        />
+      </View>
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="••••••••"
+          placeholderTextColor={colors.mutedText}
+          style={styles.input}
+          textContentType="password"
+          onSubmitEditing={() => {
+            void submit();
+          }}
+          returnKeyType="done"
+        />
+      </View>
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Account ID (optional)</Text>
+        <TextInput
+          value={accountId}
+          onChangeText={setAccountId}
+          keyboardType="number-pad"
+          placeholder="1234"
+          placeholderTextColor={colors.mutedText}
+          style={styles.input}
+        />
+      </View>
+      {error && status !== 'authenticated' ? (
+        <Text accessibilityRole="alert" style={styles.errorText}>
+          {error}
+        </Text>
+      ) : null}
+      <Pressable
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, submitting && styles.buttonDisabled]}
+        onPress={() => {
+          void submit();
+        }}
+        accessibilityRole="button"
+        disabled={submitting}
+      >
+        <Text style={styles.buttonText}>{submitting ? 'Signing in…' : 'Sign In'}</Text>
+      </Pressable>
+      {Platform.OS === 'web' ? <input type="submit" hidden /> : null}
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.card}>
-        <Text style={styles.heading}>Scorekeeper Login</Text>
-        <Text style={styles.subtitle}>
-          Sign in with your Draco Sports Manager credentials to access assignments and scorecards.
-        </Text>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Username</Text>
-          <TextInput
-            value={userName}
-            onChangeText={setUserName}
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="scorekeeper@example.com"
-            placeholderTextColor={colors.mutedText}
-            style={styles.input}
-            textContentType="username"
-          />
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="••••••••"
-            placeholderTextColor={colors.mutedText}
-            style={styles.input}
-            textContentType="password"
-          />
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Account ID (optional)</Text>
-          <TextInput
-            value={accountId}
-            onChangeText={setAccountId}
-            keyboardType="number-pad"
-            placeholder="1234"
-            placeholderTextColor={colors.mutedText}
-            style={styles.input}
-          />
-        </View>
-        {error && status !== 'authenticated' ? (
-          <Text accessibilityRole="alert" style={styles.errorText}>
-            {error}
-          </Text>
-        ) : null}
-        <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, submitting && styles.buttonDisabled]}
-          onPress={onSubmit}
-          accessibilityRole="button"
-          disabled={submitting}
-        >
-          <Text style={styles.buttonText}>{submitting ? 'Signing in…' : 'Sign In'}</Text>
-        </Pressable>
-      </View>
+      {Platform.OS === 'web' ? (
+        <form style={webFormStyle} onSubmit={handleSubmit}>
+          {cardContent}
+        </form>
+      ) : (
+        cardContent
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -124,11 +150,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     gap: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6
+    ...Platform.select({
+      web: {
+        boxShadow: '0 12px 24px rgba(0, 0, 0, 0.18)'
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 12 },
+        elevation: 6
+      }
+    })
   },
   heading: {
     fontSize: 24,

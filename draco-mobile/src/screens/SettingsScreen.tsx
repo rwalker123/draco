@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../theme/colors';
 
-export function SettingsScreen(): JSX.Element {
+export function SettingsScreen() {
   const { session, logout, refreshSession } = useAuth();
 
   return (

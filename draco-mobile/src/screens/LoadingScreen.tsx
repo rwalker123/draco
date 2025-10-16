@@ -1,7 +1,7 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { colors } from '../theme/colors';
 
-export function LoadingScreen(): JSX.Element {
+export function LoadingScreen() {
   return (
     <View style={styles.container} accessibilityRole="progressbar">
       <ActivityIndicator size="large" color={colors.primary} />

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 
-export function LineupsScreen(): JSX.Element {
+export function LineupsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Lineups</Text>

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 
-export function DashboardScreen(): JSX.Element {
+export function DashboardScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Upcoming Assignments</Text>

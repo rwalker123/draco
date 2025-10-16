@@ -14,7 +14,7 @@ export type MainTabParamList = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-export function MainTabs(): JSX.Element {
+export function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{

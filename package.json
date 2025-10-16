@@ -62,9 +62,7 @@
     "mobile:format": "npm run format -w @draco/mobile"
   },
   "overrides": {
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "react-native": "0.76.3"
+    "react-native": "0.81.4"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
@@ -74,9 +72,7 @@
     "eslint": "^9.33.0",
     "@types/node": "^24.0.1",
     "lint-staged": "^16.1.2",
-    "vitest": "^2.0.5",
-    "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "vitest": "^2.0.5"
   },
   "lint-staged": {
     "draco-nodejs/**/*.{js,jsx,ts,tsx}": [

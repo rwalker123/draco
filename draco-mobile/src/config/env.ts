@@ -8,7 +8,7 @@ const ExtraSchema = z.object({
 const parsed = ExtraSchema.safeParse(Constants.expoConfig?.extra);
 
 if (!parsed.success) {
-  const errorMessage = parsed.error.errors.map((error) => error.message).join(', ');
+  const errorMessage = parsed.error.issues.map((issue) => issue.message).join(', ');
   throw new Error(`Invalid mobile environment configuration: ${errorMessage}`);
 }
 

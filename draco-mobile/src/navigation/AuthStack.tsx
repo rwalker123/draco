@@ -13,7 +13,7 @@ type AuthStackProps = {
   screen: keyof AuthStackParamList;
 };
 
-export function AuthStack({ screen }: AuthStackProps): JSX.Element {
+export function AuthStack({ screen }: AuthStackProps) {
   return (
     <Stack.Navigator
       key={screen}

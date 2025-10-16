@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import type { AuthSession, LoginPayload } from '../types/auth';
 import { login as loginRequest, refresh as refreshRequest } from '../services/auth/authApi';
@@ -24,11 +24,12 @@ const REFRESH_INTERVAL_MS = 1000 * 60 * 30; // 30 minutes
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: PropsWithChildren): JSX.Element {
+export function AuthProvider({ children }: PropsWithChildren) {
+
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [session, setSession] = useState<AuthSession | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const refreshTimer = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearRefreshTimer = useCallback(() => {
     if (refreshTimer.current) {
@@ -46,20 +47,27 @@ export function AuthProvider({ children }: PropsWithChildren): JSX.Element {
 
   const hydrateSession = useCallback(async () => {
     setStatus('loading');
-    const stored = await loadSession();
+    try {
+      const stored = await loadSession();
 
-    if (!stored) {
+      if (!stored) {
+        setStatus('unauthenticated');
+        setSession(null);
+        clearRefreshTimer();
+        setError(null);
+        return;
+      }
+
+      const restoredSession = extractAuthSession(stored);
+      setSession(restoredSession);
+      setStatus('authenticated');
+      setError(null);
+    } catch {
       setStatus('unauthenticated');
       setSession(null);
       clearRefreshTimer();
       setError(null);
-      return;
     }
-
-    const restoredSession = extractAuthSession(stored);
-    setSession(restoredSession);
-    setStatus('authenticated');
-    setError(null);
   }, [clearRefreshTimer]);
 
   useEffect(() => {

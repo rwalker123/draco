@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 
-export function GamesScreen(): JSX.Element {
+export function GamesScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Games</Text>

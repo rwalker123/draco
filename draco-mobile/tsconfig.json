@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": [
+      "esnext"
+    ],
     "allowJs": false,
     "jsx": "react-jsx",
     "strict": true,
@@ -10,15 +12,32 @@
     "noUnusedParameters": true,
     "moduleResolution": "bundler",
     "module": "esnext",
-    "types": ["vitest/globals", "react", "react-native"],
+    "types": [
+      "vitest/globals",
+      "react",
+      "react-native"
+    ],
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
-      "@/": ["./src/*"],
-      "@/*": ["./src/*"]
+      "@/": [
+        "./src/*"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["App.tsx", "src", "vitest.setup.ts"],
-  "exclude": ["node_modules", "dist", "build"]
+  "include": [
+    "App.tsx",
+    "src",
+    "vitest.setup.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ],
+  "extends": "expo/tsconfig.base"
 }
