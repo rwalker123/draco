@@ -121,6 +121,8 @@ import {
   GameSchema,
   GameResultSchema,
   GamesWithRecapsSchema,
+  HandoutListSchema,
+  HandoutSchema,
   LeaderCategoriesSchema,
   LeaderRowSchema,
   LeaderStatisticsFiltersSchema,
@@ -131,6 +133,7 @@ import {
   VerifyTokenRequestSchema,
   ChangePasswordRequestSchema,
   RoleCheckResponseSchema,
+  UpsertHandoutSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -423,6 +426,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const GameResultSchemaRef = registry.register('GameResult', GameResultSchema);
   const RecentGamesSchemaRef = registry.register('RecentGames', RecentGamesSchema);
   const GamesWithRecapsSchemaRef = registry.register('GamesWithRecaps', GamesWithRecapsSchema);
+  const HandoutSchemaRef = registry.register('Handout', HandoutSchema);
+  const HandoutListSchemaRef = registry.register('HandoutList', HandoutListSchema);
+  const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
   const UpdateGameResultsSchemaRef = registry.register(
     'UpdateGameResults',
     UpdateGameResultsSchema,
@@ -574,6 +580,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     GameResultSchemaRef,
     RecentGamesSchemaRef,
     GamesWithRecapsSchemaRef,
+    HandoutSchemaRef,
+    HandoutListSchemaRef,
+    UpsertHandoutSchemaRef,
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,

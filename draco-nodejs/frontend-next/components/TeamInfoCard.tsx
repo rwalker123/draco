@@ -22,6 +22,7 @@ interface TeamInfoCardProps {
     accountName: string;
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
+    teamId?: string;
   }) => void;
 }
 
@@ -67,6 +68,7 @@ export default function TeamInfoCard({
 
         const teamData: Team = {
           id: data.id,
+          teamId: data.team.id,
           name: data.name ?? 'Unknown Team',
           logoUrl: data.team.logoUrl ?? undefined,
           webAddress: data.team.webAddress ?? undefined,
@@ -129,6 +131,7 @@ export default function TeamInfoCard({
         accountName,
         logoUrl: team.logoUrl,
         record: record || undefined,
+        teamId: team.teamId,
       });
     }
   }, [team, accountName, seasonName, leagueName, record, onTeamDataLoaded]);

@@ -108,7 +108,13 @@ export const routePermissions: Record<string, RoutePermission> = {
   '/account/[accountId]/seasons/[seasonId]/teams': {
     public: true,
   },
+  '/account/[accountId]/seasons/[seasonId]/teams/[teamSeasonId]': {
+    public: true,
+  },
   '/account/[accountId]/statistics': {
+    public: true,
+  },
+  '/account/[accountId]/seasons/[seasonId]/standings': {
     public: true,
   },
   '/accounts': {

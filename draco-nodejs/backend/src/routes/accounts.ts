@@ -12,6 +12,7 @@ import accountsWorkoutsRouter from './accounts-workouts.js';
 import accountsPlayerClassifiedsRouter from './accounts-player-classifieds.js';
 import accountsSponsorsRouter from './accounts-sponsors.js';
 import accountsPollsRouter from './accounts-polls.js';
+import accountsHandoutsRouter from './accounts-handouts.js';
 
 const router = Router({ mergeParams: true });
 
@@ -46,5 +47,8 @@ router.use('/', accountsSponsorsRouter);
 
 // Poll management endpoints
 router.use('/', accountsPollsRouter);
+
+// Handout management endpoints
+router.use('/', accountsHandoutsRouter);
 
 export default router;
