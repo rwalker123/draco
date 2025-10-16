@@ -28,6 +28,7 @@ import seasonManagersRouter from './routes/seasonManagers.js';
 import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';
 import monitoringRouter from './routes/monitoring.js';
+import adminAnalyticsRouter from './routes/adminAnalytics.js';
 import { domainRouting } from './middleware/domainRouting.js';
 import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhookRoutes.js';
@@ -199,6 +200,7 @@ app.get('/apidocs', (_req: express.Request, res: express.Response) => {
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/monitoring', monitoringRouter);
+app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/cleanup', cleanupRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);
 app.use('/api/accounts/:accountId/seasons', seasonsRouter);

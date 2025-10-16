@@ -39,7 +39,10 @@ export class PrismaHandoutRepository implements IHandoutRepository {
     });
   }
 
-  async findAccountHandoutById(handoutId: bigint, accountId: bigint): Promise<dbAccountHandout | null> {
+  async findAccountHandoutById(
+    handoutId: bigint,
+    accountId: bigint,
+  ): Promise<dbAccountHandout | null> {
     return this.prisma.accounthandouts.findFirst({
       where: { id: handoutId, accountid: accountId },
       select: this.accountHandoutSelect,

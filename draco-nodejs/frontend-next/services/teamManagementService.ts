@@ -41,9 +41,7 @@ export class TeamManagementService {
       client: this.client,
       body: payload,
       throwOnError: false,
-      ...(input.logoFile
-        ? { ...formDataBodySerializer, headers: { 'Content-Type': null } }
-        : {}),
+      ...(input.logoFile ? { ...formDataBodySerializer, headers: { 'Content-Type': null } } : {}),
     });
 
     return unwrapApiResult(result, 'Failed to update team');

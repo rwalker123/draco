@@ -10,7 +10,10 @@ const descriptionSchema = z
   .string()
   .trim()
   .min(1, 'Description is required')
-  .max(HANDOUT_DESCRIPTION_MAX_LENGTH, `Description must be ${HANDOUT_DESCRIPTION_MAX_LENGTH} characters or fewer`);
+  .max(
+    HANDOUT_DESCRIPTION_MAX_LENGTH,
+    `Description must be ${HANDOUT_DESCRIPTION_MAX_LENGTH} characters or fewer`,
+  );
 
 export const UpsertHandoutSchema = z
   .object({

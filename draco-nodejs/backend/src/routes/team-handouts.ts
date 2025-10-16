@@ -100,7 +100,11 @@ router.get(
     const { accountId } = extractAccountParams(req.params);
     const { teamId, handoutId } = extractBigIntParams(req.params, 'teamId', 'handoutId');
 
-    const { fileName, buffer } = await handoutService.getTeamHandoutFile(accountId, teamId, handoutId);
+    const { fileName, buffer } = await handoutService.getTeamHandoutFile(
+      accountId,
+      teamId,
+      handoutId,
+    );
 
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);

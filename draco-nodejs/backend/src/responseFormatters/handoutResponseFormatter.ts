@@ -34,6 +34,8 @@ export class HandoutResponseFormatter {
   }
 
   static formatTeamHandouts(handouts: dbTeamHandout[], accountId: bigint): HandoutType[] {
-    return handouts.map((handout) => HandoutResponseFormatter.formatTeamHandout(handout, accountId));
+    return handouts.map((handout) =>
+      HandoutResponseFormatter.formatTeamHandout(handout, accountId),
+    );
   }
 }

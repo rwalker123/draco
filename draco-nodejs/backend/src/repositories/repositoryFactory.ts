@@ -26,6 +26,7 @@ import {
   ILeagueLeadersDisplayRepository,
   IRosterRepository,
   IHandoutRepository,
+  IAdminAnalyticsRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -55,6 +56,7 @@ import {
   PrismaLeagueLeadersDisplayRepository,
   PrismaRosterRepository,
   PrismaHandoutRepository,
+  PrismaAdminAnalyticsRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -91,6 +93,7 @@ export class RepositoryFactory {
   private static leagueLeadersDisplayRepository: ILeagueLeadersDisplayRepository;
   private static rosterRepository: IRosterRepository;
   private static handoutRepository: IHandoutRepository;
+  private static adminAnalyticsRepository: IAdminAnalyticsRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -125,6 +128,13 @@ export class RepositoryFactory {
       this.handoutRepository = new PrismaHandoutRepository(prisma);
     }
     return this.handoutRepository;
+  }
+
+  static getAdminAnalyticsRepository(): IAdminAnalyticsRepository {
+    if (!this.adminAnalyticsRepository) {
+      this.adminAnalyticsRepository = new PrismaAdminAnalyticsRepository(prisma);
+    }
+    return this.adminAnalyticsRepository;
   }
 
   static getAccountRepository(): IAccountRepository {

@@ -2,11 +2,7 @@ import { getAccountBranding } from '../../../../../lib/metadataFetchers';
 import { buildSeoMetadata } from '../../../../../lib/seoMetadata';
 import AccountHandoutManagementClient from './AccountHandoutManagementClient';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ accountId: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
   const { accountId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `Manage the handouts available to ${accountName} members.`;

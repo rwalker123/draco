@@ -18,7 +18,7 @@ interface PerformanceStats {
   p95Duration: number;
   p99Duration: number;
   maxDuration: number;
-  queryPatterns: Map<string, PerformanceQueryPattern>;
+  queryPatterns: Map<string, PerformanceQueryPattern> | Record<string, PerformanceQueryPattern>;
 }
 
 interface PerformanceHealthStatus {
@@ -73,7 +73,7 @@ export interface MonitoringPerformanceResponse {
   slowQueries: Array<{
     duration: number;
     query: string;
-    timestamp: Date;
+    timestamp: Date | string;
     model?: string;
     operation?: string;
   }>;
@@ -198,7 +198,10 @@ export class MonitoringResponseFormatter {
       ? ((stats.slowQueries / stats.totalQueries) * 100).toFixed(2)
       : '0.00';
 
-    const queryPatterns = Object.fromEntries(stats.queryPatterns);
+    const queryPatterns =
+      stats.queryPatterns instanceof Map
+        ? Object.fromEntries(stats.queryPatterns)
+        : stats.queryPatterns;
 
     return {
       timeWindow: `${windowMinutes} minutes`,

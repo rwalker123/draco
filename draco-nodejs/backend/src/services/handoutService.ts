@@ -42,7 +42,10 @@ export class HandoutService {
     return HandoutResponseFormatter.formatTeamHandouts(handouts, accountId);
   }
 
-  async createAccountHandout(accountId: bigint, payload: HandoutWritePayload): Promise<HandoutType> {
+  async createAccountHandout(
+    accountId: bigint,
+    payload: HandoutWritePayload,
+  ): Promise<HandoutType> {
     const normalized = this.normalizePayload(payload);
 
     if (!normalized.file) {
@@ -92,11 +95,7 @@ export class HandoutService {
       } catch (error) {
         if (shouldDeleteOldFile) {
           await this.storageService
-            .deleteHandout(
-              accountId.toString(),
-              handoutId.toString(),
-              normalized.file.safeFileName,
-            )
+            .deleteHandout(accountId.toString(), handoutId.toString(), normalized.file.safeFileName)
             .catch(() => {});
         }
         throw error;
@@ -122,7 +121,11 @@ export class HandoutService {
   async deleteAccountHandout(accountId: bigint, handoutId: bigint): Promise<void> {
     const handout = await this.requireAccountHandout(accountId, handoutId);
     await this.handoutRepository.deleteAccountHandout(handoutId);
-    await this.storageService.deleteHandout(accountId.toString(), handoutId.toString(), handout.filename);
+    await this.storageService.deleteHandout(
+      accountId.toString(),
+      handoutId.toString(),
+      handout.filename,
+    );
   }
 
   async createTeamHandout(
@@ -264,7 +267,10 @@ export class HandoutService {
     return { fileName: handout.filename, buffer };
   }
 
-  private async requireAccountHandout(accountId: bigint, handoutId: bigint): Promise<dbAccountHandout> {
+  private async requireAccountHandout(
+    accountId: bigint,
+    handoutId: bigint,
+  ): Promise<dbAccountHandout> {
     const handout = await this.handoutRepository.findAccountHandoutById(handoutId, accountId);
     if (!handout) {
       throw new NotFoundError('Handout not found');

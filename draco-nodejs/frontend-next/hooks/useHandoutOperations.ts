@@ -39,7 +39,10 @@ export function useHandoutOperations(scope: HandoutScope) {
 
       try {
         if (scope.type === 'team') {
-          return await service.createTeamHandout({ accountId: scope.accountId, teamId: scope.teamId }, input);
+          return await service.createTeamHandout(
+            { accountId: scope.accountId, teamId: scope.teamId },
+            input,
+          );
         }
 
         return await service.createAccountHandout(scope.accountId, input);
@@ -87,7 +90,10 @@ export function useHandoutOperations(scope: HandoutScope) {
 
       try {
         if (scope.type === 'team') {
-          await service.deleteTeamHandout({ accountId: scope.accountId, teamId: scope.teamId }, handoutId);
+          await service.deleteTeamHandout(
+            { accountId: scope.accountId, teamId: scope.teamId },
+            handoutId,
+          );
         } else {
           await service.deleteAccountHandout(scope.accountId, handoutId);
         }

@@ -1436,3 +1436,33 @@ export type dbTeamSeasonRecord = {
   losses: number;
   ties: number;
 };
+
+export type dbAdminAccountStorageUsage = {
+  accountId: bigint;
+  accountName: string;
+  attachmentBytes: bigint;
+  attachmentCount: number;
+};
+
+export type dbAdminEmailSummary = {
+  totalEmails: number;
+  totalRecipients: number;
+  successfulDeliveries: number;
+  failedDeliveries: number;
+  bounceCount: number;
+  openCount: number;
+  clickCount: number;
+};
+
+export type dbAdminAccountEmailActivity = {
+  accountId: bigint;
+  accountName: string;
+  emailCount: number;
+  totalRecipients: number;
+  successfulDeliveries: number;
+  failedDeliveries: number;
+  bounceCount: number;
+  openCount: number;
+  clickCount: number;
+  lastSentAt: Date | null;
+};
