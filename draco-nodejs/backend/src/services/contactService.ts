@@ -255,7 +255,9 @@ export class ContactService {
       },
     );
 
-    return birthdays.map((contact) => ContactResponseFormatter.formatContactResponse(contact));
+    return birthdays.map((contact) =>
+      ContactResponseFormatter.formatBirthdayContactResponse(accountId, contact),
+    );
   }
 
   /**

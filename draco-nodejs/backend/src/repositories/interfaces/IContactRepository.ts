@@ -5,6 +5,7 @@ import {
   dbContactWithAccountRoles,
   dbContactWithRoleAndDetails,
   dbRosterPlayer,
+  dbBirthdayContact,
 } from '../types/dbTypes.js';
 import { ContactQueryOptions } from '../../interfaces/contactInterfaces.js';
 
@@ -27,7 +28,7 @@ export interface IContactRepository extends IBaseRepository<contacts> {
     accountId: bigint,
     seasonId: bigint,
     filters?: ActiveRosterContactFilters,
-  ): Promise<dbBaseContact[]>;
+  ): Promise<dbBirthdayContact[]>;
   searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,

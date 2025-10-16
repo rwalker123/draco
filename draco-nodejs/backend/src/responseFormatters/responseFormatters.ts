@@ -14,6 +14,7 @@ import {
   dbContactWithRoleAndDetails,
   dbPollQuestionWithCounts,
   dbPollQuestionWithUserVotes,
+  dbBirthdayContact,
 } from '../repositories/index.js';
 import { ROLE_NAMES } from '../config/roles.js';
 import { PaginationHelper } from '../utils/pagination.js';
@@ -47,6 +48,19 @@ export class ContactResponseFormatter {
       },
     };
     return contactEntry;
+  }
+
+  static formatBirthdayContactResponse(
+    accountId: bigint,
+    contact: dbBirthdayContact,
+  ): BaseContactType {
+    return {
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      middleName: contact.middlename || undefined,
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+    };
   }
 
   static formatManyContactsResponse(contacts: dbBaseContact[]): BaseContactType[] {

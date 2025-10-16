@@ -5,6 +5,7 @@ import {
   dbBaseContact,
   dbContactWithAccountRoles,
   dbContactWithRoleAndDetails,
+  dbBirthdayContact,
 } from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
@@ -178,7 +179,7 @@ export class PrismaContactRepository implements IContactRepository {
     accountId: bigint,
     seasonId: bigint,
     filters: ActiveRosterContactFilters = {},
-  ): Promise<dbBaseContact[]> {
+  ): Promise<dbBirthdayContact[]> {
     const { birthdayOn } = filters;
 
     if (!birthdayOn) {
@@ -207,44 +208,22 @@ export class PrismaContactRepository implements IContactRepository {
           id: true,
           firstname: true,
           lastname: true,
-          email: true,
-          phone1: true,
-          phone2: true,
-          phone3: true,
-          streetaddress: true,
-          city: true,
-          state: true,
-          zip: true,
-          dateofbirth: true,
           middlename: true,
-          creatoraccountid: true,
-          userid: true,
         },
         orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
       });
     }
 
-    return this.prisma.$queryRaw<dbBaseContact[]>(Prisma.sql`
+    return this.prisma.$queryRaw<dbBirthdayContact[]>(Prisma.sql`
       SELECT
         c.id,
         c.firstname,
         c.lastname,
-        c.email,
-        c.phone1,
-        c.phone2,
-        c.phone3,
-        c.streetaddress,
-        c.city,
-        c.state,
-        c.zip,
-        c.dateofbirth,
-        c.middlename,
-        c.creatoraccountid,
-        c.userid
+        c.middlename
       FROM contacts c
       INNER JOIN roster r ON r.contactid = c.id
-      INNER JOIN rosterseason rs ON rs.rosterid = r.id AND rs.inactive = false
-      INNER JOIN teamsseason ts ON ts.id = rs.teamsseasonid
+      INNER JOIN rosterseason rs ON rs.playerid = r.id AND rs.inactive = false
+      INNER JOIN teamsseason ts ON ts.id = rs.teamseasonid
       INNER JOIN leagueseason ls ON ls.id = ts.leagueseasonid
       INNER JOIN league l ON l.id = ls.leagueid
       WHERE
@@ -259,18 +238,7 @@ export class PrismaContactRepository implements IContactRepository {
         c.id,
         c.firstname,
         c.lastname,
-        c.email,
-        c.phone1,
-        c.phone2,
-        c.phone3,
-        c.streetaddress,
-        c.city,
-        c.state,
-        c.zip,
-        c.dateofbirth,
-        c.middlename,
-        c.creatoraccountid,
-        c.userid
+        c.middlename
       ORDER BY c.lastname ASC, c.firstname ASC
     `);
   }
