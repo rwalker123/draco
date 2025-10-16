@@ -272,16 +272,21 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
             </Table>
           </TableContainer>
         )}
-
-        <Fab
-          color="primary"
-          aria-label="add poll"
-          sx={{ position: 'absolute', bottom: 32, right: 32 }}
-          onClick={handleOpenCreate}
-        >
-          <AddIcon />
-        </Fab>
       </Box>
+
+      <Fab
+        color="primary"
+        aria-label="add poll"
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 24, md: 32 },
+          right: { xs: 24, md: 32 },
+          zIndex: (theme) => theme.zIndex.tooltip,
+        }}
+        onClick={handleOpenCreate}
+      >
+        <AddIcon />
+      </Fab>
 
       <PollEditorDialog
         accountId={accountId}

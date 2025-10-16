@@ -14,8 +14,8 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
-import { AccountPollType } from '@draco/shared-schemas';
-import { CreatePollPayload, UpdatePollPayload, usePollsService } from '@/hooks/usePollsService';
+import { AccountPollType, CreatePollSchema, UpdatePollSchema } from '@draco/shared-schemas';
+import { UpdatePollPayload, usePollsService } from '@/hooks/usePollsService';
 
 interface PollOptionForm {
   id?: string;
@@ -137,8 +137,19 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
   const handleRemoveOption = useCallback((option: PollOptionForm) => {
     setFormError(null);
     setFormState((prev) => {
-      if (prev.options.length <= 2) {
-        setFormError('A poll must include at least two options.');
+      const nextOptions = prev.options.filter((item) => item.tempId !== option.tempId);
+
+      const validationResult = CreatePollSchema.shape.options.safeParse(
+        nextOptions.map((item, index) => ({
+          optionText: item.optionText.trim(),
+          priority: Number.isInteger(item.priority) ? item.priority : index,
+        })),
+      );
+
+      if (!validationResult.success) {
+        const message =
+          validationResult.error.issues[0]?.message ?? 'A poll must include at least two options.';
+        setFormError(message);
         return prev;
       }
 
@@ -149,56 +160,63 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
 
       return {
         ...prev,
-        options: prev.options.filter((item) => item.tempId !== option.tempId),
+        options: nextOptions,
       };
     });
   }, []);
 
-  const validateForm = useCallback(() => {
-    if (!formState.question.trim()) {
-      setFormError('Poll question is required.');
-      return false;
-    }
-
-    if (formState.options.length < 2) {
-      setFormError('A poll must include at least two options.');
-      return false;
-    }
-
-    if (formState.options.some((option) => !option.optionText.trim())) {
-      setFormError('All options must include text.');
-      return false;
-    }
-
-    setFormError(null);
-    return true;
-  }, [formState]);
-
   const handleSave = useCallback(async () => {
-    if (!validateForm()) {
-      return;
-    }
-
     setFormError(null);
 
-    const basePayload: CreatePollPayload = {
+    const sanitizedOptions = formState.options.map((option, index) => ({
+      ...(option.id ? { id: option.id } : {}),
+      optionText: option.optionText.trim(),
+      priority: Number.isInteger(option.priority) ? option.priority : index,
+    }));
+
+    const createPayload = {
       question: formState.question.trim(),
       active: formState.active,
-      options: formState.options.map((option, index) => ({
-        id: option.id,
-        optionText: option.optionText.trim(),
-        priority: option.priority ?? index,
-      })),
-    };
+      options: sanitizedOptions.map(({ id: _id, ...rest }) => rest),
+    } satisfies Omit<UpdatePollPayload, 'deletedOptionIds'>;
 
     try {
-      const result =
-        isEditMode && poll
-          ? await updatePoll(poll.id, {
-              ...basePayload,
-              deletedOptionIds: removedOptionIds.length > 0 ? removedOptionIds : undefined,
-            } satisfies UpdatePollPayload)
-          : await createPoll(basePayload);
+      let result: { message: string; poll: AccountPollType };
+
+      if (isEditMode) {
+        if (!poll) {
+          setFormError('Unable to locate the poll to update. Please refresh and try again.');
+          return;
+        }
+
+        const validationResult = UpdatePollSchema.safeParse({
+          ...createPayload,
+          options: sanitizedOptions,
+          deletedOptionIds: removedOptionIds.length > 0 ? removedOptionIds : undefined,
+        });
+
+        if (!validationResult.success) {
+          const message =
+            validationResult.error.issues[0]?.message ??
+            'Please review the poll details and try again.';
+          setFormError(message);
+          return;
+        }
+
+        result = await updatePoll(poll.id, validationResult.data);
+      } else {
+        const validationResult = CreatePollSchema.safeParse(createPayload);
+
+        if (!validationResult.success) {
+          const message =
+            validationResult.error.issues[0]?.message ??
+            'Please review the poll details and try again.';
+          setFormError(message);
+          return;
+        }
+
+        result = await createPoll(validationResult.data);
+      }
 
       onSuccess?.(result);
       onClose();
@@ -216,7 +234,6 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
     onSuccess,
     poll,
     removedOptionIds,
-    validateForm,
     createPoll,
     updatePoll,
   ]);
