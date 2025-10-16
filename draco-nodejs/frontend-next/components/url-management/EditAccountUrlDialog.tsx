@@ -16,8 +16,13 @@ import {
   TextField,
 } from '@mui/material';
 import type { AccountUrlType } from '@draco/shared-schemas';
-import { getDomainValidationError, isValidDomain } from '../../utils/validation';
 import { AccountUrlUpdateResult, useAccountUrlsService } from '../../hooks/useAccountUrlsService';
+import {
+  AccountUrlProtocol,
+  buildAccountUrlPreview,
+  sanitizeDomainInput,
+  validateAccountUrlInput,
+} from './accountUrlValidation';
 
 interface EditAccountUrlDialogProps {
   accountId: string;
@@ -35,9 +40,11 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
   onSuccess,
 }) => {
   const { updateUrl, loading, error, clearError } = useAccountUrlsService(accountId);
-  const [protocol, setProtocol] = React.useState<'https://' | 'http://'>('https://');
+  const [protocol, setProtocol] = React.useState<AccountUrlProtocol>('https://');
   const [domain, setDomain] = React.useState('');
   const [validationError, setValidationError] = React.useState<string | null>(null);
+
+  const urlPreview = React.useMemo(() => buildAccountUrlPreview(protocol, domain), [protocol, domain]);
 
   const resetState = React.useCallback(() => {
     setProtocol('https://');
@@ -55,9 +62,9 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
     if (url) {
       try {
         const parsed = new URL(url.url);
-        const parsedProtocol = parsed.protocol === 'http:' ? 'http://' : 'https://';
+        const parsedProtocol: AccountUrlProtocol = parsed.protocol === 'http:' ? 'http://' : 'https://';
         setProtocol(parsedProtocol);
-        setDomain(parsed.host);
+        setDomain(sanitizeDomainInput(parsed.host));
       } catch (parseError) {
         console.error('Failed to parse account URL', parseError);
         setProtocol('https://');
@@ -79,15 +86,15 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
       return;
     }
 
-    const trimmedDomain = domain.trim();
+    const validationResult = validateAccountUrlInput(protocol, domain);
 
-    if (!trimmedDomain || !isValidDomain(trimmedDomain)) {
-      setValidationError(getDomainValidationError(trimmedDomain));
+    if (!validationResult.success) {
+      setValidationError(validationResult.error);
       return;
     }
 
     try {
-      const result = await updateUrl(url.id, `${protocol}${trimmedDomain}`);
+      const result = await updateUrl(url.id, validationResult.url);
       onSuccess?.(result);
       handleClose();
     } catch (err) {
@@ -117,7 +124,7 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
             <Select
               value={protocol}
               label="Protocol"
-              onChange={(event) => setProtocol(event.target.value as 'https://' | 'http://')}
+              onChange={(event) => setProtocol(event.target.value as AccountUrlProtocol)}
               disabled={loading}
             >
               <MenuItem value="https://">HTTPS (Recommended)</MenuItem>
@@ -142,9 +149,7 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
             required
             disabled={loading}
           />
-          {protocol && domain.trim() && (
-            <Alert severity="info">Full URL: {`${protocol}${domain.trim()}`}</Alert>
-          )}
+          {urlPreview && <Alert severity="info">Full URL: {urlPreview}</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions>
