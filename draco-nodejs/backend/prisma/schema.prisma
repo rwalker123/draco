@@ -56,6 +56,7 @@ model accounts {
   leaguenews              leaguenews[]
   leagueumpires           leagueumpires[]
   photogallery            photogallery[]
+  photogallerysubmission  photogallerysubmission[]
   playerswantedclassified playerswantedclassified[]
   profilecategory         profilecategory[]
   season                  season[]
@@ -246,6 +247,8 @@ model contacts {
   playerprofile                                             playerprofile[]
   playerswantedclassified                                   playerswantedclassified[]
   roster                                                    roster?
+  photogallerysubmission_photogallerysubmission_submittercontactidTocontacts photogallerysubmission[] @relation("photogallerysubmission_submittercontactidTocontacts")
+  photogallerysubmission_photogallerysubmission_moderatedbycontactidTocontacts photogallerysubmission[] @relation("photogallerysubmission_moderatedbycontactidTocontacts")
   teamseasonmanager                                         teamseasonmanager[]
   voteanswers                                               voteanswers[]
 
@@ -836,6 +839,7 @@ model photogallery {
   albumid           BigInt?
   accounts          accounts           @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallery_accounts")
   photogalleryalbum photogalleryalbum? @relation(fields: [albumid], references: [id], map: "fk_photogallery_albumid")
+  photogallerysubmission photogallerysubmission[]
 }
 
 model photogalleryalbum {
@@ -845,6 +849,38 @@ model photogalleryalbum {
   parentalbumid BigInt
   teamid        BigInt
   photogallery  photogallery[]
+  photogallerysubmission photogallerysubmission[]
+}
+
+model photogallerysubmission {
+  id                   BigInt             @id @default(autoincrement())
+  accountid            BigInt
+  teamid               BigInt?
+  albumid              BigInt?
+  submittercontactid   BigInt
+  moderatedbycontactid BigInt?
+  approvedphotoid      BigInt?
+  title                String             @db.VarChar(50)
+  caption              String?            @db.VarChar(255)
+  originalfilename     String             @db.VarChar(255)
+  originalfilepath     String             @db.VarChar(255)
+  primaryimagepath     String             @db.VarChar(255)
+  thumbnailimagepath   String             @db.VarChar(255)
+  status               String             @default("Pending") @db.VarChar(10)
+  denialreason         String?            @db.VarChar(255)
+  submittedat          DateTime           @default(now()) @db.Timestamptz(6)
+  updatedat            DateTime           @default(now()) @db.Timestamptz(6)
+  moderatedat          DateTime?          @db.Timestamptz(6)
+  accounts             accounts           @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallerysubmission_accounts")
+  photogalleryalbum    photogalleryalbum? @relation(fields: [albumid], references: [id], map: "fk_photogallerysubmission_albumid")
+  photogallery         photogallery?      @relation(fields: [approvedphotoid], references: [id], onDelete: SetNull, map: "fk_photogallerysubmission_approvedphotoid")
+  submitter            contacts           @relation("photogallerysubmission_submittercontactidTocontacts", fields: [submittercontactid], references: [id], map: "fk_photogallerysubmission_submittercontactid")
+  moderator            contacts?          @relation("photogallerysubmission_moderatedbycontactidTocontacts", fields: [moderatedbycontactid], references: [id], map: "fk_photogallerysubmission_moderatedbycontactid")
+
+  @@index([accountid], map: "idx_photogallerysubmission_accountid")
+  @@index([teamid], map: "idx_photogallerysubmission_teamid")
+  @@index([albumid], map: "idx_photogallerysubmission_albumid")
+  @@index([status], map: "idx_photogallerysubmission_status")
 }
 
 model pitchstatsum {
