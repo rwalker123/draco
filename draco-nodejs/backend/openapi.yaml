@@ -5058,8 +5058,11 @@ components:
             type: object
             properties:
               id:
-                type: string
-                pattern: ^d+$
+                anyOf:
+                  - type: string
+                    pattern: ^\d+$
+                  - type: string
+                    pattern: ^d+$
               optionText:
                 type: string
                 minLength: 1
@@ -5128,8 +5131,11 @@ components:
             type: object
             properties:
               id:
-                type: string
-                pattern: ^d+$
+                anyOf:
+                  - type: string
+                    pattern: ^\d+$
+                  - type: string
+                    pattern: ^d+$
               optionText:
                 type: string
                 minLength: 1

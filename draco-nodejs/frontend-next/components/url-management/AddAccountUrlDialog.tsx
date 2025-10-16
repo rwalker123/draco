@@ -15,8 +15,12 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { getDomainValidationError, isValidDomain } from '../../utils/validation';
 import { AccountUrlCreateResult, useAccountUrlsService } from '../../hooks/useAccountUrlsService';
+import {
+  AccountUrlProtocol,
+  buildAccountUrlPreview,
+  validateAccountUrlInput,
+} from './accountUrlValidation';
 
 interface AddAccountUrlDialogProps {
   accountId: string;
@@ -34,9 +38,11 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
   onSuccess,
 }) => {
   const { createUrl, loading, error, clearError } = useAccountUrlsService(accountId);
-  const [protocol, setProtocol] = React.useState<'https://' | 'http://'>('https://');
+  const [protocol, setProtocol] = React.useState<AccountUrlProtocol>('https://');
   const [domain, setDomain] = React.useState('');
   const [validationError, setValidationError] = React.useState<string | null>(null);
+
+  const urlPreview = React.useMemo(() => buildAccountUrlPreview(protocol, domain), [protocol, domain]);
 
   const resetState = React.useCallback(() => {
     setProtocol('https://');
@@ -57,15 +63,15 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
   }, [onClose, resetState]);
 
   const handleSubmit = async () => {
-    const trimmedDomain = domain.trim();
+    const validationResult = validateAccountUrlInput(protocol, domain);
 
-    if (!trimmedDomain || !isValidDomain(trimmedDomain)) {
-      setValidationError(getDomainValidationError(trimmedDomain));
+    if (!validationResult.success) {
+      setValidationError(validationResult.error);
       return;
     }
 
     try {
-      const result = await createUrl(`${protocol}${trimmedDomain}`);
+      const result = await createUrl(validationResult.url);
       onSuccess?.(result);
       handleClose();
     } catch (err) {
@@ -95,7 +101,7 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
             <Select
               value={protocol}
               label="Protocol"
-              onChange={(event) => setProtocol(event.target.value as 'https://' | 'http://')}
+              onChange={(event) => setProtocol(event.target.value as AccountUrlProtocol)}
               disabled={loading}
             >
               <MenuItem value="https://">HTTPS (Recommended)</MenuItem>
@@ -120,9 +126,7 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
             required
             disabled={loading}
           />
-          {protocol && domain.trim() && (
-            <Alert severity="info">Full URL: {`${protocol}${domain.trim()}`}</Alert>
-          )}
+          {urlPreview && <Alert severity="info">Full URL: {urlPreview}</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions>

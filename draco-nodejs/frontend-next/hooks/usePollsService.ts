@@ -1,26 +1,14 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { AccountPollType } from '@draco/shared-schemas';
+import { AccountPollType, CreatePollType, UpdatePollType } from '@draco/shared-schemas';
 import { createAccountPoll, updateAccountPoll, deleteAccountPoll } from '@draco/shared-api-client';
 import { useApiClient } from './useApiClient';
 import { unwrapApiResult, assertNoApiError } from '@/utils/apiResult';
 
-export interface PollOptionPayload {
-  id?: string;
-  optionText: string;
-  priority: number;
-}
+export type CreatePollPayload = CreatePollType;
 
-export interface CreatePollPayload {
-  question: string;
-  active: boolean;
-  options: PollOptionPayload[];
-}
-
-export interface UpdatePollPayload extends CreatePollPayload {
-  deletedOptionIds?: string[];
-}
+export type UpdatePollPayload = UpdatePollType;
 
 export interface PollMutationResult {
   message: string;

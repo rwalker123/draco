@@ -6866,8 +6866,16 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string",
-                  "pattern": "^d+$"
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  ]
                 },
                 "optionText": {
                   "type": "string",
@@ -6960,8 +6968,16 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string",
-                  "pattern": "^d+$"
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    }
+                  ]
                 },
                 "optionText": {
                   "type": "string",

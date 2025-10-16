@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 import {
   Dialog,
   DialogTitle,
@@ -37,15 +38,22 @@ interface EditAccountLogoDialogProps {
   onError?: (message: string) => void;
 }
 
-const validateLogoFile = (file: File): string | null => {
-  if (!file.type.startsWith('image/')) {
-    return 'File must be an image.';
-  }
-  if (file.size > MAX_FILE_SIZE) {
-    return 'File size must be less than 10MB.';
-  }
-  return null;
-};
+const logoFileSchema = z
+  .custom<File>((value): value is File => value instanceof File, {
+    message: 'Please select a logo to upload.',
+  })
+  .superRefine((file, ctx) => {
+    if (!file.type.startsWith('image/')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'File must be an image.' });
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'File size must be less than 10MB.',
+      });
+    }
+  });
 
 const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   open,
@@ -84,30 +92,38 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const validationError = validateLogoFile(file);
-      if (validationError) {
-        setValidationError(validationError);
-        return;
-      }
-      setLogoFile(file);
-      setValidationError(null);
-      clearError();
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) {
+      return;
     }
+
+    const validationResult = logoFileSchema.safeParse(file);
+
+    if (!validationResult.success) {
+      const message = validationResult.error.issues[0]?.message ?? 'Invalid logo file.';
+      setValidationError(message);
+      return;
+    }
+
+    setLogoFile(file);
+    setValidationError(null);
+    clearError();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setLogoPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
-    if (!logoFile) {
-      setValidationError('Please select a logo to upload.');
+    const validationResult = logoFileSchema.safeParse(logoFile);
+
+    if (!validationResult.success) {
+      const message = validationResult.error.issues[0]?.message ?? 'Please select a logo to upload.';
+      setValidationError(message);
       return;
     }
     clearError();
-    const result = await uploadLogo(logoFile);
+    const result = await uploadLogo(validationResult.data);
 
     if (result.success) {
       onSuccess?.(result);
