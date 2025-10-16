@@ -180,26 +180,43 @@ const PollEditorDialog: React.FC<PollEditorDialogProps> = ({
       options: sanitizedOptions.map(({ id: _id, ...rest }) => rest),
     } satisfies Omit<UpdatePollPayload, 'deletedOptionIds'>;
 
-    const validationResult = isEditMode
-      ? UpdatePollSchema.safeParse({
+    try {
+      let result: { message: string; poll: AccountPollType };
+
+      if (isEditMode) {
+        if (!poll) {
+          setFormError('Unable to locate the poll to update. Please refresh and try again.');
+          return;
+        }
+
+        const validationResult = UpdatePollSchema.safeParse({
           ...createPayload,
           options: sanitizedOptions,
           deletedOptionIds: removedOptionIds.length > 0 ? removedOptionIds : undefined,
-        })
-      : CreatePollSchema.safeParse(createPayload);
+        });
 
-    if (!validationResult.success) {
-      const message =
-        validationResult.error.issues[0]?.message ?? 'Please review the poll details and try again.';
-      setFormError(message);
-      return;
-    }
+        if (!validationResult.success) {
+          const message =
+            validationResult.error.issues[0]?.message ??
+            'Please review the poll details and try again.';
+          setFormError(message);
+          return;
+        }
 
-    try {
-      const result =
-        isEditMode && poll
-          ? await updatePoll(poll.id, validationResult.data)
-          : await createPoll(validationResult.data);
+        result = await updatePoll(poll.id, validationResult.data);
+      } else {
+        const validationResult = CreatePollSchema.safeParse(createPayload);
+
+        if (!validationResult.success) {
+          const message =
+            validationResult.error.issues[0]?.message ??
+            'Please review the poll details and try again.';
+          setFormError(message);
+          return;
+        }
+
+        result = await createPoll(validationResult.data);
+      }
 
       onSuccess?.(result);
       onClose();
