@@ -13,15 +13,6 @@ import {
   TableRow,
   Button,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
   Stack,
   Alert,
@@ -39,132 +30,96 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useAccount } from '../../context/AccountContext';
-import {
-  US_TIMEZONES,
-  getTimezoneLabel,
-  detectUserTimezone,
-  DEFAULT_TIMEZONE,
-} from '../../utils/timezones';
+import { getTimezoneLabel, DEFAULT_TIMEZONE } from '../../utils/timezones';
 import EditAccountLogoDialog from '../../components/EditAccountLogoDialog';
-import CreateAccountDialog from '../../components/account/dialogs/CreateAccountDialog';
-import DeleteAccountDialog from '../../components/account/dialogs/DeleteAccountDialog';
+import CreateAccountDialog from '../../components/account-management/dialogs/CreateAccountDialog';
+import DeleteAccountDialog from '../../components/account-management/dialogs/DeleteAccountDialog';
+import EditAccountDialog from '../../components/account-management/dialogs/EditAccountDialog';
 import type {
   AccountType as SharedAccountType,
   AccountTypeReference,
   AccountAffiliationType,
-  CreateAccountType,
 } from '@draco/shared-schemas';
-import {
-  getManagedAccounts,
-  getAccountAffiliations,
-  getAccountTypes,
-  updateAccount,
-} from '@draco/shared-api-client';
-import { useApiClient } from '../../hooks/useApiClient';
-import { unwrapApiResult } from '../../utils/apiResult';
+import { useAccountManagementService } from '../../hooks/useAccountManagementService';
+import type { AccountLogoOperationSuccess } from '../../hooks/useAccountLogoOperations';
 
 const AccountManagement: React.FC = () => {
   const { token } = useAuth();
   const { hasRole } = useRole();
   const { setCurrentAccount } = useAccount();
-  const apiClient = useApiClient();
+  const { fetchManagedAccounts, fetchAccountTypes, fetchAccountAffiliations } =
+    useAccountManagementService();
 
   const [accounts, setAccounts] = useState<SharedAccountType[]>([]);
   const [accountTypes, setAccountTypes] = useState<AccountTypeReference[]>([]);
   const [affiliations, setAffiliations] = useState<AccountAffiliationType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<SharedAccountType | null>(null);
 
-  type AccountEditFormState = {
-    name: string;
-    accountTypeId: string;
-    affiliationId: string;
-    timezoneId: string;
-    firstYear: number;
-  };
-
-  const [defaultTimezone] = useState(() => detectUserTimezone());
-
-  const buildInitialEditFormState = useCallback((): AccountEditFormState => {
-    return {
-      name: '',
-      accountTypeId: '',
-      affiliationId: '1',
-      timezoneId: defaultTimezone,
-      firstYear: new Date().getFullYear(),
-    };
-  }, [defaultTimezone]);
-
-  // Form states
-  const [editFormData, setEditFormData] = useState<AccountEditFormState>(buildInitialEditFormState);
-
-  // Add state for logo dialog
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoDialogAccount, setLogoDialogAccount] = useState<SharedAccountType | null>(null);
   const [logoRefreshKey, setLogoRefreshKey] = useState(0);
 
-  const buildAccountPayload = useCallback(
-    (
-      state: AccountEditFormState,
-      existingAccount?: SharedAccountType | null,
-    ): Partial<CreateAccountType> => {
-      const accountType = accountTypes.find((type) => type.id === state.accountTypeId);
-      const affiliation = affiliations.find((item) => item.id === state.affiliationId);
-
-      const configuration: NonNullable<CreateAccountType['configuration']> = {};
-
-      if (accountType) {
-        configuration.accountType = {
-          id: accountType.id,
-          name: accountType.name,
-        };
-      }
-
-      if (affiliation) {
-        configuration.affiliation = {
-          id: affiliation.id,
-          name: affiliation.name,
-          url: affiliation.url ?? undefined,
-        };
-      }
-
-      if (state.timezoneId) {
-        configuration.timeZone = state.timezoneId;
-      }
-
-      if (state.firstYear) {
-        configuration.firstYear = state.firstYear;
-      }
-
-      const payload: Partial<CreateAccountType> = {
-        name: state.name,
-        accountLogoUrl: existingAccount?.accountLogoUrl ?? '',
-      };
-
-      if (Object.keys(configuration).length > 0) {
-        payload.configuration = configuration;
-      }
-
-      if (existingAccount?.socials) {
-        payload.socials = existingAccount.socials;
-      }
-
-      if (existingAccount?.urls?.length) {
-        payload.urls = existingAccount.urls.map((url) => ({ id: url.id, url: url.url }));
-      }
-
-      return payload;
-    },
-    [accountTypes, affiliations],
-  );
-
   const isGlobalAdmin = hasRole('Administrator');
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const errors: string[] = [];
+    try {
+      const [accountsResult, typesResult, affiliationsResult] = await Promise.all([
+        fetchManagedAccounts(),
+        fetchAccountTypes(),
+        fetchAccountAffiliations(),
+      ]);
+
+      if (accountsResult.success) {
+        setAccounts(accountsResult.data);
+      } else {
+        setAccounts([]);
+        errors.push(accountsResult.error);
+      }
+
+      if (typesResult.success) {
+        setAccountTypes(typesResult.data);
+      } else {
+        setAccountTypes([]);
+        errors.push(typesResult.error);
+      }
+
+      if (affiliationsResult.success) {
+        setAffiliations(affiliationsResult.data);
+      } else {
+        setAffiliations([]);
+        errors.push(affiliationsResult.error);
+      }
+
+      setError(errors[0] ?? null);
+      if (errors.length > 0) {
+        setSuccess(null);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load account data';
+      setError(message);
+      setAccounts([]);
+      setAccountTypes([]);
+      setAffiliations([]);
+      setSuccess(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchManagedAccounts, fetchAccountTypes, fetchAccountAffiliations]);
+
+  useEffect(() => {
+    if (token) {
+      void loadData();
+    }
+  }, [token, loadData]);
 
   const getAccountTypeName = useCallback(
     (account: SharedAccountType) => account.configuration?.accountType?.name ?? 'Unknown',
@@ -188,142 +143,98 @@ const AccountManagement: React.FC = () => {
     return 'Unknown Owner';
   }, []);
 
-  const getAccountTypeId = useCallback(
-    (account: SharedAccountType) => account.configuration?.accountType?.id ?? '',
-    [],
-  );
-
-  const getAffiliationId = useCallback(
-    (account: SharedAccountType) => account.configuration?.affiliation?.id ?? '1',
-    [],
-  );
-
   const getTimezoneId = useCallback(
     (account: SharedAccountType) => account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
     [],
   );
 
-  const getFirstYearValue = useCallback(
-    (account: SharedAccountType) => account.configuration?.firstYear ?? new Date().getFullYear(),
-    [],
+  const handleViewAccount = useCallback(
+    (account: SharedAccountType) => {
+      setCurrentAccount({
+        id: account.id,
+        name: account.name,
+        accountType: account.configuration?.accountType?.name || undefined,
+        timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
+        timeZoneSource: 'account',
+      });
+      window.location.href = `/account/${account.id}`;
+    },
+    [setCurrentAccount],
   );
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const handleCreateClick = useCallback(() => {
+    setCreateDialogOpen(true);
+  }, []);
 
-      const managedAccountsResult = await getManagedAccounts({
-        client: apiClient,
-        throwOnError: false,
-      });
-      const managedAccounts = unwrapApiResult(managedAccountsResult, 'Failed to load accounts') as
-        | SharedAccountType[]
-        | undefined;
+  const handleCreateDialogClose = useCallback(() => {
+    setCreateDialogOpen(false);
+  }, []);
 
-      setAccounts(managedAccounts ?? []);
+  const handleEditDialogClose = useCallback(() => {
+    setEditDialogOpen(false);
+    setSelectedAccount(null);
+  }, []);
 
-      const typesResult = await getAccountTypes({ client: apiClient, throwOnError: false });
-      const types = unwrapApiResult(typesResult, 'Failed to load account types') as
-        | AccountTypeReference[]
-        | undefined;
-      setAccountTypes(types ?? []);
+  const handleDeleteDialogClose = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setSelectedAccount(null);
+  }, []);
 
-      const affiliationsResult = await getAccountAffiliations({
-        client: apiClient,
-        throwOnError: false,
-      });
-      const affiliationsData = unwrapApiResult(
-        affiliationsResult,
-        'Failed to load affiliations',
-      ) as AccountAffiliationType[] | undefined;
-      setAffiliations(affiliationsData ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient]);
-
-  useEffect(() => {
-    if (token) {
-      loadData();
-    }
-  }, [token, loadData]);
-
-  const handleEditAccount = async () => {
-    if (!selectedAccount) return;
-
-    try {
-      if (!editFormData.accountTypeId) {
-        setError('Account type is required');
-        return;
-      }
-
-      setError(null);
-
-      const payload = buildAccountPayload(editFormData, selectedAccount);
-
-      const result = await updateAccount({
-        client: apiClient,
-        path: { accountId: selectedAccount.id },
-        body: payload,
-        throwOnError: false,
-      });
-
-      unwrapApiResult(result, 'Failed to update account');
-
-      setEditDialogOpen(false);
-      setSelectedAccount(null);
-      setEditFormData(buildInitialEditFormState());
-      loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update account');
-    }
-  };
-
-  const openEditDialog = (account: SharedAccountType) => {
+  const openEditDialog = useCallback((account: SharedAccountType) => {
     setSelectedAccount(account);
-    setEditFormData({
-      name: account.name,
-      accountTypeId: getAccountTypeId(account),
-      affiliationId: getAffiliationId(account),
-      timezoneId: getTimezoneId(account),
-      firstYear: getFirstYearValue(account),
-    });
     setEditDialogOpen(true);
-  };
+  }, []);
 
-  const openDeleteDialog = (account: SharedAccountType) => {
+  const openDeleteDialog = useCallback((account: SharedAccountType) => {
     setSelectedAccount(account);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleViewAccount = (account: SharedAccountType) => {
-    setCurrentAccount({
-      id: account.id,
-      name: account.name,
-      accountType: account.configuration?.accountType?.name || undefined,
-      timeZone: account.configuration?.timeZone ?? DEFAULT_TIMEZONE,
-      timeZoneSource: 'account',
-    });
-    // Navigate to account details or dashboard
-    window.location.href = `/account/${account.id}`;
-  };
+  const handleDialogError = useCallback((message: string) => {
+    setError(message);
+    setSuccess(null);
+  }, []);
 
-  const handleCreateClick = () => {
-    setCreateDialogOpen(true);
-  };
+  const handleCreateSuccess = useCallback(() => {
+    setError(null);
+    setSuccess(null);
+    void loadData();
+  }, [loadData]);
 
-  const handleCreateDialogClose = () => {
-    setCreateDialogOpen(false);
-  };
+  const handleEditSuccess = useCallback(() => {
+    setError(null);
+    setSuccess(null);
+    void loadData();
+  }, [loadData]);
 
-  // Helper to get logo URL (with refresh key to force reload)
-  const getAccountLogoUrl = (account: SharedAccountType | null) => {
-    if (!account) return null;
-    return account.accountLogoUrl ? `${account.accountLogoUrl}?k=${logoRefreshKey}` : null;
-  };
+  const handleDeleteSuccess = useCallback(() => {
+    setError(null);
+    setSuccess(null);
+    void loadData();
+  }, [loadData]);
+
+  const handleLogoDialogClose = useCallback(() => {
+    setLogoDialogOpen(false);
+    setLogoDialogAccount(null);
+  }, []);
+
+  const handleLogoSuccess = useCallback(
+    (result: AccountLogoOperationSuccess) => {
+      setError(null);
+      setSuccess(result.message);
+      setLogoRefreshKey((k) => k + 1);
+      void loadData();
+    },
+    [loadData],
+  );
+
+  const getAccountLogoUrl = useCallback(
+    (account: SharedAccountType | null) => {
+      if (!account) return null;
+      return account.accountLogoUrl ? `${account.accountLogoUrl}?k=${logoRefreshKey}` : null;
+    },
+    [logoRefreshKey],
+  );
 
   if (loading) {
     return (
@@ -349,6 +260,12 @@ const AccountManagement: React.FC = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
         </Alert>
       )}
 
@@ -444,120 +361,35 @@ const AccountManagement: React.FC = () => {
       <CreateAccountDialog
         open={createDialogOpen}
         onClose={handleCreateDialogClose}
-        onSuccess={() => {
-          setError(null);
-          loadData();
-        }}
-        onError={(message) => setError(message)}
+        onSuccess={() => handleCreateSuccess()}
+        onError={handleDialogError}
       />
 
-      {/* Edit Account Dialog */}
-      <Dialog
+      <EditAccountDialog
         open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Edit Account</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Account Name"
-              value={editFormData.name}
-              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-              fullWidth
-              required
-            />
-            <FormControl fullWidth required>
-              <InputLabel>Account Type</InputLabel>
-              <Select
-                value={editFormData.accountTypeId}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, accountTypeId: e.target.value })
-                }
-                label="Account Type"
-              >
-                {accountTypes.map((type) => (
-                  <MenuItem key={type.id} value={type.id}>
-                    {type.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Affiliation</InputLabel>
-              <Select
-                value={editFormData.affiliationId}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, affiliationId: e.target.value })
-                }
-                label="Affiliation"
-              >
-                {affiliations.map((affiliation) => (
-                  <MenuItem key={affiliation.id} value={affiliation.id}>
-                    {affiliation.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Timezone</InputLabel>
-              <Select
-                value={editFormData.timezoneId}
-                onChange={(e) => setEditFormData({ ...editFormData, timezoneId: e.target.value })}
-                label="Timezone"
-              >
-                {US_TIMEZONES.map((timezone) => (
-                  <MenuItem key={timezone.value} value={timezone.value}>
-                    {timezone.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label="First Year"
-              type="number"
-              value={editFormData.firstYear}
-              onChange={(e) =>
-                setEditFormData({ ...editFormData, firstYear: parseInt(e.target.value, 10) })
-              }
-              fullWidth
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditAccount} variant="contained">
-            Update
-          </Button>
-        </DialogActions>
-      </Dialog>
+        account={selectedAccount}
+        accountTypes={accountTypes}
+        affiliations={affiliations}
+        onClose={handleEditDialogClose}
+        onSuccess={() => handleEditSuccess()}
+        onError={handleDialogError}
+      />
 
-      {/* EditAccountLogoDialog integration */}
       <EditAccountLogoDialog
         open={logoDialogOpen}
         accountId={logoDialogAccount?.id || ''}
         accountLogoUrl={getAccountLogoUrl(logoDialogAccount)}
-        onClose={() => setLogoDialogOpen(false)}
-        onLogoUpdated={() => {
-          setLogoDialogOpen(false);
-          setLogoRefreshKey((k) => k + 1);
-          loadData();
-        }}
+        onClose={handleLogoDialogClose}
+        onSuccess={handleLogoSuccess}
+        onError={handleDialogError}
       />
 
       <DeleteAccountDialog
         open={deleteDialogOpen}
         account={selectedAccount}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setSelectedAccount(null);
-        }}
-        onSuccess={() => {
-          setDeleteDialogOpen(false);
-          setSelectedAccount(null);
-          loadData();
-        }}
+        onClose={handleDeleteDialogClose}
+        onSuccess={() => handleDeleteSuccess()}
+        onError={handleDialogError}
       />
     </main>
   );

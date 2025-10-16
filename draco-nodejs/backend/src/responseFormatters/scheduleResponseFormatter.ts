@@ -8,6 +8,7 @@ import {
 import { dbScheduleGameWithDetails, dbScheduleGameWithRecaps } from '../repositories/index.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameStatus.js';
+import { formatFieldFromAvailableField } from './fieldFormatterUtils.js';
 
 export type ScheduleGameWithRecapsType = GamesWithRecapsType['games'][number];
 
@@ -52,22 +53,12 @@ export class ScheduleResponseFormatter {
       homeScore: game.hscore,
       visitorScore: game.vscore,
       comment: game.comment ?? undefined,
-      field: game.availablefields
-        ? {
-            id: game.availablefields.id.toString(),
-            name: game.availablefields.name,
-            shortName: game.availablefields.shortname,
-            address: game.availablefields.address,
-            city: game.availablefields.city,
-            state: game.availablefields.state,
-            zip: game.availablefields.zipcode,
-          }
-        : undefined,
+      field: formatFieldFromAvailableField(game.availablefields),
       gameStatus: game.gamestatus,
       gameStatusText: getGameStatusText(game.gamestatus) as GameStatusEnumType,
       gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
       gameType: game.gametype,
-      hasGameRecap: options.hasRecap,
+      hasGameRecap: Boolean(options.hasRecap),
       umpire1: game.umpire1 ? { id: game.umpire1.toString() } : undefined,
       umpire2: game.umpire2 ? { id: game.umpire2.toString() } : undefined,
       umpire3: game.umpire3 ? { id: game.umpire3.toString() } : undefined,
@@ -106,11 +97,16 @@ export class ScheduleResponseFormatter {
     games: dbScheduleGameWithDetails[],
     teamNames: Map<string, string>,
   ): GameType[] {
-    return games.map((game) =>
-      this.formatGame(game, {
+    return games.map((game) => {
+      const recapCount = Number(
+        (game as { _count?: { gamerecap?: number } })._count?.gamerecap ?? 0,
+      );
+
+      return this.formatGame(game, {
         homeTeamName: teamNames.get(game.hteamid.toString()),
         visitorTeamName: teamNames.get(game.vteamid.toString()),
-      }),
-    );
+        hasRecap: recapCount > 0,
+      });
+    });
   }
 }

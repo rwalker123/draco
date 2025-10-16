@@ -297,6 +297,78 @@ export class LocalStorageService extends BaseStorageService {
       this.handleStorageError(error, 'delete all email attachments from local storage');
     }
   }
+
+  async saveHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    buffer: Buffer,
+    teamId?: string,
+  ): Promise<void> {
+    try {
+      const baseDir = teamId
+        ? path.join(this.uploadsDir, accountId, 'team-handouts', teamId, handoutId)
+        : path.join(this.uploadsDir, accountId, 'handouts', handoutId);
+
+      if (!fs.existsSync(baseDir)) {
+        fs.mkdirSync(baseDir, { recursive: true });
+      }
+
+      const filePath = path.join(baseDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      console.log(`Handout saved to local storage: ${filePath}`);
+    } catch (error) {
+      this.handleStorageError(error, 'save handout to local storage');
+    }
+  }
+
+  async getHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<Buffer | null> {
+    try {
+      const filePath = teamId
+        ? path.join(this.uploadsDir, accountId, 'team-handouts', teamId, handoutId, filename)
+        : path.join(this.uploadsDir, accountId, 'handouts', handoutId, filename);
+
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      return fs.readFileSync(filePath);
+    } catch (error) {
+      console.error('Error reading handout from local storage:', error);
+      return null;
+    }
+  }
+
+  async deleteHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<void> {
+    try {
+      const directory = teamId
+        ? path.join(this.uploadsDir, accountId, 'team-handouts', teamId, handoutId)
+        : path.join(this.uploadsDir, accountId, 'handouts', handoutId);
+      const filePath = path.join(directory, filename);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Handout deleted from local storage: ${filePath}`);
+      }
+
+      // Remove directory if empty
+      if (fs.existsSync(directory) && fs.readdirSync(directory).length === 0) {
+        fs.rmdirSync(directory);
+      }
+    } catch (error) {
+      this.handleStorageError(error, 'delete handout from local storage');
+    }
+  }
 }
 
 export class S3StorageService extends BaseStorageService {
@@ -832,6 +904,73 @@ export class S3StorageService extends BaseStorageService {
     } catch (error) {
       console.error('Error deleting all email attachments from S3:', error);
       throw new Error('Failed to delete all email attachments from S3');
+    }
+  }
+
+  async saveHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    buffer: Buffer,
+    teamId?: string,
+  ): Promise<void> {
+    try {
+      const key = this.getHandoutKey(accountId, handoutId, filename, teamId);
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: 'application/octet-stream',
+      });
+
+      await this.s3Client.send(command);
+    } catch (error) {
+      console.error('Error saving handout to S3:', error);
+      throw new Error('Failed to save handout to S3');
+    }
+  }
+
+  async getHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<Buffer | null> {
+    try {
+      const key = this.getHandoutKey(accountId, handoutId, filename, teamId);
+      const command = new GetObjectCommand({ Bucket: this.bucketName, Key: key });
+      const response = await this.s3Client.send(command);
+
+      if (!response.Body) {
+        return null;
+      }
+
+      const chunks: Buffer[] = [];
+      const stream = response.Body as NodeJS.ReadableStream;
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+
+      return Buffer.concat(chunks);
+    } catch (error) {
+      console.error('Error retrieving handout from S3:', error);
+      return null;
+    }
+  }
+
+  async deleteHandout(
+    accountId: string,
+    handoutId: string,
+    filename: string,
+    teamId?: string,
+  ): Promise<void> {
+    try {
+      const key = this.getHandoutKey(accountId, handoutId, filename, teamId);
+      const command = new DeleteObjectCommand({ Bucket: this.bucketName, Key: key });
+      await this.s3Client.send(command);
+    } catch (error) {
+      console.error('Error deleting handout from S3:', error);
+      throw new Error('Failed to delete handout from S3');
     }
   }
 }

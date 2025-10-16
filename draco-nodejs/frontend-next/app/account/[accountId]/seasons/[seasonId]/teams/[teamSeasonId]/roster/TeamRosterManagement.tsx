@@ -42,6 +42,7 @@ import { format, parseISO } from 'date-fns';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import SignPlayerDialog from '../../../../../../../../components/roster/SignPlayerDialog';
+import { RosterPlayerMutationResult } from '../../../../../../../../hooks/roster/useRosterPlayer';
 import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDataManager';
 import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
 import {
@@ -77,12 +78,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     error,
     successMessage,
     fetchRosterData,
-    fetchAvailablePlayers,
     fetchManagers,
     fetchSeasonData,
     fetchLeagueData,
-    updateRosterMember,
-    getContactRoster,
     signPlayer,
     releasePlayer,
     activatePlayer,
@@ -110,6 +108,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     null,
   );
   const [isSigningNewPlayer, setIsSigningNewPlayer] = useState(false);
+  const [editingRosterMemberId, setEditingRosterMemberId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<RosterMemberType | null>(null);
 
@@ -182,10 +181,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   ]);
 
   // Removed: Initial fetch of all available players - now using dynamic search
-
-  const handleSignPlayer = async (contactId: string, rosterData: SignRosterMemberType) => {
-    await signPlayer(contactId, rosterData);
-  };
 
   // Handler to release player
   const handleReleasePlayer = async (rosterMember: RosterMemberType) => {
@@ -299,6 +294,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
     setSignPlayerDialogOpen(false);
     setSelectedPlayer(null);
+    setEditingRosterMemberId(null);
     setRosterFormData({
       playerNumber: undefined,
       submittedWaiver: false,
@@ -337,6 +333,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const openSignPlayerDialog = () => {
     setIsSigningNewPlayer(true);
     setSelectedPlayer(null);
+    setEditingRosterMemberId(null);
     setRosterFormData({
       playerNumber: undefined,
       submittedWaiver: false,
@@ -355,6 +352,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const openRosterDialog = (rosterMember: RosterMemberType) => {
     setIsSigningNewPlayer(false);
     setSelectedPlayer(rosterMember.player);
+    setEditingRosterMemberId(rosterMember.id);
     setRosterFormData({
       playerNumber: rosterMember.playerNumber,
       submittedWaiver: rosterMember.submittedWaiver,
@@ -368,6 +366,22 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     });
     setSignPlayerDialogOpen(true);
   };
+
+  const handleRosterDialogSuccess = useCallback(
+    async (result: RosterPlayerMutationResult) => {
+      await fetchRosterData();
+
+      const contactName = getContactDisplayName(result.member.player.contact);
+      const message =
+        result.type === 'sign'
+          ? `Player "${contactName}" signed to roster successfully`
+          : `Roster information saved for "${contactName}"`;
+
+      clearError();
+      setSuccessMessage(message);
+    },
+    [fetchRosterData, clearError, setSuccessMessage],
+  );
 
   // Enhanced contact success handler for new EditContactDialog
   const handleEnhancedContactSuccess = useCallback(
@@ -1156,15 +1170,14 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       <SignPlayerDialog
         open={signPlayerDialogOpen}
         onClose={closeSignPlayerDialog}
-        onSignPlayer={handleSignPlayer}
-        onUpdateRosterMember={updateRosterMember}
-        getContactRoster={getContactRoster}
-        fetchAvailablePlayers={fetchAvailablePlayers}
-        isSigningNewPlayer={isSigningNewPlayer}
-        selectedPlayer={selectedPlayer}
+        accountId={accountId}
+        seasonId={seasonId}
+        teamSeasonId={teamSeasonId}
+        mode={isSigningNewPlayer ? 'sign' : 'edit'}
+        rosterMemberId={editingRosterMemberId}
+        initialPlayer={selectedPlayer}
         initialRosterData={rosterFormData}
-        error={error}
-        onClearError={clearError}
+        onSuccess={handleRosterDialogSuccess}
       />
 
       {/* Delete Player Dialog */}

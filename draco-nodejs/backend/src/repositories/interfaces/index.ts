@@ -25,4 +25,5 @@ export * from './IBattingStatisticsRepository.js';
 export * from './IPitchingStatisticsRepository.js';
 export * from './ILeagueLeadersDisplayRepository.js';
 export * from './IRosterRepository.js';
+export * from './IHandoutRepository.js';
 export * from './IAdminAnalyticsRepository.js';

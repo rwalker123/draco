@@ -274,7 +274,8 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
                 key={account.id}
                 sx={{
                   minWidth: 280,
-                  flex: '1 1 300px',
+                  maxWidth: 360,
+                  flex: '0 1 360px',
                   height: '100%',
                   borderRadius: 2,
                   border: '1px solid',

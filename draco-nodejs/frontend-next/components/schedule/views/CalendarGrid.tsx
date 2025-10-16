@@ -28,12 +28,15 @@ export interface CalendarGridProps {
   onGameClick?: (game: Game) => void;
   onGameResults?: (game: Game) => void;
   onZoomClick?: (weekStartDate: Date) => void;
+  onEditRecap?: (game: Game) => void;
+  onViewRecap?: (game: Game) => void;
 
   // Game card conversion
   convertGameToGameCardData: (game: Game) => GameCardData;
 
   // Permissions
   canEditSchedule: boolean;
+  canEditRecap?: (game: GameCardData) => boolean;
 
   // Navigation state
   isNavigating?: boolean;
@@ -52,8 +55,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   onGameClick,
   onGameResults,
   onZoomClick,
+  onEditRecap,
+  onViewRecap,
   convertGameToGameCardData,
   canEditSchedule,
+  canEditRecap,
   isNavigating = false,
   timeZone,
 }) => {
@@ -250,7 +256,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                               month: 'long',
                               day: 'numeric',
                               year: 'numeric',
-                            })} in day view`
+                            })}`
                           : undefined
                       }
                     >
@@ -282,39 +288,56 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                       {/* Games for this day */}
                       <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
                         {getGamesForDay(day).length > 0 ? (
-                          getGamesForDay(day).map((game) => (
-                            <Box
-                              key={game.id}
-                              onClick={(e) => {
-                                e.stopPropagation(); // Prevent triggering day view
-                                onGameClick?.(game);
-                              }}
-                            >
-                              <GameCard
-                                game={convertGameToGameCardData(game)}
-                                layout="vertical"
-                                compact={true}
-                                calendar={true}
-                                canEditGames={canEditSchedule}
-                                onEnterGameResults={
-                                  canEditSchedule && onGameResults
-                                    ? (gameCardData) => {
-                                        // Find the original game by ID and call onGameResults
-                                        const originalGame = getGamesForDay(day).find(
-                                          (g) => g.id === gameCardData.id,
-                                        );
-                                        if (originalGame) {
-                                          onGameResults(originalGame);
+                          getGamesForDay(day).map((game) => {
+                            const gameCardData = convertGameToGameCardData(game);
+                            const showActions =
+                              canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+
+                            return (
+                              <Box
+                                key={game.id}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent triggering day view
+                                  onGameClick?.(game);
+                                }}
+                              >
+                                <GameCard
+                                  game={gameCardData}
+                                  layout="vertical"
+                                  compact={true}
+                                  calendar={true}
+                                  canEditGames={canEditSchedule}
+                                  onEnterGameResults={
+                                    canEditSchedule && onGameResults
+                                      ? (cardData) => {
+                                          // Find the original game by ID and call onGameResults
+                                          const originalGame = getGamesForDay(day).find(
+                                            (g) => g.id === cardData.id,
+                                          );
+                                          if (originalGame) {
+                                            onGameResults(originalGame);
+                                          }
                                         }
-                                      }
-                                    : undefined
-                                }
-                                showActions={canEditSchedule}
-                                onClick={() => onGameClick?.(game)}
-                                timeZone={timeZone}
-                              />
-                            </Box>
-                          ))
+                                      : undefined
+                                  }
+                                  canEditRecap={canEditRecap}
+                                  onEditRecap={
+                                    canEditRecap && onEditRecap
+                                      ? () => onEditRecap(game)
+                                      : undefined
+                                  }
+                                  onViewRecap={
+                                    onViewRecap && gameCardData.hasGameRecap
+                                      ? () => onViewRecap(game)
+                                      : undefined
+                                  }
+                                  showActions={showActions}
+                                  onClick={() => onGameClick?.(game)}
+                                  timeZone={timeZone}
+                                />
+                              </Box>
+                            );
+                          })
                         ) : (
                           <Typography
                             variant="body2"
@@ -388,39 +411,54 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                 {/* Games for this day */}
                 <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
                   {getGamesForDay(day).length > 0 ? (
-                    getGamesForDay(day).map((game) => (
-                      <Box
-                        key={game.id}
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent triggering day view
-                          onGameClick?.(game);
-                        }}
-                      >
-                        <GameCard
-                          game={convertGameToGameCardData(game)}
-                          layout="vertical"
-                          compact={true}
-                          calendar={true}
-                          canEditGames={canEditSchedule}
-                          onEnterGameResults={
-                            canEditSchedule && onGameResults
-                              ? (gameCardData) => {
-                                  // Find the original game by ID and call onGameResults
-                                  const originalGame = getGamesForDay(day).find(
-                                    (g) => g.id === gameCardData.id,
-                                  );
-                                  if (originalGame) {
-                                    onGameResults(originalGame);
+                    getGamesForDay(day).map((game) => {
+                      const gameCardData = convertGameToGameCardData(game);
+                      const showActions =
+                        canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+
+                      return (
+                        <Box
+                          key={game.id}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering day view
+                            onGameClick?.(game);
+                          }}
+                        >
+                          <GameCard
+                            game={gameCardData}
+                            layout="vertical"
+                            compact={true}
+                            calendar={true}
+                            canEditGames={canEditSchedule}
+                            onEnterGameResults={
+                              canEditSchedule && onGameResults
+                                ? (cardData) => {
+                                    // Find the original game by ID and call onGameResults
+                                    const originalGame = getGamesForDay(day).find(
+                                      (g) => g.id === cardData.id,
+                                    );
+                                    if (originalGame) {
+                                      onGameResults(originalGame);
+                                    }
                                   }
-                                }
-                              : undefined
-                          }
-                          showActions={canEditSchedule}
-                          onClick={() => onGameClick?.(game)}
-                          timeZone={timeZone}
-                        />
-                      </Box>
-                    ))
+                                : undefined
+                            }
+                            canEditRecap={canEditRecap}
+                            onEditRecap={
+                              canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined
+                            }
+                            onViewRecap={
+                              onViewRecap && gameCardData.hasGameRecap
+                                ? () => onViewRecap(game)
+                                : undefined
+                            }
+                            showActions={showActions}
+                            onClick={() => onGameClick?.(game)}
+                            timeZone={timeZone}
+                          />
+                        </Box>
+                      );
+                    })
                   ) : (
                     <Typography
                       variant="body2"

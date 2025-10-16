@@ -200,7 +200,11 @@ export class EmailService {
     resetToken: string,
   ): Promise<boolean> {
     try {
-      const resetUrl = `${this.baseUrl}/reset-password?token=${resetToken}`;
+      const frontendBaseUrl = process.env.FRONTEND_URL || this.baseUrl;
+      const normalizedBaseUrl = frontendBaseUrl.endsWith('/')
+        ? frontendBaseUrl.replace(/\/+$/, '')
+        : frontendBaseUrl;
+      const resetUrl = `${normalizedBaseUrl}/reset-password?token=${resetToken}`;
       const settings = EmailConfigFactory.getEmailSettings();
 
       const emailOptions: EmailOptions = {
@@ -219,6 +223,85 @@ export class EmailService {
       return result.success;
     } catch (error) {
       console.error('Error sending password reset email:', error);
+      return false;
+    }
+  }
+
+  async sendGeneralWelcomeEmail(toEmail: string): Promise<boolean> {
+    if (!this.hasValidEmail(toEmail)) {
+      return false;
+    }
+
+    try {
+      const loginUrl = `${this.baseUrl}/login`;
+      const settings = EmailConfigFactory.getEmailSettings();
+
+      const emailOptions: EmailOptions = {
+        to: toEmail,
+        subject: 'Welcome to Draco Sports Manager',
+        html: this.generateGeneralWelcomeEmailHtml(loginUrl),
+        text: this.generateGeneralWelcomeEmailText(loginUrl),
+        from: settings.fromEmail,
+        fromName: settings.fromName,
+        replyTo: settings.replyTo,
+      };
+
+      const provider = await this.getProvider();
+      const result = await provider.sendEmail(emailOptions);
+
+      return result.success;
+    } catch (error) {
+      console.error('Error sending general welcome email:', error);
+      return false;
+    }
+  }
+
+  async sendAccountWelcomeEmail(options: {
+    toEmail: string;
+    accountId: string;
+    accountName: string;
+    contactName?: string;
+    userName?: string;
+  }): Promise<boolean> {
+    const { toEmail, accountId, accountName, contactName, userName } = options;
+
+    if (!this.hasValidEmail(toEmail)) {
+      return false;
+    }
+
+    try {
+      const accountDashboardUrl = `${this.baseUrl}/account/${accountId}`;
+      const loginUrl = `${this.baseUrl}/login`;
+      const settings = EmailConfigFactory.getEmailSettings();
+
+      const emailOptions: EmailOptions = {
+        to: toEmail,
+        subject: `Welcome to ${accountName} on Draco Sports Manager`,
+        html: this.generateAccountWelcomeEmailHtml({
+          accountName,
+          accountDashboardUrl,
+          loginUrl,
+          contactName,
+          userName,
+        }),
+        text: this.generateAccountWelcomeEmailText({
+          accountName,
+          accountDashboardUrl,
+          loginUrl,
+          contactName,
+          userName,
+        }),
+        from: settings.fromEmail,
+        fromName: settings.fromName,
+        replyTo: settings.replyTo,
+      };
+
+      const provider = await this.getProvider();
+      const result = await provider.sendEmail(emailOptions);
+
+      return result.success;
+    } catch (error) {
+      console.error('Error sending account welcome email:', error);
       return false;
     }
   }
@@ -361,6 +444,23 @@ export class EmailService {
     return EmailResponseFormatter.formatEmailList(emails, paginationInfo);
   }
 
+  async deleteEmail(accountId: bigint, emailId: bigint): Promise<void> {
+    const email = await this.emailRepository.findEmailWithAccount(emailId);
+
+    if (!email || email.account_id !== accountId) {
+      throw new NotFoundError('Email not found');
+    }
+
+    this.clearQueuedJobsForEmail(emailId);
+
+    await this.attachmentService.deleteAllEmailAttachments(
+      email.account_id.toString(),
+      emailId.toString(),
+    );
+
+    await this.emailRepository.deleteEmail(emailId, accountId);
+  }
+
   /**
    * Queue email batches for background processing
    */
@@ -395,6 +495,21 @@ export class EmailService {
       };
 
       this.jobQueue.set(job.id, job);
+    }
+  }
+
+  private clearQueuedJobsForEmail(emailId: bigint): void {
+    const jobsToRemove: string[] = [];
+
+    for (const [jobId, job] of this.jobQueue) {
+      if (job.emailId === emailId) {
+        jobsToRemove.push(jobId);
+      }
+    }
+
+    for (const jobId of jobsToRemove) {
+      this.jobQueue.delete(jobId);
+      this.processingQueue.delete(jobId);
     }
   }
 
@@ -1233,6 +1348,135 @@ If you didn't request this password reset, please ignore this email. Your passwo
 
 This is an automated message from Draco Sports Manager. Please do not reply to this email.
     `;
+  }
+
+  /**
+   * Generate welcome email for new platform users
+   */
+  private generateGeneralWelcomeEmailHtml(loginUrl: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Welcome to Draco Sports Manager</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f8f9fa; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Draco Sports Manager</h1>
+          </div>
+          <div class="content">
+            <h2>Welcome!</h2>
+            <p>Thanks for creating a Draco Sports Manager login. You're all set to sign in and connect with your organizations.</p>
+            <p>Use the button below to access your account.</p>
+            <a href="${loginUrl}" class="button">Sign In</a>
+            <p>After signing in, you can join or manage organizations, review schedules, and stay connected with your teams.</p>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from Draco Sports Manager. Please do not reply to this email.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateGeneralWelcomeEmailText(loginUrl: string): string {
+    return `
+Welcome to Draco Sports Manager!
+
+Thanks for creating a Draco Sports Manager login. You're all set to sign in and connect with your organizations.
+
+Sign in here: ${loginUrl}
+
+After signing in, you can join or manage organizations, review schedules, and stay connected with your teams.
+
+This is an automated message from Draco Sports Manager. Please do not reply to this email.
+    `.trim();
+  }
+
+  private generateAccountWelcomeEmailHtml(options: {
+    accountName: string;
+    accountDashboardUrl: string;
+    loginUrl: string;
+    contactName?: string;
+    userName?: string;
+  }): string {
+    const { accountName, accountDashboardUrl, loginUrl, contactName, userName } = options;
+    const greetingName = contactName || 'there';
+    const loginLine = userName ? `<p>Your login: <strong>${userName}</strong></p>` : '';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Welcome to ${accountName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f8f9fa; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>${accountName}</h1>
+          </div>
+          <div class="content">
+            <h2>Welcome aboard, ${greetingName}!</h2>
+            <p>You're now connected to <strong>${accountName}</strong> on Draco Sports Manager.</p>
+            ${loginLine}
+            <p>Sign in and head to the account dashboard to get started.</p>
+            <a href="${loginUrl}" class="button">Sign In</a>
+            <p>Once signed in, you can go directly to your account: <a href="${accountDashboardUrl}">${accountDashboardUrl}</a>.</p>
+            <p>If you have any questions, reach out to your organization administrator.</p>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from Draco Sports Manager. Please do not reply to this email.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateAccountWelcomeEmailText(options: {
+    accountName: string;
+    accountDashboardUrl: string;
+    loginUrl: string;
+    contactName?: string;
+    userName?: string;
+  }): string {
+    const { accountName, accountDashboardUrl, loginUrl, contactName, userName } = options;
+    const greetingName = contactName || 'there';
+    const loginLine = userName ? `Your login: ${userName}\n\n` : '';
+
+    return `
+Welcome aboard, ${greetingName}!
+
+You're now connected to ${accountName} on Draco Sports Manager.
+${loginLine}Sign in: ${loginUrl}
+
+After signing in, open your account dashboard here:
+${accountDashboardUrl}
+
+If you have any questions, reach out to your organization administrator.
+
+This is an automated message from Draco Sports Manager. Please do not reply to this email.
+    `.trim();
   }
 
   /**

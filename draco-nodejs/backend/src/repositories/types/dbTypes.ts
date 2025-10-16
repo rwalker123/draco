@@ -159,6 +159,20 @@ export type dbTeamSeason = Prisma.teamsseasonGetPayload<{
   select: { id: true; name: true };
 }>;
 
+export type dbAccountHandout = Prisma.accounthandoutsGetPayload<{
+  select: { id: true; description: true; filename: true; accountid: true };
+}>;
+
+export type dbTeamHandout = Prisma.teamhandoutsGetPayload<{
+  select: {
+    id: true;
+    description: true;
+    filename: true;
+    teamid: true;
+    teams: { select: { id: true; accountid: true } };
+  };
+}>;
+
 export type dbRosterMember = Prisma.rosterseasonGetPayload<{
   include: { roster: { include: { contacts: true } } };
 }>;
@@ -176,6 +190,11 @@ export type dbAvailableField = Prisma.availablefieldsGetPayload<{
     state: true;
     zipcode: true;
     shortname: true;
+    comment: true;
+    directions: true;
+    rainoutnumber: true;
+    latitude: true;
+    longitude: true;
   };
 }>;
 

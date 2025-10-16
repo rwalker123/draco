@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,27 +17,74 @@ import {
   Chip,
   OutlinedInput,
   FormHelperText,
-  SelectChangeEvent,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm, type DefaultValues, type Resolver } from 'react-hook-form';
+import { z } from 'zod';
 import { formatPhoneNumber } from '../../utils/phoneNumber';
-import { isValidEmailFormat } from '../../utils/emailValidation';
-import { UpsertTeamsWantedClassifiedType } from '@draco/shared-schemas';
+import {
+  TeamsWantedOwnerClassifiedType,
+  UpsertTeamsWantedClassifiedType,
+} from '@draco/shared-schemas';
+import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
+import { useAccountMembership } from '../../hooks/useAccountMembership';
+
+const parseDateOnly = (value: string | null | undefined): Date | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const [datePart] = trimmed.split('T');
+  const segments = datePart.split('-');
+  if (segments.length !== 3) {
+    return undefined;
+  }
+
+  const [yearStr, monthStr, dayStr] = segments;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return undefined;
+  }
+
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
+export interface TeamsWantedDialogSuccessEvent {
+  action: 'create' | 'update';
+  message: string;
+  data: TeamsWantedOwnerClassifiedType;
+}
+
+export type TeamsWantedFormInitialData = UpsertTeamsWantedClassifiedType & {
+  id?: string | number | bigint;
+};
 
 interface CreateTeamsWantedDialogProps {
+  accountId: string;
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: UpsertTeamsWantedClassifiedType) => Promise<void>;
-  loading?: boolean;
   editMode?: boolean;
-  initialData?: UpsertTeamsWantedClassifiedType | null;
-  _classifiedId?: string;
+  initialData?: TeamsWantedFormInitialData | null;
+  classifiedId?: string;
+  accessCode?: string;
+  onSuccess?: (event: TeamsWantedDialogSuccessEvent) => void;
+  onError?: (message: string) => void;
 }
 
 // Available positions for teams wanted - using IDs that match backend validation
-const AVAILABLE_POSITIONS = [
+const POSITION_OPTIONS = [
   'pitcher',
   'catcher',
   'first-base',
@@ -49,9 +96,11 @@ const AVAILABLE_POSITIONS = [
   'right-field',
   'utility',
   'designated-hitter',
-];
+] as const;
 
-const POSITION_LABELS: Record<string, string> = {
+type PositionOption = (typeof POSITION_OPTIONS)[number];
+
+const POSITION_LABELS: Record<PositionOption, string> = {
   pitcher: 'Pitcher',
   catcher: 'Catcher',
   'first-base': 'First Base',
@@ -65,173 +114,293 @@ const POSITION_LABELS: Record<string, string> = {
   'designated-hitter': 'Designated Hitter',
 };
 
+const isValidPosition = (value: string): value is PositionOption =>
+  (POSITION_OPTIONS as readonly string[]).includes(value);
+
+const sanitizeNameInput = (value: string) =>
+  value
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '');
+
+const isAtLeastThirteen = (date: Date) => {
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+  const monthDiff = today.getMonth() - date.getMonth();
+  const dayDiff = today.getDate() - date.getDate();
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age -= 1;
+  }
+
+  return age >= 13;
+};
+
+const PositionEnum = z.enum(POSITION_OPTIONS);
+
+const NAME_MAX_LENGTH = 50;
+const EMAIL_MAX_LENGTH = 320;
+const PHONE_MAX_LENGTH = 50;
+const EXPERIENCE_MAX_LENGTH = 255;
+
+const TeamsWantedFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: 'Full name is required' })
+    .max(NAME_MAX_LENGTH, {
+      message: `Full name must not exceed ${NAME_MAX_LENGTH} characters`,
+    }),
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Enter a valid email address' })
+    .max(EMAIL_MAX_LENGTH, {
+      message: `Email must not exceed ${EMAIL_MAX_LENGTH} characters`,
+    }),
+  phone: z
+    .string()
+    .trim()
+    .min(1, { message: 'Phone number is required' })
+    .max(PHONE_MAX_LENGTH, {
+      message: `Phone number must not exceed ${PHONE_MAX_LENGTH} characters`,
+    }),
+  experience: z
+    .string()
+    .trim()
+    .min(1, { message: 'Experience is required' })
+    .max(EXPERIENCE_MAX_LENGTH, {
+      message: `Experience must not exceed ${EXPERIENCE_MAX_LENGTH} characters`,
+    }),
+  positionsPlayed: z
+    .array(PositionEnum)
+    .min(1, 'Please select at least one position')
+    .max(3, 'Please select no more than 3 positions'),
+  birthDate: z
+    .preprocess(
+      (value) => {
+        if (value === null || value === undefined || value === '') {
+          return undefined;
+        }
+
+        if (value instanceof Date) {
+          return value;
+        }
+
+        const parsed = new Date(value as string);
+        return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+      },
+      z.instanceof(Date, { message: 'Birth date is required' }),
+    )
+    .refine(isAtLeastThirteen, {
+      message: 'You must be at least 13 years old',
+    }),
+});
+
+type TeamsWantedFormValues = z.infer<typeof TeamsWantedFormSchema>;
+
 // Experience level is now a free-form text input
 
 const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
+  accountId,
   open,
   onClose,
-  onSubmit,
-  loading = false,
   editMode = false,
   initialData,
-  _classifiedId,
+  classifiedId,
+  accessCode,
+  onSuccess,
+  onError: _onError,
 }) => {
-  // Form state
-  const [formData, setFormData] = useState<UpsertTeamsWantedClassifiedType>(
-    initialData || {
-      name: '',
-      email: '',
-      phone: '',
-      experience: '',
-      positionsPlayed: '',
-      birthDate: '',
-    },
+  const {
+    createTeamsWanted,
+    updateTeamsWanted,
+    loading: operationLoading,
+    error: serviceError,
+    resetError,
+  } = useTeamsWantedClassifieds(accountId);
+  const { contact } = useAccountMembership(accountId);
+
+  const contactPrefill = useMemo(() => {
+    if (!contact) {
+      return null;
+    }
+
+    const nameParts = [contact.firstName, contact.middleName, contact.lastName]
+      .map((part) => (typeof part === 'string' ? part.trim() : ''))
+      .filter((part) => part.length > 0);
+
+    const primaryPhone =
+      contact.contactDetails?.phone1 ||
+      contact.contactDetails?.phone2 ||
+      contact.contactDetails?.phone3 ||
+      '';
+
+    const digitsOnly = primaryPhone.replace(/\D/g, '');
+    const formattedPhone =
+      digitsOnly.length === 10 ? formatPhoneNumber(digitsOnly) : primaryPhone.trim();
+
+    return {
+      name: nameParts.join(' '),
+      email: contact.email?.trim() ?? '',
+      phone: formattedPhone,
+      birthDate: parseDateOnly(contact.contactDetails?.dateOfBirth),
+    };
+  }, [contact]);
+
+  const updateClassifiedId = useMemo(() => {
+    if (classifiedId && classifiedId.trim().length > 0) {
+      return classifiedId;
+    }
+
+    if (!initialData?.id) {
+      return undefined;
+    }
+
+    if (typeof initialData.id === 'string') {
+      const trimmed = initialData.id.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }
+
+    return String(initialData.id);
+  }, [classifiedId, initialData]);
+
+  const formDefaults = useMemo<DefaultValues<TeamsWantedFormValues>>(() => {
+    const positions =
+      (initialData?.positionsPlayed ?? '')
+        .split(',')
+        .map((position) => position.trim())
+        .filter(
+          (position): position is PositionOption =>
+            position.length > 0 && isValidPosition(position),
+        )
+        .slice(0, 3) ?? [];
+
+    let birthDate = parseDateOnly(initialData?.birthDate);
+
+    const shouldPrefill = !editMode;
+
+    if (!initialData?.birthDate && !birthDate && !editMode && contactPrefill?.birthDate) {
+      birthDate = contactPrefill.birthDate;
+    }
+
+    return {
+      name: initialData?.name ?? (shouldPrefill ? (contactPrefill?.name ?? '') : ''),
+      email: initialData?.email ?? (shouldPrefill ? (contactPrefill?.email ?? '') : ''),
+      phone: initialData?.phone ?? (shouldPrefill ? (contactPrefill?.phone ?? '') : ''),
+      experience: initialData?.experience ?? '',
+      positionsPlayed: positions,
+      birthDate,
+    };
+  }, [initialData, editMode, contactPrefill]);
+
+  const formResolver = useMemo(
+    () =>
+      zodResolver(TeamsWantedFormSchema) as Resolver<
+        TeamsWantedFormValues,
+        Record<string, never>,
+        TeamsWantedFormValues
+      >,
+    [],
   );
 
-  const selectedPositions = React.useMemo(() => {
-    return formData.positionsPlayed
-      ? formData.positionsPlayed
-          .split(',')
-          .map((position) => position.trim())
-          .filter((position) => position.length > 0)
-      : [];
-  }, [formData.positionsPlayed]);
+  const {
+    control,
+    handleSubmit: submitForm,
+    reset,
+    watch,
+    formState: { errors, isDirty },
+    clearErrors,
+    register,
+  } = useForm<TeamsWantedFormValues>({
+    resolver: formResolver,
+    defaultValues: formDefaults,
+  });
 
-  // Form validation errors
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof UpsertTeamsWantedClassifiedType, string>>
-  >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Update form data when initialData changes (for edit mode)
-  React.useEffect(() => {
-    if (initialData) {
-      setFormData(initialData);
+  const experienceValue = watch('experience') ?? '';
+
+  useEffect(() => {
+    if (serviceError) {
+      setSubmitError(serviceError);
     }
-  }, [initialData]);
+  }, [serviceError]);
 
-  // Handle form field changes
-  const handleFieldChange = (
-    field: keyof UpsertTeamsWantedClassifiedType,
-    value: string | Date | string[] | null,
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-
-    // Clear error for this field when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  // Handle positions selection
-  const handlePositionsChange = (event: SelectChangeEvent<string[]>) => {
-    const value = event.target.value;
-    const nextSelected = (typeof value === 'string' ? value.split(',') : value).slice(0, 3);
-
-    setFormData((prev) => ({
-      ...prev,
-      positionsPlayed: nextSelected.join(','),
-    }));
-
-    if (errors.positionsPlayed) {
-      setErrors((prev) => ({ ...prev, positionsPlayed: undefined }));
-    }
-  };
-
-  // Validate form data
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof UpsertTeamsWantedClassifiedType, string>> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!isValidEmailFormat(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    }
-
-    if (!formData.experience.trim()) {
-      newErrors.experience = 'Experience level is required';
-    } else if (formData.experience.trim().length < 2) {
-      newErrors.experience = 'Experience level must be at least 2 characters';
-    } else if (formData.experience.trim().length > 255) {
-      newErrors.experience = 'Experience level must be 255 characters or less';
-    }
-
-    if (selectedPositions.length === 0) {
-      newErrors.positionsPlayed = 'Please select at least one position';
-    } else if (selectedPositions.length > 3) {
-      newErrors.positionsPlayed = 'Please select no more than 3 positions';
-    }
-
-    if (!formData.birthDate) {
-      newErrors.birthDate = 'Birth date is required';
-    } else {
-      const today = new Date();
-      const birthDate = new Date(formData.birthDate);
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-
-      if (age < 13 || (age === 13 && monthDiff < 0)) {
-        newErrors.birthDate = 'You must be at least 13 years old';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle form submission
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSubmitError(null);
-
-    if (!validateForm()) {
+  useEffect(() => {
+    if (!open) {
       return;
     }
 
-    try {
-      await onSubmit(formData);
-      // Close dialog immediately on success
-      handleClose();
-    } catch (error) {
-      // The service layer now handles parsing detailed server errors
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`,
-      );
+    if (!isDirty) {
+      reset(formDefaults);
+      clearErrors();
+      setSubmitError(null);
+      resetError();
     }
-  };
+  }, [open, formDefaults, reset, clearErrors, resetError, isDirty]);
 
-  // Handle dialog close
-  const handleClose = () => {
-    // Reset form state to initial values or empty
-    setFormData(
-      initialData || {
-        name: '',
-        email: '',
-        phone: '',
-        experience: '',
-        positionsPlayed: '',
-        birthDate: '',
-      },
-    );
-    setErrors({});
+  const onSubmit = submitForm(async (values) => {
     setSubmitError(null);
+    resetError();
+
+    if (editMode && !updateClassifiedId) {
+      const message = 'Missing classified identifier for update.';
+      setSubmitError(message);
+      return;
+    }
+
+    const normalizedPayload: UpsertTeamsWantedClassifiedType = {
+      name: values.name.trim(),
+      email: values.email.trim(),
+      phone: values.phone.trim(),
+      experience: values.experience.trim(),
+      positionsPlayed: values.positionsPlayed.join(','),
+      birthDate: values.birthDate
+        ? `${values.birthDate.getFullYear()}-${String(values.birthDate.getMonth() + 1).padStart(
+            2,
+            '0',
+          )}-${String(values.birthDate.getDate()).padStart(2, '0')}`
+        : '',
+    };
+
+    let result: Awaited<ReturnType<typeof updateTeamsWanted>>;
+
+    if (editMode) {
+      result = await updateTeamsWanted(updateClassifiedId ?? '', normalizedPayload, { accessCode });
+    } else {
+      result = await createTeamsWanted(normalizedPayload);
+    }
+
+    if (result.success && result.data) {
+      const successMessage =
+        result.message ?? `Teams Wanted ad ${editMode ? 'updated' : 'created'} successfully`;
+      onSuccess?.({
+        action: editMode ? 'update' : 'create',
+        message: successMessage,
+        data: result.data,
+      });
+      handleClose();
+      return;
+    }
+
+    const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`;
+    setSubmitError(message);
+  });
+
+  const handleClose = () => {
+    reset(formDefaults);
+    clearErrors();
+    setSubmitError(null);
+    resetError();
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editMode ? 'Edit Teams Wanted' : 'Post Teams Wanted'}</DialogTitle>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={onSubmit} noValidate>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DialogContent>
             {/* Error Alert */}
@@ -242,23 +411,22 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
             )}
 
             {/* Name Field */}
-            <TextField
-              fullWidth
-              margin="dense"
-              label="Full Name"
-              value={formData.name}
-              onChange={(e) => {
-                // Sanitize input: remove potentially dangerous characters
-                const sanitizedValue = e.target.value
-                  .replace(/[<>]/g, '') // Remove < and > to prevent HTML injection
-                  .replace(/javascript:/gi, '') // Remove javascript: protocol
-                  .replace(/on\w+=/gi, ''); // Remove event handlers
-                handleFieldChange('name', sanitizedValue);
-              }}
-              error={!!errors.name}
-              helperText={errors.name}
-              required
-              sx={{ mb: 2 }}
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  margin="dense"
+                  label="Full Name"
+                  onChange={(event) => field.onChange(sanitizeNameInput(event.target.value))}
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                  required
+                  sx={{ mb: 2 }}
+                />
+              )}
             />
 
             {/* Contact Fields */}
@@ -272,56 +440,59 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
             >
               <Box sx={{ flexGrow: 1 }}>
                 <TextField
+                  {...register('email')}
                   fullWidth
                   margin="dense"
                   label="Email"
                   type="email"
-                  value={formData.email}
-                  onChange={(e) => handleFieldChange('email', e.target.value)}
                   error={!!errors.email}
-                  helperText={errors.email}
+                  helperText={errors.email?.message}
                   required
                 />
               </Box>
               <Box sx={{ width: { xs: '100%', md: 220 } }}>
-                <TextField
-                  fullWidth
-                  margin="dense"
-                  label="Phone Number"
-                  value={formData.phone}
-                  onChange={(e) => {
-                    const rawValue = e.target.value;
-                    const digitsOnly = rawValue.replace(/\D/g, '');
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      margin="dense"
+                      label="Phone Number"
+                      onChange={(event) => {
+                        const rawValue = event.target.value;
+                        const digitsOnly = rawValue.replace(/\D/g, '');
 
-                    // Limit to 10 digits maximum
-                    if (digitsOnly.length > 10) {
-                      return;
-                    }
+                        if (digitsOnly.length > 10) {
+                          return;
+                        }
 
-                    // Only format if it looks like a complete phone number (10 digits)
-                    const formattedValue =
-                      digitsOnly.length === 10 ? formatPhoneNumber(digitsOnly) : digitsOnly;
-                    handleFieldChange('phone', formattedValue);
-                  }}
-                  error={!!errors.phone}
-                  helperText={errors.phone}
-                  required
+                        const formattedValue =
+                          digitsOnly.length === 10 ? formatPhoneNumber(digitsOnly) : digitsOnly;
+                        field.onChange(formattedValue);
+                      }}
+                      error={!!errors.phone}
+                      helperText={errors.phone?.message}
+                      required
+                    />
+                  )}
                 />
               </Box>
             </Box>
 
             {/* Experience Level */}
             <TextField
+              {...register('experience')}
               fullWidth
               margin="dense"
               label="Experience Level"
               multiline
               rows={4}
-              value={formData.experience}
-              onChange={(e) => handleFieldChange('experience', e.target.value)}
               error={!!errors.experience}
               helperText={
-                errors.experience || `${255 - formData.experience.length} characters remaining`
+                errors.experience?.message ||
+                `${Math.max(0, EXPERIENCE_MAX_LENGTH - experienceValue.length)} characters remaining`
               }
               placeholder="Describe your baseball experience in detail...
 Examples: 
@@ -330,7 +501,7 @@ Examples:
 • High school varsity team experience, all-state recognition
 • Coached youth teams for 3 years"
               required
-              inputProps={{ maxLength: 255 }}
+              inputProps={{ maxLength: EXPERIENCE_MAX_LENGTH }}
               sx={{ mb: 2 }}
             />
 
@@ -343,61 +514,83 @@ Examples:
                 mb: 2,
               }}
             >
-              <FormControl
-                fullWidth
-                margin="dense"
-                error={!!errors.positionsPlayed}
-                sx={{ flexGrow: 1 }}
-              >
-                <InputLabel id="positions-played-label">Positions Played</InputLabel>
-                <Select
-                  labelId="positions-played-label"
-                  id="positions-played-select"
-                  multiple
-                  value={selectedPositions}
-                  onChange={handlePositionsChange}
-                  input={<OutlinedInput label="Positions Played" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(Array.isArray(selected) ? selected : [])
-                        .map((value) => value as string)
-                        .map((value) => (
-                          <Chip key={value} label={POSITION_LABELS[value] || value} size="small" />
-                        ))}
-                    </Box>
-                  )}
-                  required
-                >
-                  {AVAILABLE_POSITIONS.map((position) => (
-                    <MenuItem
-                      key={position}
-                      value={position}
-                      disabled={
-                        selectedPositions.length >= 3 && !selectedPositions.includes(position)
-                      }
+              <Controller
+                name="positionsPlayed"
+                control={control}
+                render={({ field }) => {
+                  const fieldValue = field.value ?? [];
+
+                  return (
+                    <FormControl
+                      fullWidth
+                      margin="dense"
+                      error={!!errors.positionsPlayed}
+                      sx={{ flexGrow: 1 }}
                     >
-                      {POSITION_LABELS[position] || position}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText error={!!errors.positionsPlayed}>
-                  {errors.positionsPlayed || `${selectedPositions.length}/3 positions selected`}
-                </FormHelperText>
-              </FormControl>
+                      <InputLabel id="positions-played-label">Positions Played</InputLabel>
+                      <Select
+                        labelId="positions-played-label"
+                        id="positions-played-select"
+                        multiple
+                        value={fieldValue}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          const nextSelected = (
+                            typeof value === 'string' ? value.split(',') : value
+                          )
+                            .map((position) => position as string)
+                            .filter((position) => isValidPosition(position));
+                          const deduped = Array.from(new Set(nextSelected)) as PositionOption[];
+                          field.onChange(deduped.slice(0, 3));
+                        }}
+                        input={<OutlinedInput label="Positions Played" />}
+                        renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {(selected as PositionOption[]).map((value) => (
+                              <Chip key={value} label={POSITION_LABELS[value]} size="small" />
+                            ))}
+                          </Box>
+                        )}
+                        required
+                      >
+                        {POSITION_OPTIONS.map((position) => (
+                          <MenuItem
+                            key={position}
+                            value={position}
+                            disabled={fieldValue.length >= 3 && !fieldValue.includes(position)}
+                          >
+                            {POSITION_LABELS[position]}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormHelperText error={!!errors.positionsPlayed}>
+                        {errors.positionsPlayed?.message ||
+                          `${fieldValue.length}/3 positions selected`}
+                      </FormHelperText>
+                    </FormControl>
+                  );
+                }}
+              />
               <Box sx={{ width: { xs: '100%', md: 220 } }}>
-                <DatePicker
-                  label="Birth Date"
-                  value={formData.birthDate ? new Date(formData.birthDate) : null}
-                  onChange={(date) => handleFieldChange('birthDate', date || null)}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      margin: 'dense',
-                      error: !!errors.birthDate,
-                      helperText: errors.birthDate,
-                      required: true,
-                    },
-                  }}
+                <Controller
+                  name="birthDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Birth Date"
+                      value={field.value ?? null}
+                      onChange={(date) => field.onChange(date ?? null)}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          margin: 'dense',
+                          error: !!errors.birthDate,
+                          helperText: errors.birthDate?.message,
+                          required: true,
+                        },
+                      }}
+                    />
+                  )}
                 />
               </Box>
             </Box>
@@ -416,11 +609,11 @@ Examples:
         </LocalizationProvider>
 
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
+          <Button onClick={handleClose} disabled={operationLoading}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading
+          <Button type="submit" variant="contained" disabled={operationLoading}>
+            {operationLoading
               ? editMode
                 ? 'Updating...'
                 : 'Creating...'

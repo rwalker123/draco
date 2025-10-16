@@ -21,6 +21,7 @@ import teamRosterRouter from './routes/team-roster.js';
 import teamStatsRouter from './routes/team-stats.js';
 import teamMediaRouter from './routes/team-media.js';
 import teamSponsorsRouter from './routes/team-sponsors.js';
+import teamHandoutsRouter from './routes/team-handouts.js';
 import gamesRouter from './routes/games.js';
 import teamManagersRouter from './routes/teamManagers.js';
 import seasonManagersRouter from './routes/seasonManagers.js';
@@ -86,7 +87,6 @@ app.use(
       }
       return compression.filter(req, res);
     },
-    windowBits: 16, // Window size for gzip
     memLevel: 8, // Memory usage level
   }),
 );
@@ -213,6 +213,7 @@ app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamRosterRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamStatsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamMediaRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamSponsorsRouter);
+app.use('/api/accounts/:accountId/teams', teamHandoutsRouter);
 app.use(
   '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
   teamManagersRouter,

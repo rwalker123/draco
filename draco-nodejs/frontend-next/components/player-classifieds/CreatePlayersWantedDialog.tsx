@@ -28,13 +28,19 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { PLAYER_CLASSIFIED_VALIDATION } from '../../utils/characterValidation';
 import CharacterCounter from '../common/CharacterCounter';
-import { playerClassifiedService } from '../../services/playerClassifiedService';
 import { getAccountUserTeams } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
+import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
 
 // Use shared validation constants
 const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
+
+export interface PlayersWantedDialogSuccessEvent {
+  action: 'create' | 'update';
+  message: string;
+  data: PlayersWantedClassifiedType;
+}
 
 interface CreatePlayersWantedDialogProps {
   accountId: string;
@@ -42,7 +48,7 @@ interface CreatePlayersWantedDialogProps {
   onClose: () => void;
   editMode?: boolean;
   initialData?: UpsertPlayersWantedClassifiedType;
-  onSuccess?: (classified: PlayersWantedClassifiedType) => void;
+  onSuccess?: (event: PlayersWantedDialogSuccessEvent) => void;
   onError?: (message: string) => void;
 }
 
@@ -91,11 +97,18 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   editMode = false,
   initialData,
   onSuccess,
-  onError,
+  onError: _onError,
 }) => {
   const { user, token } = useAuth();
   const isAuthenticated = !!user && !!token;
   const apiClient = useApiClient();
+  const {
+    createPlayersWanted,
+    updatePlayersWanted,
+    loading: operationLoading,
+    error: serviceError,
+    resetError,
+  } = usePlayersWantedClassifieds(accountId);
 
   const [formData, setFormData] = useState<UpsertPlayersWantedClassifiedType>(
     initialData ?? EMPTY_FORM,
@@ -104,9 +117,14 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     Partial<Record<keyof UpsertPlayersWantedClassifiedType, string>>
   >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [teamOptions, setTeamOptions] = useState<string[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
+
+  useEffect(() => {
+    if (serviceError) {
+      setSubmitError(serviceError);
+    }
+  }, [serviceError]);
 
   useEffect(() => {
     setFormData(initialData ?? EMPTY_FORM);
@@ -192,6 +210,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
+    resetError();
 
     if (!validateForm()) {
       return;
@@ -200,60 +219,43 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     if (!isAuthenticated || !token) {
       const message = 'You must be signed in to perform this action.';
       setSubmitError(message);
-      onError?.(message);
       return;
     }
 
     const payload = buildPayload();
-
-    try {
-      setSubmitting(true);
-      let result: PlayersWantedClassifiedType;
-
-      if (editMode) {
-        const classifiedId = payload.id;
-        if (!classifiedId) {
-          throw new Error('Missing classified identifier for update.');
-        }
-
-        const updatePayload: UpsertPlayersWantedClassifiedType = {
-          teamEventName: payload.teamEventName,
-          description: payload.description,
-          positionsNeeded: payload.positionsNeeded,
-        };
-        result = await playerClassifiedService.updatePlayersWanted(
-          accountId,
-          classifiedId,
-          updatePayload,
-          token,
-        );
-      } else {
-        const createPayload: UpsertPlayersWantedClassifiedType = {
-          teamEventName: payload.teamEventName,
-          description: payload.description,
-          positionsNeeded: payload.positionsNeeded,
-        };
-        result = await playerClassifiedService.createPlayersWanted(accountId, createPayload, token);
-      }
-
-      onSuccess?.(result);
-      handleClose();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : `Failed to ${editMode ? 'update' : 'create'} Players Wanted ad`;
+    if (editMode && !payload.id) {
+      const message = 'Missing classified identifier for update.';
       setSubmitError(message);
-      onError?.(message);
-    } finally {
-      setSubmitting(false);
+      return;
     }
+
+    const { id, ...restPayload } = payload;
+
+    const result = editMode
+      ? await updatePlayersWanted(id as string, restPayload)
+      : await createPlayersWanted(restPayload);
+
+    if (result.success && result.data) {
+      const successMessage =
+        result.message ?? `Players Wanted ad ${editMode ? 'updated' : 'created'} successfully`;
+      onSuccess?.({
+        action: editMode ? 'update' : 'create',
+        message: successMessage,
+        data: result.data,
+      });
+      handleClose();
+      return;
+    }
+
+    const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Players Wanted ad`;
+    setSubmitError(message);
   };
 
   const handleClose = () => {
     setFormData(initialData ?? EMPTY_FORM);
     setErrors({});
     setSubmitError(null);
+    resetError();
     onClose();
   };
 
@@ -314,7 +316,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editMode ? 'Edit Players Wanted' : 'Post Players Wanted'}</DialogTitle>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
             {!isAuthenticated && (
@@ -339,7 +341,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
                   handleFieldChange('teamEventName', (newValue as string) ?? '')
                 }
                 onInputChange={(_, value) => handleFieldChange('teamEventName', value)}
-                disabled={submitting || !isAuthenticated}
+                disabled={operationLoading || !isAuthenticated}
                 renderInput={(params) => {
                   params.InputProps.endAdornment = (
                     <>
@@ -384,7 +386,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
                 fullWidth
                 multiline
                 rows={4}
-                disabled={submitting || !isAuthenticated}
+                disabled={operationLoading || !isAuthenticated}
                 slotProps={{
                   htmlInput: {
                     maxLength: VALIDATION_CONSTANTS.DESCRIPTION.MAX_LENGTH,
@@ -397,7 +399,10 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
               />
             </Box>
 
-            <FormControl error={!!errors.positionsNeeded} disabled={submitting || !isAuthenticated}>
+            <FormControl
+              error={!!errors.positionsNeeded}
+              disabled={operationLoading || !isAuthenticated}
+            >
               <InputLabel>Positions Needed</InputLabel>
               <Select
                 multiple
@@ -438,11 +443,11 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={submitting}>
+          <Button onClick={handleClose} disabled={operationLoading}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={submitting || !isAuthenticated}>
-            {submitting
+          <Button type="submit" variant="contained" disabled={operationLoading || !isAuthenticated}>
+            {operationLoading
               ? editMode
                 ? 'Updating...'
                 : 'Creating...'

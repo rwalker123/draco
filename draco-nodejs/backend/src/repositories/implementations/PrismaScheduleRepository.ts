@@ -186,6 +186,11 @@ export class PrismaScheduleRepository implements IScheduleRepository {
             season: true,
           },
         },
+        _count: {
+          select: {
+            gamerecap: true,
+          },
+        },
       },
       orderBy: {
         gamedate: options.sortOrder,

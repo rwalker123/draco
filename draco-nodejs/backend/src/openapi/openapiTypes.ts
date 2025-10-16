@@ -29,6 +29,7 @@ import {
   BaseContactSchema,
   NamedContactSchema,
   ContactValidationWithSignInSchema,
+  ContactValidationSchema,
   SignInCredentialsSchema,
   RegisteredUserWithRolesSchema,
   RegisteredUserSchema,
@@ -69,6 +70,7 @@ import {
   RosterMemberSchema,
   RosterPlayerSchema,
   SignRosterMemberSchema,
+  UpdateRosterMemberSchema,
   SponsorListSchema,
   SponsorSchema,
   SeasonManagerListSchema,
@@ -119,6 +121,8 @@ import {
   GameSchema,
   GameResultSchema,
   GamesWithRecapsSchema,
+  HandoutListSchema,
+  HandoutSchema,
   LeaderCategoriesSchema,
   LeaderRowSchema,
   LeaderStatisticsFiltersSchema,
@@ -129,12 +133,17 @@ import {
   VerifyTokenRequestSchema,
   ChangePasswordRequestSchema,
   RoleCheckResponseSchema,
+  UpsertHandoutSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const RosterMemberSchemaRef = registry.register('RosterMember', RosterMemberSchema);
   const RosterPlayerSchemaRef = registry.register('RosterPlayer', RosterPlayerSchema);
   const SignRosterMemberSchemaRef = registry.register('SignRosterMember', SignRosterMemberSchema);
+  const UpdateRosterMemberSchemaRef = registry.register(
+    'UpdateRosterMember',
+    UpdateRosterMemberSchema,
+  );
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
   const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
   const NamedContactSchemaRef = registry.register('NamedContact', NamedContactSchema);
@@ -417,6 +426,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const GameResultSchemaRef = registry.register('GameResult', GameResultSchema);
   const RecentGamesSchemaRef = registry.register('RecentGames', RecentGamesSchema);
   const GamesWithRecapsSchemaRef = registry.register('GamesWithRecaps', GamesWithRecapsSchema);
+  const HandoutSchemaRef = registry.register('Handout', HandoutSchema);
+  const HandoutListSchemaRef = registry.register('HandoutList', HandoutListSchema);
+  const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
   const UpdateGameResultsSchemaRef = registry.register(
     'UpdateGameResults',
     UpdateGameResultsSchema,
@@ -458,10 +470,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'RoleCheckResponse',
     RoleCheckResponseSchema,
   );
+  const ContactValidationSchemaRef = registry.register(
+    'ContactValidation',
+    ContactValidationSchema,
+  );
   return {
     RosterMemberSchemaRef,
     RosterPlayerSchemaRef,
     SignRosterMemberSchemaRef,
+    UpdateRosterMemberSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
     NamedContactSchemaRef,
@@ -499,6 +516,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RegisteredUserWithRolesSchemaRef,
     SignInCredentialsSchemaRef,
     ContactValidationWithSignInSchemaRef,
+    ContactValidationSchemaRef,
     PagedContactSchemaRef,
     AccountSchemaRef,
     AccountSearchQuerySchemaRef,
@@ -562,6 +580,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     GameResultSchemaRef,
     RecentGamesSchemaRef,
     GamesWithRecapsSchemaRef,
+    HandoutSchemaRef,
+    HandoutListSchemaRef,
+    UpsertHandoutSchemaRef,
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,

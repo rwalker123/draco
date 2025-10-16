@@ -77,11 +77,45 @@ export const sanitizeRichContent = (text: string): string => {
   return DOMPurify.sanitize(text, {
     USE_PROFILES: { html: true }, // Allow only safe HTML elements
     FORBID_TAGS: ['svg', 'math'], // Explicitly forbid SVG and MathML for security
-    FORBID_ATTR: ['style'], // Remove style attributes to prevent CSS injection
+    ALLOWED_ATTR: ['class', 'href', 'target', 'rel'], // Allow safe attributes while blocking inline styles
+    FORBID_ATTR: ['style'], // Explicitly strip any inline styling hooks
     KEEP_CONTENT: true, // Preserve text content when removing tags
     RETURN_DOM: false, // Return string, not DOM object
     SANITIZE_DOM: true, // Enable DOM clobbering protection
     SANITIZE_NAMED_PROPS: true, // Enforce strict DOM clobbering protection
+  }).trim();
+};
+
+/**
+ * Sanitizes handout descriptions while keeping the HTML compact so it fits existing limits.
+ * Allows basic formatting such as headings, emphasis, and lists, and strips class/style attributes.
+ */
+export const sanitizeHandoutContent = (text: string): string => {
+  if (!text || typeof text !== 'string') return '';
+
+  return DOMPurify.sanitize(text, {
+    ALLOWED_TAGS: [
+      'p',
+      'br',
+      'strong',
+      'b',
+      'em',
+      'i',
+      'u',
+      'ul',
+      'ol',
+      'li',
+      'a',
+      'h1',
+      'h2',
+      'h3',
+    ],
+    ALLOWED_ATTR: ['href', 'target', 'rel'],
+    FORBID_TAGS: ['script', 'style', 'svg', 'math', 'iframe', 'object', 'embed'],
+    FORBID_ATTR: ['style'],
+    KEEP_CONTENT: true,
+    SANITIZE_DOM: true,
+    SANITIZE_NAMED_PROPS: true,
   }).trim();
 };
 

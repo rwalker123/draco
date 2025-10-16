@@ -122,10 +122,19 @@ export interface ICreatePlayersWantedDialogProps {
 
 // Props for Create Teams Wanted dialog
 export interface ICreateTeamsWantedDialogProps {
+  accountId: string;
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: UpsertTeamsWantedClassifiedType) => void;
-  loading: boolean;
+  editMode?: boolean;
+  initialData?: (UpsertTeamsWantedClassifiedType & { id?: string }) | null;
+  classifiedId?: string;
+  accessCode?: string;
+  onSuccess?: (event: {
+    action: 'create' | 'update';
+    message: string;
+    data: TeamsWantedOwnerClassifiedType;
+  }) => void;
+  onError?: (message: string) => void;
 }
 
 // Props for Edit Players Wanted dialog

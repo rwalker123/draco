@@ -2,7 +2,12 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
 import { ContactTransformationService } from '../services/contactTransformationService';
-import { BaseContactType, RosterMemberType, RosterPlayerType } from '@draco/shared-schemas';
+import {
+  BaseContactType,
+  RosterMemberType,
+  RosterPlayerType,
+  UpdateRosterMemberType,
+} from '@draco/shared-schemas';
 import {
   updateRosterMember as apiUpdateRosterMember,
   signPlayer as apiSignPlayer,
@@ -17,6 +22,7 @@ import {
   listAvailableRosterPlayers as apiListAvailableRosterPlayers,
   getAccountSeason,
   getTeamSeasonLeague as apiGetTeamSeasonLeague,
+  listTeamManagers as apiListTeamManagers,
 } from '@draco/shared-api-client';
 import {
   TeamManagerType,
@@ -48,8 +54,11 @@ interface UseRosterDataManagerOptions {
 
 interface RosterMemberUpdates {
   playerNumber?: number;
-  inactive?: boolean;
   submittedWaiver?: boolean;
+  player?: {
+    submittedDriversLicense?: boolean;
+    firstYear?: number;
+  };
 }
 
 // todo: check to see if we should really be storing the available players in the state
@@ -270,8 +279,8 @@ export const useRosterDataManager = (
     if (!accountId || !seasonId || !teamSeasonId || !token) return;
 
     try {
-      const result = await apiClient.get<{ 200: TeamManagerType[] }, unknown, false>({
-        url: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers',
+      const result = await apiListTeamManagers({
+        client: apiClient,
         path: { accountId, seasonId, teamSeasonId },
         throwOnError: false,
       });
@@ -352,9 +361,35 @@ export const useRosterDataManager = (
       if (!rosterData) return;
 
       try {
+        const sanitizedUpdates: UpdateRosterMemberType = {};
+
+        if (updates.playerNumber !== undefined) {
+          sanitizedUpdates.playerNumber = updates.playerNumber;
+        }
+
+        if (updates.submittedWaiver !== undefined) {
+          sanitizedUpdates.submittedWaiver = updates.submittedWaiver;
+        }
+
+        if (updates.player) {
+          const playerUpdates: NonNullable<UpdateRosterMemberType['player']> = {};
+
+          if (updates.player.submittedDriversLicense !== undefined) {
+            playerUpdates.submittedDriversLicense = updates.player.submittedDriversLicense;
+          }
+
+          if (updates.player.firstYear !== undefined) {
+            playerUpdates.firstYear = updates.player.firstYear;
+          }
+
+          if (Object.keys(playerUpdates).length > 0) {
+            sanitizedUpdates.player = playerUpdates;
+          }
+        }
+
         const result = await apiUpdateRosterMember({
           path: { accountId, seasonId, teamSeasonId, rosterMemberId },
-          body: updates,
+          body: sanitizedUpdates,
           client: apiClient,
           throwOnError: false,
         });

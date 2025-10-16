@@ -63,10 +63,6 @@ export default function Communications() {
         </AccountPageHeader>
 
         <Box sx={{ p: 3 }}>
-          <Typography variant="body1" color="text.secondary" paragraph>
-            Send emails to contacts, team members, and manage communications for your organization.
-          </Typography>
-
           {visibleQuickActions.length > 0 && (
             <Box
               sx={{
@@ -135,7 +131,7 @@ export default function Communications() {
           <Tooltip title="Compose email">
             <span>
               <Fab
-                color="secondary"
+                color="primary"
                 onClick={() => router.push(`/account/${accountIdStr}/communications/compose`)}
                 sx={{
                   position: 'fixed',

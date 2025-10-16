@@ -3,15 +3,14 @@
 import React from 'react';
 import {
   Box,
-  Typography,
   Button,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
   Alert,
+  Fab,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
@@ -21,10 +20,12 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import { StreamPaginationControl } from '../../../../components/pagination';
 import TeamsWantedStateManager from '../../../../components/player-classifieds/TeamsWantedStateManager';
-import CreateTeamsWantedDialog from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
+import CreateTeamsWantedDialog, {
+  type TeamsWantedDialogSuccessEvent,
+  type TeamsWantedFormInitialData,
+} from '../../../../components/player-classifieds/CreateTeamsWantedDialog';
 import { playerClassifiedService } from '../../../../services/playerClassifiedService';
 import {
-  UpsertTeamsWantedClassifiedType,
   TeamsWantedOwnerClassifiedType,
   TeamsWantedPublicClassifiedType,
 } from '@draco/shared-schemas';
@@ -65,7 +66,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
-  const [formLoading, setFormLoading] = React.useState(false);
 
   // State for delete operation
   const [selectedClassified, setSelectedClassified] =
@@ -73,10 +73,10 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
 
   // State for edit operation
   const [editingClassified, setEditingClassified] =
-    React.useState<UpsertTeamsWantedClassifiedType | null>(null);
+    React.useState<TeamsWantedFormInitialData | null>(null);
+  const [editingClassifiedId, setEditingClassifiedId] = React.useState<string | null>(null);
 
   // State for contact fetching during edit
-  const [editContactLoading, setEditContactLoading] = React.useState(false);
   const [editContactError, setEditContactError] = React.useState<string | null>(null);
 
   // Pagination state
@@ -88,12 +88,9 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
   // Use the main hook for data management with pagination
   const {
     teamsWanted,
-    loading,
     paginationLoading,
     error: hookError,
     paginationInfo,
-    createTeamsWanted,
-    updateTeamsWanted,
     deleteTeamsWanted,
     loadTeamsWantedPage,
   } = usePlayerClassifieds(accountId, token || undefined);
@@ -146,7 +143,6 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
 
     if (canOperateWithoutAccessCode(classified)) {
       // AccountAdmins - fetch contact info with JWT token
-      setEditContactLoading(true);
       setEditContactError(null);
 
       try {
@@ -166,49 +162,50 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         };
 
         setEditingClassified(classifiedWithContact);
+        setEditingClassifiedId(classified.id.toString());
         setEditDialogOpen(true);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to fetch contact information';
         setEditContactError(errorMessage);
-      } finally {
-        setEditContactLoading(false);
       }
     }
     // Access code verification is handled by TeamsWantedStateManager for non-AccountAdmins
   };
 
   // Handle edit dialog close
-  const closeEditDialog = () => {
+  const closeEditDialog = React.useCallback(() => {
     setEditDialogOpen(false);
     setEditingClassified(null);
+    setEditingClassifiedId(null);
     setEditContactError(null);
-  };
+  }, []);
 
-  // Handle edit form submission
-  const handleEditSubmit = async (formData: UpsertTeamsWantedClassifiedType) => {
-    if (!editingClassified || !editingClassified.id) return;
-
-    try {
-      // For AccountAdmins, no access code is needed - use empty string
-      await updateTeamsWanted(editingClassified.id, formData, '');
-
-      // The hook state is automatically updated by the updateTeamsWanted call
-      // No need to manually update state
-
-      // Close the edit dialog and show detailed success message
-      closeEditDialog();
-      setSuccess(
-        'Teams Wanted ad updated successfully! Your Teams Wanted ad has been updated with the new information.',
-      );
+  const handleCreateDialogSuccess = React.useCallback(
+    (event: TeamsWantedDialogSuccessEvent) => {
+      setCreateDialogOpen(false);
+      setSuccess(event.message);
       setError(null);
-      // Auto-hide success message after 5 seconds
+      loadTeamsWantedPage(pagination.page, pagination.limit);
+      setTimeout(() => setSuccess(null), 8000);
+    },
+    [loadTeamsWantedPage, pagination.limit, pagination.page],
+  );
+
+  const handleEditDialogSuccess = React.useCallback(
+    (event: TeamsWantedDialogSuccessEvent) => {
+      setSuccess(event.message);
+      setError(null);
+      closeEditDialog();
+      loadTeamsWantedPage(pagination.page, pagination.limit);
       setTimeout(() => setSuccess(null), 5000);
-    } catch (error) {
-      // Let the hook handle error notifications, but re-throw so dialog can handle it
-      throw error;
-    }
-  };
+    },
+    [closeEditDialog, loadTeamsWantedPage, pagination.limit, pagination.page],
+  );
+
+  const handleDialogError = React.useCallback((message: string) => {
+    setError(message);
+  }, []);
 
   // Handle delete
   const handleDelete = async (id: string, _accessCodeRequired: string) => {
@@ -256,69 +253,8 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
     closeDeleteDialog();
   };
 
-  // Handle create teams wanted
-  const handleCreateTeamsWanted = async (formData: UpsertTeamsWantedClassifiedType) => {
-    setFormLoading(true);
-    try {
-      await createTeamsWanted(formData);
-      // Close dialog and show detailed success message
-      setCreateDialogOpen(false);
-      setSuccess(
-        "Teams Wanted ad created successfully! You'll receive an access code via email shortly. Keep this code safe - you'll need it to edit or delete your ad later.",
-      );
-      setError(null);
-      // Auto-hide success message after 8 seconds (longer for detailed message)
-      setTimeout(() => setSuccess(null), 8000);
-    } catch (error) {
-      // Error is already handled by the hook
-      throw error;
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  // Loading state - only show spinner for initial load, not for pagination
-  if (loading && teamsWanted.length === 0) {
-    return (
-      <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h5" component="h2">
-            Teams Wanted
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-            disabled={!isAccountMember}
-          >
-            Create Ad
-          </Button>
-        </Box>
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
-        </Box>
-      </Box>
-    );
-  }
-
   return (
     <Box>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5" component="h2">
-          Teams Wanted
-        </Typography>
-        <Box display="flex" gap={2}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            Post Teams Wanted
-          </Button>
-        </Box>
-      </Box>
-
       {/* Notifications */}
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
@@ -352,6 +288,20 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
         onVerificationProcessed={onVerificationProcessed}
       />
 
+      <Fab
+        color="primary"
+        aria-label="Create Teams Wanted classified"
+        onClick={() => setCreateDialogOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 24, sm: 32 },
+          right: { xs: 24, sm: 32 },
+          zIndex: (theme) => theme.zIndex.snackbar + 1,
+        }}
+      >
+        <AddIcon />
+      </Fab>
+
       {/* Pagination Controls - Only show for authenticated account members */}
       {isAuthenticated && isAccountMember && teamsWanted.length > 0 && (
         <Box display="flex" justifyContent="center" mt={4}>
@@ -375,10 +325,11 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
 
       {/* Create Teams Wanted Dialog */}
       <CreateTeamsWantedDialog
+        accountId={accountId}
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSubmit={handleCreateTeamsWanted}
-        loading={formLoading}
+        onSuccess={handleCreateDialogSuccess}
+        onError={handleDialogError}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -400,12 +351,14 @@ const TeamsWanted: React.FC<TeamsWantedProps> = ({
       {/* Edit Teams Wanted Dialog */}
       {editingClassified && (
         <CreateTeamsWantedDialog
+          accountId={accountId}
           open={editDialogOpen}
           onClose={closeEditDialog}
-          onSubmit={handleEditSubmit}
-          loading={formLoading || editContactLoading}
           initialData={editingClassified}
+          classifiedId={editingClassifiedId ?? undefined}
           editMode={true}
+          onSuccess={handleEditDialogSuccess}
+          onError={handleDialogError}
         />
       )}
     </Box>

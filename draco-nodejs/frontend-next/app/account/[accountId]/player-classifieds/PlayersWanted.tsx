@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useCallback } from 'react';
-import { Box, Typography, CircularProgress, Button, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Fab } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { usePlayerClassifieds } from '../../../../hooks/usePlayerClassifieds';
 import { useClassifiedsPermissions } from '../../../../hooks/useClassifiedsPermissions';
@@ -11,6 +11,8 @@ import { usePlayersWantedDialogs } from '../../../../hooks/usePlayersWantedDialo
 import { PlayersWantedCard } from '../../../../components/player-classifieds';
 import CreatePlayersWantedDialog from '../../../../components/player-classifieds/CreatePlayersWantedDialog';
 import DeletePlayersWantedDialog from '../../../../components/player-classifieds/DeletePlayersWantedDialog';
+import type { PlayersWantedDialogSuccessEvent } from '../../../../components/player-classifieds/CreatePlayersWantedDialog';
+import type { DeletePlayersWantedSuccessEvent } from '../../../../components/player-classifieds/DeletePlayersWantedDialog';
 import EmptyState from '../../../../components/common/EmptyState';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 
@@ -24,15 +26,10 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
   const isAccountMember = !!isMember;
   const isSignedIn = !!user;
 
-  const {
-    playersWanted,
-    loading,
-    error,
-    clearError,
-    deletePlayersWanted,
-    formLoading,
-    refreshData,
-  } = usePlayerClassifieds(accountId, token || undefined);
+  const { playersWanted, loading, error, clearError, refreshData } = usePlayerClassifieds(
+    accountId,
+    token || undefined,
+  );
 
   // Get permission functions for edit/delete controls
   const { canEditPlayersWantedById, canDeletePlayersWantedById } = useClassifiedsPermissions({
@@ -81,34 +78,26 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
     [playersWanted, openDeleteDialog],
   );
 
-  // Handle delete confirmation
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deletingClassified) return;
-
-    try {
-      await deletePlayersWanted(deletingClassified.id.toString());
-
-      // Close the delete dialog and show success message
-      closeDeleteDialog();
-      showSuccessMessage('Players Wanted ad deleted successfully!');
-    } catch {
-      // Error is already handled by the hook (notification shown)
-      // No need to re-throw - just keep dialog open for user to retry
-    }
-  }, [deletingClassified, deletePlayersWanted, closeDeleteDialog, showSuccessMessage]);
-
   const handleCreateDialogSuccess = useCallback(
-    async (_classified: PlayersWantedClassifiedType) => {
+    async (_event: PlayersWantedDialogSuccessEvent) => {
       await refreshData();
-      showSuccessMessage('Players Wanted ad created successfully!');
+      showSuccessMessage(_event.message);
     },
     [refreshData, showSuccessMessage],
   );
 
   const handleEditDialogSuccess = useCallback(
-    async (_classified: PlayersWantedClassifiedType) => {
+    async (_event: PlayersWantedDialogSuccessEvent) => {
       await refreshData();
-      showSuccessMessage('Players Wanted ad updated successfully!');
+      showSuccessMessage(_event.message);
+    },
+    [refreshData, showSuccessMessage],
+  );
+
+  const handleDeleteSuccess = useCallback(
+    async (_event: DeletePlayersWantedSuccessEvent) => {
+      await refreshData();
+      showSuccessMessage(_event.message);
     },
     [refreshData, showSuccessMessage],
   );
@@ -148,11 +137,12 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
 
         {/* Delete Players Wanted Dialog */}
         <DeletePlayersWantedDialog
+          accountId={accountId}
           open={deleteDialogOpen}
           classified={deletingClassified}
           onClose={closeDeleteDialog}
-          onConfirm={handleDeleteConfirm}
-          loading={formLoading}
+          onSuccess={handleDeleteSuccess}
+          onError={handleDialogError}
         />
       </>
     ),
@@ -166,11 +156,10 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
       deleteDialogOpen,
       deletingClassified,
       closeDeleteDialog,
-      handleDeleteConfirm,
       handleCreateDialogSuccess,
       handleEditDialogSuccess,
+      handleDeleteSuccess,
       handleDialogError,
-      formLoading,
     ],
   );
 
@@ -206,19 +195,24 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
           <EmptyState
             title="No Players Wanted"
             subtitle="No players are currently looking for teams."
-          >
-            {isAccountMember && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={openCreateDialog}
-                sx={{ mt: 2 }}
-              >
-                Post Players Wanted
-              </Button>
-            )}
-          </EmptyState>
+          />
         </Box>
+
+        {isAccountMember && (
+          <Fab
+            color="primary"
+            aria-label="Create Players Wanted classified"
+            onClick={openCreateDialog}
+            sx={{
+              position: 'fixed',
+              bottom: { xs: 24, sm: 32 },
+              right: { xs: 24, sm: 32 },
+              zIndex: (theme) => theme.zIndex.snackbar + 1,
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        )}
 
         {/* Render dialogs for empty state */}
         {renderDialogs}
@@ -253,11 +247,6 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
         <Typography variant="h6" component="h2">
           Teams Looking for Players ({playersWanted.length})
         </Typography>
-        {isAccountMember && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
-            Post Players Wanted
-          </Button>
-        )}
       </Box>
 
       {/* Players Wanted Grid */}
@@ -279,6 +268,22 @@ const PlayersWanted: React.FC<PlayersWantedProps> = ({ accountId }) => {
           />
         ))}
       </Box>
+
+      {isAccountMember && (
+        <Fab
+          color="primary"
+          aria-label="Create Players Wanted classified"
+          onClick={openCreateDialog}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 24, sm: 32 },
+            right: { xs: 24, sm: 32 },
+            zIndex: (theme) => theme.zIndex.snackbar + 1,
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
 
       {/* Render dialogs for main state */}
       {renderDialogs}

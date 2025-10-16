@@ -16,6 +16,7 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  FormHelperText,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -23,51 +24,51 @@ import {
   Email as EmailIcon,
   Twitter as TwitterIcon,
 } from '@mui/icons-material';
+import type { GameRecapType, GameResultType, UpdateGameResultsType } from '@draco/shared-schemas';
+import { UpdateGameResultsSchema } from '@draco/shared-schemas';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { GameStatus } from '../types/schedule';
 import { formatDateTimeInTimezone } from '../utils/dateUtils';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
+import { useGameResults } from '../hooks/useGameResults';
 
-interface GameRecap {
-  teamId: string;
-  recap: string;
+type TeamSummary = {
+  id: string;
+  name?: string | null;
+};
+
+export interface EnterGameResultsDialogGame {
+  id: string;
+  seasonId: string;
+  gameDate: string;
+  homeTeam: TeamSummary;
+  visitorTeam: TeamSummary;
+  homeScore: number;
+  visitorScore: number;
+  gameStatus: number;
+  gameStatusText?: string;
+  leagueName?: string;
+  fieldId?: string | null;
+  fieldName?: string | null;
+  fieldShortName?: string | null;
+  recaps?: GameRecapType[];
 }
 
-interface Game {
-  id: string;
-  date: string;
-  homeTeamId: string;
-  awayTeamId: string;
-  homeTeamName: string;
-  awayTeamName: string;
-  homeScore: number;
-  awayScore: number;
-  gameStatus: number;
-  gameStatusText: string;
-  leagueName: string;
-  fieldId: string | null;
-  fieldName: string | null;
-  fieldShortName: string | null;
-  hasGameRecap: boolean;
-  gameRecaps: GameRecap[];
+export interface GameResultsSuccessPayload {
+  gameId: string;
+  seasonId: string;
+  result: GameResultType;
+  request: UpdateGameResultsType;
 }
 
 interface EnterGameResultsDialogProps {
   open: boolean;
   onClose: () => void;
-  game: Game | null;
-  onSave: (gameData: GameResultData) => Promise<void>;
+  accountId: string;
+  game: EnterGameResultsDialogGame | null;
+  onSuccess?: (payload: GameResultsSuccessPayload) => void;
   timeZone?: string;
-}
-
-export interface GameResultData {
-  gameId: string;
-  homeScore: number;
-  awayScore: number;
-  gameStatus: number;
-  emailPlayers: boolean;
-  postToTwitter: boolean;
-  postToBluesky: boolean;
-  postToFacebook: boolean;
 }
 
 const gameStatusOptions = [
@@ -79,82 +80,91 @@ const gameStatusOptions = [
   { value: 5, label: 'Did Not Report' },
 ];
 
+const defaultFormValues: UpdateGameResultsType = {
+  homeScore: 0,
+  visitorScore: 0,
+  gameStatus: GameStatus.Scheduled,
+  emailPlayers: false,
+  postToTwitter: false,
+  postToBluesky: false,
+  postToFacebook: false,
+};
+
+const mapGameToFormValues = (game: EnterGameResultsDialogGame | null): UpdateGameResultsType => ({
+  homeScore: game?.homeScore ?? defaultFormValues.homeScore,
+  visitorScore: game?.visitorScore ?? defaultFormValues.visitorScore,
+  gameStatus: game?.gameStatus ?? defaultFormValues.gameStatus,
+  emailPlayers: defaultFormValues.emailPlayers,
+  postToTwitter: defaultFormValues.postToTwitter,
+  postToBluesky: defaultFormValues.postToBluesky,
+  postToFacebook: defaultFormValues.postToFacebook,
+});
+
 const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   open,
   onClose,
+  accountId,
   game,
-  onSave,
+  onSuccess,
   timeZone = DEFAULT_TIMEZONE,
 }) => {
-  const [formData, setFormData] = useState<GameResultData>({
-    gameId: '',
-    homeScore: 0,
-    awayScore: 0,
-    gameStatus: GameStatus.Scheduled,
-    emailPlayers: false,
-    postToTwitter: false,
-    postToBluesky: false,
-    postToFacebook: false,
+  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UpdateGameResultsType>({
+    resolver: zodResolver(UpdateGameResultsSchema),
+    defaultValues: mapGameToFormValues(game ?? null),
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const { submitResults, loading, error, resetError } = useGameResults({
+    accountId,
+    seasonId: game?.seasonId ?? '',
+  });
 
   // Initialize form data when game changes
   React.useEffect(() => {
-    if (game) {
-      setFormData({
-        gameId: game.id,
-        homeScore: game.homeScore,
-        awayScore: game.awayScore,
-        gameStatus: game.gameStatus,
-        emailPlayers: false,
-        postToTwitter: false,
-        postToBluesky: false,
-        postToFacebook: false,
-      });
-      setError(null);
-    }
-  }, [game]);
-
-  const handleInputChange = (field: keyof GameResultData, value: string | number | boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSave = async () => {
-    if (!game) return;
-
-    // Validate forfeit scores
-    if (formData.gameStatus === GameStatus.Forfeit) {
-      // Forfeit
-      if (formData.homeScore === 0 && formData.awayScore === 0) {
-        setError(
-          'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
-        );
-        return;
-      }
-      if (formData.homeScore > 0 && formData.awayScore > 0) {
-        setError(
-          'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
-        );
-        return;
-      }
+    if (!game) {
+      reset(defaultFormValues);
+      setFormError(null);
+      resetError();
+      return;
     }
 
-    setLoading(true);
-    setError(null);
+    reset(mapGameToFormValues(game));
+    setFormError(null);
+    resetError();
+  }, [game, reset, resetError]);
+
+  const handleSave = handleSubmit(async (values) => {
+    if (!game) {
+      return;
+    }
+
+    if (!game.seasonId) {
+      setFormError('Missing season information for the selected game.');
+      return;
+    }
+
+    setFormError(null);
 
     try {
-      await onSave(formData);
+      const result = await submitResults(game.id, values);
+
+      onSuccess?.({
+        gameId: game.id,
+        seasonId: game.seasonId,
+        result,
+        request: values,
+      });
+
       onClose();
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to save game results');
-    } finally {
-      setLoading(false);
+    } catch {
+      // Error state is managed by the service hook; no additional handling required.
     }
-  };
+  });
 
   const formatGameTime = (dateString: string) => {
     return formatDateTimeInTimezone(dateString, timeZone, {
@@ -167,8 +177,16 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     });
   };
 
-  const getDisplayFieldName = (game: Game) => {
-    return game.fieldName;
+  const getDisplayFieldName = (gameDetails: EnterGameResultsDialogGame) => {
+    if (gameDetails.fieldName) {
+      return gameDetails.fieldName;
+    }
+
+    if (gameDetails.fieldShortName) {
+      return gameDetails.fieldShortName;
+    }
+
+    return null;
   };
 
   if (!game) return null;
@@ -218,9 +236,9 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ pt: 4, pb: 2, px: 3 }}>
-        {error && (
+        {(formError || error) && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {formError ?? error}
           </Alert>
         )}
 
@@ -241,7 +259,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 Date/Time:
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {formatGameTime(game.date)}
+                {formatGameTime(game.gameDate)}
               </Typography>
             </Box>
             <Box>
@@ -257,7 +275,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 League:
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {game.leagueName}
+                {game.leagueName ?? 'Unknown League'}
               </Typography>
             </Box>
           </Box>
@@ -271,74 +289,84 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               <Typography variant="body2" color="text.secondary" sx={{ minWidth: '100px' }}>
                 Game Status:
               </Typography>
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <Select
-                  value={formData.gameStatus}
-                  onChange={(e) => handleInputChange('gameStatus', Number(e.target.value))}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        bgcolor: 'background.paper',
-                        color: 'text.primary',
-                        zIndex: 1500,
-                        '& .MuiMenuItem-root': {
-                          color: 'text.primary',
-                          '&:hover': {
-                            bgcolor: 'action.hover',
-                          },
-                          '&.Mui-selected': {
-                            bgcolor: 'primary.main',
-                            color: 'primary.contrastText',
-                            '&:hover': {
-                              bgcolor: 'primary.dark',
+              <FormControl size="small" sx={{ minWidth: 200 }} error={Boolean(errors.gameStatus)}>
+                <Controller
+                  name="gameStatus"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      value={field.value}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            bgcolor: 'background.paper',
+                            color: 'text.primary',
+                            zIndex: 1500,
+                            '& .MuiMenuItem-root': {
+                              color: 'text.primary',
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                              },
+                              '&.Mui-selected': {
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                '&:hover': {
+                                  bgcolor: 'primary.dark',
+                                },
+                              },
                             },
                           },
                         },
-                      },
-                    },
-                    sx: {
-                      zIndex: 1500,
-                    },
-                    container: document.body,
-                  }}
-                  sx={{
-                    color: 'text.primary',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'divider',
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
-                    },
-                    '& .MuiSvgIcon-root': {
-                      color: 'text.secondary',
-                    },
-                  }}
-                >
-                  {gameStatusOptions.map((option) => (
-                    <MenuItem
-                      key={option.value}
-                      value={option.value}
+                        sx: {
+                          zIndex: 1500,
+                        },
+                        container: document.body,
+                      }}
                       sx={{
                         color: 'text.primary',
-                        '&:hover': {
-                          bgcolor: 'action.hover',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'divider',
                         },
-                        '&.Mui-selected': {
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          '&:hover': {
-                            bgcolor: 'primary.dark',
-                          },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'text.secondary',
                         },
                       }}
                     >
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
+                      {gameStatusOptions.map((option) => (
+                        <MenuItem
+                          key={option.value}
+                          value={option.value}
+                          sx={{
+                            color: 'text.primary',
+                            '&:hover': {
+                              bgcolor: 'action.hover',
+                            },
+                            '&.Mui-selected': {
+                              bgcolor: 'primary.main',
+                              color: 'primary.contrastText',
+                              '&:hover': {
+                                bgcolor: 'primary.dark',
+                              },
+                            },
+                          }}
+                        >
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                {errors.gameStatus && (
+                  <FormHelperText error>{errors.gameStatus.message}</FormHelperText>
+                )}
               </FormControl>
             </Box>
           </Box>
@@ -354,47 +382,56 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 fontWeight={600}
                 sx={{ minWidth: '150px' }}
               >
-                {game.awayTeamName}
+                {game.visitorTeam.name ?? 'Away Team'}
               </Typography>
-              <TextField
-                type="number"
-                value={formData.awayScore}
-                onChange={(e) => {
-                  const value = e.target.value === '' ? 0 : Number(e.target.value);
-                  handleInputChange('awayScore', isNaN(value) ? 0 : value);
-                }}
-                inputProps={{ min: 0 }}
-                size="medium"
-                sx={{
-                  width: '100px',
-                  '& .MuiOutlinedInput-root': {
-                    color: 'text.primary',
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    '& fieldset': {
-                      borderColor: 'divider',
-                      borderWidth: '2px',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'primary.main',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: 'primary.main',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'text.secondary',
-                  },
-                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
-                    {
-                      WebkitAppearance: 'none',
-                      margin: 0,
-                    },
-                  '& input[type=number]': {
-                    MozAppearance: 'textfield',
-                    textAlign: 'center',
-                  },
-                }}
+              <Controller
+                name="visitorScore"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    value={field.value ?? 0}
+                    onChange={(e) => {
+                      const numericValue = Number(e.target.value);
+                      field.onChange(Number.isNaN(numericValue) ? 0 : numericValue);
+                    }}
+                    inputProps={{ min: 0 }}
+                    size="medium"
+                    error={Boolean(fieldState.error)}
+                    helperText={fieldState.error?.message}
+                    sx={{
+                      width: '100px',
+                      '& .MuiOutlinedInput-root': {
+                        color: 'text.primary',
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        '& fieldset': {
+                          borderColor: 'divider',
+                          borderWidth: '2px',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: 'text.secondary',
+                      },
+                      '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
+                        {
+                          WebkitAppearance: 'none',
+                          margin: 0,
+                        },
+                      '& input[type=number]': {
+                        MozAppearance: 'textfield',
+                        textAlign: 'center',
+                      },
+                    }}
+                  />
+                )}
               />
             </Box>
 
@@ -407,47 +444,56 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 fontWeight={600}
                 sx={{ minWidth: '150px' }}
               >
-                {game.homeTeamName}
+                {game.homeTeam.name ?? 'Home Team'}
               </Typography>
-              <TextField
-                type="number"
-                value={formData.homeScore}
-                onChange={(e) => {
-                  const value = e.target.value === '' ? 0 : Number(e.target.value);
-                  handleInputChange('homeScore', isNaN(value) ? 0 : value);
-                }}
-                inputProps={{ min: 0 }}
-                size="medium"
-                sx={{
-                  width: '100px',
-                  '& .MuiOutlinedInput-root': {
-                    color: 'text.primary',
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    '& fieldset': {
-                      borderColor: 'divider',
-                      borderWidth: '2px',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'primary.main',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: 'primary.main',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'text.secondary',
-                  },
-                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
-                    {
-                      WebkitAppearance: 'none',
-                      margin: 0,
-                    },
-                  '& input[type=number]': {
-                    MozAppearance: 'textfield',
-                    textAlign: 'center',
-                  },
-                }}
+              <Controller
+                name="homeScore"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    value={field.value ?? 0}
+                    onChange={(e) => {
+                      const numericValue = Number(e.target.value);
+                      field.onChange(Number.isNaN(numericValue) ? 0 : numericValue);
+                    }}
+                    inputProps={{ min: 0 }}
+                    size="medium"
+                    error={Boolean(fieldState.error)}
+                    helperText={fieldState.error?.message}
+                    sx={{
+                      width: '100px',
+                      '& .MuiOutlinedInput-root': {
+                        color: 'text.primary',
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        '& fieldset': {
+                          borderColor: 'divider',
+                          borderWidth: '2px',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: 'text.secondary',
+                      },
+                      '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
+                        {
+                          WebkitAppearance: 'none',
+                          margin: 0,
+                        },
+                      '& input[type=number]': {
+                        MozAppearance: 'textfield',
+                        textAlign: 'center',
+                      },
+                    }}
+                  />
+                )}
               />
             </Box>
           </Box>
@@ -468,101 +514,129 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               borderRadius: 1,
             }}
           >
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.emailPlayers}
-                  onChange={(e) => handleInputChange('emailPlayers', e.target.checked)}
-                  sx={{
-                    color: 'text.secondary',
-                    '&.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                  }}
+            <Controller
+              name="emailPlayers"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={Boolean(field.value)}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      sx={{
+                        color: 'text.secondary',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <EmailIcon fontSize="small" />
+                      <Typography variant="body2" color="text.primary">
+                        Email to players
+                      </Typography>
+                    </Box>
+                  }
                 />
-              }
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <EmailIcon fontSize="small" />
-                  <Typography variant="body2" color="text.primary">
-                    Email game results to players
-                  </Typography>
-                </Box>
-              }
+              )}
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.postToTwitter}
-                  onChange={(e) => handleInputChange('postToTwitter', e.target.checked)}
-                  sx={{
-                    color: 'text.secondary',
-                    '&.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                  }}
+            <Controller
+              name="postToTwitter"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={Boolean(field.value)}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      sx={{
+                        color: 'text.secondary',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TwitterIcon fontSize="small" />
+                      <Typography variant="body2" color="text.primary">
+                        Post to Twitter
+                      </Typography>
+                    </Box>
+                  }
                 />
-              }
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TwitterIcon fontSize="small" />
-                  <Typography variant="body2" color="text.primary">
-                    Post to Twitter
-                  </Typography>
-                </Box>
-              }
+              )}
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.postToBluesky}
-                  onChange={(e) => handleInputChange('postToBluesky', e.target.checked)}
-                  sx={{
-                    color: 'text.secondary',
-                    '&.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                  }}
+            <Controller
+              name="postToBluesky"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={Boolean(field.value)}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      sx={{
+                        color: 'text.secondary',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip
+                        label="BS"
+                        size="small"
+                        sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }}
+                      />
+                      <Typography variant="body2" color="text.primary">
+                        Post to Bluesky
+                      </Typography>
+                    </Box>
+                  }
                 />
-              }
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip
-                    label="BS"
-                    size="small"
-                    sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }}
-                  />
-                  <Typography variant="body2" color="text.primary">
-                    Post to Bluesky
-                  </Typography>
-                </Box>
-              }
+              )}
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.postToFacebook}
-                  onChange={(e) => handleInputChange('postToFacebook', e.target.checked)}
-                  sx={{
-                    color: 'text.secondary',
-                    '&.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                  }}
+            <Controller
+              name="postToFacebook"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={Boolean(field.value)}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      sx={{
+                        color: 'text.secondary',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip
+                        label="FB"
+                        size="small"
+                        sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }}
+                      />
+                      <Typography variant="body2" color="text.primary">
+                        Post to Facebook
+                      </Typography>
+                    </Box>
+                  }
                 />
-              }
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip
-                    label="FB"
-                    size="small"
-                    sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }}
-                  />
-                  <Typography variant="body2" color="text.primary">
-                    Post to Facebook
-                  </Typography>
-                </Box>
-              }
+              )}
             />
           </Box>
         </Box>

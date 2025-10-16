@@ -1,10 +1,10 @@
 import {
   BaseContactType,
   CreateContactType,
-  CreateRosterMemberType,
   RosterMemberType,
   SignRosterMemberType,
   TeamRosterMembersType,
+  UpdateRosterMemberType,
 } from '@draco/shared-schemas';
 import { RosterResponseFormatter, ContactResponseFormatter } from '../responseFormatters/index.js';
 import { DateUtils } from '../utils/dateUtils.js';
@@ -145,7 +145,7 @@ export class RosterService {
     teamSeasonId: bigint,
     seasonId: bigint,
     accountId: bigint,
-    updateData: CreateRosterMemberType,
+    updateData: UpdateRosterMemberType,
   ): Promise<RosterMemberType> {
     const existingRosterMember = await this.getRosterMemberForAccount(
       rosterMemberId,
@@ -154,10 +154,17 @@ export class RosterService {
       accountId,
     );
 
-    const { playerNumber, submittedWaiver } = updateData;
-    const { submittedDriversLicense, firstYear } = updateData.player;
+    const { playerNumber, submittedWaiver, player } = updateData;
+    const { submittedDriversLicense, firstYear } = player ?? {};
 
-    if (submittedDriversLicense !== undefined || firstYear !== undefined) {
+    const hasPlayerUpdates = submittedDriversLicense !== undefined || firstYear !== undefined;
+    const hasRosterEntryUpdates = playerNumber !== undefined || submittedWaiver !== undefined;
+
+    if (!hasPlayerUpdates && !hasRosterEntryUpdates) {
+      throw new ValidationError('No roster updates were provided');
+    }
+
+    if (hasPlayerUpdates) {
       await this.rosterRepository.updateRosterPlayer(
         existingRosterMember.playerid,
         submittedDriversLicense,
@@ -165,11 +172,13 @@ export class RosterService {
       );
     }
 
-    const updatedRosterMember = await this.rosterRepository.updateRosterSeasonEntry(
-      rosterMemberId,
-      playerNumber,
-      submittedWaiver,
-    );
+    const updatedRosterMember = hasRosterEntryUpdates
+      ? await this.rosterRepository.updateRosterSeasonEntry(
+          rosterMemberId,
+          playerNumber,
+          submittedWaiver,
+        )
+      : await this.getRosterMemberForAccount(rosterMemberId, teamSeasonId, seasonId, accountId);
 
     return RosterResponseFormatter.formatRosterMemberResponse(updatedRosterMember);
   }

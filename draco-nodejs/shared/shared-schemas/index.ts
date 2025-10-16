@@ -22,3 +22,4 @@ export * from './league.js';
 export * from './game.js';
 export * from './standing.js';
 export * from './statistics.js';
+export * from './handout.js';
