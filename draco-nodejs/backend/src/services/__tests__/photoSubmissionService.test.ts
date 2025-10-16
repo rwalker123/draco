@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 
 vi.mock('@draco/shared-schemas', () => ({}));
 vi.mock('../../utils/customErrors.js', () => {
@@ -33,19 +33,31 @@ import {
 } from '../../types/photoSubmissions.js';
 
 class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
-  createSubmissionMock = vi.fn<[dbCreatePhotoSubmissionInput], Promise<dbPhotoSubmission>>();
-  findSubmissionByIdMock = vi.fn<[bigint], Promise<dbPhotoSubmission | null>>();
-  findSubmissionForAccountMock = vi.fn<[bigint, bigint], Promise<dbPhotoSubmission | null>>();
-  findSubmissionWithRelationsMock = vi.fn<
+  createSubmissionMock: Mock<
+    [dbCreatePhotoSubmissionInput],
+    Promise<dbPhotoSubmission>
+  > = vi.fn();
+  findSubmissionByIdMock: Mock<[bigint], Promise<dbPhotoSubmission | null>> = vi.fn();
+  findSubmissionForAccountMock: Mock<
+    [bigint, bigint],
+    Promise<dbPhotoSubmission | null>
+  > = vi.fn();
+  findSubmissionWithRelationsMock: Mock<
     [bigint],
     Promise<dbPhotoSubmissionWithRelations | null>
-  >();
-  findAlbumForAccountMock = vi.fn<[bigint, bigint], Promise<dbPhotoGalleryAlbum | null>>();
-  approveSubmissionMock = vi.fn<
+  > = vi.fn();
+  findAlbumForAccountMock: Mock<
+    [bigint, bigint],
+    Promise<dbPhotoGalleryAlbum | null>
+  > = vi.fn();
+  approveSubmissionMock: Mock<
     [bigint, dbApprovePhotoSubmissionInput],
     Promise<dbPhotoSubmission>
-  >();
-  denySubmissionMock = vi.fn<[bigint, dbDenyPhotoSubmissionInput], Promise<dbPhotoSubmission>>();
+  > = vi.fn();
+  denySubmissionMock: Mock<
+    [bigint, dbDenyPhotoSubmissionInput],
+    Promise<dbPhotoSubmission>
+  > = vi.fn();
 
   createSubmission(data: dbCreatePhotoSubmissionInput): Promise<dbPhotoSubmission> {
     return this.createSubmissionMock(data);

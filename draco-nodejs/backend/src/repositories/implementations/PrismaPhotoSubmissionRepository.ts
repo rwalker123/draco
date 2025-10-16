@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { ValidationError } from '../../utils/customErrors.js';
 import { IPhotoSubmissionRepository } from '../interfaces/IPhotoSubmissionRepository.js';
 import {
   dbApprovePhotoSubmissionInput,
@@ -140,17 +141,30 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
     submissionId: bigint,
     data: dbApprovePhotoSubmissionInput,
   ): Promise<dbPhotoSubmission> {
-    return this.prisma.photogallerysubmission.update({
-      where: { id: submissionId },
-      data: {
-        moderatedbycontactid: data.moderatedbycontactid,
-        approvedphotoid: data.approvedphotoid,
-        status: 'Approved',
-        moderatedat: data.moderatedat,
-        updatedat: data.updatedat,
-        denialreason: null,
-      },
-      select: submissionSelect,
+    return this.prisma.$transaction(async (tx) => {
+      const updateResult = await tx.photogallerysubmission.updateMany({
+        where: {
+          id: submissionId,
+          status: 'Pending',
+        },
+        data: {
+          moderatedbycontactid: data.moderatedbycontactid,
+          approvedphotoid: data.approvedphotoid,
+          status: 'Approved',
+          moderatedat: data.moderatedat,
+          updatedat: data.updatedat,
+          denialreason: null,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        throw new ValidationError('Only pending submissions can be moderated');
+      }
+
+      return tx.photogallerysubmission.findUniqueOrThrow({
+        where: { id: submissionId },
+        select: submissionSelect,
+      });
     });
   }
 
@@ -158,17 +172,30 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
     submissionId: bigint,
     data: dbDenyPhotoSubmissionInput,
   ): Promise<dbPhotoSubmission> {
-    return this.prisma.photogallerysubmission.update({
-      where: { id: submissionId },
-      data: {
-        moderatedbycontactid: data.moderatedbycontactid,
-        approvedphotoid: null,
-        status: 'Denied',
-        moderatedat: data.moderatedat,
-        updatedat: data.updatedat,
-        denialreason: data.denialreason,
-      },
-      select: submissionSelect,
+    return this.prisma.$transaction(async (tx) => {
+      const updateResult = await tx.photogallerysubmission.updateMany({
+        where: {
+          id: submissionId,
+          status: 'Pending',
+        },
+        data: {
+          moderatedbycontactid: data.moderatedbycontactid,
+          approvedphotoid: null,
+          status: 'Denied',
+          moderatedat: data.moderatedat,
+          updatedat: data.updatedat,
+          denialreason: data.denialreason,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        throw new ValidationError('Only pending submissions can be moderated');
+      }
+
+      return tx.photogallerysubmission.findUniqueOrThrow({
+        where: { id: submissionId },
+        select: submissionSelect,
+      });
     });
   }
 }
