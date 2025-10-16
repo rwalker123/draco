@@ -136,22 +136,31 @@ echo ""
 echo "Step 3: Verifying database updates..."
 echo "----------------------------------------"
 
-# Check if email tables were created
-echo "Checking for email tables..."
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "
-SELECT COUNT(*) FROM information_schema.tables 
-WHERE table_schema = 'public' 
-AND table_name IN ('emails', 'email_templates', 'email_recipients', 'email_attachments', 'email_events');" | xargs
+# Check if email and photo submission tables were created
+TABLES_TO_CHECK=(
+  "emails"
+  "email_templates"
+  "email_recipients"
+  "email_attachments"
+  "email_events"
+  "photogallerysubmission"
+)
+
+EXPECTED_COUNT=${#TABLES_TO_CHECK[@]}
+TABLE_LIST=$(printf "'%s'," "${TABLES_TO_CHECK[@]}")
+TABLE_LIST=${TABLE_LIST%,}
+
+echo "Checking for required tables (${TABLES_TO_CHECK[*]})..."
 
 TABLE_COUNT=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "
-SELECT COUNT(*) FROM information_schema.tables 
-WHERE table_schema = 'public' 
-AND table_name IN ('emails', 'email_templates', 'email_recipients', 'email_attachments', 'email_events');" | xargs)
+SELECT COUNT(*) FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_name IN (${TABLE_LIST});" | xargs)
 
-if [ "$TABLE_COUNT" -eq "5" ]; then
-    echo "✓ All 5 email tables created successfully"
+if [ "$TABLE_COUNT" -eq "$EXPECTED_COUNT" ]; then
+    echo "✓ All $EXPECTED_COUNT required tables created successfully"
 else
-    echo "⚠ Warning: Expected 5 email tables, found $TABLE_COUNT"
+    echo "⚠ Warning: Expected $EXPECTED_COUNT tables (${TABLES_TO_CHECK[*]}), found $TABLE_COUNT"
 fi
 
 # Clear password from environment
@@ -165,7 +174,7 @@ echo ""
 echo "Summary:"
 echo "  - SQL post-migration fixes applied"
 echo "  - Prisma schema synchronized"
-echo "  - Email tables created (if not existing)"
+echo "  - Email and photo submission tables created (if not existing)"
 echo "  - Database is ready for use"
 echo ""
 echo "Next steps:"

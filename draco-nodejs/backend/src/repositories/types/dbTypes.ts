@@ -1431,6 +1431,70 @@ export type dbCreateEmailAttachmentInput = {
   storage_path: string;
 };
 
+export type dbPhotoSubmission = Prisma.photogallerysubmissionGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    teamid: true;
+    albumid: true;
+    submittercontactid: true;
+    moderatedbycontactid: true;
+    approvedphotoid: true;
+    title: true;
+    caption: true;
+    originalfilename: true;
+    originalfilepath: true;
+    primaryimagepath: true;
+    thumbnailimagepath: true;
+    status: true;
+    denialreason: true;
+    submittedat: true;
+    updatedat: true;
+    moderatedat: true;
+  };
+}>;
+
+export type dbPhotoSubmissionWithRelations = Prisma.photogallerysubmissionGetPayload<{
+  include: {
+    accounts: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+    photogalleryalbum: {
+      select: {
+        id: true;
+        title: true;
+        teamid: true;
+      };
+    };
+    photogallery: {
+      select: {
+        id: true;
+        title: true;
+        albumid: true;
+      };
+    };
+    submitter: {
+      select: {
+        id: true;
+        firstname: true;
+        lastname: true;
+        email: true;
+      };
+    };
+    moderator: {
+      select: {
+        id: true;
+        firstname: true;
+        lastname: true;
+        email: true;
+      };
+    };
+  };
+}>;
+
 export type dbTeamSeasonRecord = {
   wins: number;
   losses: number;
