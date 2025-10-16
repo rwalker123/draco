@@ -36,6 +36,7 @@ import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
 import HandoutSection from '@/components/handouts/HandoutSection';
+import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -389,6 +390,8 @@ const BaseballAccountHome: React.FC = () => {
             />
           </Box>
         )}
+
+        <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
 
