@@ -30,6 +30,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionRef = useRef<AuthSession | null>(null);
 
   const clearRefreshTimer = useCallback(() => {
     if (refreshTimer.current) {
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const persistSession = useCallback(async (next: AuthSession) => {
     await saveSession(next);
+    sessionRef.current = next;
     setSession(next);
     setStatus('authenticated');
     setError(null);
@@ -53,18 +55,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!stored) {
         setStatus('unauthenticated');
         setSession(null);
+        sessionRef.current = null;
         clearRefreshTimer();
         setError(null);
         return;
       }
 
       const restoredSession = extractAuthSession(stored);
+      sessionRef.current = restoredSession;
       setSession(restoredSession);
       setStatus('authenticated');
       setError(null);
     } catch {
       setStatus('unauthenticated');
       setSession(null);
+      sessionRef.current = null;
       clearRefreshTimer();
       setError(null);
     }
@@ -94,6 +99,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const logout = useCallback(async () => {
     clearRefreshTimer();
+    sessionRef.current = null;
     setSession(null);
     setStatus('unauthenticated');
     setError(null);
@@ -101,17 +107,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [clearRefreshTimer]);
 
   const refreshSession = useCallback(async () => {
-    if (!session) {
+    const activeSession = sessionRef.current;
+    if (!activeSession) {
       return;
     }
 
     try {
-      const refreshed = await refreshRequest(session.token);
+      const refreshed = await refreshRequest(activeSession.token);
+      if (sessionRef.current?.token !== activeSession.token) {
+        return;
+      }
       await persistSession(refreshed);
     } catch {
-      await logout();
+      if (sessionRef.current?.token === activeSession.token) {
+        await logout();
+      }
     }
-  }, [logout, persistSession, session]);
+  }, [logout, persistSession]);
 
   useEffect(() => {
     clearRefreshTimer();
