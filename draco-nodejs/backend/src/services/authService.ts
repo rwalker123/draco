@@ -96,7 +96,7 @@ export class AuthService {
 
     // Reset failed login count on successful login
     if (user.accessfailedcount > 0) {
-      this.userRepository.update(BigInt(user.id), {
+      await this.userRepository.updateUser(user.id, {
         accessfailedcount: 0,
       });
     }

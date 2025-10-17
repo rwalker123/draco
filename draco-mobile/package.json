@@ -1,6 +1,7 @@
 {
   "name": "@draco/mobile",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -11,7 +12,7 @@
     "lint": "eslint ./src --ext .ts,.tsx",
     "lint:fix": "eslint ./src --ext .ts,.tsx --fix",
     "type-check": "tsc --noEmit",
-    "test": "vitest",
+    "test": "vitest run",
     "format": "prettier --check \"**/*.{js,jsx,ts,tsx,json}\"",
     "format:fix": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\""
   },
