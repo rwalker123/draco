@@ -125,10 +125,11 @@ export const useLineupStore = createStore<LineupState>((set, get) => ({
         assignmentsByGameId
       });
 
+      const latestState = get();
       await saveLineupCache({
-        templates: Object.values(templatesById),
-        assignments: Object.values(assignmentsByGameId),
-        pending: currentState.pending
+        templates: Object.values(latestState.templatesById),
+        assignments: Object.values(latestState.assignmentsByGameId),
+        pending: latestState.pending
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to refresh lineups';

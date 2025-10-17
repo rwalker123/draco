@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLineupStore } from '../lineupStore';
-import type { LineupTemplate, LineupMutation } from '../../types/lineups';
+import type { LineupTemplate, LineupMutation, GameLineupAssignment } from '../../types/lineups';
 
 vi.mock('../../storage/lineupStorage', () => ({
   loadLineupCache: vi.fn(),
@@ -24,6 +24,8 @@ const loadLineupCacheMock = lineupStorage.loadLineupCache as ReturnType<typeof v
 const saveLineupCacheMock = lineupStorage.saveLineupCache as ReturnType<typeof vi.fn>;
 const saveLineupTemplateMock = lineupApi.saveLineupTemplate as ReturnType<typeof vi.fn>;
 const assignTemplateToGameMock = lineupApi.assignTemplateToGame as ReturnType<typeof vi.fn>;
+const listLineupTemplatesMock = lineupApi.listLineupTemplates as ReturnType<typeof vi.fn>;
+const listLineupAssignmentsMock = lineupApi.listLineupAssignments as ReturnType<typeof vi.fn>;
 
 const baseTemplate: LineupTemplate = {
   id: 'template-1',
@@ -187,5 +189,57 @@ describe('lineupStore', () => {
       'game-1': { gameId: 'game-1', templateId: 'template-1', updatedAt: 'yesterday' }
     });
     expect(state.pending).toHaveLength(0);
+  });
+
+  it('persists latest pending mutations after refresh completes', async () => {
+    loadLineupCacheMock.mockResolvedValue(null);
+    saveLineupCacheMock.mockResolvedValue(undefined);
+
+    await useLineupStore.getState().hydrate();
+
+    let resolveTemplates: (value: LineupTemplate[]) => void = () => {};
+    let resolveAssignments: (value: GameLineupAssignment[]) => void = () => {};
+
+    listLineupTemplatesMock.mockImplementation(
+      () =>
+        new Promise<LineupTemplate[]>((resolve) => {
+          resolveTemplates = resolve;
+        }),
+    );
+    listLineupAssignmentsMock.mockImplementation(
+      () =>
+        new Promise<GameLineupAssignment[]>((resolve) => {
+          resolveAssignments = resolve;
+        }),
+    );
+
+    const refreshPromise = useLineupStore.getState().refresh('token-refresh');
+
+    const offlineMutation: LineupMutation = {
+      type: 'create',
+      clientId: 'pending-refresh',
+      timestamp: Date.now(),
+      payload: {
+        id: 'template-offline',
+        name: 'Offline Template',
+        teamId: 'team-1',
+        leagueId: 'league-1',
+        scope: 'team',
+        slots: baseTemplate.slots
+      }
+    };
+
+    useLineupStore.setState((state) => ({
+      ...state,
+      pending: [...state.pending, offlineMutation]
+    }));
+
+    resolveTemplates([]);
+    resolveAssignments([]);
+
+    await refreshPromise;
+
+    const savedSnapshot = saveLineupCacheMock.mock.calls.at(-1)?.[0];
+    expect(savedSnapshot?.pending).toContainEqual(offlineMutation);
   });
 });
