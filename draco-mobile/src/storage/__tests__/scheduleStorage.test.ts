@@ -13,15 +13,16 @@ const sampleSnapshot: ScheduleSnapshot = {
       visitorTeam: { id: 'away-1', name: 'Visitor Team' },
       field: { id: 'field-1', name: 'Main Field' },
       league: { id: 'league-1', name: 'Premier' },
-      season: undefined,
+      season: null,
       gameStatus: 0,
       gameStatusText: 'Scheduled'
     }
   ],
-  teams: [{ id: 'team-1', name: 'Home Team', league: { id: 'league-1', name: 'Premier' }, division: undefined }],
+  teams: [{ id: 'team-1', name: 'Home Team', league: { id: 'league-1', name: 'Premier' }, division: null }],
   assignments: [
     { id: 'assign-1', scope: 'team', accountId: 'account-1', teamSeasonId: 'team-1', updatedAt: new Date().toISOString() }
-  ]
+  ],
+  seasonId: null
 };
 
 describe('scheduleStorage', () => {
