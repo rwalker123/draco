@@ -44,6 +44,9 @@ import { TurnstileService } from './turnstileService.js';
 import { HandoutService } from './handoutService.js';
 import { AdminAnalyticsService } from './adminAnalyticsService.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
+import { PhotoGalleryService } from './photoGalleryService.js';
+import { PhotoSubmissionModerationService } from './photoSubmissionModerationService.js';
+import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -85,6 +88,9 @@ export class ServiceFactory {
   private static handoutService: HandoutService;
   private static adminAnalyticsService: AdminAnalyticsService;
   private static photoSubmissionService: PhotoSubmissionService;
+  private static photoGalleryService: PhotoGalleryService;
+  private static photoSubmissionModerationService: PhotoSubmissionModerationService;
+  private static photoSubmissionAssetService: PhotoSubmissionAssetService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -339,6 +345,30 @@ export class ServiceFactory {
     }
 
     return this.photoSubmissionService;
+  }
+
+  static getPhotoGalleryService(): PhotoGalleryService {
+    if (!this.photoGalleryService) {
+      this.photoGalleryService = new PhotoGalleryService();
+    }
+
+    return this.photoGalleryService;
+  }
+
+  static getPhotoSubmissionModerationService(): PhotoSubmissionModerationService {
+    if (!this.photoSubmissionModerationService) {
+      this.photoSubmissionModerationService = new PhotoSubmissionModerationService();
+    }
+
+    return this.photoSubmissionModerationService;
+  }
+
+  static getPhotoSubmissionAssetService(): PhotoSubmissionAssetService {
+    if (!this.photoSubmissionAssetService) {
+      this.photoSubmissionAssetService = new PhotoSubmissionAssetService();
+    }
+
+    return this.photoSubmissionAssetService;
   }
 
   static getUserService(): UserService {

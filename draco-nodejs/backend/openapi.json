@@ -10127,6 +10127,685 @@
         "title": "UpsertHandout",
         "description": "Payload for creating or updating a handout record"
       },
+      "PhotoSubmission": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Identifier for the associated team, if any"
+          },
+          "albumId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Identifier for the destination album, if any"
+          },
+          "submitterContactId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "moderatedByContactId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Moderator contact responsible for the decision"
+          },
+          "approvedPhotoId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Approved gallery photo identifier when promoted"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Title supplied for the submission"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "Optional caption supplied for the submission"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "Approved",
+              "Denied"
+            ],
+            "description": "Moderation status for a photo submission"
+          },
+          "denialReason": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "Moderator supplied reason for denial"
+          },
+          "submittedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the submission was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the submission was last updated"
+          },
+          "moderatedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO timestamp when the submission was moderated"
+          },
+          "originalFilePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative path to the uploaded original asset"
+          },
+          "primaryImagePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative path to the generated primary image asset"
+          },
+          "thumbnailImagePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative path to the generated thumbnail image asset"
+          },
+          "originalFileName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Original filename supplied by the submitter"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "teamId",
+          "albumId",
+          "submitterContactId",
+          "moderatedByContactId",
+          "approvedPhotoId",
+          "title",
+          "caption",
+          "status",
+          "denialReason",
+          "submittedAt",
+          "updatedAt",
+          "moderatedAt",
+          "originalFilePath",
+          "primaryImagePath",
+          "thumbnailImagePath",
+          "originalFileName"
+        ],
+        "title": "PhotoSubmission",
+        "description": "Photo submission record with metadata and staged assets"
+      },
+      "PhotoSubmissionDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Identifier for the associated team, if any"
+          },
+          "albumId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Identifier for the destination album, if any"
+          },
+          "submitterContactId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "moderatedByContactId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Moderator contact responsible for the decision"
+          },
+          "approvedPhotoId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Approved gallery photo identifier when promoted"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Title supplied for the submission"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "Optional caption supplied for the submission"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "Approved",
+              "Denied"
+            ],
+            "description": "Moderation status for a photo submission"
+          },
+          "denialReason": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "Moderator supplied reason for denial"
+          },
+          "submittedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the submission was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the submission was last updated"
+          },
+          "moderatedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO timestamp when the submission was moderated"
+          },
+          "originalFilePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative path to the uploaded original asset"
+          },
+          "primaryImagePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative path to the generated primary image asset"
+          },
+          "thumbnailImagePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative path to the generated thumbnail image asset"
+          },
+          "originalFileName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Original filename supplied by the submitter"
+          },
+          "accountName": {
+            "type": "string",
+            "description": "Display name of the owning account"
+          },
+          "album": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Album title"
+              },
+              "teamId": {
+                "type": "string",
+                "nullable": true,
+                "pattern": "^d+$",
+                "description": "Team identifier the album belongs to, when applicable"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "teamId"
+            ],
+            "description": "Album information linked to a photo submission"
+          },
+          "approvedPhoto": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Approved photo title"
+              },
+              "albumId": {
+                "type": "string",
+                "nullable": true,
+                "pattern": "^d+$",
+                "description": "Album identifier for the approved photo, if any"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "albumId"
+            ],
+            "description": "Photo gallery entry created from an approved submission"
+          },
+          "submitter": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "firstName": {
+                "type": "string",
+                "description": "Contact first name"
+              },
+              "lastName": {
+                "type": "string",
+                "description": "Contact last name"
+              },
+              "email": {
+                "type": "string",
+                "nullable": true,
+                "format": "email",
+                "description": "Contact email address, if available"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ],
+            "description": "Contact information associated with a photo submission"
+          },
+          "moderator": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "firstName": {
+                "type": "string",
+                "description": "Contact first name"
+              },
+              "lastName": {
+                "type": "string",
+                "description": "Contact last name"
+              },
+              "email": {
+                "type": "string",
+                "nullable": true,
+                "format": "email",
+                "description": "Contact email address, if available"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ],
+            "description": "Contact information associated with a photo submission"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "teamId",
+          "albumId",
+          "submitterContactId",
+          "moderatedByContactId",
+          "approvedPhotoId",
+          "title",
+          "caption",
+          "status",
+          "denialReason",
+          "submittedAt",
+          "updatedAt",
+          "moderatedAt",
+          "originalFilePath",
+          "primaryImagePath",
+          "thumbnailImagePath",
+          "originalFileName",
+          "accountName",
+          "album",
+          "approvedPhoto",
+          "submitter",
+          "moderator"
+        ],
+        "title": "PhotoSubmissionDetail",
+        "description": "Detailed view of a photo submission including related entities"
+      },
+      "PhotoSubmissionList": {
+        "type": "object",
+        "properties": {
+          "submissions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "teamId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$",
+                  "description": "Identifier for the associated team, if any"
+                },
+                "albumId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$",
+                  "description": "Identifier for the destination album, if any"
+                },
+                "submitterContactId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "moderatedByContactId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$",
+                  "description": "Moderator contact responsible for the decision"
+                },
+                "approvedPhotoId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$",
+                  "description": "Approved gallery photo identifier when promoted"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50,
+                  "description": "Title supplied for the submission"
+                },
+                "caption": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 255,
+                  "description": "Optional caption supplied for the submission"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Pending",
+                    "Approved",
+                    "Denied"
+                  ],
+                  "description": "Moderation status for a photo submission"
+                },
+                "denialReason": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 255,
+                  "description": "Moderator supplied reason for denial"
+                },
+                "submittedAt": {
+                  "type": "string",
+                  "description": "ISO timestamp when the submission was created"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "description": "ISO timestamp when the submission was last updated"
+                },
+                "moderatedAt": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "ISO timestamp when the submission was moderated"
+                },
+                "originalFilePath": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relative path to the uploaded original asset"
+                },
+                "primaryImagePath": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relative path to the generated primary image asset"
+                },
+                "thumbnailImagePath": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relative path to the generated thumbnail image asset"
+                },
+                "originalFileName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "description": "Original filename supplied by the submitter"
+                },
+                "accountName": {
+                  "type": "string",
+                  "description": "Display name of the owning account"
+                },
+                "album": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Album title"
+                    },
+                    "teamId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$",
+                      "description": "Team identifier the album belongs to, when applicable"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "teamId"
+                  ],
+                  "description": "Album information linked to a photo submission"
+                },
+                "approvedPhoto": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Approved photo title"
+                    },
+                    "albumId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$",
+                      "description": "Album identifier for the approved photo, if any"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "albumId"
+                  ],
+                  "description": "Photo gallery entry created from an approved submission"
+                },
+                "submitter": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "description": "Contact first name"
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "description": "Contact last name"
+                    },
+                    "email": {
+                      "type": "string",
+                      "nullable": true,
+                      "format": "email",
+                      "description": "Contact email address, if available"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "firstName",
+                    "lastName"
+                  ],
+                  "description": "Contact information associated with a photo submission"
+                },
+                "moderator": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "description": "Contact first name"
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "description": "Contact last name"
+                    },
+                    "email": {
+                      "type": "string",
+                      "nullable": true,
+                      "format": "email",
+                      "description": "Contact email address, if available"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "firstName",
+                    "lastName"
+                  ],
+                  "description": "Contact information associated with a photo submission"
+                }
+              },
+              "required": [
+                "id",
+                "accountId",
+                "teamId",
+                "albumId",
+                "submitterContactId",
+                "moderatedByContactId",
+                "approvedPhotoId",
+                "title",
+                "caption",
+                "status",
+                "denialReason",
+                "submittedAt",
+                "updatedAt",
+                "moderatedAt",
+                "originalFilePath",
+                "primaryImagePath",
+                "thumbnailImagePath",
+                "originalFileName",
+                "accountName",
+                "album",
+                "approvedPhoto",
+                "submitter",
+                "moderator"
+              ],
+              "title": "PhotoSubmissionDetail",
+              "description": "Detailed view of a photo submission including related entities"
+            }
+          }
+        },
+        "required": [
+          "submissions"
+        ],
+        "title": "PhotoSubmissionList",
+        "description": "Collection response containing pending photo submissions"
+      },
+      "CreatePhotoSubmissionForm": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Title for the uploaded photo submission"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Optional caption for the photo submission"
+          },
+          "albumId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Album identifier selected for the submission"
+          },
+          "photo": {
+            "type": "string",
+            "format": "binary",
+            "description": "Photo file to upload"
+          }
+        },
+        "required": [
+          "title",
+          "photo"
+        ],
+        "title": "CreatePhotoSubmissionForm",
+        "description": "Multipart form payload for submitting a staged photo"
+      },
+      "DenyPhotoSubmissionRequest": {
+        "type": "object",
+        "properties": {
+          "denialReason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Reason provided by the moderator when denying a submission"
+          }
+        },
+        "required": [
+          "denialReason"
+        ],
+        "title": "DenyPhotoSubmissionRequest",
+        "description": "Request payload for denying a photo submission via the API"
+      },
       "UpdateGameResults": {
         "type": "object",
         "properties": {
@@ -13066,6 +13745,313 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/photo-submissions": {
+      "post": {
+        "operationId": "createAccountPhotoSubmission",
+        "summary": "Submit a photo for account moderation",
+        "description": "Stages an uploaded photo for account-level moderation. Requires an authenticated contact with photo submission permissions.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePhotoSubmissionForm"
+              },
+              "encoding": {
+                "photo": {
+                  "contentType": "image/*"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Photo submission created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmission"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to submit photos."
+          },
+          "500": {
+            "description": "Unexpected server error while staging the submission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/photo-submissions/pending": {
+      "get": {
+        "operationId": "listPendingAccountPhotoSubmissions",
+        "summary": "List pending account photo submissions",
+        "description": "Retrieves photo submissions awaiting moderation for the specified account.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending photo submissions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmissionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to review photo submissions."
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving submissions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/photo-submissions/{submissionId}/approve": {
+      "post": {
+        "operationId": "approveAccountPhotoSubmission",
+        "summary": "Approve an account photo submission",
+        "description": "Promotes a pending photo submission into the gallery and removes staged assets.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "submissionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Submission approved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmissionDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to moderate photo submissions."
+          },
+          "404": {
+            "description": "Submission not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while approving the submission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/photo-submissions/{submissionId}/deny": {
+      "post": {
+        "operationId": "denyAccountPhotoSubmission",
+        "summary": "Deny an account photo submission",
+        "description": "Denies a pending photo submission and removes any staged assets.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "submissionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DenyPhotoSubmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Submission denied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmissionDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to moderate photo submissions."
+          },
+          "404": {
+            "description": "Submission not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while denying the submission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
                 }
               }
             }
@@ -27116,6 +28102,349 @@
           },
           "500": {
             "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-submissions": {
+      "post": {
+        "operationId": "createTeamPhotoSubmission",
+        "summary": "Submit a photo for team moderation",
+        "description": "Stages an uploaded photo for team-level moderation. Requires authenticated access with team photo permissions.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePhotoSubmissionForm"
+              },
+              "encoding": {
+                "photo": {
+                  "contentType": "image/*"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Photo submission created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmission"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to submit team photos."
+          },
+          "500": {
+            "description": "Unexpected server error while staging the submission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-submissions/pending": {
+      "get": {
+        "operationId": "listPendingTeamPhotoSubmissions",
+        "summary": "List pending team photo submissions",
+        "description": "Retrieves pending photo submissions awaiting team-level moderation.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending photo submissions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmissionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to review team photo submissions."
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving submissions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-submissions/{submissionId}/approve": {
+      "post": {
+        "operationId": "approveTeamPhotoSubmission",
+        "summary": "Approve a team photo submission",
+        "description": "Promotes a pending team photo submission into the gallery and removes staged assets.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "submissionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Submission approved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmissionDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to moderate team photo submissions."
+          },
+          "404": {
+            "description": "Submission not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while approving the submission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-submissions/{submissionId}/deny": {
+      "post": {
+        "operationId": "denyTeamPhotoSubmission",
+        "summary": "Deny a team photo submission",
+        "description": "Denies a pending team photo submission and removes staged assets.",
+        "tags": [
+          "Photo Submissions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "submissionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DenyPhotoSubmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Submission denied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSubmissionDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to moderate team photo submissions."
+          },
+          "404": {
+            "description": "Submission not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while denying the submission.",
             "content": {
               "application/json": {
                 "schema": {

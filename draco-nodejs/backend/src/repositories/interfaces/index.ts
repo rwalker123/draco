@@ -28,3 +28,4 @@ export * from './IRosterRepository.js';
 export * from './IHandoutRepository.js';
 export * from './IAdminAnalyticsRepository.js';
 export * from './IPhotoSubmissionRepository.js';
+export * from './IPhotoGalleryRepository.js';

@@ -12,6 +12,11 @@ export const registerTeamsEndpoints = ({ registry, schemaRefs }: RegisterContext
     UpsertTeamSeasonSchemaRef,
     UpsertTeamSeasonWithLogoSchemaRef,
     ValidationErrorSchemaRef,
+    PhotoSubmissionSchemaRef,
+    PhotoSubmissionDetailSchemaRef,
+    PhotoSubmissionListSchemaRef,
+    CreatePhotoSubmissionFormSchemaRef,
+    DenyPhotoSubmissionRequestSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/{accountId}/seasons/{seasonId}/teams
@@ -465,6 +470,176 @@ export const registerTeamsEndpoints = ({ registry, schemaRefs }: RegisterContext
           'application/json': {
             schema: InternalServerErrorSchemaRef,
           },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-submissions',
+    operationId: 'createTeamPhotoSubmission',
+    summary: 'Submit a photo for team moderation',
+    description:
+      'Stages an uploaded photo for team-level moderation. Requires authenticated access with team photo permissions.',
+    tags: ['Photo Submissions'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+    ],
+    request: {
+      body: {
+        content: {
+          'multipart/form-data': {
+            schema: CreatePhotoSubmissionFormSchemaRef,
+            encoding: { photo: { contentType: 'image/*' } },
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Photo submission created.',
+        content: {
+          'application/json': { schema: PhotoSubmissionSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to submit team photos.' },
+      500: {
+        description: 'Unexpected server error while staging the submission.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-submissions/pending',
+    operationId: 'listPendingTeamPhotoSubmissions',
+    summary: 'List pending team photo submissions',
+    description: 'Retrieves pending photo submissions awaiting team-level moderation.',
+    tags: ['Photo Submissions'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+    ],
+    responses: {
+      200: {
+        description: 'Pending photo submissions.',
+        content: {
+          'application/json': { schema: PhotoSubmissionListSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to review team photo submissions.' },
+      500: {
+        description: 'Unexpected server error while retrieving submissions.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-submissions/{submissionId}/approve',
+    operationId: 'approveTeamPhotoSubmission',
+    summary: 'Approve a team photo submission',
+    description: 'Promotes a pending team photo submission into the gallery and removes staged assets.',
+    tags: ['Photo Submissions'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      { name: 'submissionId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+    ],
+    responses: {
+      200: {
+        description: 'Submission approved.',
+        content: {
+          'application/json': { schema: PhotoSubmissionDetailSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to moderate team photo submissions.' },
+      404: {
+        description: 'Submission not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while approving the submission.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-submissions/{submissionId}/deny',
+    operationId: 'denyTeamPhotoSubmission',
+    summary: 'Deny a team photo submission',
+    description: 'Denies a pending team photo submission and removes staged assets.',
+    tags: ['Photo Submissions'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      { name: 'accountId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      { name: 'teamId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+      { name: 'submissionId', in: 'path', required: true, schema: { type: 'string', format: 'number' } },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': { schema: DenyPhotoSubmissionRequestSchemaRef },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Submission denied.',
+        content: {
+          'application/json': { schema: PhotoSubmissionDetailSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to moderate team photo submissions.' },
+      404: {
+        description: 'Submission not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while denying the submission.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
         },
       },
     },

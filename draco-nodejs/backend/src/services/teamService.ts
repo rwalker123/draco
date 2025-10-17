@@ -1,4 +1,9 @@
-import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
+import {
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+  AuthorizationError,
+} from '../utils/customErrors.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   ITeamRepository,
@@ -124,6 +129,35 @@ export class TeamService {
     );
 
     return TeamResponseFormatter.formatTeamsResponse(accountId, divisionTeams);
+  }
+
+  async ensureContactIsOnTeam(accountId: bigint, teamId: bigint, contactId: bigint): Promise<void> {
+    if (contactId <= 0n) {
+      throw new ValidationError('Contact identifier must be a positive value');
+    }
+
+    const currentSeason = await this.seasonRepository.findCurrentSeason(accountId);
+
+    if (!currentSeason) {
+      throw new NotFoundError('Current season not set for account');
+    }
+
+    const rosterTeams = await this.teamRepository.findContactTeams(
+      accountId,
+      contactId,
+      currentSeason.id,
+    );
+    const managesTeam = await this.teamRepository.findTeamManager(
+      contactId,
+      teamId,
+      currentSeason.id,
+    );
+
+    const isRostered = rosterTeams.some((team) => team.teamsseason?.teams?.id === teamId);
+
+    if (!isRostered && !managesTeam) {
+      throw new AuthorizationError('Contact is not associated with this team');
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { FieldSchema, booleanQueryParam } from './index.js';
+import { FieldSchema } from './field.js';
+import { booleanQueryParam } from './queryParams.js';
 
 extendZodWithOpenApi(z);
 

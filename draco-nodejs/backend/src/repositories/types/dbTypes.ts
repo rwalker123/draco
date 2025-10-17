@@ -1541,6 +1541,23 @@ export type dbPhotoSubmissionWithRelations = Prisma.photogallerysubmissionGetPay
   };
 }>;
 
+export interface dbCreatePhotoGalleryInput {
+  accountid: bigint;
+  albumid?: bigint | null;
+  title: string;
+  caption: string;
+}
+
+export type dbPhotoGallery = Prisma.photogalleryGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    albumid: true;
+    title: true;
+    caption: true;
+  };
+}>;
+
 export type dbTeamSeasonRecord = {
   wins: number;
   losses: number;

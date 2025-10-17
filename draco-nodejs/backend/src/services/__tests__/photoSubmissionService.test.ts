@@ -1,6 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-vi.mock('@draco/shared-schemas', () => ({}));
 vi.mock('../../utils/customErrors.js', () => {
   class ValidationError extends Error {}
   class NotFoundError extends Error {}
@@ -27,11 +25,11 @@ import {
   dbPhotoSubmissionWithRelations,
 } from '../../repositories/types/dbTypes.js';
 import { IPhotoSubmissionRepository } from '../../repositories/interfaces/IPhotoSubmissionRepository.js';
-import {
-  ApprovePhotoSubmissionInput,
-  CreatePhotoSubmissionInput,
-  DenyPhotoSubmissionInput,
-} from '../../types/photoSubmissions.js';
+import type {
+  ApprovePhotoSubmissionInputType,
+  CreatePhotoSubmissionInputType,
+  DenyPhotoSubmissionInputType,
+} from '@draco/shared-schemas';
 
 class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
   createSubmissionMock =
@@ -41,6 +39,10 @@ class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
     vi.fn<(accountId: bigint, submissionId: bigint) => Promise<dbPhotoSubmission | null>>();
   findSubmissionWithRelationsMock =
     vi.fn<(submissionId: bigint) => Promise<dbPhotoSubmissionWithRelations | null>>();
+  findPendingSubmissionsForAccountMock =
+    vi.fn<(accountId: bigint) => Promise<dbPhotoSubmissionWithRelations[]>>();
+  findPendingSubmissionsForTeamMock =
+    vi.fn<(accountId: bigint, teamId: bigint) => Promise<dbPhotoSubmissionWithRelations[]>>();
   findAlbumForAccountMock =
     vi.fn<(accountId: bigint, albumId: bigint) => Promise<dbPhotoGalleryAlbum | null>>();
   approveSubmissionMock =
@@ -49,6 +51,7 @@ class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
     >();
   denySubmissionMock =
     vi.fn<(submissionId: bigint, data: dbDenyPhotoSubmissionInput) => Promise<dbPhotoSubmission>>();
+  deleteSubmissionMock = vi.fn<(submissionId: bigint) => Promise<void>>();
 
   createSubmission(data: dbCreatePhotoSubmissionInput): Promise<dbPhotoSubmission> {
     return this.createSubmissionMock(data);
@@ -71,6 +74,17 @@ class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
     return this.findSubmissionWithRelationsMock(submissionId);
   }
 
+  findPendingSubmissionsForAccount(accountId: bigint): Promise<dbPhotoSubmissionWithRelations[]> {
+    return this.findPendingSubmissionsForAccountMock(accountId);
+  }
+
+  findPendingSubmissionsForTeam(
+    accountId: bigint,
+    teamId: bigint,
+  ): Promise<dbPhotoSubmissionWithRelations[]> {
+    return this.findPendingSubmissionsForTeamMock(accountId, teamId);
+  }
+
   findAlbumForAccount(accountId: bigint, albumId: bigint): Promise<dbPhotoGalleryAlbum | null> {
     return this.findAlbumForAccountMock(accountId, albumId);
   }
@@ -87,6 +101,10 @@ class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
     data: dbDenyPhotoSubmissionInput,
   ): Promise<dbPhotoSubmission> {
     return this.denySubmissionMock(submissionId, data);
+  }
+
+  deleteSubmission(submissionId: bigint): Promise<void> {
+    return this.deleteSubmissionMock(submissionId);
   }
 }
 
@@ -121,6 +139,18 @@ const createAlbum = (overrides: Partial<dbPhotoGalleryAlbum> = {}): dbPhotoGalle
   ...overrides,
 });
 
+const createSubmissionWithRelations = (
+  overrides: Partial<dbPhotoSubmissionWithRelations> = {},
+): dbPhotoSubmissionWithRelations => ({
+  ...createDbSubmission(),
+  accounts: { id: 1n, name: 'Example Account' },
+  photogalleryalbum: { id: 2n, title: 'Main Album', teamid: 0n },
+  photogallery: null,
+  submitter: { id: 4n, firstname: 'Sam', lastname: 'Submitter', email: 'sam@example.com' },
+  moderator: null,
+  ...overrides,
+});
+
 describe('PhotoSubmissionService', () => {
   let repository: PhotoSubmissionRepositoryMock;
   let service: PhotoSubmissionService;
@@ -134,12 +164,12 @@ describe('PhotoSubmissionService', () => {
     vi.restoreAllMocks();
   });
 
-  const baseCreateInput: CreatePhotoSubmissionInput = {
-    accountId: 1n,
-    submitterContactId: 4n,
+  const baseCreateInput: CreatePhotoSubmissionInputType = {
+    accountId: '1',
+    submitterContactId: '4',
     title: '  Summer Tournament  ',
     caption: '  Winning shot  ',
-    albumId: 2n,
+    albumId: '2',
     teamId: null,
     originalFileName: 'Photo.JPG',
   };
@@ -166,8 +196,12 @@ describe('PhotoSubmissionService', () => {
         title: 'Summer Tournament',
         caption: 'Winning shot',
         originalfilename: 'Photo.JPG',
-        originalfilepath: 'Uploads/Accounts/1/PhotoSubmissions/storage-key/original.jpg',
       }),
+    );
+
+    const [[createArgs]] = repository.createSubmissionMock.mock.calls;
+    expect(createArgs.originalfilepath).toMatch(
+      /^Uploads\/Accounts\/1\/PhotoSubmissions\/[a-z0-9-]+\/original\.jpg$/,
     );
 
     expect(result.originalFilePath).toBe(
@@ -184,12 +218,30 @@ describe('PhotoSubmissionService', () => {
     repository.findAlbumForAccountMock.mockResolvedValue(createAlbum({ teamid: 9n }));
     repository.createSubmissionMock.mockResolvedValue(createDbSubmission({ teamid: 9n }));
 
-    const result = await service.createSubmission({ ...baseCreateInput, teamId: 9n });
+    const result = await service.createSubmission({ ...baseCreateInput, teamId: '9' });
 
     expect(repository.createSubmissionMock).toHaveBeenCalledWith(
       expect.objectContaining({ teamid: 9n }),
     );
-    expect(result.teamId).toBe(9n);
+    expect(result.teamId).toBe('9');
+  });
+
+  it('uses provided storage key when creating submissions', async () => {
+    repository.findAlbumForAccountMock.mockResolvedValue(createAlbum());
+    repository.createSubmissionMock.mockResolvedValue(
+      createDbSubmission({
+        originalfilepath: 'Uploads/Accounts/1/PhotoSubmissions/custom-key/original.jpg',
+        primaryimagepath: 'Uploads/Accounts/1/PhotoSubmissions/custom-key/primary.jpg',
+        thumbnailimagepath: 'Uploads/Accounts/1/PhotoSubmissions/custom-key/thumbnail.jpg',
+      }),
+    );
+
+    await service.createSubmission({ ...baseCreateInput, storageKey: 'custom-key' });
+
+    const [[createArgs]] = repository.createSubmissionMock.mock.calls;
+    expect(createArgs.originalfilepath).toBe(
+      'Uploads/Accounts/1/PhotoSubmissions/custom-key/original.jpg',
+    );
   });
 
   it('throws when album does not exist for account', async () => {
@@ -199,7 +251,7 @@ describe('PhotoSubmissionService', () => {
   });
 
   it('throws when file extension is not supported', async () => {
-    const input: CreatePhotoSubmissionInput = {
+    const input: CreatePhotoSubmissionInputType = {
       ...baseCreateInput,
       originalFileName: 'photo.tiff',
     };
@@ -210,16 +262,46 @@ describe('PhotoSubmissionService', () => {
   it('throws when account album is paired with a team id', async () => {
     repository.findAlbumForAccountMock.mockResolvedValue(createAlbum({ teamid: 0n }));
 
-    await expect(service.createSubmission({ ...baseCreateInput, teamId: 5n })).rejects.toThrow(
+    await expect(service.createSubmission({ ...baseCreateInput, teamId: '5' })).rejects.toThrow(
       ValidationError,
     );
   });
 
-  const baseApproveInput: ApprovePhotoSubmissionInput = {
-    accountId: 1n,
-    submissionId: 10n,
-    moderatorContactId: 3n,
-    approvedPhotoId: 20n,
+  it('deletes pending submissions', async () => {
+    const pending = createDbSubmission();
+    repository.findSubmissionForAccountMock.mockResolvedValue(pending);
+
+    await service.deleteSubmission(1n, pending.id);
+
+    expect(repository.deleteSubmissionMock).toHaveBeenCalledWith(pending.id);
+  });
+
+  it('returns submission details with relations', async () => {
+    const submissionWithRelations = createSubmissionWithRelations();
+    repository.findSubmissionWithRelationsMock.mockResolvedValue(submissionWithRelations);
+
+    const result = await service.getSubmissionDetail(1n, 10n);
+
+    expect(result.accountName).toBe('Example Account');
+    expect(result.album?.title).toBe('Main Album');
+  });
+
+  it('lists pending account submissions', async () => {
+    repository.findPendingSubmissionsForAccountMock.mockResolvedValue([
+      createSubmissionWithRelations(),
+    ]);
+
+    const results = await service.listPendingAccountSubmissions(1n);
+
+    expect(results).toHaveLength(1);
+    expect(repository.findPendingSubmissionsForAccountMock).toHaveBeenCalledWith(1n);
+  });
+
+  const baseApproveInput: ApprovePhotoSubmissionInputType = {
+    accountId: '1',
+    submissionId: '10',
+    moderatorContactId: '3',
+    approvedPhotoId: '20',
   };
 
   it('approves a pending submission', async () => {
@@ -243,7 +325,7 @@ describe('PhotoSubmissionService', () => {
     expect(data.moderatedat).toBeInstanceOf(Date);
     expect(data.updatedat).toBeInstanceOf(Date);
     expect(result.status).toBe('Approved');
-    expect(result.approvedPhotoId).toBe(20n);
+    expect(result.approvedPhotoId).toBe('20');
   });
 
   it('rejects approval when submission is not pending', async () => {
@@ -263,10 +345,10 @@ describe('PhotoSubmissionService', () => {
     await expect(service.approveSubmission(baseApproveInput)).rejects.toThrow(ConflictError);
   });
 
-  const baseDenyInput: DenyPhotoSubmissionInput = {
-    accountId: 1n,
-    submissionId: 10n,
-    moderatorContactId: 3n,
+  const baseDenyInput: DenyPhotoSubmissionInputType = {
+    accountId: '1',
+    submissionId: '10',
+    moderatorContactId: '3',
     denialReason: '  Low quality image  ',
   };
 
@@ -303,7 +385,7 @@ describe('PhotoSubmissionService', () => {
 
     const result = await service.getSubmission(1n, 10n);
 
-    expect(result.id).toBe(10n);
+    expect(result.id).toBe('10');
     expect(repository.findSubmissionForAccountMock).toHaveBeenCalledWith(1n, 10n);
   });
 });

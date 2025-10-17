@@ -134,6 +134,11 @@ import {
   ChangePasswordRequestSchema,
   RoleCheckResponseSchema,
   UpsertHandoutSchema,
+  CreatePhotoSubmissionFormSchema,
+  PhotoSubmissionRecordSchema,
+  PhotoSubmissionDetailSchema,
+  PhotoSubmissionListSchema,
+  DenyPhotoSubmissionRequestSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -429,6 +434,23 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const HandoutSchemaRef = registry.register('Handout', HandoutSchema);
   const HandoutListSchemaRef = registry.register('HandoutList', HandoutListSchema);
   const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
+  const PhotoSubmissionSchemaRef = registry.register('PhotoSubmission', PhotoSubmissionRecordSchema);
+  const PhotoSubmissionDetailSchemaRef = registry.register(
+    'PhotoSubmissionDetail',
+    PhotoSubmissionDetailSchema,
+  );
+  const PhotoSubmissionListSchemaRef = registry.register(
+    'PhotoSubmissionList',
+    PhotoSubmissionListSchema,
+  );
+  const CreatePhotoSubmissionFormSchemaRef = registry.register(
+    'CreatePhotoSubmissionForm',
+    CreatePhotoSubmissionFormSchema,
+  );
+  const DenyPhotoSubmissionRequestSchemaRef = registry.register(
+    'DenyPhotoSubmissionRequest',
+    DenyPhotoSubmissionRequestSchema,
+  );
   const UpdateGameResultsSchemaRef = registry.register(
     'UpdateGameResults',
     UpdateGameResultsSchema,
@@ -596,6 +618,11 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     InternalServerErrorSchemaRef,
     PagingSchemaRef,
     ContactSearchParamsSchemaRef,
+    PhotoSubmissionSchemaRef,
+    PhotoSubmissionDetailSchemaRef,
+    PhotoSubmissionListSchemaRef,
+    CreatePhotoSubmissionFormSchemaRef,
+    DenyPhotoSubmissionRequestSchemaRef,
     PlayerBattingStatsSchemaRef,
     PlayerBattingStatsBriefSchemaRef,
     PlayerPitchingStatsSchemaRef,

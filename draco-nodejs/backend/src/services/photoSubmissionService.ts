@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
-import {
-  ApprovePhotoSubmissionInput,
-  CreatePhotoSubmissionInput,
-  DenyPhotoSubmissionInput,
-  PhotoSubmissionAssets,
-  PhotoSubmissionRecord,
-  PhotoSubmissionStatus,
-} from '../types/photoSubmissions.js';
+import type {
+  ApprovePhotoSubmissionInputType,
+  CreatePhotoSubmissionInputType,
+  DenyPhotoSubmissionInputType,
+  PhotoSubmissionDetailType,
+  PhotoSubmissionRecordType,
+} from '@draco/shared-schemas';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import { RepositoryFactory } from '../repositories/index.js';
+import { buildSubmissionAssetPaths } from '../utils/photoSubmissionPaths.js';
 import type {
   IPhotoSubmissionRepository,
   dbApprovePhotoSubmissionInput,
@@ -18,32 +18,37 @@ import type {
   dbPhotoGalleryAlbum,
   dbPhotoSubmission,
 } from '../repositories/index.js';
+import { PhotoSubmissionResponseFormatter } from '../responseFormatters/photoSubmissionResponseFormatter.js';
 
 const ALLOWED_EXTENSIONS = new Set(['.gif', '.jpg', '.jpeg', '.png', '.bmp']);
-const STORAGE_BASE_PREFIX = 'Uploads/Accounts';
 
 export class PhotoSubmissionService {
   constructor(
     private readonly repository: IPhotoSubmissionRepository = RepositoryFactory.getPhotoSubmissionRepository(),
   ) {}
 
-  async createSubmission(input: CreatePhotoSubmissionInput): Promise<PhotoSubmissionRecord> {
+  async createSubmission(input: CreatePhotoSubmissionInputType): Promise<PhotoSubmissionRecordType> {
+    const accountId = this.parseBigInt(input.accountId, 'Account');
+    const submitterContactId = this.parseBigInt(input.submitterContactId, 'Submitter contact');
+    const albumId = this.parseOptionalBigInt(input.albumId, 'Album');
+    const teamId = this.normalizeTeamId(this.parseOptionalBigInt(input.teamId, 'Team'));
+
     const title = this.validateTitle(input.title);
-    const caption = this.validateCaption(input.caption);
+    const caption = this.validateCaption(input.caption ?? null);
     const originalFileName = this.validateOriginalFileName(input.originalFileName);
     const extension = this.validateExtension(originalFileName);
 
-    const album = input.albumId ? await this.getAlbum(input.accountId, input.albumId) : null;
-    const resolvedTeamId = this.resolveTeamId(this.normalizeTeamId(input.teamId), album);
+    const album = albumId ? await this.getAlbum(accountId, albumId) : null;
+    const resolvedTeamId = this.resolveTeamId(teamId, album);
 
-    const storageKey = randomUUID();
-    const assetPaths = this.buildStoragePaths(input.accountId, storageKey, extension);
+    const storageKey = input.storageKey ?? randomUUID();
+    const assetPaths = buildSubmissionAssetPaths(accountId, storageKey, extension);
 
     const createData: dbCreatePhotoSubmissionInput = {
-      accountid: input.accountId,
+      accountid: accountId,
       teamid: resolvedTeamId ?? undefined,
-      albumid: input.albumId ?? undefined,
-      submittercontactid: input.submitterContactId,
+      albumid: albumId ?? undefined,
+      submittercontactid: submitterContactId,
       title,
       caption: caption ?? undefined,
       originalfilename: originalFileName,
@@ -53,53 +58,94 @@ export class PhotoSubmissionService {
     };
 
     const record = await this.repository.createSubmission(createData);
-    return this.mapSubmission(record);
+    return PhotoSubmissionResponseFormatter.formatSubmission(record);
   }
 
-  async getSubmission(accountId: bigint, submissionId: bigint): Promise<PhotoSubmissionRecord> {
+  async deleteSubmission(accountId: bigint, submissionId: bigint): Promise<void> {
     const submission = await this.requireSubmission(accountId, submissionId);
-    return this.mapSubmission(submission);
+
+    if (submission.status !== 'Pending') {
+      throw new ValidationError('Only pending submissions can be deleted');
+    }
+
+    await this.repository.deleteSubmission(submissionId);
   }
 
-  async approveSubmission(input: ApprovePhotoSubmissionInput): Promise<PhotoSubmissionRecord> {
-    this.ensurePositiveIdentifier(input.moderatorContactId, 'Moderator contact');
-    this.ensurePositiveIdentifier(input.approvedPhotoId, 'Approved photo');
+  async getSubmission(accountId: bigint, submissionId: bigint): Promise<PhotoSubmissionRecordType> {
+    const submission = await this.requireSubmission(accountId, submissionId);
+    return PhotoSubmissionResponseFormatter.formatSubmission(submission);
+  }
 
-    const submission = await this.requireSubmission(input.accountId, input.submissionId);
+  async getSubmissionDetail(
+    accountId: bigint,
+    submissionId: bigint,
+  ): Promise<PhotoSubmissionDetailType> {
+    const submission = await this.repository.findSubmissionWithRelations(submissionId);
+    if (!submission || submission.accountid !== accountId) {
+      throw new NotFoundError('Photo submission not found');
+    }
+    return PhotoSubmissionResponseFormatter.formatSubmissionDetail(submission);
+  }
+
+  async listPendingAccountSubmissions(accountId: bigint): Promise<PhotoSubmissionDetailType[]> {
+    const submissions = await this.repository.findPendingSubmissionsForAccount(accountId);
+    return submissions.map((submission) => PhotoSubmissionResponseFormatter.formatSubmissionDetail(submission));
+  }
+
+  async listPendingTeamSubmissions(
+    accountId: bigint,
+    teamId: bigint,
+  ): Promise<PhotoSubmissionDetailType[]> {
+    const submissions = await this.repository.findPendingSubmissionsForTeam(accountId, teamId);
+    return submissions.map((submission) => PhotoSubmissionResponseFormatter.formatSubmissionDetail(submission));
+  }
+
+  async approveSubmission(input: ApprovePhotoSubmissionInputType): Promise<PhotoSubmissionRecordType> {
+    const accountId = this.parseBigInt(input.accountId, 'Account');
+    const submissionId = this.parseBigInt(input.submissionId, 'Submission');
+    const moderatorContactId = this.parseBigInt(input.moderatorContactId, 'Moderator contact');
+    const approvedPhotoId = this.parseBigInt(input.approvedPhotoId, 'Approved photo');
+
+    const submission = await this.requireSubmission(accountId, submissionId);
     this.ensurePending(submission);
 
     const now = new Date();
     const updateData: dbApprovePhotoSubmissionInput = {
-      moderatedbycontactid: input.moderatorContactId,
-      approvedphotoid: input.approvedPhotoId,
+      moderatedbycontactid: moderatorContactId,
+      approvedphotoid: approvedPhotoId,
       moderatedat: now,
       updatedat: now,
     };
 
     const updated = await this.repository.approveSubmission(submission.id, updateData);
-    return this.mapSubmission(updated);
+    return PhotoSubmissionResponseFormatter.formatSubmission(updated);
   }
 
-  async denySubmission(input: DenyPhotoSubmissionInput): Promise<PhotoSubmissionRecord> {
-    this.ensurePositiveIdentifier(input.moderatorContactId, 'Moderator contact');
+  async denySubmission(input: DenyPhotoSubmissionInputType): Promise<PhotoSubmissionRecordType> {
+    const accountId = this.parseBigInt(input.accountId, 'Account');
+    const submissionId = this.parseBigInt(input.submissionId, 'Submission');
+    const moderatorContactId = this.parseBigInt(input.moderatorContactId, 'Moderator contact');
     const reason = this.validateDenialReason(input.denialReason);
 
-    const submission = await this.requireSubmission(input.accountId, input.submissionId);
+    const submission = await this.requireSubmission(accountId, submissionId);
     this.ensurePending(submission);
 
     const now = new Date();
     const updateData: dbDenyPhotoSubmissionInput = {
-      moderatedbycontactid: input.moderatorContactId,
+      moderatedbycontactid: moderatorContactId,
       denialreason: reason,
       moderatedat: now,
       updatedat: now,
     };
 
     const updated = await this.repository.denySubmission(submission.id, updateData);
-    return this.mapSubmission(updated);
+    return PhotoSubmissionResponseFormatter.formatSubmission(updated);
   }
 
-  private async requireSubmission(accountId: bigint, submissionId: bigint): Promise<dbPhotoSubmission> {
+  private async requireSubmission(
+    accountId: bigint,
+    submissionId: bigint,
+  ): Promise<dbPhotoSubmission> {
     const submission = await this.repository.findSubmissionForAccount(accountId, submissionId);
     if (!submission) {
       throw new NotFoundError('Photo submission not found');
@@ -185,8 +231,8 @@ export class PhotoSubmissionService {
     return extension;
   }
 
-  private normalizeTeamId(teamId?: bigint | null): bigint | null {
-    if (teamId === undefined || teamId === null) {
+  private normalizeTeamId(teamId: bigint | null): bigint | null {
+    if (teamId === null) {
       return null;
     }
 
@@ -218,42 +264,28 @@ export class PhotoSubmissionService {
     return null;
   }
 
-  private buildStoragePaths(
-    accountId: bigint,
-    storageKey: string,
-    extension: string,
-  ): PhotoSubmissionAssets {
-    const accountSegment = accountId.toString();
-    const basePath = `${STORAGE_BASE_PREFIX}/${accountSegment}/PhotoSubmissions/${storageKey}`;
-
-    return {
-      originalFilePath: `${basePath}/original${extension}`,
-      primaryImagePath: `${basePath}/primary${extension}`,
-      thumbnailImagePath: `${basePath}/thumbnail${extension}`,
-      originalFileName: `original${extension}`,
-    };
+  private parseBigInt(value: string, label: string): bigint {
+    try {
+      const normalized = value.trim();
+      if (!normalized) {
+        throw new Error('empty');
+      }
+      return BigInt(normalized);
+    } catch (error) {
+      throw new ValidationError(`${label} identifier must be a valid number`);
+    }
   }
 
-  private mapSubmission(submission: dbPhotoSubmission): PhotoSubmissionRecord {
-    return {
-      id: submission.id,
-      accountId: submission.accountid,
-      teamId: this.normalizeTeamId(submission.teamid ?? null),
-      albumId: submission.albumid ?? null,
-      submitterContactId: submission.submittercontactid,
-      moderatedByContactId: submission.moderatedbycontactid ?? null,
-      approvedPhotoId: submission.approvedphotoid ?? null,
-      title: submission.title,
-      caption: submission.caption ?? null,
-      originalFileName: submission.originalfilename,
-      originalFilePath: submission.originalfilepath,
-      primaryImagePath: submission.primaryimagepath,
-      thumbnailImagePath: submission.thumbnailimagepath,
-      status: submission.status as PhotoSubmissionStatus,
-      denialReason: submission.denialreason ?? null,
-      submittedAt: submission.submittedat,
-      updatedAt: submission.updatedat,
-      moderatedAt: submission.moderatedat ?? null,
-    };
+  private parseOptionalBigInt(value: string | null | undefined, label: string): bigint | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+
+    const normalized = String(value).trim();
+    if (!normalized) {
+      return null;
+    }
+
+    return this.parseBigInt(normalized, label);
   }
 }

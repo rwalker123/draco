@@ -14,9 +14,12 @@ export interface IPhotoSubmissionRepository {
     accountId: bigint,
     submissionId: bigint,
   ): Promise<dbPhotoSubmission | null>;
-  findSubmissionWithRelations(
-    submissionId: bigint,
-  ): Promise<dbPhotoSubmissionWithRelations | null>;
+  findSubmissionWithRelations(submissionId: bigint): Promise<dbPhotoSubmissionWithRelations | null>;
+  findPendingSubmissionsForAccount(accountId: bigint): Promise<dbPhotoSubmissionWithRelations[]>;
+  findPendingSubmissionsForTeam(
+    accountId: bigint,
+    teamId: bigint,
+  ): Promise<dbPhotoSubmissionWithRelations[]>;
   findAlbumForAccount(accountId: bigint, albumId: bigint): Promise<dbPhotoGalleryAlbum | null>;
   approveSubmission(
     submissionId: bigint,
@@ -26,4 +29,5 @@ export interface IPhotoSubmissionRepository {
     submissionId: bigint,
     data: dbDenyPhotoSubmissionInput,
   ): Promise<dbPhotoSubmission>;
+  deleteSubmission(submissionId: bigint): Promise<void>;
 }
