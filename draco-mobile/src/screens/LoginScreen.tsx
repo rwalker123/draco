@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import {
   Alert,
@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../theme/colors';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { loadLastCredentials, saveLastCredentials } from '../storage/credentialsStorage';
 
 const webFormStyle: CSSProperties = Platform.OS === 'web' ? { width: '100%' } : {};
 
@@ -22,6 +23,30 @@ export function LoginScreen() {
   const [password, setPassword] = useState('');
   const [accountId, setAccountId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const hydrateCredentials = async () => {
+      try {
+        const stored = await loadLastCredentials();
+        if (!stored || !isActive) {
+          return;
+        }
+
+        setUserName(stored.userName);
+        setAccountId(stored.accountId ?? '');
+      } catch {
+        // Ignore storage errors and allow manual entry
+      }
+    };
+
+    void hydrateCredentials();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const submit = async () => {
     if (!userName || !password) {
@@ -41,6 +66,14 @@ export function LoginScreen() {
         password,
         accountId: sanitizedAccountId
       });
+      try {
+        await saveLastCredentials({
+          userName,
+          accountId: sanitizedAccountId ?? null
+        });
+      } catch {
+        // Ignore persistence failures so successful sign-ins continue
+      }
     } catch (requestError) {
       if (requestError instanceof Error) {
         Alert.alert('Login failed', requestError.message);

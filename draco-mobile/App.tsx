@@ -1,12 +1,11 @@
 import 'react-native-gesture-handler';
-import React from 'react';
+import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import { AuthProvider } from './src/providers/AuthProvider';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { useEffect } from 'react';
-import * as SystemUI from 'expo-system-ui';
 
 function SystemUiInitializer(): null {
   useEffect(() => {

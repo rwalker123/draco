@@ -446,24 +446,27 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
 
       const games = Object.fromEntries(
         Object.entries(stored).map(([gameId, record]) => {
+          const baseState = INITIAL_STATE();
           const events: ScoreEvent[] = record.events
-            .map((storedEvent) => ({
-              id: storedEvent.id,
-              sequence: storedEvent.sequence,
-              gameId,
-              createdAt: storedEvent.createdAt,
-              createdBy: storedEvent.createdBy,
-              deviceId: storedEvent.deviceId,
-              notation: '',
-              summary: '',
-              input: storedEvent.input,
-              inning: 1,
-              half: 'top',
-              outsBefore: 0,
-              outsAfter: 0,
-              scoreAfter: INITIAL_STATE().score,
-              basesAfter: INITIAL_STATE().bases
-            }))
+            .map(
+              (storedEvent): ScoreEvent => ({
+                id: storedEvent.id,
+                sequence: storedEvent.sequence,
+                gameId,
+                createdAt: storedEvent.createdAt,
+                createdBy: storedEvent.createdBy,
+                deviceId: storedEvent.deviceId,
+                notation: '',
+                summary: '',
+                input: storedEvent.input,
+                inning: baseState.inning,
+                half: baseState.half,
+                outsBefore: baseState.outs,
+                outsAfter: baseState.outs,
+                scoreAfter: baseState.score,
+                basesAfter: baseState.bases
+              }),
+            )
             .sort((a, b) => a.sequence - b.sequence);
 
           return [gameId, buildGame(record.metadata, events)];
@@ -487,8 +490,8 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
   setActiveGame: async (initializer: ScorecardInitializer) => {
     const metadata: ScorecardMetadata = {
       gameId: initializer.id,
-      homeTeam: initializer.homeTeam.name,
-      awayTeam: initializer.visitorTeam.name,
+      homeTeam: initializer.homeTeam.name ?? 'Home Team',
+      awayTeam: initializer.visitorTeam.name ?? 'Away Team',
       field: initializer.field?.name ?? null,
       scheduledStart: initializer.startsAt
     };

@@ -25,6 +25,10 @@ Expo will display a QR code in the terminal you can scan with the Expo Go app, o
 - `npm run type-check` – Validate the TypeScript project configuration.
 - `npm run test` – Execute Vitest unit tests.
 
+## Tooling Notes
+
+- The package declares `"type": "module"`, so config files default to ESM. Metro still loads configs via `require`, so `metro.config.cjs` stays on CommonJS while other tooling (e.g., Babel) uses ESM exports.
+
 ## Authentication Overview
 
 - Login form posts to `/api/auth/login` on the existing backend.

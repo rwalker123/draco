@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import type { AuthSession, LoginPayload } from '../types/auth';
 import { login as loginRequest, refresh as refreshRequest } from '../services/auth/authApi';

@@ -153,7 +153,12 @@ describe('scorecardStore', () => {
     await useScorecardStore.getState().editEvent(initializer.id, firstEventId, strikeout);
 
     const updated = useScorecardStore.getState().games[initializer.id];
-    expect(updated.events[0].input.result).toBe('strikeout_swinging');
+    const updatedInput = updated.events[0].input;
+    expect(updatedInput.type).toBe('at_bat');
+    if (updatedInput.type !== 'at_bat') {
+      throw new Error('Expected edited event to remain an at-bat');
+    }
+    expect(updatedInput.result).toBe('strikeout_swinging');
     expect(updated.state.outs).toBe(1);
     expect(updated.state.bases.first).toBeNull();
     expect(updated.derived.batting.hits).toBe(0);

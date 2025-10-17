@@ -12,7 +12,7 @@ import {
 } from '../types/index.js';
 
 export interface ScheduleListFilters {
-  dateRange?: { start: Date; end: Date };
+  dateRange?: { start?: Date; end?: Date };
   teamId?: bigint;
   includeRecaps?: boolean;
 }

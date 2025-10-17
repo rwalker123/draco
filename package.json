@@ -78,5 +78,8 @@
     "draco-nodejs/**/*.{js,jsx,ts,tsx}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "expo-network": "~8.0.7"
   }
 }

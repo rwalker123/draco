@@ -86,6 +86,14 @@ router.get(
     const parsedStartDate = startDate ? new Date(String(startDate)) : undefined;
     const parsedEndDate = endDate ? new Date(String(endDate)) : undefined;
 
+    if (parsedStartDate && Number.isNaN(parsedStartDate.getTime())) {
+      throw new ValidationError('Invalid startDate');
+    }
+
+    if (parsedEndDate && Number.isNaN(parsedEndDate.getTime())) {
+      throw new ValidationError('Invalid endDate');
+    }
+
     const includeRecaps = String(hasRecap) === 'true';
 
     const response = await scheduleService.listSeasonGames(
@@ -97,8 +105,8 @@ router.get(
         sortOrder: paginationParams.sortOrder,
       },
       {
-        startDate: parsedStartDate && parsedEndDate ? parsedStartDate : undefined,
-        endDate: parsedStartDate && parsedEndDate ? parsedEndDate : undefined,
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
         teamId: parsedTeamId,
         hasRecap: includeRecaps ? true : undefined,
       },
