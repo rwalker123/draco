@@ -115,7 +115,10 @@ function normalizeSlots(slots: LineupTemplatePayload['slots']): LineupSlot[] {
       id: slot.id,
       order: slot.order,
       playerName: slot.playerName,
-      position: slot.position
+      position: slot.position,
+      rosterMemberId: slot.rosterMemberId ?? null,
+      playerId: slot.playerId ?? null,
+      contactId: slot.contactId ?? null
     }))
     .sort((a, b) => a.order - b.order);
 }

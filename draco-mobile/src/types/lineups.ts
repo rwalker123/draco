@@ -5,6 +5,9 @@ export type LineupSlot = {
   order: number;
   playerName: string;
   position: string;
+  rosterMemberId?: string | null;
+  playerId?: string | null;
+  contactId?: string | null;
 };
 
 export type LineupTemplate = {
@@ -39,5 +42,15 @@ export type LineupTemplatePayload = {
   scope: ScorekeeperScope;
   slots: LineupSlotPayload[];
 };
+export type LineupSlotPayload = Pick<LineupSlot, 'id' | 'order' | 'playerName' | 'position' | 'rosterMemberId' | 'playerId' | 'contactId'>;
 
-export type LineupSlotPayload = Pick<LineupSlot, 'id' | 'order' | 'playerName' | 'position'>;
+export type TeamRosterPlayer = {
+  rosterMemberId: string;
+  playerId: string;
+  contactId: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  playerNumber?: number;
+  inactive?: boolean;
+};

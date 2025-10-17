@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { useScheduleStore, selectAssignments, selectTeams, selectUpcomingGames } from '../state/scheduleStore';
+import {
+  useScheduleStore,
+  selectAssignments,
+  selectTeams,
+  selectUpcomingGames,
+  selectSeasonId
+} from '../state/scheduleStore';
 import { useAuth } from './useAuth';
 import { useNetworkStatus } from './useNetworkStatus';
 
@@ -17,6 +23,7 @@ export function useScheduleData() {
   const upcomingGames = useScheduleStore(selectUpcomingGames);
   const teams = useScheduleStore(selectTeams);
   const assignments = useScheduleStore(selectAssignments);
+  const seasonId = useScheduleStore(selectSeasonId);
 
   useEffect(() => {
     void hydrate();
@@ -45,12 +52,13 @@ export function useScheduleData() {
       upcomingGames,
       teams,
       assignments,
+      seasonId,
       isOnline,
       status,
       hydrated,
       error,
       refresh: manualRefresh
     }),
-    [assignments, error, hydrated, isOnline, manualRefresh, status, teams, upcomingGames],
+    [assignments, error, hydrated, isOnline, manualRefresh, seasonId, status, teams, upcomingGames],
   );
 }

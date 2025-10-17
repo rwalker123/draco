@@ -3,6 +3,7 @@ import { useLineupStore, selectAssignmentsByGame, selectLineupTemplates } from '
 import { useAuth } from './useAuth';
 import { useNetworkStatus } from './useNetworkStatus';
 import type { GameLineupAssignment, LineupTemplatePayload } from '../types/lineups';
+import { LINEUP_SYNC_ENABLED } from '../config/env';
 
 export function useLineupManager() {
   const { session } = useAuth();
@@ -28,29 +29,31 @@ export function useLineupManager() {
     void hydrate();
   }, [hydrate]);
 
+  const canSync = LINEUP_SYNC_ENABLED && Boolean(sessionToken) && isOnline;
+
   useEffect(() => {
-    if (!sessionToken || !isOnline) {
+    if (!canSync || !sessionToken) {
       return;
     }
 
     void refresh(sessionToken).catch(() => {
       // handled via store error state
     });
-  }, [refresh, sessionToken, isOnline]);
+  }, [refresh, sessionToken, canSync]);
 
   useEffect(() => {
-    if (!sessionToken || !isOnline) {
+    if (!canSync || !sessionToken) {
       return;
     }
 
     void syncPending(sessionToken).catch(() => {
       // failures reflected via template status flags
     });
-  }, [sessionToken, isOnline, syncPending]);
+  }, [sessionToken, canSync, syncPending]);
 
   const mutationContext = useMemo(
-    () => ({ token: sessionToken, online: isOnline }),
-    [sessionToken, isOnline],
+    () => ({ token: canSync && sessionToken ? sessionToken : null, online: canSync }),
+    [canSync, sessionToken],
   );
 
   const handleCreate = useCallback(
@@ -74,12 +77,12 @@ export function useLineupManager() {
   );
 
   const manualRefresh = useCallback(() => {
-    if (!sessionToken) {
+    if (!canSync || !sessionToken) {
       return Promise.resolve();
     }
 
     return refresh(sessionToken);
-  }, [refresh, sessionToken]);
+  }, [canSync, refresh, sessionToken]);
 
   return {
     templates,
@@ -88,6 +91,7 @@ export function useLineupManager() {
     status,
     error,
     isOnline,
+    syncEnabled: LINEUP_SYNC_ENABLED,
     pendingCount,
     refresh: manualRefresh,
     createTemplate: handleCreate,

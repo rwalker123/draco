@@ -40,7 +40,8 @@ Expo will display a QR code in the terminal you can scan with the Expo Go app, o
 ## Lineup Management
 
 - The Lineups tab now supports creating, editing, and deleting lineup templates with optimistic updates.
-- Templates, assignments, and mutation queues are persisted locally and synced once connectivity returns. Pending changes surface in the UI so scorekeepers know when a sync is outstanding.
+- Templates, assignments, and mutation queues are persisted locally. Backend sync will be enabled once the lineup API ships, so the UI labels changes as 'Saved locally' and keeps them on device.
+- When online with lineup sync enabled, the template form auto-loads the team roster so scorekeepers can drop players into slots without retyping names; offline mode falls back to manual entry.
 - Offline assignments are reconciled against upcoming games, and permission scopes (account, league, team) filter the teams that appear in the creation flow.
 
 ## Shared Contracts & API Client

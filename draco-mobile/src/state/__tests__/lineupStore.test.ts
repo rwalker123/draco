@@ -111,6 +111,7 @@ describe('lineupStore', () => {
     const state = useLineupStore.getState();
     expect(state.pending.length).toBe(1);
     expect(state.templatesById['temp-1'].status).toBe('pending');
+    expect(saveLineupTemplateMock).not.toHaveBeenCalled();
   });
 
   it('syncs pending mutations when online', async () => {
@@ -139,6 +140,25 @@ describe('lineupStore', () => {
     expect(state.pending.length).toBe(0);
     expect(state.templatesById[savedTemplate.id].status).toBe('synced');
     expect(saveLineupTemplateMock).toHaveBeenCalledWith('token-123', expect.any(Object));
+  });
+
+  it('stores assignments locally when offline', async () => {
+    loadLineupCacheMock.mockResolvedValue(null);
+    saveLineupCacheMock.mockResolvedValue(undefined);
+
+    await useLineupStore.getState().hydrate();
+
+    const assignment = {
+      gameId: 'game-2',
+      templateId: 'template-2',
+      updatedAt: new Date().toISOString()
+    };
+
+    await useLineupStore.getState().assignToGame(assignment, { online: false, token: null });
+
+    const state = useLineupStore.getState();
+    expect(state.assignmentsByGameId[assignment.gameId]).toEqual(assignment);
+    expect(assignTemplateToGameMock).not.toHaveBeenCalled();
   });
 
   it('rolls back assignments when server rejects changes', async () => {

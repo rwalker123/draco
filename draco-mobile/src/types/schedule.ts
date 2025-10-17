@@ -25,4 +25,5 @@ export type ScheduleSnapshot = {
   games: UpcomingGame[];
   teams: TeamSummary[];
   assignments: ScorekeeperAssignment[];
+  seasonId?: string | null;
 };

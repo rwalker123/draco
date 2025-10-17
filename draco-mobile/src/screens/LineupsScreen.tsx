@@ -8,14 +8,22 @@ import {
   TextInput,
   View
 } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { colors } from '../theme/colors';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { useLineupManager } from '../hooks/useLineupManager';
 import { useScheduleData } from '../hooks/useScheduleData';
-import type { GameLineupAssignment, LineupSlot, LineupTemplate, LineupTemplatePayload } from '../types/lineups';
+import { useAuth } from '../hooks/useAuth';
+import type {
+  GameLineupAssignment,
+  LineupSlot,
+  LineupTemplate,
+  LineupTemplatePayload,
+  TeamRosterPlayer
+} from '../types/lineups';
 import type { ScorekeeperAssignment, TeamSummary, UpcomingGame } from '../types/schedule';
 import { generateId } from '../utils/id';
+import { fetchTeamRoster } from '../services/lineups/teamRosterService';
 
 type FormMode = 'create' | 'edit';
 
@@ -25,6 +33,7 @@ export function LineupsScreen() {
     status,
     error,
     isOnline,
+    syncEnabled,
     pendingCount,
     refresh,
     createTemplate,
@@ -33,7 +42,10 @@ export function LineupsScreen() {
     assignToGame,
     assignments: assignmentsByGameId
   } = useLineupManager();
-  const { teams, assignments: scorekeeperAssignments, upcomingGames } = useScheduleData();
+  const { session } = useAuth();
+  const accountId = session?.accountId ?? null;
+  const sessionToken = session?.token ?? null;
+  const { teams, assignments: scorekeeperAssignments, upcomingGames, seasonId } = useScheduleData();
 
   const permittedTeams = useMemo(
     () => filterTeamsByPermission(teams, scorekeeperAssignments),
@@ -96,7 +108,7 @@ export function LineupsScreen() {
   const handleDelete = (template: LineupTemplate) => {
     Alert.alert(
       'Delete lineup?',
-      `This will remove ${template.name} from your device and sync the deletion when you are online.`,
+      `This will remove ${template.name} from your device. The deletion will sync once the lineup API is available.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -130,15 +142,23 @@ export function LineupsScreen() {
     }
   };
 
-  const pendingBanner = pendingCount > 0 ? `Pending sync: ${pendingCount} change${pendingCount === 1 ? '' : 's'}` : null;
+  const pendingBanner = pendingCount > 0
+    ? syncEnabled
+      ? `Pending sync: ${pendingCount} change${pendingCount === 1 ? '' : 's'}`
+      : `Saved locally: ${pendingCount} change${pendingCount === 1 ? '' : 's'}`
+    : null;
 
   return (
     <ScreenContainer>
       <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Lineup Templates</Text>
-        <Pressable style={styles.refreshButton} onPress={() => void refresh()}>
-          <Text style={styles.refreshText}>Refresh</Text>
+        <Pressable
+          style={[styles.refreshButton, !syncEnabled ? styles.refreshButtonDisabled : null]}
+          onPress={() => void refresh()}
+          disabled={!syncEnabled}
+        >
+          <Text style={[styles.refreshText, !syncEnabled ? styles.refreshTextDisabled : null]}>Refresh</Text>
         </Pressable>
       </View>
       <View style={styles.statusRow}>
@@ -148,6 +168,12 @@ export function LineupsScreen() {
         </View>
         {pendingBanner ? <Text style={styles.pendingText}>{pendingBanner}</Text> : null}
       </View>
+      {!syncEnabled ? (
+        <Text style={styles.helperText}>
+          Lineup sync is coming soon. Templates you create are stored on this device and will sync once the backend
+          API launches.
+        </Text>
+      ) : null}
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <Pressable style={styles.primaryButton} onPress={openCreateForm}>
         <Text style={styles.primaryButtonText}>New lineup template</Text>
@@ -165,7 +191,7 @@ export function LineupsScreen() {
                 <Text style={styles.cardTitle}>{template.name}</Text>
                 <Text style={styles.cardSubtitle}>{lookupTeamName(template.teamId, teams) ?? 'Team unavailable'}</Text>
               </View>
-              <StatusBadge template={template} />
+            <StatusBadge template={template} syncEnabled={syncEnabled} />
             </View>
             <Text style={styles.cardMeta}>{template.slots.length} players</Text>
             {assignmentsByTemplate[template.id] ? (
@@ -192,7 +218,7 @@ export function LineupsScreen() {
             <Text style={styles.emptyTitle}>{status === 'loading' ? 'Loading templates...' : 'No saved lineups'}</Text>
             <Text style={styles.emptyBody}>
               {status === 'loading'
-                ? 'Syncing roster data and saved templates from the server.'
+                ? 'Loading lineup templates stored on this device.'
                 : 'Create a lineup template for each team you score to speed up pre-game setup.'}
             </Text>
           </View>
@@ -206,6 +232,10 @@ export function LineupsScreen() {
               mode={formMode}
               template={activeTemplate}
               teams={permittedTeams}
+              accountId={accountId}
+              seasonId={seasonId ?? null}
+              token={sessionToken}
+              isOnline={isOnline}
               onCancel={() => setFormVisible(false)}
               onSubmit={handleFormSubmit}
               submitting={submitting}
@@ -307,24 +337,237 @@ type LineupFormProps = {
   template?: LineupTemplate;
   teams: TeamSummary[];
   assignments: ScorekeeperAssignment[];
+  accountId: string | null;
+  seasonId: string | null;
+  token: string | null;
+  isOnline: boolean;
   onSubmit: (payload: LineupTemplatePayload) => Promise<void>;
   onCancel: () => void;
   submitting: boolean;
   error: string | null;
 };
 
-function LineupForm({ mode, template, teams, assignments, onSubmit, onCancel, submitting, error }: LineupFormProps) {
+function LineupForm({
+  mode,
+  template,
+  teams,
+  assignments,
+  accountId,
+  seasonId,
+  token,
+  isOnline,
+  onSubmit,
+  onCancel,
+  submitting,
+  error
+}: LineupFormProps) {
   const [name, setName] = useState(template?.name ?? '');
   const [teamId, setTeamId] = useState(template?.teamId ?? (teams[0]?.id ?? ''));
   const [slots, setSlots] = useState<LineupSlot[]>(() =>
     template?.slots.map((slot) => ({ ...slot })) ?? [createEmptySlot(1)],
   );
   const [teamPickerOpen, setTeamPickerOpen] = useState(false);
+  const [rosterPickerOpen, setRosterPickerOpen] = useState(false);
+  const [activeRosterSlot, setActiveRosterSlot] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [roster, setRoster] = useState<TeamRosterPlayer[]>([]);
+  const [rosterStatus, setRosterStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [rosterError, setRosterError] = useState<string | null>(null);
 
   const selectedTeam = teams.find((team) => team.id === teamId) ?? null;
 
   const scope = useMemo(() => inferScope(teamId, assignments), [teamId, assignments]);
+
+  const previousTeamIdRef = useRef<string>(teamId);
+
+  useEffect(() => {
+    if (previousTeamIdRef.current === teamId) {
+      return;
+    }
+    previousTeamIdRef.current = teamId;
+    setSlots((current) =>
+      current.map((slot) => ({
+        ...slot,
+        rosterMemberId: null,
+        playerId: null,
+        contactId: null
+      })),
+    );
+  }, [teamId]);
+
+  useEffect(() => {
+    if (!teams.some((team) => team.id === teamId)) {
+      setTeamId(teams[0]?.id ?? '');
+    }
+  }, [teamId, teams]);
+
+  useEffect(() => {
+    if (!teamId) {
+      setRoster([]);
+      setRosterStatus('idle');
+      setRosterError(null);
+      return;
+    }
+
+    if (!isOnline || !accountId || !seasonId || !token) {
+      setRoster([]);
+      setRosterStatus('idle');
+      setRosterError(null);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadRoster = async () => {
+      setRosterStatus('loading');
+      setRosterError(null);
+      try {
+        const players = await fetchTeamRoster({
+          token,
+          accountId,
+          seasonId,
+          teamSeasonId: teamId
+        });
+        if (isCancelled) {
+          return;
+        }
+        setRoster(players);
+        setRosterStatus('idle');
+      } catch (err) {
+        if (isCancelled) {
+          return;
+        }
+        setRosterStatus('error');
+        setRosterError(err instanceof Error ? err.message : 'Unable to load roster for this team.');
+      }
+    };
+
+    void loadRoster();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [accountId, isOnline, seasonId, teamId, token]);
+
+  const rosterMessage = useMemo(() => {
+    if (!teamId) {
+      return null;
+    }
+    if (!isOnline) {
+      return 'Connect to load the latest roster for this team.';
+    }
+    if (!accountId || !seasonId || !token) {
+      return 'Roster data is unavailable. Enter player names manually for now.';
+    }
+    return null;
+  }, [accountId, isOnline, seasonId, teamId, token]);
+
+  const updateSlotName = useCallback((slotId: string, value: string) => {
+    setSlots((current) =>
+      current.map((slot) =>
+        slot.id === slotId
+          ? {
+              ...slot,
+              playerName: value,
+              rosterMemberId: null,
+              playerId: null,
+              contactId: null
+            }
+          : slot,
+      ),
+    );
+  }, []);
+
+  const updateSlotPosition = useCallback((slotId: string, value: string) => {
+    setSlots((current) =>
+      current.map((slot) => (slot.id === slotId ? { ...slot, position: value } : slot)),
+    );
+  }, []);
+
+  const removeSlot = useCallback((slotId: string) => {
+    setSlots((current) => current.filter((slot) => slot.id !== slotId));
+  }, []);
+
+  const moveSlot = useCallback((slotId: string, direction: -1 | 1) => {
+    setSlots((current) => {
+      const index = current.findIndex((slot) => slot.id === slotId);
+      if (index === -1) {
+        return current;
+      }
+
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      const [removed] = next.splice(index, 1);
+      next.splice(targetIndex, 0, removed);
+      return next.map((slot, idx) => ({ ...slot, order: idx + 1 }));
+    });
+  }, []);
+
+  const addSlot = useCallback(() => {
+    setSlots((current) => [...current, createEmptySlot(current.length + 1)]);
+  }, []);
+
+  const openRosterPicker = useCallback(
+    (slotId: string) => {
+      if (roster.length === 0) {
+        return;
+      }
+      setActiveRosterSlot(slotId);
+      setRosterPickerOpen(true);
+    },
+    [roster.length],
+  );
+
+  const closeRosterPicker = useCallback(() => {
+    setRosterPickerOpen(false);
+    setActiveRosterSlot(null);
+  }, []);
+
+  const applyRosterSelection = useCallback(
+    (player: TeamRosterPlayer) => {
+      if (!activeRosterSlot) {
+        return;
+      }
+      setSlots((current) =>
+        current.map((slot) =>
+          slot.id === activeRosterSlot
+            ? {
+                ...slot,
+                playerName: player.displayName,
+                rosterMemberId: player.rosterMemberId,
+                playerId: player.playerId,
+                contactId: player.contactId
+              }
+            : slot,
+        ),
+      );
+      closeRosterPicker();
+    },
+    [activeRosterSlot, closeRosterPicker],
+  );
+
+  const rosterOptions = useMemo(() => {
+    if (!activeRosterSlot) {
+      return [];
+    }
+    const selectedIds = new Set(
+      slots
+        .filter((slot) => slot.rosterMemberId && slot.id !== activeRosterSlot)
+        .map((slot) => slot.rosterMemberId as string),
+    );
+    return [...roster]
+      .filter((player) => !selectedIds.has(player.rosterMemberId))
+      .sort((a, b) => {
+        if (a.playerNumber && b.playerNumber && a.playerNumber !== b.playerNumber) {
+          return a.playerNumber - b.playerNumber;
+        }
+        return a.displayName.localeCompare(b.displayName);
+      });
+  }, [activeRosterSlot, roster, slots]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -361,7 +604,10 @@ function LineupForm({ mode, template, teams, assignments, onSubmit, onCancel, su
         id: slot.id,
         order: slot.order,
         playerName: slot.playerName,
-        position: slot.position
+        position: slot.position,
+        rosterMemberId: slot.rosterMemberId ?? undefined,
+        playerId: slot.playerId ?? undefined,
+        contactId: slot.contactId ?? undefined
       }))
     };
 
@@ -369,32 +615,18 @@ function LineupForm({ mode, template, teams, assignments, onSubmit, onCancel, su
     await onSubmit(payload);
   };
 
-  const updateSlot = (slotId: string, updates: Partial<LineupSlot>) => {
-    setSlots((current) => current.map((slot) => (slot.id === slotId ? { ...slot, ...updates } : slot)));
-  };
-
-  const removeSlot = (slotId: string) => {
-    setSlots((current) => current.filter((slot) => slot.id !== slotId));
-  };
-
-  const moveSlot = (slotId: string, direction: -1 | 1) => {
-    setSlots((current) => {
-      const index = current.findIndex((slot) => slot.id === slotId);
-      if (index === -1) {
-        return current;
-      }
-
-      const targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= current.length) {
-        return current;
-      }
-
-      const next = [...current];
-      const [removed] = next.splice(index, 1);
-      next.splice(targetIndex, 0, removed);
-      return next.map((slot, idx) => ({ ...slot, order: idx + 1 }));
-    });
-  };
+  const rosterStatusMessage = useMemo(() => {
+    if (!teamId) {
+      return null;
+    }
+    if (rosterStatus === 'loading') {
+      return 'Loading roster…';
+    }
+    if (rosterStatus === 'error') {
+      return rosterError ?? 'Unable to load roster for this team.';
+    }
+    return rosterMessage;
+  }, [rosterError, rosterMessage, rosterStatus, teamId]);
 
   return (
     <View style={styles.formContainer}>
@@ -412,6 +644,7 @@ function LineupForm({ mode, template, teams, assignments, onSubmit, onCancel, su
         <Text style={styles.selectorLabel}>Team</Text>
         <Text style={styles.selectorValue}>{selectedTeam?.name ?? 'Select team'}</Text>
       </Pressable>
+      {rosterStatusMessage ? <Text style={styles.helperText}>{rosterStatusMessage}</Text> : null}
       <ScrollView style={styles.slotList}>
         {slots.map((slot) => (
           <View key={slot.id} style={styles.slotRow}>
@@ -420,16 +653,22 @@ function LineupForm({ mode, template, teams, assignments, onSubmit, onCancel, su
               placeholder="Player name"
               placeholderTextColor={colors.mutedText}
               value={slot.playerName}
-              onChangeText={(value) => updateSlot(slot.id, { playerName: value })}
+              onChangeText={(value) => updateSlotName(slot.id, value)}
             />
+            {slot.rosterMemberId ? <Text style={styles.rosterTag}>Roster: {slot.playerName}</Text> : null}
             <TextInput
               style={styles.textInput}
               placeholder="Position"
               placeholderTextColor={colors.mutedText}
               value={slot.position}
-              onChangeText={(value) => updateSlot(slot.id, { position: value })}
+              onChangeText={(value) => updateSlotPosition(slot.id, value)}
             />
             <View style={styles.slotActions}>
+              {roster.length > 0 && rosterStatus === 'idle' ? (
+                <Pressable style={styles.slotButton} onPress={() => openRosterPicker(slot.id)}>
+                  <Text style={styles.slotButtonText}>Pick</Text>
+                </Pressable>
+              ) : null}
               <Pressable style={styles.slotButton} onPress={() => moveSlot(slot.id, -1)}>
                 <Text style={styles.slotButtonText}>↑</Text>
               </Pressable>
@@ -443,10 +682,7 @@ function LineupForm({ mode, template, teams, assignments, onSubmit, onCancel, su
           </View>
         ))}
       </ScrollView>
-      <Pressable
-        style={styles.secondaryButton}
-        onPress={() => setSlots((current) => [...current, createEmptySlot(current.length + 1)])}
-      >
+      <Pressable style={styles.secondaryButton} onPress={addSlot}>
         <Text style={styles.secondaryButtonText}>Add player</Text>
       </Pressable>
       <View style={styles.formActions}>
@@ -490,6 +726,35 @@ function LineupForm({ mode, template, teams, assignments, onSubmit, onCancel, su
           </View>
         </View>
       </Modal>
+
+      <Modal visible={rosterPickerOpen} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select roster player</Text>
+            {rosterStatus === 'loading' ? <Text style={styles.helperText}>Loading roster…</Text> : null}
+            {rosterStatus === 'error' && rosterError ? <Text style={styles.errorText}>{rosterError}</Text> : null}
+            <ScrollView style={{ maxHeight: 320 }}>
+              {rosterOptions.length > 0 ? (
+                rosterOptions.map((player) => (
+                  <Pressable
+                    key={player.rosterMemberId}
+                    style={styles.assignmentRow}
+                    onPress={() => applyRosterSelection(player)}
+                  >
+                    <Text style={styles.assignmentTitle}>{player.displayName}</Text>
+                    <Text style={styles.assignmentSubtitle}>Tap to add to lineup</Text>
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={styles.emptyBody}>All roster players are already in this lineup.</Text>
+              )}
+            </ScrollView>
+            <Pressable style={styles.secondaryButton} onPress={closeRosterPicker}>
+              <Text style={styles.secondaryButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -513,21 +778,25 @@ function createEmptySlot(order: number): LineupSlot {
     id: generateId('slot'),
     order,
     playerName: '',
-    position: ''
+    position: '',
+    rosterMemberId: null,
+    playerId: null,
+    contactId: null
   };
 }
 
 type StatusBadgeProps = {
   template: LineupTemplate;
+  syncEnabled: boolean;
 };
 
-function StatusBadge({ template }: StatusBadgeProps) {
+function StatusBadge({ template, syncEnabled }: StatusBadgeProps) {
   if (template.status === 'synced' && !template.pendingAction) {
     return <Text style={styles.statusSynced}>Synced</Text>;
   }
 
   if (template.status === 'pending') {
-    return <Text style={styles.statusPending}>Syncing…</Text>;
+    return <Text style={styles.statusPending}>{syncEnabled ? 'Syncing…' : 'Saved locally'}</Text>;
   }
 
   return <Text style={styles.statusFailed}>Needs attention</Text>;
@@ -555,10 +824,16 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.card
   },
+  refreshButtonDisabled: {
+    opacity: 0.6
+  },
   refreshText: {
     color: colors.primaryText,
     fontWeight: '600',
     fontSize: 12
+  },
+  refreshTextDisabled: {
+    color: colors.mutedText
   },
   statusRow: {
     flexDirection: 'row',
@@ -750,6 +1025,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 12
+  },
+  rosterTag: {
+    fontSize: 12,
+    color: colors.mutedText,
+    marginBottom: 8
   },
   slotActions: {
     flexDirection: 'row',

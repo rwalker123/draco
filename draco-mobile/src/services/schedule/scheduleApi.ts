@@ -75,7 +75,8 @@ export async function fetchScheduleSnapshot({ token, accountId }: FetchScheduleP
   return {
     games: upcomingGames,
     teams: normalizedTeams,
-    assignments
+    assignments,
+    seasonId: currentSeason.id
   };
 }
 

@@ -47,6 +47,10 @@ Requirements:
 - Provide optimistic updates with rollback when the server rejects changes.
 - Add unit tests for lineup reducers/services and include user docs or help text for scorekeepers.
 
+Next steps once the lineup API is available:
+- Flip the `lineupSyncEnabled` mobile feature flag so refresh/sync calls re-enable.
+- Point the lineup API client at the new endpoints and expand tests to cover online mutations.
+
 Deliver code, tests, and a summary highlighting key architectural decisions.
 ```
 

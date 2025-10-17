@@ -22,6 +22,7 @@ type ScheduleState = {
   teamsById: Record<string, TeamSummary>;
   assignmentsById: Record<string, ScorekeeperAssignment>;
   lastSyncedAt: number | null;
+  seasonId: string | null;
   hydrate: () => Promise<void>;
   refresh: (params: { token: string; accountId: string }) => Promise<void>;
   clear: () => Promise<void>;
@@ -48,6 +49,7 @@ export const useScheduleStore = createStore<ScheduleState>((set, get) => ({
   teamsById: {},
   assignmentsById: {},
   lastSyncedAt: null,
+  seasonId: null,
   hydrate: async () => {
     if (get().hydrated) {
       return;
@@ -66,7 +68,8 @@ export const useScheduleStore = createStore<ScheduleState>((set, get) => ({
       gamesById: mapById(cached.games),
       gameOrder: buildGameOrder(cached.games),
       teamsById: mapById(cached.teams),
-      assignmentsById: mapById(cached.assignments)
+      assignmentsById: mapById(cached.assignments),
+      seasonId: cached.seasonId ?? null
     });
   },
   refresh: async ({ token, accountId }) => {
@@ -80,9 +83,10 @@ export const useScheduleStore = createStore<ScheduleState>((set, get) => ({
         gamesById: mapById(snapshot.games),
         gameOrder: buildGameOrder(snapshot.games),
         teamsById: mapById(snapshot.teams),
-        assignmentsById: mapById(snapshot.assignments),
-        lastSyncedAt: Date.now()
-      });
+      assignmentsById: mapById(snapshot.assignments),
+      lastSyncedAt: Date.now(),
+      seasonId: snapshot.seasonId ?? null
+    });
       await saveScheduleSnapshot(snapshot);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to refresh schedule';
@@ -99,7 +103,8 @@ export const useScheduleStore = createStore<ScheduleState>((set, get) => ({
       status: 'idle',
       error: null,
       hydrated: false,
-      lastSyncedAt: null
+      lastSyncedAt: null,
+      seasonId: null
     });
     await clearScheduleSnapshot();
   }
@@ -112,3 +117,5 @@ export const selectTeams = (state: ScheduleState): TeamSummary[] => Object.value
 
 export const selectAssignments = (state: ScheduleState): ScorekeeperAssignment[] =>
   Object.values(state.assignmentsById);
+
+export const selectSeasonId = (state: ScheduleState): string | null => state.seasonId;

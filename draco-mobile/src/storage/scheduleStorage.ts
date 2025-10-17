@@ -38,7 +38,8 @@ export async function loadScheduleSnapshot(): Promise<ScheduleSnapshot | null> {
     return {
       games: parsed.games ?? [],
       teams: parsed.teams ?? [],
-      assignments: parsed.assignments ?? []
+      assignments: parsed.assignments ?? [],
+      seasonId: parsed.seasonId ?? null
     };
   } catch {
     await AsyncStorage.removeItem(STORAGE_KEY);
