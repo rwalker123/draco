@@ -31,6 +31,19 @@ Expo will display a QR code in the terminal you can scan with the Expo Go app, o
 - Successful authentication persists the JWT, user metadata, and a 30-day retention timestamp in `expo-secure-store`.
 - The `AuthProvider` refreshes the token every 30 minutes via `/api/auth/refresh` while the session is active and automatically clears expired records.
 
+## Schedule & Offline Caching
+
+- Upcoming assignments, team metadata, and scorekeeper permissions hydrate from the backend and are normalized in a Zustand store.
+- The cache is persisted to AsyncStorage with a 30-day eviction policy so the dashboard remains usable without connectivity.
+- Network requests flow through a lightweight fetch wrapper that logs request/response metadata to aid debugging during local development.
+
+## Lineup Management
+
+- The Lineups tab now supports creating, editing, and deleting lineup templates with optimistic updates.
+- Templates, assignments, and mutation queues are persisted locally. Backend sync will be enabled once the lineup API ships, so the UI labels changes as 'Saved locally' and keeps them on device.
+- When online with lineup sync enabled, the template form auto-loads the team roster so scorekeepers can drop players into slots without retyping names; offline mode falls back to manual entry.
+- Offline assignments are reconciled against upcoming games, and permission scopes (account, league, team) filter the teams that appear in the creation flow.
+
 ## Shared Contracts & API Client
 
 - All TypeScript types for authentication and future features should be imported from `@draco/shared-schemas` so the mobile app stays aligned with the backend Zod source of truth.

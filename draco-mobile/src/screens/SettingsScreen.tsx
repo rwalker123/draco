@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScreenContainer } from '../components/ScreenContainer';
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../theme/colors';
 
@@ -6,28 +7,30 @@ export function SettingsScreen() {
   const { session, logout, refreshSession } = useAuth();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.heading}>Account</Text>
-        <Text style={styles.label}>User</Text>
-        <Text style={styles.value}>{session?.user.userName ?? 'Unknown'}</Text>
-        {session?.user.contactName ? (
-          <>
-            <Text style={styles.label}>Contact</Text>
-            <Text style={styles.value}>{session.user.contactName}</Text>
-          </>
-        ) : null}
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.heading}>Session Controls</Text>
-        <Pressable style={styles.button} onPress={() => refreshSession()}>
-          <Text style={styles.buttonText}>Refresh Token</Text>
-        </Pressable>
-        <Pressable style={[styles.button, styles.logoutButton]} onPress={() => logout()}>
-          <Text style={styles.buttonText}>Sign Out</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+    <ScreenContainer>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.heading}>Account</Text>
+          <Text style={styles.label}>User</Text>
+          <Text style={styles.value}>{session?.user.userName ?? 'Unknown'}</Text>
+          {session?.user.contactName ? (
+            <>
+              <Text style={styles.label}>Contact</Text>
+              <Text style={styles.value}>{session.user.contactName}</Text>
+            </>
+          ) : null}
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.heading}>Session Controls</Text>
+          <Pressable style={styles.button} onPress={() => refreshSession()}>
+            <Text style={styles.buttonText}>Refresh Token</Text>
+          </Pressable>
+          <Pressable style={[styles.button, styles.logoutButton]} onPress={() => logout()}>
+            <Text style={styles.buttonText}>Sign Out</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </ScreenContainer>
   );
 }
 

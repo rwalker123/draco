@@ -52,8 +52,9 @@ describe('authStorage', () => {
     const { saveSession, loadSession, clearSession } = await import('../authStorage');
     const session = {
       token: 'test-token',
+      accountId: '1234',
       user: {
-        userId: 42,
+        userId: 'user-42',
         userName: 'tester'
       }
     };
@@ -65,6 +66,7 @@ describe('authStorage', () => {
     expect(restored).not.toBeNull();
     expect(restored?.token).toBe('test-token');
     expect(restored?.user).toEqual(session.user);
+    expect(restored?.accountId).toBe(session.accountId);
 
     await clearSession();
     expect(storageBacking.has(STORAGE_KEY)).toBe(false);

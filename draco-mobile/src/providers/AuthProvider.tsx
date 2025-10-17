@@ -83,7 +83,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const login = useCallback(
     async (payload: LoginPayload) => {
       setError(null);
-      setStatus('loading');
       try {
         const result = await loginRequest(payload);
         await persistSession(result);
@@ -113,7 +112,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     try {
-      const refreshed = await refreshRequest(activeSession.token);
+      const refreshed = await refreshRequest(activeSession.token, activeSession.accountId);
       if (sessionRef.current?.token !== activeSession.token) {
         return;
       }
@@ -149,6 +148,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 function extractAuthSession(stored: StoredAuthSession): AuthSession {
   return {
     token: stored.token,
-    user: stored.user
+    user: stored.user,
+    accountId: stored.accountId
   };
 }

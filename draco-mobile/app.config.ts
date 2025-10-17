@@ -29,7 +29,10 @@ const config: ExpoConfig = {
   },
   plugins: ['expo-secure-store'],
   extra: {
-    apiBaseUrl: process.env.MOBILE_API_URL ?? 'http://localhost:3000'
+    apiBaseUrl: process.env.MOBILE_API_URL ?? 'http://localhost:3000',
+    features: {
+      lineupSyncEnabled: process.env.MOBILE_LINEUP_SYNC_ENABLED === 'true'
+    }
   }
 };
 
