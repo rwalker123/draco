@@ -6,6 +6,8 @@ import { useNetworkStatus } from './useNetworkStatus';
 export function useScheduleData() {
   const { session } = useAuth();
   const { isOnline } = useNetworkStatus();
+  const sessionToken = session?.token;
+  const sessionAccountId = session?.accountId;
   const hydrated = useScheduleStore((state) => state.hydrated);
   const status = useScheduleStore((state) => state.status);
   const error = useScheduleStore((state) => state.error);
@@ -21,22 +23,22 @@ export function useScheduleData() {
   }, [hydrate]);
 
   useEffect(() => {
-    if (!session?.token || !isOnline) {
+    if (!sessionToken || !sessionAccountId || !isOnline) {
       return;
     }
 
-    void refresh(session.token).catch(() => {
+    void refresh({ token: sessionToken, accountId: sessionAccountId }).catch(() => {
       // Error state is handled inside the store
     });
-  }, [refresh, session?.token, isOnline]);
+  }, [refresh, sessionAccountId, sessionToken, isOnline]);
 
   const manualRefresh = useCallback(() => {
-    if (!session?.token) {
+    if (!sessionToken || !sessionAccountId) {
       return Promise.resolve();
     }
 
-    return refresh(session.token);
-  }, [refresh, session?.token]);
+    return refresh({ token: sessionToken, accountId: sessionAccountId });
+  }, [refresh, sessionAccountId, sessionToken]);
 
   return useMemo(
     () => ({

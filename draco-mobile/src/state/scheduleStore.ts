@@ -23,7 +23,7 @@ type ScheduleState = {
   assignmentsById: Record<string, ScorekeeperAssignment>;
   lastSyncedAt: number | null;
   hydrate: () => Promise<void>;
-  refresh: (token: string) => Promise<void>;
+  refresh: (params: { token: string; accountId: string }) => Promise<void>;
   clear: () => Promise<void>;
 };
 
@@ -69,10 +69,10 @@ export const useScheduleStore = createStore<ScheduleState>((set, get) => ({
       assignmentsById: mapById(cached.assignments)
     });
   },
-  refresh: async (token: string) => {
+  refresh: async ({ token, accountId }) => {
     set({ status: 'loading', error: null });
     try {
-      const snapshot = await fetchScheduleSnapshot(token);
+      const snapshot = await fetchScheduleSnapshot({ token, accountId });
       set({
         status: 'idle',
         error: null,

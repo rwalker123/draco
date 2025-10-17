@@ -187,7 +187,8 @@ jq --arg path "$CURRENT_DIR" \
      "status": "active",
      "envFiles": {
        "backend": ($path + "/draco-nodejs/backend/.env"),
-       "frontend": ($path + "/draco-nodejs/frontend-next/.env.local")
+       "frontend": ($path + "/draco-nodejs/frontend-next/.env.local"),
+       "mobile": ($path + "/draco-mobile/.env")
      }
    } | .lastUpdated = $now' "$REGISTRY_PATH" > "$TEMP_REGISTRY"
 mv "$TEMP_REGISTRY" "$REGISTRY_PATH"
@@ -196,6 +197,16 @@ print_success "Port registry updated, moved from $TEMP_REGISTRY to $REGISTRY_PAT
 
 # Copy and modify .env files with new ports
 print_status "Setting up environment files with assigned ports..."
+
+# Determine machine IP for mobile API configuration
+print_status "Detecting machine IP address for mobile client..."
+MACHINE_IP=$(node -e "const os=require('os'); const interfaces=os.networkInterfaces(); const ips=Object.values(interfaces).flatMap(list => list || []).filter(iface => iface && iface.family === 'IPv4' && !iface.internal).map(iface => iface.address); if (!ips.length) { process.exit(1); } process.stdout.write(ips[0]);" 2>/dev/null) || MACHINE_IP=""
+if [ -z "$MACHINE_IP" ]; then
+    print_warning "Unable to determine a non-loopback IPv4 address; defaulting MOBILE_API_URL to localhost"
+    MACHINE_IP="localhost"
+else
+    print_success "Detected machine IP address: $MACHINE_IP"
+fi
 
 # Backend .env file
 if [ -f "$MAIN_REPO_PATH/draco-nodejs/backend/.env" ]; then
@@ -232,6 +243,32 @@ if [ -f "$MAIN_REPO_PATH/draco-nodejs/frontend-next/.env.local" ]; then
     print_success "Frontend .env.local configured with backend port $BACKEND_PORT and frontend port $FRONTEND_PORT"
 else
     print_warning "Frontend .env.local file not found in main repo"
+fi
+
+# Mobile .env file
+MOBILE_ENV_TARGET="draco-mobile/.env"
+MOBILE_ENV_SOURCE=""
+if [ -f "$MAIN_REPO_PATH/draco-mobile/.env" ]; then
+    MOBILE_ENV_SOURCE="$MAIN_REPO_PATH/draco-mobile/.env"
+elif [ -f "$MAIN_REPO_PATH/draco-mobile/.env.example" ]; then
+    MOBILE_ENV_SOURCE="$MAIN_REPO_PATH/draco-mobile/.env.example"
+fi
+
+if [ -n "$MOBILE_ENV_SOURCE" ]; then
+    mkdir -p "draco-mobile"
+    cp "$MOBILE_ENV_SOURCE" "$MOBILE_ENV_TARGET"
+
+    MOBILE_API_URL="https://$MACHINE_IP:$BACKEND_PORT"
+    if grep -q "^[[:space:]]*MOBILE_API_URL=" "$MOBILE_ENV_TARGET"; then
+        sed -i.bak "s|^[[:space:]]*MOBILE_API_URL=.*|MOBILE_API_URL=$MOBILE_API_URL|" "$MOBILE_ENV_TARGET"
+    else
+        echo "MOBILE_API_URL=$MOBILE_API_URL" >> "$MOBILE_ENV_TARGET"
+    fi
+    rm -f "${MOBILE_ENV_TARGET}.bak"
+
+    print_success "Mobile .env configured with MOBILE_API_URL=$MOBILE_API_URL"
+else
+    print_warning "No mobile .env template found; skipped configuring draco-mobile/.env"
 fi
 
 # Backend certs directory (SSL certificates for HTTPS development)
@@ -322,9 +359,11 @@ echo "  🖥️  Backend Port: $BACKEND_PORT (https://localhost:$BACKEND_PORT)"
 echo "  🌐 Frontend Port: $FRONTEND_PORT (https://localhost:$FRONTEND_PORT)"
 echo "  🔗 API URL: https://localhost:$BACKEND_PORT"
 echo "  🌍 Frontend URL: https://localhost:$FRONTEND_PORT"
+echo "  📱 Mobile API URL: http://$MACHINE_IP:$BACKEND_PORT"
 echo ""
 echo "  📁 Backend .env: draco-nodejs/backend/.env"
 echo "  📁 Frontend .env.local: draco-nodejs/frontend-next/.env.local"
+echo "  📁 Mobile .env: draco-mobile/.env"
 echo ""
 
 # Summary

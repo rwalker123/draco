@@ -1,12 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
+import { ScreenContainer } from '../components/ScreenContainer';
 
 export function GamesScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Games</Text>
-      <Text style={styles.body}>Live scoring will be available in a future milestone.</Text>
-    </View>
+    <ScreenContainer>
+      <View style={styles.container}>
+        <Text style={styles.heading}>Games</Text>
+        <Text style={styles.body}>Live scoring will be available in a future milestone.</Text>
+      </View>
+    </ScreenContainer>
   );
 }
 

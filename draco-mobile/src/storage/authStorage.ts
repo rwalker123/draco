@@ -51,7 +51,7 @@ export async function loadSession(): Promise<StoredAuthSession | null> {
 
   try {
     const parsed = deserialize(rawValue);
-    if (parsed.expiresAt <= Date.now()) {
+    if (!parsed.accountId || parsed.expiresAt <= Date.now()) {
       await storage.deleteItem(STORAGE_KEY);
       return null;
     }

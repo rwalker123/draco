@@ -2,6 +2,7 @@ import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useMemo, useState } from 'react';
 import { colors } from '../theme/colors';
 import { useScheduleData } from '../hooks/useScheduleData';
+import { ScreenContainer } from '../components/ScreenContainer';
 
 export function DashboardScreen() {
   const { upcomingGames, status, error, isOnline, refresh, hydrated } = useScheduleData();
@@ -19,7 +20,8 @@ export function DashboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer>
+      <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Upcoming Assignments</Text>
         <View style={[styles.statusPill, isOnline ? styles.statusOnline : styles.statusOffline]}>
@@ -56,7 +58,8 @@ export function DashboardScreen() {
         )}
         contentContainerStyle={sortedGames.length === 0 ? styles.listEmptyContainer : styles.listContainer}
       />
-    </View>
+      </View>
+    </ScreenContainer>
   );
 }
 

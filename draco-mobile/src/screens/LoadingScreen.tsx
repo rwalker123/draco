@@ -1,11 +1,14 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ScreenContainer } from '../components/ScreenContainer';
 import { colors } from '../theme/colors';
 
 export function LoadingScreen() {
   return (
-    <View style={styles.container} accessibilityRole="progressbar">
-      <ActivityIndicator size="large" color={colors.primary} />
-    </View>
+    <ScreenContainer>
+      <View style={styles.container} accessibilityRole="progressbar">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    </ScreenContainer>
   );
 }
 

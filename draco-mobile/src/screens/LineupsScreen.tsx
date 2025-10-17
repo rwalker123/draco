@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useMemo, useState } from 'react';
 import { colors } from '../theme/colors';
+import { ScreenContainer } from '../components/ScreenContainer';
 import { useLineupManager } from '../hooks/useLineupManager';
 import { useScheduleData } from '../hooks/useScheduleData';
 import type { GameLineupAssignment, LineupSlot, LineupTemplate, LineupTemplatePayload } from '../types/lineups';
@@ -132,7 +133,8 @@ export function LineupsScreen() {
   const pendingBanner = pendingCount > 0 ? `Pending sync: ${pendingCount} change${pendingCount === 1 ? '' : 's'}` : null;
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer>
+      <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Lineup Templates</Text>
         <Pressable style={styles.refreshButton} onPress={() => void refresh()}>
@@ -238,7 +240,8 @@ export function LineupsScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+    </ScreenContainer>
   );
 }
 

@@ -10,6 +10,7 @@ export type AuthTokens = {
 
 export type AuthSession = AuthTokens & {
   user: AuthenticatedUser;
+  accountId: string;
 };
 
 export type LoginPayload = SignInCredentialsType;

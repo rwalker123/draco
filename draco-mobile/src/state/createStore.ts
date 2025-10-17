@@ -41,9 +41,9 @@ export function createStore<TState>(initializer: StateCreator<TState>): UseStore
     return () => listeners.delete(listener);
   };
 
-  const useStore = (<U>(selector?: (state: TState) => U): U => {
-    const getSnapshot = () => (selector ? selector(state) : (state as unknown as U));
-    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const useStore = ((selector?: (state: TState) => unknown) => {
+    const snapshot = useSyncExternalStore(subscribe, getState, getState);
+    return selector ? selector(snapshot) : snapshot;
   }) as UseStore<TState>;
 
   useStore.getState = getState;

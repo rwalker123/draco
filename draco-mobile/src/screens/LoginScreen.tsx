@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../theme/colors';
+import { ScreenContainer } from '../components/ScreenContainer';
 
 const webFormStyle: CSSProperties = Platform.OS === 'web' ? { width: '100%' } : {};
 
@@ -29,11 +30,16 @@ export function LoginScreen() {
     }
 
     setSubmitting(true);
+    const normalizedAccountId = accountId.trim();
+    const sanitizedAccountId = normalizedAccountId.length > 0 && /^\d+$/.test(normalizedAccountId)
+      ? normalizedAccountId
+      : undefined;
+
     try {
       await login({
         userName,
         password,
-        accountId: accountId ? accountId : undefined
+        accountId: sanitizedAccountId
       });
     } catch (requestError) {
       if (requestError instanceof Error) {
@@ -64,6 +70,9 @@ export function LoginScreen() {
           onChangeText={setUserName}
           autoCapitalize="none"
           autoCorrect={false}
+          autoComplete="email"
+          keyboardType="email-address"
+          importantForAutofill="yes"
           placeholder="scorekeeper@example.com"
           placeholderTextColor={colors.mutedText}
           style={styles.input}
@@ -79,6 +88,8 @@ export function LoginScreen() {
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
+          autoComplete="password"
+          importantForAutofill="yes"
           placeholder="••••••••"
           placeholderTextColor={colors.mutedText}
           style={styles.input}
@@ -95,6 +106,8 @@ export function LoginScreen() {
           value={accountId}
           onChangeText={setAccountId}
           keyboardType="number-pad"
+          importantForAutofill="no"
+          autoComplete="off"
           placeholder="1234"
           placeholderTextColor={colors.mutedText}
           style={styles.input}
@@ -120,10 +133,11 @@ export function LoginScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <ScreenContainer>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       {Platform.OS === 'web' ? (
         <form style={webFormStyle} onSubmit={handleSubmit}>
           {cardContent}
@@ -131,7 +145,8 @@ export function LoginScreen() {
       ) : (
         cardContent
       )}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ScreenContainer>
   );
 }
 

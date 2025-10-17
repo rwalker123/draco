@@ -7,6 +7,7 @@ import type { GameLineupAssignment, LineupTemplatePayload } from '../types/lineu
 export function useLineupManager() {
   const { session } = useAuth();
   const { isOnline } = useNetworkStatus();
+  const sessionToken = session?.token;
 
   const hydrated = useLineupStore((state) => state.hydrated);
   const status = useLineupStore((state) => state.status);
@@ -28,28 +29,28 @@ export function useLineupManager() {
   }, [hydrate]);
 
   useEffect(() => {
-    if (!session?.token || !isOnline) {
+    if (!sessionToken || !isOnline) {
       return;
     }
 
-    void refresh(session.token).catch(() => {
+    void refresh(sessionToken).catch(() => {
       // handled via store error state
     });
-  }, [refresh, session?.token, isOnline]);
+  }, [refresh, sessionToken, isOnline]);
 
   useEffect(() => {
-    if (!session?.token || !isOnline) {
+    if (!sessionToken || !isOnline) {
       return;
     }
 
-    void syncPending(session.token).catch(() => {
+    void syncPending(sessionToken).catch(() => {
       // failures reflected via template status flags
     });
-  }, [session?.token, isOnline, syncPending]);
+  }, [sessionToken, isOnline, syncPending]);
 
   const mutationContext = useMemo(
-    () => ({ token: session?.token, online: isOnline }),
-    [session?.token, isOnline],
+    () => ({ token: sessionToken, online: isOnline }),
+    [sessionToken, isOnline],
   );
 
   const handleCreate = useCallback(
@@ -73,12 +74,12 @@ export function useLineupManager() {
   );
 
   const manualRefresh = useCallback(() => {
-    if (!session?.token) {
+    if (!sessionToken) {
       return Promise.resolve();
     }
 
-    return refresh(session.token);
-  }, [refresh, session?.token]);
+    return refresh(sessionToken);
+  }, [refresh, sessionToken]);
 
   return {
     templates,

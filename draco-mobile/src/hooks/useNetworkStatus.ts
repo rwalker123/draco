@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import * as Network from 'expo-network';
 
 export function useNetworkStatus() {
@@ -6,7 +7,9 @@ export function useNetworkStatus() {
 
   useEffect(() => {
     let isMounted = true;
-    let subscription: Network.NetworkStateSubscription | null = null;
+    let subscription: { remove?: () => void } | null = null;
+    let appStateSubscription: { remove?: () => void } | null = null;
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
     const updateState = async () => {
       try {
@@ -21,15 +24,39 @@ export function useNetworkStatus() {
       }
     };
 
-    subscription = Network.addNetworkStateListener((state) => {
-      setIsOnline(Boolean(state.isConnected));
-    });
+    const addNetworkStateListener =
+      (Network as unknown as { addNetworkStateListener?: (listener: (state: Network.NetworkState) => void) => { remove?: () => void } })
+        .addNetworkStateListener;
+
+    if (typeof addNetworkStateListener === 'function') {
+      subscription = addNetworkStateListener((state) => {
+        if (isMounted) {
+          setIsOnline(Boolean(state?.isConnected));
+        }
+      });
+    } else {
+      const handleAppStateChange = (status: AppStateStatus) => {
+        if (status === 'active') {
+          void updateState();
+        }
+      };
+
+      appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+
+      pollingInterval = setInterval(() => {
+        void updateState();
+      }, 30000);
+    }
 
     void updateState();
 
     return () => {
       isMounted = false;
-      subscription?.remove();
+      subscription?.remove?.();
+      appStateSubscription?.remove?.();
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
     };
   }, []);
 
