@@ -43,6 +43,7 @@ import { SeasonService } from './seasonService.js';
 import { TurnstileService } from './turnstileService.js';
 import { HandoutService } from './handoutService.js';
 import { AdminAnalyticsService } from './adminAnalyticsService.js';
+import { PhotoSubmissionService } from './photoSubmissionService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -83,6 +84,7 @@ export class ServiceFactory {
   private static turnstileService: TurnstileService;
   private static handoutService: HandoutService;
   private static adminAnalyticsService: AdminAnalyticsService;
+  private static photoSubmissionService: PhotoSubmissionService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -328,6 +330,15 @@ export class ServiceFactory {
     }
 
     return this.adminAnalyticsService;
+  }
+
+  static getPhotoSubmissionService(): PhotoSubmissionService {
+    if (!this.photoSubmissionService) {
+      const repository = RepositoryFactory.getPhotoSubmissionRepository();
+      this.photoSubmissionService = new PhotoSubmissionService(repository);
+    }
+
+    return this.photoSubmissionService;
   }
 
   static getUserService(): UserService {

@@ -26,3 +26,4 @@ export * from './PrismaLeagueLeadersDisplayRepository.js';
 export * from './PrismaRosterRepository.js';
 export * from './PrismaHandoutRepository.js';
 export * from './PrismaAdminAnalyticsRepository.js';
+export * from './PrismaPhotoSubmissionRepository.js';

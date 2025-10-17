@@ -25,3 +25,27 @@ export interface PhotoSubmissionMetadata {
 }
 
 export type PhotoSubmissionRecord = PhotoSubmissionMetadata & PhotoSubmissionAssets;
+
+export interface CreatePhotoSubmissionInput {
+  accountId: bigint;
+  submitterContactId: bigint;
+  title: string;
+  caption?: string | null;
+  albumId?: bigint | null;
+  teamId?: bigint | null;
+  originalFileName: string;
+}
+
+export interface ApprovePhotoSubmissionInput {
+  accountId: bigint;
+  submissionId: bigint;
+  moderatorContactId: bigint;
+  approvedPhotoId: bigint;
+}
+
+export interface DenyPhotoSubmissionInput {
+  accountId: bigint;
+  submissionId: bigint;
+  moderatorContactId: bigint;
+  denialReason: string;
+}

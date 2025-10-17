@@ -27,6 +27,7 @@ import {
   IRosterRepository,
   IHandoutRepository,
   IAdminAnalyticsRepository,
+  IPhotoSubmissionRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -57,6 +58,7 @@ import {
   PrismaRosterRepository,
   PrismaHandoutRepository,
   PrismaAdminAnalyticsRepository,
+  PrismaPhotoSubmissionRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -94,6 +96,7 @@ export class RepositoryFactory {
   private static rosterRepository: IRosterRepository;
   private static handoutRepository: IHandoutRepository;
   private static adminAnalyticsRepository: IAdminAnalyticsRepository;
+  private static photoSubmissionRepository: IPhotoSubmissionRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -135,6 +138,13 @@ export class RepositoryFactory {
       this.adminAnalyticsRepository = new PrismaAdminAnalyticsRepository(prisma);
     }
     return this.adminAnalyticsRepository;
+  }
+
+  static getPhotoSubmissionRepository(): IPhotoSubmissionRepository {
+    if (!this.photoSubmissionRepository) {
+      this.photoSubmissionRepository = new PrismaPhotoSubmissionRepository(prisma);
+    }
+    return this.photoSubmissionRepository;
   }
 
   static getAccountRepository(): IAccountRepository {
