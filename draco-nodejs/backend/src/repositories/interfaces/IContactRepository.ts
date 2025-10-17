@@ -5,8 +5,16 @@ import {
   dbContactWithAccountRoles,
   dbContactWithRoleAndDetails,
   dbRosterPlayer,
+  dbBirthdayContact,
 } from '../types/dbTypes.js';
 import { ContactQueryOptions } from '../../interfaces/contactInterfaces.js';
+
+export interface ActiveRosterContactFilters {
+  birthdayOn?: {
+    month: number;
+    day: number;
+  };
+}
 
 export interface IContactRepository extends IBaseRepository<contacts> {
   findRosterByContactId(contactId: bigint): Promise<dbRosterPlayer | null>;
@@ -16,6 +24,11 @@ export interface IContactRepository extends IBaseRepository<contacts> {
   findByUserId(userId: string, accountId: bigint): Promise<dbBaseContact | null>;
   findContactsByUserIds(userIds: string[]): Promise<dbBaseContact[]>;
   findContactsWithRolesByAccountId(accountId: bigint): Promise<dbContactWithAccountRoles[]>;
+  findActiveSeasonRosterContacts(
+    accountId: bigint,
+    seasonId: bigint,
+    filters?: ActiveRosterContactFilters,
+  ): Promise<dbBirthdayContact[]>;
   searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,

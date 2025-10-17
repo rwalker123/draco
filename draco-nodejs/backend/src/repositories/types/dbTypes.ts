@@ -146,6 +146,15 @@ export type dbBaseContact = Prisma.contactsGetPayload<{
   };
 }>;
 
+export type dbBirthdayContact = Prisma.contactsGetPayload<{
+  select: {
+    id: true;
+    firstname: true;
+    lastname: true;
+    middlename: true;
+  };
+}>;
+
 export type dbContactEmailOnly = Prisma.contactsGetPayload<{
   select: {
     id: true;

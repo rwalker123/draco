@@ -1,10 +1,11 @@
 import { Prisma, PrismaClient, contacts } from '@prisma/client';
-import { IContactRepository } from '../interfaces/index.js';
+import { ActiveRosterContactFilters, IContactRepository } from '../interfaces/index.js';
 import {
   dbRosterPlayer,
   dbBaseContact,
   dbContactWithAccountRoles,
   dbContactWithRoleAndDetails,
+  dbBirthdayContact,
 } from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
@@ -172,6 +173,74 @@ export class PrismaContactRepository implements IContactRepository {
         },
       },
     });
+  }
+
+  async findActiveSeasonRosterContacts(
+    accountId: bigint,
+    seasonId: bigint,
+    filters: ActiveRosterContactFilters = {},
+  ): Promise<dbBirthdayContact[]> {
+    const { birthdayOn } = filters;
+
+    if (!birthdayOn) {
+      return this.prisma.contacts.findMany({
+        where: {
+          creatoraccountid: accountId,
+          roster: {
+            is: {
+              rosterseason: {
+                some: {
+                  inactive: false,
+                  teamsseason: {
+                    leagueseason: {
+                      seasonid: seasonId,
+                      league: {
+                        accountid: accountId,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          firstname: true,
+          lastname: true,
+          middlename: true,
+        },
+        orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
+      });
+    }
+
+    return this.prisma.$queryRaw<dbBirthdayContact[]>(Prisma.sql`
+      SELECT
+        c.id,
+        c.firstname,
+        c.lastname,
+        c.middlename
+      FROM contacts c
+      INNER JOIN roster r ON r.contactid = c.id
+      INNER JOIN rosterseason rs ON rs.playerid = r.id AND rs.inactive = false
+      INNER JOIN teamsseason ts ON ts.id = rs.teamseasonid
+      INNER JOIN leagueseason ls ON ls.id = ts.leagueseasonid
+      INNER JOIN league l ON l.id = ls.leagueid
+      WHERE
+        c.creatoraccountid = ${accountId}
+        AND l.accountid = ${accountId}
+        AND ls.seasonid = ${seasonId}
+        AND c.dateofbirth IS NOT NULL
+        AND c.dateofbirth <> DATE '1900-01-01'
+        AND EXTRACT(MONTH FROM c.dateofbirth) = ${birthdayOn.month}
+        AND EXTRACT(DAY FROM c.dateofbirth) = ${birthdayOn.day}
+      GROUP BY
+        c.id,
+        c.firstname,
+        c.lastname,
+        c.middlename
+      ORDER BY c.lastname ASC, c.firstname ASC
+    `);
   }
 
   async searchContactsWithRoles(

@@ -9,6 +9,7 @@ import { ValidationError, NotFoundError, ConflictError } from '../utils/customEr
 import { extractAccountParams, extractContactParams } from '../utils/paramExtraction.js';
 import { handleContactPhotoUpload } from './utils/fileUpload.js';
 import {
+  BaseContactType,
   ContactType,
   CreateContactSchema,
   CreateContactType,
@@ -63,6 +64,21 @@ router.get(
 
     const existing = await contactService.getContactByUserId(req.user!.id, BigInt(accountId));
     res.json(existing);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/contacts/birthdays/today
+ * Public endpoint to list current season players with birthdays today
+ */
+router.get(
+  '/:accountId/contacts/birthdays/today',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+
+    const birthdays: BaseContactType[] = await contactService.getTodaysBirthdays(accountId);
+
+    res.json(birthdays);
   }),
 );
 
