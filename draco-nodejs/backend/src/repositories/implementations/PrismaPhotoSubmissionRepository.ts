@@ -8,7 +8,7 @@ import {
   dbPhotoSubmission,
   dbPhotoSubmissionWithRelations,
 } from '../types/dbTypes.js';
-import { ConflictError } from '../../utils/customErrors.js';
+import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
 
 const submissionSelect = {
   id: true,
@@ -30,6 +30,15 @@ const submissionSelect = {
   updatedat: true,
   moderatedat: true,
 } as const;
+
+type ModerationUpdateData = {
+  moderatedbycontactid: bigint;
+  approvedphotoid: bigint | null;
+  status: 'Approved' | 'Denied';
+  moderatedat: Date;
+  updatedat: Date;
+  denialreason: string | null;
+};
 
 export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -167,7 +176,7 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
 
   private async updatePendingSubmission(
     submissionId: bigint,
-    data: Prisma.photogallerysubmissionUpdateManyMutationInput,
+    data: ModerationUpdateData,
   ): Promise<dbPhotoSubmission> {
     return this.prisma.$transaction(async (tx) => {
       const result = await tx.photogallerysubmission.updateMany({
@@ -175,17 +184,28 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
           id: submissionId,
           status: 'Pending',
         },
-        data,
+        data: {
+          moderatedbycontactid: data.moderatedbycontactid,
+          approvedphotoid: data.approvedphotoid,
+          status: data.status,
+          moderatedat: data.moderatedat,
+          updatedat: data.updatedat,
+          denialreason: data.denialreason,
+        } as unknown as Prisma.photogallerysubmissionUpdateManyMutationInput,
       });
-
-      if (result.count === 0) {
-        throw new ConflictError('Photo submission has already been moderated');
-      }
 
       const submission = await tx.photogallerysubmission.findUnique({
         where: { id: submissionId },
         select: submissionSelect,
       });
+
+      if (result.count === 0) {
+        if (!submission) {
+          throw new NotFoundError('Photo submission not found');
+        }
+
+        throw new ConflictError('Photo submission has already been moderated');
+      }
 
       if (!submission) {
         throw new ConflictError('Photo submission could not be retrieved after moderation');
