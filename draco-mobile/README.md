@@ -44,6 +44,20 @@ Expo will display a QR code in the terminal you can scan with the Expo Go app, o
 - When online with lineup sync enabled, the template form auto-loads the team roster so scorekeepers can drop players into slots without retyping names; offline mode falls back to manual entry.
 - Offline assignments are reconciled against upcoming games, and permission scopes (account, league, team) filter the teams that appear in the creation flow.
 
+## Live Scorecard & State Machine
+
+- The Games screen now launches a responsive scorecard grid once you select an assignment. The UI highlights current base occupancy, inning/outs, and aggregate stats alongside undo/redo controls.
+- At-bat controls ship with Retrosheet-style presets (e.g., `1B`, `HR`, `Kc`) and configurable runner decisions so advances translate into canonical notation.
+- Runner and substitution forms allow quick stolen-base events, pickoffs, or pinch-runner updates with accessible tap targets sized for in-game use.
+- All plays flow through a deterministic state machine (`src/state/scorecardStore.ts`) that enforces legal runner movement, tracks inning transitions, and recomputes downstream state when prior events are edited or deleted.
+
+## Retrosheet Parser & Event Log
+
+- The parser in `src/utils/retrosheetParser.ts` converts scorecard inputs into Retrosheet-compatible strings such as `S;B-1;3-H`, `SB12`, or `SUBR:Jamie/Taylor-PR`. Tests document the expected output patterns.
+- Each recorded play persists into the offline scorecard log (`src/storage/scorecardStorage.ts`) using schema version 1. Entries capture metadata (timestamp, user, device) plus the raw `ScoreEventInput` so future migrations can rehydrate notation and derived stats deterministically.
+- The store exposes derived summaries (pitch count, AB, hits, RBI) that update with every edit, giving scorekeepers instant validation without waiting for backend processing.
+- Logs automatically purge after 30 days to align with the wider offline retention policy; deleting or clearing a game removes its record from storage and resets the state machine.
+
 ## Shared Contracts & API Client
 
 - All TypeScript types for authentication and future features should be imported from `@draco/shared-schemas` so the mobile app stays aligned with the backend Zod source of truth.
