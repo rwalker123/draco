@@ -4,7 +4,9 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 extendZodWithOpenApi(z);
 
 export const PollOptionSchema = z.object({
-  id: z.bigint().transform((val) => val.toString()),
+  id: z
+    .union([z.string().regex(/^\d+$/), z.bigint()])
+    .transform((val) => (typeof val === 'bigint' ? val.toString() : val)),
   optionText: z.string().min(1).max(255),
   priority: z.number().int(),
   voteCount: z.number().int().nonnegative(),

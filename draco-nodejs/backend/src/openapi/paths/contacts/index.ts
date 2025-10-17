@@ -20,6 +20,45 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     ContactSearchParamsSchemaRef,
   } = schemaRefs;
 
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/birthdays/today',
+    summary: "Get today's birthdays",
+    description:
+      'Public endpoint that lists active season players in the account whose birthday is today.',
+    operationId: 'getAccountTodaysBirthdays',
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Contacts with birthdays today',
+        content: {
+          'application/json': {
+            schema: BaseContactSchemaRef.array(),
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
   /**
    * GET /api/accounts/:accountId/contacts/me
    * Get current user's contact
