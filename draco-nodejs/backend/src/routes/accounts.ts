@@ -13,6 +13,7 @@ import accountsPlayerClassifiedsRouter from './accounts-player-classifieds.js';
 import accountsSponsorsRouter from './accounts-sponsors.js';
 import accountsPollsRouter from './accounts-polls.js';
 import accountsHandoutsRouter from './accounts-handouts.js';
+import accountsPhotoSubmissionsRouter from './accounts-photo-submissions.js';
 
 const router = Router({ mergeParams: true });
 
@@ -22,6 +23,9 @@ router.use('/', accountsContactsRouter);
 
 // Contact media endpoints (photos)
 router.use('/:accountId/contacts', contactMediaRouter);
+
+// Photo submission endpoints
+router.use('/', accountsPhotoSubmissionsRouter);
 
 // Resources endpoints (teams, leagues, fields, umpires)
 router.use('/', accountsResourcesRouter);

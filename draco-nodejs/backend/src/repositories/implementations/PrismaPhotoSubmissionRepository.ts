@@ -31,6 +31,47 @@ const submissionSelect = {
   moderatedat: true,
 } as const;
 
+const submissionInclude = {
+  accounts: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  photogalleryalbum: {
+    select: {
+      id: true,
+      accountid: true,
+      title: true,
+      parentalbumid: true,
+      teamid: true,
+    },
+  },
+  photogallery: {
+    select: {
+      id: true,
+      title: true,
+      albumid: true,
+    },
+  },
+  submitter: {
+    select: {
+      id: true,
+      firstname: true,
+      lastname: true,
+      email: true,
+    },
+  },
+  moderator: {
+    select: {
+      id: true,
+      firstname: true,
+      lastname: true,
+      email: true,
+    },
+  },
+} as const;
+
 type ModerationUpdateData = {
   moderatedbycontactid: bigint;
   approvedphotoid: bigint | null;
@@ -86,43 +127,38 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
   ): Promise<dbPhotoSubmissionWithRelations | null> {
     return this.prisma.photogallerysubmission.findUnique({
       where: { id: submissionId },
-      include: {
-        accounts: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        photogalleryalbum: {
-          select: {
-            id: true,
-            title: true,
-            teamid: true,
-          },
-        },
-        photogallery: {
-          select: {
-            id: true,
-            title: true,
-            albumid: true,
-          },
-        },
-        submitter: {
-          select: {
-            id: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        },
-        moderator: {
-          select: {
-            id: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        },
+      include: submissionInclude,
+    });
+  }
+
+  async findPendingSubmissionsForAccount(
+    accountId: bigint,
+  ): Promise<dbPhotoSubmissionWithRelations[]> {
+    return this.prisma.photogallerysubmission.findMany({
+      where: {
+        accountid: accountId,
+        status: 'Pending',
+      },
+      include: submissionInclude,
+      orderBy: {
+        submittedat: 'asc',
+      },
+    });
+  }
+
+  async findPendingSubmissionsForTeam(
+    accountId: bigint,
+    teamId: bigint,
+  ): Promise<dbPhotoSubmissionWithRelations[]> {
+    return this.prisma.photogallerysubmission.findMany({
+      where: {
+        accountid: accountId,
+        teamid: teamId,
+        status: 'Pending',
+      },
+      include: submissionInclude,
+      orderBy: {
+        submittedat: 'asc',
       },
     });
   }
@@ -172,6 +208,33 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
       updatedat: data.updatedat,
       denialreason: data.denialreason,
     });
+  }
+
+  async deleteSubmission(submissionId: bigint): Promise<void> {
+    await this.prisma.photogallerysubmission.delete({
+      where: { id: submissionId },
+    });
+  }
+
+  async revertApproval(submissionId: bigint): Promise<void> {
+    const result = await this.prisma.photogallerysubmission.updateMany({
+      where: {
+        id: submissionId,
+        status: 'Approved',
+      },
+      data: {
+        status: 'Pending',
+        moderatedbycontactid: null,
+        approvedphotoid: null,
+        moderatedat: null,
+        denialreason: null,
+        updatedat: new Date(),
+      } as Prisma.photogallerysubmissionUpdateManyMutationInput,
+    });
+
+    if (result.count === 0) {
+      throw new ConflictError('Photo submission approval could not be reverted');
+    }
   }
 
   private async updatePendingSubmission(

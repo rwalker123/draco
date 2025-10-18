@@ -1511,8 +1511,10 @@ export type dbPhotoSubmissionWithRelations = Prisma.photogallerysubmissionGetPay
     photogalleryalbum: {
       select: {
         id: true;
-        title: true;
+        accountid: true;
         teamid: true;
+        parentalbumid: true;
+        title: true;
       };
     };
     photogallery: {
@@ -1538,6 +1540,23 @@ export type dbPhotoSubmissionWithRelations = Prisma.photogallerysubmissionGetPay
         email: true;
       };
     };
+  };
+}>;
+
+export interface dbCreatePhotoGalleryInput {
+  accountid: bigint;
+  albumid?: bigint | null;
+  title: string;
+  caption: string;
+}
+
+export type dbPhotoGallery = Prisma.photogalleryGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    albumid: true;
+    title: true;
+    caption: true;
   };
 }>;
 

@@ -1,12 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@draco/shared-schemas', () => ({
-  EmailListPagedType: {},
-  EmailRecipientGroupsType: {},
-  EmailSendType: {},
-  PagingType: {},
-}));
-
 import { EmailService } from '../emailService.js';
 
 describe('EmailService email status updates', () => {
