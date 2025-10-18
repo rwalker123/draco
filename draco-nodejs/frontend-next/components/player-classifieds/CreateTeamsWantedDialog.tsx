@@ -223,7 +223,8 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   } = useTeamsWantedClassifieds(accountId);
   const { isMember, contact } = useAccountMembership(accountId);
 
-  const captchaRequired = isMember !== true;
+  const turnstileEnabled = useMemo(() => Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY), []);
+  const captchaRequired = turnstileEnabled && isMember !== true;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
