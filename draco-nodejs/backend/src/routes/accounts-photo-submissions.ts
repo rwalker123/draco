@@ -16,6 +16,7 @@ const routeProtection = ServiceFactory.getRouteProtection();
 const photoSubmissionService = ServiceFactory.getPhotoSubmissionService();
 const assetService = ServiceFactory.getPhotoSubmissionAssetService();
 const moderationService = ServiceFactory.getPhotoSubmissionModerationService();
+const notificationService = ServiceFactory.getPhotoSubmissionNotificationService();
 
 const createPhotoSubmissionBodySchema = CreatePhotoSubmissionFormSchema.pick({
   title: true,
@@ -74,6 +75,16 @@ router.post(
     } catch (error) {
       await photoSubmissionService.deleteSubmission(accountId, BigInt(submission.id));
       throw error;
+    }
+
+    try {
+      const detail = await photoSubmissionService.getSubmissionDetail(
+        accountId,
+        BigInt(submission.id),
+      );
+      await notificationService.sendSubmissionReceivedNotification(detail);
+    } catch (error) {
+      console.error('Failed to send submission received notification', error);
     }
 
     res.status(201).json(submission);

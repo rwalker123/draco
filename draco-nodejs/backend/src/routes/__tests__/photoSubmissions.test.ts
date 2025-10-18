@@ -1,10 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import type { Express, Request, Response, NextFunction } from 'express';
-import type {
-  PhotoSubmissionDetailType,
-  PhotoSubmissionRecordType,
-} from '@draco/shared-schemas';
+import type { PhotoSubmissionDetailType, PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ServiceFactory } from '../../services/serviceFactory.js';
 
 vi.mock('../../middleware/authMiddleware.js', () => ({
@@ -60,6 +57,7 @@ describe('Photo submission routes', () => {
   let app: Express;
   const createSubmissionMock = vi.fn();
   const deleteSubmissionMock = vi.fn();
+  const getSubmissionDetailMock = vi.fn();
   const stageAssetsMock = vi.fn();
   const ensureContactIsOnTeamMock = vi.fn();
   const cleanupServiceMock = { start: vi.fn() };
@@ -68,6 +66,9 @@ describe('Photo submission routes', () => {
     listTeamPending: vi.fn(),
     approveSubmission: vi.fn(),
     denySubmission: vi.fn(),
+  };
+  const notificationServiceMock = {
+    sendSubmissionReceivedNotification: vi.fn(),
   };
 
   const createSubmissionRecord = (
@@ -117,6 +118,7 @@ describe('Photo submission routes', () => {
     vi.spyOn(ServiceFactory, 'getPhotoSubmissionService').mockReturnValue({
       createSubmission: createSubmissionMock,
       deleteSubmission: deleteSubmissionMock,
+      getSubmissionDetail: getSubmissionDetailMock,
     } as never);
     vi.spyOn(ServiceFactory, 'getPhotoSubmissionAssetService').mockReturnValue({
       stageSubmissionAssets: stageAssetsMock,
@@ -127,6 +129,9 @@ describe('Photo submission routes', () => {
     vi.spyOn(ServiceFactory, 'getPhotoSubmissionModerationService').mockReturnValue(
       moderationServiceMock as never,
     );
+    vi.spyOn(ServiceFactory, 'getPhotoSubmissionNotificationService').mockReturnValue(
+      notificationServiceMock as never,
+    );
 
     const module = await import('../../app.js');
     app = module.default;
@@ -136,12 +141,14 @@ describe('Photo submission routes', () => {
     accountBoundaryContactId = 2n;
     createSubmissionMock.mockReset();
     deleteSubmissionMock.mockReset();
+    getSubmissionDetailMock.mockReset();
     stageAssetsMock.mockReset();
     ensureContactIsOnTeamMock.mockReset();
     moderationServiceMock.listAccountPending.mockReset();
     moderationServiceMock.listTeamPending.mockReset();
     moderationServiceMock.approveSubmission.mockReset();
     moderationServiceMock.denySubmission.mockReset();
+    notificationServiceMock.sendSubmissionReceivedNotification.mockReset();
   });
 
   afterAll(() => {
@@ -152,6 +159,9 @@ describe('Photo submission routes', () => {
     const record = createSubmissionRecord();
     createSubmissionMock.mockResolvedValue(record);
     stageAssetsMock.mockResolvedValue(undefined);
+    const detail = createSubmissionDetail();
+    getSubmissionDetailMock.mockResolvedValue(detail);
+    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post('/api/accounts/1/photo-submissions')
@@ -172,6 +182,8 @@ describe('Photo submission routes', () => {
     );
     expect(stageAssetsMock).toHaveBeenCalledWith(record, expect.any(Buffer));
     expect(deleteSubmissionMock).not.toHaveBeenCalled();
+    expect(getSubmissionDetailMock).toHaveBeenCalledWith(1n, 10n);
+    expect(notificationServiceMock.sendSubmissionReceivedNotification).toHaveBeenCalledWith(detail);
     expect(response.body.id).toBe('10');
     expect(response.body.accountId).toBe('1');
   });
@@ -180,6 +192,12 @@ describe('Photo submission routes', () => {
     const record = createSubmissionRecord({ teamId: '2', albumId: '9' });
     createSubmissionMock.mockResolvedValue(record);
     stageAssetsMock.mockResolvedValue(undefined);
+    const teamDetail = createSubmissionDetail({
+      teamId: '2',
+      album: { id: '9', title: 'Album', teamId: '2' },
+    });
+    getSubmissionDetailMock.mockResolvedValue(teamDetail);
+    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post('/api/accounts/1/teams/2/photo-submissions')
@@ -198,12 +216,17 @@ describe('Photo submission routes', () => {
         originalFileName: 'banner.png',
       }),
     );
+    expect(getSubmissionDetailMock).toHaveBeenCalledWith(1n, 10n);
+    expect(notificationServiceMock.sendSubmissionReceivedNotification).toHaveBeenCalledWith(
+      teamDetail,
+    );
   });
 
   it('cleans up submissions when asset staging fails', async () => {
     const record = createSubmissionRecord();
     createSubmissionMock.mockResolvedValue(record);
     stageAssetsMock.mockRejectedValue(new Error('Storage failed'));
+    getSubmissionDetailMock.mockResolvedValue(createSubmissionDetail());
 
     const response = await request(app)
       .post('/api/accounts/1/photo-submissions')
@@ -213,6 +236,8 @@ describe('Photo submission routes', () => {
 
     expect(response.status).toBe(500);
     expect(deleteSubmissionMock).toHaveBeenCalledWith(1n, 10n);
+    expect(getSubmissionDetailMock).not.toHaveBeenCalled();
+    expect(notificationServiceMock.sendSubmissionReceivedNotification).not.toHaveBeenCalled();
   });
 
   it('rejects submission creation when submitter contact is missing', async () => {

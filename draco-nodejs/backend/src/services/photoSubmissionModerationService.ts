@@ -2,6 +2,7 @@ import { ServiceFactory } from './serviceFactory.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryService } from './photoGalleryService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
+import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
 import type { PhotoSubmissionDetailType, PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ValidationError } from '../utils/customErrors.js';
 
@@ -12,6 +13,7 @@ export class PhotoSubmissionModerationService {
     private readonly submissionService: PhotoSubmissionService = ServiceFactory.getPhotoSubmissionService(),
     private readonly galleryService: PhotoGalleryService = ServiceFactory.getPhotoGalleryService(),
     private readonly assetService: PhotoSubmissionAssetService = ServiceFactory.getPhotoSubmissionAssetService(),
+    private readonly notificationService: PhotoSubmissionNotificationService = ServiceFactory.getPhotoSubmissionNotificationService(),
   ) {}
 
   async listAccountPending(accountId: bigint): Promise<PhotoSubmissionDetailType[]> {
@@ -96,7 +98,11 @@ export class PhotoSubmissionModerationService {
       throw error;
     }
 
-    return this.submissionService.getSubmissionDetail(accountId, submissionId);
+    const finalDetail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
+
+    await this.notificationService.sendSubmissionApprovedNotification(finalDetail);
+
+    return finalDetail;
   }
 
   async denySubmission(
@@ -114,6 +120,10 @@ export class PhotoSubmissionModerationService {
 
     await this.assetService.deleteSubmissionAssets(updatedSubmission);
 
-    return this.submissionService.getSubmissionDetail(accountId, submissionId);
+    const finalDetail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
+
+    await this.notificationService.sendSubmissionDeniedNotification(finalDetail);
+
+    return finalDetail;
   }
 }
