@@ -2,9 +2,10 @@ import {
   getCurrentSeason,
   getMyAccounts,
   login as loginRequest,
-  refreshToken as refreshTokenRequest
+  refreshToken as refreshTokenRequest,
+  type Account,
+  type RegisteredUser
 } from '@draco/shared-api-client';
-import type { Account, RegisteredUserType } from '@draco/shared-schemas';
 
 import type { AuthSession, LoginPayload } from '../../types/auth';
 import { createApiClient } from '../api/apiClient';
@@ -64,7 +65,7 @@ export async function refresh(token: string, accountId: string): Promise<AuthSes
   };
 }
 
-const buildAuthSession = (payload: RegisteredUserType) => {
+const buildAuthSession = (payload: RegisteredUser) => {
   const token = payload.token;
 
   if (!token) {
@@ -146,7 +147,7 @@ async function verifyAccountAccess(client: ReturnType<typeof createApiClient>, a
   }
 }
 
-const getContactName = (payload: RegisteredUserType): string | undefined => {
+const getContactName = (payload: RegisteredUser): string | undefined => {
   const parts: Array<string | undefined> = [
     payload.contact?.firstName,
     payload.contact?.middleName,

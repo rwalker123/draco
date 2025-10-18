@@ -140,10 +140,19 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     };
 
     if (filters.dateRange) {
-      where.gamedate = {
-        gte: filters.dateRange.start,
-        lte: filters.dateRange.end,
-      };
+      const gamedateFilter: Prisma.DateTimeFilter = {};
+
+      if (filters.dateRange.start) {
+        gamedateFilter.gte = filters.dateRange.start;
+      }
+
+      if (filters.dateRange.end) {
+        gamedateFilter.lte = filters.dateRange.end;
+      }
+
+      if (Object.keys(gamedateFilter).length > 0) {
+        where.gamedate = gamedateFilter;
+      }
     }
 
     if (filters.teamId) {
@@ -208,10 +217,19 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     };
 
     if (filters.dateRange) {
-      where.gamedate = {
-        gte: filters.dateRange.start,
-        lte: filters.dateRange.end,
-      };
+      const gamedateFilter: Prisma.DateTimeFilter = {};
+
+      if (filters.dateRange.start) {
+        gamedateFilter.gte = filters.dateRange.start;
+      }
+
+      if (filters.dateRange.end) {
+        gamedateFilter.lte = filters.dateRange.end;
+      }
+
+      if (Object.keys(gamedateFilter).length > 0) {
+        where.gamedate = gamedateFilter;
+      }
     }
 
     if (filters.teamId) {

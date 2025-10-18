@@ -11,14 +11,20 @@ const sampleSnapshot: ScheduleSnapshot = {
       startsAt: new Date().toISOString(),
       homeTeam: { id: 'home-1', name: 'Home Team' },
       visitorTeam: { id: 'away-1', name: 'Visitor Team' },
-      field: { id: 'field-1', name: 'Main Field' },
+      field: {
+        id: 'field-1',
+        name: 'Main Field',
+        shortName: 'MF',
+        latitude: null,
+        longitude: null
+      },
       league: { id: 'league-1', name: 'Premier' },
-      season: null,
+      season: undefined,
       gameStatus: 0,
       gameStatusText: 'Scheduled'
     }
   ],
-  teams: [{ id: 'team-1', name: 'Home Team', league: { id: 'league-1', name: 'Premier' }, division: null }],
+  teams: [{ id: 'team-1', name: 'Home Team', league: { id: 'league-1', name: 'Premier' } }],
   assignments: [
     { id: 'assign-1', scope: 'team', accountId: 'account-1', teamSeasonId: 'team-1', updatedAt: new Date().toISOString() }
   ],

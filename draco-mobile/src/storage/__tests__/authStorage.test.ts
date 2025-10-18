@@ -47,7 +47,7 @@ describe('authStorage', () => {
   it('persists sessions when SecureStore is unavailable', async () => {
     vi.mock('expo-secure-store', () => ({
       isAvailableAsync: vi.fn().mockResolvedValue(false)
-    }), { virtual: true });
+    }));
 
     const { saveSession, loadSession, clearSession } = await import('../authStorage');
     const session = {
@@ -75,7 +75,7 @@ describe('authStorage', () => {
   it('removes invalid persisted session data', async () => {
     vi.mock('expo-secure-store', () => ({
       isAvailableAsync: vi.fn().mockResolvedValue(false)
-    }), { virtual: true });
+    }));
 
     storageBacking.set(STORAGE_KEY, 'not-json');
 

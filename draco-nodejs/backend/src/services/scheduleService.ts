@@ -80,11 +80,20 @@ export class ScheduleService {
   ): Promise<GamesWithRecapsType> {
     const scheduleFilters: ScheduleListFilters = {};
 
-    if (filters.startDate && filters.endDate) {
-      scheduleFilters.dateRange = {
-        start: filters.startDate,
-        end: filters.endDate,
-      };
+    if (filters.startDate || filters.endDate) {
+      const dateRange: ScheduleListFilters['dateRange'] = {};
+
+      if (filters.startDate) {
+        dateRange.start = filters.startDate;
+      }
+
+      if (filters.endDate) {
+        dateRange.end = filters.endDate;
+      }
+
+      if (dateRange.start || dateRange.end) {
+        scheduleFilters.dateRange = dateRange;
+      }
     }
 
     if (filters.teamId) {
