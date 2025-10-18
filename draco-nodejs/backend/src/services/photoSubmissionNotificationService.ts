@@ -259,7 +259,16 @@ export class PhotoSubmissionNotificationService {
   }
 
   private hasValidEmail(email: string | null): email is string {
-    return Boolean(email) && validator.isEmail(email);
+    if (typeof email !== 'string') {
+      return false;
+    }
+
+    const trimmedEmail = email.trim();
+    if (trimmedEmail.length === 0) {
+      return false;
+    }
+
+    return validator.isEmail(trimmedEmail);
   }
 
   private buildGreeting(detail: PhotoSubmissionDetailType): string {
