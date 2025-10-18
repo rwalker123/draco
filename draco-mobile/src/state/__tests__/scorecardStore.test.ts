@@ -250,4 +250,46 @@ describe('scorecardStore', () => {
     expect(game.state.bases.first?.name).toBe('Alex');
     expect(useScorecardStore.getState().hydrated).toBe(true);
   });
+
+  it('clears redo stack when a new event is recorded', async () => {
+    loadSnapshotMock.mockResolvedValue(null);
+    saveSnapshotMock.mockResolvedValue(undefined);
+
+    await useScorecardStore.getState().setActiveGame(initializer);
+
+    const batter = { id: 'b1', name: 'Alex' };
+    const atBat: ScoreEventInput = {
+      type: 'at_bat',
+      batter,
+      result: 'single',
+      advances: [{ runner: batter, start: 'batter', end: 'first' }],
+      pitches: 3
+    };
+
+    await useScorecardStore.getState().recordEvent(initializer.id, atBat, {
+      userName: 'Scorekeeper',
+      deviceId: 'device-1'
+    });
+
+    await useScorecardStore.getState().undo(initializer.id);
+
+    let game = useScorecardStore.getState().games[initializer.id];
+    expect(game.redoStack).toHaveLength(1);
+
+    const nextAtBat: ScoreEventInput = {
+      type: 'at_bat',
+      batter,
+      result: 'walk',
+      advances: [{ runner: batter, start: 'batter', end: 'first' }],
+      pitches: 4
+    };
+
+    await useScorecardStore.getState().recordEvent(initializer.id, nextAtBat, {
+      userName: 'Scorekeeper',
+      deviceId: 'device-1'
+    });
+
+    game = useScorecardStore.getState().games[initializer.id];
+    expect(game.redoStack).toHaveLength(0);
+  });
 });

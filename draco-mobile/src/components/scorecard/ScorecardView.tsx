@@ -25,6 +25,13 @@ import {
   type SubstitutionRole
 } from '../../types/scoring';
 import { generateId } from '../../utils/id';
+import {
+  buildRunnerInput,
+  getRunnerFromGame,
+  initialRunnerState,
+  runnerBaseOrder,
+  type RunnerFormState
+} from './runnerUtils';
 
 const AT_BAT_OPTIONS: { label: string; value: AtBatResult }[] = [
   { label: '1B', value: 'single' },
@@ -79,14 +86,6 @@ type AtBatFormState = {
   runnerDecisions: Partial<Record<BaseName, RunnerDecision>>;
 };
 
-type RunnerFormState = {
-  runnerId: string | null;
-  base: BaseName | null;
-  action: RunnerEventInput['action'];
-  destination: RunnerEventInput['to'];
-  notes: string;
-};
-
 type SubstitutionFormState = {
   role: SubstitutionRole;
   incomingName: string;
@@ -111,14 +110,6 @@ const initialAtBatState = (): AtBatFormState => ({
   runnerDecisions: {}
 });
 
-const initialRunnerState = (): RunnerFormState => ({
-  runnerId: null,
-  base: null,
-  action: 'stolen_base',
-  destination: 'second',
-  notes: ''
-});
-
 const initialSubstitutionState = (): SubstitutionFormState => ({
   role: 'batter',
   incomingName: '',
@@ -127,8 +118,6 @@ const initialSubstitutionState = (): SubstitutionFormState => ({
   position: '',
   notes: ''
 });
-
-const baseOrder: BaseName[] = ['first', 'second', 'third'];
 
 function decisionToDestination(base: BaseName, decision: RunnerDecision): RunnerEventInput['to'] | BaseName | null {
   switch (decision) {
@@ -171,7 +160,7 @@ function formatHalfLabel(game: ScorecardGame): string {
 }
 
 function baseOccupancySummary(game: ScorecardGame): string {
-  return baseOrder
+  return runnerBaseOrder
     .map((base) => {
       const runner = game.state.bases[base];
       return runner ? `${baseLabel(base)}: ${runner.name}` : `${baseLabel(base)}: —`;
@@ -197,19 +186,6 @@ function buildBatterAdvance(result: AtBatResult): RunnerEventInput['to'] | BaseN
     default:
       return null;
   }
-}
-
-function getRunnerFromGame(game: ScorecardGame, runnerId: string | null): { base: BaseName; runner: RunnerState } | null {
-  if (!runnerId) {
-    return null;
-  }
-  for (const base of baseOrder) {
-    const occupant = game.state.bases[base];
-    if (occupant?.id === runnerId) {
-      return { base, runner: occupant };
-    }
-  }
-  return null;
 }
 
 function RunnerDecisionRow({
@@ -295,7 +271,7 @@ export function ScorecardView({ game }: ScorecardViewProps) {
   const [error, setError] = useState<string | null>(null);
 
   const availableRunners = useMemo(() => {
-    return baseOrder
+    return runnerBaseOrder
       .map((base) => {
         const runner = game.state.bases[base];
         return runner ? { base, runner } : null;
@@ -361,6 +337,7 @@ export function ScorecardView({ game }: ScorecardViewProps) {
     } else if (event.input.type === 'runner') {
       setRunnerState({
         runnerId: event.input.runner.id,
+        runner: event.input.runner,
         base: event.input.from,
         action: event.input.action,
         destination: event.input.to,
@@ -521,7 +498,7 @@ function buildAtBatInput(game: ScorecardGame, state: AtBatFormState): ScoreEvent
     advances.push({ runner: batter, start: 'batter', end: 'home', rbis: 1 });
   }
 
-  baseOrder.forEach((base) => {
+  runnerBaseOrder.forEach((base) => {
     const runner = game.state.bases[base];
     if (!runner) {
       return;
@@ -553,30 +530,6 @@ function buildAtBatInput(game: ScorecardGame, state: AtBatFormState): ScoreEvent
     pitches: Number.parseInt(state.pitches, 10) || 1,
     notes: state.notes || undefined,
     advances
-  };
-}
-
-function buildRunnerInput(game: ScorecardGame, state: RunnerFormState): ScoreEventInput | null {
-  if (!state.runnerId) {
-    return null;
-  }
-  const found = getRunnerFromGame(game, state.runnerId);
-  if (!found) {
-    return null;
-  }
-
-  let destination: RunnerEventInput['to'] = state.destination;
-  if (state.action === 'caught_stealing' || state.action === 'pickoff') {
-    destination = 'out';
-  }
-
-  return {
-    type: 'runner',
-    runner: found.runner,
-    from: found.base,
-    to: destination,
-    action: state.action,
-    notes: state.notes || undefined
   };
 }
 
@@ -716,6 +669,7 @@ function RunnerForm({
                 onChange({
                   ...state,
                   runnerId: runner.id,
+                  runner,
                   base,
                   destination: base === 'third' ? 'home' : base === 'second' ? 'third' : 'second'
                 })

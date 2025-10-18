@@ -542,7 +542,8 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
     set((prev) => {
       const nextGame = recomputeGame({
         ...prev.games[gameId],
-        events: [...prev.games[gameId].events, newEvent]
+        events: [...prev.games[gameId].events, newEvent],
+        redoStack: []
       });
 
       return {
