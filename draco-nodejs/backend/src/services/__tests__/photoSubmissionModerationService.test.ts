@@ -41,6 +41,12 @@ describe('PhotoSubmissionModerationService', () => {
       vi.fn<(submission: PhotoSubmissionRecordType, photoId: bigint) => Promise<void>>(),
   };
 
+  const notificationService = {
+    sendSubmissionApprovedNotification:
+      vi.fn<(detail: PhotoSubmissionDetailType) => Promise<void>>(),
+    sendSubmissionDeniedNotification: vi.fn<(detail: PhotoSubmissionDetailType) => Promise<void>>(),
+  };
+
   const baseDetail: PhotoSubmissionDetailType = {
     id: '10',
     accountId: '1',
@@ -109,10 +115,13 @@ describe('PhotoSubmissionModerationService', () => {
     assetService.promoteSubmissionAssets.mockReset();
     assetService.deleteSubmissionAssets.mockReset();
     assetService.deleteGalleryAssets.mockReset();
+    notificationService.sendSubmissionApprovedNotification.mockReset();
+    notificationService.sendSubmissionDeniedNotification.mockReset();
     service = new PhotoSubmissionModerationService(
       submissionService as never,
       galleryService as never,
       assetService as never,
+      notificationService as never,
     );
   });
 
@@ -155,6 +164,9 @@ describe('PhotoSubmissionModerationService', () => {
     expect(assetService.deleteSubmissionAssets).toHaveBeenCalledWith(approvedRecord);
     expect(assetService.deleteGalleryAssets).not.toHaveBeenCalled();
     expect(submissionService.revertApproval).not.toHaveBeenCalled();
+    expect(notificationService.sendSubmissionApprovedNotification).toHaveBeenCalledWith(
+      detailAfterApproval,
+    );
     expect(result).toEqual(detailAfterApproval);
   });
 
@@ -188,6 +200,9 @@ describe('PhotoSubmissionModerationService', () => {
     const result = await service.denySubmission(1n, 10n, 7n, 'Inappropriate');
 
     expect(assetService.deleteSubmissionAssets).toHaveBeenCalledWith(deniedRecord);
+    expect(notificationService.sendSubmissionDeniedNotification).toHaveBeenCalledWith(
+      detailAfterDenial,
+    );
     expect(result).toEqual(detailAfterDenial);
   });
 

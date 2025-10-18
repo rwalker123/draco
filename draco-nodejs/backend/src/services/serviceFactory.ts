@@ -47,6 +47,7 @@ import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryService } from './photoGalleryService.js';
 import { PhotoSubmissionModerationService } from './photoSubmissionModerationService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
+import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -91,6 +92,7 @@ export class ServiceFactory {
   private static photoGalleryService: PhotoGalleryService;
   private static photoSubmissionModerationService: PhotoSubmissionModerationService;
   private static photoSubmissionAssetService: PhotoSubmissionAssetService;
+  private static photoSubmissionNotificationService: PhotoSubmissionNotificationService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -353,6 +355,14 @@ export class ServiceFactory {
     }
 
     return this.photoGalleryService;
+  }
+
+  static getPhotoSubmissionNotificationService(): PhotoSubmissionNotificationService {
+    if (!this.photoSubmissionNotificationService) {
+      this.photoSubmissionNotificationService = new PhotoSubmissionNotificationService();
+    }
+
+    return this.photoSubmissionNotificationService;
   }
 
   static getPhotoSubmissionModerationService(): PhotoSubmissionModerationService {
