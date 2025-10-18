@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -31,6 +31,7 @@ import {
 } from '@draco/shared-schemas';
 import { useTeamsWantedClassifieds } from '../../hooks/useClassifiedsService';
 import { useAccountMembership } from '../../hooks/useAccountMembership';
+import TurnstileChallenge from '../security/TurnstileChallenge';
 
 const parseDateOnly = (value: string | null | undefined): Date | undefined => {
   if (!value) {
@@ -220,7 +221,15 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     error: serviceError,
     resetError,
   } = useTeamsWantedClassifieds(accountId);
-  const { contact } = useAccountMembership(accountId);
+  const { isMember, contact } = useAccountMembership(accountId);
+
+  const turnstileEnabled = useMemo(() => Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY), []);
+  const captchaRequired = turnstileEnabled && isMember !== true;
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const previousOpenRef = useRef(open);
+  const previousCaptchaRequiredRef = useRef<boolean | null>(null);
 
   const contactPrefill = useMemo(() => {
     if (!contact) {
@@ -329,6 +338,42 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   }, [serviceError]);
 
   useEffect(() => {
+    if (previousOpenRef.current !== open) {
+      previousOpenRef.current = open;
+
+      setCaptchaToken(null);
+      setCaptchaError(null);
+
+      if (!open || captchaRequired) {
+        setCaptchaResetKey((key) => key + 1);
+      }
+    }
+  }, [open, captchaRequired]);
+
+  useEffect(() => {
+    if (!open) {
+      previousCaptchaRequiredRef.current = captchaRequired;
+      return;
+    }
+
+    if (previousCaptchaRequiredRef.current !== captchaRequired) {
+      previousCaptchaRequiredRef.current = captchaRequired;
+      setCaptchaToken(null);
+      setCaptchaError(null);
+
+      if (captchaRequired) {
+        setCaptchaResetKey((key) => key + 1);
+      }
+    }
+  }, [open, captchaRequired]);
+
+  useEffect(() => {
+    if (captchaToken) {
+      setCaptchaError(null);
+    }
+  }, [captchaToken]);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
@@ -344,6 +389,12 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
   const onSubmit = submitForm(async (values) => {
     setSubmitError(null);
     resetError();
+
+    if (captchaRequired && !captchaToken) {
+      setCaptchaError('Please verify that you are human before submitting.');
+      setCaptchaResetKey((key) => key + 1);
+      return;
+    }
 
     if (editMode && !updateClassifiedId) {
       const message = 'Missing classified identifier for update.';
@@ -370,7 +421,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     if (editMode) {
       result = await updateTeamsWanted(updateClassifiedId ?? '', normalizedPayload, { accessCode });
     } else {
-      result = await createTeamsWanted(normalizedPayload);
+      result = await createTeamsWanted(normalizedPayload, {
+        captchaToken: captchaRequired ? (captchaToken ?? undefined) : undefined,
+      });
     }
 
     if (result.success && result.data) {
@@ -387,6 +440,11 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
 
     const message = result.error ?? `Failed to ${editMode ? 'update' : 'create'} Teams Wanted ad`;
     setSubmitError(message);
+
+    if (captchaRequired) {
+      setCaptchaToken(null);
+      setCaptchaResetKey((key) => key + 1);
+    }
   });
 
   const handleClose = () => {
@@ -394,6 +452,9 @@ const CreateTeamsWantedDialog: React.FC<CreateTeamsWantedDialogProps> = ({
     clearErrors();
     setSubmitError(null);
     resetError();
+    setCaptchaToken(null);
+    setCaptchaError(null);
+    setCaptchaResetKey((key) => key + 1);
     onClose();
   };
 
@@ -603,6 +664,21 @@ Examples:
                   via email. Keep this code safe - you&apos;ll need it to edit or delete your ad
                   later.
                 </Alert>
+              </Box>
+            )}
+
+            {captchaRequired && (
+              <Box sx={{ mt: 3 }}>
+                {captchaError && (
+                  <Alert severity="error" onClose={() => setCaptchaError(null)} sx={{ mb: 2 }}>
+                    {captchaError}
+                  </Alert>
+                )}
+                <TurnstileChallenge
+                  onTokenChange={setCaptchaToken}
+                  resetSignal={captchaResetKey}
+                  loading={operationLoading}
+                />
               </Box>
             )}
           </DialogContent>
