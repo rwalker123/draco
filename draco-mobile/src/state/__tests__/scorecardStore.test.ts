@@ -164,6 +164,53 @@ describe('scorecardStore', () => {
     expect(updated.derived.batting.hits).toBe(0);
   });
 
+  it('scores all runners on a home run', async () => {
+    loadSnapshotMock.mockResolvedValue(null);
+    saveSnapshotMock.mockResolvedValue(undefined);
+
+    await useScorecardStore.getState().setActiveGame(initializer);
+
+    const leadoff = { id: 'b-leadoff', name: 'Table Setter' };
+    const single: ScoreEventInput = {
+      type: 'at_bat',
+      batter: leadoff,
+      result: 'single',
+      advances: [{ runner: leadoff, start: 'batter', end: 'first' }],
+      pitches: 3
+    };
+
+    await useScorecardStore.getState().recordEvent(initializer.id, single, {
+      userName: 'Scorekeeper',
+      deviceId: 'device-1'
+    });
+
+    const gameAfterSingle = useScorecardStore.getState().games[initializer.id];
+    const runnerOnFirst = gameAfterSingle.state.bases.first;
+    expect(runnerOnFirst?.id).toBe(leadoff.id);
+
+    const slugger = { id: 'b-slugger', name: 'Slugger' };
+    const homeRun: ScoreEventInput = {
+      type: 'at_bat',
+      batter: slugger,
+      result: 'home_run',
+      advances: [
+        { runner: slugger, start: 'batter', end: 'home', rbis: 1 },
+        { runner: runnerOnFirst!, start: 'first', end: 'home', rbis: 1 }
+      ],
+      pitches: 1
+    };
+
+    await useScorecardStore.getState().recordEvent(initializer.id, homeRun, {
+      userName: 'Scorekeeper',
+      deviceId: 'device-1'
+    });
+
+    const gameAfterHomeRun = useScorecardStore.getState().games[initializer.id];
+    expect(gameAfterHomeRun.state.score.away).toBe(2);
+    expect(gameAfterHomeRun.state.bases.first).toBeNull();
+    expect(gameAfterHomeRun.derived.batting.runs).toBe(2);
+  });
+
   it('hydrates games from persisted snapshot', async () => {
     const storedEvent = {
       id: 'event-1',

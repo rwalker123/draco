@@ -522,15 +522,22 @@ function buildAtBatInput(game: ScorecardGame, state: AtBatFormState): ScoreEvent
   }
 
   baseOrder.forEach((base) => {
-    const decision = state.runnerDecisions[base];
     const runner = game.state.bases[base];
-    if (!runner || !decision) {
+    if (!runner) {
       return;
     }
-    const destination = decisionToDestination(base, decision);
+
+    const decision = state.runnerDecisions[base];
+    const destination = decision
+      ? decisionToDestination(base, decision)
+      : state.result === 'home_run'
+        ? 'home'
+        : null;
+
     if (!destination) {
       return;
     }
+
     advances.push({
       runner,
       start: base,
