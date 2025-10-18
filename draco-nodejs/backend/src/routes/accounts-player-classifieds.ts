@@ -138,10 +138,9 @@ router.post(
   teamsWantedRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const createRequest = UpsertTeamsWantedClassifiedSchema.omit({
-      id: true,
-      accessCode: true,
-    }).parse(req.body);
+    const createRequest = UpsertTeamsWantedClassifiedSchema.omit({ accessCode: true }).parse(
+      req.body,
+    );
 
     const classified = await playerClassifiedService.createTeamsWanted(accountId, createRequest);
 
