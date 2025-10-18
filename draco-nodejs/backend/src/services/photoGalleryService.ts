@@ -1,5 +1,6 @@
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
-import type { IPhotoGalleryRepository, dbPhotoGallery } from '../repositories/interfaces/index.js';
+import type { IPhotoGalleryRepository } from '../repositories/interfaces/index.js';
+import type { dbPhotoGallery } from '../repositories/types/dbTypes.js';
 
 interface CreatePhotoParams {
   accountId: bigint;

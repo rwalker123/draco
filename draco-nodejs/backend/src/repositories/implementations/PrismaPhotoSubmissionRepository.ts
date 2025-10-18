@@ -41,7 +41,9 @@ const submissionInclude = {
   photogalleryalbum: {
     select: {
       id: true,
+      accountid: true,
       title: true,
+      parentalbumid: true,
       teamid: true,
     },
   },

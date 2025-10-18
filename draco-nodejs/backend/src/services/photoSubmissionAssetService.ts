@@ -16,7 +16,7 @@ const SUPPORTED_FORMATS: Record<string, keyof FormatEnum> = {
   '.jpeg': 'jpeg',
   '.png': 'png',
   '.gif': 'gif',
-  '.bmp': 'bmp',
+  '.bmp': 'jpeg',
 };
 
 const ensureDirectory = async (targetPath: string): Promise<void> => {

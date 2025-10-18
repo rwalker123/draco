@@ -52,6 +52,7 @@ class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
   denySubmissionMock =
     vi.fn<(submissionId: bigint, data: dbDenyPhotoSubmissionInput) => Promise<dbPhotoSubmission>>();
   deleteSubmissionMock = vi.fn<(submissionId: bigint) => Promise<void>>();
+  revertApprovalMock = vi.fn<(submissionId: bigint) => Promise<void>>();
 
   createSubmission(data: dbCreatePhotoSubmissionInput): Promise<dbPhotoSubmission> {
     return this.createSubmissionMock(data);
@@ -106,6 +107,10 @@ class PhotoSubmissionRepositoryMock implements IPhotoSubmissionRepository {
   deleteSubmission(submissionId: bigint): Promise<void> {
     return this.deleteSubmissionMock(submissionId);
   }
+
+  revertApproval(submissionId: bigint): Promise<void> {
+    return this.revertApprovalMock(submissionId);
+  }
 }
 
 const createDbSubmission = (overrides: Partial<dbPhotoSubmission> = {}): dbPhotoSubmission => ({
@@ -144,7 +149,7 @@ const createSubmissionWithRelations = (
 ): dbPhotoSubmissionWithRelations => ({
   ...createDbSubmission(),
   accounts: { id: 1n, name: 'Example Account' },
-  photogalleryalbum: { id: 2n, title: 'Main Album', teamid: 0n },
+  photogalleryalbum: { id: 2n, accountid: 1n, teamid: 0n, parentalbumid: 0n, title: 'Main Album' },
   photogallery: null,
   submitter: { id: 4n, firstname: 'Sam', lastname: 'Submitter', email: 'sam@example.com' },
   moderator: null,
