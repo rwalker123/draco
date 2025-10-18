@@ -218,6 +218,10 @@ interface TeamsWantedOperationOptions {
   accessCode?: string;
 }
 
+interface CreateTeamsWantedOptions {
+  captchaToken?: string | null;
+}
+
 export function useTeamsWantedClassifieds(accountId: string) {
   const apiClient = useApiClient();
   const { runOperation, loading, error, resetError } = useRunOperation();
@@ -225,6 +229,7 @@ export function useTeamsWantedClassifieds(accountId: string) {
   const createTeamsWanted = useCallback(
     async (
       payload: UpsertTeamsWantedClassifiedType,
+      options?: CreateTeamsWantedOptions,
     ): Promise<ClassifiedsOperationResult<TeamsWantedOwnerClassifiedType>> => {
       return runOperation<TeamsWantedOwnerClassifiedType>({
         defaultError: 'Failed to create Teams Wanted classified',
@@ -234,6 +239,9 @@ export function useTeamsWantedClassifieds(accountId: string) {
             client: apiClient,
             path: { accountId },
             body: payload,
+            headers: options?.captchaToken
+              ? { 'cf-turnstile-token': options.captchaToken }
+              : undefined,
             throwOnError: false,
           });
 
