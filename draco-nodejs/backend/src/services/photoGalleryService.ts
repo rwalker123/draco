@@ -27,4 +27,8 @@ export class PhotoGalleryService {
       caption,
     });
   }
+
+  async deletePhoto(photoId: bigint): Promise<void> {
+    await this.repository.deletePhoto(photoId);
+  }
 }

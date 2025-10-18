@@ -16,6 +16,7 @@ describe('PhotoSubmissionModerationService', () => {
       vi.fn<(input: ApprovePhotoSubmissionInputType) => Promise<PhotoSubmissionRecordType>>(),
     denySubmission:
       vi.fn<(input: DenyPhotoSubmissionInputType) => Promise<PhotoSubmissionRecordType>>(),
+    revertApproval: vi.fn<(submission: PhotoSubmissionRecordType) => Promise<void>>(),
   };
 
   const galleryService = {
@@ -29,14 +30,16 @@ describe('PhotoSubmissionModerationService', () => {
           caption?: string | null;
         }) => Promise<{ id: bigint }>
       >(),
+    deletePhoto: vi.fn<(photoId: bigint) => Promise<void>>(),
   };
 
   const assetService = {
     promoteSubmissionAssets:
       vi.fn<(submission: PhotoSubmissionRecordType, photoId: bigint) => Promise<void>>(),
     deleteSubmissionAssets: vi.fn<(submission: PhotoSubmissionRecordType) => Promise<void>>(),
+    deleteGalleryAssets:
+      vi.fn<(submission: PhotoSubmissionRecordType, photoId: bigint) => Promise<void>>(),
   };
-
 
   const baseDetail: PhotoSubmissionDetailType = {
     id: '10',
@@ -99,10 +102,13 @@ describe('PhotoSubmissionModerationService', () => {
     submissionService.getSubmissionDetail.mockReset();
     submissionService.approveSubmission.mockReset();
     submissionService.denySubmission.mockReset();
+    submissionService.revertApproval.mockReset();
     galleryService.countPhotosInAlbum.mockReset();
     galleryService.createPhoto.mockReset();
+    galleryService.deletePhoto.mockReset();
     assetService.promoteSubmissionAssets.mockReset();
     assetService.deleteSubmissionAssets.mockReset();
+    assetService.deleteGalleryAssets.mockReset();
     service = new PhotoSubmissionModerationService(
       submissionService as never,
       galleryService as never,
@@ -147,6 +153,8 @@ describe('PhotoSubmissionModerationService', () => {
     });
     expect(assetService.promoteSubmissionAssets).toHaveBeenCalledWith(approvedRecord, 25n);
     expect(assetService.deleteSubmissionAssets).toHaveBeenCalledWith(approvedRecord);
+    expect(assetService.deleteGalleryAssets).not.toHaveBeenCalled();
+    expect(submissionService.revertApproval).not.toHaveBeenCalled();
     expect(result).toEqual(detailAfterApproval);
   });
 
@@ -181,5 +189,38 @@ describe('PhotoSubmissionModerationService', () => {
 
     expect(assetService.deleteSubmissionAssets).toHaveBeenCalledWith(deniedRecord);
     expect(result).toEqual(detailAfterDenial);
+  });
+
+  it('rolls back approval when asset promotion fails', async () => {
+    submissionService.getSubmissionDetail.mockResolvedValue(baseDetail);
+    galleryService.countPhotosInAlbum.mockResolvedValue(5);
+    galleryService.createPhoto.mockResolvedValue({ id: 25n });
+    submissionService.approveSubmission.mockResolvedValue(approvedRecord);
+    const error = new Error('promotion failed');
+    assetService.promoteSubmissionAssets.mockRejectedValue(error);
+
+    await expect(service.approveSubmission(1n, 10n, 7n)).rejects.toBe(error);
+
+    expect(assetService.deleteSubmissionAssets).not.toHaveBeenCalled();
+    expect(assetService.deleteGalleryAssets).toHaveBeenCalledWith(approvedRecord, 25n);
+    expect(galleryService.deletePhoto).toHaveBeenCalledWith(25n);
+    expect(submissionService.revertApproval).toHaveBeenCalledWith(approvedRecord);
+  });
+
+  it('reverts approval when submission asset cleanup fails', async () => {
+    submissionService.getSubmissionDetail.mockResolvedValue(baseDetail);
+    galleryService.countPhotosInAlbum.mockResolvedValue(5);
+    galleryService.createPhoto.mockResolvedValue({ id: 25n });
+    submissionService.approveSubmission.mockResolvedValue(approvedRecord);
+    assetService.promoteSubmissionAssets.mockResolvedValue();
+    const error = new Error('cleanup failed');
+    assetService.deleteSubmissionAssets.mockRejectedValue(error);
+
+    await expect(service.approveSubmission(1n, 10n, 7n)).rejects.toBe(error);
+
+    expect(assetService.promoteSubmissionAssets).toHaveBeenCalledWith(approvedRecord, 25n);
+    expect(assetService.deleteGalleryAssets).toHaveBeenCalledWith(approvedRecord, 25n);
+    expect(galleryService.deletePhoto).toHaveBeenCalledWith(25n);
+    expect(submissionService.revertApproval).toHaveBeenCalledWith(approvedRecord);
   });
 });

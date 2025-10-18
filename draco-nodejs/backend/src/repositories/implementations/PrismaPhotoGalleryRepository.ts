@@ -31,4 +31,10 @@ export class PrismaPhotoGalleryRepository implements IPhotoGalleryRepository {
       },
     });
   }
+
+  async deletePhoto(photoId: bigint): Promise<void> {
+    await this.prisma.photogallery.delete({
+      where: { id: photoId },
+    });
+  }
 }

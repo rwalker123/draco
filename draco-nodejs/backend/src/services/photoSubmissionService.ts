@@ -27,7 +27,9 @@ export class PhotoSubmissionService {
     private readonly repository: IPhotoSubmissionRepository = RepositoryFactory.getPhotoSubmissionRepository(),
   ) {}
 
-  async createSubmission(input: CreatePhotoSubmissionInputType): Promise<PhotoSubmissionRecordType> {
+  async createSubmission(
+    input: CreatePhotoSubmissionInputType,
+  ): Promise<PhotoSubmissionRecordType> {
     const accountId = this.parseBigInt(input.accountId, 'Account');
     const submitterContactId = this.parseBigInt(input.submitterContactId, 'Submitter contact');
     const albumId = this.parseOptionalBigInt(input.albumId, 'Album');
@@ -89,7 +91,9 @@ export class PhotoSubmissionService {
 
   async listPendingAccountSubmissions(accountId: bigint): Promise<PhotoSubmissionDetailType[]> {
     const submissions = await this.repository.findPendingSubmissionsForAccount(accountId);
-    return submissions.map((submission) => PhotoSubmissionResponseFormatter.formatSubmissionDetail(submission));
+    return submissions.map((submission) =>
+      PhotoSubmissionResponseFormatter.formatSubmissionDetail(submission),
+    );
   }
 
   async listPendingTeamSubmissions(
@@ -97,10 +101,14 @@ export class PhotoSubmissionService {
     teamId: bigint,
   ): Promise<PhotoSubmissionDetailType[]> {
     const submissions = await this.repository.findPendingSubmissionsForTeam(accountId, teamId);
-    return submissions.map((submission) => PhotoSubmissionResponseFormatter.formatSubmissionDetail(submission));
+    return submissions.map((submission) =>
+      PhotoSubmissionResponseFormatter.formatSubmissionDetail(submission),
+    );
   }
 
-  async approveSubmission(input: ApprovePhotoSubmissionInputType): Promise<PhotoSubmissionRecordType> {
+  async approveSubmission(
+    input: ApprovePhotoSubmissionInputType,
+  ): Promise<PhotoSubmissionRecordType> {
     const accountId = this.parseBigInt(input.accountId, 'Account');
     const submissionId = this.parseBigInt(input.submissionId, 'Submission');
     const moderatorContactId = this.parseBigInt(input.moderatorContactId, 'Moderator contact');
@@ -119,6 +127,11 @@ export class PhotoSubmissionService {
 
     const updated = await this.repository.approveSubmission(submission.id, updateData);
     return PhotoSubmissionResponseFormatter.formatSubmission(updated);
+  }
+
+  async revertApproval(submission: PhotoSubmissionRecordType): Promise<void> {
+    const submissionId = this.parseBigInt(submission.id, 'Submission');
+    await this.repository.revertApproval(submissionId);
   }
 
   async denySubmission(input: DenyPhotoSubmissionInputType): Promise<PhotoSubmissionRecordType> {
@@ -271,7 +284,7 @@ export class PhotoSubmissionService {
         throw new Error('empty');
       }
       return BigInt(normalized);
-    } catch (error) {
+    } catch (_error) {
       throw new ValidationError(`${label} identifier must be a valid number`);
     }
   }

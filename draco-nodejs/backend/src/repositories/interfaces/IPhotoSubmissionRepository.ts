@@ -30,4 +30,5 @@ export interface IPhotoSubmissionRepository {
     data: dbDenyPhotoSubmissionInput,
   ): Promise<dbPhotoSubmission>;
   deleteSubmission(submissionId: bigint): Promise<void>;
+  revertApproval(submissionId: bigint): Promise<void>;
 }

@@ -214,6 +214,27 @@ export class PrismaPhotoSubmissionRepository implements IPhotoSubmissionReposito
     });
   }
 
+  async revertApproval(submissionId: bigint): Promise<void> {
+    const result = await this.prisma.photogallerysubmission.updateMany({
+      where: {
+        id: submissionId,
+        status: 'Approved',
+      },
+      data: {
+        status: 'Pending',
+        moderatedbycontactid: null,
+        approvedphotoid: null,
+        moderatedat: null,
+        denialreason: null,
+        updatedat: new Date(),
+      } as Prisma.photogallerysubmissionUpdateManyMutationInput,
+    });
+
+    if (result.count === 0) {
+      throw new ConflictError('Photo submission approval could not be reverted');
+    }
+  }
+
   private async updatePendingSubmission(
     submissionId: bigint,
     data: ModerationUpdateData,

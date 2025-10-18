@@ -2,7 +2,7 @@ import { ServiceFactory } from './serviceFactory.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryService } from './photoGalleryService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
-import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
+import type { PhotoSubmissionDetailType, PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ValidationError } from '../utils/customErrors.js';
 
 const ALBUM_PHOTO_LIMIT = 100;
@@ -43,15 +43,58 @@ export class PhotoSubmissionModerationService {
       caption: detail.caption ?? '',
     });
 
-    const updatedSubmission = await this.submissionService.approveSubmission({
-      accountId: accountId.toString(),
-      submissionId: submissionId.toString(),
-      moderatorContactId: moderatorContactId.toString(),
-      approvedPhotoId: photo.id.toString(),
-    });
+    const cleanupPhoto = async (error: unknown): Promise<never> => {
+      try {
+        await this.galleryService.deletePhoto(photo.id);
+      } catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'Failed to approve photo submission');
+      }
 
-    await this.assetService.promoteSubmissionAssets(updatedSubmission, photo.id);
-    await this.assetService.deleteSubmissionAssets(updatedSubmission);
+      throw error;
+    };
+
+    let updatedSubmission: PhotoSubmissionRecordType;
+    try {
+      updatedSubmission = await this.submissionService.approveSubmission({
+        accountId: accountId.toString(),
+        submissionId: submissionId.toString(),
+        moderatorContactId: moderatorContactId.toString(),
+        approvedPhotoId: photo.id.toString(),
+      });
+    } catch (error) {
+      return cleanupPhoto(error);
+    }
+
+    try {
+      await this.assetService.promoteSubmissionAssets(updatedSubmission, photo.id);
+      await this.assetService.deleteSubmissionAssets(updatedSubmission);
+    } catch (error) {
+      const rollbackErrors: unknown[] = [];
+
+      try {
+        await this.assetService.deleteGalleryAssets(updatedSubmission, photo.id);
+      } catch (cleanupError) {
+        rollbackErrors.push(cleanupError);
+      }
+
+      try {
+        await this.galleryService.deletePhoto(photo.id);
+      } catch (cleanupError) {
+        rollbackErrors.push(cleanupError);
+      }
+
+      try {
+        await this.submissionService.revertApproval(updatedSubmission);
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError);
+      }
+
+      if (rollbackErrors.length > 0) {
+        throw new AggregateError([error, ...rollbackErrors], 'Failed to approve photo submission');
+      }
+
+      throw error;
+    }
 
     return this.submissionService.getSubmissionDetail(accountId, submissionId);
   }

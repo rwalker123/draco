@@ -98,4 +98,18 @@ export class PhotoSubmissionAssetService {
     await copyFile(sourcePrimary, destinationPrimary);
     await copyFile(sourceThumbnail, destinationThumbnail);
   }
+
+  async deleteGalleryAssets(
+    submission: PhotoSubmissionRecordType,
+    approvedPhotoId: bigint,
+  ): Promise<void> {
+    const extension = getExtension(submission.originalFilePath);
+    const accountId = BigInt(submission.accountId);
+    const galleryAssets = buildGalleryAssetPaths(accountId, approvedPhotoId, extension);
+
+    const destinationOriginal = resolveGalleryAssetAbsolutePath(galleryAssets.originalFilePath);
+    const directory = path.dirname(destinationOriginal);
+
+    await fs.rm(directory, { recursive: true, force: true });
+  }
 }
