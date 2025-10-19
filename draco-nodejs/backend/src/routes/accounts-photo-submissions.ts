@@ -10,6 +10,8 @@ import {
   DenyPhotoSubmissionRequestSchema,
 } from '@draco/shared-schemas';
 import { ZodError } from 'zod';
+import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
+import { PhotoSubmissionNotificationError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -50,44 +52,64 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   handlePhotoUploadMiddleware,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const submitterContactId = ensureSubmitterContact(req);
-    const file = req.file;
-
-    if (!file) {
-      throw new ValidationError('Photo file is required');
-    }
-
-    const { title, caption, albumId } = createPhotoSubmissionBodySchema.parse(req.body);
-
-    const submission = await photoSubmissionService.createSubmission({
-      accountId: accountId.toString(),
-      submitterContactId: submitterContactId.toString(),
-      title,
-      caption: caption ?? null,
-      albumId: albumId ?? null,
-      teamId: null,
-      originalFileName: file.originalname,
-    });
+    let accountId: bigint | null = null;
+    let submissionId: string | null = null;
 
     try {
-      await assetService.stageSubmissionAssets(submission, file.buffer);
+      ({ accountId } = extractAccountParams(req.params));
+      const submitterContactId = ensureSubmitterContact(req);
+      const file = req.file;
+
+      if (!file) {
+        throw new ValidationError('Photo file is required');
+      }
+
+      const { title, caption, albumId } = createPhotoSubmissionBodySchema.parse(req.body);
+
+      const submission = await photoSubmissionService.createSubmission({
+        accountId: accountId.toString(),
+        submitterContactId: submitterContactId.toString(),
+        title,
+        caption: caption ?? null,
+        albumId: albumId ?? null,
+        teamId: null,
+        originalFileName: file.originalname,
+      });
+
+      submissionId = submission.id.toString();
+
+      try {
+        await assetService.stageSubmissionAssets(submission, file.buffer);
+      } catch (error) {
+        await photoSubmissionService.deleteSubmission(accountId, BigInt(submission.id));
+        throw error;
+      }
+
+      try {
+        const detail = await photoSubmissionService.getSubmissionDetail(
+          accountId,
+          BigInt(submission.id),
+        );
+        const emailSent = await notificationService.sendSubmissionReceivedNotification(detail);
+        if (!emailSent) {
+          res.setHeader('X-Photo-Email-Warning', 'submission-received');
+        }
+      } catch (error) {
+        console.error('Failed to send submission received notification', error);
+        res.setHeader('X-Photo-Email-Warning', 'submission-received');
+      }
+
+      res.status(201).json(submission);
     } catch (error) {
-      await photoSubmissionService.deleteSubmission(accountId, BigInt(submission.id));
+      photoSubmissionMetrics.recordSubmissionFailure({
+        stage: 'account-create',
+        accountId: accountId?.toString(),
+        teamId: null,
+        submissionId,
+        error,
+      });
       throw error;
     }
-
-    try {
-      const detail = await photoSubmissionService.getSubmissionDetail(
-        accountId,
-        BigInt(submission.id),
-      );
-      await notificationService.sendSubmissionReceivedNotification(detail);
-    } catch (error) {
-      console.error('Failed to send submission received notification', error);
-    }
-
-    res.status(201).json(submission);
   }),
 );
 
@@ -112,14 +134,22 @@ router.post(
     const { accountId } = extractAccountParams(req.params);
     const { submissionId } = extractBigIntParams(req.params, 'submissionId');
     const moderatorContactId = ensureModeratorContact(req);
+    try {
+      const result = await moderationService.approveSubmission(
+        accountId,
+        submissionId,
+        moderatorContactId,
+      );
 
-    const result = await moderationService.approveSubmission(
-      accountId,
-      submissionId,
-      moderatorContactId,
-    );
-
-    res.json(result);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof PhotoSubmissionNotificationError && error.detail) {
+        res.setHeader('X-Photo-Email-Warning', error.event);
+        res.status(200).json(error.detail);
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
@@ -152,14 +182,23 @@ router.post(
       throw error;
     }
 
-    const result = await moderationService.denySubmission(
-      accountId,
-      submissionId,
-      moderatorContactId,
-      denialReason,
-    );
+    try {
+      const result = await moderationService.denySubmission(
+        accountId,
+        submissionId,
+        moderatorContactId,
+        denialReason,
+      );
 
-    res.json(result);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof PhotoSubmissionNotificationError && error.detail) {
+        res.setHeader('X-Photo-Email-Warning', error.event);
+        res.status(200).json(error.detail);
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

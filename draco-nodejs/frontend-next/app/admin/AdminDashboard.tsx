@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -30,14 +32,15 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import TimelineIcon from '@mui/icons-material/Timeline';
-import { useAuth } from '../../context/AuthContext';
-import { useRole } from '../../context/RoleContext';
-import { useApiClient } from '../../hooks/useApiClient';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import { useAuth } from '@/context/AuthContext';
+import { useRole } from '@/context/RoleContext';
+import { useApiClient } from '@/hooks/useApiClient';
 import {
   fetchAdminAnalyticsSummary,
   type AdminAnalyticsSummary,
-} from '../../services/adminAnalyticsService';
-import { formatDateTime } from '../../utils/dateUtils';
+} from '@/services/adminAnalyticsService';
+import { formatDateTime } from '@/utils/dateUtils';
 
 interface MetricCardProps {
   icon: React.ReactNode;
@@ -123,6 +126,13 @@ const getStatusChipColor = (status: 'healthy' | 'warning' | 'critical') => {
   }
 };
 
+const PHOTO_EVENT_LABELS: Record<'submission_failure' | 'quota_violation' | 'email_error', string> =
+  {
+    submission_failure: 'Submission failure',
+    quota_violation: 'Quota violation',
+    email_error: 'Email error',
+  };
+
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const { hasRole } = useRole();
@@ -167,6 +177,14 @@ const AdminDashboard: React.FC = () => {
 
   const topStorageAccounts = useMemo(() => summary?.accounts.topStorageAccounts ?? [], [summary]);
   const emailAccounts = useMemo(() => summary?.email.perAccount ?? [], [summary]);
+  const photoCounters = summary?.photos.counters ?? {
+    submissionFailures: 0,
+    quotaViolations: 0,
+    emailErrors: 0,
+  };
+  const totalPhotoIssues =
+    photoCounters.submissionFailures + photoCounters.quotaViolations + photoCounters.emailErrors;
+  const photoEvents = useMemo(() => summary?.photos.recent ?? [], [summary]);
   const slowQueries = useMemo(
     () => summary?.monitoring.performance.slowQueries?.slice(0, 5) ?? [],
     [summary],
@@ -256,6 +274,13 @@ const AdminDashboard: React.FC = () => {
                 helper={`Open ${formatPercentage(summary.email.openRate)} • Click ${formatPercentage(summary.email.clickRate)}`}
                 color="success"
               />
+              <MetricCard
+                icon={<PhotoCameraIcon />}
+                label="Photo issues"
+                value={formatNumber(totalPhotoIssues)}
+                helper={`Failures ${formatNumber(photoCounters.submissionFailures)} • Quota ${formatNumber(photoCounters.quotaViolations)} • Email ${formatNumber(photoCounters.emailErrors)}`}
+                color={totalPhotoIssues > 0 ? 'warning' : 'secondary'}
+              />
             </Stack>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
               Generated at {formatDateTime(summary.generatedAt)}
@@ -333,6 +358,43 @@ const AdminDashboard: React.FC = () => {
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   No email activity has been recorded yet.
+                </Typography>
+              )}
+            </Paper>
+
+            <Paper sx={{ p: 3, flex: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                <PhotoCameraIcon fontSize="small" />
+                <Typography variant="h6">Photo submission alerts</Typography>
+              </Stack>
+              {photoEvents.length > 0 ? (
+                <Table size="small" aria-label="Recent photo submission issues">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Timestamp</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Account</TableCell>
+                      <TableCell>Team</TableCell>
+                      <TableCell>Details</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {photoEvents.map((event, index) => (
+                      <TableRow key={`${event.timestamp}-${index}`} hover>
+                        <TableCell>{formatDateTime(event.timestamp)}</TableCell>
+                        <TableCell sx={{ fontWeight: 500 }}>
+                          {PHOTO_EVENT_LABELS[event.type]}
+                        </TableCell>
+                        <TableCell>{event.accountId ?? '—'}</TableCell>
+                        <TableCell>{event.teamId ?? '—'}</TableCell>
+                        <TableCell>{event.detail?.trim() ? event.detail : '—'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No recent photo submission issues have been reported.
                 </Typography>
               )}
             </Paper>

@@ -7,6 +7,7 @@ import {
 } from '@draco/shared-api-client';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ApiClientError, unwrapApiResult } from '../utils/apiResult';
+import { getPhotoEmailWarningMessage } from '../utils/photoSubmissionWarnings';
 
 interface UsePhotoSubmissionOptions {
   accountId?: string | null;
@@ -92,10 +93,19 @@ export const usePhotoSubmission = ({
               throwOnError: false,
             });
 
-        return unwrapApiResult<PhotoSubmissionRecordType>(
+        const submission = unwrapApiResult<PhotoSubmissionRecordType>(
           result,
           'Failed to submit photo for review',
         );
+
+        const warning = getPhotoEmailWarningMessage(
+          result.response?.headers.get('x-photo-email-warning') ?? null,
+        );
+        if (warning) {
+          setError(warning);
+        }
+
+        return submission;
       } catch (err: unknown) {
         const message =
           err instanceof ApiClientError ? err.message : 'Failed to submit photo for review';

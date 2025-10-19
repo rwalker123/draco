@@ -10,6 +10,7 @@ import {
 } from '@draco/shared-api-client';
 import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 import { ApiClientError, unwrapApiResult } from '../utils/apiResult';
+import { getPhotoEmailWarningMessage } from '../utils/photoSubmissionWarnings';
 
 interface UsePendingPhotoSubmissionsOptions {
   accountId?: string | null;
@@ -135,8 +136,15 @@ export const usePendingPhotoSubmissions = ({
             });
 
         unwrapApiResult(result, 'Failed to approve photo submission');
+        const warningMessage = getPhotoEmailWarningMessage(
+          result.response?.headers.get('x-photo-email-warning') ?? null,
+        );
+
         await fetchSubmissions();
-        if (submission) {
+        if (warningMessage) {
+          setError(warningMessage);
+          setSuccessMessage(null);
+        } else if (submission) {
           setSuccessMessage(`Approved “${submission.title}”.`);
         } else {
           setSuccessMessage('Submission approved.');
@@ -182,8 +190,15 @@ export const usePendingPhotoSubmissions = ({
             });
 
         unwrapApiResult(result, 'Failed to deny photo submission');
+        const warningMessage = getPhotoEmailWarningMessage(
+          result.response?.headers.get('x-photo-email-warning') ?? null,
+        );
+
         await fetchSubmissions();
-        if (submission) {
+        if (warningMessage) {
+          setError(warningMessage);
+          setSuccessMessage(null);
+        } else if (submission) {
           setSuccessMessage(`Denied “${submission.title}”.`);
         } else {
           setSuccessMessage('Submission denied.');

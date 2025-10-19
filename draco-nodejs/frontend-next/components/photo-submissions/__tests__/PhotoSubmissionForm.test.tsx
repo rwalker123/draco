@@ -166,4 +166,31 @@ describe('PhotoSubmissionForm', () => {
     expect(call.body.title).toBe('Team Celebration');
     expect(call.body.photo).toBeInstanceOf(File);
   });
+
+  it('shows an email warning when the confirmation email fails to send', async () => {
+    const submission = createSubmission({ title: 'Summer Game' });
+    const headers = {
+      get: (key: string) =>
+        key.toLowerCase() === 'x-photo-email-warning' ? 'submission-received' : null,
+    };
+
+    createAccountPhotoSubmission.mockResolvedValue({
+      data: submission,
+      response: { headers } as unknown as Response,
+    });
+
+    renderForm();
+
+    await userEvent.type(screen.getByLabelText(/title/i), 'Summer Game');
+    const file = new File(['dummy'], 'photo.jpg', { type: 'image/jpeg' });
+    await userEvent.upload(screen.getByTestId('photo-input') as HTMLInputElement, file);
+
+    await userEvent.click(screen.getByRole('button', { name: /submit photo/i }));
+
+    expect(
+      await screen.findByText(
+        'Photo submitted, but we could not send the confirmation email. Moderators will still review it.',
+      ),
+    ).toBeInTheDocument();
+  });
 });

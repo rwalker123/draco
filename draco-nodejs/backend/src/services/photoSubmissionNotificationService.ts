@@ -3,6 +3,7 @@ import type { IEmailProvider, EmailOptions } from '../interfaces/emailInterfaces
 import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
 import validator from 'validator';
+import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
 
 type DetailRow = { label: string; value: string | null };
 type EmailContent = {
@@ -24,26 +25,26 @@ export class PhotoSubmissionNotificationService {
     private readonly getBaseUrl = () => EmailConfigFactory.getBaseUrl(),
   ) {}
 
-  async sendSubmissionReceivedNotification(detail: PhotoSubmissionDetailType): Promise<void> {
-    await this.dispatch(detail, this.buildReceivedEmail(detail));
+  async sendSubmissionReceivedNotification(detail: PhotoSubmissionDetailType): Promise<boolean> {
+    return this.dispatch(detail, this.buildReceivedEmail(detail));
   }
 
-  async sendSubmissionApprovedNotification(detail: PhotoSubmissionDetailType): Promise<void> {
-    await this.dispatch(detail, this.buildApprovedEmail(detail));
+  async sendSubmissionApprovedNotification(detail: PhotoSubmissionDetailType): Promise<boolean> {
+    return this.dispatch(detail, this.buildApprovedEmail(detail));
   }
 
-  async sendSubmissionDeniedNotification(detail: PhotoSubmissionDetailType): Promise<void> {
-    await this.dispatch(detail, this.buildDeniedEmail(detail));
+  async sendSubmissionDeniedNotification(detail: PhotoSubmissionDetailType): Promise<boolean> {
+    return this.dispatch(detail, this.buildDeniedEmail(detail));
   }
 
   private async dispatch(
     detail: PhotoSubmissionDetailType,
     content: EmailContent | null,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const recipientEmail = detail.submitter?.email ?? null;
 
     if (!this.hasValidEmail(recipientEmail) || !content) {
-      return;
+      return true;
     }
 
     try {
@@ -63,10 +64,28 @@ export class PhotoSubmissionNotificationService {
       const result = await provider.sendEmail(options);
 
       if (!result.success) {
+        photoSubmissionMetrics.recordEmailError({
+          accountId: detail.accountId,
+          teamId: detail.teamId,
+          submissionId: detail.id,
+          template: content.subject,
+          error: result.error ?? 'Unknown email provider error',
+        });
         console.error('Failed to send photo submission notification email', result.error);
+        return false;
       }
+
+      return true;
     } catch (error) {
+      photoSubmissionMetrics.recordEmailError({
+        accountId: detail.accountId,
+        teamId: detail.teamId,
+        submissionId: detail.id,
+        template: content.subject,
+        error,
+      });
       console.error('Failed to send photo submission notification email', error);
+      return false;
     }
   }
 

@@ -60,7 +60,7 @@ describe('PhotoSubmissionNotificationService', () => {
   it('sends submission received email with gallery link', async () => {
     const detail = createDetail();
 
-    await service.sendSubmissionReceivedNotification(detail);
+    const result = await service.sendSubmissionReceivedNotification(detail);
 
     expect(getProvider).toHaveBeenCalled();
     expect(sendEmailMock).toHaveBeenCalled();
@@ -70,6 +70,7 @@ describe('PhotoSubmissionNotificationService', () => {
     expect(options.html).toContain('Example Account');
     expect(options.html).toContain('View gallery');
     expect(options.text).toContain('View gallery: http://localhost:3000/account/1/photos');
+    expect(result).toBe(true);
   });
 
   it('sends approval email including moderator details', async () => {
@@ -79,13 +80,14 @@ describe('PhotoSubmissionNotificationService', () => {
       moderator: { id: '7', firstName: 'Mia', lastName: 'Moderator', email: 'mia@example.com' },
     });
 
-    await service.sendSubmissionApprovedNotification(moderatedDetail);
+    const result = await service.sendSubmissionApprovedNotification(moderatedDetail);
 
     expect(sendEmailMock).toHaveBeenCalled();
     const options = sendEmailMock.mock.calls[0][0];
     expect(options.subject).toContain('was approved');
     expect(options.html).toContain('Mia Moderator');
     expect(options.text).toContain('Great news! Your photo submission is now live');
+    expect(result).toBe(true);
   });
 
   it('sends denial email with provided reason', async () => {
@@ -96,13 +98,14 @@ describe('PhotoSubmissionNotificationService', () => {
       moderator: { id: '7', firstName: 'Mia', lastName: 'Moderator', email: 'mia@example.com' },
     });
 
-    await service.sendSubmissionDeniedNotification(deniedDetail);
+    const result = await service.sendSubmissionDeniedNotification(deniedDetail);
 
     expect(sendEmailMock).toHaveBeenCalled();
     const options = sendEmailMock.mock.calls[0][0];
     expect(options.subject).toContain('was denied');
     expect(options.html).toContain('Photo is blurry');
     expect(options.text).toContain('Reason provided: Photo is blurry');
+    expect(result).toBe(true);
   });
 
   it('skips sending when submitter email is missing', async () => {
@@ -110,8 +113,9 @@ describe('PhotoSubmissionNotificationService', () => {
       submitter: { id: '5', firstName: 'Sam', lastName: 'Submitter', email: null },
     });
 
-    await service.sendSubmissionReceivedNotification(detail);
+    const result = await service.sendSubmissionReceivedNotification(detail);
 
     expect(sendEmailMock).not.toHaveBeenCalled();
+    expect(result).toBe(true);
   });
 });

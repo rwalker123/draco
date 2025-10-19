@@ -117,6 +117,26 @@ const registerAdminAnalyticsEndpoints = ({ registry, z }: RegisterContext) => {
     }),
   });
 
+  const photoEventSchema = z.object({
+    type: z.enum(['submission_failure', 'quota_violation', 'email_error']),
+    accountId: z.string().nullable(),
+    teamId: z.string().nullable(),
+    submissionId: z.string().nullable(),
+    timestamp: z.string().openapi({ format: 'date-time' }),
+    detail: z.string().nullable().optional(),
+  });
+
+  const photoMetricsSchema = z.object({
+    counters: z.object({
+      submissionFailures: z.number().int().nonnegative(),
+      quotaViolations: z.number().int().nonnegative(),
+      emailErrors: z.number().int().nonnegative(),
+    }),
+    recent: photoEventSchema
+      .array()
+      .openapi({ description: 'Recent photo submission issues encountered by the platform.' }),
+  });
+
   const adminAnalyticsSummarySchema = z.object({
     generatedAt: z.string().openapi({ format: 'date-time' }),
     accounts: z.object({
@@ -143,6 +163,7 @@ const registerAdminAnalyticsEndpoints = ({ registry, z }: RegisterContext) => {
       clickRate: z.number().min(0).max(100),
       perAccount: accountEmailMetricSchema.array(),
     }),
+    photos: photoMetricsSchema,
     monitoring: z.object({
       health: monitoringHealthSchema,
       performance: monitoringPerformanceSchema,

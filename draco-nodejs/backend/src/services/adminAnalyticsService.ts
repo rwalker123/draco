@@ -9,6 +9,7 @@ import type {
   MonitoringHealthResponse,
   MonitoringPerformanceResponse,
 } from '../responseFormatters/MonitoringResponseFormatter.js';
+import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
 
 export interface AdminAnalyticsSummary {
   generatedAt: string;
@@ -36,6 +37,7 @@ export interface AdminAnalyticsSummary {
     clickRate: number;
     perAccount: AdminAccountEmailMetric[];
   };
+  photos: AdminPhotoMetrics;
   monitoring: {
     health: Awaited<ReturnType<MonitoringService['getHealthOverview']>>['body'];
     performance: Awaited<ReturnType<MonitoringService['getPerformanceMetrics']>>;
@@ -65,6 +67,24 @@ export interface AdminAccountEmailMetric {
   clickRate: number;
 }
 
+export interface AdminPhotoMetrics {
+  counters: {
+    submissionFailures: number;
+    quotaViolations: number;
+    emailErrors: number;
+  };
+  recent: AdminPhotoEventMetric[];
+}
+
+export interface AdminPhotoEventMetric {
+  type: 'submission_failure' | 'quota_violation' | 'email_error';
+  accountId: string | null;
+  teamId: string | null;
+  submissionId: string | null;
+  timestamp: string;
+  detail?: string | null;
+}
+
 export class AdminAnalyticsService {
   private readonly monitoringService: MonitoringService;
   private readonly adminAnalyticsRepository = RepositoryFactory.getAdminAnalyticsRepository();
@@ -86,6 +106,7 @@ export class AdminAnalyticsService {
 
     const storageMetrics = this.buildStorageMetrics(storageUsage);
     const emailMetrics = this.buildEmailMetrics(emailSummary, accountEmailActivity);
+    const photoMetrics = this.buildPhotoMetrics();
 
     const normalizedHealth = this.normalizeHealthResponse(health.body);
     const normalizedPerformance = this.normalizePerformanceResponse(performance);
@@ -99,6 +120,7 @@ export class AdminAnalyticsService {
       },
       storage: storageMetrics,
       email: emailMetrics,
+      photos: photoMetrics,
       monitoring: {
         health: normalizedHealth,
         performance: normalizedPerformance,
@@ -180,6 +202,26 @@ export class AdminAnalyticsService {
       openRate,
       clickRate,
       perAccount,
+    };
+  }
+
+  private buildPhotoMetrics(): AdminPhotoMetrics {
+    const snapshot = photoSubmissionMetrics.getSnapshot();
+    return {
+      counters: {
+        submissionFailures: snapshot.counters.submissionFailures,
+        quotaViolations: snapshot.counters.quotaViolations,
+        emailErrors: snapshot.counters.emailErrors,
+      },
+      recent: snapshot.recent.map((event) => ({
+        type: event.type,
+        accountId: event.accountId ?? null,
+        teamId: event.teamId ?? null,
+        submissionId: event.submissionId ?? null,
+        timestamp:
+          event.timestamp instanceof Date ? event.timestamp.toISOString() : event.timestamp,
+        detail: event.detail ?? null,
+      })),
     };
   }
 
