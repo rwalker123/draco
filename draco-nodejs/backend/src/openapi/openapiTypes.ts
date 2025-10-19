@@ -77,6 +77,7 @@ import {
   SeasonManagerSchema,
   SeasonManagerWithLeagueSchema,
   SeasonParticipantCountDataSchema,
+  CurrentSeasonResponseSchema,
   SeasonSchema,
   TeamManagerSchema,
   TeamRosterMembersSchema,
@@ -183,6 +184,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonManagerWithLeagueSchema,
   );
   const SeasonSchemaRef = registry.register('Season', SeasonSchema);
+  const CurrentSeasonResponseSchemaRef = registry.register(
+    'CurrentSeasonResponse',
+    CurrentSeasonResponseSchema,
+  );
   const SeasonParticipantCountDataSchemaRef = registry.register(
     'SeasonParticipantCountData',
     SeasonParticipantCountDataSchema,
@@ -520,6 +525,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonManagerListSchemaRef,
     SeasonManagerWithLeagueSchemaRef,
     SeasonSchemaRef,
+    CurrentSeasonResponseSchemaRef,
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
     TeamRosterMembersSchemaRef,

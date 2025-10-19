@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { SeasonNameSchema, SeasonSchema } from './season.js';
+import { SeasonNameSchema, SeasonSchema } from './seasonBase.js';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
 import { booleanQueryParam } from './queryParams.js';
 import { DivisionSeasonSchema } from './division.js';

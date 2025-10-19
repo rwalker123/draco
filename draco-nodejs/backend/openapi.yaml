@@ -1457,6 +1457,96 @@ components:
         - id
         - name
         - accountId
+    CurrentSeasonResponse:
+      anyOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            accountId:
+              type: string
+              pattern: ^d+$
+            isCurrent:
+              type: boolean
+          required:
+            - id
+            - name
+            - accountId
+        - type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            accountId:
+              type: string
+              pattern: ^d+$
+            isCurrent:
+              type: boolean
+            leagues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^d+$
+                  league:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        pattern: ^d+$
+                      name:
+                        type: string
+                        minLength: 1
+                        maxLength: 100
+                    required:
+                      - id
+                      - name
+                  divisions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^d+$
+                        division:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              pattern: ^d+$
+                            name:
+                              type: string
+                              minLength: 1
+                              maxLength: 100
+                          required:
+                            - id
+                            - name
+                        priority:
+                          type: integer
+                      required:
+                        - id
+                        - division
+                        - priority
+                required:
+                  - id
+                  - league
+          required:
+            - id
+            - name
+            - accountId
+            - leagues
     SeasonParticipantCountData:
       type: object
       properties:
@@ -17096,7 +17186,8 @@ paths:
     get:
       operationId: getCurrentSeason
       summary: Get current season
-      description: Return the account's current season with its active league assignments.
+      description: Return the account's current season. League assignments can be
+        included with the includeLeagues query parameter.
       tags:
         - Seasons
       parameters:
@@ -17106,13 +17197,28 @@ paths:
           schema:
             type: string
             format: number
+        - name: includeLeagues
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Include league assignments for the season when true.
+        - name: includeDivisions
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Include division assignments for each league when includeLeagues is
+            true.
       responses:
         "200":
-          description: Current season and league assignments for the account.
+          description: Current season for the account.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LeagueSeasonWithDivision"
+                $ref: "#/components/schemas/CurrentSeasonResponse"
         "404":
           description: No current season is configured for the account.
           content:
