@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
+import { MessageSquare, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
 import GameListDisplay, { Game } from '../../../../../../../components/GameListDisplay';
 import React from 'react';
@@ -41,6 +41,8 @@ import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePla
 import PendingPhotoSubmissionsPanel from '../../../../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
 import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendingPhotoSubmissions';
 import PhotoSubmissionForm from '../../../../../../../components/photo-submissions/PhotoSubmissionForm';
+import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
+import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 
 interface TeamPageProps {
   accountId: string;
@@ -121,6 +123,28 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     teamId: teamModerationTeamId,
     enabled: shouldShowTeamPendingPanel,
   });
+
+  const {
+    photos: teamGalleryPhotos,
+    loading: teamGalleryLoading,
+    error: teamGalleryError,
+    refresh: refreshTeamGallery,
+  } = usePhotoGallery({
+    accountId,
+    teamId: teamData?.teamId ?? null,
+    enabled: Boolean(teamData?.teamId),
+  });
+
+  const handleApproveTeamPhoto = React.useCallback(
+    async (submissionId: string) => {
+      const success = await approveTeamSubmission(submissionId);
+      if (success) {
+        await refreshTeamGallery();
+      }
+      return success;
+    },
+    [approveTeamSubmission, refreshTeamGallery],
+  );
 
   React.useEffect(() => {
     let isMounted = true;
@@ -488,7 +512,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             successMessage={teamPendingSuccess}
             processingIds={teamPendingProcessing}
             onRefresh={refreshTeamPending}
-            onApprove={approveTeamSubmission}
+            onApprove={handleApproveTeamPhoto}
             onDeny={denyTeamSubmission}
             onClearStatus={clearTeamPendingStatus}
             emptyMessage="No pending photo submissions for this team."
@@ -573,39 +597,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
       {/* Media Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="w-5 h-5" />
-              Photo Gallery
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Image
-                src="/placeholder.png"
-                alt="Photo 1"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-              <Image
-                src="/placeholder.png"
-                alt="Photo 2"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-              <Image
-                src="/placeholder.png"
-                alt="Photo 3"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <PhotoGallerySection
+          title="Team Photo Gallery"
+          description={`Highlights from the ${teamData?.seasonName ?? 'current'} season.`}
+          photos={teamGalleryPhotos}
+          loading={teamGalleryLoading}
+          error={teamGalleryError}
+          onRefresh={refreshTeamGallery}
+          emptyMessage="No team photos have been published yet."
+          accent="team"
+          totalCountOverride={teamGalleryPhotos.length}
+        />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

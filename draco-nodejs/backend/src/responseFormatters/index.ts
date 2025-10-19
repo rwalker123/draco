@@ -21,3 +21,4 @@ export * from './SponsorResponseFormatter.js';
 export * from './seasonResponseFormatter.js';
 export * from './handoutResponseFormatter.js';
 export * from './photoSubmissionResponseFormatter.js';
+export * from './photoGalleryResponseFormatter.js';

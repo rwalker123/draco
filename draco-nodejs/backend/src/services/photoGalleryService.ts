@@ -1,6 +1,11 @@
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
-import type { IPhotoGalleryRepository } from '../repositories/interfaces/index.js';
+import type { PhotoGalleryListType } from '@draco/shared-schemas';
+import type {
+  GalleryQueryOptions,
+  IPhotoGalleryRepository,
+} from '../repositories/interfaces/index.js';
 import type { dbPhotoGallery } from '../repositories/types/dbTypes.js';
+import { PhotoGalleryResponseFormatter } from '../responseFormatters/photoGalleryResponseFormatter.js';
 
 interface CreatePhotoParams {
   accountId: bigint;
@@ -31,5 +36,10 @@ export class PhotoGalleryService {
 
   async deletePhoto(photoId: bigint): Promise<void> {
     await this.repository.deletePhoto(photoId);
+  }
+
+  async listGalleryEntries(options: GalleryQueryOptions): Promise<PhotoGalleryListType> {
+    const entries = await this.repository.listGalleryEntries(options);
+    return PhotoGalleryResponseFormatter.formatAccountGallery(entries);
   }
 }

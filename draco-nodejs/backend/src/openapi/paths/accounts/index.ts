@@ -33,6 +33,8 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     PhotoSubmissionListSchemaRef,
     CreatePhotoSubmissionFormSchemaRef,
     DenyPhotoSubmissionRequestSchemaRef,
+    PhotoGalleryListSchemaRef,
+    PhotoGalleryQuerySchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/search
@@ -1764,6 +1766,50 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
           'application/json': {
             schema: NotFoundErrorSchemaRef,
           },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/photo-gallery',
+    operationId: 'getAccountPhotoGallery',
+    summary: 'Retrieve the account photo gallery',
+    description:
+      'Returns approved gallery photos for the account along with aggregated album metadata. Requires an authenticated contact with access to the account.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      query: PhotoGalleryQuerySchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Account photo gallery.',
+        content: {
+          'application/json': { schema: PhotoGalleryListSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to view the photo gallery.' },
+      500: {
+        description: 'Unexpected server error while retrieving the gallery.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
         },
       },
     },

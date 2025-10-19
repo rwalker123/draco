@@ -18,6 +18,7 @@ export { useScrollPosition } from './useScrollPosition';
 export { useTableLoadingState } from './useTableLoadingState';
 export { useTeamMembership } from './useTeamMembership';
 export { usePhotoSubmission } from './usePhotoSubmission';
+export { usePhotoGallery } from './usePhotoGallery';
 export { usePollsService } from './usePollsService';
 export { useUserApiOperations } from './useUserApiOperations';
 export { useUserDataManager } from './useUserDataManager';

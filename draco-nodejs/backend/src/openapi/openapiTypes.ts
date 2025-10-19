@@ -141,6 +141,10 @@ import {
   PhotoSubmissionDetailSchema,
   PhotoSubmissionListSchema,
   DenyPhotoSubmissionRequestSchema,
+  PhotoGalleryAlbumSchema,
+  PhotoGalleryListSchema,
+  PhotoGalleryPhotoSchema,
+  PhotoGalleryQuerySchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -444,6 +448,19 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const HandoutSchemaRef = registry.register('Handout', HandoutSchema);
   const HandoutListSchemaRef = registry.register('HandoutList', HandoutListSchema);
   const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
+  const PhotoGalleryPhotoSchemaRef = registry.register(
+    'PhotoGalleryPhoto',
+    PhotoGalleryPhotoSchema,
+  );
+  const PhotoGalleryAlbumSchemaRef = registry.register(
+    'PhotoGalleryAlbum',
+    PhotoGalleryAlbumSchema,
+  );
+  const PhotoGalleryListSchemaRef = registry.register('PhotoGalleryList', PhotoGalleryListSchema);
+  const PhotoGalleryQuerySchemaRef = registry.register(
+    'PhotoGalleryQuery',
+    PhotoGalleryQuerySchema,
+  );
   const PhotoSubmissionSchemaRef = registry.register(
     'PhotoSubmission',
     PhotoSubmissionRecordSchema,
@@ -620,6 +637,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     HandoutSchemaRef,
     HandoutListSchemaRef,
     UpsertHandoutSchemaRef,
+    PhotoGalleryPhotoSchemaRef,
+    PhotoGalleryAlbumSchemaRef,
+    PhotoGalleryListSchemaRef,
+    PhotoGalleryQuerySchemaRef,
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,

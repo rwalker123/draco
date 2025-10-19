@@ -10282,6 +10282,274 @@
         "title": "UpsertHandout",
         "description": "Payload for creating or updating a handout record"
       },
+      "PhotoGalleryPhoto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "submissionId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$"
+          },
+          "albumId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$"
+          },
+          "albumTitle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Display title for the album containing the photo"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Title assigned to the approved gallery photo"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "Optional caption describing the gallery photo"
+          },
+          "submittedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Timestamp when the source submission was created"
+          },
+          "originalUrl": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative URL to the original gallery asset"
+          },
+          "primaryUrl": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative URL to the primary sized gallery asset"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Relative URL to the thumbnail gallery asset"
+          }
+        },
+        "required": [
+          "id",
+          "submissionId",
+          "accountId",
+          "teamId",
+          "albumId",
+          "albumTitle",
+          "title",
+          "caption",
+          "submittedAt",
+          "originalUrl",
+          "primaryUrl",
+          "thumbnailUrl"
+        ],
+        "title": "PhotoGalleryPhoto",
+        "description": "Approved gallery photo ready for display in the account UI"
+      },
+      "PhotoGalleryAlbum": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Album title used for grouping gallery photos"
+          },
+          "teamId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$",
+            "description": "Team identifier associated with the album when applicable"
+          },
+          "photoCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of photos contained in the album"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "teamId",
+          "photoCount"
+        ],
+        "title": "PhotoGalleryAlbum",
+        "description": "Album metadata summarizing gallery contents for filtering"
+      },
+      "PhotoGalleryList": {
+        "type": "object",
+        "properties": {
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "submissionId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "teamId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$"
+                },
+                "albumId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$"
+                },
+                "albumTitle": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "description": "Display title for the album containing the photo"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "description": "Title assigned to the approved gallery photo"
+                },
+                "caption": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 255,
+                  "description": "Optional caption describing the gallery photo"
+                },
+                "submittedAt": {
+                  "type": "string",
+                  "nullable": true,
+                  "format": "date-time",
+                  "description": "Timestamp when the source submission was created"
+                },
+                "originalUrl": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relative URL to the original gallery asset"
+                },
+                "primaryUrl": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relative URL to the primary sized gallery asset"
+                },
+                "thumbnailUrl": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relative URL to the thumbnail gallery asset"
+                }
+              },
+              "required": [
+                "id",
+                "submissionId",
+                "accountId",
+                "teamId",
+                "albumId",
+                "albumTitle",
+                "title",
+                "caption",
+                "submittedAt",
+                "originalUrl",
+                "primaryUrl",
+                "thumbnailUrl"
+              ],
+              "title": "PhotoGalleryPhoto",
+              "description": "Approved gallery photo ready for display in the account UI"
+            }
+          },
+          "albums": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "description": "Album title used for grouping gallery photos"
+                },
+                "teamId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^d+$",
+                  "description": "Team identifier associated with the album when applicable"
+                },
+                "photoCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Total number of photos contained in the album"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "teamId",
+                "photoCount"
+              ],
+              "title": "PhotoGalleryAlbum",
+              "description": "Album metadata summarizing gallery contents for filtering"
+            }
+          }
+        },
+        "required": [
+          "photos",
+          "albums"
+        ],
+        "title": "PhotoGalleryList",
+        "description": "Account photo gallery response including photos and available albums"
+      },
+      "PhotoGalleryQuery": {
+        "type": "object",
+        "properties": {
+          "albumId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$"
+          },
+          "teamId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^d+$"
+          }
+        },
+        "title": "PhotoGalleryQuery",
+        "description": "Optional filters when retrieving the account photo gallery"
+      },
       "PhotoSubmission": {
         "type": "object",
         "properties": {
@@ -13900,6 +14168,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/photo-gallery": {
+      "get": {
+        "operationId": "getAccountPhotoGallery",
+        "summary": "Retrieve the account photo gallery",
+        "description": "Returns approved gallery photos for the account along with aggregated album metadata. Requires an authenticated contact with access to the account.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^d+$"
+            },
+            "required": false,
+            "name": "albumId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^d+$"
+            },
+            "required": false,
+            "name": "teamId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account photo gallery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to view the photo gallery."
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving the gallery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
                 }
               }
             }

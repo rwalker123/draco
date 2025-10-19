@@ -1560,6 +1560,34 @@ export type dbPhotoGallery = Prisma.photogalleryGetPayload<{
   };
 }>;
 
+export type dbPhotoGalleryEntry = Prisma.photogallerysubmissionGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    teamid: true;
+    albumid: true;
+    title: true;
+    caption: true;
+    originalfilepath: true;
+    submittedat: true;
+    photogallery: {
+      select: {
+        id: true;
+        title: true;
+        caption: true;
+        albumid: true;
+      };
+    };
+    photogalleryalbum: {
+      select: {
+        id: true;
+        title: true;
+        teamid: true;
+      };
+    };
+  };
+}>;
+
 export type dbTeamSeasonRecord = {
   wins: number;
   losses: number;

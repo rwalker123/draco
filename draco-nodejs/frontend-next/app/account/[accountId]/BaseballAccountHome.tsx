@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -43,6 +43,8 @@ import PhotoSubmissionForm, {
   type PhotoAlbumOption,
 } from '@/components/photo-submissions/PhotoSubmissionForm';
 import { usePendingPhotoSubmissions } from '../../../hooks/usePendingPhotoSubmissions';
+import { usePhotoGallery } from '../../../hooks/usePhotoGallery';
+import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -102,7 +104,7 @@ const BaseballAccountHome: React.FC = () => {
     enabled: shouldShowPendingPanel,
   });
 
-  const albumOptions: PhotoAlbumOption[] = useMemo(() => {
+  const submissionAlbumOptions: PhotoAlbumOption[] = useMemo(() => {
     const options = new Map<string | null, string>();
     options.set(null, 'Main Account Album (Default)');
 
@@ -115,6 +117,54 @@ const BaseballAccountHome: React.FC = () => {
 
     return Array.from(options.entries()).map(([id, title]) => ({ id, title }));
   }, [pendingSubmissions]);
+
+  const {
+    photos: galleryPhotos,
+    albums: galleryAlbums,
+    loading: galleryLoading,
+    error: galleryError,
+    refresh: refreshGallery,
+  } = usePhotoGallery({ accountId: accountIdStr ?? null });
+
+  const [selectedAlbumKey, setSelectedAlbumKey] = useState<string>('all');
+
+  useEffect(() => {
+    if (selectedAlbumKey === 'all') {
+      return;
+    }
+
+    const hasAlbum = galleryAlbums.some((album) => (album.id ?? 'null') === selectedAlbumKey);
+    if (!hasAlbum) {
+      setSelectedAlbumKey('all');
+    }
+  }, [galleryAlbums, selectedAlbumKey]);
+
+  const filteredGalleryPhotos = useMemo(() => {
+    if (selectedAlbumKey === 'all') {
+      return galleryPhotos;
+    }
+
+    if (selectedAlbumKey === 'null') {
+      return galleryPhotos.filter((photo) => photo.albumId === null);
+    }
+
+    return galleryPhotos.filter((photo) => photo.albumId === selectedAlbumKey);
+  }, [galleryPhotos, selectedAlbumKey]);
+
+  const handleAlbumTabChange = useCallback((_: React.SyntheticEvent, value: string) => {
+    setSelectedAlbumKey(value);
+  }, []);
+
+  const handleApprovePendingSubmission = useCallback(
+    async (submissionId: string) => {
+      const success = await approvePendingSubmission(submissionId);
+      if (success) {
+        await refreshGallery();
+      }
+      return success;
+    },
+    [approvePendingSubmission, refreshGallery],
+  );
 
   // Fetch public account data
   useEffect(() => {
@@ -402,7 +452,7 @@ const BaseballAccountHome: React.FC = () => {
                 variant="account"
                 accountId={accountIdStr ?? ''}
                 contextName={account.name}
-                albumOptions={albumOptions}
+                albumOptions={submissionAlbumOptions}
                 onSubmitted={() => {
                   void refreshPendingSubmissions();
                 }}
@@ -426,7 +476,7 @@ const BaseballAccountHome: React.FC = () => {
               successMessage={pendingSuccess}
               processingIds={pendingProcessingIds}
               onRefresh={refreshPendingSubmissions}
-              onApprove={approvePendingSubmission}
+              onApprove={handleApprovePendingSubmission}
               onDeny={denyPendingSubmission}
               onClearStatus={clearPendingStatus}
               emptyMessage="No pending photo submissions for this account."
@@ -494,6 +544,21 @@ const BaseballAccountHome: React.FC = () => {
             />
           </Box>
         )}
+
+        <PhotoGallerySection
+          title="Photo Gallery"
+          description={`Relive the highlights from ${account?.name ?? 'this organization'}.`}
+          photos={filteredGalleryPhotos}
+          albums={galleryAlbums}
+          loading={galleryLoading}
+          error={galleryError}
+          onRefresh={refreshGallery}
+          emptyMessage="No photos have been published yet."
+          enableAlbumTabs
+          selectedAlbumKey={selectedAlbumKey}
+          onAlbumChange={handleAlbumTabChange}
+          totalCountOverride={galleryPhotos.length}
+        />
 
         <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
 
