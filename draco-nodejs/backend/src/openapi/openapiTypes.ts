@@ -77,6 +77,7 @@ import {
   SeasonManagerSchema,
   SeasonManagerWithLeagueSchema,
   SeasonParticipantCountDataSchema,
+  CurrentSeasonResponseSchema,
   SeasonSchema,
   TeamManagerSchema,
   TeamRosterMembersSchema,
@@ -101,6 +102,7 @@ import {
   WorkoutListQuerySchema,
   WorkoutRegistrationSchema,
   WorkoutRegistrationsQuerySchema,
+  WorkoutRegistrationsEmailRequestSchema,
   WorkoutRegistrationsSchema,
   WorkoutSchema,
   WorkoutSourceOptionPayloadSchema,
@@ -182,6 +184,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonManagerWithLeagueSchema,
   );
   const SeasonSchemaRef = registry.register('Season', SeasonSchema);
+  const CurrentSeasonResponseSchemaRef = registry.register(
+    'CurrentSeasonResponse',
+    CurrentSeasonResponseSchema,
+  );
   const SeasonParticipantCountDataSchemaRef = registry.register(
     'SeasonParticipantCountData',
     SeasonParticipantCountDataSchema,
@@ -406,6 +412,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'WorkoutRegistrationsQuery',
     WorkoutRegistrationsQuerySchema,
   );
+  const WorkoutRegistrationsEmailRequestSchemaRef = registry.register(
+    'WorkoutRegistrationsEmailRequest',
+    WorkoutRegistrationsEmailRequestSchema,
+  );
   const DivisionSeasonSchemaRef = registry.register('DivisionSeason', DivisionSeasonSchema);
   const DivisionSeasonWithTeamsSchemaRef = registry.register(
     'DivisionSeasonWithTeams',
@@ -434,7 +444,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const HandoutSchemaRef = registry.register('Handout', HandoutSchema);
   const HandoutListSchemaRef = registry.register('HandoutList', HandoutListSchema);
   const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
-  const PhotoSubmissionSchemaRef = registry.register('PhotoSubmission', PhotoSubmissionRecordSchema);
+  const PhotoSubmissionSchemaRef = registry.register(
+    'PhotoSubmission',
+    PhotoSubmissionRecordSchema,
+  );
   const PhotoSubmissionDetailSchemaRef = registry.register(
     'PhotoSubmissionDetail',
     PhotoSubmissionDetailSchema,
@@ -512,6 +525,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonManagerListSchemaRef,
     SeasonManagerWithLeagueSchemaRef,
     SeasonSchemaRef,
+    CurrentSeasonResponseSchemaRef,
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
     TeamRosterMembersSchemaRef,
@@ -589,6 +603,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     WorkoutSourceOptionPayloadSchemaRef,
     WorkoutListQuerySchemaRef,
     WorkoutRegistrationsQuerySchemaRef,
+    WorkoutRegistrationsEmailRequestSchemaRef,
     DivisionSeasonSchemaRef,
     DivisionSeasonWithTeamsSchemaRef,
     LeagueSeasonQueryParamsSchemaRef,

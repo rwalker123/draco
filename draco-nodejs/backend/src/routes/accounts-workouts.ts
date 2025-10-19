@@ -7,6 +7,7 @@ import {
   UpsertWorkoutRegistrationSchema,
   WorkoutSourcesSchema,
   WorkoutSourceOptionPayloadSchema,
+  WorkoutRegistrationsEmailRequestSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
@@ -197,6 +198,22 @@ router.get(
     return service.listRegistrations(accountId, workoutId, query.limit).then((registrations) => {
       res.json(registrations);
     });
+  }),
+);
+
+router.post(
+  '/:accountId/workouts/:workoutId/registrations/email',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('workout.manage'),
+  asyncHandler(async (req, res) => {
+    const { accountId } = extractAccountParams(req.params);
+    const { workoutId } = extractBigIntParams(req.params, 'workoutId');
+    const payload = WorkoutRegistrationsEmailRequestSchema.parse(req.body);
+
+    await service.emailRegistrants(accountId, workoutId, payload);
+
+    res.status(202).json({ status: 'queued' });
   }),
 );
 

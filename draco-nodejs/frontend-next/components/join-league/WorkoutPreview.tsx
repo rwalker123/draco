@@ -34,14 +34,12 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
         setLoading(true);
         setError(null);
 
-        const allWorkouts = await listWorkouts(accountId, false, token);
+        const upcomingWorkouts = await listWorkouts(accountId, false, token, 'upcoming');
         if (!isMounted) {
           return;
         }
 
-        const now = new Date();
-        const upcoming = allWorkouts
-          .filter((workout) => new Date(workout.workoutDate) > now)
+        const upcoming = upcomingWorkouts
           .sort((a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime())
           .slice(0, maxDisplay);
 

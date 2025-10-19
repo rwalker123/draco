@@ -25,8 +25,13 @@ router.get(
   '/current',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+    const includeLeagues = req.query.includeLeagues === 'true';
+    const includeDivisions = includeLeagues && req.query.includeDivisions === 'true';
 
-    const season = await seasonService.getCurrentSeason(accountId);
+    const season = await seasonService.getCurrentSeason(accountId, {
+      includeLeagues,
+      includeDivisions,
+    });
 
     res.json(season);
   }),

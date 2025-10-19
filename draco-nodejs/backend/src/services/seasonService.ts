@@ -1,4 +1,5 @@
 import {
+  CurrentSeasonResponseType,
   LeagueSeasonWithDivisionType,
   SeasonParticipantCountDataType,
   SeasonType,
@@ -32,17 +33,27 @@ export class SeasonService {
     });
   }
 
-  async getCurrentSeason(accountId: bigint): Promise<LeagueSeasonWithDivisionType> {
+  async getCurrentSeason(
+    accountId: bigint,
+    options?: { includeLeagues?: boolean; includeDivisions?: boolean },
+  ): Promise<CurrentSeasonResponseType> {
+    const includeLeagues = options?.includeLeagues ?? false;
+    const includeDivisions = options?.includeDivisions ?? false;
+
     const currentSeasonRecord = await this.seasonsRepository.findCurrentSeason(accountId);
 
     if (!currentSeasonRecord) {
       throw new NotFoundError('No current season set for this account');
     }
 
+    if (!includeLeagues) {
+      return SeasonResponseFormatter.formatSeason(currentSeasonRecord, { isCurrent: true });
+    }
+
     const season = await this.seasonsRepository.findSeasonWithLeagues(
       accountId,
       currentSeasonRecord.id,
-      false,
+      includeDivisions,
     );
 
     if (!season) {
@@ -50,7 +61,7 @@ export class SeasonService {
     }
 
     return SeasonResponseFormatter.formatSeasonWithLeagues(season, {
-      includeDivisions: false,
+      includeDivisions,
       currentSeasonId: currentSeasonRecord.id,
       forceCurrent: true,
     });

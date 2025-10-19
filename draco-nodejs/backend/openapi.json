@@ -1973,6 +1973,135 @@
           "accountId"
         ]
       },
+      "CurrentSeasonResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "accountId": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "isCurrent": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "accountId"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "accountId": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "isCurrent": {
+                "type": "boolean"
+              },
+              "leagues": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "league": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^d+$"
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    },
+                    "divisions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^d+$"
+                          },
+                          "division": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^d+$"
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          },
+                          "priority": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "division",
+                          "priority"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "league"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "accountId",
+              "leagues"
+            ]
+          }
+        ]
+      },
       "SeasonParticipantCountData": {
         "type": "object",
         "properties": {
@@ -7563,6 +7692,32 @@
         },
         "title": "WorkoutRegistrationsQuery",
         "description": "Query parameters to paginate workout registrations"
+      },
+      "WorkoutRegistrationsEmailRequest": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          },
+          "registrationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "subject",
+          "body"
+        ],
+        "title": "WorkoutRegistrationsEmailRequest",
+        "description": "Payload to email workout registrants"
       },
       "DivisionSeason": {
         "type": "object",
@@ -25180,7 +25335,7 @@
       "get": {
         "operationId": "getCurrentSeason",
         "summary": "Get current season",
-        "description": "Return the account's current season with its active league assignments.",
+        "description": "Return the account's current season. League assignments can be included with the includeLeagues query parameter.",
         "tags": [
           "Seasons"
         ],
@@ -25193,15 +25348,35 @@
               "type": "string",
               "format": "number"
             }
+          },
+          {
+            "name": "includeLeagues",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include league assignments for the season when true."
+          },
+          {
+            "name": "includeDivisions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include division assignments for each league when includeLeagues is true."
           }
         ],
         "responses": {
           "200": {
-            "description": "Current season and league assignments for the account.",
+            "description": "Current season for the account.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LeagueSeasonWithDivision"
+                  "$ref": "#/components/schemas/CurrentSeasonResponse"
                 }
               }
             }
@@ -30338,6 +30513,124 @@
           },
           "404": {
             "description": "Registration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/workouts/{workoutId}/registrations/email": {
+      "post": {
+        "operationId": "emailWorkoutRegistrations",
+        "summary": "Email workout registrants",
+        "description": "Send an email to one or more workout registrants.",
+        "tags": [
+          "Workouts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "workoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkoutRegistrationsEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Email accepted for delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "title": "WorkoutEmailQueuedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workout or registrations not found",
             "content": {
               "application/json": {
                 "schema": {
