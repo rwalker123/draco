@@ -11,6 +11,7 @@ import {
   updateAccountWorkout,
   updateWorkoutRegistration as apiUpdateWorkoutRegistration,
   updateWorkoutSources as apiUpdateWorkoutSources,
+  emailWorkoutRegistrations as apiEmailWorkoutRegistrations,
   type WorkoutSummary as ApiWorkoutSummary,
   type Workout as ApiWorkout,
 } from '@draco/shared-api-client';
@@ -21,6 +22,8 @@ import type {
   WorkoutSourcesType,
   WorkoutSummaryType,
   WorkoutType,
+  WorkoutRegistrationsEmailRequestType,
+  WorkoutStatusType,
 } from '@draco/shared-schemas';
 
 import { createApiClient } from '../lib/apiClientFactory';
@@ -85,13 +88,24 @@ export async function listWorkouts(
   accountId: string,
   includeRegistrationCounts = true,
   token?: string,
+  status?: WorkoutStatusType,
 ): Promise<WorkoutSummaryType[]> {
   const client = createClient(token);
-  const query = includeRegistrationCounts ? { includeRegistrationCounts } : undefined;
+  const queryParams: Partial<{ includeRegistrationCounts: boolean; status: WorkoutStatusType }> =
+    {};
+
+  if (includeRegistrationCounts) {
+    queryParams.includeRegistrationCounts = includeRegistrationCounts;
+  }
+
+  if (status) {
+    queryParams.status = status;
+  }
+
   const result = await listAccountWorkouts({
     client,
     path: { accountId },
-    query,
+    query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
     throwOnError: false,
   });
 
@@ -234,6 +248,24 @@ export async function deleteWorkoutRegistration(
   });
 
   assertNoApiError(result, 'Failed to delete registration');
+}
+
+export async function sendWorkoutRegistrationEmails(
+  accountId: string,
+  workoutId: string,
+  dto: WorkoutRegistrationsEmailRequestType,
+  token?: string,
+): Promise<void> {
+  const client = createClient(token);
+
+  const result = await apiEmailWorkoutRegistrations({
+    client,
+    path: { accountId, workoutId },
+    body: dto,
+    throwOnError: false,
+  });
+
+  unwrapApiResult(result, 'Failed to send workout email');
 }
 
 export async function listRegistrations(
