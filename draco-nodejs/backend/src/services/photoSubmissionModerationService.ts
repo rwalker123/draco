@@ -4,7 +4,8 @@ import { PhotoGalleryService } from './photoGalleryService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
 import type { PhotoSubmissionDetailType, PhotoSubmissionRecordType } from '@draco/shared-schemas';
-import { ValidationError } from '../utils/customErrors.js';
+import { ValidationError, PhotoSubmissionNotificationError } from '../utils/customErrors.js';
+import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
 
 const ALBUM_PHOTO_LIMIT = 100;
 
@@ -29,80 +30,113 @@ export class PhotoSubmissionModerationService {
     submissionId: bigint,
     moderatorContactId: bigint,
   ): Promise<PhotoSubmissionDetailType> {
-    const detail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
+    let detail: PhotoSubmissionDetailType | null = null;
 
-    const albumId = detail.albumId ? BigInt(detail.albumId) : null;
+    try {
+      detail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
+      const albumId = detail.albumId ? BigInt(detail.albumId) : null;
+      const photoCount = await this.galleryService.countPhotosInAlbum(accountId, albumId);
+      if (photoCount >= ALBUM_PHOTO_LIMIT) {
+        photoSubmissionMetrics.recordQuotaViolation({
+          accountId: detail.accountId,
+          teamId: detail.teamId,
+          submissionId: detail.id,
+          albumId: detail.albumId,
+          limit: ALBUM_PHOTO_LIMIT,
+        });
 
-    const photoCount = await this.galleryService.countPhotosInAlbum(accountId, albumId);
-    if (photoCount >= ALBUM_PHOTO_LIMIT) {
-      throw new ValidationError('Album has reached the maximum number of photos');
-    }
-
-    const photo = await this.galleryService.createPhoto({
-      accountId,
-      albumId,
-      title: detail.title,
-      caption: detail.caption ?? '',
-    });
-
-    const cleanupPhoto = async (error: unknown): Promise<never> => {
-      try {
-        await this.galleryService.deletePhoto(photo.id);
-      } catch (cleanupError) {
-        throw new AggregateError([error, cleanupError], 'Failed to approve photo submission');
+        throw new ValidationError('Album has reached the maximum number of photos');
       }
 
-      throw error;
-    };
-
-    let updatedSubmission: PhotoSubmissionRecordType;
-    try {
-      updatedSubmission = await this.submissionService.approveSubmission({
-        accountId: accountId.toString(),
-        submissionId: submissionId.toString(),
-        moderatorContactId: moderatorContactId.toString(),
-        approvedPhotoId: photo.id.toString(),
+      const photo = await this.galleryService.createPhoto({
+        accountId,
+        albumId,
+        title: detail.title,
+        caption: detail.caption ?? '',
       });
+
+      const cleanupPhoto = async (error: unknown): Promise<never> => {
+        try {
+          await this.galleryService.deletePhoto(photo.id);
+        } catch (cleanupError) {
+          throw new AggregateError([error, cleanupError], 'Failed to approve photo submission');
+        }
+
+        throw error;
+      };
+
+      let updatedSubmission: PhotoSubmissionRecordType;
+      try {
+        updatedSubmission = await this.submissionService.approveSubmission({
+          accountId: accountId.toString(),
+          submissionId: submissionId.toString(),
+          moderatorContactId: moderatorContactId.toString(),
+          approvedPhotoId: photo.id.toString(),
+        });
+      } catch (error) {
+        return cleanupPhoto(error);
+      }
+
+      try {
+        await this.assetService.promoteSubmissionAssets(updatedSubmission, photo.id);
+        await this.assetService.deleteSubmissionAssets(updatedSubmission);
+      } catch (error) {
+        const rollbackErrors: unknown[] = [];
+
+        try {
+          await this.assetService.deleteGalleryAssets(updatedSubmission, photo.id);
+        } catch (cleanupError) {
+          rollbackErrors.push(cleanupError);
+        }
+
+        try {
+          await this.galleryService.deletePhoto(photo.id);
+        } catch (cleanupError) {
+          rollbackErrors.push(cleanupError);
+        }
+
+        try {
+          await this.submissionService.revertApproval(updatedSubmission);
+        } catch (rollbackError) {
+          rollbackErrors.push(rollbackError);
+        }
+
+        if (rollbackErrors.length > 0) {
+          throw new AggregateError(
+            [error, ...rollbackErrors],
+            'Failed to approve photo submission',
+          );
+        }
+
+        throw error;
+      }
+
+      const finalDetail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
+
+      const emailSent =
+        await this.notificationService.sendSubmissionApprovedNotification(finalDetail);
+      if (!emailSent) {
+        throw new PhotoSubmissionNotificationError('moderation-approved', undefined, finalDetail);
+      }
+
+      return finalDetail;
     } catch (error) {
-      return cleanupPhoto(error);
-    }
+      const isQuotaViolation =
+        error instanceof ValidationError &&
+        error.message === 'Album has reached the maximum number of photos';
 
-    try {
-      await this.assetService.promoteSubmissionAssets(updatedSubmission, photo.id);
-      await this.assetService.deleteSubmissionAssets(updatedSubmission);
-    } catch (error) {
-      const rollbackErrors: unknown[] = [];
-
-      try {
-        await this.assetService.deleteGalleryAssets(updatedSubmission, photo.id);
-      } catch (cleanupError) {
-        rollbackErrors.push(cleanupError);
-      }
-
-      try {
-        await this.galleryService.deletePhoto(photo.id);
-      } catch (cleanupError) {
-        rollbackErrors.push(cleanupError);
-      }
-
-      try {
-        await this.submissionService.revertApproval(updatedSubmission);
-      } catch (rollbackError) {
-        rollbackErrors.push(rollbackError);
-      }
-
-      if (rollbackErrors.length > 0) {
-        throw new AggregateError([error, ...rollbackErrors], 'Failed to approve photo submission');
+      if (!isQuotaViolation && !(error instanceof PhotoSubmissionNotificationError)) {
+        photoSubmissionMetrics.recordSubmissionFailure({
+          stage: 'moderation-approve',
+          accountId: accountId.toString(),
+          teamId: detail?.teamId ?? null,
+          submissionId: submissionId.toString(),
+          error,
+        });
       }
 
       throw error;
     }
-
-    const finalDetail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
-
-    await this.notificationService.sendSubmissionApprovedNotification(finalDetail);
-
-    return finalDetail;
   }
 
   async denySubmission(
@@ -111,19 +145,40 @@ export class PhotoSubmissionModerationService {
     moderatorContactId: bigint,
     denialReason: string,
   ): Promise<PhotoSubmissionDetailType> {
-    const updatedSubmission = await this.submissionService.denySubmission({
-      accountId: accountId.toString(),
-      submissionId: submissionId.toString(),
-      moderatorContactId: moderatorContactId.toString(),
-      denialReason,
-    });
+    let detail: PhotoSubmissionDetailType | null = null;
 
-    await this.assetService.deleteSubmissionAssets(updatedSubmission);
+    try {
+      detail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
 
-    const finalDetail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
+      const updatedSubmission = await this.submissionService.denySubmission({
+        accountId: accountId.toString(),
+        submissionId: submissionId.toString(),
+        moderatorContactId: moderatorContactId.toString(),
+        denialReason,
+      });
 
-    await this.notificationService.sendSubmissionDeniedNotification(finalDetail);
+      await this.assetService.deleteSubmissionAssets(updatedSubmission);
 
-    return finalDetail;
+      const finalDetail = await this.submissionService.getSubmissionDetail(accountId, submissionId);
+
+      const emailSent =
+        await this.notificationService.sendSubmissionDeniedNotification(finalDetail);
+      if (!emailSent) {
+        throw new PhotoSubmissionNotificationError('moderation-denied', undefined, finalDetail);
+      }
+
+      return finalDetail;
+    } catch (error) {
+      if (!(error instanceof PhotoSubmissionNotificationError)) {
+        photoSubmissionMetrics.recordSubmissionFailure({
+          stage: 'moderation-deny',
+          accountId: accountId.toString(),
+          teamId: detail?.teamId ?? null,
+          submissionId: submissionId.toString(),
+          error,
+        });
+      }
+      throw error;
+    }
   }
 }

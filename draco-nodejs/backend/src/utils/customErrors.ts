@@ -7,6 +7,7 @@ import {
   ConflictErrorType,
   InternalServerErrorType,
 } from '@draco/shared-schemas';
+import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 
 export class ApiError extends Error implements ApiErrorType {
   public readonly statusCode: number;
@@ -153,6 +154,27 @@ export class InternalServerError extends ApiError {
       statusCode: this.statusCode,
       isRetryable: this.isRetryable,
     };
+  }
+}
+
+export type PhotoSubmissionNotificationEvent =
+  | 'submission-received'
+  | 'moderation-approved'
+  | 'moderation-denied';
+
+export class PhotoSubmissionNotificationError extends InternalServerError {
+  public readonly event: PhotoSubmissionNotificationEvent;
+  public readonly detail?: PhotoSubmissionDetailType;
+
+  constructor(
+    event: PhotoSubmissionNotificationEvent,
+    message = 'Failed to send photo submission notification email',
+    detail?: PhotoSubmissionDetailType,
+  ) {
+    super(message);
+    this.event = event;
+    this.detail = detail;
+    this.name = 'PhotoSubmissionNotificationError';
   }
 }
 

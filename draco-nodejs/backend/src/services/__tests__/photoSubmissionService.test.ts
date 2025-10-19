@@ -124,9 +124,9 @@ const createDbSubmission = (overrides: Partial<dbPhotoSubmission> = {}): dbPhoto
   title: 'Summer Tournament',
   caption: 'Winning shot',
   originalfilename: 'photo.jpg',
-  originalfilepath: 'Uploads/Accounts/1/PhotoSubmissions/storage-key/original.jpg',
-  primaryimagepath: 'Uploads/Accounts/1/PhotoSubmissions/storage-key/primary.jpg',
-  thumbnailimagepath: 'Uploads/Accounts/1/PhotoSubmissions/storage-key/thumbnail.jpg',
+  originalfilepath: '1/photo-submissions/storage-key/original.jpg',
+  primaryimagepath: '1/photo-submissions/storage-key/primary.jpg',
+  thumbnailimagepath: '1/photo-submissions/storage-key/thumbnail.jpg',
   status: 'Pending',
   denialreason: null,
   submittedat: new Date('2024-01-01T00:00:00Z'),
@@ -183,9 +183,9 @@ describe('PhotoSubmissionService', () => {
     repository.findAlbumForAccountMock.mockResolvedValue(createAlbum());
 
     const createdSubmission = createDbSubmission({
-      originalfilepath: 'Uploads/Accounts/1/PhotoSubmissions/storage-key/original.jpg',
-      primaryimagepath: 'Uploads/Accounts/1/PhotoSubmissions/storage-key/primary.jpg',
-      thumbnailimagepath: 'Uploads/Accounts/1/PhotoSubmissions/storage-key/thumbnail.jpg',
+      originalfilepath: '1/photo-submissions/storage-key/original.jpg',
+      primaryimagepath: '1/photo-submissions/storage-key/primary.jpg',
+      thumbnailimagepath: '1/photo-submissions/storage-key/thumbnail.jpg',
     });
 
     repository.createSubmissionMock.mockResolvedValue(createdSubmission);
@@ -206,15 +206,11 @@ describe('PhotoSubmissionService', () => {
 
     const [[createArgs]] = repository.createSubmissionMock.mock.calls;
     expect(createArgs.originalfilepath).toMatch(
-      /^Uploads\/Accounts\/1\/PhotoSubmissions\/[a-z0-9-]+\/original\.jpg$/,
+      /^1\/photo-submissions\/[a-z0-9-]+\/original\.jpg$/,
     );
 
-    expect(result.originalFilePath).toBe(
-      'Uploads/Accounts/1/PhotoSubmissions/storage-key/original.jpg',
-    );
-    expect(result.primaryImagePath).toBe(
-      'Uploads/Accounts/1/PhotoSubmissions/storage-key/primary.jpg',
-    );
+    expect(result.originalFilePath).toBe('1/photo-submissions/storage-key/original.jpg');
+    expect(result.primaryImagePath).toBe('1/photo-submissions/storage-key/primary.jpg');
     expect(result.status).toBe('Pending');
     expect(result.caption).toBe('Winning shot');
   });
@@ -235,18 +231,16 @@ describe('PhotoSubmissionService', () => {
     repository.findAlbumForAccountMock.mockResolvedValue(createAlbum());
     repository.createSubmissionMock.mockResolvedValue(
       createDbSubmission({
-        originalfilepath: 'Uploads/Accounts/1/PhotoSubmissions/custom-key/original.jpg',
-        primaryimagepath: 'Uploads/Accounts/1/PhotoSubmissions/custom-key/primary.jpg',
-        thumbnailimagepath: 'Uploads/Accounts/1/PhotoSubmissions/custom-key/thumbnail.jpg',
+        originalfilepath: '1/photo-submissions/custom-key/original.jpg',
+        primaryimagepath: '1/photo-submissions/custom-key/primary.jpg',
+        thumbnailimagepath: '1/photo-submissions/custom-key/thumbnail.jpg',
       }),
     );
 
     await service.createSubmission({ ...baseCreateInput, storageKey: 'custom-key' });
 
     const [[createArgs]] = repository.createSubmissionMock.mock.calls;
-    expect(createArgs.originalfilepath).toBe(
-      'Uploads/Accounts/1/PhotoSubmissions/custom-key/original.jpg',
-    );
+    expect(createArgs.originalfilepath).toBe('1/photo-submissions/custom-key/original.jpg');
   });
 
   it('throws when album does not exist for account', async () => {

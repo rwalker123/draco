@@ -4,12 +4,13 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { handlePhotoUploadMiddleware } from '../middleware/fileUpload.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { ValidationError } from '../utils/customErrors.js';
+import { ValidationError, PhotoSubmissionNotificationError } from '../utils/customErrors.js';
 import {
   CreatePhotoSubmissionFormSchema,
   DenyPhotoSubmissionRequestSchema,
 } from '@draco/shared-schemas';
 import { ZodError } from 'zod';
+import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -51,47 +52,68 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   handlePhotoUploadMiddleware,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId } = extractAccountParams(req.params);
-    const { teamId } = extractBigIntParams(req.params, 'teamId');
-    const submitterContactId = ensureSubmitterContact(req);
-    const file = req.file;
-
-    if (!file) {
-      throw new ValidationError('Photo file is required');
-    }
-
-    await teamService.ensureContactIsOnTeam(accountId, teamId, submitterContactId);
-
-    const { title, caption, albumId } = createPhotoSubmissionBodySchema.parse(req.body);
-
-    const submission = await photoSubmissionService.createSubmission({
-      accountId: accountId.toString(),
-      submitterContactId: submitterContactId.toString(),
-      title,
-      caption: caption ?? null,
-      albumId: albumId ?? null,
-      teamId: teamId.toString(),
-      originalFileName: file.originalname,
-    });
+    let accountId: bigint | null = null;
+    let teamId: bigint | null = null;
+    let submissionId: string | null = null;
 
     try {
-      await assetService.stageSubmissionAssets(submission, file.buffer);
+      ({ accountId } = extractAccountParams(req.params));
+      ({ teamId } = extractBigIntParams(req.params, 'teamId'));
+      const submitterContactId = ensureSubmitterContact(req);
+      const file = req.file;
+
+      if (!file) {
+        throw new ValidationError('Photo file is required');
+      }
+
+      await teamService.ensureContactIsOnTeam(accountId, teamId, submitterContactId);
+
+      const { title, caption, albumId } = createPhotoSubmissionBodySchema.parse(req.body);
+
+      const submission = await photoSubmissionService.createSubmission({
+        accountId: accountId.toString(),
+        submitterContactId: submitterContactId.toString(),
+        title,
+        caption: caption ?? null,
+        albumId: albumId ?? null,
+        teamId: teamId.toString(),
+        originalFileName: file.originalname,
+      });
+
+      submissionId = submission.id.toString();
+
+      try {
+        await assetService.stageSubmissionAssets(submission, file.buffer);
+      } catch (error) {
+        await photoSubmissionService.deleteSubmission(accountId, BigInt(submission.id));
+        throw error;
+      }
+
+      try {
+        const detail = await photoSubmissionService.getSubmissionDetail(
+          accountId,
+          BigInt(submission.id),
+        );
+        const emailSent = await notificationService.sendSubmissionReceivedNotification(detail);
+        if (!emailSent) {
+          res.setHeader('X-Photo-Email-Warning', 'submission-received');
+        }
+      } catch (error) {
+        console.error('Failed to send submission received notification', error);
+        res.setHeader('X-Photo-Email-Warning', 'submission-received');
+      }
+
+      res.status(201).json(submission);
     } catch (error) {
-      await photoSubmissionService.deleteSubmission(accountId, BigInt(submission.id));
+      photoSubmissionMetrics.recordSubmissionFailure({
+        stage: 'team-create',
+        accountId: accountId?.toString(),
+        teamId: teamId?.toString(),
+        submissionId,
+        error,
+      });
       throw error;
     }
-
-    try {
-      const detail = await photoSubmissionService.getSubmissionDetail(
-        accountId,
-        BigInt(submission.id),
-      );
-      await notificationService.sendSubmissionReceivedNotification(detail);
-    } catch (error) {
-      console.error('Failed to send submission received notification', error);
-    }
-
-    res.status(201).json(submission);
   }),
 );
 
@@ -121,13 +143,22 @@ router.post(
     const { submissionId } = extractBigIntParams(req.params, 'submissionId');
     const moderatorContactId = ensureModeratorContact(req);
 
-    const result = await moderationService.approveSubmission(
-      accountId,
-      submissionId,
-      moderatorContactId,
-    );
+    try {
+      const result = await moderationService.approveSubmission(
+        accountId,
+        submissionId,
+        moderatorContactId,
+      );
 
-    res.json(result);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof PhotoSubmissionNotificationError && error.detail) {
+        res.setHeader('X-Photo-Email-Warning', error.event);
+        res.status(200).json(error.detail);
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
@@ -161,14 +192,23 @@ router.post(
       throw error;
     }
 
-    const result = await moderationService.denySubmission(
-      accountId,
-      submissionId,
-      moderatorContactId,
-      denialReason,
-    );
+    try {
+      const result = await moderationService.denySubmission(
+        accountId,
+        submissionId,
+        moderatorContactId,
+        denialReason,
+      );
 
-    res.json(result);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof PhotoSubmissionNotificationError && error.detail) {
+        res.setHeader('X-Photo-Email-Warning', error.event);
+        res.status(200).json(error.detail);
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

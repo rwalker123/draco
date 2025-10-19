@@ -43,8 +43,9 @@ describe('PhotoSubmissionModerationService', () => {
 
   const notificationService = {
     sendSubmissionApprovedNotification:
-      vi.fn<(detail: PhotoSubmissionDetailType) => Promise<void>>(),
-    sendSubmissionDeniedNotification: vi.fn<(detail: PhotoSubmissionDetailType) => Promise<void>>(),
+      vi.fn<(detail: PhotoSubmissionDetailType) => Promise<boolean>>(),
+    sendSubmissionDeniedNotification:
+      vi.fn<(detail: PhotoSubmissionDetailType) => Promise<boolean>>(),
   };
 
   const baseDetail: PhotoSubmissionDetailType = {
@@ -58,9 +59,9 @@ describe('PhotoSubmissionModerationService', () => {
     title: 'Summer Tournament',
     caption: null,
     originalFileName: 'photo.jpg',
-    originalFilePath: 'Uploads/Accounts/1/PhotoSubmissions/key/original.jpg',
-    primaryImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/primary.jpg',
-    thumbnailImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/thumbnail.jpg',
+    originalFilePath: '1/photo-submissions/key/original.jpg',
+    primaryImagePath: '1/photo-submissions/key/primary.jpg',
+    thumbnailImagePath: '1/photo-submissions/key/thumbnail.jpg',
     status: 'Pending',
     denialReason: null,
     submittedAt: new Date('2024-01-01T00:00:00Z').toISOString(),
@@ -84,9 +85,9 @@ describe('PhotoSubmissionModerationService', () => {
     title: 'Summer Tournament',
     caption: null,
     originalFileName: 'photo.jpg',
-    originalFilePath: 'Uploads/Accounts/1/PhotoSubmissions/key/original.jpg',
-    primaryImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/primary.jpg',
-    thumbnailImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/thumbnail.jpg',
+    originalFilePath: '1/photo-submissions/key/original.jpg',
+    primaryImagePath: '1/photo-submissions/key/primary.jpg',
+    thumbnailImagePath: '1/photo-submissions/key/thumbnail.jpg',
     status: 'Approved',
     denialReason: null,
     submittedAt: new Date('2024-01-01T00:00:00Z').toISOString(),
@@ -117,6 +118,8 @@ describe('PhotoSubmissionModerationService', () => {
     assetService.deleteGalleryAssets.mockReset();
     notificationService.sendSubmissionApprovedNotification.mockReset();
     notificationService.sendSubmissionDeniedNotification.mockReset();
+    notificationService.sendSubmissionApprovedNotification.mockResolvedValue(true);
+    notificationService.sendSubmissionDeniedNotification.mockResolvedValue(true);
     service = new PhotoSubmissionModerationService(
       submissionService as never,
       galleryService as never,

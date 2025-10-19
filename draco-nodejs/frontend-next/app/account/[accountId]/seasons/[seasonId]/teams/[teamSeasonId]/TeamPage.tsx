@@ -15,6 +15,8 @@ import AccountPageHeader from '../../../../../../../components/AccountPageHeader
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
+import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import { SponsorService } from '../../../../../../../services/sponsorService';
@@ -36,6 +38,9 @@ import {
 } from '@draco/shared-api-client';
 import HandoutSection from '@/components/handouts/HandoutSection';
 import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePlayersWantedDialog';
+import PendingPhotoSubmissionsPanel from '../../../../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
+import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendingPhotoSubmissions';
+import PhotoSubmissionForm from '../../../../../../../components/photo-submissions/PhotoSubmissionForm';
 
 interface TeamPageProps {
   accountId: string;
@@ -76,12 +81,46 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { isMember } = useAccountMembership(accountId);
   const isAccountMember = isMember === true;
-  const { isMember: isTeamMember, error: teamMembershipError } = useTeamMembership(
-    isAccountMember ? accountId : null,
-    teamSeasonId,
-    seasonId,
-  );
+  const {
+    isMember: isTeamMember,
+    loading: teamMembershipLoading,
+    error: teamMembershipError,
+    teamSeason,
+  } = useTeamMembership(isAccountMember ? accountId : null, teamSeasonId, seasonId);
   const apiClient = useApiClient();
+
+  const teamModerationTeamId = teamData?.teamId ?? null;
+
+  const canModerateTeamSubmissions = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRole('PhotoAdmin') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInAccount('AccountPhotoAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+      hasRoleInTeam('TeamPhotoAdmin', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
+  const shouldShowTeamPendingPanel = Boolean(
+    token && canModerateTeamSubmissions && teamModerationTeamId,
+  );
+
+  const {
+    submissions: teamPendingSubmissions,
+    loading: teamPendingLoading,
+    error: teamPendingError,
+    successMessage: teamPendingSuccess,
+    processingIds: teamPendingProcessing,
+    approve: approveTeamSubmission,
+    deny: denyTeamSubmission,
+    refresh: refreshTeamPending,
+    clearStatus: clearTeamPendingStatus,
+  } = usePendingPhotoSubmissions({
+    accountId,
+    teamId: teamModerationTeamId,
+    enabled: shouldShowTeamPendingPanel,
+  });
 
   React.useEffect(() => {
     let isMounted = true;
@@ -386,24 +425,73 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         </Alert>
       )}
 
-      {teamData?.teamId && isTeamMember && (
-        <Box
-          sx={{
-            maxWidth: { xs: '100%', md: 420 },
-            mb: 4,
-            '&:empty': { display: 'none', marginBottom: 0 },
-          }}
-        >
-          <HandoutSection
-            scope={{ type: 'team', accountId, teamId: teamData.teamId }}
-            title="Team Handouts"
-            description="Important documents shared with your roster."
-            allowManage={false}
-            variant="card"
-            maxItems={3}
-            viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts`}
-            emptyMessage="No team handouts have been posted yet."
-            hideWhenEmpty
+      {teamData?.teamId && (
+        <>
+          {teamMembershipLoading ? (
+            <Paper sx={{ p: 3, mb: 4 }}>
+              <Box display="flex" alignItems="center" gap={2}>
+                <CircularProgress size={24} />
+                <Typography variant="body2">Checking your team access…</Typography>
+              </Box>
+            </Paper>
+          ) : isTeamMember ? (
+            <Paper sx={{ p: 3, mb: 4 }}>
+              <PhotoSubmissionForm
+                variant="team"
+                accountId={accountId}
+                teamId={teamData.teamId}
+                contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
+                onSubmitted={() => {
+                  void refreshTeamPending();
+                }}
+              />
+            </Paper>
+          ) : null}
+
+          {isTeamMember && (
+            <Box
+              sx={{
+                maxWidth: { xs: '100%', md: 420 },
+                mb: 4,
+                '&:empty': { display: 'none', marginBottom: 0 },
+              }}
+            >
+              <HandoutSection
+                scope={{ type: 'team', accountId, teamId: teamData.teamId }}
+                title="Team Handouts"
+                description="Important documents shared with your roster."
+                allowManage={false}
+                variant="card"
+                maxItems={3}
+                viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts`}
+                emptyMessage="No team handouts have been posted yet."
+                hideWhenEmpty
+              />
+            </Box>
+          )}
+
+          {!teamMembershipLoading && !isTeamMember && (
+            <Alert severity="info" sx={{ mb: 4 }}>
+              You need to be on this roster to submit photos for review.
+            </Alert>
+          )}
+        </>
+      )}
+
+      {shouldShowTeamPendingPanel && (
+        <Box sx={{ mb: 4 }}>
+          <PendingPhotoSubmissionsPanel
+            contextLabel={teamData?.teamName ?? 'this team'}
+            submissions={teamPendingSubmissions}
+            loading={teamPendingLoading}
+            error={teamPendingError}
+            successMessage={teamPendingSuccess}
+            processingIds={teamPendingProcessing}
+            onRefresh={refreshTeamPending}
+            onApprove={approveTeamSubmission}
+            onDeny={denyTeamSubmission}
+            onClearStatus={clearTeamPendingStatus}
+            emptyMessage="No pending photo submissions for this team."
           />
         </Box>
       )}

@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vites
 import type { Express, Request, Response, NextFunction } from 'express';
 import type { PhotoSubmissionDetailType, PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ServiceFactory } from '../../services/serviceFactory.js';
+import { PhotoSubmissionNotificationError } from '../../utils/customErrors.js';
 
 vi.mock('../../middleware/authMiddleware.js', () => ({
   authenticateToken: (req: Request, _res: Response, next: NextFunction) => {
@@ -84,9 +85,9 @@ describe('Photo submission routes', () => {
     title: 'Test Photo',
     caption: overrides.caption ?? 'Caption',
     originalFileName: 'photo.jpg',
-    originalFilePath: 'Uploads/Accounts/1/PhotoSubmissions/key/original.jpg',
-    primaryImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/primary.jpg',
-    thumbnailImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/thumbnail.jpg',
+    originalFilePath: '1/photo-submissions/key/original.jpg',
+    primaryImagePath: '1/photo-submissions/key/primary.jpg',
+    thumbnailImagePath: '1/photo-submissions/key/thumbnail.jpg',
     status: 'Pending',
     denialReason: null,
     submittedAt: new Date('2024-01-01T00:00:00Z').toISOString(),
@@ -108,7 +109,7 @@ describe('Photo submission routes', () => {
   });
 
   beforeAll(async () => {
-    process.env.JWT_SECRET = 'test-secret';
+    process.env.JWT_SECRET = 'jwt-key-placeholder'; // pragma: allowlist secret
     process.env.FRONTEND_URL = 'http://localhost:3000';
 
     vi.spyOn(ServiceFactory, 'getCleanupService').mockReturnValue(cleanupServiceMock as never);
@@ -149,6 +150,7 @@ describe('Photo submission routes', () => {
     moderationServiceMock.approveSubmission.mockReset();
     moderationServiceMock.denySubmission.mockReset();
     notificationServiceMock.sendSubmissionReceivedNotification.mockReset();
+    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(true);
   });
 
   afterAll(() => {
@@ -161,7 +163,7 @@ describe('Photo submission routes', () => {
     stageAssetsMock.mockResolvedValue(undefined);
     const detail = createSubmissionDetail();
     getSubmissionDetailMock.mockResolvedValue(detail);
-    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(undefined);
+    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(true);
 
     const response = await request(app)
       .post('/api/accounts/1/photo-submissions')
@@ -197,7 +199,7 @@ describe('Photo submission routes', () => {
       album: { id: '9', title: 'Album', teamId: '2' },
     });
     getSubmissionDetailMock.mockResolvedValue(teamDetail);
-    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(undefined);
+    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(true);
 
     const response = await request(app)
       .post('/api/accounts/1/teams/2/photo-submissions')
@@ -220,6 +222,54 @@ describe('Photo submission routes', () => {
     expect(notificationServiceMock.sendSubmissionReceivedNotification).toHaveBeenCalledWith(
       teamDetail,
     );
+  });
+
+  it('returns team approval detail with warning header when notification email fails', async () => {
+    const detail = createSubmissionDetail({ teamId: '2' });
+    moderationServiceMock.approveSubmission.mockRejectedValue(
+      new PhotoSubmissionNotificationError('moderation-approved', undefined, detail),
+    );
+
+    const response = await request(app)
+      .post('/api/accounts/1/teams/2/photo-submissions/10/approve')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['x-photo-email-warning']).toBe('moderation-approved');
+    expect(response.body.id).toBe(detail.id);
+  });
+
+  it('returns team denial detail with warning header when notification email fails', async () => {
+    const detail = createSubmissionDetail({ teamId: '2' });
+    moderationServiceMock.denySubmission.mockRejectedValue(
+      new PhotoSubmissionNotificationError('moderation-denied', undefined, detail),
+    );
+
+    const response = await request(app)
+      .post('/api/accounts/1/teams/2/photo-submissions/10/deny')
+      .send({ denialReason: 'Not appropriate' })
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['x-photo-email-warning']).toBe('moderation-denied');
+    expect(response.body.id).toBe(detail.id);
+  });
+
+  it('sets email warning header when confirmation email fails', async () => {
+    const record = createSubmissionRecord();
+    createSubmissionMock.mockResolvedValue(record);
+    stageAssetsMock.mockResolvedValue(undefined);
+    const detail = createSubmissionDetail();
+    getSubmissionDetailMock.mockResolvedValue(detail);
+    notificationServiceMock.sendSubmissionReceivedNotification.mockResolvedValue(false);
+
+    const response = await request(app)
+      .post('/api/accounts/1/photo-submissions')
+      .field('title', 'Tournament Win')
+      .attach('photo', Buffer.from([1, 2, 3, 4]), 'photo.jpg');
+
+    expect(response.status).toBe(201);
+    expect(response.headers['x-photo-email-warning']).toBe('submission-received');
   });
 
   it('cleans up submissions when asset staging fails', async () => {
@@ -276,6 +326,21 @@ describe('Photo submission routes', () => {
     expect(moderationServiceMock.approveSubmission).toHaveBeenCalledWith(1n, 10n, 2n);
   });
 
+  it('returns approval detail with warning header when notification email fails', async () => {
+    const detail = createSubmissionDetail();
+    moderationServiceMock.approveSubmission.mockRejectedValue(
+      new PhotoSubmissionNotificationError('moderation-approved', undefined, detail),
+    );
+
+    const response = await request(app)
+      .post('/api/accounts/1/photo-submissions/10/approve')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['x-photo-email-warning']).toBe('moderation-approved');
+    expect(response.body.id).toBe(detail.id);
+  });
+
   it('returns validation error when approval fails', async () => {
     const validationError = Object.assign(
       new Error('Album has reached the maximum number of photos'),
@@ -321,6 +386,22 @@ describe('Photo submission routes', () => {
       2n,
       'Not appropriate',
     );
+  });
+
+  it('returns denial detail with warning header when notification email fails', async () => {
+    const detail = createSubmissionDetail();
+    moderationServiceMock.denySubmission.mockRejectedValue(
+      new PhotoSubmissionNotificationError('moderation-denied', undefined, detail),
+    );
+
+    const response = await request(app)
+      .post('/api/accounts/1/photo-submissions/10/deny')
+      .send({ denialReason: 'Not appropriate' })
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['x-photo-email-warning']).toBe('moderation-denied');
+    expect(response.body.id).toBe(detail.id);
   });
 
   it('returns validation error when denial reason is missing', async () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -19,6 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
+import { useRole } from '../../../context/RoleContext';
 import TodayScoreboard from '../../../components/TodayScoreboard';
 import YesterdayScoreboard from '../../../components/YesterdayScoreboard';
 import GameRecapsWidget from '../../../components/GameRecapsWidget';
@@ -37,6 +38,11 @@ import { unwrapApiResult } from '../../../utils/apiResult';
 import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
 import HandoutSection from '@/components/handouts/HandoutSection';
 import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
+import PendingPhotoSubmissionsPanel from '@/components/photo-submissions/PendingPhotoSubmissionsPanel';
+import PhotoSubmissionForm, {
+  type PhotoAlbumOption,
+} from '@/components/photo-submissions/PhotoSubmissionForm';
+import { usePendingPhotoSubmissions } from '../../../hooks/usePendingPhotoSubmissions';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -50,13 +56,65 @@ const BaseballAccountHome: React.FC = () => {
   const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
   const [sponsorError, setSponsorError] = useState<string | null>(null);
   const { user, token } = useAuth();
+  const { hasRole, hasRoleInAccount } = useRole();
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
-  const { isMember, contact } = useAccountMembership(accountIdStr);
+  const {
+    isMember,
+    contact,
+    loading: membershipLoading,
+    error: membershipError,
+  } = useAccountMembership(accountIdStr);
   const isAccountMember = isMember === true;
   const hasAccountContact = Boolean(contact);
+  const canSubmitPhotos = Boolean(token && isAccountMember);
+  const showSubmissionPanel = Boolean(token && accountIdStr);
+
+  const canModerateAccountPhotos = useMemo(() => {
+    if (!accountIdStr) {
+      return false;
+    }
+
+    return (
+      hasRole('Administrator') ||
+      hasRole('PhotoAdmin') ||
+      hasRoleInAccount('AccountAdmin', accountIdStr) ||
+      hasRoleInAccount('AccountPhotoAdmin', accountIdStr)
+    );
+  }, [accountIdStr, hasRole, hasRoleInAccount]);
+
+  const shouldShowPendingPanel = Boolean(token && canModerateAccountPhotos && accountIdStr);
+
+  const {
+    submissions: pendingSubmissions,
+    loading: pendingLoading,
+    error: pendingError,
+    successMessage: pendingSuccess,
+    processingIds: pendingProcessingIds,
+    approve: approvePendingSubmission,
+    deny: denyPendingSubmission,
+    refresh: refreshPendingSubmissions,
+    clearStatus: clearPendingStatus,
+  } = usePendingPhotoSubmissions({
+    accountId: accountIdStr ?? null,
+    enabled: shouldShowPendingPanel,
+  });
+
+  const albumOptions: PhotoAlbumOption[] = useMemo(() => {
+    const options = new Map<string | null, string>();
+    options.set(null, 'Main Account Album (Default)');
+
+    pendingSubmissions.forEach((submission) => {
+      const album = submission.album;
+      if (album?.id && album.title) {
+        options.set(album.id, album.title);
+      }
+    });
+
+    return Array.from(options.entries()).map(([id, title]) => ({ id, title }));
+  }, [pendingSubmissions]);
 
   // Fetch public account data
   useEffect(() => {
@@ -329,6 +387,52 @@ const BaseballAccountHome: React.FC = () => {
           token={token || undefined}
           isAccountMember={isAccountMember}
         />
+
+        {showSubmissionPanel && (
+          <Paper sx={{ p: 3, mb: 2 }}>
+            {membershipLoading ? (
+              <Box display="flex" alignItems="center" gap={2}>
+                <CircularProgress size={24} />
+                <Typography variant="body2">Checking your access…</Typography>
+              </Box>
+            ) : membershipError ? (
+              <Alert severity="error">{membershipError}</Alert>
+            ) : canSubmitPhotos ? (
+              <PhotoSubmissionForm
+                variant="account"
+                accountId={accountIdStr ?? ''}
+                contextName={account.name}
+                albumOptions={albumOptions}
+                onSubmitted={() => {
+                  void refreshPendingSubmissions();
+                }}
+              />
+            ) : (
+              <Alert severity="info">
+                You need to be a registered contact for this account to submit photos for
+                moderation.
+              </Alert>
+            )}
+          </Paper>
+        )}
+
+        {shouldShowPendingPanel && (
+          <Paper sx={{ p: 3, mb: 2 }}>
+            <PendingPhotoSubmissionsPanel
+              contextLabel={account.name}
+              submissions={pendingSubmissions}
+              loading={pendingLoading}
+              error={pendingError}
+              successMessage={pendingSuccess}
+              processingIds={pendingProcessingIds}
+              onRefresh={refreshPendingSubmissions}
+              onApprove={approvePendingSubmission}
+              onDeny={denyPendingSubmission}
+              onClearStatus={clearPendingStatus}
+              emptyMessage="No pending photo submissions for this account."
+            />
+          </Paper>
+        )}
 
         {/* Scoreboard Layout Toggle */}
         {hasAnyGames && (

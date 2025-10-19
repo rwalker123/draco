@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -21,22 +21,65 @@ import {
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
+import { useRole } from '../../../../context/RoleContext';
 import BaseballAccountHome from '../BaseballAccountHome';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
 import { AccountType, AccountSeasonWithStatusType } from '@draco/shared-schemas';
+import PendingPhotoSubmissionsPanel from '../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
+import PhotoSubmissionForm, {
+  type PhotoAlbumOption,
+} from '../../../../components/photo-submissions/PhotoSubmissionForm';
+import { usePendingPhotoSubmissions } from '../../../../hooks/usePendingPhotoSubmissions';
+import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 
 const AccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
   const [seasons, setSeasons] = useState<AccountSeasonWithStatusType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const { hasRole, hasRoleInAccount } = useRole();
   const router = useRouter();
   const { accountId } = useParams();
   const apiClient = useApiClient();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
+
+  const canModerateAccountPhotos = useMemo(() => {
+    if (!accountIdStr) {
+      return false;
+    }
+
+    return (
+      hasRole('Administrator') ||
+      hasRole('PhotoAdmin') ||
+      hasRoleInAccount('AccountAdmin', accountIdStr) ||
+      hasRoleInAccount('AccountPhotoAdmin', accountIdStr)
+    );
+  }, [accountIdStr, hasRole, hasRoleInAccount]);
+
+  const shouldShowPendingPanel = Boolean(token && canModerateAccountPhotos && accountIdStr);
+  const {
+    isMember: isAccountMember,
+    loading: membershipLoading,
+    error: membershipError,
+  } = useAccountMembership(accountIdStr ?? null);
+
+  const {
+    submissions: pendingSubmissions,
+    loading: pendingLoading,
+    error: pendingError,
+    successMessage: pendingSuccess,
+    processingIds: pendingProcessingIds,
+    approve: approvePendingSubmission,
+    deny: denyPendingSubmission,
+    refresh: refreshPendingSubmissions,
+    clearStatus: clearPendingStatus,
+  } = usePendingPhotoSubmissions({
+    accountId: accountIdStr ?? null,
+    enabled: shouldShowPendingPanel,
+  });
 
   useEffect(() => {
     if (!accountIdStr) {
@@ -168,6 +211,23 @@ const AccountHome: React.FC = () => {
       ? new Date().getFullYear() - account.configuration?.firstYear + 1
       : 'N/A';
 
+  const albumOptions: PhotoAlbumOption[] = (() => {
+    const options = new Map<string | null, string>();
+    options.set(null, 'Main Account Album (Default)');
+
+    pendingSubmissions.forEach((submission) => {
+      const album = submission.album;
+      if (album?.id && album.title) {
+        options.set(album.id, album.title);
+      }
+    });
+
+    return Array.from(options.entries()).map(([id, title]) => ({ id, title }));
+  })();
+
+  const canSubmitPhotos = Boolean(token && isAccountMember);
+  const showSubmissionPanel = Boolean(token && accountIdStr);
+
   return (
     <main className="min-h-screen bg-background">
       {/* Header */}
@@ -225,6 +285,51 @@ const AccountHome: React.FC = () => {
           </Button>
         )}
       </Box>
+
+      {showSubmissionPanel && (
+        <Paper sx={{ p: 3, mb: 4 }}>
+          {membershipLoading ? (
+            <Box display="flex" alignItems="center" gap={2}>
+              <CircularProgress size={24} />
+              <Typography variant="body2">Checking your access…</Typography>
+            </Box>
+          ) : membershipError ? (
+            <Alert severity="error">{membershipError}</Alert>
+          ) : canSubmitPhotos ? (
+            <PhotoSubmissionForm
+              variant="account"
+              accountId={accountIdStr ?? ''}
+              contextName={account.name}
+              albumOptions={albumOptions}
+              onSubmitted={() => {
+                void refreshPendingSubmissions();
+              }}
+            />
+          ) : (
+            <Alert severity="info">
+              You need to be a registered contact for this account to submit photos for moderation.
+            </Alert>
+          )}
+        </Paper>
+      )}
+
+      {shouldShowPendingPanel && (
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <PendingPhotoSubmissionsPanel
+            contextLabel={account.name}
+            submissions={pendingSubmissions}
+            loading={pendingLoading}
+            error={pendingError}
+            successMessage={pendingSuccess}
+            processingIds={pendingProcessingIds}
+            onRefresh={refreshPendingSubmissions}
+            onApprove={approvePendingSubmission}
+            onDeny={denyPendingSubmission}
+            onClearStatus={clearPendingStatus}
+            emptyMessage="No pending photo submissions for this account."
+          />
+        </Paper>
+      )}
 
       {/* Current Season Info */}
       {currentSeason && (
