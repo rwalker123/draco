@@ -6,6 +6,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import PhotoSubmissionForm from '../PhotoSubmissionForm';
 import type { PhotoAlbumOption } from '../PhotoSubmissionForm';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
+import type { CreatePhotoSubmissionForm } from '@draco/shared-api-client';
 import { ApiClientError } from '../../../utils/apiResult';
 
 vi.mock('../../../hooks/useApiClient', () => ({
@@ -25,7 +26,9 @@ const albumOptions: PhotoAlbumOption[] = [
   { id: '10', title: 'Highlights' },
 ];
 
-const createSubmission = (overrides: Partial<PhotoSubmissionRecordType> = {}): PhotoSubmissionRecordType => ({
+const createSubmission = (
+  overrides: Partial<PhotoSubmissionRecordType> = {},
+): PhotoSubmissionRecordType => ({
   id: '1',
   accountId: '1',
   teamId: null,
@@ -44,15 +47,15 @@ const createSubmission = (overrides: Partial<PhotoSubmissionRecordType> = {}): P
   originalFilePath: 'Uploads/Accounts/1/PhotoSubmissions/1/original.jpg',
   primaryImagePath: 'Uploads/Accounts/1/PhotoSubmissions/1/primary.jpg',
   thumbnailImagePath: 'Uploads/Accounts/1/PhotoSubmissions/1/thumbnail.jpg',
-  accountName: 'Draco Sports',
-  album: overrides.album ?? null,
-  approvedPhoto: null,
-  submitter: overrides.submitter ?? null,
-  moderator: null,
   ...overrides,
 });
 
-const renderForm = (props?: Partial<React.ComponentProps<typeof PhotoSubmissionForm>>) => {
+interface RenderAccountFormProps {
+  onSubmitted?: (submission: PhotoSubmissionRecordType) => void;
+  albumOptions?: PhotoAlbumOption[];
+}
+
+const renderForm = (props: RenderAccountFormProps = {}) => {
   const theme = createTheme();
   return render(
     <ThemeProvider theme={theme}>
@@ -60,8 +63,8 @@ const renderForm = (props?: Partial<React.ComponentProps<typeof PhotoSubmissionF
         variant="account"
         accountId="1"
         contextName="Draco Sports"
-        albumOptions={albumOptions}
-        {...props}
+        albumOptions={props.albumOptions ?? albumOptions}
+        onSubmitted={props.onSubmitted}
       />
     </ThemeProvider>,
   );
@@ -93,11 +96,13 @@ describe('PhotoSubmissionForm', () => {
       expect(createAccountPhotoSubmission).toHaveBeenCalledTimes(1);
     });
 
-    const call = createAccountPhotoSubmission.mock.calls[0][0] as { body: FormData };
-    const formData = call.body;
-    expect(formData.get('title')).toBe('Summer Game');
-    expect(formData.get('caption')).toBe('Great win!');
-    expect(formData.get('photo')).toBeInstanceOf(File);
+    const call = createAccountPhotoSubmission.mock.calls[0][0] as {
+      body: CreatePhotoSubmissionForm;
+    };
+    const body = call.body;
+    expect(body.title).toBe('Summer Game');
+    expect(body.caption).toBe('Great win!');
+    expect(body.photo).toBeInstanceOf(File);
 
     await waitFor(() => {
       expect(
@@ -140,12 +145,7 @@ describe('PhotoSubmissionForm', () => {
     const theme = createTheme();
     render(
       <ThemeProvider theme={theme}>
-        <PhotoSubmissionForm
-          variant="team"
-          accountId="1"
-          teamId="2"
-          contextName="Varsity"
-        />
+        <PhotoSubmissionForm variant="team" accountId="1" teamId="2" contextName="Varsity" />
       </ThemeProvider>,
     );
 
@@ -160,7 +160,10 @@ describe('PhotoSubmissionForm', () => {
       expect(createTeamPhotoSubmission).toHaveBeenCalledTimes(1);
     });
 
-    const call = createTeamPhotoSubmission.mock.calls[0][0] as { body: FormData };
-    expect(call.body.get('title')).toBe('Team Celebration');
+    const call = createTeamPhotoSubmission.mock.calls[0][0] as {
+      body: CreatePhotoSubmissionForm;
+    };
+    expect(call.body.title).toBe('Team Celebration');
+    expect(call.body.photo).toBeInstanceOf(File);
   });
 });

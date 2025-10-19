@@ -174,7 +174,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
             const processing = isProcessing(submission.id);
 
             return (
-              <Grid item xs={12} md={6} key={submission.id}>
+              <Grid size={{ xs: 12, md: 6 }} key={submission.id}>
                 <Card variant="outlined">
                   <CardHeader
                     title={submission.title}

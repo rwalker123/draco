@@ -3,6 +3,7 @@ import { useApiClient } from './useApiClient';
 import {
   createAccountPhotoSubmission,
   createTeamPhotoSubmission,
+  type CreatePhotoSubmissionForm,
 } from '@draco/shared-api-client';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ApiClientError, unwrapApiResult } from '../utils/apiResult';
@@ -35,17 +36,6 @@ const normalizeId = (value?: string | null): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
-const appendOptionalField = (formData: FormData, key: string, value?: string | null) => {
-  if (!value) {
-    return;
-  }
-
-  const trimmed = value.trim();
-  if (trimmed.length > 0) {
-    formData.append(key, trimmed);
-  }
-};
-
 export const usePhotoSubmission = ({
   accountId,
   teamId,
@@ -58,7 +48,12 @@ export const usePhotoSubmission = ({
   const [error, setError] = useState<string | null>(null);
 
   const submitPhoto = useCallback(
-    async ({ title, caption, albumId, photo }: SubmitPhotoInput): Promise<PhotoSubmissionRecordType | null> => {
+    async ({
+      title,
+      caption,
+      albumId,
+      photo,
+    }: SubmitPhotoInput): Promise<PhotoSubmissionRecordType | null> => {
       if (!normalizedAccountId) {
         setError('Account information is required to submit photos.');
         return null;
@@ -67,24 +62,33 @@ export const usePhotoSubmission = ({
       setSubmitting(true);
       setError(null);
 
-      const formData = new FormData();
-      formData.append('title', title.trim());
-      appendOptionalField(formData, 'caption', caption ?? null);
-      appendOptionalField(formData, 'albumId', albumId ?? null);
-      formData.append('photo', photo);
+      const submissionBody: CreatePhotoSubmissionForm = {
+        title: title.trim(),
+        photo,
+      };
+
+      const trimmedCaption = caption?.trim();
+      if (trimmedCaption) {
+        submissionBody.caption = trimmedCaption;
+      }
+
+      const trimmedAlbumId = albumId?.trim();
+      if (trimmedAlbumId) {
+        submissionBody.albumId = trimmedAlbumId;
+      }
 
       try {
         const result = normalizedTeamId
           ? await createTeamPhotoSubmission({
               client: apiClient,
               path: { accountId: normalizedAccountId, teamId: normalizedTeamId },
-              body: formData,
+              body: submissionBody,
               throwOnError: false,
             })
           : await createAccountPhotoSubmission({
               client: apiClient,
               path: { accountId: normalizedAccountId },
-              body: formData,
+              body: submissionBody,
               throwOnError: false,
             });
 

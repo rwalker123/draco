@@ -15,7 +15,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { PhotoCamera as PhotoCameraIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
+import {
+  PhotoCamera as PhotoCameraIcon,
+  CloudUpload as CloudUploadIcon,
+} from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,29 +55,23 @@ const PhotoSubmissionSchema = z.object({
     .trim()
     .min(1, 'Title is required')
     .max(50, 'Title must be 50 characters or fewer'),
-  caption: z
-    .string()
-    .trim()
-    .max(255, 'Caption must be 255 characters or fewer')
-    .optional()
-    .transform((value) => value ?? ''),
+  caption: z.string().trim().max(255, 'Caption must be 255 characters or fewer').default(''),
   albumId: z.string().trim().optional().nullable(),
-  photo: z
-    .custom<File | null>()
-    .superRefine((value, ctx) => {
-      if (!value) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please choose a photo to upload.' });
-        return;
-      }
+  photo: z.custom<File | null>().superRefine((value, ctx) => {
+    if (!value) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please choose a photo to upload.' });
+      return;
+    }
 
-      const error = validatePhotoSubmissionFile(value);
-      if (error) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
-      }
-    }),
+    const error = validatePhotoSubmissionFile(value);
+    if (error) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
+    }
+  }),
 });
 
-type PhotoSubmissionFormValues = z.infer<typeof PhotoSubmissionSchema>;
+type PhotoSubmissionFormValues = z.input<typeof PhotoSubmissionSchema>;
+type PhotoSubmissionFormSubmitValues = z.output<typeof PhotoSubmissionSchema>;
 
 const buildDefaultAlbumOptions = (options?: PhotoAlbumOption[]): PhotoAlbumOption[] => {
   if (options && options.length > 0) {
@@ -89,7 +86,10 @@ const buildDefaultAlbumOptions = (options?: PhotoAlbumOption[]): PhotoAlbumOptio
   ];
 };
 
-const getDefaultAlbumId = (options: PhotoAlbumOption[], variant: PhotoSubmissionFormProps['variant']) => {
+const getDefaultAlbumId = (
+  options: PhotoAlbumOption[],
+  variant: PhotoSubmissionFormProps['variant'],
+) => {
   if (variant === 'team') {
     return null;
   }
@@ -97,7 +97,10 @@ const getDefaultAlbumId = (options: PhotoAlbumOption[], variant: PhotoSubmission
   return options[0]?.id ?? null;
 };
 
-const formatSuccessMessage = (submission: PhotoSubmissionRecordType, contextName: string): string => {
+const formatSuccessMessage = (
+  submission: PhotoSubmissionRecordType,
+  contextName: string,
+): string => {
   const normalizedContext = contextName.trim().length > 0 ? contextName : 'this gallery';
   return `Photo “${submission.title}” submitted for review in ${normalizedContext}.`;
 };
@@ -116,7 +119,10 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
     teamId,
   });
 
-  const defaultAlbumId = useMemo(() => getDefaultAlbumId(albumOptions, props.variant), [albumOptions, props.variant]);
+  const defaultAlbumId = useMemo(
+    () => getDefaultAlbumId(albumOptions, props.variant),
+    [albumOptions, props.variant],
+  );
 
   const {
     handleSubmit,
@@ -124,7 +130,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
     register,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<PhotoSubmissionFormValues>({
+  } = useForm<PhotoSubmissionFormValues, unknown, PhotoSubmissionFormSubmitValues>({
     resolver: zodResolver(PhotoSubmissionSchema),
     defaultValues: {
       title: '',
@@ -163,7 +169,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
     const submission = await submitPhoto({
       title,
       caption: caption?.trim()?.length ? caption.trim() : undefined,
-      albumId: showAlbumSelection ? albumId ?? null : null,
+      albumId: showAlbumSelection ? (albumId ?? null) : null,
       photo,
     });
 
@@ -180,7 +186,8 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
         Submit a Photo for Review
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Upload a photo to share with {contextName}. Your submission will appear once a moderator approves it.
+        Upload a photo to share with {contextName}. Your submission will appear once a moderator
+        approves it.
       </Typography>
 
       <Stack component="form" spacing={3} onSubmit={onSubmit} noValidate>
@@ -232,14 +239,16 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
                 </Select>
               )}
             />
-            <FormHelperText>{errors.albumId?.message ?? 'Choose where the photo should appear'}</FormHelperText>
+            <FormHelperText>
+              {errors.albumId?.message ?? 'Choose where the photo should appear'}
+            </FormHelperText>
           </FormControl>
         )}
 
         <Controller
           name="photo"
           control={control}
-          render={({ field: { onChange, ...field } }) => (
+          render={({ field: { value: _value, onChange, ...field } }) => (
             <Box>
               <Button
                 variant="outlined"
@@ -275,11 +284,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
         />
 
         {(error || successMessage) && (
-          <Alert
-            severity={error ? 'error' : 'success'}
-            onClose={clearStatus}
-            sx={{ mt: 1 }}
-          >
+          <Alert severity={error ? 'error' : 'success'} onClose={clearStatus} sx={{ mt: 1 }}>
             {error ?? successMessage}
           </Alert>
         )}

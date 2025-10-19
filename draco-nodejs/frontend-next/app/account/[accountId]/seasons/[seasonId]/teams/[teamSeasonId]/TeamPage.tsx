@@ -86,11 +86,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     loading: teamMembershipLoading,
     error: teamMembershipError,
     teamSeason,
-  } = useTeamMembership(
-    isAccountMember ? accountId : null,
-    teamSeasonId,
-    seasonId,
-  );
+  } = useTeamMembership(isAccountMember ? accountId : null, teamSeasonId, seasonId);
   const apiClient = useApiClient();
 
   const teamModerationTeamId = teamData?.teamId ?? null;
@@ -444,7 +440,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 variant="team"
                 accountId={accountId}
                 teamId={teamData.teamId}
-                contextName={teamData.teamName ?? teamSeason?.team?.name ?? 'this team'}
+                contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
                 onSubmitted={() => {
                   void refreshTeamPending();
                 }}
