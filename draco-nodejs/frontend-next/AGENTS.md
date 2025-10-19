@@ -20,3 +20,7 @@ Refer back to the architecture guide for component patterns, data flow, and inte
 - Always create the generated OpenAPI client with `useApiClient()`.
 - Every call to a generated operation **must** include `client: apiClient` in the options object (see `useRosterDataManager` for examples).
 - Omitting the client causes the helper to throw because it lacks the HTTP transport configuration.
+
+## Rich Text Editor Usage
+- Treat `RichTextEditor` as an uncontrolled component. Mount it with an initial value and use its exposed ref helpers (`getCurrentContent`, `getTextContent`, `insertText`) instead of wiring React state through `onChange`.
+- Avoid syncing every keystroke into component state and back into `initialValue`; doing so remounts Lexical on each change and forces the caret to jump to the end. See `EmailComposePage` or `TemplateRichTextEditor` for the correct pattern.

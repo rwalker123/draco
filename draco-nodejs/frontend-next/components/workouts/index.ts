@@ -1,8 +1,11 @@
 export { WorkoutsManagement } from './WorkoutsManagement';
-export { WorkoutForm } from './WorkoutForm';
 export { WorkoutSourcesForm } from './WorkoutSourcesForm';
 export { WorkoutCard } from './WorkoutCard';
-export { WorkoutDetails } from './WorkoutDetails';
 export { WorkoutDisplay } from './WorkoutDisplay';
 export { WorkoutRegistrationsAccordion } from './WorkoutRegistrationsAccordion';
 export { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
+export { WorkoutFormDialog } from './dialogs/WorkoutFormDialog';
+export { WorkoutPreviewDialog } from './dialogs/WorkoutPreviewDialog';
+export { WorkoutDetailsDialog } from './dialogs/WorkoutDetailsDialog';
+export { WorkoutEmailDialog } from './dialogs/WorkoutEmailDialog';
+export { WorkoutSourcesDialog } from './dialogs/WorkoutSourcesDialog';
