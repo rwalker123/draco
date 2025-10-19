@@ -84,9 +84,9 @@ describe('Photo submission routes', () => {
     title: 'Test Photo',
     caption: overrides.caption ?? 'Caption',
     originalFileName: 'photo.jpg',
-    originalFilePath: 'Uploads/Accounts/1/PhotoSubmissions/key/original.jpg',
-    primaryImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/primary.jpg',
-    thumbnailImagePath: 'Uploads/Accounts/1/PhotoSubmissions/key/thumbnail.jpg',
+    originalFilePath: '1/photo-submissions/key/original.jpg',
+    primaryImagePath: '1/photo-submissions/key/primary.jpg',
+    thumbnailImagePath: '1/photo-submissions/key/thumbnail.jpg',
     status: 'Pending',
     denialReason: null,
     submittedAt: new Date('2024-01-01T00:00:00Z').toISOString(),
@@ -108,7 +108,7 @@ describe('Photo submission routes', () => {
   });
 
   beforeAll(async () => {
-    process.env.JWT_SECRET = 'test-secret';
+    process.env.JWT_SECRET = 'jwt-key-placeholder'; // pragma: allowlist secret
     process.env.FRONTEND_URL = 'http://localhost:3000';
 
     vi.spyOn(ServiceFactory, 'getCleanupService').mockReturnValue(cleanupServiceMock as never);

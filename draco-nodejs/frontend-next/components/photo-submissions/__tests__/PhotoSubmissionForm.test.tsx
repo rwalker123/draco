@@ -44,9 +44,9 @@ const createSubmission = (
   updatedAt: '2024-01-01T00:00:00.000Z',
   moderatedAt: null,
   originalFileName: 'summer-game.jpg',
-  originalFilePath: 'Uploads/Accounts/1/PhotoSubmissions/1/original.jpg',
-  primaryImagePath: 'Uploads/Accounts/1/PhotoSubmissions/1/primary.jpg',
-  thumbnailImagePath: 'Uploads/Accounts/1/PhotoSubmissions/1/thumbnail.jpg',
+  originalFilePath: '1/photo-submissions/1/original.jpg',
+  primaryImagePath: '1/photo-submissions/1/primary.jpg',
+  thumbnailImagePath: '1/photo-submissions/1/thumbnail.jpg',
   ...overrides,
 });
 

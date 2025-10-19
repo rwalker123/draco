@@ -51,9 +51,7 @@ export function useTeamMembership(
             return false;
           }
 
-          const matchesTeamSeason = team.id === teamSeasonId;
-          const matchesSeason = seasonId ? team.season?.id === seasonId : true;
-          return matchesTeamSeason && matchesSeason;
+          return team.id === teamSeasonId;
         });
 
         setTeamSeason(match ?? null);

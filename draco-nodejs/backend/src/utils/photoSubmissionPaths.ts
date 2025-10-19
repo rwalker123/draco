@@ -1,8 +1,6 @@
 import path from 'node:path';
 import type { PhotoSubmissionAssetsType } from '@draco/shared-schemas';
 
-const STORAGE_BASE_PREFIX = 'Uploads/Accounts';
-
 const ensureExtensionFormat = (extension: string): string => {
   if (!extension) {
     return extension;
@@ -18,7 +16,7 @@ export function buildSubmissionAssetPaths(
 ): PhotoSubmissionAssetsType {
   const accountSegment = accountId.toString();
   const normalizedExtension = ensureExtensionFormat(extension);
-  const basePath = `${STORAGE_BASE_PREFIX}/${accountSegment}/PhotoSubmissions/${storageKey}`;
+  const basePath = `${accountSegment}/photo-submissions/${storageKey}`;
 
   return {
     originalFilePath: `${basePath}/original${normalizedExtension}`,
@@ -43,7 +41,7 @@ export function buildGalleryAssetPaths(
 } {
   const accountSegment = accountId.toString();
   const normalizedExtension = ensureExtensionFormat(extension);
-  const basePath = `${STORAGE_BASE_PREFIX}/${accountSegment}/PhotoGallery/${photoId.toString()}`;
+  const basePath = `${accountSegment}/photo-gallery/${photoId.toString()}`;
 
   return {
     originalFilePath: `${basePath}/Original${normalizedExtension}`,

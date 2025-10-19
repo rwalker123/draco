@@ -18,6 +18,8 @@ import {
 import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 import DenyPhotoSubmissionDialog from './DenyPhotoSubmissionDialog';
 
+const THUMBNAIL_MAX_WIDTH = 320;
+
 export interface PendingPhotoSubmissionsPanelProps {
   contextLabel: string;
   submissions: PhotoSubmissionDetailType[];
@@ -41,8 +43,12 @@ const buildAssetUrl = (path?: string | null): string | undefined => {
     return path;
   }
 
-  const normalized = path.startsWith('/') ? path : `/${path}`;
-  return normalized.replace(/\\/g, '/');
+  const normalized = path.replace(/\\/g, '/').replace(/^\/+/, '');
+  if (normalized.startsWith('uploads/')) {
+    return `/${normalized}`;
+  }
+
+  return `/uploads/${normalized}`;
 };
 
 const formatDateTime = (value: string): string => {
@@ -65,7 +71,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
   successMessage,
   processingIds,
   emptyMessage = 'No pending photo submissions right now.',
-  onRefresh,
+  onRefresh: _onRefresh,
   onApprove,
   onDeny,
   onClearStatus,
@@ -131,17 +137,9 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
 
   return (
     <Box data-testid="pending-photo-submissions-panel">
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">Pending Photo Submissions</Typography>
-        <Button
-          onClick={() => {
-            void onRefresh();
-          }}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
-      </Stack>
+      <Typography variant="h5" mb={2}>
+        Pending Photo Submissions
+      </Typography>
 
       <Typography variant="body2" color="text.secondary" mb={3}>
         Review submissions awaiting moderation for {contextLabel}.
@@ -163,7 +161,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
           <CircularProgress role="progressbar" />
         </Box>
       ) : hasSubmissions ? (
-        <Grid container spacing={3}>
+        <Grid container spacing={3} justifyContent="center">
           {submissions.map((submission) => {
             const thumbnailUrl = buildAssetUrl(submission.thumbnailImagePath);
             const submitterName = [submission.submitter?.firstName, submission.submitter?.lastName]
@@ -174,8 +172,12 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
             const processing = isProcessing(submission.id);
 
             return (
-              <Grid size={{ xs: 12, md: 6 }} key={submission.id}>
-                <Card variant="outlined">
+              <Grid
+                size={{ xs: 12, md: 6 }}
+                key={submission.id}
+                sx={{ display: 'flex', justifyContent: 'center' }}
+              >
+                <Card variant="outlined" sx={{ width: '100%', maxWidth: THUMBNAIL_MAX_WIDTH }}>
                   <CardHeader
                     title={submission.title}
                     subheader={`Submitted ${submittedAt}`}
@@ -185,34 +187,35 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
                   <Divider />
                   <CardContent>
                     <Stack direction="column" spacing={2}>
-                      {thumbnailUrl ? (
-                        <Box
-                          component="img"
-                          src={thumbnailUrl}
-                          alt={`Preview of ${submission.title}`}
-                          sx={{
-                            width: '100%',
-                            height: 180,
-                            objectFit: 'cover',
-                            borderRadius: 1,
-                            bgcolor: 'grey.100',
-                          }}
-                        />
-                      ) : (
-                        <Box
-                          sx={{
-                            width: '100%',
-                            height: 180,
-                            borderRadius: 1,
-                            bgcolor: 'grey.100',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
+                      <Box
+                        sx={{
+                          width: '100%',
+                          borderRadius: 1,
+                          bgcolor: 'grey.100',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                          minHeight: 120,
+                        }}
+                      >
+                        {thumbnailUrl ? (
+                          <Box
+                            component="img"
+                            src={thumbnailUrl}
+                            alt={`Preview of ${submission.title}`}
+                            loading="lazy"
+                            sx={{
+                              width: '100%',
+                              height: 'auto',
+                              maxHeight: 220,
+                              objectFit: 'contain',
+                            }}
+                          />
+                        ) : (
                           <Typography color="text.secondary">No preview available</Typography>
-                        </Box>
-                      )}
+                        )}
+                      </Box>
 
                       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                         <Chip label={albumTitle} color="primary" variant="outlined" />
