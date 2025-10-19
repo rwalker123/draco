@@ -5556,6 +5556,25 @@ components:
           default: 10000
       title: WorkoutRegistrationsQuery
       description: Query parameters to paginate workout registrations
+    WorkoutRegistrationsEmailRequest:
+      type: object
+      properties:
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 255
+        body:
+          type: string
+          minLength: 1
+        registrationIds:
+          type: array
+          items:
+            type: string
+      required:
+        - subject
+        - body
+      title: WorkoutRegistrationsEmailRequest
+      description: Payload to email workout registrants
     DivisionSeason:
       type: object
       properties:
@@ -20342,6 +20361,78 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/workouts/{workoutId}/registrations/email:
+    post:
+      operationId: emailWorkoutRegistrations
+      summary: Email workout registrants
+      description: Send an email to one or more workout registrants.
+      tags:
+        - Workouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutRegistrationsEmailRequest"
+      responses:
+        "202":
+          description: Email accepted for delivery
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - queued
+                required:
+                  - status
+                title: WorkoutEmailQueuedResponse
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Workout or registrations not found
           content:
             application/json:
               schema:

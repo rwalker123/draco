@@ -1,130 +1,120 @@
-import React, { useState, useEffect, useCallback } from 'react';
+'use client';
+
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
+  Alert,
+  Badge,
   Box,
   Button,
-  IconButton,
   Chip,
-  Badge,
-  List,
-  ListItem,
-  ListItemText,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   CircularProgress,
   Container,
+  IconButton,
   Paper,
-  Alert,
-  Divider,
-  TextField,
-  FormControl,
-  Select,
-  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Typography,
+  Dialog,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Add as AddIcon,
-  People as PeopleIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  PersonAddAlt1 as PersonAddIcon,
   Visibility as VisibilityIcon,
+  People as PeopleIcon,
+  EmailOutlined as EmailOutlinedIcon,
 } from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import {
-  WorkoutSummaryType,
-  WorkoutRegistrationType,
-  UpsertWorkoutRegistrationType,
-} from '@draco/shared-schemas';
-import {
-  listWorkouts,
-  listWorkoutRegistrations,
-  createWorkoutRegistration,
-  updateWorkoutRegistration,
-  deleteWorkoutRegistration,
-  deleteWorkout,
-} from '../../services/workoutService';
+import type { WorkoutSummaryType } from '@draco/shared-schemas';
+import { deleteWorkout, listWorkouts } from '../../services/workoutService';
 import ConfirmationDialog from '../common/ConfirmationDialog';
-import { WorkoutRegistrationForm } from './WorkoutRegistrationForm';
-import { formatPhoneNumber } from '../../utils/phoneNumber';
 import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
+import { WorkoutDetailsDialog } from './dialogs/WorkoutDetailsDialog';
+import { WorkoutEmailDialog } from './dialogs/WorkoutEmailDialog';
+import ButtonBase from '@mui/material/ButtonBase';
+import { listAccountFields } from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
+import { FieldDetailsCard, type FieldDetails } from '../fields/FieldDetailsCard';
 
 interface WorkoutRegistrationsAccordionProps {
   accountId: string;
+  onCreateWorkout: () => void;
+  onEditWorkout: (workoutId: string) => void;
+  onPreviewWorkout: (workoutId: string) => void;
+  refreshKey?: number;
 }
+
+const formatWorkoutDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
 
 export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordionProps> = ({
   accountId,
+  onCreateWorkout,
+  onEditWorkout,
+  onPreviewWorkout,
+  refreshKey = 0,
 }) => {
   const { token } = useAuth();
+  const apiClient = useApiClient();
   const [workouts, setWorkouts] = useState<WorkoutSummaryType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workoutToDelete, setWorkoutToDelete] = useState<WorkoutSummaryType | null>(null);
-  const [expandedWorkout, setExpandedWorkout] = useState<string | false>(false);
-  const [loadedRegistrations, setLoadedRegistrations] = useState<Set<string>>(new Set());
-  const [registrations, setRegistrations] = useState<Record<string, WorkoutRegistrationType[]>>({});
-  const [loadingRegistrations, setLoadingRegistrations] = useState<Record<string, boolean>>({});
-
-  // Registration management state
-  const [registrationDialogOpen, setRegistrationDialogOpen] = useState(false);
-  const [editingRegistration, setEditingRegistration] = useState<WorkoutRegistrationType | null>(
-    null,
-  );
-  const [currentWorkoutId, setCurrentWorkoutId] = useState<string>('');
-  const [savingRegistration, setSavingRegistration] = useState(false);
-  const [deleteRegistrationDialogOpen, setDeleteRegistrationDialogOpen] = useState(false);
-  const [registrationToDelete, setRegistrationToDelete] = useState<{
-    workoutId: string;
-    registrationId: string;
-  } | null>(null);
-
-  // Feedback states
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [workoutToDelete, setWorkoutToDelete] = useState<WorkoutSummaryType | null>(null);
+  const [detailsDialogState, setDetailsDialogState] = useState<{
+    open: boolean;
+    workout: WorkoutSummaryType | null;
+    initialAction: 'createRegistration' | null;
+  }>({ open: false, workout: null, initialAction: null });
+  const [emailDialogState, setEmailDialogState] = useState<{
+    open: boolean;
+    workout: WorkoutSummaryType | null;
+  }>({ open: false, workout: null });
+  const [fieldDialogState, setFieldDialogState] = useState<{
+    open: boolean;
+    fieldId: string | null;
+    fallbackField: FieldDetails | null;
+  }>({ open: false, fieldId: null, fallbackField: null });
+  const [fields, setFields] = useState<Record<string, FieldDetails>>({});
 
-  // Search and filter states
-  const [searchTerm, setSearchTerm] = useState<Record<string, string>>({});
-  const [filterManager, setFilterManager] = useState<Record<string, boolean | null>>({});
+  const showSuccessMessage = useCallback((message: string) => {
+    setSuccessMessage(message);
+    window.setTimeout(() => setSuccessMessage(null), UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS);
+  }, []);
 
-  const router = useRouter();
-
-  // Helper function to filter registrations
-  const getFilteredRegistrations = (workoutId: string): WorkoutRegistrationType[] => {
-    const workoutRegistrations = registrations[workoutId] || [];
-    const search = searchTerm[workoutId] || '';
-    const managerFilter = filterManager[workoutId];
-
-    return workoutRegistrations.filter((registration) => {
-      // Search filter
-      const matchesSearch =
-        !search ||
-        registration.name.toLowerCase().includes(search.toLowerCase()) ||
-        registration.email?.toLowerCase().includes(search.toLowerCase()) ||
-        registration.positions?.toLowerCase().includes(search.toLowerCase());
-
-      // Manager filter - null means "All Registrants"
-      const matchesManager = managerFilter === null || registration.isManager === managerFilter;
-
-      return matchesSearch && matchesManager;
-    });
-  };
+  const showErrorMessage = useCallback((message: string) => {
+    setOperationError(message);
+    window.setTimeout(() => setOperationError(null), UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS);
+  }, []);
 
   const fetchWorkouts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await listWorkouts(accountId, true, token || undefined); // Include registration counts
-      // Sort by workout date, most recent first
-      const sortedWorkouts = data.sort(
+      const data = await listWorkouts(accountId, true, token || undefined);
+      const sorted = [...data].sort(
         (a, b) => new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime(),
       );
-      setWorkouts(sortedWorkouts);
+      setWorkouts(sorted);
     } catch (err) {
       console.error('Error fetching workouts:', err);
       setError('Failed to load workouts');
@@ -134,499 +124,198 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
   }, [accountId, token]);
 
   useEffect(() => {
-    fetchWorkouts();
-  }, [fetchWorkouts]);
+    void fetchWorkouts();
+  }, [fetchWorkouts, refreshKey]);
 
-  // Initialize filter states for workouts
-  useEffect(() => {
-    if (workouts.length > 0) {
-      const initialFilterState: Record<string, boolean | null> = {};
-      const initialSearchState: Record<string, string> = {};
-
-      workouts.forEach((workout) => {
-        initialFilterState[workout.id] = null; // null = "All Registrants"
-        initialSearchState[workout.id] = '';
+  const fetchFields = useCallback(async () => {
+    try {
+      const result = await listAccountFields({
+        client: apiClient,
+        path: { accountId },
+        throwOnError: false,
       });
 
-      setFilterManager(initialFilterState);
-      setSearchTerm(initialSearchState);
+      const data = unwrapApiResult(result, 'Failed to load fields');
+      const mapped: Record<string, FieldDetails> = {};
+
+      data.fields.forEach((field) => {
+        if (!field.id) {
+          return;
+        }
+
+        mapped[field.id] = {
+          id: field.id,
+          name: field.name ?? field.shortName ?? null,
+          shortName: field.shortName ?? null,
+          address: field.address ?? null,
+          city: field.city ?? null,
+          state: field.state ?? null,
+          zip: field.zip ?? null,
+          rainoutNumber: field.rainoutNumber ?? null,
+          comment: field.comment ?? null,
+          directions: field.directions ?? null,
+          latitude: (field.latitude as string | number | null | undefined) ?? null,
+          longitude: (field.longitude as string | number | null | undefined) ?? null,
+        };
+      });
+
+      setFields(mapped);
+    } catch (err) {
+      console.error('Error fetching fields:', err);
     }
-  }, [workouts]);
+  }, [accountId, apiClient]);
 
-  const handleCreateWorkout = () => {
-    router.push(`/account/${accountId}/workouts/new`);
-  };
+  useEffect(() => {
+    void fetchFields();
+  }, [fetchFields]);
 
-  const handleAccordionChange =
-    (workoutId: string) => async (event: React.SyntheticEvent, isExpanded: boolean) => {
-      setExpandedWorkout(isExpanded ? workoutId : false);
+  const handleOpenDetails = useCallback(
+    (workout: WorkoutSummaryType, initialAction: 'createRegistration' | null = null) => {
+      setDetailsDialogState({ open: true, workout, initialAction });
+    },
+    [],
+  );
 
-      if (isExpanded) {
-        // Always fetch registrations if not already loaded, or reload if needed
-        if (!loadedRegistrations.has(workoutId)) {
-          try {
-            setLoadingRegistrations((prev) => ({ ...prev, [workoutId]: true }));
+  const handleCloseDetails = useCallback(() => {
+    setDetailsDialogState({ open: false, workout: null, initialAction: null });
+  }, []);
 
-            if (!token) {
-              setError('Authentication required to view registrations');
-              return;
-            }
-
-            const registrationsData = await listWorkoutRegistrations(accountId, workoutId, token);
-
-            setRegistrations((prev) => ({ ...prev, [workoutId]: registrationsData }));
-            setLoadedRegistrations((prev) => new Set([...prev, workoutId]));
-          } catch (err) {
-            console.error('Error fetching registrations:', err);
-            setError(
-              `Failed to load registrations: ${err instanceof Error ? err.message : 'Unknown error'}`,
-            );
-          } finally {
-            setLoadingRegistrations((prev) => ({ ...prev, [workoutId]: false }));
-          }
-        }
-
-        // Initialize filter state for this workout if not already set
-        if (filterManager[workoutId] === undefined) {
-          setFilterManager((prev) => ({ ...prev, [workoutId]: null })); // null = "All Registrants"
-        }
-        if (searchTerm[workoutId] === undefined) {
-          setSearchTerm((prev) => ({ ...prev, [workoutId]: '' }));
-        }
-      }
-    };
-
-  const handleAddRegistration = (workout: WorkoutSummaryType) => {
-    setCurrentWorkoutId(workout.id);
-    setEditingRegistration(null);
-    setRegistrationDialogOpen(true);
-  };
-
-  const handleEditRegistration = (workoutId: string, registration: WorkoutRegistrationType) => {
-    setCurrentWorkoutId(workoutId);
-    setEditingRegistration(registration);
-    setRegistrationDialogOpen(true);
-  };
-
-  const handleDeleteRegistration = async (workoutId: string, registrationId: string) => {
-    try {
-      await deleteWorkoutRegistration(accountId, workoutId, registrationId, token || undefined);
-
-      // Update local state
-      setRegistrations((prev) => ({
-        ...prev,
-        [workoutId]: prev[workoutId]?.filter((r) => r.id !== registrationId) || [],
-      }));
-
-      // Update workout registration count
+  const handleRegistrationsChange = useCallback(
+    ({ workoutId, registrationCount }: { workoutId: string; registrationCount: number }) => {
       setWorkouts((prev) =>
-        prev.map((w) =>
-          w.id === workoutId ? { ...w, registrationCount: (w.registrationCount || 0) - 1 } : w,
+        prev.map((workout) =>
+          workout.id === workoutId ? { ...workout, registrationCount } : workout,
         ),
       );
+      setDetailsDialogState((prev) => {
+        if (!prev.workout || prev.workout.id !== workoutId) {
+          return prev;
+        }
 
-      setSuccessMessage('Registration deleted successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err) {
-      setOperationError(
-        `Failed to delete registration: ${err instanceof Error ? err.message : 'Unknown error'}`,
-      );
-      setTimeout(() => setOperationError(null), 3000);
-    }
-  };
-
-  const handleSaveRegistration = async (data: UpsertWorkoutRegistrationType) => {
-    try {
-      setSavingRegistration(true);
-      setOperationError(null);
-      setSuccessMessage(null);
-
-      if (editingRegistration) {
-        // Update existing registration
-        const updatedRegistration = await updateWorkoutRegistration(
-          accountId,
-          currentWorkoutId,
-          editingRegistration.id,
-          data,
-          token || undefined,
-        );
-
-        // Update local state
-        setRegistrations((prev) => ({
+        return {
           ...prev,
-          [currentWorkoutId]: prev[currentWorkoutId].map((reg) =>
-            reg.id === editingRegistration.id ? updatedRegistration : reg,
-          ),
-        }));
+          workout: { ...prev.workout, registrationCount },
+        };
+      });
+    },
+    [],
+  );
 
-        setSuccessMessage('Registration updated successfully');
-      } else {
-        // Create new registration
-        const newRegistration = await createWorkoutRegistration(
-          accountId,
-          currentWorkoutId,
-          data,
-          token || undefined,
-        );
+  const handlePreviewAction = useCallback(
+    (workout: WorkoutSummaryType) => onPreviewWorkout(workout.id),
+    [onPreviewWorkout],
+  );
 
-        // Update local state
-        setRegistrations((prev) => ({
-          ...prev,
-          [currentWorkoutId]: [...(prev[currentWorkoutId] || []), newRegistration],
-        }));
+  const handleEditAction = useCallback(
+    (workout: WorkoutSummaryType) => onEditWorkout(workout.id),
+    [onEditWorkout],
+  );
 
-        // Update workout registration count
-        setWorkouts((prev) =>
-          prev.map((workout) =>
-            workout.id === currentWorkoutId
-              ? { ...workout, registrationCount: (workout.registrationCount || 0) + 1 }
-              : workout,
-          ),
-        );
+  const handleAddRegistrationAction = useCallback(
+    (workout: WorkoutSummaryType) => handleOpenDetails(workout, 'createRegistration'),
+    [handleOpenDetails],
+  );
 
-        setSuccessMessage('Registration created successfully');
+  const handleDeleteAction = useCallback((workout: WorkoutSummaryType) => {
+    setWorkoutToDelete(workout);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleEmailAction = useCallback((workout: WorkoutSummaryType) => {
+    setEmailDialogState({ open: true, workout });
+  }, []);
+
+  const handleCloseEmailDialog = useCallback(() => {
+    setEmailDialogState({ open: false, workout: null });
+  }, []);
+
+  const getFieldDetails = useCallback(
+    (workout: WorkoutSummaryType): FieldDetails | null => {
+      const fieldId = workout.field?.id ?? null;
+      if (fieldId && fields[fieldId]) {
+        return fields[fieldId];
       }
 
-      setRegistrationDialogOpen(false);
+      if (workout.field) {
+        return {
+          id: workout.field.id ?? null,
+          name: workout.field.name ?? null,
+          shortName: workout.field.shortName ?? null,
+          address: workout.field.address ?? null,
+          city: workout.field.city ?? null,
+          state: workout.field.state ?? null,
+          zip: workout.field.zip ?? null,
+          rainoutNumber: workout.field.rainoutNumber ?? null,
+          comment: workout.field.comment ?? null,
+          directions: workout.field.directions ?? null,
+          latitude: workout.field.latitude ?? null,
+          longitude: workout.field.longitude ?? null,
+        };
+      }
 
-      // Clear success message after configured timeout
-      setTimeout(() => setSuccessMessage(null), UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS);
-    } catch (err) {
-      console.error('Error saving registration:', err);
-      setOperationError(err instanceof Error ? err.message : 'Failed to save registration');
+      return null;
+    },
+    [fields],
+  );
 
-      // Clear error message after configured timeout
-      setTimeout(() => setOperationError(null), UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS);
-    } finally {
-      setSavingRegistration(false);
+  const getFieldName = useCallback(
+    (workout: WorkoutSummaryType) => {
+      const details = getFieldDetails(workout);
+      return details?.name ?? details?.shortName ?? 'TBD';
+    },
+    [getFieldDetails],
+  );
+
+  const handleFieldDialogOpen = useCallback(
+    (workout: WorkoutSummaryType) => {
+      const fieldId = workout.field?.id ?? null;
+      const fallbackField = getFieldDetails(workout);
+
+      if (!fieldId && !fallbackField) {
+        return;
+      }
+
+      setFieldDialogState({ open: true, fieldId, fallbackField });
+    },
+    [getFieldDetails],
+  );
+
+  const handleFieldDialogClose = useCallback(() => {
+    setFieldDialogState({ open: false, fieldId: null, fallbackField: null });
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!workoutToDelete) {
+      return;
     }
-  };
-
-  const confirmDelete = async () => {
-    if (!workoutToDelete) return;
 
     try {
       await deleteWorkout(accountId, workoutToDelete.id, token || undefined);
-      setWorkouts((prev) => prev.filter((w) => w.id !== workoutToDelete.id));
-      setDeleteDialogOpen(false);
-      setWorkoutToDelete(null);
+      setWorkouts((prev) => prev.filter((workout) => workout.id !== workoutToDelete.id));
+      showSuccessMessage('Workout deleted successfully');
     } catch (err) {
       console.error('Error deleting workout:', err);
-      setError('Failed to delete workout');
+      showErrorMessage('Failed to delete workout');
+    } finally {
+      setDeleteDialogOpen(false);
+      setWorkoutToDelete(null);
     }
-  };
+  }, [accountId, workoutToDelete, token, showSuccessMessage, showErrorMessage]);
 
-  const confirmDeleteRegistration = async () => {
-    if (!registrationToDelete) return;
-
-    try {
-      await deleteWorkoutRegistration(
-        accountId,
-        registrationToDelete.workoutId,
-        registrationToDelete.registrationId,
-        token || undefined,
-      );
-
-      // Update local state
-      setRegistrations((prev) => ({
-        ...prev,
-        [registrationToDelete.workoutId]: prev[registrationToDelete.workoutId].filter(
-          (reg) => reg.id !== registrationToDelete.registrationId,
-        ),
-      }));
-
-      // Update workout registration count
-      setWorkouts((prev) =>
-        prev.map((workout) =>
-          workout.id === registrationToDelete.workoutId
-            ? { ...workout, registrationCount: Math.max(0, (workout.registrationCount || 0) - 1) }
-            : workout,
-        ),
-      );
-
-      setDeleteRegistrationDialogOpen(false);
-      setRegistrationToDelete(null);
-    } catch (err) {
-      console.error('Error deleting registration:', err);
-      setError('Failed to delete registration');
-    }
-  };
-
-  if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
-        <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Loading workouts...
-        </Typography>
-      </Container>
-    );
-  }
-
-  return (
-    <Container maxWidth="xl">
-      {/* Success/Error Messages */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      )}
-
-      {operationError && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setOperationError(null)}>
-          {operationError}
-        </Alert>
-      )}
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Workouts Accordion */}
-      {loading ? (
-        <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+  const renderTableContent = useMemo(() => {
+    if (loading) {
+      return (
+        <Box sx={{ py: 4, textAlign: 'center' }}>
           <CircularProgress size={60} />
           <Typography variant="h6" sx={{ mt: 2 }}>
             Loading workouts...
           </Typography>
-        </Container>
-      ) : workouts.length > 0 ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {workouts.map((workout) => (
-            <Accordion
-              key={workout.id}
-              expanded={expandedWorkout === workout.id}
-              onChange={handleAccordionChange(workout.id)}
-              sx={{
-                '&:before': { display: 'none' },
-                boxShadow: 2,
-                borderRadius: 2,
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                sx={{
-                  backgroundColor: 'background.paper',
-                  borderRadius: expandedWorkout === workout.id ? '8px 8px 0 0' : '8px',
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    pr: 2,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', minWidth: '200px' }}>
-                      {workout.workoutDesc}
-                    </Typography>
-                    <Chip
-                      label={new Date(workout.workoutDate).toLocaleDateString()}
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                    />
-                    <Chip
-                      label={workout.field?.name || 'TBD'}
-                      color="secondary"
-                      variant="outlined"
-                      size="small"
-                    />
-                    <Badge
-                      badgeContent={workout.registrationCount || 0}
-                      color="primary"
-                      sx={{ ml: 1 }}
-                    >
-                      <PeopleIcon />
-                    </Badge>
-                  </Box>
-                </Box>
-              </AccordionSummary>
-
-              <AccordionDetails
-                sx={{ backgroundColor: 'background.default', borderRadius: '0 0 8px 8px' }}
-              >
-                <Box sx={{ p: 2 }}>
-                  {/* Workout Actions */}
-                  <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => router.push(`/account/${accountId}/workouts/${workout.id}`)}
-                      startIcon={<VisibilityIcon />}
-                    >
-                      Preview Workout
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() =>
-                        router.push(`/account/${accountId}/workouts/${workout.id}/edit`)
-                      }
-                      startIcon={<EditIcon />}
-                    >
-                      Edit Workout
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={() => {
-                        setWorkoutToDelete(workout);
-                        setDeleteDialogOpen(true);
-                      }}
-                      startIcon={<DeleteIcon />}
-                    >
-                      Delete Workout
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={() => handleAddRegistration(workout)}
-                      size="small"
-                    >
-                      Add Registration
-                    </Button>
-                  </Box>
-
-                  <Divider sx={{ my: 2 }} />
-
-                  {/* Registrations List */}
-                  {expandedWorkout === workout.id && (
-                    <Box sx={{ mt: 2 }}>
-                      {/* Search and Filter Controls */}
-                      <Box
-                        sx={{
-                          mb: 2,
-                          display: 'flex',
-                          gap: 2,
-                          flexWrap: 'wrap',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <TextField
-                          size="small"
-                          placeholder="Search registrations..."
-                          value={searchTerm[workout.id] || ''}
-                          onChange={(e) =>
-                            setSearchTerm((prev) => ({ ...prev, [workout.id]: e.target.value }))
-                          }
-                          sx={{ minWidth: 200 }}
-                        />
-                        <FormControl size="small" sx={{ minWidth: 120 }}>
-                          <Select
-                            value={
-                              filterManager[workout.id] === null
-                                ? 'all'
-                                : filterManager[workout.id]
-                                  ? 'manager'
-                                  : 'player'
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setFilterManager((prev) => ({
-                                ...prev,
-                                [workout.id]: value === 'all' ? null : value === 'manager',
-                              }));
-                            }}
-                          >
-                            <MenuItem value="all">All Registrants</MenuItem>
-                            <MenuItem value="manager">Managers Only</MenuItem>
-                            <MenuItem value="player">Players Only</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <Typography variant="body2" color="text.secondary">
-                          Showing {getFilteredRegistrations(workout.id).length} of{' '}
-                          {registrations[workout.id]?.length || 0} registrations
-                        </Typography>
-                      </Box>
-
-                      {loadingRegistrations[workout.id] ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                          <CircularProgress size={24} />
-                        </Box>
-                      ) : getFilteredRegistrations(workout.id).length > 0 ? (
-                        <List dense>
-                          {getFilteredRegistrations(workout.id).map((registration) => (
-                            <ListItem
-                              key={registration.id}
-                              sx={{
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                mb: 1,
-                                '&:hover': {
-                                  backgroundColor: 'action.hover',
-                                },
-                              }}
-                              secondaryAction={
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleEditRegistration(workout.id, registration)}
-                                    color="primary"
-                                  >
-                                    <EditIcon />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      handleDeleteRegistration(workout.id, registration.id)
-                                    }
-                                    color="error"
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </Box>
-                              }
-                            >
-                              <ListItemText
-                                primary={
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                      {registration.name}
-                                    </Typography>
-                                    {registration.isManager && (
-                                      <Chip label="Manager" size="small" color="primary" />
-                                    )}
-                                  </Box>
-                                }
-                                secondary={
-                                  <span
-                                    style={{ fontSize: '0.875rem', color: 'rgba(0, 0, 0, 0.6)' }}
-                                  >
-                                    {registration.email && `${registration.email} • `}
-                                    {registration.phone1 &&
-                                      `${formatPhoneNumber(registration.phone1)} • `}
-                                    {registration.positions || 'No positions specified'}
-                                  </span>
-                                }
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ textAlign: 'center', py: 3 }}
-                        >
-                          No registrations found
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-                </Box>
-              </AccordionDetails>
-            </Accordion>
-          ))}
         </Box>
-      ) : (
+      );
+    }
+
+    if (workouts.length === 0) {
+      return (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No workouts found
@@ -634,13 +323,165 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Create your first workout to get started.
           </Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateWorkout}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={onCreateWorkout}>
             Create Workout
           </Button>
         </Paper>
-      )}
+      );
+    }
 
-      {/* Delete Workout Dialog */}
+    return (
+      <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Workout</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Field</TableCell>
+              <TableCell align="center">Registrations</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {workouts.map((workout) => (
+              <TableRow key={workout.id} hover>
+                <TableCell sx={{ maxWidth: 260 }}>
+                  <Typography variant="subtitle1" fontWeight="bold" noWrap>
+                    {workout.workoutDesc}
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  {formatWorkoutDate(workout.workoutDate)}
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  {workout.field?.id || getFieldDetails(workout) ? (
+                    <ButtonBase
+                      onClick={() => handleFieldDialogOpen(workout)}
+                      sx={{
+                        display: 'inline-flex',
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        color: 'primary.main',
+                        textTransform: 'none',
+                        fontSize: '0.95rem',
+                        '&:hover': { backgroundColor: 'action.hover' },
+                      }}
+                    >
+                      {getFieldName(workout)}
+                    </ButtonBase>
+                  ) : (
+                    <Chip label="TBD" size="small" variant="outlined" color="secondary" />
+                  )}
+                </TableCell>
+                <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
+                  <Tooltip title="View registrations">
+                    <IconButton size="small" onClick={() => handleOpenDetails(workout)}>
+                      <Badge badgeContent={workout.registrationCount || 0} color="primary">
+                        <PeopleIcon color="action" fontSize="small" />
+                      </Badge>
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Email registrants">
+                    <IconButton
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => handleEmailAction(workout)}
+                    >
+                      <EmailOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  <Tooltip title="Preview workout">
+                    <IconButton
+                      size="small"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handlePreviewAction(workout);
+                      }}
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Edit workout">
+                    <IconButton
+                      size="small"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleEditAction(workout);
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Add registration">
+                    <IconButton
+                      size="small"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleAddRegistrationAction(workout);
+                      }}
+                    >
+                      <PersonAddIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete workout">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteAction(workout);
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  }, [
+    loading,
+    workouts,
+    onCreateWorkout,
+    handlePreviewAction,
+    handleEditAction,
+    handleAddRegistrationAction,
+    handleDeleteAction,
+    handleOpenDetails,
+    handleEmailAction,
+    handleFieldDialogOpen,
+    getFieldDetails,
+    getFieldName,
+  ]);
+
+  return (
+    <Container maxWidth="xl">
+      {successMessage ? (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
+          {successMessage}
+        </Alert>
+      ) : null}
+
+      {operationError ? (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setOperationError(null)}>
+          {operationError}
+        </Alert>
+      ) : null}
+
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      ) : null}
+
+      {renderTableContent}
+
       <ConfirmationDialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
@@ -651,369 +492,42 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
         confirmButtonColor="error"
       />
 
-      {/* Delete Registration Dialog */}
-      <ConfirmationDialog
-        open={deleteRegistrationDialogOpen}
-        onClose={() => setDeleteRegistrationDialogOpen(false)}
-        onConfirm={confirmDeleteRegistration}
-        title="Delete Registration"
-        message="Are you sure you want to delete this registration? This action cannot be undone."
-        confirmText="Delete"
-        confirmButtonColor="error"
+      <WorkoutDetailsDialog
+        accountId={accountId}
+        workout={detailsDialogState.workout}
+        open={detailsDialogState.open}
+        onClose={handleCloseDetails}
+        onSuccess={showSuccessMessage}
+        onError={showErrorMessage}
+        onRegistrationsChange={handleRegistrationsChange}
+        initialAction={detailsDialogState.initialAction ?? undefined}
       />
 
-      {/* Registration Form Dialog */}
-      <Dialog
-        open={registrationDialogOpen}
-        onClose={() => setRegistrationDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {editingRegistration ? 'Edit Registration' : 'Add New Registration'}
-        </DialogTitle>
-        <DialogContent>
-          <WorkoutRegistrationForm
-            accountId={accountId}
-            workoutId={currentWorkoutId}
-            registration={editingRegistration}
-            onSubmit={handleSaveRegistration}
-            onCancel={() => setRegistrationDialogOpen(false)}
-            isLoading={savingRegistration}
+      <WorkoutEmailDialog
+        accountId={accountId}
+        workout={emailDialogState.workout}
+        open={emailDialogState.open}
+        onClose={handleCloseEmailDialog}
+        onSuccess={showSuccessMessage}
+        onError={showErrorMessage}
+      />
+
+      <Dialog open={fieldDialogState.open} onClose={handleFieldDialogClose} fullWidth maxWidth="sm">
+        <DialogContent sx={{ p: 0 }}>
+          <FieldDetailsCard
+            field={
+              fieldDialogState.fieldId
+                ? (fields[fieldDialogState.fieldId] ?? fieldDialogState.fallbackField)
+                : fieldDialogState.fallbackField
+            }
+            placeholderTitle={fieldDialogState.fallbackField?.name ?? 'Field details unavailable'}
+            placeholderDescription="Field information is not available for this workout."
           />
         </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleFieldDialogClose}>Close</Button>
+        </DialogActions>
       </Dialog>
-    </Container>
-  );
-
-  return (
-    <Container maxWidth="xl">
-      {/* Success/Error Messages */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      )}
-
-      {operationError && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setOperationError(null)}>
-          {operationError}
-        </Alert>
-      )}
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Workouts Accordion */}
-      {loading ? (
-        <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
-          <CircularProgress size={60} />
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            Loading workouts...
-          </Typography>
-        </Container>
-      ) : workouts.length > 0 ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {workouts.map((workout) => (
-            <Accordion
-              key={workout.id}
-              expanded={expandedWorkout === workout.id}
-              onChange={handleAccordionChange(workout.id)}
-              sx={{
-                '&:before': { display: 'none' },
-                boxShadow: 2,
-                borderRadius: 2,
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                sx={{
-                  backgroundColor: 'background.paper',
-                  borderRadius: expandedWorkout === workout.id ? '8px 8px 0 0' : '8px',
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    pr: 2,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', minWidth: '200px' }}>
-                      {workout.workoutDesc}
-                    </Typography>
-                    <Chip
-                      label={new Date(workout.workoutDate).toLocaleDateString()}
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                    />
-                    <Chip
-                      label={workout.field?.name || 'TBD'}
-                      color="secondary"
-                      variant="outlined"
-                      size="small"
-                    />
-                    <Badge
-                      badgeContent={workout.registrationCount || 0}
-                      color="primary"
-                      sx={{ ml: 1 }}
-                    >
-                      <PeopleIcon />
-                    </Badge>
-                  </Box>
-                </Box>
-              </AccordionSummary>
-
-              <AccordionDetails
-                sx={{ backgroundColor: 'background.default', borderRadius: '0 0 8px 8px' }}
-              >
-                <Box sx={{ p: 2 }}>
-                  {/* Workout Actions */}
-                  <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => router.push(`/account/${accountId}/workouts/${workout.id}`)}
-                      startIcon={<VisibilityIcon />}
-                    >
-                      Preview Workout
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() =>
-                        router.push(`/account/${accountId}/workouts/${workout.id}/edit`)
-                      }
-                      startIcon={<EditIcon />}
-                    >
-                      Edit Workout
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={() => {
-                        setWorkoutToDelete(workout);
-                        setDeleteDialogOpen(true);
-                      }}
-                      startIcon={<DeleteIcon />}
-                    >
-                      Delete Workout
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={() => handleAddRegistration(workout)}
-                      size="small"
-                    >
-                      Add Registration
-                    </Button>
-                  </Box>
-
-                  <Divider sx={{ my: 2 }} />
-
-                  {/* Registrations List */}
-                  {expandedWorkout === workout.id && (
-                    <Box sx={{ mt: 2 }}>
-                      {/* Search and Filter Controls */}
-                      <Box
-                        sx={{
-                          mb: 2,
-                          display: 'flex',
-                          gap: 2,
-                          flexWrap: 'wrap',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <TextField
-                          size="small"
-                          placeholder="Search registrations..."
-                          value={searchTerm[workout.id] || ''}
-                          onChange={(e) =>
-                            setSearchTerm((prev) => ({ ...prev, [workout.id]: e.target.value }))
-                          }
-                          sx={{ minWidth: 200 }}
-                        />
-                        <FormControl size="small" sx={{ minWidth: 120 }}>
-                          <Select
-                            value={
-                              filterManager[workout.id] === null
-                                ? 'all'
-                                : filterManager[workout.id]
-                                  ? 'manager'
-                                  : 'player'
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setFilterManager((prev) => ({
-                                ...prev,
-                                [workout.id]: value === 'all' ? null : value === 'manager',
-                              }));
-                            }}
-                          >
-                            <MenuItem value="all">All Registrants</MenuItem>
-                            <MenuItem value="manager">Managers Only</MenuItem>
-                            <MenuItem value="player">Players Only</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <Typography variant="body2" color="text.secondary">
-                          Showing {getFilteredRegistrations(workout.id).length} of{' '}
-                          {registrations[workout.id]?.length || 0} registrations
-                        </Typography>
-                      </Box>
-
-                      {loadingRegistrations[workout.id] ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                          <CircularProgress size={24} />
-                        </Box>
-                      ) : getFilteredRegistrations(workout.id).length > 0 ? (
-                        <List dense>
-                          {getFilteredRegistrations(workout.id).map((registration) => (
-                            <ListItem
-                              key={registration.id}
-                              sx={{
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                mb: 1,
-                                '&:hover': {
-                                  backgroundColor: 'action.hover',
-                                },
-                              }}
-                              secondaryAction={
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleEditRegistration(workout.id, registration)}
-                                    color="primary"
-                                  >
-                                    <EditIcon />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      handleDeleteRegistration(workout.id, registration.id)
-                                    }
-                                    color="error"
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </Box>
-                              }
-                            >
-                              <ListItemText
-                                primary={
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                      {registration.name}
-                                    </Typography>
-                                    {registration.isManager && (
-                                      <Chip label="Manager" size="small" color="primary" />
-                                    )}
-                                  </Box>
-                                }
-                                secondary={
-                                  <Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                      {registration.email && `${registration.email} • `}
-                                      {registration.phone1 &&
-                                        `${formatPhoneNumber(registration.phone1)} • `}
-                                      {registration.positions || 'No positions specified'}
-                                    </Typography>
-                                  </Box>
-                                }
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ textAlign: 'center', py: 3 }}
-                        >
-                          No registrations found
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-                </Box>
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </Box>
-      ) : (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            No workouts found
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Get started by creating your first workout.
-          </Typography>
-          <Button variant="contained" onClick={handleCreateWorkout} startIcon={<AddIcon />}>
-            Create Workout
-          </Button>
-        </Paper>
-      )}
-
-      {/* Registration Dialog */}
-      {registrationDialogOpen && (
-        <Dialog
-          open={registrationDialogOpen}
-          onClose={() => setRegistrationDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>
-            {editingRegistration ? 'Edit Registration' : 'Add Registration'}
-          </DialogTitle>
-          <DialogContent>
-            <WorkoutRegistrationForm
-              accountId={accountId}
-              workoutId={currentWorkoutId}
-              registration={editingRegistration}
-              onSubmit={handleSaveRegistration}
-              onCancel={() => setRegistrationDialogOpen(false)}
-              isLoading={savingRegistration}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Delete Workout Confirmation */}
-      <ConfirmationDialog
-        open={deleteDialogOpen}
-        title="Delete Workout"
-        message="Are you sure you want to delete this workout? This action cannot be undone and will also delete all associated registrations."
-        confirmText="Delete"
-        confirmButtonColor="error"
-        onConfirm={confirmDelete}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setWorkoutToDelete(null);
-        }}
-      />
-
-      {/* Delete Registration Confirmation */}
-      <ConfirmationDialog
-        open={deleteRegistrationDialogOpen}
-        title="Delete Registration"
-        message="Are you sure you want to delete this registration? This action cannot be undone."
-        confirmText="Delete"
-        confirmButtonColor="error"
-        onConfirm={confirmDeleteRegistration}
-        onClose={() => {
-          setDeleteRegistrationDialogOpen(false);
-          setRegistrationToDelete(null);
-        }}
-      />
     </Container>
   );
 };

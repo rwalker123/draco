@@ -6,7 +6,7 @@ import {
   Button,
   FormControl,
   FormControlLabel,
-  Checkbox,
+  Switch,
   MenuItem,
   Typography,
   Paper,
@@ -131,21 +131,17 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
     [],
   );
 
-  const handlePhoneChange = useCallback(
-    (field: 'phone1' | 'phone2' | 'phone3' | 'phone4') =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        const value = event.target.value;
+  const handlePhoneChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
 
-        // Only format if it looks like a complete phone number
-        const formattedValue = value.length >= 10 ? formatPhoneNumber(value) : value;
+    // Only format if it looks like a complete phone number
+    const formattedValue = value.length >= 10 ? formatPhoneNumber(value) : value;
 
-        setFormData((prev) => ({
-          ...prev,
-          [field]: formattedValue,
-        }));
-      },
-    [],
-  );
+    setFormData((prev) => ({
+      ...prev,
+      phone1: formattedValue,
+    }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,43 +244,13 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             />
           </Box>
 
-          {/* Phone Numbers */}
+          {/* Phone Number */}
           <Box>
             <TextField
               fullWidth
-              label="Phone 1"
+              label="Phone"
               value={formData.phone1}
-              onChange={handlePhoneChange('phone1')}
-              disabled={isLoading}
-              placeholder="(555) 123-4567"
-            />
-          </Box>
-          <Box>
-            <TextField
-              fullWidth
-              label="Phone 2"
-              value={formData.phone2}
-              onChange={handlePhoneChange('phone2')}
-              disabled={isLoading}
-              placeholder="(555) 123-4567"
-            />
-          </Box>
-          <Box>
-            <TextField
-              fullWidth
-              label="Phone 3"
-              value={formData.phone3}
-              onChange={handlePhoneChange('phone3')}
-              disabled={isLoading}
-              placeholder="(555) 123-4567"
-            />
-          </Box>
-          <Box>
-            <TextField
-              fullWidth
-              label="Phone 4"
-              value={formData.phone4}
-              onChange={handlePhoneChange('phone4')}
+              onChange={handlePhoneChange}
               disabled={isLoading}
               placeholder="(555) 123-4567"
             />
@@ -312,12 +278,12 @@ export const WorkoutRegistrationForm: React.FC<WorkoutRegistrationFormProps> = (
             </TextField>
           </Box>
 
-          {/* Is Manager Checkbox */}
+          {/* Is Manager Toggle */}
           <Box>
             <FormControl>
               <FormControlLabel
                 control={
-                  <Checkbox
+                  <Switch
                     checked={formData.isManager}
                     onChange={handleCheckboxChange('isManager')}
                     disabled={isLoading}

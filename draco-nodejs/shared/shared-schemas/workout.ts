@@ -162,6 +162,17 @@ export const WorkoutRegistrationsQuerySchema = z
     description: 'Query parameters to paginate workout registrations',
   });
 
+export const WorkoutRegistrationsEmailRequestSchema = z
+  .object({
+    subject: z.string().trim().min(1).max(255),
+    body: z.string().min(1),
+    registrationIds: z.array(z.string()).optional(),
+  })
+  .openapi({
+    title: 'WorkoutRegistrationsEmailRequest',
+    description: 'Payload to email workout registrants',
+  });
+
 export type WorkoutStatusType = z.infer<typeof WorkoutStatusSchema>;
 export type WorkoutSummaryType = z.infer<typeof WorkoutSummarySchema>;
 export type WorkoutType = z.infer<typeof WorkoutSchema>;
@@ -174,3 +185,6 @@ export type WorkoutSourceOptionType = z.infer<typeof WorkoutSourceOptionSchema>;
 export type WorkoutSourceOptionPayloadType = z.infer<typeof WorkoutSourceOptionPayloadSchema>;
 export type WorkoutListQueryType = z.infer<typeof WorkoutListQuerySchema>;
 export type WorkoutRegistrationsQueryType = z.infer<typeof WorkoutRegistrationsQuerySchema>;
+export type WorkoutRegistrationsEmailRequestType = z.infer<
+  typeof WorkoutRegistrationsEmailRequestSchema
+>;

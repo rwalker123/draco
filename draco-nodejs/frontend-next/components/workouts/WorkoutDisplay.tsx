@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -13,6 +13,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { getWorkout } from '../../services/workoutService';
 import { WorkoutType } from '@draco/shared-schemas';
@@ -21,6 +22,8 @@ import { Event } from '@mui/icons-material';
 import { listAccountFields } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
+import { FieldDetailsCard, type FieldDetails } from '../fields/FieldDetailsCard';
+import ButtonBase from '@mui/material/ButtonBase';
 
 interface WorkoutDisplayProps {
   accountId: string;
@@ -43,7 +46,9 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
-  const [fields, setFields] = useState<Array<{ id: string; name: string }>>([]);
+  const [fields, setFields] = useState<Record<string, FieldDetails>>({});
+  const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const apiClient = useApiClient();
 
   const fetchWorkout = useCallback(async () => {
@@ -69,10 +74,28 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
       });
 
       const data = unwrapApiResult(result, 'Failed to load fields');
-      const mappedFields = data.fields.map((field) => ({
-        id: field.id,
-        name: field.name ?? field.shortName,
-      }));
+      const mappedFields: Record<string, FieldDetails> = {};
+
+      data.fields.forEach((field) => {
+        if (!field.id) {
+          return;
+        }
+
+        mappedFields[field.id] = {
+          id: field.id,
+          name: field.name ?? field.shortName ?? null,
+          shortName: field.shortName ?? null,
+          address: field.address ?? null,
+          city: field.city ?? null,
+          state: field.state ?? null,
+          zip: field.zip ?? null,
+          rainoutNumber: field.rainoutNumber ?? null,
+          comment: field.comment ?? null,
+          directions: field.directions ?? null,
+          latitude: (field.latitude as string | number | null | undefined) ?? null,
+          longitude: (field.longitude as string | number | null | undefined) ?? null,
+        };
+      });
 
       setFields(mappedFields);
     } catch (err) {
@@ -86,21 +109,69 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
     fetchFields();
   }, [fetchWorkout, fetchFields]);
 
-  const formatDate = (dateString: string) => {
+  const formatDateTime = useCallback((dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    const formattedDate = date.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
       year: 'numeric',
     });
-  };
 
-  const getFieldName = (fieldId: string | null) => {
-    if (!fieldId) return 'TBD';
-    const field = fields.find((f) => f.id === fieldId);
-    return field ? field.name : 'Unknown Field';
-  };
+    const formattedTime = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
+    return { formattedDate, formattedTime };
+  }, []);
+
+  const getFieldDetails = useCallback(
+    (fieldId: string | null | undefined): FieldDetails | null => {
+      if (!fieldId) {
+        return workout?.field ?? null;
+      }
+
+      return fields[fieldId] ?? workout?.field ?? null;
+    },
+    [fields, workout?.field],
+  );
+
+  const getFieldName = useCallback(
+    (fieldId: string | null | undefined) => {
+      const details = getFieldDetails(fieldId);
+      return details?.name ?? details?.shortName ?? 'TBD';
+    },
+    [getFieldDetails],
+  );
+
+  const handleOpenFieldDialog = useCallback(
+    (fieldId: string | null | undefined) => {
+      if (!fieldId && !workout?.field?.id) {
+        return;
+      }
+
+      const targetId = fieldId ?? workout?.field?.id ?? null;
+      if (!targetId) {
+        return;
+      }
+
+      setSelectedFieldId(targetId);
+      setFieldDialogOpen(true);
+    },
+    [workout?.field?.id],
+  );
+
+  const handleCloseFieldDialog = useCallback(() => {
+    setFieldDialogOpen(false);
+  }, []);
+
+  const selectedFieldDetails = useMemo(() => {
+    if (!fieldDialogOpen) {
+      return null;
+    }
+    return getFieldDetails(selectedFieldId ?? workout?.field?.id ?? null);
+  }, [fieldDialogOpen, getFieldDetails, selectedFieldId, workout?.field?.id]);
 
   const handleAddToCalendar = () => {
     if (!workout) return;
@@ -111,7 +182,7 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
     const eventEnd = new Date(workout.workoutDate); // Assuming it's a single-day event
     const eventLocation = getFieldName(workout.field?.id || null);
     const eventDescription = workout.comments || '';
-    const eventUrl = `/account/${accountId}/workouts/${workout.id}`;
+    const eventUrl = `/account/${accountId}/workouts`;
 
     // Format dates for iCal format
     const formatDateForICal = (date: Date) => {
@@ -225,14 +296,38 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
             <Typography variant="h6" gutterBottom>
               Date & Time
             </Typography>
-            <Typography variant="body1">{formatDate(workout.workoutDate)}</Typography>
+            {(() => {
+              const { formattedDate, formattedTime } = formatDateTime(workout.workoutDate);
+              return (
+                <>
+                  <Typography variant="body1">{formattedDate}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {formattedTime}
+                  </Typography>
+                </>
+              );
+            })()}
           </Box>
 
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h6" gutterBottom>
               Field
             </Typography>
-            <Typography variant="body1">{getFieldName(workout.field?.id || null)}</Typography>
+            <ButtonBase
+              onClick={() => handleOpenFieldDialog(workout.field?.id ?? null)}
+              sx={{
+                display: 'inline-flex',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                color: 'primary.main',
+                textTransform: 'none',
+                fontSize: '1rem',
+                '&:hover': { backgroundColor: 'action.hover' },
+              }}
+            >
+              {getFieldName(workout.field?.id ?? null)}
+            </ButtonBase>
           </Box>
         </Box>
 
@@ -324,6 +419,33 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
           </DialogContent>
         </Dialog>
       )}
+
+      <FieldDetailsDialog
+        open={fieldDialogOpen}
+        onClose={handleCloseFieldDialog}
+        field={selectedFieldDetails}
+      />
     </>
+  );
+};
+
+const FieldDetailsDialog: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  field: FieldDetails | null;
+}> = ({ open, onClose, field }) => {
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogContent sx={{ p: 0 }}>
+        <FieldDetailsCard
+          field={field}
+          placeholderTitle={field?.name ?? 'Field details unavailable'}
+          placeholderDescription="Field information is not available for this workout."
+        />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
   );
 };
