@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
-import { SeasonNameSchema } from './season.js';
+import { SeasonNameSchema } from './seasonBase.js';
 
 extendZodWithOpenApi(z);
 

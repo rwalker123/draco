@@ -9,6 +9,7 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     LeagueSeasonWithDivisionSchemaRef,
     NotFoundErrorSchemaRef,
     SeasonParticipantCountDataSchemaRef,
+    CurrentSeasonResponseSchemaRef,
     SeasonSchemaRef,
     UpsertSeasonSchemaRef,
     ValidationErrorSchemaRef,
@@ -76,7 +77,8 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     path: '/api/accounts/{accountId}/seasons/current',
     operationId: 'getCurrentSeason',
     summary: 'Get current season',
-    description: "Return the account's current season with its active league assignments.",
+    description:
+      "Return the account's current season. League assignments can be included with the includeLeagues query parameter.",
     tags: ['Seasons'],
     parameters: [
       {
@@ -88,13 +90,33 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
           format: 'number',
         },
       },
+      {
+        name: 'includeLeagues',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+          default: false,
+        },
+        description: 'Include league assignments for the season when true.',
+      },
+      {
+        name: 'includeDivisions',
+        in: 'query',
+        required: false,
+        schema: {
+          type: 'boolean',
+          default: false,
+        },
+        description: 'Include division assignments for each league when includeLeagues is true.',
+      },
     ],
     responses: {
       200: {
-        description: 'Current season and league assignments for the account.',
+        description: 'Current season for the account.',
         content: {
           'application/json': {
-            schema: LeagueSeasonWithDivisionSchemaRef,
+            schema: CurrentSeasonResponseSchemaRef,
           },
         },
       },
