@@ -47,12 +47,14 @@ const defaultEmptyMessage = 'No photos have been published yet.';
 const renderAlbumTabs = (
   albums: PhotoGalleryAlbumType[],
   selectedKey: string,
-  onChange: (event: React.SyntheticEvent, value: string) => void,
+  onChange: (albumId: string) => void,
   totalCount: number,
 ) => (
   <Tabs
     value={selectedKey}
-    onChange={onChange}
+    onChange={(_event, value) => {
+      onChange(typeof value === 'string' ? value : String(value));
+    }}
     variant="scrollable"
     scrollButtons="auto"
     sx={{

@@ -29,7 +29,7 @@ const optionalBigintQueryParam = z.preprocess((value) => {
 
     try {
       return BigInt(trimmed);
-    } catch (error) {
+    } catch {
       return trimmed;
     }
   }

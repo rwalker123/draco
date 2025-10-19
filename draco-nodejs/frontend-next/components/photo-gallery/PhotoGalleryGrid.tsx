@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, LinearProgress, Skeleton, Typography, IconButton } from '@mui/material';
+import { Box, LinearProgress, Skeleton, Typography, IconButton } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import type { PhotoGalleryPhotoType } from '@draco/shared-schemas';
 
@@ -168,21 +168,31 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
   return (
     <Box>
       {loading && photos.length > 0 && <LinearProgress sx={{ mb: 2 }} />}
-      <Grid container spacing={2.5}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2.5,
+          gridTemplateColumns: {
+            xs: 'repeat(1, minmax(0, 1fr))',
+            sm: 'repeat(2, minmax(0, 1fr))',
+            md: 'repeat(3, minmax(0, 1fr))',
+          },
+        }}
+      >
         {showSkeletons
           ? Array.from({ length: 6 }).map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} key={`skeleton-${index}`}>
+              <Box key={`skeleton-${index}`}>
                 <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 3 }} />
-              </Grid>
+              </Box>
             ))
           : null}
         {!showSkeletons &&
           photos.map((photo) => (
-            <Grid item xs={12} sm={6} md={4} key={photo.id}>
+            <Box key={photo.id}>
               <GalleryCard photo={photo} />
-            </Grid>
+            </Box>
           ))}
-      </Grid>
+      </Box>
     </Box>
   );
 };

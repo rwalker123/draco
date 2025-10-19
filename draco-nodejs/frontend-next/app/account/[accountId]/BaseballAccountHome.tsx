@@ -151,7 +151,7 @@ const BaseballAccountHome: React.FC = () => {
     return galleryPhotos.filter((photo) => photo.albumId === selectedAlbumKey);
   }, [galleryPhotos, selectedAlbumKey]);
 
-  const handleAlbumTabChange = useCallback((_: React.SyntheticEvent, value: string) => {
+  const handleAlbumTabChange = useCallback((value: string) => {
     setSelectedAlbumKey(value);
   }, []);
 
