@@ -142,6 +142,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const isProcessing = submitting || isSubmitting;
   const showAlbumSelection = props.variant === 'account';
@@ -154,6 +155,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
       photo: null,
     });
     setSelectedFile(null);
+    setPreviewUrl(null);
   };
 
   const clearStatus = () => {
@@ -267,6 +269,24 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
                     setSelectedFile(file);
                     clearStatus();
                     onChange(file);
+
+                    if (!file) {
+                      setPreviewUrl(null);
+                      return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (loadEvent) => {
+                      const result = (loadEvent.target?.result ?? reader.result) as
+                        | string
+                        | ArrayBuffer
+                        | null;
+                      setPreviewUrl(typeof result === 'string' ? result : null);
+                    };
+                    reader.onerror = () => {
+                      setPreviewUrl(null);
+                    };
+                    reader.readAsDataURL(file);
                   }}
                   data-testid="photo-input"
                 />
@@ -274,6 +294,25 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 {selectedFile ? selectedFile.name : 'GIF, JPG, JPEG, PNG, or BMP up to 10MB'}
               </Typography>
+              {previewUrl && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Photo preview
+                  </Typography>
+                  <Box
+                    component="img"
+                    src={previewUrl}
+                    alt={`Preview of ${selectedFile?.name ?? 'selected photo'}`}
+                    sx={{
+                      width: 160,
+                      height: 160,
+                      borderRadius: 1,
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      objectFit: 'cover',
+                    }}
+                  />
+                </Box>
+              )}
               {errors.photo?.message && (
                 <FormHelperText error sx={{ mt: 1 }}>
                   {errors.photo.message}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, vi, beforeAll, afterAll } from 'vitest';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import PhotoSubmissionForm from '../PhotoSubmissionForm';
 import type { PhotoAlbumOption } from '../PhotoSubmissionForm';
@@ -15,6 +15,42 @@ vi.mock('../../../hooks/useApiClient', () => ({
 
 const createAccountPhotoSubmission = vi.fn();
 const createTeamPhotoSubmission = vi.fn();
+
+const readAsDataURLMock = vi.fn();
+
+const originalFileReader = global.FileReader;
+
+class MockFileReader {
+  static readonly EMPTY = 0;
+  static readonly LOADING = 1;
+  static readonly DONE = 2;
+
+  readyState = MockFileReader.EMPTY;
+  result: string | ArrayBuffer | null = null;
+  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+  onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+
+  readAsDataURL = readAsDataURLMock.mockImplementation((_file: Blob) => {
+    this.readyState = MockFileReader.LOADING;
+    this.result = 'data:image/jpeg;base64,preview';
+    this.onload?.(new Event('load') as ProgressEvent<FileReader>);
+    this.readyState = MockFileReader.DONE;
+  });
+
+  abort() {
+    this.readyState = MockFileReader.DONE;
+  }
+}
+
+beforeAll(() => {
+  // jsdom's FileReader does not produce data URLs, so provide a deterministic mock.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).FileReader = MockFileReader as unknown as typeof FileReader;
+});
+
+afterAll(() => {
+  global.FileReader = originalFileReader;
+});
 
 vi.mock('@draco/shared-api-client', () => ({
   createAccountPhotoSubmission: (...args: unknown[]) => createAccountPhotoSubmission(...args),
@@ -74,6 +110,7 @@ describe('PhotoSubmissionForm', () => {
   beforeEach(() => {
     createAccountPhotoSubmission.mockReset();
     createTeamPhotoSubmission.mockReset();
+    readAsDataURLMock.mockClear();
   });
 
   it('submits an account photo and shows a success message', async () => {
@@ -89,6 +126,8 @@ describe('PhotoSubmissionForm', () => {
     const file = new File(['dummy'], 'photo.jpg', { type: 'image/jpeg' });
     const fileInput = screen.getByTestId('photo-input') as HTMLInputElement;
     await userEvent.upload(fileInput, file);
+
+    expect(await screen.findByAltText('Preview of photo.jpg')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /submit photo/i }));
 

@@ -43,8 +43,9 @@ describe('PhotoSubmissionModerationService', () => {
 
   const notificationService = {
     sendSubmissionApprovedNotification:
-      vi.fn<(detail: PhotoSubmissionDetailType) => Promise<void>>(),
-    sendSubmissionDeniedNotification: vi.fn<(detail: PhotoSubmissionDetailType) => Promise<void>>(),
+      vi.fn<(detail: PhotoSubmissionDetailType) => Promise<boolean>>(),
+    sendSubmissionDeniedNotification:
+      vi.fn<(detail: PhotoSubmissionDetailType) => Promise<boolean>>(),
   };
 
   const baseDetail: PhotoSubmissionDetailType = {
@@ -117,6 +118,8 @@ describe('PhotoSubmissionModerationService', () => {
     assetService.deleteGalleryAssets.mockReset();
     notificationService.sendSubmissionApprovedNotification.mockReset();
     notificationService.sendSubmissionDeniedNotification.mockReset();
+    notificationService.sendSubmissionApprovedNotification.mockResolvedValue(true);
+    notificationService.sendSubmissionDeniedNotification.mockResolvedValue(true);
     service = new PhotoSubmissionModerationService(
       submissionService as never,
       galleryService as never,
