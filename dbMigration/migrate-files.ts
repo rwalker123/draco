@@ -1666,7 +1666,9 @@ class FileMigrationService {
 
       await fs.promises.mkdir(path.dirname(originalDestination), { recursive: true });
 
-      const originalMetadata = await sharp(originalBuffer).metadata().catch(() => null);
+      const originalMetadata = await sharp(originalBuffer)
+        .metadata()
+        .catch(() => null);
       const shouldResizePrimary = !matchesTargetDimensions(
         originalMetadata,
         GALLERY_PRIMARY_DIMENSIONS,
@@ -1689,16 +1691,24 @@ class FileMigrationService {
       await fs.promises.mkdir(path.dirname(thumbnailDestination), { recursive: true });
 
       const thumbnailMetadata = thumbnailBuffer
-        ? await sharp(thumbnailBuffer).metadata().catch(() => null)
+        ? await sharp(thumbnailBuffer)
+            .metadata()
+            .catch(() => null)
         : null;
 
       let thumbnailSourceBuffer = thumbnailBuffer ?? originalBuffer;
       let shouldResizeThumbnail = true;
 
-      if (thumbnailBuffer && matchesTargetDimensions(thumbnailMetadata, GALLERY_THUMBNAIL_DIMENSIONS)) {
+      if (
+        thumbnailBuffer &&
+        matchesTargetDimensions(thumbnailMetadata, GALLERY_THUMBNAIL_DIMENSIONS)
+      ) {
         shouldResizeThumbnail = false;
         thumbnailSourceBuffer = thumbnailBuffer;
-      } else if (!thumbnailBuffer && matchesTargetDimensions(originalMetadata, GALLERY_THUMBNAIL_DIMENSIONS)) {
+      } else if (
+        !thumbnailBuffer &&
+        matchesTargetDimensions(originalMetadata, GALLERY_THUMBNAIL_DIMENSIONS)
+      ) {
         shouldResizeThumbnail = false;
         thumbnailSourceBuffer = originalBuffer;
       }

@@ -31,11 +31,20 @@ import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
-import { getAccountById, getAccountUserTeams, listSeasonTeams } from '@draco/shared-api-client';
+import {
+  getAccountById,
+  getAccountUserTeams,
+  listSeasonLeagueSeasons,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
-import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
+import {
+  AccountSeasonWithStatusType,
+  AccountType,
+  SponsorType,
+  LeagueSeasonWithDivisionTeamsAndUnassignedType,
+} from '@draco/shared-schemas';
 import HandoutSection from '@/components/handouts/HandoutSection';
 import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
 import PendingPhotoSubmissionsPanel from '@/components/photo-submissions/PendingPhotoSubmissionsPanel';
@@ -44,7 +53,10 @@ import PhotoSubmissionForm, {
 } from '@/components/photo-submissions/PhotoSubmissionForm';
 import { usePendingPhotoSubmissions } from '../../../hooks/usePendingPhotoSubmissions';
 import { usePhotoGallery } from '../../../hooks/usePhotoGallery';
-import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
+import PhotoGallerySection, {
+  type TeamAlbumHierarchyGroup,
+} from '@/components/photo-gallery/PhotoGallerySection';
+import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -128,6 +140,9 @@ const BaseballAccountHome: React.FC = () => {
 
   const [selectedAlbumKey, setSelectedAlbumKey] = useState<string>('all');
   const [seasonTeamIds, setSeasonTeamIds] = useState<string[] | null>(null);
+  const [seasonLeagueHierarchy, setSeasonLeagueHierarchy] = useState<
+    LeagueSeasonWithDivisionTeamsAndUnassignedType[]
+  >([]);
 
   const seasonFilteredPhotos = useMemo(() => {
     if (seasonTeamIds === null || seasonTeamIds.length === 0) {
@@ -170,6 +185,110 @@ const BaseballAccountHome: React.FC = () => {
       })
       .filter((album) => album.photoCount > 0 || album.id === null);
   }, [galleryAlbums, seasonFilteredPhotos, seasonTeamIds]);
+
+  const teamAlbumsByTeamId = useMemo(() => {
+    const map = new Map<
+      string,
+      { albumId: string; photoCount: number; albumTitle: string | null }
+    >();
+
+    seasonFilteredAlbums.forEach((album) => {
+      if (album.teamId && album.id) {
+        map.set(album.teamId, {
+          albumId: album.id,
+          photoCount: album.photoCount ?? 0,
+          albumTitle: album.title ?? null,
+        });
+      }
+    });
+
+    return map;
+  }, [seasonFilteredAlbums]);
+
+  const teamAlbumHierarchy = useMemo<TeamAlbumHierarchyGroup[]>(() => {
+    if (seasonLeagueHierarchy.length === 0 || teamAlbumsByTeamId.size === 0) {
+      return [];
+    }
+
+    return seasonLeagueHierarchy
+      .map((league) => {
+        const divisions = (league.divisions ?? [])
+          .map((division) => {
+            const teams = division.teams
+              .map((team) => {
+                const teamId = team.team?.id ?? null;
+                if (!teamId) {
+                  return null;
+                }
+
+                const album = teamAlbumsByTeamId.get(teamId);
+                if (!album) {
+                  return null;
+                }
+
+                return {
+                  teamId,
+                  teamSeasonId: team.id,
+                  teamName: team.name ?? team.team?.name ?? 'Team',
+                  albumId: album.albumId,
+                  photoCount: album.photoCount,
+                };
+              })
+              .filter(
+                (value): value is TeamAlbumHierarchyGroup['divisions'][number]['teams'][number] =>
+                  Boolean(value),
+              );
+
+            if (teams.length === 0) {
+              return null;
+            }
+
+            return {
+              id: division.id,
+              name: division.division.name,
+              teams,
+            };
+          })
+          .filter((value): value is TeamAlbumHierarchyGroup['divisions'][number] => Boolean(value));
+
+        const unassignedTeams =
+          league.unassignedTeams
+            ?.map((team) => {
+              const teamId = team.team?.id ?? null;
+              if (!teamId) {
+                return null;
+              }
+
+              const album = teamAlbumsByTeamId.get(teamId);
+              if (!album) {
+                return null;
+              }
+
+              return {
+                teamId,
+                teamSeasonId: team.id,
+                teamName: team.name ?? team.team?.name ?? 'Team',
+                albumId: album.albumId,
+                photoCount: album.photoCount,
+              };
+            })
+            .filter((value): value is TeamAlbumHierarchyGroup['unassignedTeams'][number] =>
+              Boolean(value),
+            ) ?? [];
+
+        if (divisions.length === 0 && unassignedTeams.length === 0) {
+          return null;
+        }
+
+        return {
+          leagueId: league.id,
+          leagueName: league.league.name,
+          divisions,
+          unassignedTeams,
+        };
+      })
+      .filter((value): value is TeamAlbumHierarchyGroup => Boolean(value));
+  }, [seasonLeagueHierarchy, teamAlbumsByTeamId]);
 
   useEffect(() => {
     if (selectedAlbumKey === 'all') {
@@ -276,16 +395,18 @@ const BaseballAccountHome: React.FC = () => {
   useEffect(() => {
     if (!accountIdStr || !currentSeason?.id) {
       setSeasonTeamIds(null);
+      setSeasonLeagueHierarchy([]);
       return;
     }
 
     let ignore = false;
 
-    const fetchSeasonTeams = async () => {
+    const fetchSeasonLeagueHierarchy = async () => {
       try {
-        const result = await listSeasonTeams({
+        const result = await listSeasonLeagueSeasons({
           client: apiClient,
           path: { accountId: accountIdStr, seasonId: currentSeason.id },
+          query: { includeTeams: true, includeUnassignedTeams: true },
           throwOnError: false,
         });
 
@@ -293,26 +414,39 @@ const BaseballAccountHome: React.FC = () => {
           return;
         }
 
-        const teams = unwrapApiResult(result, 'Failed to load season teams');
-        if (!Array.isArray(teams)) {
-          setSeasonTeamIds([]);
-          return;
-        }
+        const leagueSetup = unwrapApiResult(result, 'Failed to load season league hierarchy');
+        const mappedSetup = mapLeagueSetup(leagueSetup);
+        const leagueSeasons = mappedSetup.leagueSeasons ?? [];
 
-        const ids = teams
-          .map((team) => team.team?.id)
-          .filter((value): value is string => Boolean(value));
+        setSeasonLeagueHierarchy(leagueSeasons);
 
-        setSeasonTeamIds(ids);
+        const ids = new Set<string>();
+        leagueSeasons.forEach((league) => {
+          league.divisions?.forEach((division) => {
+            division.teams.forEach((team) => {
+              if (team.team?.id) {
+                ids.add(team.team.id);
+              }
+            });
+          });
+          league.unassignedTeams?.forEach((team) => {
+            if (team.team?.id) {
+              ids.add(team.team.id);
+            }
+          });
+        });
+
+        setSeasonTeamIds(Array.from(ids));
       } catch (err) {
         if (!ignore) {
-          console.warn('Failed to load season teams:', err);
+          console.warn('Failed to load season league hierarchy:', err);
+          setSeasonLeagueHierarchy([]);
           setSeasonTeamIds([]);
         }
       }
     };
 
-    void fetchSeasonTeams();
+    void fetchSeasonLeagueHierarchy();
 
     return () => {
       ignore = true;
@@ -649,6 +783,7 @@ const BaseballAccountHome: React.FC = () => {
           selectedAlbumKey={selectedAlbumKey}
           onAlbumChange={handleAlbumTabChange}
           totalCountOverride={seasonFilteredPhotos.length}
+          teamAlbumHierarchy={teamAlbumHierarchy}
         />
 
         <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />

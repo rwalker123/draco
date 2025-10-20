@@ -39,6 +39,8 @@ const PhotoGalleryLightbox: React.FC<PhotoGalleryLightboxProps> = ({
   onPrev,
 }) => {
   const theme = useTheme();
+  const imageSrc = photo?.originalUrl ?? photo?.primaryUrl ?? photo?.thumbnailUrl ?? null;
+  const imageAlt = photo?.title ?? 'Selected gallery photo';
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -155,18 +157,30 @@ const PhotoGalleryLightbox: React.FC<PhotoGalleryLightboxProps> = ({
         </IconButton>
 
         <Box
-          component="img"
-          src={photo?.originalUrl ?? photo?.primaryUrl ?? ''}
-          alt={photo?.title ?? 'Selected gallery photo'}
           sx={{
-            maxHeight: '70%',
-            maxWidth: '90%',
-            objectFit: 'contain',
-            margin: 'auto',
-            borderRadius: 3,
-            boxShadow: theme.shadows[12],
+            flexGrow: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            px: { xs: 2, sm: 6 },
+            py: { xs: 8, sm: 10 },
           }}
-        />
+        >
+          {imageSrc ? (
+            <Box
+              component="img"
+              src={imageSrc}
+              alt={imageAlt}
+              sx={{
+                maxHeight: '70%',
+                maxWidth: '90%',
+                objectFit: 'contain',
+                borderRadius: 3,
+                boxShadow: theme.shadows[12],
+              }}
+            />
+          ) : null}
+        </Box>
 
         <Box
           sx={{
