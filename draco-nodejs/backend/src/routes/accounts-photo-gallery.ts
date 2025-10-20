@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams } from '../utils/paramExtraction.js';
@@ -7,7 +6,6 @@ import { ValidationError } from '../utils/customErrors.js';
 import { PhotoGalleryQuerySchema } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
-const routeProtection = ServiceFactory.getRouteProtection();
 const galleryService = ServiceFactory.getPhotoGalleryService();
 
 const normalizeQueryId = (value: unknown): bigint | null | undefined => {
@@ -38,8 +36,6 @@ const normalizeQueryId = (value: unknown): bigint | null | undefined => {
 
 router.get(
   '/:accountId/photo-gallery',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { albumId, teamId } = PhotoGalleryQuerySchema.parse(req.query);

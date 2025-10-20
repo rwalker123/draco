@@ -1777,9 +1777,8 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     operationId: 'getAccountPhotoGallery',
     summary: 'Retrieve the account photo gallery',
     description:
-      'Returns approved gallery photos for the account along with aggregated album metadata. Requires an authenticated contact with access to the account.',
+      'Returns approved gallery photos for the account along with aggregated album metadata. This endpoint is publicly accessible.',
     tags: ['Photo Gallery'],
-    security: [{ bearerAuth: [] }],
     parameters: [
       {
         name: 'accountId',
@@ -1804,8 +1803,6 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
           'application/json': { schema: ValidationErrorSchemaRef },
         },
       },
-      401: { description: 'Authentication required.' },
-      403: { description: 'Insufficient permissions to view the photo gallery.' },
       500: {
         description: 'Unexpected server error while retrieving the gallery.',
         content: {

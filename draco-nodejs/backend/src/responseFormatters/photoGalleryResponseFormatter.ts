@@ -21,31 +21,56 @@ const buildAssetUrl = (relativePath: string): string => {
   return `/uploads/${normalized}`;
 };
 
-const formatPhoto = (entry: dbPhotoGalleryEntry): PhotoGalleryPhotoType | null => {
-  const gallery = entry.photogallery;
-
-  if (!gallery) {
+const normalizeExtension = (value?: string | null): string | null => {
+  if (!value) {
     return null;
   }
 
-  const album = entry.photogalleryalbum;
-  const albumId = album?.id ?? gallery.albumid ?? entry.albumid ?? null;
-  const teamId = album?.teamid ?? entry.teamid ?? null;
-  const caption = gallery.caption?.trim() || entry.caption?.trim() || '';
-  const albumTitle = album?.title?.trim() || (teamId ? 'Team Album' : 'Main Album');
-  const extension = path.extname(entry.originalfilepath) || '.jpg';
-  const galleryPaths = buildGalleryAssetPaths(entry.accountid, BigInt(gallery.id), extension);
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.startsWith('.') ? trimmed.toLowerCase() : `.${trimmed.toLowerCase()}`;
+};
+
+const normalizeTeamId = (value?: bigint | null): bigint | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return value === 0n ? null : value;
+};
+
+const formatPhoto = (entry: dbPhotoGalleryEntry): PhotoGalleryPhotoType | null => {
+  const submission = entry.photogallerysubmission[0] ?? null;
+  const album = entry.photogalleryalbum ?? null;
+
+  const albumId = entry.albumid ?? album?.id ?? submission?.albumid ?? null;
+  const teamId =
+    normalizeTeamId(album?.teamid ?? null) ?? normalizeTeamId(submission?.teamid ?? null);
+
+  const caption = entry.caption?.trim() ?? '';
+  const normalizedCaption = caption.length > 0 ? caption : null;
+
+  const extensionHint = submission?.originalfilepath
+    ? path.extname(submission.originalfilepath)
+    : null;
+  const extension = normalizeExtension(extensionHint) ?? '.jpg';
+  const galleryPaths = buildGalleryAssetPaths(entry.accountid, entry.id, extension);
 
   return {
-    id: gallery.id.toString(),
-    submissionId: entry.id.toString(),
+    id: entry.id.toString(),
+    submissionId: (submission?.id ?? entry.id).toString(),
     accountId: entry.accountid.toString(),
     teamId: toStringOrNull(teamId),
     albumId: toStringOrNull(albumId),
-    albumTitle,
-    title: gallery.title,
-    caption: caption.length > 0 ? caption : null,
-    submittedAt: DateUtils.formatDateTimeForResponse(entry.submittedat),
+    albumTitle: album?.title?.trim() || (teamId ? 'Team Album' : 'Main Album'),
+    title: entry.title.trim(),
+    caption: normalizedCaption,
+    submittedAt: submission?.submittedat
+      ? DateUtils.formatDateTimeForResponse(submission.submittedat)
+      : null,
     originalUrl: buildAssetUrl(galleryPaths.originalFilePath),
     primaryUrl: buildAssetUrl(galleryPaths.primaryImagePath),
     thumbnailUrl: buildAssetUrl(galleryPaths.thumbnailImagePath),

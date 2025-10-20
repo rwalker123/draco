@@ -1560,30 +1560,32 @@ export type dbPhotoGallery = Prisma.photogalleryGetPayload<{
   };
 }>;
 
-export type dbPhotoGalleryEntry = Prisma.photogallerysubmissionGetPayload<{
+export type dbPhotoGalleryEntry = Prisma.photogalleryGetPayload<{
   select: {
     id: true;
     accountid: true;
-    teamid: true;
     albumid: true;
     title: true;
     caption: true;
-    originalfilepath: true;
-    submittedat: true;
-    photogallery: {
-      select: {
-        id: true;
-        title: true;
-        caption: true;
-        albumid: true;
-      };
-    };
     photogalleryalbum: {
       select: {
         id: true;
         title: true;
         teamid: true;
       };
+    };
+    photogallerysubmission: {
+      select: {
+        id: true;
+        teamid: true;
+        albumid: true;
+        submittedat: true;
+        originalfilepath: true;
+      };
+      orderBy: {
+        submittedat: 'desc';
+      };
+      take: 1;
     };
   };
 }>;

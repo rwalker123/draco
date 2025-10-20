@@ -10171,12 +10171,9 @@ paths:
       operationId: getAccountPhotoGallery
       summary: Retrieve the account photo gallery
       description: Returns approved gallery photos for the account along with
-        aggregated album metadata. Requires an authenticated contact with access
-        to the account.
+        aggregated album metadata. This endpoint is publicly accessible.
       tags:
         - Photo Gallery
-      security:
-        - bearerAuth: []
       parameters:
         - name: accountId
           in: path
@@ -10211,10 +10208,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationError"
-        "401":
-          description: Authentication required.
-        "403":
-          description: Insufficient permissions to view the photo gallery.
         "500":
           description: Unexpected server error while retrieving the gallery.
           content:

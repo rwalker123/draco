@@ -9,6 +9,14 @@ import {
   dbPhotoGalleryEntry,
 } from '../types/dbTypes.js';
 
+const normalizeTeamId = (value: bigint | null | undefined): bigint | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return value === 0n ? null : value;
+};
+
 export class PrismaPhotoGalleryRepository implements IPhotoGalleryRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -46,42 +54,22 @@ export class PrismaPhotoGalleryRepository implements IPhotoGalleryRepository {
   }
 
   async listGalleryEntries(options: GalleryQueryOptions): Promise<dbPhotoGalleryEntry[]> {
-    const where: Prisma.photogallerysubmissionWhereInput = {
+    const where: Prisma.photogalleryWhereInput = {
       accountid: options.accountId,
-      status: 'Approved',
-      photogallery: { isNot: null },
     };
 
     if (options.albumId !== undefined) {
       where.albumid = options.albumId ?? null;
     }
 
-    if (options.teamId !== undefined && options.teamId !== null) {
-      where.OR = [
-        { teamid: options.teamId },
-        { photogalleryalbum: { teamid: options.teamId } },
-      ];
-    }
-
-    return this.prisma.photogallerysubmission.findMany({
+    const entries = await this.prisma.photogallery.findMany({
       where,
       select: {
         id: true,
         accountid: true,
-        teamid: true,
         albumid: true,
         title: true,
         caption: true,
-        originalfilepath: true,
-        submittedat: true,
-        photogallery: {
-          select: {
-            id: true,
-            title: true,
-            caption: true,
-            albumid: true,
-          },
-        },
         photogalleryalbum: {
           select: {
             id: true,
@@ -89,8 +77,38 @@ export class PrismaPhotoGalleryRepository implements IPhotoGalleryRepository {
             teamid: true,
           },
         },
+        photogallerysubmission: {
+          select: {
+            id: true,
+            teamid: true,
+            albumid: true,
+            submittedat: true,
+            originalfilepath: true,
+          },
+          orderBy: {
+            submittedat: 'desc',
+          },
+          take: 1,
+        },
       },
-      orderBy: { submittedat: 'desc' },
+      orderBy: { id: 'desc' },
+    });
+
+    if (options.teamId === undefined) {
+      return entries;
+    }
+
+    const targetTeamId = normalizeTeamId(options.teamId);
+
+    return entries.filter((entry) => {
+      const albumTeamId = normalizeTeamId(entry.photogalleryalbum?.teamid ?? null);
+      const submissionTeamId = normalizeTeamId(entry.photogallerysubmission[0]?.teamid ?? null);
+
+      if (targetTeamId === null) {
+        return albumTeamId === null && submissionTeamId === null;
+      }
+
+      return albumTeamId === targetTeamId || submissionTeamId === targetTeamId;
     });
   }
 }
