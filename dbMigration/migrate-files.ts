@@ -1645,7 +1645,11 @@ class FileMigrationService {
 
     try {
       const { extension, format } = this.normalizeGalleryExtension(remoteOriginalPath);
-      const destinations = this.buildGalleryDestinationPaths(accountIdBigInt, galleryIdBigInt, extension);
+      const destinations = this.buildGalleryDestinationPaths(
+        accountIdBigInt,
+        galleryIdBigInt,
+        extension,
+      );
       const originalDestination = this.resolveUploadsAbsolutePath(destinations.photo);
       const thumbnailDestination = this.resolveUploadsAbsolutePath(destinations.thumbnail);
 
