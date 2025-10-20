@@ -31,7 +31,7 @@ import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
-import { getAccountById, getAccountUserTeams } from '@draco/shared-api-client';
+import { getAccountById, getAccountUserTeams, listSeasonTeams } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
@@ -127,29 +127,74 @@ const BaseballAccountHome: React.FC = () => {
   } = usePhotoGallery({ accountId: accountIdStr ?? null });
 
   const [selectedAlbumKey, setSelectedAlbumKey] = useState<string>('all');
+  const [seasonTeamIds, setSeasonTeamIds] = useState<string[] | null>(null);
+
+  const seasonFilteredPhotos = useMemo(() => {
+    if (seasonTeamIds === null || seasonTeamIds.length === 0) {
+      return galleryPhotos;
+    }
+
+    const allowedTeamIds = new Set(seasonTeamIds);
+    return galleryPhotos.filter((photo) => {
+      if (!photo.teamId) {
+        return true;
+      }
+      return allowedTeamIds.has(photo.teamId);
+    });
+  }, [galleryPhotos, seasonTeamIds]);
+
+  const seasonFilteredAlbums = useMemo(() => {
+    if (seasonTeamIds === null || seasonTeamIds.length === 0) {
+      return galleryAlbums;
+    }
+
+    const allowedTeamIds = new Set(seasonTeamIds);
+    const albumCounts = new Map<string, number>();
+
+    seasonFilteredPhotos.forEach((photo) => {
+      const key = photo.albumId ?? 'null';
+      albumCounts.set(key, (albumCounts.get(key) ?? 0) + 1);
+    });
+
+    return galleryAlbums
+      .filter((album) => {
+        if (!album.teamId) {
+          return true;
+        }
+        return allowedTeamIds.has(album.teamId);
+      })
+      .map((album) => {
+        const key = album.id ?? 'null';
+        const photoCount = albumCounts.get(key) ?? 0;
+        return { ...album, photoCount };
+      })
+      .filter((album) => album.photoCount > 0 || album.id === null);
+  }, [galleryAlbums, seasonFilteredPhotos, seasonTeamIds]);
 
   useEffect(() => {
     if (selectedAlbumKey === 'all') {
       return;
     }
 
-    const hasAlbum = galleryAlbums.some((album) => (album.id ?? 'null') === selectedAlbumKey);
+    const hasAlbum = seasonFilteredAlbums.some(
+      (album) => (album.id ?? 'null') === selectedAlbumKey,
+    );
     if (!hasAlbum) {
       setSelectedAlbumKey('all');
     }
-  }, [galleryAlbums, selectedAlbumKey]);
+  }, [seasonFilteredAlbums, selectedAlbumKey]);
 
   const filteredGalleryPhotos = useMemo(() => {
     if (selectedAlbumKey === 'all') {
-      return galleryPhotos;
+      return seasonFilteredPhotos;
     }
 
     if (selectedAlbumKey === 'null') {
-      return galleryPhotos.filter((photo) => photo.albumId === null);
+      return seasonFilteredPhotos.filter((photo) => photo.albumId === null);
     }
 
-    return galleryPhotos.filter((photo) => photo.albumId === selectedAlbumKey);
-  }, [galleryPhotos, selectedAlbumKey]);
+    return seasonFilteredPhotos.filter((photo) => photo.albumId === selectedAlbumKey);
+  }, [seasonFilteredPhotos, selectedAlbumKey]);
 
   const handleAlbumTabChange = useCallback((value: string) => {
     setSelectedAlbumKey(value);
@@ -227,6 +272,52 @@ const BaseballAccountHome: React.FC = () => {
       isMounted = false;
     };
   }, [accountIdStr, apiClient]);
+
+  useEffect(() => {
+    if (!accountIdStr || !currentSeason?.id) {
+      setSeasonTeamIds(null);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchSeasonTeams = async () => {
+      try {
+        const result = await listSeasonTeams({
+          client: apiClient,
+          path: { accountId: accountIdStr, seasonId: currentSeason.id },
+          throwOnError: false,
+        });
+
+        if (ignore) {
+          return;
+        }
+
+        const teams = unwrapApiResult(result, 'Failed to load season teams');
+        if (!Array.isArray(teams)) {
+          setSeasonTeamIds([]);
+          return;
+        }
+
+        const ids = teams
+          .map((team) => team.team?.id)
+          .filter((value): value is string => Boolean(value));
+
+        setSeasonTeamIds(ids);
+      } catch (err) {
+        if (!ignore) {
+          console.warn('Failed to load season teams:', err);
+          setSeasonTeamIds([]);
+        }
+      }
+    };
+
+    void fetchSeasonTeams();
+
+    return () => {
+      ignore = true;
+    };
+  }, [accountIdStr, currentSeason?.id, apiClient]);
 
   // Fetch user teams if logged in
   useEffect(() => {
@@ -549,7 +640,7 @@ const BaseballAccountHome: React.FC = () => {
           title="Photo Gallery"
           description={`Relive the highlights from ${account?.name ?? 'this organization'}.`}
           photos={filteredGalleryPhotos}
-          albums={galleryAlbums}
+          albums={seasonFilteredAlbums}
           loading={galleryLoading}
           error={galleryError}
           onRefresh={refreshGallery}
@@ -557,7 +648,7 @@ const BaseballAccountHome: React.FC = () => {
           enableAlbumTabs
           selectedAlbumKey={selectedAlbumKey}
           onAlbumChange={handleAlbumTabChange}
-          totalCountOverride={galleryPhotos.length}
+          totalCountOverride={seasonFilteredPhotos.length}
         />
 
         <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />

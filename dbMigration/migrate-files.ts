@@ -44,12 +44,23 @@ interface MigrationStats {
   messageBoards: CategoryStats;
 }
 
+const GALLERY_PRIMARY_DIMENSIONS = { width: 800, height: 450 } as const;
 const GALLERY_THUMBNAIL_DIMENSIONS = { width: 160, height: 90 } as const;
 const EXTENSION_FORMAT_MAP: Record<string, 'jpeg' | 'png' | 'webp'> = {
   '.jpg': 'jpeg',
   '.jpeg': 'jpeg',
   '.png': 'png',
   '.webp': 'webp',
+};
+
+const matchesTargetDimensions = (
+  metadata: sharp.Metadata | null | undefined,
+  dimensions: { width: number; height: number },
+) => {
+  if (!metadata?.width || !metadata?.height) {
+    return false;
+  }
+  return metadata.width === dimensions.width && metadata.height === dimensions.height;
 };
 
 interface FileInfo {
@@ -1655,36 +1666,55 @@ class FileMigrationService {
 
       await fs.promises.mkdir(path.dirname(originalDestination), { recursive: true });
 
-      const originalNeedsConversion = !this.extensionsMatch(
-        path.extname(remoteOriginalPath),
-        extension,
+      const originalMetadata = await sharp(originalBuffer).metadata().catch(() => null);
+      const shouldResizePrimary = !matchesTargetDimensions(
+        originalMetadata,
+        GALLERY_PRIMARY_DIMENSIONS,
       );
 
-      const photoBuffer = originalNeedsConversion
-        ? await sharp(originalBuffer).toFormat(format).toBuffer()
-        : originalBuffer;
-
-      await fs.promises.writeFile(originalDestination, photoBuffer);
-
-      let thumbnailOutputBuffer: Buffer;
-      if (thumbnailBuffer) {
-        thumbnailOutputBuffer = this.extensionsMatch(
-          path.extname(remoteThumbnailPath ?? ''),
-          extension,
-        )
-          ? thumbnailBuffer
-          : await sharp(thumbnailBuffer).toFormat(format).toBuffer();
-      } else {
-        thumbnailOutputBuffer = await sharp(originalBuffer)
-          .resize(GALLERY_THUMBNAIL_DIMENSIONS.width, GALLERY_THUMBNAIL_DIMENSIONS.height, {
-            fit: 'inside',
+      if (shouldResizePrimary) {
+        const resizedPhotoBuffer = await sharp(originalBuffer)
+          .resize(GALLERY_PRIMARY_DIMENSIONS.width, GALLERY_PRIMARY_DIMENSIONS.height, {
+            fit: 'cover',
+            position: 'centre',
             withoutEnlargement: true,
           })
           .toFormat(format)
           .toBuffer();
+        await fs.promises.writeFile(originalDestination, resizedPhotoBuffer);
+      } else {
+        await fs.promises.writeFile(originalDestination, originalBuffer);
       }
 
-      await fs.promises.writeFile(thumbnailDestination, thumbnailOutputBuffer);
+      await fs.promises.mkdir(path.dirname(thumbnailDestination), { recursive: true });
+
+      const thumbnailMetadata = thumbnailBuffer
+        ? await sharp(thumbnailBuffer).metadata().catch(() => null)
+        : null;
+
+      let thumbnailSourceBuffer = thumbnailBuffer ?? originalBuffer;
+      let shouldResizeThumbnail = true;
+
+      if (thumbnailBuffer && matchesTargetDimensions(thumbnailMetadata, GALLERY_THUMBNAIL_DIMENSIONS)) {
+        shouldResizeThumbnail = false;
+        thumbnailSourceBuffer = thumbnailBuffer;
+      } else if (!thumbnailBuffer && matchesTargetDimensions(originalMetadata, GALLERY_THUMBNAIL_DIMENSIONS)) {
+        shouldResizeThumbnail = false;
+        thumbnailSourceBuffer = originalBuffer;
+      }
+
+      if (shouldResizeThumbnail) {
+        const resizedThumbnailBuffer = await sharp(thumbnailSourceBuffer)
+          .resize(GALLERY_THUMBNAIL_DIMENSIONS.width, GALLERY_THUMBNAIL_DIMENSIONS.height, {
+            fit: 'cover',
+            position: 'centre',
+          })
+          .toFormat(format)
+          .toBuffer();
+        await fs.promises.writeFile(thumbnailDestination, resizedThumbnailBuffer);
+      } else {
+        await fs.promises.writeFile(thumbnailDestination, thumbnailSourceBuffer);
+      }
 
       this.stats.galleryPhotos.uploaded++;
       this.markFileProcessed(remoteOriginalPath);
@@ -1711,19 +1741,6 @@ class FileMigrationService {
         await this.cleanupTempFile(thumbnailLocalPath);
       }
     }
-  }
-
-  private extensionsMatch(first: string, second: string): boolean {
-    const normalize = (value: string) => (value || '').trim().toLowerCase().replace(/^\.*/, '.');
-    const normalizedFirst = normalize(first);
-    const normalizedSecond = normalize(second);
-    if (normalizedFirst === '.jpeg' && normalizedSecond === '.jpg') {
-      return true;
-    }
-    if (normalizedSecond === '.jpeg' && normalizedFirst === '.jpg') {
-      return true;
-    }
-    return normalizedFirst === normalizedSecond;
   }
 
   private isImageFile(filename: string): boolean {

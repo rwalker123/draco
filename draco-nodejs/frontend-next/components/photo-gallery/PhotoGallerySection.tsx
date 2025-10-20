@@ -2,17 +2,18 @@ import React from 'react';
 import {
   Alert,
   Box,
-  Button,
   Paper,
+  Skeleton,
   Tab,
   Tabs,
   Typography,
   type SxProps,
   type Theme,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import type { PhotoGalleryAlbumType, PhotoGalleryPhotoType } from '@draco/shared-schemas';
 import PhotoGalleryGrid from './PhotoGalleryGrid';
+import PhotoGalleryHero from './PhotoGalleryHero';
+import PhotoGalleryLightbox from './PhotoGalleryLightbox';
 
 export interface PhotoGallerySectionProps {
   title: string;
@@ -126,7 +127,6 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
   albums = [],
   loading = false,
   error = null,
-  onRefresh,
   emptyMessage = defaultEmptyMessage,
   enableAlbumTabs = false,
   selectedAlbumKey = 'all',
@@ -136,6 +136,42 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
   sx,
 }) => {
   const totalCount = totalCountOverride ?? photos.length;
+  const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+
+  const handleOpenLightbox = React.useCallback(
+    (index: number) => {
+      if (index >= 0 && index < photos.length) {
+        setLightboxIndex(index);
+      }
+    },
+    [photos.length],
+  );
+
+  const handleCloseLightbox = React.useCallback(() => {
+    setLightboxIndex(null);
+  }, []);
+
+  const handleNextLightbox = React.useCallback(() => {
+    setLightboxIndex((current) => {
+      if (current === null || photos.length === 0) {
+        return current;
+      }
+      return (current + 1) % photos.length;
+    });
+  }, [photos.length]);
+
+  const handlePrevLightbox = React.useCallback(() => {
+    setLightboxIndex((current) => {
+      if (current === null || photos.length === 0) {
+        return current;
+      }
+      return (current - 1 + photos.length) % photos.length;
+    });
+  }, [photos.length]);
+
+  const heroPhotos = photos.slice(0, Math.min(10, photos.length));
+  const gridPhotos = photos.slice(heroPhotos.length);
+  const lightboxPhoto = lightboxIndex !== null ? (photos[lightboxIndex] ?? null) : null;
 
   return (
     <Paper
@@ -178,33 +214,18 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
             </Typography>
           ) : null}
         </Box>
-        <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 600,
-              color: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? 'rgba(255,255,255,0.75)'
-                  : theme.palette.text.secondary,
-            }}
-          >
-            {totalCount} {totalCount === 1 ? 'photo' : 'photos'}
-          </Typography>
-          {onRefresh ? (
-            <Button
-              variant="contained"
-              color="secondary"
-              size="small"
-              startIcon={<RefreshIcon fontSize="small" />}
-              onClick={() => {
-                void onRefresh();
-              }}
-            >
-              Refresh
-            </Button>
-          ) : null}
-        </Box>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'rgba(255,255,255,0.75)'
+                : theme.palette.text.secondary,
+          }}
+        >
+          {totalCount} {totalCount === 1 ? 'photo' : 'photos'}
+        </Typography>
       </Box>
       {enableAlbumTabs && albums.length > 0 && onAlbumChange
         ? renderAlbumTabs(albums, selectedAlbumKey, onAlbumChange, totalCount)
@@ -214,7 +235,31 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
           {error}
         </Alert>
       ) : null}
-      <PhotoGalleryGrid photos={photos} loading={loading} emptyMessage={emptyMessage} />
+      {heroPhotos.length > 0 ? (
+        <Box mb={4}>
+          <PhotoGalleryHero photos={heroPhotos} onSelect={(index) => handleOpenLightbox(index)} />
+        </Box>
+      ) : loading ? (
+        <Skeleton
+          variant="rectangular"
+          height={360}
+          sx={{ borderRadius: 4, mb: 4, bgcolor: 'rgba(15,23,42,0.08)' }}
+        />
+      ) : null}
+      <PhotoGalleryGrid
+        photos={gridPhotos}
+        loading={loading}
+        emptyMessage={emptyMessage}
+        onPhotoClick={(index) => handleOpenLightbox(heroPhotos.length + index)}
+        photoIndexOffset={heroPhotos.length}
+      />
+      <PhotoGalleryLightbox
+        open={lightboxIndex !== null}
+        photo={lightboxPhoto}
+        onClose={handleCloseLightbox}
+        onNext={handleNextLightbox}
+        onPrev={handlePrevLightbox}
+      />
     </Paper>
   );
 };
