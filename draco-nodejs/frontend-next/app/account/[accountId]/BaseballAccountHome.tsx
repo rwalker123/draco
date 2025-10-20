@@ -663,34 +663,6 @@ const BaseballAccountHome: React.FC = () => {
           isAccountMember={isAccountMember}
         />
 
-        {showSubmissionPanel && (
-          <Paper sx={{ p: 3, mb: 2 }}>
-            {membershipLoading ? (
-              <Box display="flex" alignItems="center" gap={2}>
-                <CircularProgress size={24} />
-                <Typography variant="body2">Checking your access…</Typography>
-              </Box>
-            ) : membershipError ? (
-              <Alert severity="error">{membershipError}</Alert>
-            ) : canSubmitPhotos ? (
-              <PhotoSubmissionForm
-                variant="account"
-                accountId={accountIdStr ?? ''}
-                contextName={account.name}
-                albumOptions={submissionAlbumOptions}
-                onSubmitted={() => {
-                  void refreshPendingSubmissions();
-                }}
-              />
-            ) : (
-              <Alert severity="info">
-                You need to be a registered contact for this account to submit photos for
-                moderation.
-              </Alert>
-            )}
-          </Paper>
-        )}
-
         {shouldShowPendingPanel && (
           <Paper sx={{ p: 3, mb: 2 }}>
             <PendingPhotoSubmissionsPanel
@@ -770,21 +742,63 @@ const BaseballAccountHome: React.FC = () => {
           </Box>
         )}
 
-        <PhotoGallerySection
-          title="Photo Gallery"
-          description={`Relive the highlights from ${account?.name ?? 'this organization'}.`}
-          photos={filteredGalleryPhotos}
-          albums={seasonFilteredAlbums}
-          loading={galleryLoading}
-          error={galleryError}
-          onRefresh={refreshGallery}
-          emptyMessage="No photos have been published yet."
-          enableAlbumTabs
-          selectedAlbumKey={selectedAlbumKey}
-          onAlbumChange={handleAlbumTabChange}
-          totalCountOverride={seasonFilteredPhotos.length}
-          teamAlbumHierarchy={teamAlbumHierarchy}
-        />
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: showSubmissionPanel
+              ? {
+                  xs: '1fr',
+                  lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
+                }
+              : '1fr',
+            alignItems: 'stretch',
+          }}
+        >
+          <PhotoGallerySection
+            title="Photo Gallery"
+            description={`Relive the highlights from ${account?.name ?? 'this organization'}.`}
+            photos={filteredGalleryPhotos}
+            albums={seasonFilteredAlbums}
+            loading={galleryLoading}
+            error={galleryError}
+            onRefresh={refreshGallery}
+            emptyMessage="No photos have been published yet."
+            enableAlbumTabs
+            selectedAlbumKey={selectedAlbumKey}
+            onAlbumChange={handleAlbumTabChange}
+            totalCountOverride={seasonFilteredPhotos.length}
+            teamAlbumHierarchy={teamAlbumHierarchy}
+            sx={{ height: '100%' }}
+          />
+          {showSubmissionPanel ? (
+            <Paper sx={{ p: 3, height: '100%' }}>
+              {membershipLoading ? (
+                <Box display="flex" alignItems="center" gap={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2">Checking your access…</Typography>
+                </Box>
+              ) : membershipError ? (
+                <Alert severity="error">{membershipError}</Alert>
+              ) : canSubmitPhotos ? (
+                <PhotoSubmissionForm
+                  variant="account"
+                  accountId={accountIdStr ?? ''}
+                  contextName={account.name}
+                  albumOptions={submissionAlbumOptions}
+                  onSubmitted={() => {
+                    void refreshPendingSubmissions();
+                  }}
+                />
+              ) : (
+                <Alert severity="info">
+                  You need to be a registered contact for this account to submit photos for
+                  moderation.
+                </Alert>
+              )}
+            </Paper>
+          ) : null}
+        </Box>
 
         <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
 
