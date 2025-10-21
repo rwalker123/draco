@@ -1450,6 +1450,34 @@ export type dbPhotoGalleryAlbum = Prisma.photogalleryalbumGetPayload<{
   };
 }>;
 
+export type dbPhotoGalleryAlbumWithCount = Prisma.photogalleryalbumGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    teamid: true;
+    parentalbumid: true;
+    title: true;
+    _count: {
+      select: {
+        photogallery: true;
+      };
+    };
+  };
+}>;
+
+export interface dbCreatePhotoGalleryAlbumInput {
+  accountid: bigint;
+  title: string;
+  teamid: bigint;
+  parentalbumid: bigint;
+}
+
+export interface dbUpdatePhotoGalleryAlbumInput {
+  title?: string;
+  teamid?: bigint;
+  parentalbumid?: bigint;
+}
+
 export interface dbCreatePhotoSubmissionInput {
   accountid: bigint;
   teamid?: bigint | null;
@@ -1548,6 +1576,12 @@ export interface dbCreatePhotoGalleryInput {
   albumid?: bigint | null;
   title: string;
   caption: string;
+}
+
+export interface dbUpdatePhotoGalleryInput {
+  title?: string;
+  caption?: string | null;
+  albumid?: bigint | null;
 }
 
 export type dbPhotoGallery = Prisma.photogalleryGetPayload<{

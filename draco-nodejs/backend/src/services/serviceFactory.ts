@@ -45,6 +45,9 @@ import { HandoutService } from './handoutService.js';
 import { AdminAnalyticsService } from './adminAnalyticsService.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryService } from './photoGalleryService.js';
+import { PhotoGalleryAdminService } from './photoGalleryAdminService.js';
+import { PhotoGalleryApprovalService } from './photoGalleryApprovalService.js';
+import { PhotoGalleryAssetService } from './photoGalleryAssetService.js';
 import { PhotoSubmissionModerationService } from './photoSubmissionModerationService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
@@ -92,6 +95,9 @@ export class ServiceFactory {
   private static adminAnalyticsService: AdminAnalyticsService;
   private static photoSubmissionService: PhotoSubmissionService;
   private static photoGalleryService: PhotoGalleryService;
+  private static photoGalleryAdminService: PhotoGalleryAdminService;
+  private static photoGalleryApprovalService: PhotoGalleryApprovalService;
+  private static photoGalleryAssetService: PhotoGalleryAssetService;
   private static photoSubmissionModerationService: PhotoSubmissionModerationService;
   private static photoSubmissionAssetService: PhotoSubmissionAssetService;
   private static photoSubmissionNotificationService: PhotoSubmissionNotificationService;
@@ -364,6 +370,32 @@ export class ServiceFactory {
     }
 
     return this.photoGalleryService;
+  }
+
+  static getPhotoGalleryAssetService(): PhotoGalleryAssetService {
+    if (!this.photoGalleryAssetService) {
+      this.photoGalleryAssetService = new PhotoGalleryAssetService();
+    }
+
+    return this.photoGalleryAssetService;
+  }
+
+  static getPhotoGalleryApprovalService(): PhotoGalleryApprovalService {
+    if (!this.photoGalleryApprovalService) {
+      this.photoGalleryApprovalService = new PhotoGalleryApprovalService();
+    }
+
+    return this.photoGalleryApprovalService;
+  }
+
+  static getPhotoGalleryAdminService(): PhotoGalleryAdminService {
+    if (!this.photoGalleryAdminService) {
+      const repository = RepositoryFactory.getPhotoGalleryAdminRepository();
+      const assetService = this.getPhotoGalleryAssetService();
+      this.photoGalleryAdminService = new PhotoGalleryAdminService(repository, assetService);
+    }
+
+    return this.photoGalleryAdminService;
   }
 
   static getPhotoSubmissionNotificationService(): PhotoSubmissionNotificationService {

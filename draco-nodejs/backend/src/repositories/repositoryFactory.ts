@@ -28,7 +28,9 @@ import {
   IHandoutRepository,
   IAdminAnalyticsRepository,
   IPhotoSubmissionRepository,
-  IPhotoGalleryRepository,
+  IPhotoGalleryAdminRepository,
+  IPhotoGalleryModerationRepository,
+  IPhotoGalleryReadRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -99,7 +101,7 @@ export class RepositoryFactory {
   private static handoutRepository: IHandoutRepository;
   private static adminAnalyticsRepository: IAdminAnalyticsRepository;
   private static photoSubmissionRepository: IPhotoSubmissionRepository;
-  private static photoGalleryRepository: IPhotoGalleryRepository;
+  private static photoGalleryRepository: PrismaPhotoGalleryRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -150,11 +152,23 @@ export class RepositoryFactory {
     return this.photoSubmissionRepository;
   }
 
-  static getPhotoGalleryRepository(): IPhotoGalleryRepository {
+  private static ensurePhotoGalleryRepository(): PrismaPhotoGalleryRepository {
     if (!this.photoGalleryRepository) {
       this.photoGalleryRepository = new PrismaPhotoGalleryRepository(prisma);
     }
     return this.photoGalleryRepository;
+  }
+
+  static getPhotoGalleryReadRepository(): IPhotoGalleryReadRepository {
+    return this.ensurePhotoGalleryRepository();
+  }
+
+  static getPhotoGalleryModerationRepository(): IPhotoGalleryModerationRepository {
+    return this.ensurePhotoGalleryRepository();
+  }
+
+  static getPhotoGalleryAdminRepository(): IPhotoGalleryAdminRepository {
+    return this.ensurePhotoGalleryRepository();
   }
 
   static getAccountRepository(): IAccountRepository {

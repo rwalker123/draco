@@ -7509,6 +7509,62 @@ components:
         - description
       title: UpsertHandout
       description: Payload for creating or updating a handout record
+    CreatePhotoGalleryPhoto:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Title for the approved gallery photo
+        caption:
+          type: string
+          maxLength: 255
+          description: Optional caption describing the gallery photo
+        albumId:
+          anyOf:
+            - type: string
+              pattern: ^\d+$
+              description: Numeric identifier string representation
+              example: "123"
+            - nullable: true
+            - nullable: true
+          description: Album identifier that groups the photo. Null clears the current
+            album.
+        photo:
+          type: string
+          format: binary
+          description: Photo file to upload
+      required:
+        - title
+        - photo
+      title: CreatePhotoGalleryPhoto
+      description: Multipart payload used by administrators to upload a gallery photo
+    UpdatePhotoGalleryPhoto:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Updated title for the gallery photo
+        caption:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: Updated caption for the gallery photo
+        albumId:
+          anyOf:
+            - type: string
+              pattern: ^\d+$
+              description: Numeric identifier string representation
+              example: "123"
+            - nullable: true
+            - nullable: true
+          description: Album identifier to reassign the photo. Null clears the current
+            album.
+      title: UpdatePhotoGalleryPhoto
+      description: JSON payload for updating gallery photo metadata
     PhotoGalleryPhoto:
       type: object
       properties:
@@ -7576,12 +7632,76 @@ components:
         - thumbnailUrl
       title: PhotoGalleryPhoto
       description: Approved gallery photo ready for display in the account UI
+    CreatePhotoGalleryAlbum:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 25
+          description: Album title used for grouping gallery photos
+        teamId:
+          anyOf:
+            - type: string
+              pattern: ^\d+$
+              description: Numeric identifier string representation
+              example: "123"
+            - nullable: true
+            - nullable: true
+          description: Team identifier associated with the album. Null creates an
+            account-level album.
+        parentAlbumId:
+          anyOf:
+            - type: string
+              pattern: ^\d+$
+              description: Numeric identifier string representation
+              example: "123"
+            - nullable: true
+            - nullable: true
+          description: Identifier of the parent album when nesting albums. Null creates a
+            top-level album.
+      required:
+        - title
+      title: CreatePhotoGalleryAlbum
+      description: Payload for administrators to create a gallery album
+    UpdatePhotoGalleryAlbum:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 25
+          description: New title for the gallery album
+        teamId:
+          anyOf:
+            - type: string
+              pattern: ^\d+$
+              description: Numeric identifier string representation
+              example: "123"
+            - nullable: true
+            - nullable: true
+          description: Updated team association for the album. Null removes the association.
+        parentAlbumId:
+          anyOf:
+            - type: string
+              pattern: ^\d+$
+              description: Numeric identifier string representation
+              example: "123"
+            - nullable: true
+            - nullable: true
+          description: Updated parent album for the album. Null promotes the album to
+            top-level status.
+      title: UpdatePhotoGalleryAlbum
+      description: Payload for updating gallery album metadata
     PhotoGalleryAlbum:
       type: object
       properties:
         id:
           type: string
           nullable: true
+          pattern: ^d+$
+        accountId:
+          type: string
           pattern: ^d+$
         title:
           type: string
@@ -7599,11 +7719,95 @@ components:
           description: Total number of photos contained in the album
       required:
         - id
+        - accountId
         - title
         - teamId
         - photoCount
       title: PhotoGalleryAlbum
       description: Album metadata summarizing gallery contents for filtering
+    PhotoGalleryAdminAlbum:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        accountId:
+          type: string
+          pattern: ^d+$
+        title:
+          type: string
+          minLength: 1
+          maxLength: 25
+          description: Album title used for grouping gallery photos
+        teamId:
+          type: string
+          nullable: true
+          pattern: ^d+$
+          description: Team identifier associated with the album when applicable
+        parentAlbumId:
+          type: string
+          nullable: true
+          pattern: ^d+$
+          description: Identifier of the parent album when the album is nested
+        photoCount:
+          type: integer
+          minimum: 0
+          description: Total number of photos contained in the album
+      required:
+        - id
+        - accountId
+        - title
+        - teamId
+        - parentAlbumId
+        - photoCount
+      title: PhotoGalleryAdminAlbum
+      description: Detailed album metadata for administrative management
+    PhotoGalleryAdminAlbumList:
+      type: object
+      properties:
+        albums:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              accountId:
+                type: string
+                pattern: ^d+$
+              title:
+                type: string
+                minLength: 1
+                maxLength: 25
+                description: Album title used for grouping gallery photos
+              teamId:
+                type: string
+                nullable: true
+                pattern: ^d+$
+                description: Team identifier associated with the album when applicable
+              parentAlbumId:
+                type: string
+                nullable: true
+                pattern: ^d+$
+                description: Identifier of the parent album when the album is nested
+              photoCount:
+                type: integer
+                minimum: 0
+                description: Total number of photos contained in the album
+            required:
+              - id
+              - accountId
+              - title
+              - teamId
+              - parentAlbumId
+              - photoCount
+            title: PhotoGalleryAdminAlbum
+            description: Detailed album metadata for administrative management
+      required:
+        - albums
+      title: PhotoGalleryAdminAlbumList
+      description: Collection response of gallery albums for administrative use
     PhotoGalleryList:
       type: object
       properties:
@@ -7685,6 +7889,9 @@ components:
                 type: string
                 nullable: true
                 pattern: ^d+$
+              accountId:
+                type: string
+                pattern: ^d+$
               title:
                 type: string
                 minLength: 1
@@ -7701,6 +7908,7 @@ components:
                 description: Total number of photos contained in the album
             required:
               - id
+              - accountId
               - title
               - teamId
               - photoCount
@@ -8751,6 +8959,373 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
         "500":
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/photo-gallery/photos:
+    get:
+      operationId: listAccountGalleryPhotosAdmin
+      summary: List gallery photos for administration
+      description: Returns approved gallery photos for administrative management,
+        including optional filters by album or team. Requires photo management
+        permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: string
+            nullable: true
+            pattern: ^d+$
+          required: false
+          name: albumId
+          in: query
+        - schema:
+            type: string
+            nullable: true
+            pattern: ^d+$
+          required: false
+          name: teamId
+          in: query
+      responses:
+        "200":
+          description: Gallery photos available for administrative management.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoGalleryList"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery photos.
+        "500":
+          description: Unexpected server error while retrieving gallery photos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: createAccountGalleryPhoto
+      summary: Upload a gallery photo as an administrator
+      description: Uploads a new gallery photo directly into the approved gallery.
+        Requires photo management permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreatePhotoGalleryPhoto"
+            encoding:
+              photo:
+                contentType: image/*
+      responses:
+        "201":
+          description: Gallery photo created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoGalleryPhoto"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery photos.
+        "500":
+          description: Unexpected server error while creating the gallery photo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/photo-gallery/photos/{photoId}:
+    patch:
+      operationId: updateAccountGalleryPhoto
+      summary: Update gallery photo metadata
+      description: Updates the title, caption, or album assignment for an approved
+        gallery photo. Requires photo management permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePhotoGalleryPhoto"
+      responses:
+        "200":
+          description: Updated gallery photo metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoGalleryPhoto"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery photos.
+        "404":
+          description: Gallery photo not found.
+        "500":
+          description: Unexpected server error while updating the gallery photo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteAccountGalleryPhoto
+      summary: Delete a gallery photo
+      description: Removes an approved gallery photo and associated assets. Requires
+        photo management permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Gallery photo deleted.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery photos.
+        "404":
+          description: Gallery photo not found.
+        "500":
+          description: Unexpected server error while deleting the gallery photo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/photo-gallery/albums:
+    get:
+      operationId: listAccountGalleryAlbumsAdmin
+      summary: List gallery albums for administration
+      description: Retrieves gallery albums with parent and team associations for
+        administrative management. Requires photo management permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Gallery albums available for administrative management.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoGalleryAdminAlbumList"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery albums.
+        "500":
+          description: Unexpected server error while retrieving gallery albums.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: createAccountGalleryAlbum
+      summary: Create a gallery album
+      description: Creates a gallery album available for assigning approved photos.
+        Requires photo management permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePhotoGalleryAlbum"
+      responses:
+        "201":
+          description: Gallery album created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoGalleryAdminAlbum"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery albums.
+        "409":
+          description: Album title conflicts with an existing album.
+        "500":
+          description: Unexpected server error while creating the gallery album.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/photo-gallery/albums/{albumId}:
+    patch:
+      operationId: updateAccountGalleryAlbum
+      summary: Update gallery album metadata
+      description: Updates the title, team association, or parent album for a gallery
+        album. Requires photo management permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePhotoGalleryAlbum"
+      responses:
+        "200":
+          description: Gallery album updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoGalleryAdminAlbum"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery albums.
+        "404":
+          description: Gallery album not found.
+        "409":
+          description: Album title conflicts with an existing album.
+        "500":
+          description: Unexpected server error while updating the gallery album.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteAccountGalleryAlbum
+      summary: Delete a gallery album
+      description: Deletes a gallery album. If the album contains photos, the request
+        may be rejected depending on business rules. Requires photo management
+        permissions.
+      tags:
+        - Photo Gallery
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Gallery album deleted.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Insufficient permissions to manage gallery albums.
+        "404":
+          description: Gallery album not found.
+        "409":
+          description: Album cannot be deleted while it contains photos.
+        "500":
+          description: Unexpected server error while deleting the gallery album.
           content:
             application/json:
               schema:

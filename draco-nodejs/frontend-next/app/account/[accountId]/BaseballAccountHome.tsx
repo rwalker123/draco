@@ -171,7 +171,20 @@ const BaseballAccountHome: React.FC = () => {
       albumCounts.set(key, (albumCounts.get(key) ?? 0) + 1);
     });
 
-    return galleryAlbums
+    const normalizedAlbums = galleryAlbums
+      .map((album) => ({
+        ...album,
+        title: album.accountId === '0' ? 'Default Album' : album.title,
+      }))
+      .sort((a, b) => {
+        const aDefault = a.accountId === '0';
+        const bDefault = b.accountId === '0';
+        if (aDefault && !bDefault) return -1;
+        if (!aDefault && bDefault) return 1;
+        return (a.title ?? '').localeCompare(b.title ?? '');
+      });
+
+    return normalizedAlbums
       .filter((album) => {
         if (!album.teamId) {
           return true;
@@ -210,84 +223,78 @@ const BaseballAccountHome: React.FC = () => {
       return [];
     }
 
-    return seasonLeagueHierarchy
-      .map((league) => {
-        const divisions = (league.divisions ?? [])
-          .map((division) => {
-            const teams = division.teams
-              .map((team) => {
-                const teamId = team.team?.id ?? null;
-                if (!teamId) {
-                  return null;
-                }
+    const groups: TeamAlbumHierarchyGroup[] = [];
 
-                const album = teamAlbumsByTeamId.get(teamId);
-                if (!album) {
-                  return null;
-                }
+    seasonLeagueHierarchy.forEach((league) => {
+      const divisions: TeamAlbumHierarchyGroup['divisions'] = [];
 
-                return {
-                  teamId,
-                  teamSeasonId: team.id,
-                  teamName: team.name ?? team.team?.name ?? 'Team',
-                  albumId: album.albumId,
-                  photoCount: album.photoCount,
-                };
-              })
-              .filter(
-                (value): value is TeamAlbumHierarchyGroup['divisions'][number]['teams'][number] =>
-                  Boolean(value),
-              );
+      (league.divisions ?? []).forEach((division) => {
+        const teams: TeamAlbumHierarchyGroup['divisions'][number]['teams'] = [];
 
-            if (teams.length === 0) {
-              return null;
-            }
+        division.teams.forEach((team) => {
+          const teamId = team.team?.id ?? null;
+          if (!teamId) {
+            return;
+          }
 
-            return {
-              id: division.id,
-              name: division.division.name,
-              teams,
-            };
-          })
-          .filter((value): value is TeamAlbumHierarchyGroup['divisions'][number] => Boolean(value));
+          const album = teamAlbumsByTeamId.get(teamId);
+          if (!album) {
+            return;
+          }
 
-        const unassignedTeams =
-          league.unassignedTeams
-            ?.map((team) => {
-              const teamId = team.team?.id ?? null;
-              if (!teamId) {
-                return null;
-              }
+          teams.push({
+            teamId,
+            teamSeasonId: team.id,
+            teamName: team.name ?? team.name ?? 'Team',
+            albumId: album.albumId,
+            photoCount: album.photoCount,
+          });
+        });
 
-              const album = teamAlbumsByTeamId.get(teamId);
-              if (!album) {
-                return null;
-              }
+        if (teams.length > 0) {
+          divisions.push({
+            id: division.id,
+            name: division.division.name,
+            teams,
+          });
+        }
+      });
 
-              return {
-                teamId,
-                teamSeasonId: team.id,
-                teamName: team.name ?? team.team?.name ?? 'Team',
-                albumId: album.albumId,
-                photoCount: album.photoCount,
-              };
-            })
-            .filter((value): value is TeamAlbumHierarchyGroup['unassignedTeams'][number] =>
-              Boolean(value),
-            ) ?? [];
+      const unassignedTeams: TeamAlbumHierarchyGroup['unassignedTeams'] = [];
 
-        if (divisions.length === 0 && unassignedTeams.length === 0) {
-          return null;
+      league.unassignedTeams?.forEach((team) => {
+        const teamId = team.team?.id ?? null;
+        if (!teamId) {
+          return;
         }
 
-        return {
-          leagueId: league.id,
-          leagueName: league.league.name,
-          divisions,
-          unassignedTeams,
-        };
-      })
-      .filter((value): value is TeamAlbumHierarchyGroup => Boolean(value));
+        const album = teamAlbumsByTeamId.get(teamId);
+        if (!album) {
+          return;
+        }
+
+        unassignedTeams.push({
+          teamId,
+          teamSeasonId: team.id,
+          teamName: team.name ?? team.name ?? 'Team',
+          albumId: album.albumId,
+          photoCount: album.photoCount,
+        });
+      });
+
+      if (divisions.length === 0 && unassignedTeams.length === 0) {
+        return;
+      }
+
+      groups.push({
+        leagueId: league.id,
+        leagueName: league.league.name,
+        divisions,
+        unassignedTeams,
+      });
+    });
+
+    return groups;
   }, [seasonLeagueHierarchy, teamAlbumsByTeamId]);
 
   useEffect(() => {

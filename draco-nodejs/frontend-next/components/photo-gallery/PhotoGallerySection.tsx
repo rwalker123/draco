@@ -2,9 +2,6 @@ import React from 'react';
 import {
   Alert,
   Box,
-  Button,
-  Menu,
-  MenuItem,
   Paper,
   Skeleton,
   Tab,
@@ -17,28 +14,8 @@ import type { PhotoGalleryAlbumType, PhotoGalleryPhotoType } from '@draco/shared
 import PhotoGalleryGrid from './PhotoGalleryGrid';
 import PhotoGalleryHero from './PhotoGalleryHero';
 import PhotoGalleryLightbox from './PhotoGalleryLightbox';
-import MenuIcon from '@mui/icons-material/Menu';
-
-export interface TeamAlbumHierarchyTeam {
-  teamId: string;
-  teamSeasonId?: string;
-  teamName: string;
-  albumId: string;
-  photoCount: number;
-}
-
-export interface TeamAlbumHierarchyDivision {
-  id: string;
-  name: string;
-  teams: TeamAlbumHierarchyTeam[];
-}
-
-export interface TeamAlbumHierarchyGroup {
-  leagueId: string;
-  leagueName: string;
-  divisions: TeamAlbumHierarchyDivision[];
-  unassignedTeams: TeamAlbumHierarchyTeam[];
-}
+import type { TeamAlbumHierarchyGroup } from './types';
+import TeamAlbumMenu from './TeamAlbumMenu';
 
 export interface PhotoGallerySectionProps {
   title: string;
@@ -114,34 +91,42 @@ const renderAlbumTabs = (
         </Box>
       }
     />
-    {albums.map((album) => {
-      const key = album.id ?? 'null';
-      return (
-        <Tab
-          key={key}
-          value={key}
-          label={
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2">{album.title}</Typography>
-              <Box
-                component="span"
-                sx={{
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: '999px',
-                  bgcolor: 'rgba(79,70,229,0.18)',
-                  color: 'primary.main',
-                  fontSize: 12,
-                  fontWeight: 700,
-                }}
-              >
-                {album.photoCount}
+    {[...albums]
+      .sort((a, b) => {
+        const aDefault = a.accountId === '0';
+        const bDefault = b.accountId === '0';
+        if (aDefault && !bDefault) return -1;
+        if (!aDefault && bDefault) return 1;
+        return (a.title ?? '').localeCompare(b.title ?? '');
+      })
+      .map((album) => {
+        const key = album.id ?? 'null';
+        return (
+          <Tab
+            key={key}
+            value={key}
+            label={
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="body2">{album.title}</Typography>
+                <Box
+                  component="span"
+                  sx={{
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: '999px',
+                    bgcolor: 'rgba(79,70,229,0.18)',
+                    color: 'primary.main',
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  {album.photoCount}
+                </Box>
               </Box>
-            </Box>
-          }
-        />
-      );
-    })}
+            }
+          />
+        );
+      })}
   </Tabs>
 );
 
@@ -163,7 +148,6 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
 }) => {
   const totalCount = totalCountOverride ?? photos.length;
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
-  const [teamMenuAnchorEl, setTeamMenuAnchorEl] = React.useState<HTMLElement | null>(null);
 
   const accountAlbums = React.useMemo(() => albums.filter((album) => !album.teamId), [albums]);
   const accountAlbumKeys = React.useMemo(() => {
@@ -230,21 +214,10 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
 
   const handleAlbumSelection = React.useCallback(
     (albumId: string) => {
-      if (onAlbumChange) {
-        onAlbumChange(albumId);
-      }
-      setTeamMenuAnchorEl(null);
+      onAlbumChange?.(albumId);
     },
     [onAlbumChange],
   );
-
-  const handleOpenTeamMenu = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setTeamMenuAnchorEl(event.currentTarget);
-  }, []);
-
-  const handleCloseTeamMenu = React.useCallback(() => {
-    setTeamMenuAnchorEl(null);
-  }, []);
 
   const heroPhotos = photos.slice(0, Math.min(10, photos.length));
   const gridPhotos = photos.slice(heroPhotos.length);
@@ -319,140 +292,13 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
           </Box>
           {hasTeamAlbumHierarchy ? (
             <>
-              <Button
-                variant={selectedTeamEntry ? 'contained' : 'outlined'}
-                color="primary"
-                size="small"
-                startIcon={<MenuIcon fontSize="small" />}
-                onClick={handleOpenTeamMenu}
-                aria-haspopup="menu"
-                aria-expanded={Boolean(teamMenuAnchorEl)}
-                aria-controls={Boolean(teamMenuAnchorEl) ? 'team-album-menu' : undefined}
-                sx={{
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap',
-                }}
+              <TeamAlbumMenu
+                teamAlbumHierarchy={teamAlbumHierarchy}
+                selectedAlbumKey={selectedAlbumKey}
+                onSelect={handleAlbumSelection}
+                selectedTeam={selectedTeamEntry?.team ?? null}
                 disabled={!onAlbumChange}
-              >
-                {selectedTeamEntry
-                  ? `${selectedTeamEntry.team.teamName} (${selectedTeamEntry.team.photoCount})`
-                  : 'Team Albums'}
-              </Button>
-              <Menu
-                id="team-album-menu"
-                anchorEl={teamMenuAnchorEl}
-                open={Boolean(teamMenuAnchorEl)}
-                onClose={handleCloseTeamMenu}
-                disableAutoFocusItem
-                MenuListProps={{
-                  dense: true,
-                  sx: {
-                    width: 300,
-                    maxHeight: 420,
-                    p: 0,
-                  },
-                }}
-              >
-                {teamAlbumHierarchy.flatMap((league) => [
-                  <MenuItem
-                    key={`league-${league.leagueId}`}
-                    disabled
-                    component="div"
-                    sx={{
-                      opacity: 1,
-                      fontWeight: 700,
-                      color: 'text.primary',
-                      cursor: 'default',
-                      '&:hover': { bgcolor: 'transparent' },
-                    }}
-                  >
-                    {league.leagueName}
-                  </MenuItem>,
-                  ...league.divisions.flatMap((division) => [
-                    <MenuItem
-                      key={`division-${division.id}`}
-                      disabled
-                      component="div"
-                      sx={{
-                        opacity: 1,
-                        pl: 4,
-                        fontWeight: 600,
-                        color: 'text.secondary',
-                        cursor: 'default',
-                        '&:hover': { bgcolor: 'transparent' },
-                      }}
-                    >
-                      {division.name}
-                    </MenuItem>,
-                    ...division.teams.map((team) => (
-                      <MenuItem
-                        key={`${team.teamId}-${team.albumId}`}
-                        onClick={() => handleAlbumSelection(team.albumId)}
-                        selected={selectedAlbumKey === team.albumId}
-                        sx={{
-                          pl: 6,
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          gap: 2,
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {team.teamName}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{ fontWeight: 600, color: 'text.secondary' }}
-                        >
-                          {team.photoCount}
-                        </Typography>
-                      </MenuItem>
-                    )),
-                  ]),
-                  ...(league.unassignedTeams.length > 0
-                    ? [
-                        <MenuItem
-                          key={`unassigned-heading-${league.leagueId}`}
-                          disabled
-                          component="div"
-                          sx={{
-                            opacity: 1,
-                            pl: 4,
-                            fontWeight: 600,
-                            color: 'text.secondary',
-                            cursor: 'default',
-                            '&:hover': { bgcolor: 'transparent' },
-                          }}
-                        >
-                          Unassigned
-                        </MenuItem>,
-                        ...league.unassignedTeams.map((team) => (
-                          <MenuItem
-                            key={`unassigned-${team.teamId}-${team.albumId}`}
-                            onClick={() => handleAlbumSelection(team.albumId)}
-                            selected={selectedAlbumKey === team.albumId}
-                            sx={{
-                              pl: 6,
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              gap: 2,
-                            }}
-                          >
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {team.teamName}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              sx={{ fontWeight: 600, color: 'text.secondary' }}
-                            >
-                              {team.photoCount}
-                            </Typography>
-                          </MenuItem>
-                        )),
-                      ]
-                    : []),
-                ])}
-              </Menu>
+              />
             </>
           ) : null}
         </Box>
@@ -492,3 +338,9 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
 };
 
 export default PhotoGallerySection;
+
+export type {
+  TeamAlbumHierarchyDivision,
+  TeamAlbumHierarchyGroup,
+  TeamAlbumHierarchyTeam,
+} from './types';

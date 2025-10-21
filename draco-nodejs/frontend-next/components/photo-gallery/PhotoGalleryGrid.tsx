@@ -1,149 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, LinearProgress, Skeleton, Typography, IconButton } from '@mui/material';
-import LaunchIcon from '@mui/icons-material/Launch';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import type { PhotoGalleryPhotoType } from '@draco/shared-schemas';
-
-export const formatDisplayDate = (value: string | null): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
-interface GalleryCardProps {
-  photo: PhotoGalleryPhotoType;
-  onClick?: () => void;
-}
-
-const GalleryCard: React.FC<GalleryCardProps> = ({ photo, onClick }) => {
-  const submittedOn = formatDisplayDate(photo.submittedAt);
-  const thumbnailSrc = photo.thumbnailUrl ?? photo.primaryUrl ?? photo.originalUrl;
-
-  return (
-    <Box
-      role="button"
-      tabIndex={0}
-      aria-label={`View photo ${photo.title}`}
-      onClick={onClick}
-      onKeyDown={(event) => {
-        if (!onClick) {
-          return;
-        }
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onClick();
-        }
-      }}
-      sx={{
-        flex: '0 0 auto',
-        width: 200,
-        borderRadius: 3,
-        px: 2,
-        py: 2,
-        backgroundColor: 'rgba(15,23,42,0.04)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1.5,
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 18px 40px rgba(15, 23, 42, 0.18)',
-        },
-        '&:focus-visible': onClick
-          ? {
-              outline: '2px solid',
-              outlineColor: 'primary.main',
-              outlineOffset: '4px',
-            }
-          : undefined,
-      }}
-    >
-      <Box
-        sx={{
-          width: 160,
-          height: 90,
-          borderRadius: 2,
-          overflow: 'hidden',
-          alignSelf: 'center',
-          boxShadow: '0 12px 30px rgba(15, 23, 42, 0.22)',
-        }}
-      >
-        <Box
-          component="img"
-          src={thumbnailSrc}
-          alt={photo.title}
-          loading="lazy"
-          sx={{
-            width: '100%',
-            height: '100%',
-            display: 'block',
-            objectFit: 'cover',
-          }}
-        />
-      </Box>
-      <Box display="flex" flexDirection="column" gap={1} sx={{ textAlign: 'left' }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-          {photo.title}
-        </Typography>
-        {photo.caption ? (
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.secondary',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              overflow: 'hidden',
-              WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {photo.caption}
-          </Typography>
-        ) : null}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mt: 'auto',
-            color: 'text.secondary',
-          }}
-        >
-          {submittedOn ? (
-            <Typography variant="caption" sx={{ fontWeight: 600 }}>
-              {submittedOn}
-            </Typography>
-          ) : null}
-          <IconButton
-            component="a"
-            href={photo.originalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            size="small"
-            aria-label="Open original photo"
-            sx={{
-              color: 'primary.main',
-            }}
-          >
-            <LaunchIcon fontSize="inherit" />
-          </IconButton>
-        </Box>
-      </Box>
-    </Box>
-  );
-};
+import PhotoGalleryCard from './PhotoGalleryCard';
 
 interface PhotoGalleryGridProps {
   photos: PhotoGalleryPhotoType[];
@@ -298,7 +158,7 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
             : null}
           {!showSkeletons &&
             photos.map((photo, index) => (
-              <GalleryCard
+              <PhotoGalleryCard
                 key={photo.id}
                 photo={photo}
                 onClick={

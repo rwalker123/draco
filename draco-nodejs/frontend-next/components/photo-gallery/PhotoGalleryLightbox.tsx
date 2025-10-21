@@ -12,7 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import type { PhotoGalleryPhotoType } from '@draco/shared-schemas';
-import { formatDisplayDate } from './PhotoGalleryGrid';
+import { formatDisplayDate } from './utils';
 
 type TransitionProps = Omit<SlideProps, 'direction'>;
 

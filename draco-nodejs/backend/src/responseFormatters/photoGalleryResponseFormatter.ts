@@ -50,6 +50,19 @@ const formatPhoto = (entry: dbPhotoGalleryEntry): PhotoGalleryPhotoType | null =
   const teamId =
     normalizeTeamId(album?.teamid ?? null) ?? normalizeTeamId(submission?.teamid ?? null);
 
+  const resolveAlbumTitle = (): string => {
+    if (!album) {
+      return teamId ? 'Team Album' : 'Default Album';
+    }
+
+    const rawTitle = album.title?.trim() ?? '';
+    if (rawTitle.length === 0) {
+      return teamId ? 'Team Album' : 'Default Album';
+    }
+
+    return rawTitle;
+  };
+
   const caption = entry.caption?.trim() ?? '';
   const normalizedCaption = caption.length > 0 ? caption : null;
 
@@ -65,7 +78,7 @@ const formatPhoto = (entry: dbPhotoGalleryEntry): PhotoGalleryPhotoType | null =
     accountId: entry.accountid.toString(),
     teamId: toStringOrNull(teamId),
     albumId: toStringOrNull(albumId),
-    albumTitle: album?.title?.trim() || (teamId ? 'Team Album' : 'Main Album'),
+    albumTitle: resolveAlbumTitle(),
     title: entry.title.trim(),
     caption: normalizedCaption,
     submittedAt: submission?.submittedat
@@ -82,6 +95,12 @@ const aggregateAlbums = (photos: PhotoGalleryPhotoType[]): PhotoGalleryAlbumType
 
   photos.forEach((photo) => {
     const key = photo.albumId ?? 'null';
+    const normalizedTeamId = photo.teamId && photo.teamId !== '0' ? photo.teamId : null;
+    const accountId =
+      (photo.albumId === null || photo.albumId === undefined) && normalizedTeamId === null
+        ? '0'
+        : photo.accountId;
+
     const existing = albumMap.get(key);
 
     if (existing) {
@@ -91,16 +110,31 @@ const aggregateAlbums = (photos: PhotoGalleryPhotoType[]): PhotoGalleryAlbumType
 
     albumMap.set(key, {
       id: photo.albumId,
+      accountId,
       title: photo.albumTitle,
-      teamId: photo.teamId,
+      teamId: normalizedTeamId,
       photoCount: 1,
     });
   });
+
+  if (!albumMap.has('null')) {
+    albumMap.set('null', {
+      id: null,
+      accountId: '0',
+      title: 'Default Album',
+      teamId: null,
+      photoCount: 0,
+    });
+  }
 
   return Array.from(albumMap.values());
 };
 
 export class PhotoGalleryResponseFormatter {
+  static formatPhotoEntry(entry: dbPhotoGalleryEntry): PhotoGalleryPhotoType | null {
+    return formatPhoto(entry);
+  }
+
   static formatAccountGallery(entries: dbPhotoGalleryEntry[]): PhotoGalleryListType {
     const photos: PhotoGalleryPhotoType[] = [];
 

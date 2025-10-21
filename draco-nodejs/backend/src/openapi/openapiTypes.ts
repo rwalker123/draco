@@ -141,10 +141,16 @@ import {
   PhotoSubmissionDetailSchema,
   PhotoSubmissionListSchema,
   DenyPhotoSubmissionRequestSchema,
+  CreatePhotoGalleryAlbumSchema,
+  CreatePhotoGalleryPhotoSchema,
+  PhotoGalleryAdminAlbumSchema,
+  PhotoGalleryAdminAlbumListSchema,
   PhotoGalleryAlbumSchema,
   PhotoGalleryListSchema,
   PhotoGalleryPhotoSchema,
   PhotoGalleryQuerySchema,
+  UpdatePhotoGalleryAlbumSchema,
+  UpdatePhotoGalleryPhotoSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -448,13 +454,37 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const HandoutSchemaRef = registry.register('Handout', HandoutSchema);
   const HandoutListSchemaRef = registry.register('HandoutList', HandoutListSchema);
   const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
+  const CreatePhotoGalleryPhotoSchemaRef = registry.register(
+    'CreatePhotoGalleryPhoto',
+    CreatePhotoGalleryPhotoSchema,
+  );
+  const UpdatePhotoGalleryPhotoSchemaRef = registry.register(
+    'UpdatePhotoGalleryPhoto',
+    UpdatePhotoGalleryPhotoSchema,
+  );
   const PhotoGalleryPhotoSchemaRef = registry.register(
     'PhotoGalleryPhoto',
     PhotoGalleryPhotoSchema,
   );
+  const CreatePhotoGalleryAlbumSchemaRef = registry.register(
+    'CreatePhotoGalleryAlbum',
+    CreatePhotoGalleryAlbumSchema,
+  );
+  const UpdatePhotoGalleryAlbumSchemaRef = registry.register(
+    'UpdatePhotoGalleryAlbum',
+    UpdatePhotoGalleryAlbumSchema,
+  );
   const PhotoGalleryAlbumSchemaRef = registry.register(
     'PhotoGalleryAlbum',
     PhotoGalleryAlbumSchema,
+  );
+  const PhotoGalleryAdminAlbumSchemaRef = registry.register(
+    'PhotoGalleryAdminAlbum',
+    PhotoGalleryAdminAlbumSchema,
+  );
+  const PhotoGalleryAdminAlbumListSchemaRef = registry.register(
+    'PhotoGalleryAdminAlbumList',
+    PhotoGalleryAdminAlbumListSchema,
   );
   const PhotoGalleryListSchemaRef = registry.register('PhotoGalleryList', PhotoGalleryListSchema);
   const PhotoGalleryQuerySchemaRef = registry.register(
@@ -637,8 +667,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     HandoutSchemaRef,
     HandoutListSchemaRef,
     UpsertHandoutSchemaRef,
+    CreatePhotoGalleryPhotoSchemaRef,
+    UpdatePhotoGalleryPhotoSchemaRef,
     PhotoGalleryPhotoSchemaRef,
+    CreatePhotoGalleryAlbumSchemaRef,
+    UpdatePhotoGalleryAlbumSchemaRef,
     PhotoGalleryAlbumSchemaRef,
+    PhotoGalleryAdminAlbumSchemaRef,
+    PhotoGalleryAdminAlbumListSchemaRef,
     PhotoGalleryListSchemaRef,
     PhotoGalleryQuerySchemaRef,
     UpdateGameResultsSchemaRef,

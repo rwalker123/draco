@@ -3,7 +3,7 @@ import { Box, Chip, Typography, IconButton } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import type { PhotoGalleryPhotoType } from '@draco/shared-schemas';
-import { formatDisplayDate } from './PhotoGalleryGrid';
+import { formatDisplayDate } from './utils';
 
 interface PhotoGalleryHeroProps {
   photos: PhotoGalleryPhotoType[];
