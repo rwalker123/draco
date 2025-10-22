@@ -46,6 +46,7 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     teamId: bigint,
     seasonId: bigint,
   ): Promise<teamseasonmanager | null>;
+  findTeamsManager(contactId: bigint, seasonId: bigint): Promise<teamseasonmanager[]>;
   findTeamSeason(
     teamSeasonId: bigint,
     seasonId: bigint,
@@ -101,4 +102,10 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
     accountId: bigint,
     include?: Prisma.teamsseasonInclude,
   ): Promise<dbTeamSeasonValidationResult | null>;
+
+  findTeamSeasonByTeamId(
+    teamId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeason | null>;
 }

@@ -165,7 +165,11 @@ export type dbContactEmailOnly = Prisma.contactsGetPayload<{
 }>;
 
 export type dbTeamSeason = Prisma.teamsseasonGetPayload<{
-  select: { id: true; name: true };
+  select: {
+    id: true;
+    name: true;
+    teamid: true;
+  };
 }>;
 
 export type dbAccountHandout = Prisma.accounthandoutsGetPayload<{

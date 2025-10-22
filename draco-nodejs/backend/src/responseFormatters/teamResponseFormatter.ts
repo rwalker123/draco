@@ -2,6 +2,7 @@ import { teamsseason } from '@prisma/client';
 import { getContactPhotoUrl, getLogoUrl } from '../config/logo.js';
 import {
   dbTeam,
+  dbTeamSeason,
   dbTeamSeasonManagerContact,
   dbTeamSeasonRecord,
   dbTeamSeasonWithLeaguesAndTeams,
@@ -18,6 +19,23 @@ import {
 } from '@draco/shared-schemas';
 
 export class TeamResponseFormatter {
+  static formatTeamSeason(accountId: bigint, teamSeason: dbTeamSeason): TeamSeasonType {
+    return {
+      id: teamSeason.id.toString(),
+      name: teamSeason.name,
+      team: {
+        id: teamSeason.teamid.toString(),
+      },
+    };
+  }
+
+  /**
+   * Combine and format teams the user is a member of and teams the user manages
+   * @param accountId The account identifier
+   * @param userTeams Teams the user is a member of
+   * @param managedTeams Teams the user manages
+   * @returns A combined list of unique teams with league information
+   */
   static formatAndCombineTeamsWithLeagueResponse(
     accountId: bigint,
     userTeams: dbUserTeams[],

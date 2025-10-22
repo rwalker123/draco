@@ -42,6 +42,24 @@ export class TeamService {
     this.leagueRepository = RepositoryFactory.getLeagueRepository();
   }
 
+  async getTeamSeasonFromTeamId(accountId: bigint, teamId: bigint): Promise<TeamSeasonType> {
+    const currentSeason = await this.seasonRepository.findCurrentSeason(accountId);
+    if (!currentSeason) {
+      throw new NotFoundError('Current season not set for account');
+    }
+    const teamSeason = await this.teamRepository.findTeamSeasonByTeamId(
+      teamId,
+      currentSeason.id,
+      accountId,
+    );
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    return TeamResponseFormatter.formatTeamSeason(accountId, teamSeason);
+  }
+
   async getUserTeams(accountId: bigint, userId: string): Promise<TeamSeasonType[]> {
     // Get the user's contact record for this account
     const userContact = await this.contactService.getContactByUserId(userId, accountId);
@@ -405,6 +423,20 @@ export class TeamService {
     }
 
     return teamSeason;
+  }
+
+  async findTeamSeason(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<TeamSeasonType | null> {
+    const teamSeason = await this.teamRepository.findTeamSeason(teamSeasonId, seasonId, accountId);
+
+    if (!teamSeason) {
+      return null;
+    }
+
+    return TeamResponseFormatter.formatTeamSeason(accountId, teamSeason);
   }
 
   async validateTeamSeasonWithTeamDetails(
