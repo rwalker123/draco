@@ -179,7 +179,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
         />
       </Box>
 
-      <Container maxWidth="md" sx={{ py: 4, position: 'relative' }}>
+      <Container maxWidth="md" sx={{ pt: 4, pb: 8 }}>
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>
           <MuiLink
             component={NextLink}
@@ -278,7 +278,12 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
         <Fab
           color="primary"
           aria-label="add sponsor"
-          sx={{ position: 'absolute', bottom: 24, right: 24 }}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 16, sm: 24 },
+            right: { xs: 16, sm: 24 },
+            zIndex: (theme) => theme.zIndex.tooltip,
+          }}
           onClick={handleOpenCreate}
         >
           <Add />

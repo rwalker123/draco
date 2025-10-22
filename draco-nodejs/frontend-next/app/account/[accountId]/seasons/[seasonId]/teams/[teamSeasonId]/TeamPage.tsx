@@ -19,6 +19,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
+import { SponsorService } from '../../../../../../../services/sponsorService';
 import { SponsorType, UpsertPlayersWantedClassifiedType } from '@draco/shared-schemas';
 import { useRole } from '../../../../../../../context/RoleContext';
 import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
@@ -59,8 +60,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     record?: { wins: number; losses: number; ties: number };
     teamId?: string;
   } | null>(null);
-  const [teamSponsors] = React.useState<SponsorType[]>([]);
-  const [teamSponsorError] = React.useState<string | null>(null);
+  const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
+  const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
   const [playersWantedDialogOpen, setPlayersWantedDialogOpen] = React.useState(false);
   const [playersWantedInitialData, setPlayersWantedInitialData] = React.useState<
     UpsertPlayersWantedClassifiedType | undefined
@@ -81,10 +82,47 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   } = useTeamMembership(isAccountMember ? accountId : null, teamSeasonId, seasonId);
   const apiClient = useApiClient();
   const apiClientRef = React.useRef(apiClient);
+  const sponsorService = React.useMemo(
+    () => new SponsorService(token, apiClient),
+    [token, apiClient],
+  );
 
   React.useEffect(() => {
     apiClientRef.current = apiClient;
   }, [apiClient]);
+
+  React.useEffect(() => {
+    if (!accountId || !seasonId || !teamSeasonId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadTeamSponsors = async () => {
+      try {
+        setTeamSponsorError(null);
+        const sponsors = await sponsorService.listTeamSponsors(accountId, seasonId, teamSeasonId);
+        if (!isMounted) {
+          return;
+        }
+        setTeamSponsors(sponsors);
+      } catch (err) {
+        if (!isMounted) {
+          return;
+        }
+        const message =
+          err instanceof Error ? err.message : 'Unable to load team sponsors at this time.';
+        setTeamSponsorError(message);
+        setTeamSponsors([]);
+      }
+    };
+
+    void loadTeamSponsors();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId, seasonId, teamSeasonId, sponsorService]);
 
   const teamModerationTeamId = teamData?.teamId ?? null;
 
