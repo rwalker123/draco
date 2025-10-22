@@ -123,7 +123,10 @@ const DayListView: React.FC<DayListViewProps> = ({
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {dayGames.map((game) => {
           const gameCardData = convertGameToGameCardData(game);
-          const showActions = canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+          const showActions =
+            canEditSchedule ||
+            (onViewRecap && gameCardData.hasGameRecap) ||
+            (canEditRecap?.(gameCardData) ?? false);
 
           return (
             <GameCard
@@ -205,7 +208,10 @@ const DayListView: React.FC<DayListViewProps> = ({
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {games.map((game) => {
                   const gameCardData = convertGameToGameCardData(game);
-                  const showActions = canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+                  const showActions =
+                    canEditSchedule ||
+                    (onViewRecap && gameCardData.hasGameRecap) ||
+                    (canEditRecap?.(gameCardData) ?? false);
 
                   return (
                     <GameCard

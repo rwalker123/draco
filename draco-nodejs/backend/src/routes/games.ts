@@ -189,6 +189,8 @@ router.put(
   '/:gameId/recap/:teamSeasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
+  routeProtection.enforceTeamBoundary(),
+  routeProtection.requirePermission('team.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, gameId, teamSeasonId } = extractRecapParams(req.params);
     const userId = req.user?.id;

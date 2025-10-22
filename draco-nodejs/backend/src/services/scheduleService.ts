@@ -14,18 +14,7 @@ import {
 } from '../repositories/interfaces/IScheduleRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { ScheduleResponseFormatter } from '../responseFormatters/index.js';
-import {
-  NotFoundError,
-  ValidationError,
-  ConflictError,
-  AuthorizationError,
-} from '../utils/customErrors.js';
-import { ServiceFactory } from './serviceFactory.js';
-import { IRoleQuery } from './interfaces/roleInterfaces.js';
-import { ContactService } from './contactService.js';
-import { ITeamRepository } from '../repositories/interfaces/index.js';
-import { ROLE_IDS } from '../config/roles.js';
-import { RoleNamesType } from '../types/roles.js';
+import { NotFoundError, ValidationError, ConflictError } from '../utils/customErrors.js';
 import {
   dbScheduleGameForAccount,
   dbScheduleGameWithDetails,
@@ -44,15 +33,9 @@ interface GameListFilters {
 
 export class ScheduleService {
   private readonly scheduleRepository: IScheduleRepository;
-  private readonly teamRepository: ITeamRepository;
-  private readonly roleService: IRoleQuery;
-  private readonly contactService: ContactService;
 
   constructor() {
     this.scheduleRepository = RepositoryFactory.getScheduleRepository();
-    this.teamRepository = RepositoryFactory.getTeamRepository();
-    this.roleService = ServiceFactory.getRoleQuery();
-    this.contactService = ServiceFactory.getContactService();
   }
 
   async updateGameResults(
@@ -349,7 +332,7 @@ export class ScheduleService {
 
     const recap = await this.scheduleRepository.findRecap(gameId, teamSeasonId);
     if (!recap) {
-      throw new NotFoundError('No recap found for this team');
+      return '';
     }
 
     return recap.recap;
@@ -370,11 +353,6 @@ export class ScheduleService {
     }
 
     this.ensureTeamInGame(game, teamSeasonId);
-
-    const hasRights = await this.userHasTeamAdminRights(userId, accountId, teamSeasonId, seasonId);
-    if (!hasRights) {
-      throw new AuthorizationError('Not authorized for this team in this game');
-    }
 
     const recap = await this.scheduleRepository.upsertRecap(gameId, teamSeasonId, payload.recap);
     return recap.recap;
@@ -431,51 +409,5 @@ export class ScheduleService {
     }
 
     return parsed;
-  }
-
-  private async userHasTeamAdminRights(
-    userId: string,
-    accountId: bigint,
-    teamSeasonId: bigint,
-    seasonId: bigint,
-  ): Promise<boolean> {
-    const userRoles = await this.roleService.getUserRoles(userId, accountId);
-    const administratorRoleId =
-      ROLE_IDS[RoleNamesType.ADMINISTRATOR] || RoleNamesType.ADMINISTRATOR;
-    const accountAdminRoleId = ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] || RoleNamesType.ACCOUNT_ADMIN;
-    const teamAdminRoleId = ROLE_IDS[RoleNamesType.TEAM_ADMIN] || RoleNamesType.TEAM_ADMIN;
-
-    const isAdministrator = userRoles.globalRoles.includes(administratorRoleId);
-    if (isAdministrator) {
-      return true;
-    }
-
-    const isAccountAdmin =
-      userRoles.globalRoles.includes(accountAdminRoleId) ||
-      userRoles.contactRoles.some((role) => role.roleId === accountAdminRoleId);
-    if (isAccountAdmin) {
-      return true;
-    }
-
-    const isTeamAdmin = userRoles.contactRoles.some(
-      (role) =>
-        role.roleId === teamAdminRoleId && role.roleData?.toString() === teamSeasonId.toString(),
-    );
-    if (isTeamAdmin) {
-      return true;
-    }
-
-    const contact = await this.contactService.getContactByUserId(userId, accountId);
-    if (!contact) {
-      return false;
-    }
-
-    const teamManager = await this.teamRepository.findTeamManager(
-      BigInt(contact.id),
-      teamSeasonId,
-      seasonId,
-    );
-
-    return Boolean(teamManager);
   }
 }

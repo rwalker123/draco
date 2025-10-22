@@ -166,7 +166,7 @@ const mapApiGameToGameCard = (game: ApiGame): Game => {
     fieldName: field.name,
     fieldShortName: field.shortName,
     fieldDetails,
-    hasGameRecap: recaps.length > 0,
+    hasGameRecap: recaps.length > 0 || Boolean((game as { hasGameRecap?: boolean }).hasGameRecap),
     gameRecaps: recaps,
     comment: game.comment ?? '',
     gameType: parsedGameType ?? undefined,

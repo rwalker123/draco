@@ -224,10 +224,12 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const hasRole = (roleId: string, context?: RoleContext): boolean => {
     if (!userRoles) return false;
 
-    // Convert role name to ID if needed
     const actualRoleId = normalizeRoleId(ROLE_NAME_TO_ID[roleId] || roleId);
+    if (!actualRoleId) {
+      return false;
+    }
 
-    const matchesContext = (contactRole: RoleWithContactType) => {
+    const matchesContext = (contactRole: RoleWithContactType): boolean => {
       if (context?.accountId && contactRole.accountId !== context.accountId) {
         return false;
       }
@@ -240,71 +242,42 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       return true;
     };
 
-    // Check global roles first
+    const roleMatches = (
+      candidateRoleId: string | undefined,
+      contactRole?: RoleWithContactType,
+    ): boolean => {
+      if (!candidateRoleId) {
+        return false;
+      }
+
+      if (contactRole && !matchesContext(contactRole)) {
+        return false;
+      }
+
+      if (candidateRoleId === actualRoleId) {
+        return true;
+      }
+
+      if (!roleMetadata) {
+        return false;
+      }
+
+      const inheritedRoles = getHierarchyForRole(candidateRoleId);
+      return inheritedRoles.includes(actualRoleId);
+    };
+
     for (const globalRole of userRoles.globalRoles) {
       const globalRoleId = normalizeRoleId(ROLE_NAME_TO_ID[globalRole] || globalRole);
-      if (globalRoleId && actualRoleId && globalRoleId === actualRoleId) {
+      if (roleMatches(globalRoleId)) {
         return true;
       }
     }
 
-    // Check contact roles
     for (const contactRole of userRoles.contactRoles) {
       const contactRoleId = normalizeRoleId(
         ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId,
       );
-      if (
-        contactRoleId &&
-        actualRoleId &&
-        contactRoleId === actualRoleId &&
-        matchesContext(contactRole)
-      ) {
-        return true;
-      }
-    }
-
-    if (!roleMetadata) {
-      return false;
-    }
-
-    // Check role hierarchy
-    if (!actualRoleId) {
-      return false;
-    }
-    return hasRoleOrHigher(actualRoleId);
-  };
-
-  const hasRoleOrHigher = (requiredRole: string): boolean => {
-    if (!userRoles || !roleMetadata) return false;
-
-    // Convert required role to ID if needed
-    const requiredRoleId = normalizeRoleId(ROLE_NAME_TO_ID[requiredRole] || requiredRole);
-    if (!requiredRoleId) return false;
-
-    // Check global roles
-    for (const globalRole of userRoles.globalRoles) {
-      const globalRoleId = normalizeRoleId(ROLE_NAME_TO_ID[globalRole] || globalRole);
-      if (!globalRoleId) continue;
-      if (globalRoleId === requiredRoleId) {
-        return true;
-      }
-      const inheritedRoles = getHierarchyForRole(globalRoleId);
-      if (inheritedRoles.includes(requiredRoleId)) {
-        return true;
-      }
-    }
-
-    // Check contact roles
-    for (const contactRole of userRoles.contactRoles) {
-      const contactRoleId = normalizeRoleId(
-        ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId,
-      );
-      if (!contactRoleId) continue;
-      if (contactRoleId === requiredRoleId) {
-        return true;
-      }
-      const inheritedRoles = getHierarchyForRole(contactRoleId);
-      if (inheritedRoles.includes(requiredRoleId)) {
+      if (roleMatches(contactRoleId, contactRole)) {
         return true;
       }
     }
