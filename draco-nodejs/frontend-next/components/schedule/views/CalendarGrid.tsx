@@ -291,7 +291,9 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           getGamesForDay(day).map((game) => {
                             const gameCardData = convertGameToGameCardData(game);
                             const showActions =
-                              canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+                              canEditSchedule ||
+                              (onViewRecap && gameCardData.hasGameRecap) ||
+                              (canEditRecap?.(gameCardData) ?? false);
 
                             return (
                               <Box
@@ -414,7 +416,9 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     getGamesForDay(day).map((game) => {
                       const gameCardData = convertGameToGameCardData(game);
                       const showActions =
-                        canEditSchedule || (onViewRecap && gameCardData.hasGameRecap);
+                        canEditSchedule ||
+                        (onViewRecap && gameCardData.hasGameRecap) ||
+                        (canEditRecap?.(gameCardData) ?? false);
 
                       return (
                         <Box

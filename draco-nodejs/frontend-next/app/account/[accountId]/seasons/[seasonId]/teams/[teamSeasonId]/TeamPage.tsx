@@ -60,6 +60,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const [dialogRecap, setDialogRecap] = React.useState('');
   const [summaryError, setSummaryError] = React.useState<string | null>(null);
   const [summaryReadOnly, setSummaryReadOnly] = React.useState(false);
+  const [summaryLoading, setSummaryLoading] = React.useState(false);
   const [teamData, setTeamData] = React.useState<{
     teamName: string;
     leagueName: string;
@@ -90,6 +91,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     teamSeason,
   } = useTeamMembership(isAccountMember ? accountId : null, teamSeasonId, seasonId);
   const apiClient = useApiClient();
+  const apiClientRef = React.useRef(apiClient);
+
+  React.useEffect(() => {
+    apiClientRef.current = apiClient;
+  }, [apiClient]);
 
   const teamModerationTeamId = teamData?.teamId ?? null;
 
@@ -177,8 +183,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       setLoading(true);
       setError(null);
       try {
+        const client = apiClientRef.current;
         const result = await apiListTeamSeasonGames({
-          client: apiClient,
+          client,
           path: { accountId, seasonId, teamSeasonId },
           query: { upcoming: true, recent: true, limit: 5 },
           throwOnError: false,
@@ -213,24 +220,21 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     return () => {
       isMounted = false;
     };
-  }, [accountId, apiClient, seasonId, teamSeasonId]);
+  }, [accountId, seasonId, teamSeasonId]);
 
-  const handleEditSummary = async (game: Game) => {
-    setSelectedGame(game);
-    setDialogRecap('');
-    setSummaryError(null);
-    setSummaryReadOnly(false);
-
-    if (token) {
+  const loadGameSummary = React.useCallback(
+    async (game: Game) => {
+      setSummaryLoading(true);
       try {
         const summary = await getGameSummary({
           accountId,
           seasonId,
           gameId: game.id,
-          teamSeasonId, // pass the current teamSeasonId
-          token,
+          teamSeasonId,
+          token: token ?? undefined,
         });
         setDialogRecap(summary || '');
+        setSummaryError(null);
       } catch (err: unknown) {
         if (
           err &&
@@ -238,59 +242,45 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           'message' in err &&
           typeof (err as { message?: unknown }).message === 'string'
         ) {
-          const message = (err as { message: string }).message;
-          if (message.includes('No recap found') || message.includes('not found')) {
-            setDialogRecap('');
-            setSummaryError(null);
-          } else {
-            setSummaryError(message);
-          }
+          setSummaryError((err as { message: string }).message);
         } else {
           setSummaryError('Failed to load game summary');
         }
+        setDialogRecap('');
+      } finally {
+        setSummaryLoading(false);
       }
-    }
+    },
+    [accountId, seasonId, teamSeasonId, token],
+  );
 
-    setSummaryDialogOpen(true);
-  };
-
-  const handleViewSummary = async (game: Game) => {
-    setSelectedGame(game);
-    setSummaryReadOnly(true);
-    setSummaryError(null);
-
-    const existingRecap = game.gameRecaps?.find((recap) => recap.teamId === teamSeasonId)?.recap;
-
-    if (existingRecap) {
-      setDialogRecap(existingRecap);
-      setSummaryDialogOpen(true);
-      return;
-    }
-
-    try {
-      const summary = await getGameSummary({
-        accountId,
-        seasonId,
-        gameId: game.id,
-        teamSeasonId,
-      });
-      setDialogRecap(summary || '');
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'message' in err &&
-        typeof (err as { message?: unknown }).message === 'string'
-      ) {
-        setSummaryError((err as { message: string }).message);
-      } else {
-        setSummaryError('Failed to load game summary');
-      }
+  const handleEditSummary = React.useCallback(
+    async (game: Game) => {
+      setSelectedGame(game);
       setDialogRecap('');
-    }
+      setSummaryError(null);
+      setSummaryReadOnly(false);
+      setSummaryDialogOpen(true);
 
-    setSummaryDialogOpen(true);
-  };
+      if (token) {
+        await loadGameSummary(game);
+      }
+    },
+    [loadGameSummary, token],
+  );
+
+  const handleViewSummary = React.useCallback(
+    async (game: Game) => {
+      setSelectedGame(game);
+      setSummaryReadOnly(true);
+      setSummaryError(null);
+      setDialogRecap('');
+      setSummaryDialogOpen(true);
+
+      await loadGameSummary(game);
+    },
+    [loadGameSummary],
+  );
 
   React.useEffect(() => {
     const service = new SponsorService(token);
@@ -312,6 +302,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     setSummaryReadOnly(false);
     setDialogRecap('');
     setSummaryError(null);
+    setSummaryLoading(false);
   };
 
   const handleRecapSuccess = React.useCallback(
@@ -321,6 +312,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       }
 
       setSummaryError(null);
+      setDialogRecap(recap.recap);
       setCompletedGames((prev) =>
         prev.map((g) =>
           g.id === selectedGame.id
@@ -344,6 +336,27 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       hasRoleInTeam('TeamManager', teamSeasonId)
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
+  const teamHandoutScope = React.useMemo(() => {
+    if (!teamData?.teamId) {
+      return null;
+    }
+    return {
+      type: 'team' as const,
+      accountId,
+      teamId: teamData.teamId,
+    };
+  }, [accountId, teamData?.teamId]);
+
+  const upcomingSections = React.useMemo(
+    () => [{ title: 'Upcoming Games', games: upcomingGames }],
+    [upcomingGames],
+  );
+
+  const completedSections = React.useMemo(
+    () => [{ title: 'Completed Games', games: completedGames }],
+    [completedGames],
+  );
 
   const handleOpenPlayersWantedDialog = React.useCallback(() => {
     const parts = [teamData?.leagueName, teamData?.teamName]
@@ -545,7 +558,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             </CardContent>
           </Card>
 
-          {isTeamMember && (
+          {isTeamMember && teamHandoutScope && (
             <Box
               sx={{
                 maxWidth: { xs: '100%', md: 420 },
@@ -554,7 +567,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               }}
             >
               <HandoutSection
-                scope={{ type: 'team', accountId, teamId: teamData.teamId }}
+                scope={teamHandoutScope}
                 title="Team Handouts"
                 description="Important documents shared with your roster."
                 allowManage={false}
@@ -570,21 +583,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       )}
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}
-      {loading ? (
-        <div className="text-center text-muted-foreground py-8">Loading games...</div>
-      ) : error ? (
+      {loading ? null : error ? (
         <div className="text-center text-red-600 py-8">{error}</div>
       ) : (
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           <div className="flex-1 min-w-0">
-            <GameListDisplay
-              sections={[{ title: 'Upcoming Games', games: upcomingGames }]}
-              emptyMessage="No upcoming games."
-            />
+            <GameListDisplay sections={upcomingSections} emptyMessage="No upcoming games." />
           </div>
           <div className="flex-1 min-w-0">
             <GameListDisplay
-              sections={[{ title: 'Completed Games', games: completedGames }]}
+              sections={completedSections}
               emptyMessage="No completed games."
               canEditRecap={canEditRecap}
               onEditRecap={handleEditSummary}
@@ -709,6 +717,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           readOnly={summaryReadOnly}
           onSuccess={handleRecapSuccess}
           onError={setSummaryError}
+          loading={summaryLoading}
         />
       )}
       {summaryDialogOpen && summaryError && (

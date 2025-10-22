@@ -4,13 +4,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Typography,
-  Box,
 } from '@mui/material';
 import { UpsertGameRecapSchema, UpsertGameRecapType } from '@draco/shared-schemas';
 import { useGameRecap } from '../hooks/useGameRecap';
@@ -34,6 +35,7 @@ interface EnterGameRecapDialogProps {
   readOnly?: boolean;
   onSuccess?: (recap: UpsertGameRecapType) => void;
   onError?: (message: string) => void;
+  loading?: boolean;
 }
 
 const extractPlainText = (html: string): string => {
@@ -62,8 +64,9 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   readOnly = false,
   onSuccess,
   onError,
+  loading = false,
 }) => {
-  const { saveRecap, loading } = useGameRecap({
+  const { saveRecap, loading: isSaving } = useGameRecap({
     accountId,
     seasonId,
     gameId,
@@ -129,16 +132,20 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   }, []);
 
   const handleClose = useCallback(() => {
-    if (isSubmitting || loading) {
+    if (isSubmitting || isSaving) {
       return;
     }
 
     setSubmitError(null);
     onClose();
-  }, [isSubmitting, loading, onClose]);
+  }, [isSubmitting, isSaving, onClose]);
 
   const onSubmit = useCallback(async () => {
     if (readOnly) {
+      return;
+    }
+
+    if (loading) {
       return;
     }
 
@@ -179,7 +186,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
       setSubmitError(result.error);
       onError?.(result.error);
     }
-  }, [editorContent, onClose, onError, onSuccess, readOnly, saveRecap]);
+  }, [editorContent, loading, onClose, onError, onSuccess, readOnly, saveRecap]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -198,7 +205,13 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
           </Typography>
         )}
 
-        {readOnly ? (
+        {loading ? (
+          <Box
+            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 260 }}
+          >
+            <CircularProgress size={32} />
+          </Box>
+        ) : readOnly ? (
           (() => {
             const sanitizedContent = sanitizeRichContent(editorContent ?? '');
             const hasContent = extractPlainText(sanitizedContent).length > 0;
@@ -245,7 +258,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
             initialValue={initialRecap ?? ''}
             onChange={handleEditorChange}
             placeholder="Enter the game recap..."
-            disabled={loading || isSubmitting}
+            disabled={isSaving || isSubmitting}
             minHeight={260}
           />
         )}
@@ -257,7 +270,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="secondary" disabled={isSubmitting || loading}>
+        <Button onClick={handleClose} color="secondary" disabled={isSubmitting || isSaving}>
           Close
         </Button>
         {!readOnly && (
@@ -265,9 +278,11 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
             onClick={onSubmit}
             color="primary"
             variant="contained"
-            disabled={isSubmitting || loading || plainTextContent.length === 0 || !isDirty}
+            disabled={
+              isSubmitting || isSaving || loading || plainTextContent.length === 0 || !isDirty
+            }
           >
-            {isSubmitting || loading ? 'Saving…' : 'Save'}
+            {isSubmitting || isSaving ? 'Saving…' : 'Save'}
           </Button>
         )}
       </DialogActions>
