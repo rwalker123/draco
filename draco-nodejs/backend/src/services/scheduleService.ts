@@ -15,10 +15,6 @@ import {
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { ScheduleResponseFormatter } from '../responseFormatters/index.js';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/customErrors.js';
-import { ServiceFactory } from './serviceFactory.js';
-import { IRoleQuery } from './interfaces/roleInterfaces.js';
-import { ContactService } from './contactService.js';
-import { ITeamRepository } from '../repositories/interfaces/index.js';
 import {
   dbScheduleGameForAccount,
   dbScheduleGameWithDetails,
@@ -37,15 +33,9 @@ interface GameListFilters {
 
 export class ScheduleService {
   private readonly scheduleRepository: IScheduleRepository;
-  private readonly teamRepository: ITeamRepository;
-  private readonly roleService: IRoleQuery;
-  private readonly contactService: ContactService;
 
   constructor() {
     this.scheduleRepository = RepositoryFactory.getScheduleRepository();
-    this.teamRepository = RepositoryFactory.getTeamRepository();
-    this.roleService = ServiceFactory.getRoleQuery();
-    this.contactService = ServiceFactory.getContactService();
   }
 
   async updateGameResults(
