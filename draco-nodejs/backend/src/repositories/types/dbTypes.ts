@@ -165,7 +165,11 @@ export type dbContactEmailOnly = Prisma.contactsGetPayload<{
 }>;
 
 export type dbTeamSeason = Prisma.teamsseasonGetPayload<{
-  select: { id: true; name: true };
+  select: {
+    id: true;
+    name: true;
+    teamid: true;
+  };
 }>;
 
 export type dbAccountHandout = Prisma.accounthandoutsGetPayload<{
@@ -1450,6 +1454,34 @@ export type dbPhotoGalleryAlbum = Prisma.photogalleryalbumGetPayload<{
   };
 }>;
 
+export type dbPhotoGalleryAlbumWithCount = Prisma.photogalleryalbumGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    teamid: true;
+    parentalbumid: true;
+    title: true;
+    _count: {
+      select: {
+        photogallery: true;
+      };
+    };
+  };
+}>;
+
+export interface dbCreatePhotoGalleryAlbumInput {
+  accountid: bigint;
+  title: string;
+  teamid: bigint;
+  parentalbumid: bigint;
+}
+
+export interface dbUpdatePhotoGalleryAlbumInput {
+  title?: string;
+  teamid?: bigint;
+  parentalbumid?: bigint;
+}
+
 export interface dbCreatePhotoSubmissionInput {
   accountid: bigint;
   teamid?: bigint | null;
@@ -1550,6 +1582,12 @@ export interface dbCreatePhotoGalleryInput {
   caption: string;
 }
 
+export interface dbUpdatePhotoGalleryInput {
+  title?: string;
+  caption?: string | null;
+  albumid?: bigint | null;
+}
+
 export type dbPhotoGallery = Prisma.photogalleryGetPayload<{
   select: {
     id: true;
@@ -1557,6 +1595,36 @@ export type dbPhotoGallery = Prisma.photogalleryGetPayload<{
     albumid: true;
     title: true;
     caption: true;
+  };
+}>;
+
+export type dbPhotoGalleryEntry = Prisma.photogalleryGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    albumid: true;
+    title: true;
+    caption: true;
+    photogalleryalbum: {
+      select: {
+        id: true;
+        title: true;
+        teamid: true;
+      };
+    };
+    photogallerysubmission: {
+      select: {
+        id: true;
+        teamid: true;
+        albumid: true;
+        submittedat: true;
+        originalfilepath: true;
+      };
+      orderBy: {
+        submittedat: 'desc';
+      };
+      take: 1;
+    };
   };
 }>;
 

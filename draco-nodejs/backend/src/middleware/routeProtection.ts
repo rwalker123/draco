@@ -17,6 +17,7 @@ import {
 import { ContactService } from '../services/contactService.js';
 import { UserService } from '../services/userService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import { TeamService } from '@/services/teamService.js';
 
 // Extend the Request interface to include user and role information
 declare global {
@@ -40,11 +41,13 @@ export class RouteProtection {
   private roleService: IRoleMiddleware;
   private contactService: ContactService;
   private userService: UserService;
+  private teamService: TeamService;
 
   constructor() {
     this.roleService = ServiceFactory.getRoleService();
     this.contactService = ServiceFactory.getContactService();
     this.userService = ServiceFactory.getUserService();
+    this.teamService = ServiceFactory.getTeamService();
   }
 
   /**
@@ -96,11 +99,20 @@ export class RouteProtection {
         throw new AuthenticationError('Authentication required');
       }
 
+      const seasonId = context?.seasonId || this.extractSeasonId(req);
+      const accountId = context?.accountId || this.extractAccountId(req) || BigInt(0);
+
+      // permissions are season based, but a teamId/LeagueId is allowed,
+      // it will be put in the context of the current season.
+      const teamId = context?.teamId || (await this.getTeamSeasonId(accountId, seasonId, req));
+      // todo: handle league seasons when we get to league admin permissions
+      //const leagueId = this.getLeagueSeasonId(context, req);
+
       const roleContext: RoleContextData = {
-        accountId: context?.accountId || this.extractAccountId(req) || BigInt(0),
-        teamId: context?.teamId || this.extractTeamId(req),
+        accountId: accountId,
+        teamId: teamId,
         leagueId: context?.leagueId || this.extractLeagueId(req),
-        seasonId: context?.seasonId || this.extractSeasonId(req),
+        seasonId: seasonId,
       };
 
       const hasPermission = await this.roleService.hasPermission(
@@ -257,16 +269,23 @@ export class RouteProtection {
         throw new AuthenticationError('Authentication required');
       }
 
-      const teamId = this.extractTeamId(req);
-      if (!teamId) {
-        throw new ValidationError('Team ID required');
-      }
-
       const accountId = this.extractAccountId(req);
       if (!accountId) {
         throw new ValidationError('Account ID required');
       }
 
+      // season isn't required, but if present, it means
+      // the teamId must be a teamSeasonId
+      const seasonId = this.extractSeasonId(req);
+
+      const teamSeasonId = await this.getTeamSeasonId(accountId, seasonId, req);
+      if (!teamSeasonId) {
+        throw new ValidationError('Team Season ID required');
+      }
+
+      // validate that the accountId, seasonId, and teamSeasonId are all consistent.
+      // that is, the teamSeasonId must belong to the seasonId,
+      // and the seasonId must belong to the accountId
       const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
 
       if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
@@ -276,7 +295,6 @@ export class RouteProtection {
       }
 
       if (
-        userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
         userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
       ) {
         req.userRoles = userRoles;
@@ -284,7 +302,11 @@ export class RouteProtection {
         return;
       }
 
-      const teamContext: RoleContextData = { accountId: accountId, teamId: teamId };
+      const teamContext: RoleContextData = {
+        accountId: accountId,
+        teamId: teamSeasonId,
+        seasonId: seasonId,
+      };
       const hasTeamRole = await this.roleService.hasRole(
         req.user.id,
         ROLE_IDS[RoleNamesType.TEAM_ADMIN],
@@ -329,7 +351,6 @@ export class RouteProtection {
       }
 
       if (
-        userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]) ||
         userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN])
       ) {
         req.userRoles = userRoles;
@@ -403,6 +424,24 @@ export class RouteProtection {
   }
 
   /**
+   * Extract team season ID from request
+   * @param req Request object
+   * @returns Team season ID as bigint or undefined
+   */
+  private extractTeamSeasonId(req: Request): bigint | undefined {
+    if (req.params.teamSeasonId) {
+      return BigInt(req.params.teamSeasonId);
+    }
+    if (req.body?.teamSeasonId) {
+      return BigInt(req.body.teamSeasonId);
+    }
+    if (req.query?.teamSeasonId) {
+      return BigInt(req.query.teamSeasonId as string);
+    }
+    return undefined;
+  }
+
+  /**
    * Extract league ID from request
    */
   private extractLeagueId(req: Request): bigint | undefined {
@@ -414,6 +453,24 @@ export class RouteProtection {
     }
     if (req.query?.leagueId) {
       return BigInt(req.query.leagueId as string);
+    }
+    return undefined;
+  }
+
+  /**
+   *  Extract league season ID from request
+   * @param req
+   * @returns
+   */
+  private extractLeagueSeasonId(req: Request): bigint | undefined {
+    if (req.params.leagueSeasonId) {
+      return BigInt(req.params.leagueSeasonId);
+    }
+    if (req.body?.leagueSeasonId) {
+      return BigInt(req.body.leagueSeasonId);
+    }
+    if (req.query?.leagueSeasonId) {
+      return BigInt(req.query.leagueSeasonId as string);
     }
     return undefined;
   }
@@ -432,6 +489,35 @@ export class RouteProtection {
       return BigInt(req.query.seasonId as string);
     }
     return undefined;
+  }
+
+  private async getTeamSeasonId(
+    accountId: bigint,
+    seasonId: bigint | undefined,
+    req: Request,
+  ): Promise<bigint | undefined> {
+    // permissions/roles are per season for teams. If we get a teamId without a seasonId,
+    // we have to get the teamSeasonId from the current season or throw an error
+    let teamSeasonId: bigint | undefined;
+    if (seasonId) {
+      teamSeasonId = this.extractTeamSeasonId(req);
+      if (teamSeasonId) {
+        const teamSeason = await this.teamService.findTeamSeason(accountId, seasonId, teamSeasonId);
+        if (!teamSeason) {
+          teamSeasonId = undefined;
+        }
+      }
+    } else {
+      const teamId = this.extractTeamId(req);
+      if (teamId) {
+        const teamSeason = await this.teamService.getTeamSeasonFromTeamId(accountId, teamId);
+        if (teamSeason) {
+          teamSeasonId = BigInt(teamSeason.id);
+        }
+      }
+    }
+
+    return teamSeasonId;
   }
 
   /**

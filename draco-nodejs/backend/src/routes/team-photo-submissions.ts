@@ -121,7 +121,6 @@ router.get(
   '/:teamId/photo-submissions/pending',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.enforceTeamBoundary(),
   routeProtection.requirePermission('team.photos.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -136,7 +135,6 @@ router.post(
   '/:teamId/photo-submissions/:submissionId/approve',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.enforceTeamBoundary(),
   routeProtection.requirePermission('team.photos.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -166,7 +164,6 @@ router.post(
   '/:teamId/photo-submissions/:submissionId/deny',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.enforceTeamBoundary(),
   routeProtection.requirePermission('team.photos.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);

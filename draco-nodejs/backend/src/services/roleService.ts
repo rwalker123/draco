@@ -202,6 +202,28 @@ export class RoleService implements IRoleService {
       accountid: accountId,
     });
 
+    // check for manager roles automatically assigned as team admin
+    const currentSeason = await this.seasonRepository.findCurrentSeason(accountId);
+    // Get current season for validation
+    if (currentSeason) {
+      const teamManagers = await this.teamRepository.findTeamsManager(
+        dbContact.id,
+        currentSeason.id,
+      );
+
+      if (teamManagers && teamManagers.length > 0) {
+        dbContactRoles.push(
+          ...teamManagers.map((teamManager) => ({
+            contactid: dbContact.id,
+            roleid: ROLE_IDS[RoleNamesType.TEAM_ADMIN]!,
+            roledata: teamManager.teamseasonid,
+            accountid: accountId,
+            id: BigInt(0),
+          })),
+        );
+      }
+    }
+
     const response: RoleWithContactType[] = RoleResponseFormatter.formatRoleWithContact(
       dbContact,
       dbContactRoles,

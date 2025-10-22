@@ -44,9 +44,9 @@ export function buildGalleryAssetPaths(
   const basePath = `${accountSegment}/photo-gallery/${photoId.toString()}`;
 
   return {
-    originalFilePath: `${basePath}/Original${normalizedExtension}`,
-    primaryImagePath: `${basePath}/Primary${normalizedExtension}`,
-    thumbnailImagePath: `${basePath}/PhotoGalleryThumb${normalizedExtension}`,
+    originalFilePath: `${basePath}/photo${normalizedExtension}`,
+    primaryImagePath: `${basePath}/photo${normalizedExtension}`,
+    thumbnailImagePath: `${basePath}/photo-thumb${normalizedExtension}`,
   };
 }
 

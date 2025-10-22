@@ -53,6 +53,24 @@ export class PrismaTeamRepository implements ITeamRepository {
     return this.prisma.teamsseason.count({ where });
   }
 
+  async findTeamSeasonByTeamId(
+    teamId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<dbTeamSeason | null> {
+    return this.prisma.teamsseason.findFirst({
+      where: {
+        teamid: teamId,
+        leagueseason: {
+          seasonid: seasonId,
+          season: {
+            accountid: accountId,
+          },
+        },
+      },
+    });
+  }
+
   async findBySeasonId(seasonId: bigint, accountId: bigint): Promise<teamsseason[]> {
     return this.prisma.teamsseason.findMany({
       where: {
@@ -195,6 +213,21 @@ export class PrismaTeamRepository implements ITeamRepository {
     });
   }
 
+  async findTeamsManager(contactId: bigint, seasonId: bigint): Promise<teamseasonmanager[]> {
+    const managers = await this.prisma.teamseasonmanager.findMany({
+      where: {
+        contactid: contactId,
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+          },
+        },
+      },
+    });
+
+    return managers;
+  }
+
   async findTeamSeason(
     teamSeasonId: bigint,
     seasonId: bigint,
@@ -218,7 +251,7 @@ export class PrismaTeamRepository implements ITeamRepository {
         id: teamSeasonId,
         leagueseason: { seasonid: seasonId, league: { accountid: accountId } },
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, teamid: true },
     });
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -31,11 +31,20 @@ import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
-import { getAccountById, getAccountUserTeams } from '@draco/shared-api-client';
+import {
+  getAccountById,
+  getAccountUserTeams,
+  listSeasonLeagueSeasons,
+} from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { unwrapApiResult } from '../../../utils/apiResult';
-import { AccountSeasonWithStatusType, AccountType, SponsorType } from '@draco/shared-schemas';
+import {
+  AccountSeasonWithStatusType,
+  AccountType,
+  SponsorType,
+  LeagueSeasonWithDivisionTeamsAndUnassignedType,
+} from '@draco/shared-schemas';
 import HandoutSection from '@/components/handouts/HandoutSection';
 import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
 import PendingPhotoSubmissionsPanel from '@/components/photo-submissions/PendingPhotoSubmissionsPanel';
@@ -43,6 +52,11 @@ import PhotoSubmissionForm, {
   type PhotoAlbumOption,
 } from '@/components/photo-submissions/PhotoSubmissionForm';
 import { usePendingPhotoSubmissions } from '../../../hooks/usePendingPhotoSubmissions';
+import { usePhotoGallery } from '../../../hooks/usePhotoGallery';
+import PhotoGallerySection, {
+  type TeamAlbumHierarchyGroup,
+} from '@/components/photo-gallery/PhotoGallerySection';
+import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -102,7 +116,7 @@ const BaseballAccountHome: React.FC = () => {
     enabled: shouldShowPendingPanel,
   });
 
-  const albumOptions: PhotoAlbumOption[] = useMemo(() => {
+  const submissionAlbumOptions: PhotoAlbumOption[] = useMemo(() => {
     const options = new Map<string | null, string>();
     options.set(null, 'Main Account Album (Default)');
 
@@ -115,6 +129,213 @@ const BaseballAccountHome: React.FC = () => {
 
     return Array.from(options.entries()).map(([id, title]) => ({ id, title }));
   }, [pendingSubmissions]);
+
+  const {
+    photos: galleryPhotos,
+    albums: galleryAlbums,
+    loading: galleryLoading,
+    error: galleryError,
+    refresh: refreshGallery,
+  } = usePhotoGallery({ accountId: accountIdStr ?? null });
+
+  const [selectedAlbumKey, setSelectedAlbumKey] = useState<string>('all');
+  const [seasonTeamIds, setSeasonTeamIds] = useState<string[] | null>(null);
+  const [seasonLeagueHierarchy, setSeasonLeagueHierarchy] = useState<
+    LeagueSeasonWithDivisionTeamsAndUnassignedType[]
+  >([]);
+
+  const seasonFilteredPhotos = useMemo(() => {
+    if (seasonTeamIds === null || seasonTeamIds.length === 0) {
+      return galleryPhotos;
+    }
+
+    const allowedTeamIds = new Set(seasonTeamIds);
+    return galleryPhotos.filter((photo) => {
+      if (!photo.teamId) {
+        return true;
+      }
+      return allowedTeamIds.has(photo.teamId);
+    });
+  }, [galleryPhotos, seasonTeamIds]);
+
+  const seasonFilteredAlbums = useMemo(() => {
+    if (seasonTeamIds === null || seasonTeamIds.length === 0) {
+      return galleryAlbums;
+    }
+
+    const allowedTeamIds = new Set(seasonTeamIds);
+    const albumCounts = new Map<string, number>();
+
+    seasonFilteredPhotos.forEach((photo) => {
+      const key = photo.albumId ?? 'null';
+      albumCounts.set(key, (albumCounts.get(key) ?? 0) + 1);
+    });
+
+    const normalizedAlbums = galleryAlbums
+      .map((album) => ({
+        ...album,
+        title: album.accountId === '0' ? 'Default Album' : album.title,
+      }))
+      .sort((a, b) => {
+        const aDefault = a.accountId === '0';
+        const bDefault = b.accountId === '0';
+        if (aDefault && !bDefault) return -1;
+        if (!aDefault && bDefault) return 1;
+        return (a.title ?? '').localeCompare(b.title ?? '');
+      });
+
+    return normalizedAlbums
+      .filter((album) => {
+        if (!album.teamId) {
+          return true;
+        }
+        return allowedTeamIds.has(album.teamId);
+      })
+      .map((album) => {
+        const key = album.id ?? 'null';
+        const photoCount = albumCounts.get(key) ?? 0;
+        return { ...album, photoCount };
+      })
+      .filter((album) => album.photoCount > 0 || album.id === null);
+  }, [galleryAlbums, seasonFilteredPhotos, seasonTeamIds]);
+
+  const teamAlbumsByTeamId = useMemo(() => {
+    const map = new Map<
+      string,
+      { albumId: string; photoCount: number; albumTitle: string | null }
+    >();
+
+    seasonFilteredAlbums.forEach((album) => {
+      if (album.teamId && album.id) {
+        map.set(album.teamId, {
+          albumId: album.id,
+          photoCount: album.photoCount ?? 0,
+          albumTitle: album.title ?? null,
+        });
+      }
+    });
+
+    return map;
+  }, [seasonFilteredAlbums]);
+
+  const teamAlbumHierarchy = useMemo<TeamAlbumHierarchyGroup[]>(() => {
+    if (seasonLeagueHierarchy.length === 0 || teamAlbumsByTeamId.size === 0) {
+      return [];
+    }
+
+    const groups: TeamAlbumHierarchyGroup[] = [];
+
+    seasonLeagueHierarchy.forEach((league) => {
+      const divisions: TeamAlbumHierarchyGroup['divisions'] = [];
+
+      (league.divisions ?? []).forEach((division) => {
+        const teams: TeamAlbumHierarchyGroup['divisions'][number]['teams'] = [];
+
+        division.teams.forEach((team) => {
+          const teamId = team.team?.id ?? null;
+          if (!teamId) {
+            return;
+          }
+
+          const album = teamAlbumsByTeamId.get(teamId);
+          if (!album) {
+            return;
+          }
+
+          teams.push({
+            teamId,
+            teamSeasonId: team.id,
+            teamName: team.name ?? team.name ?? 'Team',
+            albumId: album.albumId,
+            photoCount: album.photoCount,
+          });
+        });
+
+        if (teams.length > 0) {
+          divisions.push({
+            id: division.id,
+            name: division.division.name,
+            teams,
+          });
+        }
+      });
+
+      const unassignedTeams: TeamAlbumHierarchyGroup['unassignedTeams'] = [];
+
+      league.unassignedTeams?.forEach((team) => {
+        const teamId = team.team?.id ?? null;
+        if (!teamId) {
+          return;
+        }
+
+        const album = teamAlbumsByTeamId.get(teamId);
+        if (!album) {
+          return;
+        }
+
+        unassignedTeams.push({
+          teamId,
+          teamSeasonId: team.id,
+          teamName: team.name ?? team.name ?? 'Team',
+          albumId: album.albumId,
+          photoCount: album.photoCount,
+        });
+      });
+
+      if (divisions.length === 0 && unassignedTeams.length === 0) {
+        return;
+      }
+
+      groups.push({
+        leagueId: league.id,
+        leagueName: league.league.name,
+        divisions,
+        unassignedTeams,
+      });
+    });
+
+    return groups;
+  }, [seasonLeagueHierarchy, teamAlbumsByTeamId]);
+
+  useEffect(() => {
+    if (selectedAlbumKey === 'all') {
+      return;
+    }
+
+    const hasAlbum = seasonFilteredAlbums.some(
+      (album) => (album.id ?? 'null') === selectedAlbumKey,
+    );
+    if (!hasAlbum) {
+      setSelectedAlbumKey('all');
+    }
+  }, [seasonFilteredAlbums, selectedAlbumKey]);
+
+  const filteredGalleryPhotos = useMemo(() => {
+    if (selectedAlbumKey === 'all') {
+      return seasonFilteredPhotos;
+    }
+
+    if (selectedAlbumKey === 'null') {
+      return seasonFilteredPhotos.filter((photo) => photo.albumId === null);
+    }
+
+    return seasonFilteredPhotos.filter((photo) => photo.albumId === selectedAlbumKey);
+  }, [seasonFilteredPhotos, selectedAlbumKey]);
+
+  const handleAlbumTabChange = useCallback((value: string) => {
+    setSelectedAlbumKey(value);
+  }, []);
+
+  const handleApprovePendingSubmission = useCallback(
+    async (submissionId: string) => {
+      const success = await approvePendingSubmission(submissionId);
+      if (success) {
+        await refreshGallery();
+      }
+      return success;
+    },
+    [approvePendingSubmission, refreshGallery],
+  );
 
   // Fetch public account data
   useEffect(() => {
@@ -177,6 +398,67 @@ const BaseballAccountHome: React.FC = () => {
       isMounted = false;
     };
   }, [accountIdStr, apiClient]);
+
+  useEffect(() => {
+    if (!accountIdStr || !currentSeason?.id) {
+      setSeasonTeamIds(null);
+      setSeasonLeagueHierarchy([]);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchSeasonLeagueHierarchy = async () => {
+      try {
+        const result = await listSeasonLeagueSeasons({
+          client: apiClient,
+          path: { accountId: accountIdStr, seasonId: currentSeason.id },
+          query: { includeTeams: true, includeUnassignedTeams: true },
+          throwOnError: false,
+        });
+
+        if (ignore) {
+          return;
+        }
+
+        const leagueSetup = unwrapApiResult(result, 'Failed to load season league hierarchy');
+        const mappedSetup = mapLeagueSetup(leagueSetup);
+        const leagueSeasons = mappedSetup.leagueSeasons ?? [];
+
+        setSeasonLeagueHierarchy(leagueSeasons);
+
+        const ids = new Set<string>();
+        leagueSeasons.forEach((league) => {
+          league.divisions?.forEach((division) => {
+            division.teams.forEach((team) => {
+              if (team.team?.id) {
+                ids.add(team.team.id);
+              }
+            });
+          });
+          league.unassignedTeams?.forEach((team) => {
+            if (team.team?.id) {
+              ids.add(team.team.id);
+            }
+          });
+        });
+
+        setSeasonTeamIds(Array.from(ids));
+      } catch (err) {
+        if (!ignore) {
+          console.warn('Failed to load season league hierarchy:', err);
+          setSeasonLeagueHierarchy([]);
+          setSeasonTeamIds([]);
+        }
+      }
+    };
+
+    void fetchSeasonLeagueHierarchy();
+
+    return () => {
+      ignore = true;
+    };
+  }, [accountIdStr, currentSeason?.id, apiClient]);
 
   // Fetch user teams if logged in
   useEffect(() => {
@@ -388,34 +670,6 @@ const BaseballAccountHome: React.FC = () => {
           isAccountMember={isAccountMember}
         />
 
-        {showSubmissionPanel && (
-          <Paper sx={{ p: 3, mb: 2 }}>
-            {membershipLoading ? (
-              <Box display="flex" alignItems="center" gap={2}>
-                <CircularProgress size={24} />
-                <Typography variant="body2">Checking your access…</Typography>
-              </Box>
-            ) : membershipError ? (
-              <Alert severity="error">{membershipError}</Alert>
-            ) : canSubmitPhotos ? (
-              <PhotoSubmissionForm
-                variant="account"
-                accountId={accountIdStr ?? ''}
-                contextName={account.name}
-                albumOptions={albumOptions}
-                onSubmitted={() => {
-                  void refreshPendingSubmissions();
-                }}
-              />
-            ) : (
-              <Alert severity="info">
-                You need to be a registered contact for this account to submit photos for
-                moderation.
-              </Alert>
-            )}
-          </Paper>
-        )}
-
         {shouldShowPendingPanel && (
           <Paper sx={{ p: 3, mb: 2 }}>
             <PendingPhotoSubmissionsPanel
@@ -426,7 +680,7 @@ const BaseballAccountHome: React.FC = () => {
               successMessage={pendingSuccess}
               processingIds={pendingProcessingIds}
               onRefresh={refreshPendingSubmissions}
-              onApprove={approvePendingSubmission}
+              onApprove={handleApprovePendingSubmission}
               onDeny={denyPendingSubmission}
               onClearStatus={clearPendingStatus}
               emptyMessage="No pending photo submissions for this account."
@@ -494,6 +748,64 @@ const BaseballAccountHome: React.FC = () => {
             />
           </Box>
         )}
+
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: showSubmissionPanel
+              ? {
+                  xs: '1fr',
+                  lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
+                }
+              : '1fr',
+            alignItems: 'stretch',
+          }}
+        >
+          <PhotoGallerySection
+            title="Photo Gallery"
+            description={`Relive the highlights from ${account?.name ?? 'this organization'}.`}
+            photos={filteredGalleryPhotos}
+            albums={seasonFilteredAlbums}
+            loading={galleryLoading}
+            error={galleryError}
+            onRefresh={refreshGallery}
+            emptyMessage="No photos have been published yet."
+            enableAlbumTabs
+            selectedAlbumKey={selectedAlbumKey}
+            onAlbumChange={handleAlbumTabChange}
+            totalCountOverride={seasonFilteredPhotos.length}
+            teamAlbumHierarchy={teamAlbumHierarchy}
+            sx={{ height: '100%' }}
+          />
+          {showSubmissionPanel ? (
+            <Paper sx={{ p: 3, height: '100%' }}>
+              {membershipLoading ? (
+                <Box display="flex" alignItems="center" gap={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2">Checking your access…</Typography>
+                </Box>
+              ) : membershipError ? (
+                <Alert severity="error">{membershipError}</Alert>
+              ) : canSubmitPhotos ? (
+                <PhotoSubmissionForm
+                  variant="account"
+                  accountId={accountIdStr ?? ''}
+                  contextName={account.name}
+                  albumOptions={submissionAlbumOptions}
+                  onSubmitted={() => {
+                    void refreshPendingSubmissions();
+                  }}
+                />
+              ) : (
+                <Alert severity="info">
+                  You need to be a registered contact for this account to submit photos for
+                  moderation.
+                </Alert>
+              )}
+            </Paper>
+          ) : null}
+        </Box>
 
         <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
 

@@ -1,18 +1,17 @@
 import { ServiceFactory } from './serviceFactory.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
-import { PhotoGalleryService } from './photoGalleryService.js';
+import { PhotoGalleryApprovalService } from './photoGalleryApprovalService.js';
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
 import type { PhotoSubmissionDetailType, PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { ValidationError, PhotoSubmissionNotificationError } from '../utils/customErrors.js';
 import { photoSubmissionMetrics } from '../metrics/photoSubmissionMetrics.js';
-
-const ALBUM_PHOTO_LIMIT = 100;
+import { ALBUM_PHOTO_LIMIT } from './photoGalleryLimits.js';
 
 export class PhotoSubmissionModerationService {
   constructor(
     private readonly submissionService: PhotoSubmissionService = ServiceFactory.getPhotoSubmissionService(),
-    private readonly galleryService: PhotoGalleryService = ServiceFactory.getPhotoGalleryService(),
+    private readonly galleryService: PhotoGalleryApprovalService = ServiceFactory.getPhotoGalleryApprovalService(),
     private readonly assetService: PhotoSubmissionAssetService = ServiceFactory.getPhotoSubmissionAssetService(),
     private readonly notificationService: PhotoSubmissionNotificationService = ServiceFactory.getPhotoSubmissionNotificationService(),
   ) {}

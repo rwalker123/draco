@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import sharp, { FormatEnum } from 'sharp';
+import sharp, { FormatEnum, type Metadata } from 'sharp';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import {
   buildGalleryAssetPaths,
@@ -30,16 +30,29 @@ const getSharpFormat = (extension: string): keyof FormatEnum => {
   return format ?? 'jpeg';
 };
 
+const matchesTargetDimensions = (
+  metadata: Metadata | null | undefined,
+  dimensions: { width: number; height: number },
+): boolean => {
+  if (!metadata?.width || !metadata?.height) {
+    return false;
+  }
+
+  return metadata.width === dimensions.width && metadata.height === dimensions.height;
+};
+
 const processImage = async (
   buffer: Buffer,
   destination: string,
   format: keyof FormatEnum,
   dimensions: { width: number; height: number },
+  options: { withoutEnlargement?: boolean } = {},
 ): Promise<void> => {
   await sharp(buffer)
     .resize(dimensions.width, dimensions.height, {
-      fit: 'inside',
-      withoutEnlargement: true,
+      fit: 'cover',
+      position: 'centre',
+      withoutEnlargement: options.withoutEnlargement ?? false,
     })
     .toFormat(format)
     .toFile(destination);
@@ -65,8 +78,24 @@ export class PhotoSubmissionAssetService {
     try {
       await ensureDirectory(directory);
       await fs.writeFile(originalPath, fileBuffer);
-      await processImage(fileBuffer, primaryPath, format, PRIMARY_DIMENSIONS);
-      await processImage(fileBuffer, thumbnailPath, format, THUMBNAIL_DIMENSIONS);
+
+      const metadata = await sharp(fileBuffer).metadata();
+
+      await ensureDirectory(path.dirname(primaryPath));
+      if (matchesTargetDimensions(metadata, PRIMARY_DIMENSIONS)) {
+        await fs.writeFile(primaryPath, fileBuffer);
+      } else {
+        await processImage(fileBuffer, primaryPath, format, PRIMARY_DIMENSIONS, {
+          withoutEnlargement: true,
+        });
+      }
+
+      await ensureDirectory(path.dirname(thumbnailPath));
+      if (matchesTargetDimensions(metadata, THUMBNAIL_DIMENSIONS)) {
+        await fs.writeFile(thumbnailPath, fileBuffer);
+      } else {
+        await processImage(fileBuffer, thumbnailPath, format, THUMBNAIL_DIMENSIONS);
+      }
     } catch (error) {
       await fs.rm(directory, { recursive: true, force: true }).catch(() => undefined);
       throw error;

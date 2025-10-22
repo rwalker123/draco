@@ -12,6 +12,7 @@ import * as path from 'node:path';
 import { Client as FTPClient, type AccessOptions, type FileInfo as FtpFileInfo } from 'basic-ftp';
 // PrismaClient will be imported dynamically from the backend
 import * as dotenv from 'dotenv';
+import sharp from 'sharp';
 
 // Load environment variables, preferring migration overrides before backend defaults
 const migrationEnvPath = path.join(__dirname, '.env');
@@ -42,6 +43,25 @@ interface MigrationStats {
   whereHeardOptions: CategoryStats;
   messageBoards: CategoryStats;
 }
+
+const GALLERY_PRIMARY_DIMENSIONS = { width: 800, height: 450 } as const;
+const GALLERY_THUMBNAIL_DIMENSIONS = { width: 160, height: 90 } as const;
+const EXTENSION_FORMAT_MAP: Record<string, 'jpeg' | 'png' | 'webp'> = {
+  '.jpg': 'jpeg',
+  '.jpeg': 'jpeg',
+  '.png': 'png',
+  '.webp': 'webp',
+};
+
+const matchesTargetDimensions = (
+  metadata: sharp.Metadata | null | undefined,
+  dimensions: { width: number; height: number },
+) => {
+  if (!metadata?.width || !metadata?.height) {
+    return false;
+  }
+  return metadata.width === dimensions.width && metadata.height === dimensions.height;
+};
 
 interface FileInfo {
   remotePath: string;
@@ -736,50 +756,24 @@ class FileMigrationService {
         const galleryId = galleryDir.name;
         const galleryPath = `${remoteDirPath}/${galleryId}`;
         const galleryFiles = await this.listDirectory(galleryPath);
-        let processedFiles = 0;
-
-        for (const file of galleryFiles) {
-          if (!file.isFile) {
-            continue;
-          }
-
-          if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
-            console.log(
-              `🧪 Test mode: reached photo limit for gallery ${galleryId}, skipping remaining files.`,
-            );
-            break;
-          }
-
-          processedFiles += 1;
-
-          const remotePath = `${galleryPath}/${file.name}`;
-          const localPath = path.join(
-            this.tempDir,
-            'accounts',
-            accountId,
-            'PhotoGallery',
-            galleryId,
-            file.name,
-          );
-
+        const originalFile = this.findGalleryOriginalFile(galleryFiles);
+        if (!originalFile) {
           console.log(
-            `⬇️ Downloading gallery asset (stub) for account ${accountId}, gallery ${galleryId}: ${file.name}`,
+            `⚠️ No PhotoGallery original found for account ${accountId}, gallery ${galleryId}. Skipping.`,
           );
-
-          if (!(await this.downloadFile(remotePath, localPath))) {
-            this.stats.galleryPhotos.errors++;
-            continue;
-          }
-
-          this.stats.galleryPhotos.downloaded++;
           this.stats.galleryPhotos.skipped++;
-          console.log(
-            `📝 Gallery upload not yet implemented. File retained for future processing: ${remotePath}`,
-          );
-          this.markFileProcessed(remotePath);
-
-          await this.cleanupTempFile(localPath);
+          continue;
         }
+
+        const thumbnailFile = this.findGalleryThumbnailFile(galleryFiles);
+
+        await this.migrateGalleryPhoto({
+          accountId,
+          galleryId,
+          ownerSegments: ['accounts', accountId, 'PhotoGallery', galleryId],
+          remoteOriginalPath: `${galleryPath}/${originalFile.name}`,
+          remoteThumbnailPath: thumbnailFile ? `${galleryPath}/${thumbnailFile.name}` : undefined,
+        });
       }
     } catch (error) {
       console.error(`❌ Error processing photo gallery for account ${accountId}:`, error);
@@ -1090,50 +1084,33 @@ class FileMigrationService {
         const galleryId = galleryDir.name;
         const galleryPath = `${remoteDirPath}/${galleryId}`;
         const galleryFiles = await this.listDirectory(galleryPath);
-        let processedFiles = 0;
-
-        for (const file of galleryFiles) {
-          if (!file.isFile) {
-            continue;
-          }
-
-          if (this.isTestMode && processedFiles >= this.testLimits.filesPerDirectory) {
-            console.log(
-              `🧪 Test mode: reached photo limit for team gallery ${galleryId}, skipping remaining files.`,
-            );
-            break;
-          }
-
-          processedFiles += 1;
-
-          const remotePath = `${galleryPath}/${file.name}`;
-          const localPath = path.join(
-            this.tempDir,
-            'teams',
-            teamId,
-            'PhotoGallery',
-            galleryId,
-            file.name,
-          );
-
+        const originalFile = this.findGalleryOriginalFile(galleryFiles);
+        if (!originalFile) {
           console.log(
-            `⬇️ Downloading team gallery asset (stub) for team ${teamId}, gallery ${galleryId}: ${file.name}`,
+            `⚠️ No PhotoGallery original found for team ${teamId}, gallery ${galleryId}. Skipping.`,
           );
-
-          if (!(await this.downloadFile(remotePath, localPath))) {
-            this.stats.galleryPhotos.errors++;
-            continue;
-          }
-
-          this.stats.galleryPhotos.downloaded++;
           this.stats.galleryPhotos.skipped++;
-          console.log(
-            `📝 Team gallery upload not yet implemented. File retained for future processing: ${remotePath}`,
-          );
-          this.markFileProcessed(remotePath);
-
-          await this.cleanupTempFile(localPath);
+          continue;
         }
+
+        const accountId = this.teamToAccountMap.get(teamId);
+        if (!accountId) {
+          console.log(
+            `⚠️ Unable to determine account for team ${teamId} when migrating gallery ${galleryId}. Skipping.`,
+          );
+          this.stats.galleryPhotos.skipped++;
+          continue;
+        }
+
+        const thumbnailFile = this.findGalleryThumbnailFile(galleryFiles);
+
+        await this.migrateGalleryPhoto({
+          accountId,
+          galleryId,
+          ownerSegments: ['teams', teamId, 'PhotoGallery', galleryId],
+          remoteOriginalPath: `${galleryPath}/${originalFile.name}`,
+          remoteThumbnailPath: thumbnailFile ? `${galleryPath}/${thumbnailFile.name}` : undefined,
+        });
       }
     } catch (error) {
       console.error(`❌ Error processing photo gallery for team ${teamId}:`, error);
@@ -1528,6 +1505,251 @@ class FileMigrationService {
       }
     } catch (error) {
       console.error('❌ Error migrating contact photos:', error);
+    }
+  }
+
+  private findGalleryOriginalFile(files: FtpFileInfo[]): FtpFileInfo | undefined {
+    return files.find(
+      (file) =>
+        file.isFile &&
+        ['photogallery.jpg', 'photogallery.jpeg', 'photogallery.png'].includes(
+          file.name.toLowerCase(),
+        ),
+    );
+  }
+
+  private findGalleryThumbnailFile(files: FtpFileInfo[]): FtpFileInfo | undefined {
+    return files.find(
+      (file) =>
+        file.isFile &&
+        ['photogallerythumb.jpg', 'photogallerythumb.jpeg', 'photogallerythumb.png'].includes(
+          file.name.toLowerCase(),
+        ),
+    );
+  }
+
+  private tryParseBigInt(value: string, context: string): bigint | null {
+    try {
+      const normalized = value.trim();
+      if (!normalized) {
+        console.log(`⚠️ ${context}: identifier is empty.`);
+        return null;
+      }
+
+      return BigInt(normalized);
+    } catch (_error) {
+      console.log(`⚠️ ${context}: invalid identifier '${value}', skipping.`);
+      return null;
+    }
+  }
+
+  private normalizeGalleryExtension(originalPath: string): {
+    extension: string;
+    format: 'jpeg' | 'png' | 'webp';
+  } {
+    const rawExtension = path.extname(originalPath).toLowerCase();
+    if (rawExtension === '.jpeg') {
+      return { extension: '.jpg', format: 'jpeg' };
+    }
+
+    const format = EXTENSION_FORMAT_MAP[rawExtension];
+    if (format) {
+      return { extension: rawExtension as '.jpg' | '.png' | '.webp', format };
+    }
+
+    return { extension: '.jpg', format: 'jpeg' };
+  }
+
+  private buildGalleryDestinationPaths(
+    accountId: bigint,
+    galleryId: bigint,
+    extension: string,
+  ): { photo: string; thumbnail: string } {
+    const accountSegment = accountId.toString();
+    const gallerySegment = galleryId.toString();
+    const normalizedExtension = extension.startsWith('.')
+      ? extension.toLowerCase()
+      : `.${extension.toLowerCase()}`;
+    const basePath = path.join(accountSegment, 'photo-gallery', gallerySegment);
+
+    return {
+      photo: path.join(basePath, `photo${normalizedExtension}`),
+      thumbnail: path.join(basePath, `photo-thumb${normalizedExtension}`),
+    };
+  }
+
+  private resolveUploadsAbsolutePath(relativePath: string): string {
+    return path.join(process.cwd(), 'uploads', relativePath);
+  }
+
+  private async migrateGalleryPhoto(options: {
+    accountId: string;
+    galleryId: string;
+    ownerSegments: string[];
+    remoteOriginalPath: string;
+    remoteThumbnailPath?: string;
+  }): Promise<void> {
+    const { accountId, galleryId, ownerSegments, remoteOriginalPath, remoteThumbnailPath } =
+      options;
+
+    const accountIdBigInt = this.tryParseBigInt(accountId, `Gallery ${galleryId}`);
+    const galleryIdBigInt = this.tryParseBigInt(galleryId, `Gallery ${galleryId}`);
+
+    if (!accountIdBigInt || !galleryIdBigInt) {
+      this.stats.galleryPhotos.errors++;
+      return;
+    }
+
+    if (this.isFileAlreadyProcessed(remoteOriginalPath)) {
+      console.log(`⏭️ Gallery photo already migrated: ${remoteOriginalPath}`);
+      this.stats.galleryPhotos.skipped++;
+      return;
+    }
+
+    const originalLocalPath = path.join(
+      this.tempDir,
+      ...ownerSegments,
+      path.basename(remoteOriginalPath),
+    );
+
+    if (!(await this.downloadFile(remoteOriginalPath, originalLocalPath))) {
+      this.stats.galleryPhotos.errors++;
+      return;
+    }
+
+    this.stats.galleryPhotos.downloaded++;
+
+    const originalBuffer = await this.getFileBuffer(originalLocalPath);
+    if (!originalBuffer) {
+      this.stats.galleryPhotos.errors++;
+      await this.cleanupTempFile(originalLocalPath);
+      return;
+    }
+
+    let thumbnailBuffer: Buffer | null = null;
+    let thumbnailLocalPath: string | null = null;
+    let thumbnailRemotePath = remoteThumbnailPath;
+
+    if (thumbnailRemotePath) {
+      if (this.isFileAlreadyProcessed(thumbnailRemotePath)) {
+        console.log(`⏭️ Gallery thumbnail already migrated: ${thumbnailRemotePath}`);
+        thumbnailRemotePath = undefined;
+      } else {
+        thumbnailLocalPath = path.join(
+          this.tempDir,
+          ...ownerSegments,
+          path.basename(thumbnailRemotePath),
+        );
+
+        if (await this.downloadFile(thumbnailRemotePath, thumbnailLocalPath)) {
+          this.stats.galleryPhotos.downloaded++;
+          thumbnailBuffer = await this.getFileBuffer(thumbnailLocalPath);
+          if (!thumbnailBuffer) {
+            this.stats.galleryPhotos.errors++;
+          }
+        } else {
+          this.stats.galleryPhotos.errors++;
+          thumbnailRemotePath = undefined;
+        }
+      }
+    }
+
+    try {
+      const { extension, format } = this.normalizeGalleryExtension(remoteOriginalPath);
+      const destinations = this.buildGalleryDestinationPaths(
+        accountIdBigInt,
+        galleryIdBigInt,
+        extension,
+      );
+      const originalDestination = this.resolveUploadsAbsolutePath(destinations.photo);
+      const thumbnailDestination = this.resolveUploadsAbsolutePath(destinations.thumbnail);
+
+      await fs.promises.mkdir(path.dirname(originalDestination), { recursive: true });
+
+      const originalMetadata = await sharp(originalBuffer)
+        .metadata()
+        .catch(() => null);
+      const shouldResizePrimary = !matchesTargetDimensions(
+        originalMetadata,
+        GALLERY_PRIMARY_DIMENSIONS,
+      );
+
+      if (shouldResizePrimary) {
+        const resizedPhotoBuffer = await sharp(originalBuffer)
+          .resize(GALLERY_PRIMARY_DIMENSIONS.width, GALLERY_PRIMARY_DIMENSIONS.height, {
+            fit: 'cover',
+            position: 'centre',
+            withoutEnlargement: true,
+          })
+          .toFormat(format)
+          .toBuffer();
+        await fs.promises.writeFile(originalDestination, resizedPhotoBuffer);
+      } else {
+        await fs.promises.writeFile(originalDestination, originalBuffer);
+      }
+
+      await fs.promises.mkdir(path.dirname(thumbnailDestination), { recursive: true });
+
+      const thumbnailMetadata = thumbnailBuffer
+        ? await sharp(thumbnailBuffer)
+            .metadata()
+            .catch(() => null)
+        : null;
+
+      let thumbnailSourceBuffer = thumbnailBuffer ?? originalBuffer;
+      let shouldResizeThumbnail = true;
+
+      if (
+        thumbnailBuffer &&
+        matchesTargetDimensions(thumbnailMetadata, GALLERY_THUMBNAIL_DIMENSIONS)
+      ) {
+        shouldResizeThumbnail = false;
+        thumbnailSourceBuffer = thumbnailBuffer;
+      } else if (
+        !thumbnailBuffer &&
+        matchesTargetDimensions(originalMetadata, GALLERY_THUMBNAIL_DIMENSIONS)
+      ) {
+        shouldResizeThumbnail = false;
+        thumbnailSourceBuffer = originalBuffer;
+      }
+
+      if (shouldResizeThumbnail) {
+        const resizedThumbnailBuffer = await sharp(thumbnailSourceBuffer)
+          .resize(GALLERY_THUMBNAIL_DIMENSIONS.width, GALLERY_THUMBNAIL_DIMENSIONS.height, {
+            fit: 'cover',
+            position: 'centre',
+          })
+          .toFormat(format)
+          .toBuffer();
+        await fs.promises.writeFile(thumbnailDestination, resizedThumbnailBuffer);
+      } else {
+        await fs.promises.writeFile(thumbnailDestination, thumbnailSourceBuffer);
+      }
+
+      this.stats.galleryPhotos.uploaded++;
+      this.markFileProcessed(remoteOriginalPath);
+      if (thumbnailRemotePath) {
+        this.markFileProcessed(thumbnailRemotePath);
+      }
+
+      console.log(
+        `✅ Migrated gallery photo ${galleryId} for account ${accountId} into uploads/${destinations.photo}`,
+      );
+    } catch (error) {
+      console.error(
+        `❌ Failed to migrate gallery photo ${galleryId} for account ${accountId}:`,
+        error,
+      );
+      this.stats.galleryPhotos.errors++;
+      this.markFileFailed(remoteOriginalPath);
+      if (thumbnailRemotePath) {
+        this.markFileFailed(thumbnailRemotePath);
+      }
+    } finally {
+      await this.cleanupTempFile(originalLocalPath);
+      if (thumbnailLocalPath) {
+        await this.cleanupTempFile(thumbnailLocalPath);
+      }
     }
   }
 

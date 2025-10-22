@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
+import { MessageSquare, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
 import GameListDisplay, { Game } from '../../../../../../../components/GameListDisplay';
 import React from 'react';
@@ -41,6 +41,8 @@ import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePla
 import PendingPhotoSubmissionsPanel from '../../../../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
 import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendingPhotoSubmissions';
 import PhotoSubmissionForm from '../../../../../../../components/photo-submissions/PhotoSubmissionForm';
+import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
+import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 
 interface TeamPageProps {
   accountId: string;
@@ -105,6 +107,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const shouldShowTeamPendingPanel = Boolean(
     token && canModerateTeamSubmissions && teamModerationTeamId,
   );
+  const showTeamSubmissionPanel = Boolean(teamData?.teamId);
 
   const {
     submissions: teamPendingSubmissions,
@@ -121,6 +124,28 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     teamId: teamModerationTeamId,
     enabled: shouldShowTeamPendingPanel,
   });
+
+  const {
+    photos: teamGalleryPhotos,
+    loading: teamGalleryLoading,
+    error: teamGalleryError,
+    refresh: refreshTeamGallery,
+  } = usePhotoGallery({
+    accountId,
+    teamId: teamData?.teamId ?? null,
+    enabled: Boolean(teamData?.teamId),
+  });
+
+  const handleApproveTeamPhoto = React.useCallback(
+    async (submissionId: string) => {
+      const success = await approveTeamSubmission(submissionId);
+      if (success) {
+        await refreshTeamGallery();
+      }
+      return success;
+    },
+    [approveTeamSubmission, refreshTeamGallery],
+  );
 
   React.useEffect(() => {
     let isMounted = true;
@@ -419,34 +444,106 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         />
       )}
 
-      {teamData?.teamId && teamMembershipError && (
-        <Alert severity="error" sx={{ mb: 4 }}>
-          {teamMembershipError}
-        </Alert>
+      {shouldShowTeamPendingPanel && (
+        <Box sx={{ mb: 4 }}>
+          <PendingPhotoSubmissionsPanel
+            contextLabel={teamData?.teamName ?? 'this team'}
+            submissions={teamPendingSubmissions}
+            loading={teamPendingLoading}
+            error={teamPendingError}
+            successMessage={teamPendingSuccess}
+            processingIds={teamPendingProcessing}
+            onRefresh={refreshTeamPending}
+            onApprove={handleApproveTeamPhoto}
+            onDeny={denyTeamSubmission}
+            onClearStatus={clearTeamPendingStatus}
+            emptyMessage="No pending photo submissions for this team."
+          />
+        </Box>
       )}
 
       {teamData?.teamId && (
         <>
-          {teamMembershipLoading ? (
-            <Paper sx={{ p: 3, mb: 4 }}>
-              <Box display="flex" alignItems="center" gap={2}>
-                <CircularProgress size={24} />
-                <Typography variant="body2">Checking your team access…</Typography>
-              </Box>
-            </Paper>
-          ) : isTeamMember ? (
-            <Paper sx={{ p: 3, mb: 4 }}>
-              <PhotoSubmissionForm
-                variant="team"
-                accountId={accountId}
-                teamId={teamData.teamId}
-                contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
-                onSubmitted={() => {
-                  void refreshTeamPending();
-                }}
-              />
-            </Paper>
-          ) : null}
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 3,
+              gridTemplateColumns: showTeamSubmissionPanel
+                ? {
+                    xs: '1fr',
+                    lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
+                  }
+                : '1fr',
+              alignItems: 'stretch',
+              mb: 6,
+            }}
+          >
+            <PhotoGallerySection
+              title="Team Photo Gallery"
+              description={`Highlights from the ${teamData?.seasonName ?? 'current'} season.`}
+              photos={teamGalleryPhotos}
+              loading={teamGalleryLoading}
+              error={teamGalleryError}
+              onRefresh={refreshTeamGallery}
+              emptyMessage="No team photos have been published yet."
+              accent="team"
+              totalCountOverride={teamGalleryPhotos.length}
+              sx={{ height: '100%' }}
+            />
+            {showTeamSubmissionPanel ? (
+              <Paper sx={{ p: 3, height: '100%' }}>
+                {teamMembershipLoading ? (
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <CircularProgress size={24} />
+                    <Typography variant="body2">Checking your team access…</Typography>
+                  </Box>
+                ) : teamMembershipError ? (
+                  <Alert severity="error">{teamMembershipError}</Alert>
+                ) : isTeamMember ? (
+                  <PhotoSubmissionForm
+                    variant="team"
+                    accountId={accountId}
+                    teamId={teamData.teamId}
+                    contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
+                    onSubmitted={() => {
+                      void refreshTeamPending();
+                    }}
+                  />
+                ) : (
+                  <Alert severity="info">
+                    You need to be on this roster to submit photos for review.
+                  </Alert>
+                )}
+              </Paper>
+            ) : null}
+          </Box>
+
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Play className="w-5 h-5" />
+                Videos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Image
+                  src="/placeholder.png"
+                  alt="Video 1"
+                  width={120}
+                  height={80}
+                  className="rounded"
+                />
+                <Image
+                  src="/placeholder.png"
+                  alt="Video 2"
+                  width={120}
+                  height={80}
+                  className="rounded"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           {isTeamMember && (
             <Box
@@ -469,31 +566,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               />
             </Box>
           )}
-
-          {!teamMembershipLoading && !isTeamMember && (
-            <Alert severity="info" sx={{ mb: 4 }}>
-              You need to be on this roster to submit photos for review.
-            </Alert>
-          )}
         </>
-      )}
-
-      {shouldShowTeamPendingPanel && (
-        <Box sx={{ mb: 4 }}>
-          <PendingPhotoSubmissionsPanel
-            contextLabel={teamData?.teamName ?? 'this team'}
-            submissions={teamPendingSubmissions}
-            loading={teamPendingLoading}
-            error={teamPendingError}
-            successMessage={teamPendingSuccess}
-            processingIds={teamPendingProcessing}
-            onRefresh={refreshTeamPending}
-            onApprove={approveTeamSubmission}
-            onDeny={denyTeamSubmission}
-            onClearStatus={clearTeamPendingStatus}
-            emptyMessage="No pending photo submissions for this team."
-          />
-        </Box>
       )}
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}
@@ -569,69 +642,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           title="Team Sponsors"
           emptyMessage={teamSponsorError ?? 'No team sponsors have been added yet.'}
         />
-      </div>
-
-      {/* Media Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="w-5 h-5" />
-              Photo Gallery
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Image
-                src="/placeholder.png"
-                alt="Photo 1"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-              <Image
-                src="/placeholder.png"
-                alt="Photo 2"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-              <Image
-                src="/placeholder.png"
-                alt="Photo 3"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5" />
-              Videos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Image
-                src="/placeholder.png"
-                alt="Video 1"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-              <Image
-                src="/placeholder.png"
-                alt="Video 2"
-                width={120}
-                height={80}
-                className="rounded"
-              />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Community Section */}

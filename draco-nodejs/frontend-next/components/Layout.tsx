@@ -27,6 +27,7 @@ import {
   Handshake as HandshakeIcon,
   HowToVote as HowToVoteIcon,
   Description as DescriptionIcon,
+  PhotoLibrary as PhotoLibraryIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -509,6 +510,30 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <FitnessCenterIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Workout Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {/* Photo Gallery Management - AccountAdmin Role and above */}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            (hasRole('AccountAdmin', { accountId: String(currentAccount.id) }) ||
+              hasRole('AccountPhotoAdmin', { accountId: String(currentAccount.id) }))
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/photo-gallery/admin`)
+                }
+                key="photo-gallery-management"
+              >
+                <ListItemIcon>
+                  <PhotoLibraryIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Photo Gallery Management</ListItemText>
               </MenuItem>
             );
           }

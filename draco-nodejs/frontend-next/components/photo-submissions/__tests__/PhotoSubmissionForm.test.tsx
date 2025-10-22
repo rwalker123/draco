@@ -27,13 +27,17 @@ class MockFileReader {
 
   readyState = MockFileReader.EMPTY;
   result: string | ArrayBuffer | null = null;
-  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
-  onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+  onload: ((event: ProgressEvent<FileReader>) => unknown) | null = null;
+  onerror: ((event: ProgressEvent<FileReader>) => unknown) | null = null;
 
   readAsDataURL = readAsDataURLMock.mockImplementation((_file: Blob) => {
     this.readyState = MockFileReader.LOADING;
     this.result = 'data:image/jpeg;base64,preview';
-    this.onload?.(new Event('load') as ProgressEvent<FileReader>);
+    const onload = this.onload;
+    if (onload) {
+      const loadEvent = new Event('load') as ProgressEvent<FileReader>;
+      onload(loadEvent);
+    }
     this.readyState = MockFileReader.DONE;
   });
 

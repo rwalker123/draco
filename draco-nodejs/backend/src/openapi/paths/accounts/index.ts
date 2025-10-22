@@ -33,6 +33,15 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     PhotoSubmissionListSchemaRef,
     CreatePhotoSubmissionFormSchemaRef,
     DenyPhotoSubmissionRequestSchemaRef,
+    CreatePhotoGalleryPhotoSchemaRef,
+    UpdatePhotoGalleryPhotoSchemaRef,
+    CreatePhotoGalleryAlbumSchemaRef,
+    UpdatePhotoGalleryAlbumSchemaRef,
+    PhotoGalleryPhotoSchemaRef,
+    PhotoGalleryAdminAlbumListSchemaRef,
+    PhotoGalleryAdminAlbumSchemaRef,
+    PhotoGalleryListSchemaRef,
+    PhotoGalleryQuerySchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/search
@@ -69,6 +78,379 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
           'application/json': {
             schema: InternalServerErrorSchemaRef,
           },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/photo-gallery/photos',
+    operationId: 'listAccountGalleryPhotosAdmin',
+    summary: 'List gallery photos for administration',
+    description:
+      'Returns approved gallery photos for administrative management, including optional filters by album or team. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      query: PhotoGalleryQuerySchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Gallery photos available for administrative management.',
+        content: {
+          'application/json': { schema: PhotoGalleryListSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery photos.' },
+      500: {
+        description: 'Unexpected server error while retrieving gallery photos.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/photo-gallery/photos',
+    operationId: 'createAccountGalleryPhoto',
+    summary: 'Upload a gallery photo as an administrator',
+    description:
+      'Uploads a new gallery photo directly into the approved gallery. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'multipart/form-data': {
+            schema: CreatePhotoGalleryPhotoSchemaRef,
+            encoding: {
+              photo: { contentType: 'image/*' },
+            },
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Gallery photo created.',
+        content: {
+          'application/json': { schema: PhotoGalleryPhotoSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery photos.' },
+      500: {
+        description: 'Unexpected server error while creating the gallery photo.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/photo-gallery/photos/{photoId}',
+    operationId: 'updateAccountGalleryPhoto',
+    summary: 'Update gallery photo metadata',
+    description:
+      'Updates the title, caption, or album assignment for an approved gallery photo. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'photoId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdatePhotoGalleryPhotoSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated gallery photo metadata.',
+        content: {
+          'application/json': { schema: PhotoGalleryPhotoSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery photos.' },
+      404: { description: 'Gallery photo not found.' },
+      500: {
+        description: 'Unexpected server error while updating the gallery photo.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/photo-gallery/photos/{photoId}',
+    operationId: 'deleteAccountGalleryPhoto',
+    summary: 'Delete a gallery photo',
+    description:
+      'Removes an approved gallery photo and associated assets. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'photoId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      204: { description: 'Gallery photo deleted.' },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery photos.' },
+      404: { description: 'Gallery photo not found.' },
+      500: {
+        description: 'Unexpected server error while deleting the gallery photo.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/photo-gallery/albums',
+    operationId: 'listAccountGalleryAlbumsAdmin',
+    summary: 'List gallery albums for administration',
+    description:
+      'Retrieves gallery albums with parent and team associations for administrative management. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Gallery albums available for administrative management.',
+        content: {
+          'application/json': { schema: PhotoGalleryAdminAlbumListSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery albums.' },
+      500: {
+        description: 'Unexpected server error while retrieving gallery albums.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/photo-gallery/albums',
+    operationId: 'createAccountGalleryAlbum',
+    summary: 'Create a gallery album',
+    description:
+      'Creates a gallery album available for assigning approved photos. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreatePhotoGalleryAlbumSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Gallery album created.',
+        content: {
+          'application/json': { schema: PhotoGalleryAdminAlbumSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery albums.' },
+      409: { description: 'Album title conflicts with an existing album.' },
+      500: {
+        description: 'Unexpected server error while creating the gallery album.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/photo-gallery/albums/{albumId}',
+    operationId: 'updateAccountGalleryAlbum',
+    summary: 'Update gallery album metadata',
+    description:
+      'Updates the title, team association, or parent album for a gallery album. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'albumId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdatePhotoGalleryAlbumSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Gallery album updated.',
+        content: {
+          'application/json': { schema: PhotoGalleryAdminAlbumSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery albums.' },
+      404: { description: 'Gallery album not found.' },
+      409: { description: 'Album title conflicts with an existing album.' },
+      500: {
+        description: 'Unexpected server error while updating the gallery album.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/photo-gallery/albums/{albumId}',
+    operationId: 'deleteAccountGalleryAlbum',
+    summary: 'Delete a gallery album',
+    description:
+      'Deletes a gallery album. If the album contains photos, the request may be rejected depending on business rules. Requires photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'albumId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      204: { description: 'Gallery album deleted.' },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage gallery albums.' },
+      404: { description: 'Gallery album not found.' },
+      409: { description: 'Album cannot be deleted while it contains photos.' },
+      500: {
+        description: 'Unexpected server error while deleting the gallery album.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
         },
       },
     },
@@ -1764,6 +2146,47 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
           'application/json': {
             schema: NotFoundErrorSchemaRef,
           },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/photo-gallery',
+    operationId: 'getAccountPhotoGallery',
+    summary: 'Retrieve the account photo gallery',
+    description:
+      'Returns approved gallery photos for the account along with aggregated album metadata. This endpoint is publicly accessible.',
+    tags: ['Photo Gallery'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      query: PhotoGalleryQuerySchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Account photo gallery.',
+        content: {
+          'application/json': { schema: PhotoGalleryListSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while retrieving the gallery.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
         },
       },
     },
