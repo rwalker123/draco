@@ -332,7 +332,7 @@ export class ScheduleService {
 
     const recap = await this.scheduleRepository.findRecap(gameId, teamSeasonId);
     if (!recap) {
-      throw new NotFoundError('No recap found for this team');
+      return '';
     }
 
     return recap.recap;

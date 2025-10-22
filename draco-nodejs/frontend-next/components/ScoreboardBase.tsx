@@ -1,18 +1,5 @@
 import React from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  List,
-  ListItemButton,
-  ListItemText,
-  Paper,
-} from '@mui/material';
+import { Alert, Box, CircularProgress, Paper } from '@mui/material';
 import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
 import EnterGameResultsDialog, {
   EnterGameResultsDialogGame,
@@ -21,29 +8,10 @@ import EnterGameResultsDialog, {
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameUtils';
-import EnterGameRecapDialog from './EnterGameRecapDialog';
 import { GameStatus } from '../types/schedule';
 import { useAuth } from '../context/AuthContext';
 import { getGameSummary } from '../lib/utils';
-import type { UpsertGameRecapType } from '@draco/shared-schemas';
-
-type TeamOption = {
-  id: string;
-  name: string;
-};
-
-type PendingRecapAction =
-  | {
-      mode: 'edit';
-      game: Game;
-      teamOptions: TeamOption[];
-    }
-  | {
-      mode: 'view';
-      game: Game;
-      teamOptions: TeamOption[];
-      availableRecaps: Array<{ teamId: string; recap: string }>;
-    };
+import { useGameRecapFlow } from '../hooks/useGameRecapFlow';
 
 interface ScoreboardBaseProps {
   accountId: string;
@@ -71,56 +39,24 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     open: boolean;
     game: Game | null;
   }>({ open: false, game: null });
-  const [recapDialogOpen, setRecapDialogOpen] = React.useState(false);
-  const [recapSelectedGame, setRecapSelectedGame] = React.useState<Game | null>(null);
-  const [recapTeamSeasonId, setRecapTeamSeasonId] = React.useState<string | null>(null);
-  const [recapInitialRecap, setRecapInitialRecap] = React.useState('');
-  const [recapReadOnly, setRecapReadOnly] = React.useState(false);
-  const [recapErrorMessage, setRecapErrorMessage] = React.useState<string | null>(null);
-  const [recapLoading, setRecapLoading] = React.useState(false);
-  const [pendingRecapAction, setPendingRecapAction] = React.useState<PendingRecapAction | null>(
-    null,
-  );
 
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { token } = useAuth();
   const canEditGames = isAccountAdministrator(hasRole, accountId);
+
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });
   };
 
-  const canEditRecap = React.useCallback(
-    (game: Game): boolean => {
-      if (game.gameStatus !== GameStatus.Completed) {
-        return false;
-      }
-
-      if (hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId)) {
-        return true;
-      }
-
-      const canEditHome =
-        hasRoleInTeam('TeamAdmin', game.homeTeamId) ||
-        hasRoleInTeam('TeamManager', game.homeTeamId);
-      const canEditVisitor =
-        hasRoleInTeam('TeamAdmin', game.visitorTeamId) ||
-        hasRoleInTeam('TeamManager', game.visitorTeamId);
-
-      return canEditHome || canEditVisitor;
-    },
-    [accountId, hasRole, hasRoleInAccount, hasRoleInTeam],
-  );
-
   const determineEditableTeams = React.useCallback(
-    (game: Game): TeamOption[] => {
+    (game: Game): string[] => {
       if (game.gameStatus !== GameStatus.Completed) {
         return [];
       }
 
+      const editableTeamIds: string[] = [];
       const isAdministrator =
         hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId);
-
-      const options: TeamOption[] = [];
 
       const canEditHome =
         isAdministrator ||
@@ -132,23 +68,20 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         hasRoleInTeam('TeamManager', game.visitorTeamId);
 
       if (canEditHome) {
-        options.push({ id: game.homeTeamId, name: game.homeTeamName });
+        editableTeamIds.push(game.homeTeamId);
       }
 
-      if (canEditVisitor) {
-        if (!options.some((option) => option.id === game.visitorTeamId)) {
-          options.push({ id: game.visitorTeamId, name: game.visitorTeamName });
-        }
+      if (canEditVisitor && !editableTeamIds.includes(game.visitorTeamId)) {
+        editableTeamIds.push(game.visitorTeamId);
       }
 
-      return options;
+      return editableTeamIds;
     },
     [accountId, hasRole, hasRoleInAccount, hasRoleInTeam],
   );
 
-  const loadRecap = React.useCallback(
-    async (game: Game, teamSeasonId: string) => {
-      setRecapLoading(true);
+  const fetchRecapForTeam = React.useCallback(
+    async (game: Game, teamSeasonId: string): Promise<string | null> => {
       try {
         const recap = await getGameSummary({
           accountId,
@@ -157,216 +90,89 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
           teamSeasonId,
           token: token ?? undefined,
         });
-        setRecapInitialRecap(recap || '');
-        setRecapErrorMessage(null);
+        return recap ?? null;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load game summary';
-        if (
-          message.toLowerCase().includes('no recap found') ||
-          message.toLowerCase().includes('not found')
-        ) {
-          setRecapInitialRecap('');
-          setRecapErrorMessage(null);
-        } else {
-          setRecapErrorMessage(message);
-        }
-      } finally {
-        setRecapLoading(false);
+        throw err;
       }
     },
     [accountId, currentSeasonId, token],
   );
 
-  const openRecapDialog = React.useCallback(
-    (game: Game, teamSeasonId: string, options: { readOnly: boolean; initialRecap?: string }) => {
-      setRecapSelectedGame(game);
-      setRecapTeamSeasonId(teamSeasonId);
-      setRecapReadOnly(options.readOnly);
-      setRecapInitialRecap(options.initialRecap ?? '');
-      setRecapErrorMessage(null);
-      setRecapDialogOpen(true);
-      setRecapLoading(false);
-
-      if (options.initialRecap === undefined) {
-        void loadRecap(game, teamSeasonId);
-      }
-    },
-    [loadRecap],
-  );
-
-  const handleEditGameRecap = React.useCallback(
-    (game: Game) => {
-      const editableTeams = determineEditableTeams(game);
-
-      if (editableTeams.length === 0) {
-        setRecapErrorMessage('You do not have permission to edit this game recap.');
-        return;
-      }
-
-      if (editableTeams.length === 1) {
-        openRecapDialog(game, editableTeams[0].id, { readOnly: false });
-        return;
-      }
-
-      setPendingRecapAction({
-        mode: 'edit',
-        game,
-        teamOptions: editableTeams,
-      });
-    },
-    [determineEditableTeams, openRecapDialog],
-  );
-
-  const handleViewGameRecap = React.useCallback(
-    async (game: Game) => {
-      if (!game.hasGameRecap) {
-        setRecapErrorMessage('No recap available for this game.');
-        return;
-      }
-
-      const candidateTeams: TeamOption[] = [
-        { id: game.homeTeamId, name: game.homeTeamName },
-        { id: game.visitorTeamId, name: game.visitorTeamName },
-      ];
-
-      setRecapLoading(true);
-      try {
-        const results = await Promise.all(
-          candidateTeams.map(async (team) => {
-            try {
-              const recap = await getGameSummary({
-                accountId,
-                seasonId: currentSeasonId,
-                gameId: game.id,
-                teamSeasonId: team.id,
-                token: token ?? undefined,
-              });
-              return recap !== undefined && recap !== null
-                ? { teamId: team.id, teamName: team.name, recap }
-                : null;
-            } catch (err) {
-              const message = err instanceof Error ? err.message : 'Failed to load game summary';
-              if (
-                message.toLowerCase().includes('no recap found') ||
-                message.toLowerCase().includes('not found')
-              ) {
-                return null;
-              }
-              throw err;
-            }
-          }),
-        );
-
-        const available = results.filter(
-          (value): value is { teamId: string; teamName: string; recap: string } => value !== null,
-        );
-
-        if (available.length === 0) {
-          setRecapErrorMessage('No recap available for this game.');
-          return;
-        }
-
-        if (available.length === 1) {
-          const recap = available[0];
-          openRecapDialog(game, recap.teamId, {
-            readOnly: true,
-            initialRecap: recap.recap,
-          });
-          return;
-        }
-
-        setPendingRecapAction({
-          mode: 'view',
-          game,
-          teamOptions: available.map(({ teamId, teamName }) => ({ id: teamId, name: teamName })),
-          availableRecaps: available.map(({ teamId, recap }) => ({ teamId, recap })),
-        });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load game summary';
-        setRecapErrorMessage(message);
-      } finally {
-        setRecapLoading(false);
-      }
-    },
-    [accountId, currentSeasonId, openRecapDialog, token],
-  );
-
-  const handleTeamSelection = React.useCallback(
-    (teamId: string) => {
-      if (!pendingRecapAction) {
-        return;
-      }
-
-      if (pendingRecapAction.mode === 'edit') {
-        openRecapDialog(pendingRecapAction.game, teamId, { readOnly: false });
-      } else {
-        const recap = pendingRecapAction.availableRecaps.find((entry) => entry.teamId === teamId);
-        openRecapDialog(pendingRecapAction.game, teamId, {
-          readOnly: true,
-          initialRecap: recap?.recap ?? '',
-        });
-      }
-
-      setPendingRecapAction(null);
-    },
-    [openRecapDialog, pendingRecapAction],
-  );
-
-  const handleCloseRecapDialog = React.useCallback(() => {
-    setRecapDialogOpen(false);
-    setRecapSelectedGame(null);
-    setRecapTeamSeasonId(null);
-    setRecapInitialRecap('');
-    setRecapReadOnly(false);
-    setRecapLoading(false);
-  }, []);
-
-  const handleRecapSuccess = React.useCallback(
-    (result: UpsertGameRecapType) => {
-      if (!recapSelectedGame || !recapTeamSeasonId) {
-        return;
-      }
-
-      setGames((prevGames) => {
-        const updatedGames = prevGames.map((gameItem) => {
-          if (gameItem.id !== recapSelectedGame.id) {
-            return gameItem;
+  const handleRecapSaved = React.useCallback(
+    (game: Game, teamSeasonId: string, recap: string) => {
+      setGames((previous) => {
+        const updated = previous.map((entry) => {
+          if (entry.id !== game.id) {
+            return entry;
           }
 
           const updatedRecaps = [
-            ...(gameItem.gameRecaps?.filter((recap) => recap.teamId !== recapTeamSeasonId) ?? []),
-            { teamId: recapTeamSeasonId, recap: result.recap },
+            ...(entry.gameRecaps?.filter((existing) => existing.teamId !== teamSeasonId) ?? []),
+            { teamId: teamSeasonId, recap },
           ];
 
           return {
-            ...gameItem,
+            ...entry,
             hasGameRecap: updatedRecaps.length > 0,
             gameRecaps: updatedRecaps,
           };
         });
 
-        onGamesLoaded?.(updatedGames);
-        return updatedGames;
+        onGamesLoaded?.(updated);
+        return updated;
       });
     },
-    [onGamesLoaded, recapSelectedGame, recapTeamSeasonId],
+    [onGamesLoaded],
   );
 
-  const selectedTeamName = React.useMemo(() => {
-    if (!recapSelectedGame || !recapTeamSeasonId) {
-      return undefined;
-    }
+  const {
+    openEditRecap,
+    openViewRecap,
+    dialogs: recapDialogs,
+    error: recapError,
+    clearError: clearRecapError,
+    canEditRecap,
+  } = useGameRecapFlow<Game>({
+    accountId,
+    seasonId: currentSeasonId,
+    fetchRecap: fetchRecapForTeam,
+    determineEditableTeams,
+    getTeamName: (game, teamSeasonId) =>
+      teamSeasonId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName,
+    onRecapSaved: handleRecapSaved,
+  });
 
-    if (recapSelectedGame.homeTeamId === recapTeamSeasonId) {
-      return recapSelectedGame.homeTeamName;
-    }
+  const handleOpenEditRecap = React.useCallback(
+    (game: Game) => {
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('[ScoreboardBase] openEditRecap click', {
+          gameId: game.id,
+          homeTeamId: game.homeTeamId,
+          visitorTeamId: game.visitorTeamId,
+          hasGameRecap: game.hasGameRecap,
+          availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
+        });
+      }
+      openEditRecap(game);
+    },
+    [openEditRecap],
+  );
 
-    if (recapSelectedGame.visitorTeamId === recapTeamSeasonId) {
-      return recapSelectedGame.visitorTeamName;
-    }
-
-    return undefined;
-  }, [recapSelectedGame, recapTeamSeasonId]);
+  const handleOpenViewRecap = React.useCallback(
+    (game: Game) => {
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('[ScoreboardBase] openViewRecap click', {
+          gameId: game.id,
+          homeTeamId: game.homeTeamId,
+          visitorTeamId: game.visitorTeamId,
+          hasGameRecap: game.hasGameRecap,
+          availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
+        });
+      }
+      openViewRecap(game);
+    },
+    [openViewRecap],
+  );
 
   const mapGameToDialogGame = (gameData: Game): EnterGameResultsDialogGame => ({
     id: gameData.id,
@@ -427,8 +233,8 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         setGames(newGames);
         if (onGamesLoaded) onGamesLoaded(newGames);
       })
-      .catch((error: unknown) => {
-        setError(error instanceof Error ? error.message : String(error));
+      .catch((loadError: unknown) => {
+        setError(loadError instanceof Error ? loadError.message : String(loadError));
       })
       .finally(() => {
         setLoading(false);
@@ -457,16 +263,15 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     );
   }
 
-  // Don't render anything if there are no games
   if (games.length === 0) {
     return null;
   }
 
   return (
     <>
-      {recapErrorMessage && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setRecapErrorMessage(null)}>
-          {recapErrorMessage}
+      {recapError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={clearRecapError}>
+          {recapError}
         </Alert>
       )}
       <GameListDisplay
@@ -474,8 +279,8 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         canEditGames={canEditGames}
         onEnterGameResults={handleEditGame}
         canEditRecap={canEditRecap}
-        onEditRecap={handleEditGameRecap}
-        onViewRecap={handleViewGameRecap}
+        onEditRecap={handleOpenEditRecap}
+        onViewRecap={handleOpenViewRecap}
         layout={layout}
       />
       {canEditGames && (
@@ -487,55 +292,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
           onSuccess={handleDialogSuccess}
         />
       )}
-      <EnterGameRecapDialog
-        open={recapDialogOpen}
-        onClose={handleCloseRecapDialog}
-        accountId={accountId}
-        seasonId={currentSeasonId}
-        gameId={recapSelectedGame?.id ?? ''}
-        teamSeasonId={recapTeamSeasonId ?? ''}
-        initialRecap={recapInitialRecap}
-        teamName={selectedTeamName}
-        gameDate={recapSelectedGame?.date}
-        homeScore={recapSelectedGame?.homeScore}
-        visitorScore={recapSelectedGame?.visitorScore}
-        homeTeamName={recapSelectedGame?.homeTeamName}
-        visitorTeamName={recapSelectedGame?.visitorTeamName}
-        readOnly={recapReadOnly}
-        onSuccess={handleRecapSuccess}
-        onError={(message) => setRecapErrorMessage(message)}
-        loading={recapLoading}
-      />
-      <Dialog
-        open={Boolean(pendingRecapAction)}
-        onClose={() => setPendingRecapAction(null)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>
-          {pendingRecapAction?.mode === 'edit'
-            ? 'Select Team to Manage Recap'
-            : 'Select Team Recap to View'}
-        </DialogTitle>
-        <DialogContent dividers>
-          <List>
-            {pendingRecapAction?.teamOptions.map((team) => (
-              <ListItemButton
-                key={team.id}
-                onClick={() => handleTeamSelection(team.id)}
-                disabled={recapLoading}
-              >
-                <ListItemText primary={team.name} />
-              </ListItemButton>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPendingRecapAction(null)} disabled={recapLoading}>
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {recapDialogs}
     </>
   );
 };
