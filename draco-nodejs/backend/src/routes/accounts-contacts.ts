@@ -32,6 +32,46 @@ const contactService = ServiceFactory.getContactService();
 const registrationService = ServiceFactory.getRegistrationService();
 const contactDependencyService = ServiceFactory.getContactDependencyService();
 
+const buildSelfUpdatePayload = (
+  existingContact: BaseContactType,
+  incoming: Partial<CreateContactType>,
+): CreateContactType => {
+  type ContactDetailsInput = NonNullable<CreateContactType['contactDetails']>;
+
+  const fallbackDetails: ContactDetailsInput = {
+    phone1: existingContact.contactDetails?.phone1 ?? '',
+    phone2: existingContact.contactDetails?.phone2 ?? '',
+    phone3: existingContact.contactDetails?.phone3 ?? '',
+    streetAddress: existingContact.contactDetails?.streetAddress ?? '',
+    city: existingContact.contactDetails?.city ?? '',
+    state: existingContact.contactDetails?.state ?? '',
+    zip: existingContact.contactDetails?.zip ?? '',
+    dateOfBirth: existingContact.contactDetails?.dateOfBirth ?? '',
+  };
+
+  const incomingDetails: Partial<ContactDetailsInput> =
+    (incoming.contactDetails as Partial<ContactDetailsInput> | undefined) ?? {};
+
+  const mergedContact: CreateContactType = CreateContactSchema.parse({
+    firstName: incoming.firstName ?? existingContact.firstName,
+    lastName: incoming.lastName ?? existingContact.lastName,
+    middleName: incoming.middleName ?? existingContact.middleName ?? undefined,
+    email: incoming.email ?? existingContact.email ?? undefined,
+    contactDetails: {
+      phone1: incomingDetails.phone1 ?? fallbackDetails.phone1,
+      phone2: incomingDetails.phone2 ?? fallbackDetails.phone2,
+      phone3: incomingDetails.phone3 ?? fallbackDetails.phone3,
+      streetAddress: incomingDetails.streetAddress ?? fallbackDetails.streetAddress,
+      city: incomingDetails.city ?? fallbackDetails.city,
+      state: incomingDetails.state ?? fallbackDetails.state,
+      zip: incomingDetails.zip ?? fallbackDetails.zip,
+      dateOfBirth: fallbackDetails.dateOfBirth,
+    },
+  });
+
+  return mergedContact;
+};
+
 /**
  * GET /api/accounts/:accountId/contacts/:contactId/roster
  * Get contact roster
@@ -64,6 +104,28 @@ router.get(
 
     const existing = await contactService.getContactByUserId(req.user!.id, BigInt(accountId));
     res.json(existing);
+  }),
+);
+
+router.put(
+  '/:accountId/contacts/me',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const userId = req.user!.id;
+
+    const existingContact = await contactService.getContactByUserId(userId, BigInt(accountId));
+
+    const incoming = (req.body ?? {}) as Partial<CreateContactType>;
+    const contactUpdate = buildSelfUpdatePayload(existingContact, incoming);
+
+    const updatedContact = await contactService.updateContact(
+      contactUpdate,
+      BigInt(existingContact.id),
+    );
+
+    res.json(updatedContact);
   }),
 );
 

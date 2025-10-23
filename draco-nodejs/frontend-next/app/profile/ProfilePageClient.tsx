@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box, CircularProgress, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ import ContactInfoCard from '@/components/profile/ContactInfoCard';
 import MemberBusinessPlaceholder from '@/components/profile/MemberBusinessPlaceholder';
 import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
+import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
 
 interface OrganizationTeamsState {
   teams: UserTeam[];
@@ -54,7 +55,8 @@ const ProfilePageClient: React.FC = () => {
   const [organizationsError, setOrganizationsError] = useState<string | null>(null);
 
   const [teamsByAccount, setTeamsByAccount] = useState<Record<string, OrganizationTeamsState>>({});
-  const teamsByAccountRef = React.useRef<Record<string, OrganizationTeamsState>>({});
+  const teamsByAccountRef = useRef<Record<string, OrganizationTeamsState>>({});
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     teamsByAccountRef.current = teamsByAccount;
@@ -341,6 +343,14 @@ const ProfilePageClient: React.FC = () => {
     );
   }, [organizations, organizationsError, organizationsLoading, router, teamsByAccount]);
 
+  const handleEditContact = useCallback(() => {
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleContactUpdated = useCallback((updated: BaseContactType) => {
+    setContact(updated);
+  }, []);
+
   if (!user) {
     return (
       <Box
@@ -382,6 +392,7 @@ const ProfilePageClient: React.FC = () => {
               loading={contactLoading}
               error={contactError}
               accountName={currentAccount?.name}
+              onEdit={contact && currentAccount?.id ? handleEditContact : undefined}
             />
             <MemberBusinessPlaceholder />
           </Stack>
@@ -400,6 +411,15 @@ const ProfilePageClient: React.FC = () => {
           </Stack>
         </Grid>
       </Grid>
+      <EditContactInfoDialog
+        open={isEditDialogOpen}
+        contact={contact}
+        accountId={currentAccount?.id ?? null}
+        onClose={() => setEditDialogOpen(false)}
+        onSuccess={(updated) => {
+          handleContactUpdated(updated);
+        }}
+      />
     </Box>
   );
 };

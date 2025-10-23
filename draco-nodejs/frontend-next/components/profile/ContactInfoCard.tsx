@@ -1,5 +1,15 @@
 import React from 'react';
-import { Avatar, Box, Divider, Paper, Skeleton, Stack, Typography, Alert } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Divider,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+  Alert,
+  Button,
+} from '@mui/material';
 import type { BaseContactType } from '@draco/shared-schemas';
 
 interface ContactInfoCardProps {
@@ -7,6 +17,7 @@ interface ContactInfoCardProps {
   loading: boolean;
   error?: string | null;
   accountName?: string;
+  onEdit?: () => void;
 }
 
 const renderContactField = (label: string, value?: string | null) => {
@@ -26,11 +37,44 @@ const renderContactField = (label: string, value?: string | null) => {
   );
 };
 
+const formatDateOfBirth = (value?: string | null) => {
+  if (!value) {
+    return '';
+  }
+
+  const trimmedValue = value.trim();
+
+  if (trimmedValue.length === 0) {
+    return '';
+  }
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    const [year, month, day] = trimmedValue.split('-');
+    return `${month}-${day}-${year}`;
+  }
+
+  const parsedDate = new Date(trimmedValue);
+
+  if (!Number.isNaN(parsedDate.getTime())) {
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    const year = parsedDate.getFullYear();
+    return `${month}-${day}-${year}`;
+  }
+
+  return trimmedValue;
+};
+
 const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   contact,
   loading,
   error,
   accountName,
+  onEdit,
 }) => {
   if (loading) {
     return (
@@ -83,6 +127,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   const state = contact.contactDetails?.state || '';
   const zip = contact.contactDetails?.zip || '';
   const dateOfBirth = contact.contactDetails?.dateOfBirth || '';
+  const formattedDateOfBirth = formatDateOfBirth(dateOfBirth);
 
   const addressLine = [streetAddress, [city, state].filter(Boolean).join(', '), zip]
     .filter((line) => line && line.trim().length > 0)
@@ -91,24 +136,43 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   return (
     <Paper sx={{ p: 4, borderRadius: 2 }} data-testid="profile-contact-card">
       <Stack spacing={3}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar
-            src={contact.photoUrl}
-            alt={`${contact.firstName} ${contact.lastName}`}
-            sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: 28, fontWeight: 600 }}
-          >
-            {!contact.photoUrl ? contact.firstName?.[0] : undefined}
-          </Avatar>
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              {contact.firstName} {contact.lastName}
-            </Typography>
-            {accountName && (
-              <Typography variant="body2" color="text.secondary">
-                {accountName}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar
+              src={contact.photoUrl}
+              alt={`${contact.firstName} ${contact.lastName}`}
+              sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: 28, fontWeight: 600 }}
+            >
+              {!contact.photoUrl ? contact.firstName?.[0] : undefined}
+            </Avatar>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                {contact.firstName} {contact.lastName}
               </Typography>
-            )}
+              {accountName && (
+                <Typography variant="body2" color="text.secondary">
+                  {accountName}
+                </Typography>
+              )}
+            </Box>
           </Box>
+          {onEdit && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onEdit}
+              data-testid="profile-contact-edit-button"
+            >
+              Edit
+            </Button>
+          )}
         </Box>
 
         <Divider />
@@ -118,7 +182,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
           {renderContactField('Primary Phone', primaryPhone)}
           {renderContactField('Secondary Phone', secondaryPhone)}
           {renderContactField('Additional Phone', tertiaryPhone)}
-          {renderContactField('Date of Birth', dateOfBirth)}
+          {renderContactField('Date of Birth', formattedDateOfBirth)}
         </Stack>
 
         {addressLine && (

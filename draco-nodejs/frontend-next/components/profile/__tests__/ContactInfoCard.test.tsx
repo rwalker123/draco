@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import ContactInfoCard from '../ContactInfoCard';
 import type { BaseContactType } from '@draco/shared-schemas';
 
@@ -38,6 +39,25 @@ describe('ContactInfoCard', () => {
     expect(screen.getByText('(512) 555-4567')).toBeInTheDocument();
     expect(screen.getByText('1990-05-21')).toBeInTheDocument();
     expect(screen.getByText((content) => content.includes('123 Main St'))).toBeInTheDocument();
+  });
+
+  it('renders edit button when handler supplied', () => {
+    const contact = buildContact();
+    const handleEdit = vi.fn();
+
+    render(
+      <ContactInfoCard
+        contact={contact}
+        loading={false}
+        accountName="Austin Tigers"
+        onEdit={handleEdit}
+      />,
+    );
+
+    const editButton = screen.getByTestId('profile-contact-edit-button');
+    expect(editButton).toBeInTheDocument();
+    fireEvent.click(editButton);
+    expect(handleEdit).toHaveBeenCalledTimes(1);
   });
 
   it('shows skeletons while loading', () => {

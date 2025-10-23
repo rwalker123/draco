@@ -102,6 +102,73 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
   });
 
   /**
+   * PUT /api/accounts/:accountId/contacts/me
+   * Update current user's contact information
+   */
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/contacts/me',
+    description: "Update the authenticated user's contact details for this account",
+    operationId: 'updateCurrentUserContact',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateContactSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated contact record',
+        content: {
+          'application/json': {
+            schema: BaseContactSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
    * POST /api/accounts/:accountId/contacts/me
    * Self-register a contact
    */
