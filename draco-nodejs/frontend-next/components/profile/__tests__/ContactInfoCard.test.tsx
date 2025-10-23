@@ -37,7 +37,7 @@ describe('ContactInfoCard', () => {
     expect(screen.getByText('jamie.rivera@example.com')).toBeInTheDocument();
     expect(screen.getByText('(512) 555-1234')).toBeInTheDocument();
     expect(screen.getByText('(512) 555-4567')).toBeInTheDocument();
-    expect(screen.getByText('1990-05-21')).toBeInTheDocument();
+    expect(screen.getByText('05-21-1990')).toBeInTheDocument();
     expect(screen.getByText((content) => content.includes('123 Main St'))).toBeInTheDocument();
   });
 
