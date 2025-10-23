@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -218,6 +218,14 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
     }
   };
 
+  const handleProfileClick = useCallback(() => {
+    if (!user) {
+      return;
+    }
+
+    router.push('/profile');
+  }, [router, user]);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
@@ -279,7 +287,19 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             {user ? (
               <>
                 {greetingName && (
-                  <Typography variant="body1" sx={{ mr: 2 }}>
+                  <Typography
+                    variant="body1"
+                    onClick={user ? handleProfileClick : undefined}
+                    sx={{
+                      mr: 2,
+                      cursor: user ? 'pointer' : 'default',
+                      '&:hover': user
+                        ? {
+                            textDecoration: 'underline',
+                          }
+                        : undefined,
+                    }}
+                  >
                     Hi, {greetingName}
                   </Typography>
                 )}

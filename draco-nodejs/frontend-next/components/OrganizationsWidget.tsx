@@ -17,6 +17,8 @@ import {
   Search as SearchIcon,
   Visibility as ViewIcon,
   Star as StarIcon,
+  ArrowBackIos as ArrowBackIosIcon,
+  ArrowForwardIos as ArrowForwardIosIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +27,7 @@ import { searchAccounts, getMyAccounts } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { getContactDisplayName } from '../utils/contactUtils';
 import { unwrapApiResult } from '../utils/apiResult';
+import useCarousel from './profile/useCarousel';
 
 interface OrganizationsWidgetProps {
   title?: string;
@@ -43,6 +46,7 @@ interface OrganizationsWidgetProps {
   excludeAccountId?: string;
   // Callback when organizations are loaded
   onOrganizationsLoaded?: (organizations: AccountType[]) => void;
+  scrollable?: boolean;
 }
 
 const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
@@ -59,6 +63,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   onSearchTermChange,
   excludeAccountId,
   onOrganizationsLoaded,
+  scrollable = false,
 }) => {
   const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -177,6 +182,86 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
 
   // Filter and limit accounts for display
   const limitedAccounts = maxDisplay ? filteredAccounts.slice(0, maxDisplay) : filteredAccounts;
+  const isScrollable = scrollable && !maxDisplay;
+  const carousel = useCarousel({
+    total: limitedAccounts.length,
+    visibleItems: 1,
+    loop: false,
+  });
+  const showCarouselControls = isScrollable && limitedAccounts.length > 1;
+
+  const renderOrganizationCard = (account: AccountType) => {
+    const ownerDisplayName = getContactDisplayName(account.accountOwner?.contact);
+    const showOwner = Boolean(user && ownerDisplayName);
+
+    return (
+      <Card
+        key={account.id}
+        sx={{
+          minWidth: isScrollable ? 320 : 280,
+          maxWidth: isScrollable ? undefined : 360,
+          flex: isScrollable ? '0 0 320px' : '0 1 360px',
+          height: '100%',
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+          scrollSnapAlign: isScrollable ? 'start' : undefined,
+          position: 'relative',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 12px 28px rgba(0,0,0,0.16)',
+            borderColor: 'primary.main',
+          },
+        }}
+      >
+        <CardContent>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            {account.name}
+          </Typography>
+          {account.configuration?.accountType && (
+            <Typography color="text.secondary" gutterBottom>
+              {account.configuration.accountType.name}
+            </Typography>
+          )}
+          <Typography variant="body2" color="text.secondary">
+            Established: {account.configuration?.firstYear ?? '—'}
+          </Typography>
+          {account.configuration?.affiliation && (
+            <Typography variant="body2" color="text.secondary">
+              Affiliation: {account.configuration.affiliation.name}
+            </Typography>
+          )}
+          {account.urls && account.urls.length > 0 && (
+            <Typography variant="body2" color="text.secondary">
+              Website: {account.urls[0].url}
+            </Typography>
+          )}
+          {showOwner && (
+            <Typography variant="body2" color="text.secondary">
+              Owner: {ownerDisplayName}
+            </Typography>
+          )}
+        </CardContent>
+        <CardActions>
+          <Button
+            size="small"
+            startIcon={<ViewIcon />}
+            onClick={() => handleViewAccount(account.id)}
+            sx={{
+              color: 'primary.main',
+              '&:hover': {
+                bgcolor: 'transparent',
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            View Organization
+          </Button>
+        </CardActions>
+      </Card>
+    );
+  };
 
   // Don't show widget for non-authenticated users unless organizations are provided or search is enabled
   if (!user && !providedOrganizations && !showSearch) {
@@ -264,77 +349,85 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
 
       {/* Organizations Display */}
       {limitedAccounts.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          {limitedAccounts.map((account) => {
-            const ownerDisplayName = getContactDisplayName(account.accountOwner?.contact);
-            const showOwner = Boolean(user && ownerDisplayName);
-
-            return (
-              <Card
-                key={account.id}
+        <Box sx={{ position: 'relative', overflow: 'visible' }}>
+          {isScrollable ? (
+            <Box sx={{ position: 'relative', pt: 4, pb: 3 }}>
+              <Box
+                ref={carousel.registerNode}
                 sx={{
-                  minWidth: 280,
-                  maxWidth: 360,
-                  flex: '0 1 360px',
-                  height: '100%',
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-                    borderColor: 'primary.main',
-                  },
+                  display: 'flex',
+                  gap: 2,
+                  flexWrap: 'nowrap',
+                  overflow: 'hidden',
+                  alignItems: 'stretch',
+                  pt: 3,
+                  pb: 1,
+                  px: showCarouselControls ? 5 : 0,
                 }}
               >
-                <CardContent>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                    {account.name}
-                  </Typography>
-                  {account.configuration?.accountType && (
-                    <Typography color="text.secondary" gutterBottom>
-                      {account.configuration.accountType.name}
-                    </Typography>
-                  )}
-                  <Typography variant="body2" color="text.secondary">
-                    Established: {account.configuration?.firstYear ?? '—'}
-                  </Typography>
-                  {account.configuration?.affiliation && (
-                    <Typography variant="body2" color="text.secondary">
-                      Affiliation: {account.configuration.affiliation.name}
-                    </Typography>
-                  )}
-                  {account.urls && account.urls.length > 0 && (
-                    <Typography variant="body2" color="text.secondary">
-                      Website: {account.urls[0].url}
-                    </Typography>
-                  )}
-                  {showOwner && (
-                    <Typography variant="body2" color="text.secondary">
-                      Owner: {ownerDisplayName}
-                    </Typography>
-                  )}
-                </CardContent>
-                <CardActions>
-                  <Button
-                    size="small"
-                    startIcon={<ViewIcon />}
-                    onClick={() => handleViewAccount(account.id)}
+                {limitedAccounts.map(renderOrganizationCard)}
+              </Box>
+
+              {showCarouselControls && (
+                <>
+                  <IconButton
+                    aria-label="Previous organizations"
+                    onClick={carousel.handlePrev}
+                    disabled={!carousel.canGoPrev}
                     sx={{
-                      color: 'primary.main',
+                      position: 'absolute',
+                      top: '50%',
+                      left: 16,
+                      transform: 'translateY(-50%)',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: 'background.paper',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
                       '&:hover': {
-                        bgcolor: 'transparent',
-                        textDecoration: 'underline',
+                        backgroundColor: 'grey.100',
                       },
                     }}
                   >
-                    View Organization
-                  </Button>
-                </CardActions>
-              </Card>
-            );
-          })}
+                    <ArrowBackIosIcon fontSize="small" />
+                  </IconButton>
+
+                  <IconButton
+                    aria-label="Next organizations"
+                    onClick={carousel.handleNext}
+                    disabled={!carousel.canGoNext}
+                    sx={{
+                      position: 'absolute',
+                      top: '50%',
+                      right: 16,
+                      transform: 'translateY(-50%)',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: 'background.paper',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                      '&:hover': {
+                        backgroundColor: 'grey.100',
+                      },
+                    }}
+                  >
+                    <ArrowForwardIosIcon fontSize="small" />
+                  </IconButton>
+                </>
+              )}
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 2,
+                flexWrap: 'wrap',
+                overflow: 'visible',
+                alignItems: 'stretch',
+                py: 1,
+              }}
+            >
+              {limitedAccounts.map(renderOrganizationCard)}
+            </Box>
+          )}
         </Box>
       )}
 

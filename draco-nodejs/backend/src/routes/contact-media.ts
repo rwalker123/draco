@@ -20,11 +20,7 @@ router.get(
     const { accountId, contactId } = req.params;
 
     // Verify the contact exists and belongs to this account
-    const contact = await contactService.getContact(BigInt(accountId), BigInt(contactId));
-
-    if (!contact) {
-      throw new NotFoundError('Contact not found');
-    }
+    await contactService.getContact(BigInt(accountId), BigInt(contactId));
 
     // Get the photo from storage service
     const photoBuffer = await storageService.getContactPhoto(accountId, contactId);
@@ -57,10 +53,6 @@ router.delete(
 
     // Verify the contact exists and belongs to this account
     const contact = await contactService.getContact(BigInt(accountId), BigInt(contactId));
-
-    if (!contact) {
-      throw new NotFoundError('Contact not found');
-    }
 
     // Delete the photo from storage service
     await storageService.deleteContactPhoto(accountId, contactId);
