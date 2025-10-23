@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { updateCurrentUserContact } from '@draco/shared-api-client';
 import {
@@ -46,8 +46,10 @@ const EditContactDetailsSchema = ContactDetailsSchema.pick({
   zip: true,
 });
 
+const EmailFieldSchema = CreateContactSchema.shape.email.optional();
+
 const EditContactFormSchema = z.object({
-  email: CreateContactSchema.shape.email,
+  email: EmailFieldSchema,
   contactDetails: EditContactDetailsSchema,
 });
 
@@ -86,7 +88,7 @@ const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
   const initialValues = useMemo<EditContactFormValues>(() => {
     if (!contact) {
       return {
-        email: '',
+        email: undefined,
         contactDetails: { ...EMPTY_FORM_CONTACT_DETAILS },
       };
     }
@@ -94,7 +96,7 @@ const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
     const details = contact.contactDetails ?? EMPTY_DETAILS;
 
     return {
-      email: contact.email ?? '',
+      email: contact.email ?? undefined,
       contactDetails: {
         phone1: details.phone1 ?? '',
         phone2: details.phone2 ?? '',
@@ -106,6 +108,10 @@ const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
       },
     };
   }, [contact]);
+  const formResolver = useMemo(
+    () => zodResolver(EditContactFormSchema) as Resolver<EditContactFormValues>,
+    [],
+  );
   const {
     register,
     handleSubmit,
@@ -113,7 +119,7 @@ const EditContactInfoDialog: React.FC<EditContactInfoDialogProps> = ({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditContactFormValues>({
-    resolver: zodResolver(EditContactFormSchema),
+    resolver: formResolver,
     defaultValues: initialValues,
   });
 
