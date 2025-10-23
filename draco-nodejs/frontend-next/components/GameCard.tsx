@@ -89,6 +89,31 @@ const GameCard: React.FC<GameCardProps> = ({
   fitContent = false,
   timeZone = DEFAULT_TIMEZONE,
 }) => {
+  const leagueLabel = useMemo(() => {
+    const original = game.leagueName?.trim() ?? '';
+    if (original.length === 0) {
+      return '';
+    }
+
+    if (original.length <= 3) {
+      return original;
+    }
+
+    const wordParts = original.split(/\s+/).filter((part) => part.length > 0);
+    if (wordParts.length > 1) {
+      let acronym = '';
+      for (const part of wordParts) {
+        acronym += part[0]!.toUpperCase();
+        if (acronym.length >= 3) {
+          break;
+        }
+      }
+      return acronym;
+    }
+
+    return original.slice(0, 3).toUpperCase();
+  }, [game.leagueName]);
+
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const suppressClicksUntilRef = useRef(0);
   const localTime = formatGameTime(game.date, timeZone);
@@ -379,7 +404,7 @@ const GameCard: React.FC<GameCardProps> = ({
               <Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pt: 0.5 }}>
                   <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                    {game.leagueName}
+                    {leagueLabel}
                   </Typography>
                   {game.gameType === GameType.Playoff && (
                     <Tooltip title="Playoff Game">

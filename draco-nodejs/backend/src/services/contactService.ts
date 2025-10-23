@@ -66,7 +66,7 @@ export class ContactService {
    * @param contactId
    * @returns BaseContactType
    */
-  async getContact(accountId: bigint, contactId: bigint): Promise<BaseContactType | null> {
+  async getContact(accountId: bigint, contactId: bigint): Promise<BaseContactType> {
     const dbContact = await this.contactRepository.findContactInAccount(contactId, accountId);
     if (!dbContact) {
       throw new NotFoundError('Contact not found');
@@ -79,7 +79,7 @@ export class ContactService {
    * @param userId
    * @returns BaseContactType
    */
-  async getContactByUserId(userId: string, accountId: bigint): Promise<BaseContactType | null> {
+  async getContactByUserId(userId: string, accountId: bigint): Promise<BaseContactType> {
     const dbContact = await this.contactRepository.findByUserId(userId, accountId);
     if (!dbContact) {
       throw new NotFoundError('Contact not found');

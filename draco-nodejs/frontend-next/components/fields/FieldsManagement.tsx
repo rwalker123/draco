@@ -213,12 +213,6 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
                     {fetchError}
                   </Alert>
                 ) : null}
-                {!canManage ? (
-                  <Alert severity="info" sx={{ mt: 1 }}>
-                    You can view field information, but editing requires account management
-                    permissions.
-                  </Alert>
-                ) : null}
               </Box>
               <TableContainer
                 sx={{

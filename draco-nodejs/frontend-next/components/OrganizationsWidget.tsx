@@ -43,6 +43,7 @@ interface OrganizationsWidgetProps {
   excludeAccountId?: string;
   // Callback when organizations are loaded
   onOrganizationsLoaded?: (organizations: AccountType[]) => void;
+  scrollable?: boolean;
 }
 
 const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
@@ -59,6 +60,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   onSearchTermChange,
   excludeAccountId,
   onOrganizationsLoaded,
+  scrollable = false,
 }) => {
   const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -177,6 +179,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
 
   // Filter and limit accounts for display
   const limitedAccounts = maxDisplay ? filteredAccounts.slice(0, maxDisplay) : filteredAccounts;
+  const isScrollable = scrollable && !maxDisplay;
 
   // Don't show widget for non-authenticated users unless organizations are provided or search is enabled
   if (!user && !providedOrganizations && !showSearch) {
@@ -264,7 +267,27 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
 
       {/* Organizations Display */}
       {limitedAccounts.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: isScrollable ? 'nowrap' : 'wrap',
+            overflowX: isScrollable ? 'auto' : 'visible',
+            pb: isScrollable ? 1 : 0,
+            scrollSnapType: isScrollable ? 'x mandatory' : undefined,
+            '&::-webkit-scrollbar': isScrollable
+              ? {
+                  height: 8,
+                }
+              : undefined,
+            '&::-webkit-scrollbar-thumb': isScrollable
+              ? {
+                  backgroundColor: 'rgba(0,0,0,0.2)',
+                  borderRadius: 8,
+                }
+              : undefined,
+          }}
+        >
           {limitedAccounts.map((account) => {
             const ownerDisplayName = getContactDisplayName(account.accountOwner?.contact);
             const showOwner = Boolean(user && ownerDisplayName);
@@ -275,7 +298,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
                 sx={{
                   minWidth: 280,
                   maxWidth: 360,
-                  flex: '0 1 360px',
+                  flex: isScrollable ? '0 0 320px' : '0 1 360px',
                   height: '100%',
                   borderRadius: 2,
                   border: '1px solid',

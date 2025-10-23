@@ -288,9 +288,6 @@ router.put(
       contact = await contactService.updateContact(updateContactData, BigInt(contactId));
     } else {
       contact = await contactService.getContact(accountId, BigInt(contactId));
-      if (!contact) {
-        throw new NotFoundError('Contact not found');
-      }
     }
 
     // Handle photo upload if provided
