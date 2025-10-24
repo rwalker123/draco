@@ -15,7 +15,7 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { useAuth } from '@/context/AuthContext';
 import { useAccount } from '@/context/AccountContext';
 import ContactInfoCard from '@/components/profile/ContactInfoCard';
-import MemberBusinessPlaceholder from '@/components/profile/MemberBusinessPlaceholder';
+import MemberBusinessCard from '@/components/profile/MemberBusinessCard';
 import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
 import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
@@ -394,7 +394,10 @@ const ProfilePageClient: React.FC = () => {
               accountName={currentAccount?.name}
               onEdit={contact && currentAccount?.id ? handleEditContact : undefined}
             />
-            <MemberBusinessPlaceholder />
+            <MemberBusinessCard
+              accountId={currentAccount?.id ?? null}
+              contactId={contact?.id ?? null}
+            />
           </Stack>
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>

@@ -38,6 +38,7 @@ import {
   CreateContactRoleSchema,
   CreatePollSchema,
   CreateSponsorSchema,
+  CreateMemberBusinessSchema,
   FieldSchema,
   FieldsSchema,
   UpsertFieldSchema,
@@ -73,6 +74,9 @@ import {
   UpdateRosterMemberSchema,
   SponsorListSchema,
   SponsorSchema,
+  MemberBusinessListSchema,
+  MemberBusinessQueryParamsSchema,
+  MemberBusinessSchema,
   SeasonManagerListSchema,
   SeasonManagerSchema,
   SeasonManagerWithLeagueSchema,
@@ -289,6 +293,19 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const SponsorSchemaRef = registry.register('Sponsor', SponsorSchema);
   const SponsorListSchemaRef = registry.register('SponsorList', SponsorListSchema);
   const CreateSponsorSchemaRef = registry.register('CreateSponsor', CreateSponsorSchema);
+  const MemberBusinessSchemaRef = registry.register('MemberBusiness', MemberBusinessSchema);
+  const MemberBusinessListSchemaRef = registry.register(
+    'MemberBusinessList',
+    MemberBusinessListSchema,
+  );
+  const CreateMemberBusinessSchemaRef = registry.register(
+    'CreateMemberBusiness',
+    CreateMemberBusinessSchema,
+  );
+  const MemberBusinessQueryParamsSchemaRef = registry.register(
+    'MemberBusinessQueryParams',
+    MemberBusinessQueryParamsSchema,
+  );
   const PlayersWantedClassifiedSchemaRef = registry.register(
     'PlayersWantedClassified',
     PlayersWantedClassifiedSchema,
@@ -619,6 +636,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SponsorSchemaRef,
     SponsorListSchemaRef,
     CreateSponsorSchemaRef,
+    MemberBusinessSchemaRef,
+    MemberBusinessListSchemaRef,
+    CreateMemberBusinessSchemaRef,
+    MemberBusinessQueryParamsSchemaRef,
     PlayersWantedClassifiedSchemaRef,
     PlayersWantedClassifiedPagedSchemaRef,
     UpsertPlayersWantedClassifiedSchemaRef,
