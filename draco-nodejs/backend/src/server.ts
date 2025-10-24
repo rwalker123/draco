@@ -2,6 +2,7 @@ import './config/loadEnv.js';
 import { initializeRoleIds } from './config/roles.js';
 import prisma from './lib/prisma.js';
 import fs from 'node:fs';
+import http from 'node:http';
 import https from 'node:https';
 
 async function bootstrap() {
@@ -15,27 +16,30 @@ async function bootstrap() {
 
   const PORT = process.env.PORT || 3001;
 
-  if (process.env.NODE_ENV === 'development') {
+  const keyPath = './certs/key.pem';
+  const certPath = './certs/cert.pem';
+  const certFilesPresent = fs.existsSync(keyPath) && fs.existsSync(certPath);
+
+  if (certFilesPresent) {
     const options = {
-      key: fs.readFileSync('./certs/key.pem'),
-      cert: fs.readFileSync('./certs/cert.pem'),
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath),
     };
+
     https.createServer(options, app).listen(PORT, () => {
       const host = process.env.HOST || 'localhost';
-      console.log(`HTTPS server running on https://${host}:${PORT}`);
+      const protocol = 'https';
+      console.log(`🔒 ${protocol.toUpperCase()} server running on ${protocol}://${host}:${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 Health check: https://${host}:${PORT}/health`);
+      console.log(`🔗 Health check: ${protocol}://${host}:${PORT}/health`);
     });
   } else {
-    const options = {
-      key: fs.readFileSync('./certs/key.pem'),
-      cert: fs.readFileSync('./certs/cert.pem'),
-    };
-    https.createServer(options, app).listen(PORT, () => {
+    http.createServer(app).listen(PORT, () => {
       const host = process.env.HOST || 'localhost';
-      console.log(`🚀 Draco Sports Manager API server running on port ${PORT}`);
+      const protocol = 'http';
+      console.log(`🚀 ${protocol.toUpperCase()} server running on ${protocol}://${host}:${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 Health check: https://${host}:${PORT}/health`);
+      console.log(`🔗 Health check: ${protocol}://${host}:${PORT}/health`);
     });
   }
 }
