@@ -434,6 +434,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             return (
               <MenuItem
                 onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/member-businesses/manage`)
+                }
+                key="member-business-management"
+              >
+                <ListItemIcon>
+                  <BusinessIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Member Businesses</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
                   handleNavigation(`/account/${String(currentAccount.id)}/polls/manage`)
                 }
                 key="poll-management"

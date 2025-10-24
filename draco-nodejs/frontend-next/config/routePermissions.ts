@@ -67,6 +67,10 @@ export const routePermissions: Record<string, RoutePermission> = {
     roles: ['AccountAdmin', 'AccountPhotoAdmin'],
     checkAccountBoundary: true,
   },
+  '/account/[accountId]/member-businesses/manage': {
+    roles: ['AccountAdmin'],
+    checkAccountBoundary: true,
+  },
 
   '/account/[accountId]/polls/manage': {
     roles: ['AccountAdmin', 'TeamAdmin'],
