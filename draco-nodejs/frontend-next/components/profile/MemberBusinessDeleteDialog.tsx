@@ -13,7 +13,7 @@ import {
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import { deleteMemberBusiness } from '@draco/shared-api-client';
 import { useApiClient } from '@/hooks/useApiClient';
-import { unwrapApiResult } from '@/utils/apiResult';
+import { assertNoApiError } from '@/utils/apiResult';
 
 export type MemberBusinessDeleteResult = {
   message: string;
@@ -69,7 +69,7 @@ const MemberBusinessDeleteDialog: React.FC<MemberBusinessDeleteDialogProps> = ({
         throwOnError: false,
       });
 
-      unwrapApiResult(result, 'Failed to delete member business');
+      assertNoApiError(result, 'Failed to delete member business');
       onSuccess?.({
         message: 'Member business removed.',
         memberBusinessId: memberBusiness.id,
