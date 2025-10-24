@@ -180,7 +180,7 @@ export class MemberBusinessService {
   }
 
   private sanitizeName(value: string): string {
-    const trimmed = value?.trim();
+    const trimmed = value.trim();
     if (!trimmed) {
       throw new ValidationError('name is required');
     }
