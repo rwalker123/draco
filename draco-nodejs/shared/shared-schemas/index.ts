@@ -8,6 +8,7 @@ export * from './account.js';
 export * from './poll.js';
 export * from './playerClassified.js';
 export * from './sponsor.js';
+export * from './memberBusiness.js';
 export * from './date.js';
 export * from './team.js';
 export * from './field.js';

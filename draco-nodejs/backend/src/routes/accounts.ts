@@ -15,6 +15,7 @@ import accountsPollsRouter from './accounts-polls.js';
 import accountsHandoutsRouter from './accounts-handouts.js';
 import accountsPhotoSubmissionsRouter from './accounts-photo-submissions.js';
 import accountsPhotoGalleryRouter from './accounts-photo-gallery.js';
+import accountsMemberBusinessRouter from './accounts-member-businesses.js';
 
 const router = Router({ mergeParams: true });
 
@@ -52,6 +53,9 @@ router.use('/', accountsCoreRouter);
 
 // Sponsor management endpoints
 router.use('/', accountsSponsorsRouter);
+
+// Member business endpoints
+router.use('/', accountsMemberBusinessRouter);
 
 // Poll management endpoints
 router.use('/', accountsPollsRouter);

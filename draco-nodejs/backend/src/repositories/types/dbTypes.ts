@@ -20,6 +20,27 @@ export interface dbPlayerTeamAssignment {
   teamName?: string | null;
 }
 
+export type dbMemberBusiness = Prisma.memberbusinessGetPayload<{
+  select: {
+    id: true;
+    contactid: true;
+    name: true;
+    streetaddress: true;
+    citystatezip: true;
+    description: true;
+    email: true;
+    phone: true;
+    fax: true;
+    website: true;
+    contacts: {
+      select: {
+        id: true;
+        creatoraccountid: true;
+      };
+    };
+  };
+}>;
+
 export type dbBattingStatisticsRow = {
   playerId: bigint;
   playerName: string;

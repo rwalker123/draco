@@ -52,6 +52,7 @@ import { PhotoSubmissionModerationService } from './photoSubmissionModerationSer
 import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
 import { WorkoutRegistrationEmailService } from './workoutRegistrationEmailService.js';
+import { MemberBusinessService } from './memberBusinessService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -83,6 +84,7 @@ export class ServiceFactory {
   private static workoutRegistrationEmailService: WorkoutRegistrationEmailService;
   private static accountsService: AccountsService;
   private static sponsorService: SponsorService;
+  private static memberBusinessService: MemberBusinessService;
   private static pollService: PollService;
   private static fieldService: FieldService;
   private static umpireService: UmpireService;
@@ -247,6 +249,13 @@ export class ServiceFactory {
       this.sponsorService = new SponsorService();
     }
     return this.sponsorService;
+  }
+
+  static getMemberBusinessService(): MemberBusinessService {
+    if (!this.memberBusinessService) {
+      this.memberBusinessService = new MemberBusinessService();
+    }
+    return this.memberBusinessService;
   }
 
   static getTeamManagerService(): TeamManagerService {
