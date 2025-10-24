@@ -27,7 +27,7 @@
     "backend:dev": "npm run dev -w @draco/backend",
     "backend:test": "npm test -w @draco/backend",
     "backend:install": "npm install -w @draco/backend",
-    "backend:prisma-generate": "npx prisma generate -w @draco/backend",
+    "backend:prisma-generate": "npm exec --workspace @draco/backend prisma generate",
     "backend:migrate-passwords": "npm run migrate-passwords -w @draco/backend",
     "backend:test-passwords": "npm run test-passwords -w @draco/backend",
     "backend:lint": "npm run lint -w @draco/backend",
