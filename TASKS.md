@@ -28,12 +28,12 @@
   ```bash
 - Backend service (Railway dashboard → Service → Deploy tab):
   - Build Command: `npm run build -w @draco/shared-schemas && npm run sync:api && npm run build -w @draco/backend`
-  - Start Command: `npm run backend:prisma-generate && npm run start -w @draco/backend`
+  - Start Command: `npm run start -w @draco/backend`
 
 - Frontend service:
   - Build Command: `npm run build -w @draco/shared-schemas && npm run sync:api && npm run build -w @draco/frontend-next`
-  - Start Command: `NODE_EXTRA_CA_CERTS="" npm run start -w @draco/frontend-next`
-  - If Railway expects NODE_EXTRA_CA_CERTS at runtime, set it to an empty string in service variables.
+  - Start Command: `npm run start -w @draco/frontend-next`
+  - The app's start script conditionally uses mkcert when available; no extra env vars needed in Railway.
   ```
 - [ ] Set up install-time environment variables/overrides (Railway dashboard → Service → Variables).
   - Backend service:
@@ -41,7 +41,6 @@
     - `HUSKY=0` (skip Husky git hook errors in the container)
   - Frontend service:
     - `RAILPACK_INSTALL_CMD="npm install --workspaces --include-workspace-root"`
-    - `NODE_EXTRA_CA_CERTS=""` (disable the mkcert assumption in the container)
 - [ ] Wire GitHub integration for each service (**Railway dashboard → Service → Deploy tab**).
   - Select repository `Draco`.
   - Backend: set branch to `main`, leave “Wait for CI” **off** so Railway deploys immediately on push.
