@@ -159,7 +159,16 @@ describe('lineupStore', () => {
     await useLineupStore.getState().assignToGame(assignment, { online: false, token: null });
 
     const state = useLineupStore.getState();
-    expect(state.assignmentsByGameId[assignment.gameId]).toEqual(assignment);
+    const storedAssignment = state.assignmentsByGameId[assignment.gameId];
+
+    expect(storedAssignment).toMatchObject({
+      gameId: assignment.gameId,
+      templateId: assignment.templateId
+    });
+    expect(typeof storedAssignment.updatedAt).toBe('string');
+    expect(new Date(storedAssignment.updatedAt).getTime()).toBeGreaterThanOrEqual(
+      new Date(assignment.updatedAt).getTime()
+    );
     expect(assignTemplateToGameMock).not.toHaveBeenCalled();
   });
 
