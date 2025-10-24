@@ -217,7 +217,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
               <TableContainer
                 sx={{
                   position: 'relative',
-                  overflowX: 'auto',
+                  overflowX: 'visible',
                   overflowY: 'visible',
                   maxWidth: '100%',
                   width: '100%',
@@ -244,9 +244,14 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
                   size="medium"
                   aria-busy={loading}
                   sx={{
-                    minWidth: 680,
+                    width: '100%',
+                    tableLayout: 'auto',
                     opacity: loading ? 0.88 : 1,
                     transition: 'opacity 120ms ease-in-out',
+                    '& td, & th': {
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                    },
                   }}
                 >
                   <TableHead>

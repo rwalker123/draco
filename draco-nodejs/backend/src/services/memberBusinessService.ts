@@ -1,5 +1,14 @@
 import { memberbusiness } from '@prisma/client';
-import { CreateMemberBusinessType, MemberBusinessType } from '@draco/shared-schemas';
+import {
+  CreateMemberBusinessType,
+  MemberBusinessType,
+  MEMBER_BUSINESS_ADDRESS_MAX_LENGTH,
+  MEMBER_BUSINESS_DESCRIPTION_MAX_LENGTH,
+  MEMBER_BUSINESS_EMAIL_MAX_LENGTH,
+  MEMBER_BUSINESS_NAME_MAX_LENGTH,
+  MEMBER_BUSINESS_PHONE_MAX_LENGTH,
+  MEMBER_BUSINESS_WEBSITE_MAX_LENGTH,
+} from '@draco/shared-schemas';
 import {
   RepositoryFactory,
   IMemberBusinessRepository,
@@ -134,21 +143,71 @@ export class MemberBusinessService {
     payload: CreateMemberBusinessType,
     contactId: bigint,
   ): Partial<memberbusiness> {
+    const name = this.sanitizeName(payload.name);
+
     return {
       contactid: contactId,
-      name: payload.name.trim(),
-      streetaddress: this.sanitizeOptional(payload.streetAddress),
-      citystatezip: this.sanitizeOptional(payload.cityStateZip),
-      description: this.sanitizeOptional(payload.description),
-      email: this.sanitizeOptional(payload.email),
-      phone: this.sanitizeOptional(payload.phone),
-      fax: this.sanitizeOptional(payload.fax),
-      website: this.sanitizeOptional(payload.website),
+      name,
+      streetaddress: this.sanitizeOptional(payload.streetAddress, {
+        maxLength: MEMBER_BUSINESS_ADDRESS_MAX_LENGTH,
+        fieldLabel: 'streetAddress',
+      }),
+      citystatezip: this.sanitizeOptional(payload.cityStateZip, {
+        maxLength: MEMBER_BUSINESS_ADDRESS_MAX_LENGTH,
+        fieldLabel: 'cityStateZip',
+      }),
+      description: this.sanitizeOptional(payload.description, {
+        maxLength: MEMBER_BUSINESS_DESCRIPTION_MAX_LENGTH,
+        fieldLabel: 'description',
+      }),
+      email: this.sanitizeOptional(payload.email, {
+        maxLength: MEMBER_BUSINESS_EMAIL_MAX_LENGTH,
+        fieldLabel: 'email',
+      }),
+      phone: this.sanitizeOptional(payload.phone, {
+        maxLength: MEMBER_BUSINESS_PHONE_MAX_LENGTH,
+        fieldLabel: 'phone',
+      }),
+      fax: this.sanitizeOptional(payload.fax, {
+        maxLength: MEMBER_BUSINESS_PHONE_MAX_LENGTH,
+        fieldLabel: 'fax',
+      }),
+      website: this.sanitizeOptional(payload.website, {
+        maxLength: MEMBER_BUSINESS_WEBSITE_MAX_LENGTH,
+        fieldLabel: 'website',
+      }),
     } satisfies Partial<memberbusiness>;
   }
 
-  private sanitizeOptional(value: string | undefined): string {
+  private sanitizeName(value: string): string {
     const trimmed = value?.trim();
-    return trimmed ?? '';
+    if (!trimmed) {
+      throw new ValidationError('name is required');
+    }
+
+    if (trimmed.length > MEMBER_BUSINESS_NAME_MAX_LENGTH) {
+      throw new ValidationError(
+        `name must be ${MEMBER_BUSINESS_NAME_MAX_LENGTH} characters or fewer`,
+      );
+    }
+
+    return trimmed;
+  }
+
+  private sanitizeOptional(
+    value: string | undefined,
+    options?: { maxLength?: number; fieldLabel?: string },
+  ): string {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+      return '';
+    }
+
+    if (options?.maxLength && trimmed.length > options.maxLength) {
+      const label = options.fieldLabel ?? 'Field';
+      throw new ValidationError(`${label} must be ${options.maxLength} characters or fewer`);
+    }
+
+    return trimmed;
   }
 }

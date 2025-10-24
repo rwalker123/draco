@@ -197,7 +197,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
           </Box>
         </AccountPageHeader>
 
-        <Container maxWidth="md" sx={{ py: 4 }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
           <Stack spacing={3}>
             <Typography variant="h5" component="h1">
               Registered Member Businesses
@@ -221,27 +221,35 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
               </Box>
             ) : (
               <TableContainer component={Paper}>
-                <Table>
+                <Table sx={{ tableLayout: 'auto' }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Contact</TableCell>
-                      <TableCell>Email</TableCell>
-                      <TableCell>Phone</TableCell>
-                      <TableCell>Website</TableCell>
+                      <TableCell sx={{ whiteSpace: 'normal' }}>Name</TableCell>
+                      <TableCell sx={{ whiteSpace: 'normal' }}>Contact</TableCell>
+                      <TableCell sx={{ whiteSpace: 'normal' }}>Email</TableCell>
+                      <TableCell sx={{ whiteSpace: 'normal' }}>Phone</TableCell>
+                      <TableCell sx={{ whiteSpace: 'normal' }}>Website</TableCell>
                       <TableCell align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {memberBusinesses.map((business) => (
                       <TableRow key={business.id} hover>
-                        <TableCell>{business.name}</TableCell>
-                        <TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                          {business.name}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                           {contactDisplay[business.contactId] ?? business.contactId}
                         </TableCell>
-                        <TableCell>{business.email || '—'}</TableCell>
-                        <TableCell>{business.phone || '—'}</TableCell>
-                        <TableCell>{business.website || '—'}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                          {business.email || '—'}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                          {business.phone || '—'}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                          {business.website || '—'}
+                        </TableCell>
                         <TableCell align="right">
                           <IconButton
                             aria-label="edit"

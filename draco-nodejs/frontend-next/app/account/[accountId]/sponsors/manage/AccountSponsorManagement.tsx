@@ -116,7 +116,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
         </Box>
       </AccountPageHeader>
 
-      <Container maxWidth="md" sx={{ py: 4, position: 'relative' }}>
+      <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack spacing={3} sx={{ pb: 8 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h5" component="h1">
@@ -201,16 +201,21 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
             </TableContainer>
           )}
         </Stack>
-
-        <Fab
-          color="primary"
-          aria-label="add sponsor"
-          sx={{ position: 'absolute', bottom: 24, right: 24 }}
-          onClick={handleOpenCreate}
-        >
-          <Add />
-        </Fab>
       </Container>
+
+      <Fab
+        color="primary"
+        aria-label="add sponsor"
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 16, sm: 24 },
+          right: { xs: 16, sm: 24 },
+          zIndex: (theme) => theme.zIndex.tooltip,
+        }}
+        onClick={handleOpenCreate}
+      >
+        <Add />
+      </Fab>
 
       <SponsorFormDialog
         open={dialogState.open}

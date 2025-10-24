@@ -30,7 +30,12 @@ import {
   AccountOwnerSummary,
   AccountResponseFormatter,
 } from '../responseFormatters/index.js';
-import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
+import {
+  ConflictError,
+  NotFoundError,
+  NoDomainAccount,
+  ValidationError,
+} from '../utils/customErrors.js';
 import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
@@ -167,7 +172,7 @@ export class AccountsService {
     const account = await this.accountRepository.findAccountByUrls(urlVariants);
 
     if (!account) {
-      throw new NotFoundError('No account found for this domain');
+      throw new NoDomainAccount();
     }
 
     const affiliationMap = await this.buildAffiliationMap([account]);

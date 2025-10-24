@@ -1,5 +1,5 @@
-import path from 'node:path';
 import type { PhotoSubmissionAssetsType } from '@draco/shared-schemas';
+import { buildUploadsPath } from './uploadsPath.js';
 
 const ensureExtensionFormat = (extension: string): string => {
   if (!extension) {
@@ -27,7 +27,7 @@ export function buildSubmissionAssetPaths(
 }
 
 export function resolveSubmissionAssetAbsolutePath(relativePath: string): string {
-  return path.join(process.cwd(), 'uploads', relativePath);
+  return buildUploadsPath(relativePath);
 }
 
 export function buildGalleryAssetPaths(
@@ -51,5 +51,5 @@ export function buildGalleryAssetPaths(
 }
 
 export function resolveGalleryAssetAbsolutePath(relativePath: string): string {
-  return path.join(process.cwd(), 'uploads', relativePath);
+  return buildUploadsPath(relativePath);
 }

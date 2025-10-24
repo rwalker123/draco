@@ -26,6 +26,10 @@ function isZodError(err: unknown): err is ZodError {
 }
 
 function logError(err: Error, req: Request): void {
+  if (err.name === 'NoDomainAccount') {
+    return;
+  }
+
   const logData = {
     error: err.message,
     stack: err.stack,
