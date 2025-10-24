@@ -37,6 +37,7 @@ import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
+import { resolveUploadsRoot } from './utils/uploadsPath.js';
 
 // Start cleanup service
 const cleanupService = ServiceFactory.getCleanupService();
@@ -120,7 +121,7 @@ app.use(queryLoggerMiddleware);
 app.use(databaseHealthCheck);
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(resolveUploadsRoot()));
 
 // Health check endpoint with enhanced monitoring
 app.get('/health', (req: express.Request, res: express.Response) => {

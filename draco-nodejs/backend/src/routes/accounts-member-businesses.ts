@@ -6,7 +6,6 @@ import { extractAccountParams } from '../utils/paramExtraction.js';
 import {
   CreateMemberBusinessSchema,
   CreateMemberBusinessType,
-  MemberBusinessListSchema,
   MemberBusinessQueryParamsSchema,
 } from '@draco/shared-schemas';
 import { ValidationError } from '../utils/customErrors.js';
@@ -139,7 +138,7 @@ router.get(
       contactId: parseOptionalContactId(query.contactId),
     });
 
-    res.json(MemberBusinessListSchema.parse({ memberBusinesses }));
+    res.json({ memberBusinesses });
   }),
 );
 

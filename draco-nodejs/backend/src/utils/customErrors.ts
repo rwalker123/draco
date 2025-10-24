@@ -89,6 +89,13 @@ export class NotFoundError extends ApiError {
   }
 }
 
+export class NoDomainAccount extends NotFoundError {
+  constructor(message = 'No account associated with this domain') {
+    super(message);
+    this.name = 'NoDomainAccount';
+  }
+}
+
 export class AuthenticationError extends ApiError {
   public readonly statusCode = 401 as const;
   public readonly isRetryable = false as const;

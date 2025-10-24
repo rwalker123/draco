@@ -97,14 +97,93 @@
   ```
 - [ ] Package the legacy uploads directory and push it to the Railway volume.
   ```bash
-  tar -czf "draco-uploads-${SNAPSHOT_DATE}.tar.gz" /var/www/draco/uploads
-  railway ssh --service draco-backend --command \
-    "cat > /app/uploads/draco-uploads-${SNAPSHOT_DATE}.tar.gz" < "draco-uploads-${SNAPSHOT_DATE}.tar.gz"
-  railway run --service draco-backend --command \
-    "tar -xzf /app/uploads/draco-uploads-${SNAPSHOT_DATE}.tar.gz -C /app/uploads && \
-     rm /app/uploads/draco-uploads-${SNAPSHOT_DATE}.tar.gz"
+  # Create tarball rooted at the "1" directory level
+  tar -czf "draco-uploads-${SNAPSHOT_DATE}.tar.gz" -C /path/to/uploads 1
+
+  # Stage the archive via a temporary GitHub release
+  gh release create temp-upload --notes ""
+  gh release upload temp-upload "draco-uploads-${SNAPSHOT_DATE}.tar.gz"
+  gh release view temp-upload --json assets --jq '.assets[0].url'
+  # Copy the printed asset URL (e.g., https://github.com/ORG/REPO/releases/download/temp-upload/draco-uploads-${SNAPSHOT_DATE}.tar.gz)
+
+  # Pull into Railway, extract, and clean up
+  railway ssh --service draco-backend -- /bin/sh -c '
+    cat >/tmp/download.js <<"EOF_JS"
+import fs from "node:fs";
+import https from "node:https";
+import { URL } from "node:url";
+
+const startUrl = "https://github.com/ORG/REPO/releases/download/temp-upload/draco-uploads-${SNAPSHOT_DATE}.tar.gz";
+const dest = "/app/uploads/draco-uploads.tar.gz";
+
+function download(from) {
+  console.log("Starting download: " + from);
+  https.get(from, (res) => {
+    if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
+      const next = new URL(res.headers.location, from).toString();
+      console.log("Redirecting to: " + next);
+      res.resume();
+      download(next);
+      return;
+    }
+
+    if (res.statusCode !== 200) {
+      console.error("Download failed with status: " + res.statusCode);
+      res.resume();
+      process.exit(1);
+    }
+
+    const out = fs.createWriteStream(dest);
+    let downloaded = 0;
+    let lastReport = 0;
+
+    res.on("data", (chunk) => {
+      downloaded += chunk.length;
+      if (downloaded - lastReport >= 5 * 1024 * 1024) {
+        const mb = (downloaded / (1024 * 1024)).toFixed(1);
+        console.log("... downloaded " + mb + " MB");
+        lastReport = downloaded;
+      }
+    });
+
+    res.pipe(out);
+
+    res.on("error", (err) => {
+      console.error("Response error:", err);
+      process.exit(1);
+    });
+
+    out.on("finish", () => {
+      out.close(() => {
+        const total = (downloaded / (1024 * 1024)).toFixed(2);
+        console.log("Download complete. Saved " + total + " MB to " + dest);
+      });
+    });
+  }).on("error", (err) => {
+    console.error("Request error:", err);
+    process.exit(1);
+  });
+}
+
+download(startUrl);
+EOF_JS
+    node /tmp/download.js && rm /tmp/download.js
+    tar -xzf /app/uploads/draco-uploads.tar.gz -C /app/uploads && rm /app/uploads/draco-uploads.tar.gz
+  '
+
+  # Optional: verify the uploads volume (contents rooted at "1/")
+  railway ssh --service draco-backend -- /bin/sh -c 'find /app/uploads -maxdepth 2 -type d -print'
+
+  # Remove the temporary release & local tarball once validated
+  gh release delete temp-upload --cleanup-tag
+  rm "draco-uploads-${SNAPSHOT_DATE}.tar.gz"
   ```
 - [ ] Define and document a delta sync approach if the legacy stack stays live during validation (e.g., simple `rsync` script run hourly).
+- [ ] test backend with:
+
+   railway ssh --service draco-frontend
+   node -e "require('http').get('http://draco-backend.railway.internal:8080/health', res => { console.log('status:', res.statusCode); res.resume(); }).on('error', err => { console.error('request error:', err); });" 
+   
 
 ## Phase 3 – Development Validation & Automation
 - [ ] Run CI gate: `npm run test`, `npm run lint --workspaces`, and database migrations before promoting artifacts.

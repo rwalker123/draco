@@ -16,6 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   CreateMemberBusinessSchema,
+  MEMBER_BUSINESS_DESCRIPTION_MAX_LENGTH,
   type CreateMemberBusinessType,
   type MemberBusinessType,
 } from '@draco/shared-schemas';
@@ -78,11 +79,14 @@ const MemberBusinessFormDialog: React.FC<MemberBusinessFormDialogProps> = ({
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<MemberBusinessFormValues>({
     resolver: zodResolver(CreateMemberBusinessSchema),
     defaultValues,
   });
+
+  const descriptionValue = watch('description') ?? '';
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -203,7 +207,11 @@ const MemberBusinessFormDialog: React.FC<MemberBusinessFormDialogProps> = ({
             minRows={3}
             {...register('description')}
             error={Boolean(errors.description)}
-            helperText={errors.description?.message}
+            helperText={
+              errors.description?.message ??
+              `${descriptionValue.length}/${MEMBER_BUSINESS_DESCRIPTION_MAX_LENGTH} characters`
+            }
+            inputProps={{ maxLength: MEMBER_BUSINESS_DESCRIPTION_MAX_LENGTH }}
           />
           <TextField
             label="Email"
