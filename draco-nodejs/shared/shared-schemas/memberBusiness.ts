@@ -12,6 +12,16 @@ export const MEMBER_BUSINESS_WEBSITE_MAX_LENGTH = 100;
 
 const optionalTrimmedString = (maxLength: number) => z.string().trim().max(maxLength).optional();
 
+const optionalWebsiteString = (maxLength: number) =>
+  z
+    .string()
+    .trim()
+    .max(maxLength)
+    .optional()
+    .refine((value) => !value || /^https?:\/\//i.test(value), {
+      message: 'Website must start with http:// or https://',
+    });
+
 export const CreateMemberBusinessSchema = z
   .object({
     contactId: z
@@ -33,7 +43,7 @@ export const CreateMemberBusinessSchema = z
       }),
     phone: optionalTrimmedString(MEMBER_BUSINESS_PHONE_MAX_LENGTH),
     fax: optionalTrimmedString(MEMBER_BUSINESS_PHONE_MAX_LENGTH),
-    website: optionalTrimmedString(MEMBER_BUSINESS_WEBSITE_MAX_LENGTH),
+    website: optionalWebsiteString(MEMBER_BUSINESS_WEBSITE_MAX_LENGTH),
   })
   .openapi({
     title: 'CreateMemberBusiness',
