@@ -16,6 +16,7 @@ import {
   AccountWithSeasonsSchema,
   AuthenticationErrorSchema,
   AuthorizationErrorSchema,
+  CreateHofMemberSchema,
   AutomaticRoleHoldersSchema,
   BaseRoleSchema,
   AttachmentUploadResult,
@@ -55,6 +56,16 @@ import {
   NotFoundErrorSchema,
   PlayerBattingStatsBriefSchema,
   PlayerBattingStatsSchema,
+  HofContactSummarySchema,
+  HofClassSummarySchema,
+  HofClassWithMembersSchema,
+  HofMemberSchema,
+  HofNominationListSchema,
+  HofNominationSchema,
+  HofNominationSetupSchema,
+  HofEligibleContactsQuerySchema,
+  HofEligibleContactsResponseSchema,
+  HofNominationQuerySchema,
   PlayerPitchingStatsSchema,
   PlayerPitchingStatsBriefSchema,
   PlayerClassifiedSearchQuerySchema,
@@ -68,9 +79,11 @@ import {
   UmpiresSchema,
   RoleCheckSchema,
   RoleMetadataSchema,
+  SubmitHofNominationSchema,
   RosterMemberSchema,
   RosterPlayerSchema,
   SignRosterMemberSchema,
+  UpdateHofMemberSchema,
   UpdateRosterMemberSchema,
   SponsorListSchema,
   SponsorSchema,
@@ -99,6 +112,7 @@ import {
   UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
   UpsertWorkoutRegistrationSchema,
+  UpdateHofNominationSetupSchema,
   UpsertWorkoutSchema,
   ValidationErrorSchema,
   PagedContactSchema,
@@ -414,6 +428,47 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const CreatePollSchemaRef = registry.register('CreatePoll', CreatePollSchema);
   const UpdatePollSchemaRef = registry.register('UpdatePoll', UpdatePollSchema);
   const PollVoteRequestSchemaRef = registry.register('PollVoteRequest', PollVoteRequestSchema);
+  const HofContactSummarySchemaRef = registry.register(
+    'HofContactSummary',
+    HofContactSummarySchema,
+  );
+  const HofMemberSchemaRef = registry.register('HofMember', HofMemberSchema);
+  const HofClassSummarySchemaRef = registry.register('HofClassSummary', HofClassSummarySchema);
+  const HofClassWithMembersSchemaRef = registry.register(
+    'HofClassWithMembers',
+    HofClassWithMembersSchema,
+  );
+  const HofEligibleContactsQuerySchemaRef = registry.register(
+    'HofEligibleContactsQuery',
+    HofEligibleContactsQuerySchema,
+  );
+  const HofEligibleContactsResponseSchemaRef = registry.register(
+    'HofEligibleContactsResponse',
+    HofEligibleContactsResponseSchema,
+  );
+  const CreateHofMemberSchemaRef = registry.register('CreateHofMember', CreateHofMemberSchema);
+  const UpdateHofMemberSchemaRef = registry.register('UpdateHofMember', UpdateHofMemberSchema);
+  const SubmitHofNominationSchemaRef = registry.register(
+    'SubmitHofNomination',
+    SubmitHofNominationSchema,
+  );
+  const HofNominationSchemaRef = registry.register('HofNomination', HofNominationSchema);
+  const HofNominationListSchemaRef = registry.register(
+    'HofNominationList',
+    HofNominationListSchema,
+  );
+  const HofNominationQuerySchemaRef = registry.register(
+    'HofNominationQuery',
+    HofNominationQuerySchema,
+  );
+  const HofNominationSetupSchemaRef = registry.register(
+    'HofNominationSetup',
+    HofNominationSetupSchema,
+  );
+  const UpdateHofNominationSetupSchemaRef = registry.register(
+    'UpdateHofNominationSetup',
+    UpdateHofNominationSetupSchema,
+  );
   const WorkoutSummarySchemaRef = registry.register('WorkoutSummary', WorkoutSummarySchema);
   const WorkoutSchemaRef = registry.register('Workout', WorkoutSchema);
   const UpsertWorkoutSchemaRef = registry.register('UpsertWorkout', UpsertWorkoutSchema);
@@ -661,6 +716,20 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreatePollSchemaRef,
     UpdatePollSchemaRef,
     PollVoteRequestSchemaRef,
+    HofContactSummarySchemaRef,
+    HofMemberSchemaRef,
+    HofClassSummarySchemaRef,
+    HofClassWithMembersSchemaRef,
+    HofEligibleContactsQuerySchemaRef,
+    HofEligibleContactsResponseSchemaRef,
+    CreateHofMemberSchemaRef,
+    UpdateHofMemberSchemaRef,
+    SubmitHofNominationSchemaRef,
+    HofNominationSchemaRef,
+    HofNominationQuerySchemaRef,
+    HofNominationListSchemaRef,
+    HofNominationSetupSchemaRef,
+    UpdateHofNominationSetupSchemaRef,
     WorkoutSummarySchemaRef,
     WorkoutSchemaRef,
     UpsertWorkoutSchemaRef,
