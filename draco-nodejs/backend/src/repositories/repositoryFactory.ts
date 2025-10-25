@@ -32,6 +32,9 @@ import {
   IPhotoGalleryModerationRepository,
   IPhotoGalleryReadRepository,
   IMemberBusinessRepository,
+  IHallOfFameRepository,
+  IHofNominationRepository,
+  IHofNominationSetupRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -65,6 +68,9 @@ import {
   PrismaPhotoSubmissionRepository,
   PrismaPhotoGalleryRepository,
   PrismaMemberBusinessRepository,
+  PrismaHallOfFameRepository,
+  PrismaHofNominationRepository,
+  PrismaHofNominationSetupRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -105,6 +111,9 @@ export class RepositoryFactory {
   private static photoSubmissionRepository: IPhotoSubmissionRepository;
   private static photoGalleryRepository: PrismaPhotoGalleryRepository;
   private static memberBusinessRepository: IMemberBusinessRepository;
+  private static hallOfFameRepository: IHallOfFameRepository;
+  private static hofNominationRepository: IHofNominationRepository;
+  private static hofNominationSetupRepository: IHofNominationSetupRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -193,6 +202,27 @@ export class RepositoryFactory {
       this.contactRepository = new PrismaContactRepository(prisma);
     }
     return this.contactRepository;
+  }
+
+  static getHallOfFameRepository(): IHallOfFameRepository {
+    if (!this.hallOfFameRepository) {
+      this.hallOfFameRepository = new PrismaHallOfFameRepository(prisma);
+    }
+    return this.hallOfFameRepository;
+  }
+
+  static getHofNominationRepository(): IHofNominationRepository {
+    if (!this.hofNominationRepository) {
+      this.hofNominationRepository = new PrismaHofNominationRepository(prisma);
+    }
+    return this.hofNominationRepository;
+  }
+
+  static getHofNominationSetupRepository(): IHofNominationSetupRepository {
+    if (!this.hofNominationSetupRepository) {
+      this.hofNominationSetupRepository = new PrismaHofNominationSetupRepository(prisma);
+    }
+    return this.hofNominationSetupRepository;
   }
 
   static getRoleRepository(): IRoleRepository {

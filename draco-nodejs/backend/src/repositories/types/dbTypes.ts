@@ -1684,3 +1684,52 @@ export type dbAdminAccountEmailActivity = {
   clickCount: number;
   lastSentAt: Date | null;
 };
+
+export type dbHofMemberWithContact = Prisma.hofGetPayload<{
+  include: {
+    contacts: {
+      select: {
+        id: true;
+        firstname: true;
+        lastname: true;
+        middlename: true;
+        creatoraccountid: true;
+      };
+    };
+  };
+}>;
+
+export type dbHofEligibleContact = Prisma.contactsGetPayload<{
+  select: {
+    id: true;
+    firstname: true;
+    lastname: true;
+    middlename: true;
+    creatoraccountid: true;
+  };
+}>;
+
+export type dbHofNomination = Prisma.hofnominationGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    nominator: true;
+    phonenumber: true;
+    email: true;
+    nominee: true;
+    reason: true;
+  };
+}>;
+
+export type dbHofNominationSetup = Prisma.hofnominationsetupGetPayload<{
+  select: {
+    accountid: true;
+    enablenomination: true;
+    criteriatext: true;
+  };
+}>;
+
+export type dbHofClassSummary = {
+  year: number;
+  memberCount: number;
+};

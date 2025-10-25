@@ -29,3 +29,6 @@ export * from './PrismaHandoutRepository.js';
 export * from './PrismaAdminAnalyticsRepository.js';
 export * from './PrismaPhotoSubmissionRepository.js';
 export * from './PrismaPhotoGalleryRepository.js';
+export * from './PrismaHallOfFameRepository.js';
+export * from './PrismaHofNominationRepository.js';
+export * from './PrismaHofNominationSetupRepository.js';

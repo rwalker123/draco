@@ -30,3 +30,6 @@ export * from './IAdminAnalyticsRepository.js';
 export * from './IPhotoSubmissionRepository.js';
 export * from './IPhotoGalleryRepository.js';
 export * from './IMemberBusinessRepository.js';
+export * from './IHallOfFameRepository.js';
+export * from './IHofNominationRepository.js';
+export * from './IHofNominationSetupRepository.js';
