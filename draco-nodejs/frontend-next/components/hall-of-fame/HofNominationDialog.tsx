@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useForm, type Resolver } from 'react-hook-form';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SubmitHofNominationSchema } from '@draco/shared-schemas';
 import { submitAccountHallOfFameNomination } from '@draco/shared-api-client';
@@ -23,9 +23,16 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { assertNoApiError } from '@/utils/apiResult';
 import TurnstileChallenge from '@/components/security/TurnstileChallenge';
 import { sanitizeRichContent } from '@/utils/sanitization';
+import { formatPhoneInput } from '@/utils/phoneNumber';
+
+const NOMINATION_REASON_LIMIT = 1000;
 
 const FormSchema = SubmitHofNominationSchema.extend({
   phoneNumber: SubmitHofNominationSchema.shape.phoneNumber.transform((value) => value ?? ''),
+  reason: SubmitHofNominationSchema.shape.reason.refine(
+    (value) => value.length <= NOMINATION_REASON_LIMIT,
+    { message: `Reason must be ${NOMINATION_REASON_LIMIT} characters or fewer` },
+  ),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -56,7 +63,9 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
+    watch,
   } = useForm<FormValues>({
     resolver: formResolver,
     defaultValues: {
@@ -67,6 +76,7 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
       reason: '',
     },
   });
+  const reasonValue = watch('reason');
 
   const [submitting, setSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -196,15 +206,24 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
                 helperText={errors.nominator?.message}
                 {...register('nominator')}
               />
-              <TextField
-                label="Phone Number"
-                fullWidth
-                required
-                autoComplete="tel"
-                disabled={submitting}
-                error={Boolean(errors.phoneNumber)}
-                helperText={errors.phoneNumber?.message}
-                {...register('phoneNumber')}
+              <Controller
+                name="phoneNumber"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label="Phone Number"
+                    fullWidth
+                    required
+                    autoComplete="tel"
+                    disabled={submitting}
+                    value={field.value ?? ''}
+                    onChange={(event) => field.onChange(formatPhoneInput(event.target.value))}
+                    onBlur={field.onBlur}
+                    inputProps={{ inputMode: 'tel' }}
+                    error={Boolean(errors.phoneNumber)}
+                    helperText={errors.phoneNumber?.message}
+                  />
+                )}
               />
               <TextField
                 label="Email"
@@ -235,8 +254,9 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
                 error={Boolean(errors.reason)}
                 helperText={
                   errors.reason?.message ??
-                  'Share notable achievements, leadership, or community impact.'
+                  `Share notable achievements, leadership, or community impact. (${reasonValue?.length ?? 0}/${NOMINATION_REASON_LIMIT})`
                 }
+                inputProps={{ maxLength: NOMINATION_REASON_LIMIT }}
                 {...register('reason')}
               />
             </Stack>
