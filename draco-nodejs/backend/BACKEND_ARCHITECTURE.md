@@ -630,6 +630,68 @@ class ContactResponseFormatter {
 - **CQRS Pattern** - Separate read/write models for complex domains
 - **Domain-Driven Design** - Refactor services around business domains
 
+## Email Provider Configuration
+
+Outbound email is abstracted behind `EmailConfigFactory` and the provider classes in
+`src/services/email/providers`. The factory picks a transport using the `EMAIL_PROVIDER`
+environment variable:
+
+- **Production (Railway)** defaults to AWS SES (`EMAIL_PROVIDER=ses`).
+- **Local development/tests** default to Ethereal (`EMAIL_PROVIDER=ethereal`).
+- Any environment can override the default by exporting `EMAIL_PROVIDER=ses | sendgrid | ethereal`
+  before starting the backend.
+
+### Shared environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `EMAIL_FROM` | Sender email stamped on every message (required). |
+| `EMAIL_FROM_NAME` | Display name paired with `EMAIL_FROM` (required). |
+| `EMAIL_REPLY_TO` | Optional global reply-to fallback; individual jobs may override it. |
+| `BASE_URL` | Public site URL used when generating links inside templates. |
+
+These values are read once at boot, so update Railway variables and redeploy after changes.
+
+### AWS SES (default production provider)
+
+```
+EMAIL_PROVIDER=ses
+SES_SMTP_USER=<IAM SMTP username>
+SES_SMTP_PASS=<IAM SMTP password>
+SES_REGION=<aws-region>            # e.g., us-east-1 (or set SES_SMTP_HOST instead)
+SES_SMTP_HOST=email-smtp.<region>.amazonaws.com  # optional explicit host override
+SES_SMTP_PORT=587                  # optional, defaults to 587; set 465 for TLS-only
+```
+
+- Supply either `SES_REGION` or `SES_SMTP_HOST` so the factory can derive the SMTP endpoint.
+- Sandbox mode only delivers to verified identities—keep verifying sender/recipient inboxes until
+  you request production access.
+
+### SendGrid
+
+```
+EMAIL_PROVIDER=sendgrid
+SENDGRID_API_KEY=<restricted API key>
+SENDGRID_WEBHOOK_PUBLIC_KEY=<optional, required only for signed event webhooks>
+```
+
+- These settings remain available for legacy deployments that still require SendGrid.
+
+### Ethereal (local testing)
+
+```
+EMAIL_PROVIDER=ethereal
+EMAIL_DEV_USER=<optional test inbox user>
+EMAIL_DEV_PASS=<optional test inbox password>
+EMAIL_DEV_HOST=smtp.ethereal.email   # optional override
+```
+
+- When `EMAIL_DEV_USER`/`EMAIL_DEV_PASS` are omitted the provider provisions a throwaway inbox at
+  runtime so developers can inspect preview URLs.
+
+Restart the backend when any of these variables change so the provider factory rebuilds the Nodemailer
+transporter with the new credentials.
+
 ## Tools and Libraries
 
 ### Core Technologies

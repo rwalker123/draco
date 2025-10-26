@@ -107,6 +107,13 @@ export class EmailService {
       EMAIL_DELAY_MS: 12, // ~80 emails per second
       PROCESS_INTERVAL_MS: 100,
     },
+    ses: {
+      MAX_EMAILS_PER_SECOND: 14, // Default AWS SES limit per second
+      MAX_EMAILS_PER_MINUTE: 840,
+      RATE_LIMIT_ENABLED: true,
+      EMAIL_DELAY_MS: 80, // Slight buffer around default SES send rate
+      PROCESS_INTERVAL_MS: 200,
+    },
     ethereal: {
       MAX_EMAILS_PER_SECOND: 100, // No real limits for test email
       MAX_EMAILS_PER_MINUTE: 6000,
@@ -121,7 +128,7 @@ export class EmailService {
   private readonly RETRY_DELAYS = [1000, 5000, 15000]; // ms delays for retries
   private readonly MAX_RATE_LIMIT_RETRIES = 5;
   private readonly RATE_LIMIT_BACKOFF_MS = [5000, 10000, 20000, 35000, 55000];
-  private currentProviderType: 'sendgrid' | 'ethereal' | null = null;
+  private currentProviderType: 'sendgrid' | 'ethereal' | 'ses' | null = null;
 
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
     // Legacy constructor for backward compatibility
@@ -145,7 +152,7 @@ export class EmailService {
   /**
    * Detect current email provider type
    */
-  private async getProviderType(): Promise<'sendgrid' | 'ethereal'> {
+  private async getProviderType(): Promise<'sendgrid' | 'ethereal' | 'ses'> {
     if (this.currentProviderType) {
       return this.currentProviderType;
     }

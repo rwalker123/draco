@@ -13,6 +13,7 @@ import {
   InternalServerError,
   ValidationError,
 } from '../utils/customErrors.js';
+import { EmailConfigFactory } from '../config/email.js';
 
 const router = Router();
 
@@ -76,13 +77,15 @@ router.post(
 router.get(
   '/health',
   asyncHandler(async (_req: Request, res: Response) => {
+    const settings = EmailConfigFactory.getEmailSettings();
+
     res.status(200).json({
       status: 'healthy',
       timestamp: DateUtils.formatDateTimeForResponse(new Date()),
-      provider: process.env.EMAIL_PROVIDER || 'ethereal',
+      provider: settings.provider,
       webhooks: {
         sendgrid: {
-          enabled: process.env.EMAIL_PROVIDER === 'sendgrid',
+          enabled: settings.provider === 'sendgrid',
           endpoint: '/api/webhooks/sendgrid',
         },
       },
@@ -97,11 +100,15 @@ router.get(
 router.get(
   '/stats',
   asyncHandler(async (_req: Request, res: Response) => {
+    const settings = EmailConfigFactory.getEmailSettings();
+
     const stats = {
       total_events_processed: 0,
       last_event_timestamp: null,
       provider_status: {
-        sendgrid: process.env.EMAIL_PROVIDER === 'sendgrid',
+        sendgrid: settings.provider === 'sendgrid',
+        ses: settings.provider === 'ses',
+        ethereal: settings.provider === 'ethereal',
       },
     };
 
