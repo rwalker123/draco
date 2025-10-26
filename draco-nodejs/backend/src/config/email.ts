@@ -112,7 +112,7 @@ export class EmailConfigFactory {
       throw new Error('SES_SMTP_HOST or SES_REGION environment variable is required for SES email provider');
     }
 
-    const port = process.env.SES_SMTP_PORT ? Number.parseInt(process.env.SES_SMTP_PORT, 10) : 587;
+    const port = process.env.SES_SMTP_PORT ? parseInt(process.env.SES_SMTP_PORT, 10) : 587;
 
     if (Number.isNaN(port)) {
       throw new Error('SES_SMTP_PORT must be a valid number');
