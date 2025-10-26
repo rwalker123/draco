@@ -658,7 +658,7 @@ EMAIL_PROVIDER=ses
 SES_SMTP_USER=<IAM SMTP username>
 SES_SMTP_PASS=<IAM SMTP password>
 SES_REGION=<aws-region>            # e.g., us-east-1 (or set SES_SMTP_HOST instead)
-SES_SMTP_HOST=email-smtp.<region>.amazonaws.com  # optional explicit host override
+SES_SMTP_HOST=email-smtp.us-east-1.amazonaws.com  # optional explicit host override
 SES_SMTP_PORT=587                  # optional, defaults to 587; set 465 for TLS-only
 ```
 
