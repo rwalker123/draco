@@ -166,9 +166,7 @@ router.delete(
 
 router.get(
   '/:accountId/hall-of-fame/nomination-setup',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  optionalAuth,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const setup = await hofSetupService.getSetup(accountId);

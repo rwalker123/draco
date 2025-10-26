@@ -7364,15 +7364,15 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$"
           },
           "contactId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$"
           },
           "yearInducted": {
             "type": "integer",
@@ -7473,15 +7473,15 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$"
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$"
                 },
                 "contactId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$"
                 },
                 "yearInducted": {
                   "type": "integer",
@@ -21995,11 +21995,6 @@
         "description": "Retrieves the Hall of Fame nomination configuration for an account.",
         "tags": [
           "Hall of Fame"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
         ],
         "parameters": [
           {

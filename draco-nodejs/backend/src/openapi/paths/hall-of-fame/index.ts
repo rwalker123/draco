@@ -550,7 +550,6 @@ export const registerHallOfFameEndpoints = ({ registry, schemaRefs }: RegisterCo
     summary: 'Retrieve nomination setup',
     description: 'Retrieves the Hall of Fame nomination configuration for an account.',
     tags: ['Hall of Fame'],
-    security: [{ bearerAuth: [] }],
     parameters: [
       {
         name: 'accountId',

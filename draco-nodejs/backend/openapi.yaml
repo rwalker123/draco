@@ -5414,13 +5414,13 @@ components:
       properties:
         id:
           type: string
-          pattern: ^d+$
+          pattern: ^\d+$
         accountId:
           type: string
-          pattern: ^d+$
+          pattern: ^\d+$
         contactId:
           type: string
-          pattern: ^d+$
+          pattern: ^\d+$
         yearInducted:
           type: integer
           minimum: 1900
@@ -5501,13 +5501,13 @@ components:
             properties:
               id:
                 type: string
-                pattern: ^d+$
+                pattern: ^\d+$
               accountId:
                 type: string
-                pattern: ^d+$
+                pattern: ^\d+$
               contactId:
                 type: string
-                pattern: ^d+$
+                pattern: ^\d+$
               yearInducted:
                 type: integer
                 minimum: 1900
@@ -15322,8 +15322,6 @@ paths:
       description: Retrieves the Hall of Fame nomination configuration for an account.
       tags:
         - Hall of Fame
-      security:
-        - bearerAuth: []
       parameters:
         - name: accountId
           in: path

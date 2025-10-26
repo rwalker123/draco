@@ -74,9 +74,9 @@ export const HofContactSummarySchema = z
 
 export const HofMemberSchema = z
   .object({
-    id: bigintToStringSchema,
-    accountId: bigintToStringSchema,
-    contactId: bigintToStringSchema,
+    id: numericStringIdSchema,
+    accountId: numericStringIdSchema,
+    contactId: numericStringIdSchema,
     yearInducted: yearInductedSchema,
     biographyHtml: biographyHtmlSchema,
     contact: HofContactSummarySchema,
