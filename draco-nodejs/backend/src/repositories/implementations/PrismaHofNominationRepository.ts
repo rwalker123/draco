@@ -3,6 +3,7 @@ import {
   CreateHofNominationData,
   HofNominationListResult,
   IHofNominationRepository,
+  UpdateHofNominationData,
 } from '../interfaces/IHofNominationRepository.js';
 import { dbHofNomination } from '../types/dbTypes.js';
 
@@ -63,6 +64,50 @@ export class PrismaHofNominationRepository implements IHofNominationRepository {
       nominations: nominations as dbHofNomination[],
       total,
     };
+  }
+
+  async findById(accountId: bigint, nominationId: bigint): Promise<dbHofNomination | null> {
+    return this.prisma.hofnomination.findFirst({
+      where: {
+        accountid: accountId,
+        id: nominationId,
+      },
+      select: {
+        id: true,
+        accountid: true,
+        nominator: true,
+        phonenumber: true,
+        email: true,
+        nominee: true,
+        reason: true,
+      },
+    }) as Promise<dbHofNomination | null>;
+  }
+
+  async update(
+    accountId: bigint,
+    nominationId: bigint,
+    data: UpdateHofNominationData,
+  ): Promise<dbHofNomination | null> {
+    const updated = await this.prisma.hofnomination.updateMany({
+      data: {
+        nominator: data.nominator,
+        phonenumber: data.phoneNumber,
+        email: data.email,
+        nominee: data.nominee,
+        reason: data.reason,
+      },
+      where: {
+        accountid: accountId,
+        id: nominationId,
+      },
+    });
+
+    if (updated.count === 0) {
+      return null;
+    }
+
+    return this.findById(accountId, nominationId);
   }
 
   async delete(accountId: bigint, nominationId: bigint): Promise<boolean> {

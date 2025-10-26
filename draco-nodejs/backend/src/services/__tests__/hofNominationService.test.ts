@@ -4,16 +4,21 @@ import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 import { IHofNominationRepository } from '../../repositories/interfaces/IHofNominationRepository.js';
 import { IHofNominationSetupRepository } from '../../repositories/interfaces/IHofNominationSetupRepository.js';
 import { ConflictError, NotFoundError } from '../../utils/customErrors.js';
+import { ServiceFactory } from '../serviceFactory.js';
+import { HallOfFameService } from '../hallOfFameService.js';
 
 describe('HofNominationService', () => {
   let nominationRepositoryMock: Mocked<IHofNominationRepository>;
   let setupRepositoryMock: Mocked<IHofNominationSetupRepository>;
+  let hallOfFameServiceMock: Mocked<HallOfFameService>;
   let service: HofNominationService;
 
   beforeEach(() => {
     nominationRepositoryMock = {
       create: vi.fn(),
       list: vi.fn(),
+      findById: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     } as Mocked<IHofNominationRepository>;
 
@@ -22,12 +27,17 @@ describe('HofNominationService', () => {
       upsert: vi.fn(),
     } as Mocked<IHofNominationSetupRepository>;
 
+    hallOfFameServiceMock = {
+      createMember: vi.fn(),
+    } as unknown as Mocked<HallOfFameService>;
+
     vi.spyOn(RepositoryFactory, 'getHofNominationRepository').mockReturnValue(
       nominationRepositoryMock,
     );
     vi.spyOn(RepositoryFactory, 'getHofNominationSetupRepository').mockReturnValue(
       setupRepositoryMock,
     );
+    vi.spyOn(ServiceFactory, 'getHallOfFameService').mockReturnValue(hallOfFameServiceMock);
 
     service = new HofNominationService();
   });

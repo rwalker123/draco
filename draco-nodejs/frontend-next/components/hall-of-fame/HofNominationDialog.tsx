@@ -75,6 +75,7 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
   const [captchaResetKey, setCaptchaResetKey] = React.useState(0);
 
   const hasTurnstile = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const submitDisabled = submitting || (hasTurnstile && !captchaToken);
 
   const handleDialogClose = React.useCallback(() => {
     setSubmitError(null);
@@ -247,6 +248,13 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
                   resetSignal={captchaResetKey}
                   loading={submitting}
                 />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1 }}
+                >
+                  Please complete the verification before submitting your nomination.
+                </Typography>
               </Box>
             )}
           </DialogContent>
@@ -254,7 +262,7 @@ const HofNominationDialog: React.FC<HofNominationDialogProps> = ({
             <Button onClick={handleDialogClose} disabled={submitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="contained" disabled={submitting}>
+            <Button type="submit" variant="contained" disabled={submitDisabled}>
               {submitting ? 'Submitting...' : 'Submit Nomination'}
             </Button>
           </DialogActions>

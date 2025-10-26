@@ -7732,6 +7732,43 @@
         ],
         "description": "Public payload for nominating a Hall of Fame candidate."
       },
+      "UpdateHofNomination": {
+        "type": "object",
+        "properties": {
+          "nominator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "phoneNumber": {
+            "type": "string",
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 75,
+            "format": "email"
+          },
+          "nominee": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "nominator",
+          "phoneNumber",
+          "email",
+          "nominee",
+          "reason"
+        ],
+        "description": "Payload for updating a Hall of Fame nomination."
+      },
       "HofNomination": {
         "type": "object",
         "properties": {
@@ -7922,6 +7959,31 @@
           "enableNomination"
         ],
         "description": "Hall of Fame nomination settings for an account."
+      },
+      "HofNominationInduct": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "yearInducted": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2026,
+            "description": "Calendar year the inductee entered the Hall of Fame.",
+            "example": 2025
+          },
+          "biographyHtml": {
+            "type": "string",
+            "maxLength": 20000
+          }
+        },
+        "required": [
+          "contactId",
+          "yearInducted"
+        ],
+        "description": "Payload for inducting a nomination into the Hall of Fame. Biography defaults to the nomination reason when omitted."
       },
       "UpdateHofNominationSetup": {
         "type": "object",
@@ -21909,6 +21971,111 @@
       }
     },
     "/api/accounts/{accountId}/hall-of-fame/nominations/{nominationId}": {
+      "put": {
+        "operationId": "updateAccountHallOfFameNomination",
+        "summary": "Update a Hall of Fame nomination",
+        "description": "Allows account administrators to edit a stored Hall of Fame nomination.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "nominationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHofNomination"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated nomination details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofNomination"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage nominations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nomination not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "operationId": "deleteAccountHallOfFameNomination",
         "summary": "Delete a Hall of Fame nomination",
@@ -21971,6 +22138,123 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/nominations/{nominationId}/induct": {
+      "post": {
+        "operationId": "inductAccountHallOfFameNomination",
+        "summary": "Induct a Hall of Fame nomination",
+        "description": "Converts a nomination into an official Hall of Fame member using the nomination details.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "nominationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HofNominationInduct"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Newly inducted Hall of Fame member.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to induct members.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nomination not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict while inducting the nomination (e.g., already inducted).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
                 }
               }
             }

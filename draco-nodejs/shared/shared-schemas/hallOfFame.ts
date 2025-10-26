@@ -207,6 +207,10 @@ export const HofNominationSchema = HofNominationBaseSchema.extend({
     description: 'Represents a stored Hall of Fame nomination submission.',
   });
 
+export const UpdateHofNominationSchema = HofNominationBaseSchema.openapi({
+  description: 'Payload for updating a Hall of Fame nomination.',
+});
+
 export const HofNominationListSchema = z
   .object({
     nominations: HofNominationSchema.array(),
@@ -240,6 +244,17 @@ export const UpdateHofNominationSetupSchema = z
     description: 'Payload for updating nomination availability and criteria messaging.',
   });
 
+export const HofNominationInductSchema = z
+  .object({
+    contactId: numericStringIdSchema,
+    yearInducted: yearInductedSchema,
+    biographyHtml: biographyHtmlSchema.optional(),
+  })
+  .openapi({
+    description:
+      'Payload for inducting a nomination into the Hall of Fame. Biography defaults to the nomination reason when omitted.',
+  });
+
 export type HofContactSummaryType = z.infer<typeof HofContactSummarySchema>;
 export type HofMemberType = z.infer<typeof HofMemberSchema>;
 export type HofClassSummaryType = z.infer<typeof HofClassSummarySchema>;
@@ -254,3 +269,5 @@ export type HofNominationType = z.infer<typeof HofNominationSchema>;
 export type HofNominationListType = z.infer<typeof HofNominationListSchema>;
 export type HofNominationSetupType = z.infer<typeof HofNominationSetupSchema>;
 export type UpdateHofNominationSetupType = z.infer<typeof UpdateHofNominationSetupSchema>;
+export type UpdateHofNominationType = z.infer<typeof UpdateHofNominationSchema>;
+export type HofNominationInductType = z.infer<typeof HofNominationInductSchema>;

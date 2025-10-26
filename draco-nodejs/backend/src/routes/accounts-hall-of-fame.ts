@@ -3,17 +3,22 @@ import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { hofNominationRateLimit } from '../middleware/rateLimitMiddleware.js';
 import {
   CreateHofMemberSchema,
   CreateHofMemberType,
   HofEligibleContactsQuerySchema,
   HofNominationQuerySchema,
+  HofNominationInductSchema,
+  HofNominationInductType,
   SubmitHofNominationSchema,
   SubmitHofNominationType,
   UpdateHofMemberSchema,
   UpdateHofMemberType,
   UpdateHofNominationSetupSchema,
   UpdateHofNominationSetupType,
+  UpdateHofNominationSchema,
+  UpdateHofNominationType,
 } from '@draco/shared-schemas';
 import { ValidationError } from '../utils/customErrors.js';
 
@@ -125,6 +130,7 @@ router.delete(
 
 router.post(
   '/:accountId/hall-of-fame/nominations',
+  hofNominationRateLimit,
   optionalAuth,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -149,6 +155,36 @@ router.get(
     });
     const nominations = await hofNominationService.listNominations(accountId, query);
     res.json(nominations);
+  }),
+);
+
+router.put(
+  '/:accountId/hall-of-fame/nominations/:nominationId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, nominationId } = extractNominationParams(req.params);
+    const payload: UpdateHofNominationType = UpdateHofNominationSchema.parse(req.body);
+    const nomination = await hofNominationService.updateNomination(
+      accountId,
+      nominationId,
+      payload,
+    );
+    res.json(nomination);
+  }),
+);
+
+router.post(
+  '/:accountId/hall-of-fame/nominations/:nominationId/induct',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, nominationId } = extractNominationParams(req.params);
+    const payload: HofNominationInductType = HofNominationInductSchema.parse(req.body);
+    const member = await hofNominationService.inductNomination(accountId, nominationId, payload);
+    res.json(member);
   }),
 );
 

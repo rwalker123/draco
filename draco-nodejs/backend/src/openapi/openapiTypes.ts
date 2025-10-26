@@ -60,6 +60,7 @@ import {
   HofClassSummarySchema,
   HofClassWithMembersSchema,
   HofMemberSchema,
+  HofNominationInductSchema,
   HofNominationListSchema,
   HofNominationSchema,
   HofNominationSetupSchema,
@@ -112,6 +113,7 @@ import {
   UpsertEmailTemplateSchema,
   UpsertTeamsWantedClassifiedSchema,
   UpsertWorkoutRegistrationSchema,
+  UpdateHofNominationSchema,
   UpdateHofNominationSetupSchema,
   UpsertWorkoutSchema,
   ValidationErrorSchema,
@@ -452,6 +454,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SubmitHofNomination',
     SubmitHofNominationSchema,
   );
+  const UpdateHofNominationSchemaRef = registry.register(
+    'UpdateHofNomination',
+    UpdateHofNominationSchema,
+  );
   const HofNominationSchemaRef = registry.register('HofNomination', HofNominationSchema);
   const HofNominationListSchemaRef = registry.register(
     'HofNominationList',
@@ -464,6 +470,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const HofNominationSetupSchemaRef = registry.register(
     'HofNominationSetup',
     HofNominationSetupSchema,
+  );
+  const HofNominationInductSchemaRef = registry.register(
+    'HofNominationInduct',
+    HofNominationInductSchema,
   );
   const UpdateHofNominationSetupSchemaRef = registry.register(
     'UpdateHofNominationSetup',
@@ -725,10 +735,12 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreateHofMemberSchemaRef,
     UpdateHofMemberSchemaRef,
     SubmitHofNominationSchemaRef,
+    UpdateHofNominationSchemaRef,
     HofNominationSchemaRef,
     HofNominationQuerySchemaRef,
     HofNominationListSchemaRef,
     HofNominationSetupSchemaRef,
+    HofNominationInductSchemaRef,
     UpdateHofNominationSetupSchemaRef,
     WorkoutSummarySchemaRef,
     WorkoutSchemaRef,

@@ -116,6 +116,17 @@ export const teamsWantedRateLimit = createRateLimit({
 });
 
 /**
+ * Hall of Fame nomination rate limiting for public submissions
+ * 5 nominations per hour per IP address
+ */
+export const hofNominationRateLimit = createRateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: 'Too many Hall of Fame nominations from this IP. Please try again later.',
+  skipSuccessfulRequests: false,
+});
+
+/**
  * Account creation rate limiting for organization provisioning
  * 3 creations per hour per authenticated user (or IP if unauthenticated)
  */

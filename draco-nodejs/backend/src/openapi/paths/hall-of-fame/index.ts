@@ -10,10 +10,13 @@ export const registerHallOfFameEndpoints = ({ registry, schemaRefs }: RegisterCo
     CreateHofMemberSchemaRef,
     UpdateHofMemberSchemaRef,
     SubmitHofNominationSchemaRef,
+    HofNominationSchemaRef,
     HofNominationListSchemaRef,
     HofNominationQuerySchemaRef,
     HofNominationSetupSchemaRef,
     UpdateHofNominationSetupSchemaRef,
+    UpdateHofNominationSchemaRef,
+    HofNominationInductSchemaRef,
     ValidationErrorSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
@@ -481,6 +484,161 @@ export const registerHallOfFameEndpoints = ({ registry, schemaRefs }: RegisterCo
         description: 'Caller lacks permission to manage nominations.',
         content: {
           'application/json': { schema: AuthorizationErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/hall-of-fame/nominations/{nominationId}',
+    operationId: 'updateAccountHallOfFameNomination',
+    summary: 'Update a Hall of Fame nomination',
+    description: 'Allows account administrators to edit a stored Hall of Fame nomination.',
+    tags: ['Hall of Fame'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'nominationId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: UpdateHofNominationSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated nomination details.',
+        content: {
+          'application/json': {
+            schema: HofNominationSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error.',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: {
+        description: 'Authentication required.',
+        content: {
+          'application/json': { schema: AuthenticationErrorSchemaRef },
+        },
+      },
+      403: {
+        description: 'Caller lacks permission to manage nominations.',
+        content: {
+          'application/json': { schema: AuthorizationErrorSchemaRef },
+        },
+      },
+      404: {
+        description: 'Nomination not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/hall-of-fame/nominations/{nominationId}/induct',
+    operationId: 'inductAccountHallOfFameNomination',
+    summary: 'Induct a Hall of Fame nomination',
+    description:
+      'Converts a nomination into an official Hall of Fame member using the nomination details.',
+    tags: ['Hall of Fame'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'nominationId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: HofNominationInductSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Newly inducted Hall of Fame member.',
+        content: {
+          'application/json': {
+            schema: HofMemberSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error.',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: {
+        description: 'Authentication required.',
+        content: {
+          'application/json': { schema: AuthenticationErrorSchemaRef },
+        },
+      },
+      403: {
+        description: 'Caller lacks permission to induct members.',
+        content: {
+          'application/json': { schema: AuthorizationErrorSchemaRef },
+        },
+      },
+      404: {
+        description: 'Nomination not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      409: {
+        description: 'Conflict while inducting the nomination (e.g., already inducted).',
+        content: {
+          'application/json': { schema: ConflictErrorSchemaRef },
         },
       },
       500: {
