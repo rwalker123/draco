@@ -638,8 +638,7 @@ environment variable:
 
 - **Production (Railway)** defaults to AWS SES (`EMAIL_PROVIDER=ses`).
 - **Local development/tests** default to Ethereal (`EMAIL_PROVIDER=ethereal`).
-- Any environment can override the default by exporting `EMAIL_PROVIDER=ses | sendgrid | ethereal`
-  before starting the backend.
+- Any environment can override the default by setting `EMAIL_PROVIDER` to one of: `ses`, `sendgrid`, or `ethereal` before starting the backend.
 
 ### Shared environment variables
 
