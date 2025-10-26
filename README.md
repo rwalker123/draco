@@ -35,6 +35,11 @@ A comprehensive sports management application migrated from ASP.NET Framework to
 - **Routing**: React Router DOM 7.6.2
 - **HTTP Client**: Axios 1.10.0
 
+### Infrastructure & External Services
+
+- **DNS**: Cloudflare manages the public DNS records for the application.
+- **Email Delivery**: Amazon SES is planned for production email sending (integration in progress, replacing the previous SendGrid approach).
+
 ### Project Structure
 
 ```
