@@ -22314,6 +22314,10 @@ paths:
                     description: ISO 8601 timestamp describing when the health check was generated.
                   provider:
                     type: string
+                    enum:
+                      - sendgrid
+                      - ses
+                      - ethereal
                     description: Configured email provider handling outbound email and webhooks.
                   webhooks:
                     type: object
@@ -22373,8 +22377,17 @@ paths:
                       sendgrid:
                         type: boolean
                         description: Indicates whether SendGrid is the active outbound email provider.
+                      ses:
+                        type: boolean
+                        description: Indicates whether AWS SES is the active outbound email provider.
+                      ethereal:
+                        type: boolean
+                        description: Indicates whether the Ethereal test provider is active for outbound
+                          email.
                     required:
                       - sendgrid
+                      - ses
+                      - ethereal
                 required:
                   - total_events_processed
                   - last_event_timestamp
