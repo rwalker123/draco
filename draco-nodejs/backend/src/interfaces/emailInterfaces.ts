@@ -121,7 +121,7 @@ export interface EmailSettings {
   fromEmail: string;
   fromName: string;
   replyTo?: string;
-  provider: 'sendgrid' | 'ethereal';
+  provider: 'sendgrid' | 'ethereal' | 'ses';
 }
 
 export interface EtherealTestAccount {

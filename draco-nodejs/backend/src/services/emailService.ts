@@ -12,7 +12,7 @@ import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
 import { EmailAttachmentService } from './emailAttachmentService.js';
 import { PaginationHelper } from '../utils/pagination.js';
-import { NotFoundError } from '../utils/customErrors.js';
+import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import {
   EmailListPagedType,
   EmailRecipientGroupsType,
@@ -30,6 +30,7 @@ import { RosterService } from './rosterService.js';
 import { ServiceFactory } from './serviceFactory.js';
 import validator from 'validator';
 import { TeamService } from './teamService.js';
+import { ContactService } from './contactService.js';
 
 // Email queue management interfaces
 interface EmailQueueJob {
@@ -45,6 +46,7 @@ interface EmailQueueJob {
   scheduledAt: Date;
   createdAt: Date;
   attachments?: ServerEmailAttachment[];
+  senderContactId?: bigint;
 }
 
 type ProviderConfig = {
@@ -68,6 +70,13 @@ interface QueueMetrics {
       count: number;
     };
   };
+}
+
+interface SenderContext {
+  contactId: bigint;
+  displayName: string;
+  replyTo: string;
+  settings: EmailSettings;
 }
 
 // Legacy interface maintained for backward compatibility
@@ -97,6 +106,7 @@ export class EmailService {
   private seasonRepository: ISeasonsRepository;
   private rosterService: RosterService;
   private teamService: TeamService;
+  private contactService: ContactService;
 
   // Provider-specific queue configuration
   private readonly PROVIDER_CONFIGS = {
@@ -106,6 +116,13 @@ export class EmailService {
       RATE_LIMIT_ENABLED: true,
       EMAIL_DELAY_MS: 12, // ~80 emails per second
       PROCESS_INTERVAL_MS: 100,
+    },
+    ses: {
+      MAX_EMAILS_PER_SECOND: 14, // Default AWS SES limit per second
+      MAX_EMAILS_PER_MINUTE: 840,
+      RATE_LIMIT_ENABLED: true,
+      EMAIL_DELAY_MS: 80, // Slight buffer around default SES send rate
+      PROCESS_INTERVAL_MS: 200,
     },
     ethereal: {
       MAX_EMAILS_PER_SECOND: 100, // No real limits for test email
@@ -121,7 +138,7 @@ export class EmailService {
   private readonly RETRY_DELAYS = [1000, 5000, 15000]; // ms delays for retries
   private readonly MAX_RATE_LIMIT_RETRIES = 5;
   private readonly RATE_LIMIT_BACKOFF_MS = [5000, 10000, 20000, 35000, 55000];
-  private currentProviderType: 'sendgrid' | 'ethereal' | null = null;
+  private currentProviderType: 'sendgrid' | 'ethereal' | 'ses' | null = null;
 
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
     // Legacy constructor for backward compatibility
@@ -131,6 +148,7 @@ export class EmailService {
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.rosterService = ServiceFactory.getRosterService();
     this.teamService = ServiceFactory.getTeamService();
+    this.contactService = ServiceFactory.getContactService();
 
     // Start queue processor
     this.startQueueProcessor();
@@ -145,7 +163,7 @@ export class EmailService {
   /**
    * Detect current email provider type
    */
-  private async getProviderType(): Promise<'sendgrid' | 'ethereal'> {
+  private async getProviderType(): Promise<'sendgrid' | 'ethereal' | 'ses'> {
     if (this.currentProviderType) {
       return this.currentProviderType;
     }
@@ -321,6 +339,8 @@ export class EmailService {
     const shouldDelaySend = Boolean(scheduledDate && scheduledDate > new Date());
     const emailStatus = shouldDelaySend ? 'scheduled' : 'sending';
 
+    const senderContext = await this.resolveSenderContext(accountId, createdByUserId);
+
     const email = await this.emailRepository.createEmail({
       account_id: accountId,
       created_by_user_id: createdByUserId,
@@ -331,6 +351,10 @@ export class EmailService {
       status: emailStatus,
       scheduled_send_at: scheduledDate,
       created_at: new Date(),
+      sender_contact_id: senderContext.contactId,
+      sender_contact_name: senderContext.displayName,
+      reply_to_email: senderContext.replyTo,
+      from_name_override: senderContext.displayName,
     });
 
     await this.sendBulkEmail(email.id, request, {
@@ -367,6 +391,8 @@ export class EmailService {
         throw new Error('No valid recipients found');
       }
 
+      const { settings: senderSettings, senderContactId } = this.buildSenderSettingsForEmail(email);
+
       const recipientPayload: dbCreateEmailRecipientInput[] = recipients.map((recipient) => ({
         email_id: emailId,
         contact_id: recipient.contactId,
@@ -396,7 +422,11 @@ export class EmailService {
         recipients,
         email.subject,
         email.body_html,
-        attachments,
+        senderSettings,
+        {
+          attachments,
+          senderContactId,
+        },
       );
 
       console.log(
@@ -469,10 +499,22 @@ export class EmailService {
     recipients: ResolvedRecipient[],
     subject: string,
     bodyHtml: string,
-    attachments?: ServerEmailAttachment[],
+    settings: EmailSettings,
+    options: { attachments?: ServerEmailAttachment[]; senderContactId?: bigint } = {},
   ): Promise<void> {
-    const settings = EmailConfigFactory.getEmailSettings();
+    const { attachments } = options;
     const now = new Date();
+
+    if (!settings.replyTo || !validator.isEmail(settings.replyTo)) {
+      throw new ValidationError('Queued emails require a valid reply-to email address');
+    }
+
+    const sanitizedFromName = this.sanitizeDisplayName(settings.fromName);
+    const jobSettings: EmailSettings = {
+      ...settings,
+      fromName: sanitizedFromName || settings.fromName,
+      replyTo: settings.replyTo,
+    };
 
     // Split recipients into batches and queue each batch
     for (let i = 0; i < recipients.length; i += this.BATCH_SIZE) {
@@ -486,12 +528,13 @@ export class EmailService {
         recipients: batch,
         subject,
         bodyHtml,
-        settings,
+        settings: jobSettings,
         retryCount: 0,
         rateLimitRetries: 0,
         scheduledAt: now,
         createdAt: now,
         attachments,
+        senderContactId: options.senderContactId,
       };
 
       this.jobQueue.set(job.id, job);
@@ -617,6 +660,9 @@ export class EmailService {
               email.id.toString(),
             );
 
+            const { settings: senderSettings, senderContactId } =
+              this.buildSenderSettingsForEmail(email);
+
             // Queue email batches for processing using existing recipients
             const resolvedRecipients = existingRecipients.map((recipient) => ({
               contactId: recipient.contact_id,
@@ -630,7 +676,11 @@ export class EmailService {
               resolvedRecipients,
               email.subject,
               email.body_html,
-              attachments,
+              senderSettings,
+              {
+                attachments,
+                senderContactId,
+              },
             );
           } else {
             // No existing recipients - this shouldn't happen in normal flow,
@@ -1275,6 +1325,98 @@ export class EmailService {
 
   private hasValidEmail(email: string | null): boolean {
     return !!email && validator.isEmail(email);
+  }
+
+  private sanitizeDisplayName(name?: string | null): string {
+    if (!name) {
+      return '';
+    }
+
+    const normalized = name
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return normalized.length > 255 ? normalized.slice(0, 255) : normalized;
+  }
+
+  private buildContactDisplayName(
+    firstName?: string | null,
+    lastName?: string | null,
+    fallback?: string,
+  ): string {
+    const parts = [firstName, lastName].map((part) => part?.trim()).filter(Boolean) as string[];
+    if (parts.length === 0) {
+      return fallback ? fallback.trim() : '';
+    }
+    return parts.join(' ');
+  }
+
+  private applySenderOverrides(
+    baseSettings: EmailSettings,
+    overrides: { fromName?: string | null; replyTo?: string | null },
+  ): EmailSettings {
+    const overrideName = overrides.fromName ?? baseSettings.fromName;
+    const sanitizedName = this.sanitizeDisplayName(overrideName) || baseSettings.fromName;
+
+    const candidateReplyTo = overrides.replyTo?.trim() || baseSettings.replyTo?.trim();
+    if (!candidateReplyTo || !validator.isEmail(candidateReplyTo)) {
+      throw new ValidationError('Queued emails require a valid reply-to email address');
+    }
+
+    return {
+      ...baseSettings,
+      fromName: sanitizedName,
+      replyTo: candidateReplyTo,
+    };
+  }
+
+  private async resolveSenderContext(accountId: bigint, userId: string): Promise<SenderContext> {
+    const baseSettings = EmailConfigFactory.getEmailSettings();
+    const contact = await this.contactService.getContactByUserId(userId, accountId);
+
+    const contactEmail = contact.email?.trim();
+    if (!contactEmail || !validator.isEmail(contactEmail)) {
+      throw new ValidationError('Sender contact must have a valid email address before sending');
+    }
+
+    const displayNameCandidate = this.buildContactDisplayName(
+      contact.firstName,
+      contact.lastName,
+      contactEmail,
+    );
+    const overrides = this.applySenderOverrides(baseSettings, {
+      fromName: displayNameCandidate,
+      replyTo: contactEmail,
+    });
+
+    return {
+      contactId: BigInt(contact.id),
+      displayName: overrides.fromName ?? displayNameCandidate,
+      replyTo: overrides.replyTo ?? contactEmail,
+      settings: overrides,
+    };
+  }
+
+  private buildSenderSettingsForEmail(email: {
+    sender_contact_id?: bigint | null;
+    sender_contact_name?: string | null;
+    from_name_override?: string | null;
+    reply_to_email?: string | null;
+  }): { settings: EmailSettings; senderContactId?: bigint } {
+    if (!email.sender_contact_id) {
+      throw new ValidationError('Sender contact information is required to queue emails');
+    }
+
+    const baseSettings = EmailConfigFactory.getEmailSettings();
+    const settings = this.applySenderOverrides(baseSettings, {
+      fromName: email.from_name_override ?? email.sender_contact_name,
+      replyTo: email.reply_to_email,
+    });
+
+    return {
+      settings,
+      senderContactId: email.sender_contact_id,
+    };
   }
 
   /**

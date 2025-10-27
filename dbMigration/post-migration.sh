@@ -83,8 +83,10 @@ MIGRATIONS_DIR="$SCRIPT_DIR/../draco-nodejs/backend/prisma/migrations"
 if [ -d "$MIGRATIONS_DIR" ] && [ "$(ls -A "$MIGRATIONS_DIR" 2>/dev/null)" ]; then
     # Migration files exist - this is production/deployment scenario
     echo "Migration files detected - applying existing migrations..."
+    echo "Resolving baseline for email sender metadata migration if needed..."
+    npm exec --workspace @draco/backend -- prisma migrate resolve --applied 20240710120000_add_email_sender_metadata || true
     npx prisma migrate deploy
-    
+
     if [ $? -eq 0 ]; then
         echo "✓ Existing migrations applied successfully"
     else
