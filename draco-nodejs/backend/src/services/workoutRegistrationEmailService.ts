@@ -2,6 +2,7 @@ import validator from 'validator';
 import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
 import type { IEmailProvider, EmailOptions } from '../interfaces/emailInterfaces.js';
+import { htmlToPlainText } from '../utils/emailContent.js';
 
 type EmailRecipient = {
   name: string;
@@ -16,19 +17,6 @@ interface WorkoutEmailContext {
   bodyHtml: string;
   recipients: EmailRecipient[];
 }
-
-const stripHtml = (value: string): string => {
-  if (!value) {
-    return '';
-  }
-
-  return value
-    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
 
 const buildWorkoutUrl = (baseUrl: string, accountId: bigint) => {
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
@@ -68,7 +56,7 @@ export class WorkoutRegistrationEmailService {
       return;
     }
 
-    const textBody = [stripHtml(context.bodyHtml), '', `View workouts: ${workoutUrl}`]
+    const textBody = [htmlToPlainText(context.bodyHtml), '', `View workouts: ${workoutUrl}`]
       .join('\n')
       .trim();
 
