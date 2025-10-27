@@ -53,6 +53,9 @@ import { PhotoSubmissionAssetService } from './photoSubmissionAssetService.js';
 import { PhotoSubmissionNotificationService } from './photoSubmissionNotificationService.js';
 import { WorkoutRegistrationEmailService } from './workoutRegistrationEmailService.js';
 import { MemberBusinessService } from './memberBusinessService.js';
+import { HallOfFameService } from './hallOfFameService.js';
+import { HofNominationService } from './hofNominationService.js';
+import { HofSetupService } from './hofSetupService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -103,6 +106,9 @@ export class ServiceFactory {
   private static photoSubmissionModerationService: PhotoSubmissionModerationService;
   private static photoSubmissionAssetService: PhotoSubmissionAssetService;
   private static photoSubmissionNotificationService: PhotoSubmissionNotificationService;
+  private static hallOfFameService: HallOfFameService;
+  private static hofNominationService: HofNominationService;
+  private static hofSetupService: HofSetupService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -429,6 +435,30 @@ export class ServiceFactory {
     }
 
     return this.photoSubmissionAssetService;
+  }
+
+  static getHallOfFameService(): HallOfFameService {
+    if (!this.hallOfFameService) {
+      this.hallOfFameService = new HallOfFameService();
+    }
+
+    return this.hallOfFameService;
+  }
+
+  static getHofNominationService(): HofNominationService {
+    if (!this.hofNominationService) {
+      this.hofNominationService = new HofNominationService();
+    }
+
+    return this.hofNominationService;
+  }
+
+  static getHofSetupService(): HofSetupService {
+    if (!this.hofSetupService) {
+      this.hofSetupService = new HofSetupService();
+    }
+
+    return this.hofSetupService;
   }
 
   static getUserService(): UserService {

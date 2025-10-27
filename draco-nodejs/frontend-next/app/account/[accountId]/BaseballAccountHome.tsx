@@ -38,7 +38,7 @@ import {
 } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
-import { unwrapApiResult } from '../../../utils/apiResult';
+import { unwrapApiResult } from '@/utils/apiResult';
 import {
   AccountSeasonWithStatusType,
   AccountType,
@@ -57,6 +57,8 @@ import PhotoGallerySection, {
   type TeamAlbumHierarchyGroup,
 } from '@/components/photo-gallery/PhotoGallerySection';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
+import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
+import HofNominationWidget from '@/components/hall-of-fame/HofNominationWidget';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -807,7 +809,24 @@ const BaseballAccountHome: React.FC = () => {
           ) : null}
         </Box>
 
-        <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
+        <Box sx={{ display: 'grid', gap: 2 }}>
+          <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
+          {accountIdStr ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+                alignItems: 'flex-start',
+                justifyContent: 'flex-start',
+                flexWrap: 'wrap',
+              }}
+            >
+              <HofSpotlightWidget accountId={accountIdStr} />
+              <HofNominationWidget accountId={accountIdStr} />
+            </Box>
+          ) : null}
+        </Box>
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
 

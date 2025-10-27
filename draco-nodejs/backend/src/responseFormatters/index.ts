@@ -23,3 +23,4 @@ export * from './handoutResponseFormatter.js';
 export * from './photoSubmissionResponseFormatter.js';
 export * from './photoGalleryResponseFormatter.js';
 export * from './memberBusinessResponseFormatter.js';
+export * from './HallOfFameResponseFormatter.js';

@@ -114,6 +114,9 @@ export const routePermissions: Record<string, RoutePermission> = {
   '/account/[accountId]/seasons/[seasonId]/standings': {
     public: true,
   },
+  '/account/[accountId]/hall-of-fame': {
+    public: true,
+  },
   '/accounts': {
     public: true,
   },

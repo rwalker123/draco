@@ -16,6 +16,7 @@ import accountsHandoutsRouter from './accounts-handouts.js';
 import accountsPhotoSubmissionsRouter from './accounts-photo-submissions.js';
 import accountsPhotoGalleryRouter from './accounts-photo-gallery.js';
 import accountsMemberBusinessRouter from './accounts-member-businesses.js';
+import accountsHallOfFameRouter from './accounts-hall-of-fame.js';
 
 const router = Router({ mergeParams: true });
 
@@ -31,6 +32,9 @@ router.use('/', accountsPhotoSubmissionsRouter);
 
 // Photo gallery endpoints
 router.use('/', accountsPhotoGalleryRouter);
+
+// Hall of Fame endpoints
+router.use('/', accountsHallOfFameRouter);
 
 // Resources endpoints (teams, leagues, fields, umpires)
 router.use('/', accountsResourcesRouter);

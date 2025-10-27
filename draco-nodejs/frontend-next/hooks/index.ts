@@ -30,6 +30,7 @@ export { useTeamManagement } from './useTeamManagement';
 export { useFieldService } from './useFieldService';
 export { useSignupService } from './useSignupService';
 export { usePasswordResetService } from './usePasswordResetService';
+export { useHallOfFameService } from './useHallOfFameService';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';
