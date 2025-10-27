@@ -78,8 +78,13 @@ export class EtherealProvider implements IEmailProvider {
   private async initializeTransporter(): Promise<void> {
     try {
       // Use existing credentials if provided, otherwise create test account
-      if (this.config.auth.user && this.config.auth.pass) {
-        this.transporter = nodemailer.createTransport(this.config);
+      if (this.config.auth?.user && this.config.auth?.pass) {
+        this.transporter = nodemailer.createTransport({
+          host: this.config.host,
+          port: this.config.port,
+          secure: this.config.secure ?? false,
+          auth: this.config.auth,
+        });
       } else {
         // Create dynamic test account for development
         this.testAccount = await nodemailer.createTestAccount();
@@ -87,7 +92,7 @@ export class EtherealProvider implements IEmailProvider {
         const testConfig = {
           host: this.config.host,
           port: this.config.port,
-          secure: this.config.secure,
+          secure: this.config.secure ?? false,
           auth: {
             user: this.testAccount?.user || '',
             pass: this.testAccount?.pass || '',
