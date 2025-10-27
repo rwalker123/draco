@@ -251,6 +251,7 @@ model contacts {
   photogallerysubmission_photogallerysubmission_moderatedbycontactidTocontacts photogallerysubmission[] @relation("photogallerysubmission_moderatedbycontactidTocontacts")
   teamseasonmanager                                         teamseasonmanager[]
   voteanswers                                               voteanswers[]
+  sent_emails                                               emails[]                    @relation("EmailSenderContact")
 
   @@unique([lastname, firstname, middlename, creatoraccountid])
 }
@@ -1239,6 +1240,10 @@ model emails {
   id                    BigInt              @id @default(autoincrement())
   account_id            BigInt
   created_by_user_id    String?             @db.VarChar(128)
+  sender_contact_id     BigInt?
+  sender_contact_name   String?             @db.VarChar(255)
+  reply_to_email        String?             @db.VarChar(320)
+  from_name_override    String?             @db.VarChar(255)
   subject               String              @db.VarChar(500)
   body_html             String
   body_text             String?
@@ -1258,9 +1263,11 @@ model emails {
   accounts              accounts            @relation(fields: [account_id], references: [id], onDelete: Cascade)
   created_by            aspnetusers?        @relation("EmailCreatedBy", fields: [created_by_user_id], references: [id])
   template              email_templates?    @relation(fields: [template_id], references: [id])
+  sender_contact        contacts?           @relation("EmailSenderContact", fields: [sender_contact_id], references: [id], onDelete: SetNull)
 
   @@index([account_id, status])
   @@index([scheduled_send_at])
+  @@index([sender_contact_id])
 }
 
 model email_templates {

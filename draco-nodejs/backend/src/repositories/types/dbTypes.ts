@@ -863,6 +863,10 @@ export type dbEmail = Prisma.emailsGetPayload<{
     id: true;
     account_id: true;
     created_by_user_id: true;
+    sender_contact_id: true;
+    sender_contact_name: true;
+    reply_to_email: true;
+    from_name_override: true;
     subject: true;
     body_html: true;
     body_text: true;
@@ -920,6 +924,8 @@ export type dbEmailSummary = Prisma.emailsGetPayload<{
     failed_deliveries: true;
     open_count: true;
     click_count: true;
+    sender_contact_name: true;
+    reply_to_email: true;
     created_by: {
       select: {
         username: true;
@@ -959,6 +965,10 @@ export type dbScheduledEmail = Prisma.emailsGetPayload<{
     body_html: true;
     status: true;
     scheduled_send_at: true;
+    sender_contact_id: true;
+    sender_contact_name: true;
+    reply_to_email: true;
+    from_name_override: true;
   };
 }>;
 
@@ -1372,6 +1382,10 @@ export type dbCreateEmailInput = {
   status: string;
   scheduled_send_at?: Date | null;
   created_at: Date;
+  sender_contact_id?: bigint | null;
+  sender_contact_name?: string | null;
+  reply_to_email?: string | null;
+  from_name_override?: string | null;
 };
 
 export type dbCreateEmailRecipientInput = {
@@ -1391,6 +1405,10 @@ export type dbEmailUpdateData = {
   bounce_count?: number;
   open_count?: number;
   click_count?: number;
+  sender_contact_id?: bigint | null;
+  sender_contact_name?: string | null;
+  reply_to_email?: string | null;
+  from_name_override?: string | null;
 };
 
 export type dbEmailListOptions = {

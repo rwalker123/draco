@@ -32,11 +32,19 @@ export class PrismaEmailRepository implements IEmailRepository {
         status: data.status,
         scheduled_send_at: data.scheduled_send_at ?? null,
         created_at: data.created_at,
+        sender_contact_id: data.sender_contact_id ?? null,
+        sender_contact_name: data.sender_contact_name ?? null,
+        reply_to_email: data.reply_to_email ?? null,
+        from_name_override: data.from_name_override ?? null,
       },
       select: {
         id: true,
         account_id: true,
         created_by_user_id: true,
+        sender_contact_id: true,
+        sender_contact_name: true,
+        reply_to_email: true,
+        from_name_override: true,
         subject: true,
         body_html: true,
         body_text: true,
@@ -146,6 +154,8 @@ export class PrismaEmailRepository implements IEmailRepository {
           failed_deliveries: true,
           open_count: true,
           click_count: true,
+          sender_contact_name: true,
+          reply_to_email: true,
           created_by: {
             select: {
               username: true,
@@ -185,6 +195,10 @@ export class PrismaEmailRepository implements IEmailRepository {
         body_html: true,
         status: true,
         scheduled_send_at: true,
+        sender_contact_id: true,
+        sender_contact_name: true,
+        reply_to_email: true,
+        from_name_override: true,
       },
     });
   }

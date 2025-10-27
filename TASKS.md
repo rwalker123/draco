@@ -216,3 +216,25 @@ EOF_JS
 ## References
 - Source plan: `docs/railway-deployment-plan.md`
 - Railway docs: https://railway.app/docs
+
+## Prisma Migration Baseline Notes
+
+When applying the new email sender metadata migration on databases that already have tables:
+
+1. **Apply the SQL manually inside Railway** (one-time per environment):
+   ```bash
+   railway run --service draco-backend \
+     "psql \"$DATABASE_URL\" -f draco-nodejs/backend/prisma/migrations/20240710120000_add_email_sender_metadata/migration.sql"
+   ```
+2. **Mark the migration as applied** from the same container:
+   ```bash
+   railway run --service draco-backend \
+     "npm exec --workspace @draco/backend -- prisma migrate resolve --applied 20240710120000_add_email_sender_metadata"
+   ```
+3. **Resume the usual deploy flow** (either via start command or manual run):
+   ```bash
+   railway run --service draco-backend \
+     "npm exec --workspace @draco/backend -- prisma migrate deploy"
+   ```
+
+> Run the above steps once per Railway environment (Development, Production) before relying on auto-deploys to execute migrations.

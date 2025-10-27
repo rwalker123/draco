@@ -48,8 +48,8 @@ export class EmailConfigFactory {
 
     return {
       provider,
-      fromEmail: process.env.EMAIL_FROM || 'noreply@example.com',
-      fromName: process.env.EMAIL_FROM_NAME || 'Draco Sports Manager',
+      fromEmail: process.env.EMAIL_FROM || 'noreply@ezrecsports.com',
+      fromName: process.env.EMAIL_FROM_NAME || 'ezRecSports',
       replyTo: process.env.EMAIL_REPLY_TO,
     };
   }
@@ -78,7 +78,9 @@ export class EmailConfigFactory {
   private static getSendGridConfig(): EmailConfig {
     const apiKey = process.env.SENDGRID_API_KEY;
     if (!apiKey) {
-      throw new Error('SENDGRID_API_KEY environment variable is required for SendGrid email provider');
+      throw new Error(
+        'SENDGRID_API_KEY environment variable is required for SendGrid email provider',
+      );
     }
 
     return {
@@ -109,7 +111,9 @@ export class EmailConfigFactory {
       (process.env.SES_REGION ? `email-smtp.${process.env.SES_REGION}.amazonaws.com` : undefined);
 
     if (!host) {
-      throw new Error('SES_SMTP_HOST or SES_REGION environment variable is required for SES email provider');
+      throw new Error(
+        'SES_SMTP_HOST or SES_REGION environment variable is required for SES email provider',
+      );
     }
 
     const port = process.env.SES_SMTP_PORT ? parseInt(process.env.SES_SMTP_PORT, 10) : 587;
@@ -183,11 +187,15 @@ export class EmailConfigFactory {
 
     if (provider === 'ses') {
       if (!process.env.SES_SMTP_USER || !process.env.SES_SMTP_PASS) {
-        throw new Error('SES_SMTP_USER and SES_SMTP_PASS are required when using the SES email provider');
+        throw new Error(
+          'SES_SMTP_USER and SES_SMTP_PASS are required when using the SES email provider',
+        );
       }
 
       if (!process.env.SES_SMTP_HOST && !process.env.SES_REGION) {
-        throw new Error('SES_SMTP_HOST or SES_REGION is required when using the SES email provider');
+        throw new Error(
+          'SES_SMTP_HOST or SES_REGION is required when using the SES email provider',
+        );
       }
     }
 
