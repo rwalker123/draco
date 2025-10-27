@@ -54,7 +54,6 @@ const createService = () => {
     processingQueue: new Set<string>(),
     rateLimitWindow: { startTime: new Date(), count: 0 },
     emailRepository,
-    stripHtml: vi.fn().mockReturnValue('Plain text'),
     sleep: vi.fn().mockResolvedValue(undefined),
     checkAndUpdateEmailStatus: vi.fn().mockResolvedValue(undefined),
     RATE_LIMIT_BACKOFF_MS: [5000, 10000, 20000],

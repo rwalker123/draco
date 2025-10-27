@@ -2,14 +2,20 @@
 // Follows DIP - depends on environment variables, no secrets in code
 
 export interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  auth?: {
     user: string;
     pass: string;
   };
   service?: string;
+  region?: string;
+  credentials?: {
+    accessKeyId: string;
+    secretAccessKey: string;
+    sessionToken?: string;
+  };
 }
 
 export interface EmailSettings {
@@ -99,40 +105,29 @@ export class EmailConfigFactory {
    * Configuration using AWS Simple Email Service
    */
   private static getSesConfig(): EmailConfig {
-    const smtpUser = process.env.SES_SMTP_USER;
-    const smtpPass = process.env.SES_SMTP_PASS;
+    const region = process.env.SES_REGION || process.env.AWS_REGION;
+    const accessKeyId = process.env.SES_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.SES_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+    const sessionToken = process.env.SES_SESSION_TOKEN || process.env.AWS_SESSION_TOKEN;
 
-    if (!smtpUser || !smtpPass) {
-      throw new Error('SES_SMTP_USER and SES_SMTP_PASS are required for SES email provider');
+    if (!region) {
+      throw new Error('SES_REGION or AWS_REGION is required for SES email provider');
     }
 
-    const host =
-      process.env.SES_SMTP_HOST ||
-      (process.env.SES_REGION ? `email-smtp.${process.env.SES_REGION}.amazonaws.com` : undefined);
-
-    if (!host) {
+    if (!accessKeyId || !secretAccessKey) {
       throw new Error(
-        'SES_SMTP_HOST or SES_REGION environment variable is required for SES email provider',
+        'SES_ACCESS_KEY_ID/SES_SECRET_ACCESS_KEY (or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY) are required for SES email provider',
       );
     }
 
-    const port = process.env.SES_SMTP_PORT ? parseInt(process.env.SES_SMTP_PORT, 10) : 587;
-
-    if (Number.isNaN(port)) {
-      throw new Error('SES_SMTP_PORT must be a valid number');
-    }
-
-    const secure = port === 465;
-
     return {
-      host,
-      port,
-      secure,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
       service: 'SES',
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+        ...(sessionToken ? { sessionToken } : {}),
+      },
     };
   }
 
@@ -186,15 +181,18 @@ export class EmailConfigFactory {
     }
 
     if (provider === 'ses') {
-      if (!process.env.SES_SMTP_USER || !process.env.SES_SMTP_PASS) {
-        throw new Error(
-          'SES_SMTP_USER and SES_SMTP_PASS are required when using the SES email provider',
-        );
+      const region = process.env.SES_REGION || process.env.AWS_REGION;
+      const accessKeyId = process.env.SES_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+      const secretAccessKey =
+        process.env.SES_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+
+      if (!region) {
+        throw new Error('SES_REGION or AWS_REGION is required when using the SES email provider');
       }
 
-      if (!process.env.SES_SMTP_HOST && !process.env.SES_REGION) {
+      if (!accessKeyId || !secretAccessKey) {
         throw new Error(
-          'SES_SMTP_HOST or SES_REGION is required when using the SES email provider',
+          'SES_ACCESS_KEY_ID/SES_SECRET_ACCESS_KEY or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY are required when using the SES email provider',
         );
       }
     }

@@ -30,6 +30,7 @@ import { RosterService } from './rosterService.js';
 import { ServiceFactory } from './serviceFactory.js';
 import validator from 'validator';
 import { TeamService } from './teamService.js';
+import { htmlToPlainText } from '../utils/emailContent.js';
 import { ContactService } from './contactService.js';
 
 // Email queue management interfaces
@@ -346,7 +347,7 @@ export class EmailService {
       created_by_user_id: createdByUserId,
       subject: request.subject,
       body_html: request.body,
-      body_text: this.stripHtml(request.body),
+      body_text: htmlToPlainText(request.body),
       template_id: request.templateId ? BigInt(request.templateId) : null,
       status: emailStatus,
       scheduled_send_at: scheduledDate,
@@ -833,7 +834,7 @@ export class EmailService {
           to: recipient.emailAddress,
           subject: job.subject,
           html: job.bodyHtml,
-          text: this.stripHtml(job.bodyHtml),
+          text: htmlToPlainText(job.bodyHtml),
           from: job.settings.fromEmail,
           fromName: job.settings.fromName,
           replyTo: job.settings.replyTo,
@@ -1422,10 +1423,6 @@ export class EmailService {
   /**
    * Strip HTML tags for plain text version
    */
-  private stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, '').trim();
-  }
-
   /**
    * Generate HTML email template
    */
