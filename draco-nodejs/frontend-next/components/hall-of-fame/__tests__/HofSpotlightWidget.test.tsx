@@ -4,49 +4,23 @@ import userEvent from '@testing-library/user-event';
 import {
   listAccountHallOfFameClasses,
   getAccountHallOfFameRandomMember,
-  getAccountHallOfFameNominationSetup,
 } from '@draco/shared-api-client';
 import HofSpotlightWidget from '../HofSpotlightWidget';
 
 vi.mock('@draco/shared-api-client', () => ({
   listAccountHallOfFameClasses: vi.fn(),
   getAccountHallOfFameRandomMember: vi.fn(),
-  getAccountHallOfFameNominationSetup: vi.fn(),
 }));
 
 vi.mock('@/hooks/useApiClient', () => ({
   useApiClient: vi.fn(),
 }));
 
-vi.mock('../HofNominationDialog', () => ({
-  __esModule: true,
-  default: ({
-    open,
-    onClose,
-    onSubmitted,
-  }: {
-    open: boolean;
-    onClose: () => void;
-    onSubmitted?: () => void;
-  }) =>
-    open ? (
-      <div data-testid="hof-nomination-dialog">
-        <button
-          type="button"
-          onClick={() => {
-            onSubmitted?.();
-            onClose();
-          }}
-        >
-          Confirm Nomination
-        </button>
-      </div>
-    ) : null,
-}));
+const pushMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: pushMock,
   }),
 }));
 
@@ -67,7 +41,7 @@ describe('HofSpotlightWidget', () => {
     expect(getAccountHallOfFameRandomMember).not.toHaveBeenCalled();
   });
 
-  it('shows spotlight details and handles nomination submission', async () => {
+  it('shows spotlight details and links to the hall of fame page', async () => {
     vi.mocked(listAccountHallOfFameClasses).mockResolvedValue({
       data: [
         {
@@ -94,29 +68,14 @@ describe('HofSpotlightWidget', () => {
       },
     } as unknown as Awaited<ReturnType<typeof getAccountHallOfFameRandomMember>>);
 
-    vi.mocked(getAccountHallOfFameNominationSetup).mockResolvedValue({
-      data: {
-        accountId: '1',
-        enableNomination: true,
-        criteriaText: '<p>Respect and dedication<script>alert(1)</script></p>',
-      },
-    } as unknown as Awaited<ReturnType<typeof getAccountHallOfFameNominationSetup>>);
-
-    const { container } = render(<HofSpotlightWidget accountId="account-42" />);
+    render(<HofSpotlightWidget accountId="account-42" />);
 
     expect(await screen.findByText('Hall of Fame Spotlight')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Alex Morgan', level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Submit Nomination' })).toBeInTheDocument();
-    expect(container.querySelector('script')).toBeNull();
+    expect(screen.getByRole('button', { name: 'View Hall of Fame' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Submit Nomination' })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Submit Nomination' }));
-    expect(await screen.findByTestId('hof-nomination-dialog')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm Nomination' }));
-    await waitFor(() =>
-      expect(
-        screen.getByText('Thanks for the nomination! Our administrators will review it shortly.'),
-      ).toBeInTheDocument(),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'View Hall of Fame' }));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/account/account-42/hall-of-fame'));
   });
 });

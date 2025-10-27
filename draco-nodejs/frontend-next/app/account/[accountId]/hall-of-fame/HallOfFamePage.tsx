@@ -21,7 +21,6 @@ import {
   TextField,
   Typography,
   Button,
-  Snackbar,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
@@ -43,14 +42,10 @@ import {
 } from '@draco/shared-schemas';
 import AccountPageHeader from '@/components/AccountPageHeader';
 import HofMemberCard from '@/components/hall-of-fame/HofMemberCard';
-import HofNominationDialog from '@/components/hall-of-fame/HofNominationDialog';
+import HofNominationWidget from '@/components/hall-of-fame/HofNominationWidget';
 import useCarousel from '@/components/profile/useCarousel';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
-import { sanitizeRichContent } from '@/utils/sanitization';
-
-const NOMINATION_SUCCESS_MESSAGE =
-  'Thanks for the nomination! Our administrators will review it shortly.';
 
 type ClassPortrait = {
   photoUrl: string | null;
@@ -73,8 +68,6 @@ const HallOfFamePage: React.FC = () => {
   const [membersError, setMembersError] = React.useState<string | null>(null);
   const [randomMember, setRandomMember] = React.useState<HofMemberType | null>(null);
   const [nominationSetup, setNominationSetup] = React.useState<HofNominationSetupType | null>(null);
-  const [nominationDialogOpen, setNominationDialogOpen] = React.useState(false);
-  const [successSnackbarOpen, setSuccessSnackbarOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<HofMemberType[] | null>(null);
   const [searchLoading, setSearchLoading] = React.useState(false);
@@ -421,27 +414,6 @@ const HallOfFamePage: React.FC = () => {
     [classSummaries, handleSelectClass],
   );
 
-  const canSubmitNomination = nominationSetup?.enableNomination ?? false;
-
-  const handleOpenNominationDialog = React.useCallback(() => {
-    if (!canSubmitNomination) {
-      return;
-    }
-    setNominationDialogOpen(true);
-  }, [canSubmitNomination]);
-
-  const handleNominationSuccess = () => {
-    setSuccessSnackbarOpen(true);
-  };
-
-  const sanitizedCriteria = React.useMemo(() => {
-    if (!nominationSetup?.criteriaText) {
-      return null;
-    }
-    const sanitized = sanitizeRichContent(nominationSetup.criteriaText);
-    return sanitized.length > 0 ? sanitized : null;
-  }, [nominationSetup]);
-
   if (!accountId) {
     return null;
   }
@@ -472,6 +444,12 @@ const HallOfFamePage: React.FC = () => {
 
       <Container maxWidth="lg" sx={{ py: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
         {classesError && <Alert severity="error">{classesError}</Alert>}
+
+        {nominationSetup?.enableNomination ? (
+          <Box>
+            <HofNominationWidget accountId={accountId} />
+          </Box>
+        ) : null}
 
         {loadingClasses ? (
           <Box display="flex" justifyContent="center" py={6}>
@@ -631,41 +609,6 @@ const HallOfFamePage: React.FC = () => {
               </Box>
             </Paper>
 
-            {canSubmitNomination ? (
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={2}
-                justifyContent="space-between"
-                alignItems={{ xs: 'stretch', sm: 'center' }}
-              >
-                <Stack spacing={1} sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    Share the next great story
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Help us recognize outstanding contributors by nominating a deserving individual.
-                  </Typography>
-                  {sanitizedCriteria ? (
-                    <Typography
-                      component="div"
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ '& p': { mb: 0.5, '&:last-of-type': { mb: 0 } } }}
-                      dangerouslySetInnerHTML={{ __html: sanitizedCriteria }}
-                    />
-                  ) : null}
-                </Stack>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={handleOpenNominationDialog}
-                  sx={{ alignSelf: { xs: 'stretch', sm: 'center' }, minWidth: { sm: 200 } }}
-                >
-                  Submit a Nomination
-                </Button>
-              </Stack>
-            ) : null}
-
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="stretch">
               <Stack
                 spacing={2}
@@ -818,27 +761,6 @@ const HallOfFamePage: React.FC = () => {
           </Stack>
         )}
       </Container>
-
-      {nominationSetup?.enableNomination && (
-        <HofNominationDialog
-          accountId={accountId}
-          open={nominationDialogOpen}
-          onClose={() => setNominationDialogOpen(false)}
-          onSubmitted={handleNominationSuccess}
-          criteriaText={nominationSetup?.criteriaText}
-        />
-      )}
-
-      <Snackbar
-        open={successSnackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSuccessSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" onClose={() => setSuccessSnackbarOpen(false)}>
-          {NOMINATION_SUCCESS_MESSAGE}
-        </Alert>
-      </Snackbar>
     </main>
   );
 };

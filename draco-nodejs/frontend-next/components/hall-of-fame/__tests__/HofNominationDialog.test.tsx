@@ -2,7 +2,9 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { submitAccountHallOfFameNomination } from '@draco/shared-api-client';
+import type { ContactType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useAccountMembership } from '@/hooks/useAccountMembership';
 import HofNominationDialog from '../HofNominationDialog';
 
 vi.mock('@draco/shared-api-client', () => ({
@@ -11,6 +13,10 @@ vi.mock('@draco/shared-api-client', () => ({
 
 vi.mock('@/hooks/useApiClient', () => ({
   useApiClient: vi.fn(),
+}));
+
+vi.mock('@/hooks/useAccountMembership', () => ({
+  useAccountMembership: vi.fn(),
 }));
 
 vi.mock('@/components/security/TurnstileChallenge', () => ({
@@ -47,6 +53,12 @@ describe('HofNominationDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useApiClient).mockReturnValue({} as never);
+    vi.mocked(useAccountMembership).mockReturnValue({
+      isMember: null,
+      loading: false,
+      error: null,
+      contact: null,
+    });
     restoreSiteKey();
   });
 
@@ -59,10 +71,22 @@ describe('HofNominationDialog', () => {
   });
 
   const fillRequiredFields = async () => {
-    await userEvent.type(screen.getByLabelText(/your name/i), 'Jane Coach');
-    await userEvent.type(screen.getByLabelText(/phone number/i), '5551234567');
-    await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com');
-    await userEvent.type(screen.getByLabelText(/nominee name/i), 'Alex Player');
+    const nameField = screen.getByLabelText(/your name/i);
+    await userEvent.clear(nameField);
+    await userEvent.type(nameField, 'Jane Coach');
+
+    const phoneField = screen.getByLabelText(/phone number/i);
+    await userEvent.clear(phoneField);
+    await userEvent.type(phoneField, '5551234567');
+
+    const emailField = screen.getByLabelText(/email/i);
+    await userEvent.clear(emailField);
+    await userEvent.type(emailField, 'jane@example.com');
+
+    const nomineeField = screen.getByLabelText(/nominee name/i);
+    await userEvent.clear(nomineeField);
+    await userEvent.type(nomineeField, 'Alex Player');
+
     await userEvent.type(
       screen.getByLabelText(/reason for nomination/i),
       'Outstanding leadership and performance.',
@@ -146,5 +170,36 @@ describe('HofNominationDialog', () => {
     });
     expect(onSubmitted).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('prefills contact information when membership data is available', async () => {
+    const mockContact = {
+      firstName: 'Taylor',
+      lastName: 'Swift',
+      email: 'taylor@example.com',
+      contactDetails: {
+        phone1: '',
+        phone2: '(555) 000-1111',
+        phone3: '',
+        streetAddress: '',
+        city: '',
+        state: '',
+        zip: '',
+        dateOfBirth: '',
+      },
+    } as unknown as ContactType;
+
+    vi.mocked(useAccountMembership).mockReturnValue({
+      isMember: true,
+      loading: false,
+      error: null,
+      contact: mockContact,
+    });
+
+    render(<HofNominationDialog accountId="prefill" open onClose={() => {}} />);
+
+    await waitFor(() => expect(screen.getByLabelText(/your name/i)).toHaveValue('Taylor Swift'));
+    expect(screen.getByLabelText(/email/i)).toHaveValue('taylor@example.com');
+    expect(screen.getByLabelText(/phone number/i)).toHaveValue('(555) 000-1111');
   });
 });

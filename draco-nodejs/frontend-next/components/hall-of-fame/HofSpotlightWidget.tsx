@@ -1,40 +1,51 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Snackbar,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useRouter } from 'next/navigation';
 import {
-  getAccountHallOfFameNominationSetup,
   getAccountHallOfFameRandomMember,
   listAccountHallOfFameClasses,
 } from '@draco/shared-api-client';
-import {
-  HofMemberSchema,
-  type HofMemberType,
-  type HofNominationSetupType,
-} from '@draco/shared-schemas';
+import { HofMemberSchema, type HofMemberType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
-import { sanitizeRichContent } from '@/utils/sanitization';
 import HofMemberCard from './HofMemberCard';
-import HofNominationDialog from './HofNominationDialog';
-
-const NOMINATION_SUCCESS_MESSAGE =
-  'Thanks for the nomination! Our administrators will review it shortly.';
 
 export interface HofSpotlightWidgetProps {
   accountId: string;
 }
+
+const normalizeId = (value: unknown): unknown =>
+  typeof value === 'bigint' ? value.toString() : value;
+
+const coerceMember = (member: unknown): HofMemberType | null => {
+  if (!member || typeof member !== 'object') {
+    return null;
+  }
+
+  const raw = member as Record<string, unknown>;
+  const normalized = {
+    ...raw,
+    id: normalizeId(raw.id),
+    accountId: normalizeId(raw.accountId),
+    contactId: normalizeId(raw.contactId),
+    contact:
+      raw.contact && typeof raw.contact === 'object'
+        ? {
+            ...raw.contact,
+            id: normalizeId((raw.contact as Record<string, unknown>).id),
+          }
+        : raw.contact,
+  };
+
+  try {
+    return HofMemberSchema.parse(normalized);
+  } catch {
+    return null;
+  }
+};
 
 const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) => {
   const apiClient = useApiClient();
@@ -44,9 +55,6 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) =>
   const [hallOfFameMember, setHallOfFameMember] = React.useState<HofMemberType | null>(null);
   const [hallOfFameLoading, setHallOfFameLoading] = React.useState(false);
   const [hallOfFameError, setHallOfFameError] = React.useState<string | null>(null);
-  const [nominationSetup, setNominationSetup] = React.useState<HofNominationSetupType | null>(null);
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!accountId) {
@@ -86,8 +94,13 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) =>
             const member = unwrapApiResult(randomResult, 'Unable to load Hall of Fame spotlight.');
 
             if (isMounted) {
-              const normalizedMember = HofMemberSchema.parse(member);
-              setHallOfFameMember(normalizedMember);
+              const normalizedMember = coerceMember(member);
+              if (normalizedMember) {
+                setHallOfFameMember(normalizedMember);
+              } else {
+                setHallOfFameError('Unable to load Hall of Fame spotlight.');
+                setHallOfFameMember(null);
+              }
             }
           } catch (error) {
             if (isMounted) {
@@ -119,53 +132,12 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) =>
       }
     };
 
-    const loadNominationSetup = async () => {
-      try {
-        const setupResult = await getAccountHallOfFameNominationSetup({
-          client: apiClient,
-          path: { accountId },
-          throwOnError: false,
-        });
-
-        const setup = unwrapApiResult(
-          setupResult,
-          'Unable to load Hall of Fame nomination settings.',
-        );
-
-        if (isMounted) {
-          setNominationSetup(setup);
-        }
-      } catch {
-        if (isMounted) {
-          setNominationSetup(null);
-        }
-      }
-    };
-
     loadHallOfFame();
-    loadNominationSetup();
 
     return () => {
       isMounted = false;
     };
   }, [accountId, apiClient]);
-
-  const sanitizedCriteria = React.useMemo(() => {
-    if (!nominationSetup?.criteriaText) {
-      return null;
-    }
-
-    const sanitized = sanitizeRichContent(nominationSetup.criteriaText);
-    return sanitized.length > 0 ? sanitized : null;
-  }, [nominationSetup]);
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-  };
-
-  const handleNominationSuccess = () => {
-    setSnackbarOpen(true);
-  };
 
   if (!hasHallOfFame) {
     return null;
@@ -181,9 +153,11 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) =>
             'linear-gradient(180deg, rgba(246,238,205,0.35) 0%, rgba(246,238,205,0.1) 100%)',
           boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
           mt: 3,
+          width: { xs: '100%', md: 'fit-content' },
+          maxWidth: 520,
         }}
       >
-        <Stack spacing={3}>
+        <Stack spacing={3} alignItems="flex-start">
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <EmojiEventsIcon sx={{ color: 'warning.main' }} />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -213,49 +187,9 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) =>
             >
               View Hall of Fame
             </Button>
-            {nominationSetup?.enableNomination ? (
-              <Button variant="contained" onClick={() => setDialogOpen(true)}>
-                Submit Nomination
-              </Button>
-            ) : null}
           </Stack>
-
-          {sanitizedCriteria ? (
-            <Alert
-              severity="info"
-              icon={false}
-              sx={{ '& p': { mb: 0.5, '&:last-of-type': { mb: 0 } } }}
-            >
-              <Typography
-                component="div"
-                variant="body2"
-                dangerouslySetInnerHTML={{ __html: sanitizedCriteria }}
-              />
-            </Alert>
-          ) : null}
         </Stack>
       </Paper>
-
-      {nominationSetup?.enableNomination && (
-        <HofNominationDialog
-          accountId={accountId}
-          open={dialogOpen}
-          onClose={handleDialogClose}
-          onSubmitted={handleNominationSuccess}
-          criteriaText={nominationSetup.criteriaText ?? undefined}
-        />
-      )}
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <Alert severity="success" onClose={() => setSnackbarOpen(false)}>
-          {NOMINATION_SUCCESS_MESSAGE}
-        </Alert>
-      </Snackbar>
     </>
   );
 };

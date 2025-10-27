@@ -58,6 +58,7 @@ import PhotoGallerySection, {
 } from '@/components/photo-gallery/PhotoGallerySection';
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
+import HofNominationWidget from '@/components/hall-of-fame/HofNominationWidget';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -808,19 +809,23 @@ const BaseballAccountHome: React.FC = () => {
           ) : null}
         </Box>
 
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2,
-            alignItems: 'stretch',
-            gridTemplateColumns: {
-              xs: '1fr',
-              md: accountIdStr ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr',
-            },
-          }}
-        >
+        <Box sx={{ display: 'grid', gap: 2 }}>
           <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
-          {accountIdStr ? <HofSpotlightWidget accountId={accountIdStr} /> : null}
+          {accountIdStr ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+                alignItems: 'flex-start',
+                justifyContent: 'flex-start',
+                flexWrap: 'wrap',
+              }}
+            >
+              <HofSpotlightWidget accountId={accountIdStr} />
+              <HofNominationWidget accountId={accountIdStr} />
+            </Box>
+          ) : null}
         </Box>
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
