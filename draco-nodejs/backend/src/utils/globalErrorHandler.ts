@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { ZodError } from 'zod';
-import { ApiError } from './customErrors.js';
+import { ApiError, AuthorizationError } from './customErrors.js';
 import { DateUtils } from './dateUtils.js';
 
 export function hasCodeProperty(err: unknown): err is { code: string } {
@@ -27,6 +27,14 @@ function isZodError(err: unknown): err is ZodError {
 
 function logError(err: Error, req: Request): void {
   if (err.name === 'NoDomainAccount') {
+    return;
+  }
+
+  if (
+    err instanceof AuthorizationError &&
+    req.method === 'GET' &&
+    req.path?.toLowerCase().endsWith('/contacts/me')
+  ) {
     return;
   }
 

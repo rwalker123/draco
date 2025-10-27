@@ -28,6 +28,7 @@ import {
   HowToVote as HowToVoteIcon,
   Description as DescriptionIcon,
   PhotoLibrary as PhotoLibraryIcon,
+  EmojiEvents as EmojiEventsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -464,6 +465,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <HowToVoteIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Poll Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/hall-of-fame/manage`)
+                }
+                key="hall-of-fame-management"
+              >
+                <ListItemIcon>
+                  <EmojiEventsIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Hall of Fame</ListItemText>
               </MenuItem>
             );
           }

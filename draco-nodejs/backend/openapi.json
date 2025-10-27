@@ -7323,6 +7323,684 @@
           "optionId"
         ]
       },
+      "HofContactSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "displayName"
+        ],
+        "description": "Minimal contact information surfaced for Hall of Fame inductees and eligible contacts."
+      },
+      "HofMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "yearInducted": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2026,
+            "description": "Calendar year the inductee entered the Hall of Fame.",
+            "example": 2025
+          },
+          "biographyHtml": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "displayName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "photoUrl": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName",
+              "displayName"
+            ],
+            "description": "Minimal contact information surfaced for Hall of Fame inductees and eligible contacts."
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "contactId",
+          "yearInducted",
+          "contact"
+        ],
+        "description": "Represents an inducted Hall of Fame member for an account."
+      },
+      "HofClassSummary": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2026,
+            "description": "Calendar year the inductee entered the Hall of Fame.",
+            "example": 2025
+          },
+          "memberCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "year",
+          "memberCount"
+        ],
+        "description": "Summary information for a single Hall of Fame class."
+      },
+      "HofClassWithMembers": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2026,
+            "description": "Calendar year the inductee entered the Hall of Fame.",
+            "example": 2025
+          },
+          "memberCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "yearInducted": {
+                  "type": "integer",
+                  "minimum": 1900,
+                  "maximum": 2026,
+                  "description": "Calendar year the inductee entered the Hall of Fame.",
+                  "example": 2025
+                },
+                "biographyHtml": {
+                  "type": "string",
+                  "maxLength": 20000
+                },
+                "contact": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "photoUrl": {
+                      "type": "string",
+                      "nullable": true,
+                      "maxLength": 500
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "firstName",
+                    "lastName",
+                    "displayName"
+                  ],
+                  "description": "Minimal contact information surfaced for Hall of Fame inductees and eligible contacts."
+                }
+              },
+              "required": [
+                "id",
+                "accountId",
+                "contactId",
+                "yearInducted",
+                "contact"
+              ],
+              "description": "Represents an inducted Hall of Fame member for an account."
+            }
+          }
+        },
+        "required": [
+          "year",
+          "memberCount",
+          "members"
+        ],
+        "description": "Expanded Hall of Fame class information including the inductees for a specific year."
+      },
+      "HofEligibleContactsQuery": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "page": {
+            "type": "number",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "description": "Query parameters for locating contacts eligible for Hall of Fame induction. Results are paginated."
+      },
+      "HofEligibleContactsResponse": {
+        "type": "object",
+        "properties": {
+          "contacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "displayName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "photoUrl": {
+                  "type": "string",
+                  "nullable": true,
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "id",
+                "firstName",
+                "lastName",
+                "displayName"
+              ],
+              "description": "Minimal contact information surfaced for Hall of Fame inductees and eligible contacts."
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number",
+                "nullable": true,
+                "default": 1
+              },
+              "limit": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              },
+              "skip": {
+                "type": "number",
+                "nullable": true,
+                "minimum": 0,
+                "default": 0
+              },
+              "sortBy": {
+                "type": "string"
+              },
+              "sortOrder": {
+                "type": "string",
+                "enum": [
+                  "asc",
+                  "desc"
+                ],
+                "default": "asc"
+              }
+            }
+          }
+        },
+        "required": [
+          "contacts"
+        ],
+        "description": "Paginated list of contacts eligible to be inducted into the Hall of Fame."
+      },
+      "CreateHofMember": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "yearInducted": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2026,
+            "description": "Calendar year the inductee entered the Hall of Fame.",
+            "example": 2025
+          },
+          "biographyHtml": {
+            "type": "string",
+            "maxLength": 20000
+          }
+        },
+        "required": [
+          "contactId",
+          "yearInducted"
+        ],
+        "description": "Payload for inducting a new Hall of Fame member."
+      },
+      "UpdateHofMember": {
+        "type": "object",
+        "properties": {
+          "yearInducted": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2026,
+            "description": "Calendar year the inductee entered the Hall of Fame.",
+            "example": 2025
+          },
+          "biographyHtml": {
+            "type": "string",
+            "maxLength": 20000
+          }
+        },
+        "required": [
+          "yearInducted"
+        ],
+        "description": "Payload for updating an existing Hall of Fame member."
+      },
+      "SubmitHofNomination": {
+        "type": "object",
+        "properties": {
+          "nominator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "phoneNumber": {
+            "type": "string",
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 75,
+            "format": "email"
+          },
+          "nominee": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "nominator",
+          "phoneNumber",
+          "email",
+          "nominee",
+          "reason"
+        ],
+        "description": "Public payload for nominating a Hall of Fame candidate."
+      },
+      "UpdateHofNomination": {
+        "type": "object",
+        "properties": {
+          "nominator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "phoneNumber": {
+            "type": "string",
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 75,
+            "format": "email"
+          },
+          "nominee": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "nominator",
+          "phoneNumber",
+          "email",
+          "nominee",
+          "reason"
+        ],
+        "description": "Payload for updating a Hall of Fame nomination."
+      },
+      "HofNomination": {
+        "type": "object",
+        "properties": {
+          "nominator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "phoneNumber": {
+            "type": "string",
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 75,
+            "format": "email"
+          },
+          "nominee": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 timestamp when the nomination was created."
+          }
+        },
+        "required": [
+          "nominator",
+          "phoneNumber",
+          "email",
+          "nominee",
+          "reason",
+          "id",
+          "accountId"
+        ],
+        "description": "Represents a stored Hall of Fame nomination submission."
+      },
+      "HofNominationList": {
+        "type": "object",
+        "properties": {
+          "nominations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nominator": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                },
+                "phoneNumber": {
+                  "type": "string",
+                  "default": ""
+                },
+                "email": {
+                  "type": "string",
+                  "maxLength": 75,
+                  "format": "email"
+                },
+                "nominee": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 5000
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "submittedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "ISO-8601 timestamp when the nomination was created."
+                }
+              },
+              "required": [
+                "nominator",
+                "phoneNumber",
+                "email",
+                "nominee",
+                "reason",
+                "id",
+                "accountId"
+              ],
+              "description": "Represents a stored Hall of Fame nomination submission."
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of nominations returned."
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number",
+                "nullable": true,
+                "default": 1
+              },
+              "limit": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              },
+              "skip": {
+                "type": "number",
+                "nullable": true,
+                "minimum": 0,
+                "default": 0
+              },
+              "sortBy": {
+                "type": "string"
+              },
+              "sortOrder": {
+                "type": "string",
+                "enum": [
+                  "asc",
+                  "desc"
+                ],
+                "default": "asc"
+              }
+            }
+          }
+        },
+        "required": [
+          "nominations",
+          "total"
+        ],
+        "description": "Paginated list of Hall of Fame nominations."
+      },
+      "HofNominationQuery": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "description": "Pagination options when retrieving Hall of Fame nominations."
+      },
+      "HofNominationSetup": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "enableNomination": {
+            "type": "boolean"
+          },
+          "criteriaText": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "accountId",
+          "enableNomination"
+        ],
+        "description": "Hall of Fame nomination settings for an account."
+      },
+      "HofNominationInduct": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "yearInducted": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2026,
+            "description": "Calendar year the inductee entered the Hall of Fame.",
+            "example": 2025
+          },
+          "biographyHtml": {
+            "type": "string",
+            "maxLength": 20000
+          }
+        },
+        "required": [
+          "contactId",
+          "yearInducted"
+        ],
+        "description": "Payload for inducting a nomination into the Hall of Fame. Biography defaults to the nomination reason when omitted."
+      },
+      "UpdateHofNominationSetup": {
+        "type": "object",
+        "properties": {
+          "enableNomination": {
+            "type": "boolean"
+          },
+          "criteriaText": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "enableNomination"
+        ],
+        "description": "Payload for updating nomination availability and criteria messaging."
+      },
       "WorkoutSummary": {
         "type": "object",
         "properties": {
@@ -20572,6 +21250,1175 @@
           },
           "500": {
             "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/classes": {
+      "get": {
+        "operationId": "listAccountHallOfFameClasses",
+        "summary": "List Hall of Fame classes",
+        "description": "Returns the available Hall of Fame classes for an account ordered by year.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hall of Fame classes for the requested account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HofClassSummary"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found or Hall of Fame not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/classes/{year}": {
+      "get": {
+        "operationId": "getAccountHallOfFameClass",
+        "summary": "Retrieve Hall of Fame class by year",
+        "description": "Retrieves the Hall of Fame class and inductees for a given year.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed Hall of Fame class information.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofClassWithMembers"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hall of Fame class not found for the specified year.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/random-member": {
+      "get": {
+        "operationId": "getAccountHallOfFameRandomMember",
+        "summary": "Retrieve a random Hall of Fame member",
+        "description": "Returns a random Hall of Fame inductee for spotlight experiences.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Randomly selected Hall of Fame member.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofMember"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No Hall of Fame members are available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/eligible-contacts": {
+      "get": {
+        "operationId": "listAccountHallOfFameEligibleContacts",
+        "summary": "List eligible contacts for induction",
+        "description": "Returns account contacts that are eligible to be inducted into the Hall of Fame. Requires account administrator access.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eligible contacts that may be inducted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofEligibleContactsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage the Hall of Fame.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/members": {
+      "post": {
+        "operationId": "createAccountHallOfFameMember",
+        "summary": "Induct a Hall of Fame member",
+        "description": "Creates a new Hall of Fame inductee for the account.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHofMember"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hall of Fame member created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage the Hall of Fame.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Contact is already an inducted Hall of Fame member.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/members/{memberId}": {
+      "put": {
+        "operationId": "updateAccountHallOfFameMember",
+        "summary": "Update Hall of Fame member details",
+        "description": "Updates the year or biography for an existing Hall of Fame member.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHofMember"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated Hall of Fame member.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage the Hall of Fame.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hall of Fame member not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAccountHallOfFameMember",
+        "summary": "Remove a Hall of Fame member",
+        "description": "Deletes an existing Hall of Fame induction.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Hall of Fame member deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage the Hall of Fame.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hall of Fame member not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/nominations": {
+      "post": {
+        "operationId": "submitAccountHallOfFameNomination",
+        "summary": "Submit a Hall of Fame nomination",
+        "description": "Allows public visitors to submit Hall of Fame nominations. Nomination availability depends on account settings.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitHofNomination"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Nomination submitted successfully."
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nominations are currently disabled for this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listAccountHallOfFameNominations",
+        "summary": "List Hall of Fame nominations",
+        "description": "Lists nomination submissions for the account. Requires account administrator access.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hall of Fame nominations for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofNominationList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage nominations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/nominations/{nominationId}": {
+      "put": {
+        "operationId": "updateAccountHallOfFameNomination",
+        "summary": "Update a Hall of Fame nomination",
+        "description": "Allows account administrators to edit a stored Hall of Fame nomination.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "nominationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHofNomination"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated nomination details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofNomination"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage nominations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nomination not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAccountHallOfFameNomination",
+        "summary": "Delete a Hall of Fame nomination",
+        "description": "Removes a Hall of Fame nomination submission.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "nominationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Hall of Fame nomination deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage nominations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hall of Fame nomination not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/nominations/{nominationId}/induct": {
+      "post": {
+        "operationId": "inductAccountHallOfFameNomination",
+        "summary": "Induct a Hall of Fame nomination",
+        "description": "Converts a nomination into an official Hall of Fame member using the nomination details.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "nominationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HofNominationInduct"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Newly inducted Hall of Fame member.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to induct members.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nomination not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict while inducting the nomination (e.g., already inducted).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/hall-of-fame/nomination-setup": {
+      "get": {
+        "operationId": "getAccountHallOfFameNominationSetup",
+        "summary": "Retrieve nomination setup",
+        "description": "Retrieves the Hall of Fame nomination configuration for an account.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hall of Fame nomination setup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofNominationSetup"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage nominations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hall of Fame nomination setup not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateAccountHallOfFameNominationSetup",
+        "summary": "Update nomination setup",
+        "description": "Updates whether nominations are enabled and the messaging displayed to visitors.",
+        "tags": [
+          "Hall of Fame"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHofNominationSetup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated Hall of Fame nomination setup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HofNominationSetup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks permission to manage nominations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {
