@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useRouter } from 'next/navigation';
 import {
@@ -15,6 +16,7 @@ import HofMemberCard from './HofMemberCard';
 
 export interface HofSpotlightWidgetProps {
   accountId: string;
+  hideCta?: boolean;
 }
 
 const normalizeId = (value: unknown): unknown =>
@@ -47,9 +49,15 @@ const coerceMember = (member: unknown): HofMemberType | null => {
   }
 };
 
-const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) => {
+const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hideCta }) => {
   const apiClient = useApiClient();
   const router = useRouter();
+  const theme = useTheme();
+
+  const surfaceBorderColor = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.45 : 0.18,
+  );
 
   const [hasHallOfFame, setHasHallOfFame] = React.useState(false);
   const [hallOfFameMember, setHallOfFameMember] = React.useState<HofMemberType | null>(null);
@@ -149,18 +157,23 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) =>
         sx={{
           p: 3,
           borderRadius: 2,
-          background:
-            'linear-gradient(180deg, rgba(246,238,205,0.35) 0%, rgba(246,238,205,0.1) 100%)',
-          boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
+          backgroundColor: theme.palette.background.paper,
+          border: '1px solid',
+          borderColor: surfaceBorderColor,
+          boxShadow: theme.shadows[3],
           mt: 3,
           width: { xs: '100%', md: 'fit-content' },
           maxWidth: 520,
+          transition: 'box-shadow 0.2s ease',
+          '&:hover': {
+            boxShadow: theme.shadows[6],
+          },
         }}
       >
         <Stack spacing={3} alignItems="flex-start">
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <EmojiEventsIcon sx={{ color: 'warning.main' }} />
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            <EmojiEventsIcon sx={{ color: theme.palette.primary.main }} />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
               Hall of Fame Spotlight
             </Typography>
           </Stack>
@@ -178,16 +191,18 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId }) =>
             <Alert severity="info">Hall of Fame inductees will appear here soon.</Alert>
           )}
 
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                void router.push(`/account/${accountId}/hall-of-fame`);
-              }}
-            >
-              View Hall of Fame
-            </Button>
-          </Stack>
+          {hideCta ? null : (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  void router.push(`/account/${accountId}/hall-of-fame`);
+                }}
+              >
+                View Hall of Fame
+              </Button>
+            </Stack>
+          )}
         </Stack>
       </Paper>
     </>

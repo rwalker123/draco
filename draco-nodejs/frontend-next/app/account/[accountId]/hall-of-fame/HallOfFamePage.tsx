@@ -23,6 +23,7 @@ import {
   Button,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { alpha, useTheme } from '@mui/material/styles';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -31,7 +32,6 @@ import { useParams } from 'next/navigation';
 import {
   getAccountHallOfFameClass,
   getAccountHallOfFameNominationSetup,
-  getAccountHallOfFameRandomMember,
   listAccountHallOfFameClasses,
 } from '@draco/shared-api-client';
 import {
@@ -43,6 +43,7 @@ import {
 import AccountPageHeader from '@/components/AccountPageHeader';
 import HofMemberCard from '@/components/hall-of-fame/HofMemberCard';
 import HofNominationWidget from '@/components/hall-of-fame/HofNominationWidget';
+import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import useCarousel from '@/components/profile/useCarousel';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
@@ -55,6 +56,12 @@ type ClassPortrait = {
 const HallOfFamePage: React.FC = () => {
   const params = useParams();
   const apiClient = useApiClient();
+  const theme = useTheme();
+
+  const headerTextColor = theme.palette.getContrastText(theme.palette.primary.main);
+  const headerSubtextColor = alpha(headerTextColor, 0.85);
+  const carouselButtonShadow = theme.shadows[4];
+  const carouselButtonHoverBackground = theme.palette.action.hover;
 
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
@@ -66,7 +73,6 @@ const HallOfFamePage: React.FC = () => {
   const [loadingMembersYear, setLoadingMembersYear] = React.useState<number | null>(null);
   const [classesError, setClassesError] = React.useState<string | null>(null);
   const [membersError, setMembersError] = React.useState<string | null>(null);
-  const [randomMember, setRandomMember] = React.useState<HofMemberType | null>(null);
   const [nominationSetup, setNominationSetup] = React.useState<HofNominationSetupType | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<HofMemberType[] | null>(null);
@@ -249,24 +255,6 @@ const HallOfFamePage: React.FC = () => {
         if (classes.length > 0) {
           setSelectedClassIndex(0);
           void fetchMembersForYear(classes[0].year);
-
-          getAccountHallOfFameRandomMember({
-            client: apiClient,
-            path: { accountId },
-            throwOnError: false,
-          })
-            .then((result) => {
-              const data = unwrapApiResult(result, 'Unable to load Hall of Fame spotlight.');
-              const normalizedMember = HofMemberSchema.parse(data);
-              if (isMounted) {
-                setRandomMember(normalizedMember);
-              }
-            })
-            .catch(() => {
-              if (isMounted) {
-                setRandomMember(null);
-              }
-            });
         }
       } catch (error) {
         if (!isMounted) {
@@ -426,7 +414,7 @@ const HallOfFamePage: React.FC = () => {
             variant="h4"
             component="h1"
             sx={{
-              color: 'white',
+              color: headerTextColor,
               fontWeight: 'bold',
               mb: 1,
               display: 'flex',
@@ -434,9 +422,9 @@ const HallOfFamePage: React.FC = () => {
               gap: 1,
             }}
           >
-            <EmojiEventsIcon sx={{ color: 'gold' }} /> Hall of Fame
+            <EmojiEventsIcon sx={{ color: theme.palette.primary.main }} /> Hall of Fame
           </Typography>
-          <Typography variant="body1" sx={{ color: 'white', opacity: 0.85 }}>
+          <Typography variant="body1" sx={{ color: headerSubtextColor }}>
             Celebrate legendary contributors and revisit the moments that shaped your organization.
           </Typography>
         </Box>
@@ -513,7 +501,7 @@ const HallOfFamePage: React.FC = () => {
                           borderRadius: 3,
                           border: '2px solid',
                           borderColor: isSelected ? 'primary.main' : 'transparent',
-                          backgroundColor: isSelected ? 'primary.50' : 'background.paper',
+                          backgroundColor: theme.palette.background.paper,
                           transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                           display: 'flex',
                           alignItems: 'center',
@@ -547,8 +535,8 @@ const HallOfFamePage: React.FC = () => {
                               width: 56,
                               height: 56,
                               border: '2px solid',
-                              borderColor: 'warning.light',
-                              bgcolor: portrait.photoUrl ? 'transparent' : 'warning.light',
+                              borderColor: 'primary.light',
+                              bgcolor: portrait.photoUrl ? 'transparent' : 'primary.light',
                               color: 'text.primary',
                               fontWeight: 700,
                             }}
@@ -575,9 +563,9 @@ const HallOfFamePage: React.FC = () => {
                         border: '1px solid',
                         borderColor: 'divider',
                         backgroundColor: 'background.paper',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                        boxShadow: carouselButtonShadow,
                         '&:hover': {
-                          backgroundColor: 'grey.100',
+                          backgroundColor: carouselButtonHoverBackground,
                         },
                       }}
                     >
@@ -596,9 +584,9 @@ const HallOfFamePage: React.FC = () => {
                         border: '1px solid',
                         borderColor: 'divider',
                         backgroundColor: 'background.paper',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                        boxShadow: carouselButtonShadow,
                         '&:hover': {
-                          backgroundColor: 'grey.100',
+                          backgroundColor: carouselButtonHoverBackground,
                         },
                       }}
                     >
@@ -717,22 +705,7 @@ const HallOfFamePage: React.FC = () => {
                   </Paper>
                 )}
 
-                {randomMember ? (
-                  <Paper
-                    elevation={3}
-                    sx={{
-                      p: 3,
-                      borderRadius: 3,
-                      background:
-                        'linear-gradient(180deg, rgba(255,215,64,0.18) 0%, rgba(255,215,64,0.05) 100%)',
-                    }}
-                  >
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-                      Spotlight Inductee
-                    </Typography>
-                    <HofMemberCard member={randomMember} elevation={0} />
-                  </Paper>
-                ) : null}
+                <HofSpotlightWidget accountId={accountId} hideCta />
               </Stack>
 
               <Box sx={{ flex: '1 1 auto' }}>

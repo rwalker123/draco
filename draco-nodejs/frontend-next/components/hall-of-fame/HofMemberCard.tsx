@@ -12,6 +12,7 @@ import {
   type SxProps,
   type Theme,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import type { HofMemberType } from '@draco/shared-schemas';
 import { sanitizeRichContent } from '@/utils/sanitization';
@@ -23,6 +24,7 @@ export interface HofMemberCardProps {
 }
 
 const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx }) => {
+  const theme = useTheme();
   const { contact, biographyHtml, yearInducted } = member;
   const sanitizedBio = React.useMemo(() => {
     if (!biographyHtml) {
@@ -34,6 +36,15 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
   }, [biographyHtml]);
 
   const displayName = contact.displayName ?? `${contact.firstName} ${contact.lastName}`.trim();
+  const baseColor = theme.palette.primary.main;
+  const cardBackground = `linear-gradient(180deg, ${alpha(
+    baseColor,
+    theme.palette.mode === 'dark' ? 0.24 : 0.08,
+  )} 0%, ${alpha(baseColor, 0)} 80%)`;
+  const avatarShadow = theme.shadows[4];
+  const avatarBorderColor = alpha(baseColor, theme.palette.mode === 'dark' ? 0.6 : 0.25);
+  const avatarFallbackColor =
+    theme.palette.mode === 'dark' ? theme.palette.primary.contrastText : theme.palette.primary.main;
 
   return (
     <Card
@@ -46,7 +57,7 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
           borderRadius: 3,
           border: '1px solid',
           borderColor: 'divider',
-          background: 'linear-gradient(180deg, rgba(15,23,42,0.04) 0%, rgba(15,23,42,0.0) 80%)',
+          background: cardBackground,
         },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
@@ -60,9 +71,10 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
               width: 72,
               height: 72,
               border: '3px solid',
-              borderColor: 'warning.light',
-              boxShadow: '0 6px 18px rgba(15,23,42,0.25)',
-              bgcolor: 'primary.main',
+              borderColor: avatarBorderColor,
+              boxShadow: avatarShadow,
+              bgcolor: alpha(baseColor, theme.palette.mode === 'dark' ? 0.55 : 0.15),
+              color: avatarFallbackColor,
             }}
           >
             {displayName ? displayName.charAt(0) : 'H'}
@@ -77,8 +89,13 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
                 icon={<EmojiEventsIcon fontSize="small" />}
                 label={`Class of ${yearInducted}`}
                 size="small"
-                color="warning"
-                sx={{ fontWeight: 600 }}
+                color="primary"
+                sx={{
+                  fontWeight: 600,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.primary.contrastText,
+                  },
+                }}
               />
             </Stack>
           </Box>
