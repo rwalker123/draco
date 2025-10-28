@@ -9,17 +9,10 @@ export interface EmailConfig {
     user: string;
     pass: string;
   };
-  service?: string;
-  region?: string;
-  credentials?: {
-    accessKeyId: string;
-    secretAccessKey: string;
-    sessionToken?: string;
-  };
 }
 
 export interface EmailSettings {
-  provider: 'sendgrid' | 'ethereal' | 'ses';
+  provider: 'sendgrid' | 'ethereal';
   fromEmail: string;
   fromName: string;
   replyTo?: string;
@@ -33,17 +26,9 @@ export class EmailConfigFactory {
   static getEmailConfig(): EmailConfig {
     const provider = this.resolveProvider();
 
-    switch (provider) {
-      case 'sendgrid':
-        return this.getSendGridConfig();
-
-      case 'ses':
-        return this.getSesConfig();
-
-      case 'ethereal':
-      default:
-        return this.getEtherealConfig();
-    }
+    return provider === 'sendgrid'
+      ? this.getSendGridConfig()
+      : this.getEtherealConfig();
   }
 
   /**
@@ -67,7 +52,7 @@ export class EmailConfigFactory {
     const override = process.env.EMAIL_PROVIDER?.toLowerCase();
 
     if (override) {
-      if (override === 'sendgrid' || override === 'ethereal' || override === 'ses') {
+      if (override === 'sendgrid' || override === 'ethereal') {
         return override;
       }
 
@@ -75,7 +60,7 @@ export class EmailConfigFactory {
     }
 
     const nodeEnv = process.env.NODE_ENV || 'development';
-    return nodeEnv === 'production' ? 'ses' : 'ethereal';
+    return nodeEnv === 'production' ? 'sendgrid' : 'ethereal';
   }
 
   /**
@@ -96,37 +81,6 @@ export class EmailConfigFactory {
       auth: {
         user: 'apikey',
         pass: apiKey,
-      },
-      service: 'SendGrid',
-    };
-  }
-
-  /**
-   * Configuration using AWS Simple Email Service
-   */
-  private static getSesConfig(): EmailConfig {
-    const region = process.env.SES_REGION || process.env.AWS_REGION;
-    const accessKeyId = process.env.SES_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.SES_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-    const sessionToken = process.env.SES_SESSION_TOKEN || process.env.AWS_SESSION_TOKEN;
-
-    if (!region) {
-      throw new Error('SES_REGION or AWS_REGION is required for SES email provider');
-    }
-
-    if (!accessKeyId || !secretAccessKey) {
-      throw new Error(
-        'SES_ACCESS_KEY_ID/SES_SECRET_ACCESS_KEY (or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY) are required for SES email provider',
-      );
-    }
-
-    return {
-      service: 'SES',
-      region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-        ...(sessionToken ? { sessionToken } : {}),
       },
     };
   }
@@ -178,23 +132,6 @@ export class EmailConfigFactory {
 
     if (provider === 'sendgrid' && !process.env.SENDGRID_API_KEY) {
       throw new Error('SENDGRID_API_KEY is required when using the SendGrid email provider');
-    }
-
-    if (provider === 'ses') {
-      const region = process.env.SES_REGION || process.env.AWS_REGION;
-      const accessKeyId = process.env.SES_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-      const secretAccessKey =
-        process.env.SES_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-
-      if (!region) {
-        throw new Error('SES_REGION or AWS_REGION is required when using the SES email provider');
-      }
-
-      if (!accessKeyId || !secretAccessKey) {
-        throw new Error(
-          'SES_ACCESS_KEY_ID/SES_SECRET_ACCESS_KEY or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY are required when using the SES email provider',
-        );
-      }
     }
 
     if (!process.env.EMAIL_FROM) {

@@ -636,9 +636,9 @@ Outbound email is abstracted behind `EmailConfigFactory` and the provider classe
 `src/services/email/providers`. The factory picks a transport using the `EMAIL_PROVIDER`
 environment variable:
 
-- **Production (Railway)** defaults to AWS SES (`EMAIL_PROVIDER=ses`).
+- **Production (Railway)** defaults to SendGrid (`EMAIL_PROVIDER=sendgrid`).
 - **Local development/tests** default to Ethereal (`EMAIL_PROVIDER=ethereal`).
-- Any environment can override the default by setting `EMAIL_PROVIDER` to one of: `ses`, `sendgrid`, or `ethereal` before starting the backend.
+- Any environment can override the default by setting `EMAIL_PROVIDER` to either `sendgrid` or `ethereal` before starting the backend.
 
 ### Shared environment variables
 
@@ -651,21 +651,6 @@ environment variable:
 
 These values are read once at boot, so update Railway variables and redeploy after changes.
 
-### AWS SES (default production provider)
-
-```
-EMAIL_PROVIDER=ses
-SES_SMTP_USER=<IAM SMTP username>
-SES_SMTP_PASS=<IAM SMTP password>
-SES_REGION=<aws-region>            # e.g., us-east-1 (or set SES_SMTP_HOST instead)
-SES_SMTP_HOST=email-smtp.us-east-1.amazonaws.com  # optional explicit host override
-SES_SMTP_PORT=587                  # optional, defaults to 587; set 465 for TLS-only
-```
-
-- Supply either `SES_REGION` or `SES_SMTP_HOST` so the factory can derive the SMTP endpoint.
-- Sandbox mode only delivers to verified identities—keep verifying sender/recipient inboxes until
-  you request production access.
-
 ### SendGrid
 
 ```
@@ -674,7 +659,7 @@ SENDGRID_API_KEY=<restricted API key>
 SENDGRID_WEBHOOK_PUBLIC_KEY=<optional, required only for signed event webhooks>
 ```
 
-- These settings remain available for legacy deployments that still require SendGrid.
+- These settings power production email delivery today.
 
 ### Ethereal (local testing)
 

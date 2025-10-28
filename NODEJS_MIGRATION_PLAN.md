@@ -572,7 +572,7 @@ jobs:
 - **Database:** PostgreSQL 15
 - **Caching:** Redis
 - **File Storage:** AWS S3
-- **Email:** SMTP or AWS SES
+- **Email:** SMTP via SendGrid (evaluate alternatives as needed)
 - **Monitoring:** PM2, Winston logging
 
 ## Migration Benefits

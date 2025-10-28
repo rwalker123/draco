@@ -38,7 +38,7 @@ A comprehensive sports management application migrated from ASP.NET Framework to
 ### Infrastructure & External Services
 
 - **DNS**: Cloudflare manages the public DNS records for the application.
-- **Email Delivery**: Amazon SES is planned for production email sending (integration in progress, replacing the previous SendGrid approach).
+- **Email Delivery**: SendGrid currently powers production email while we evaluate longer-term alternatives.
 
 ### Project Structure
 

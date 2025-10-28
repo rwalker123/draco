@@ -22316,7 +22316,6 @@ paths:
                     type: string
                     enum:
                       - sendgrid
-                      - ses
                       - ethereal
                     description: Configured email provider handling outbound email and webhooks.
                   webhooks:
@@ -22377,16 +22376,12 @@ paths:
                       sendgrid:
                         type: boolean
                         description: Indicates whether SendGrid is the active outbound email provider.
-                      ses:
-                        type: boolean
-                        description: Indicates whether AWS SES is the active outbound email provider.
                       ethereal:
                         type: boolean
                         description: Indicates whether the Ethereal test provider is active for outbound
                           email.
                     required:
                       - sendgrid
-                      - ses
                       - ethereal
                 required:
                   - total_events_processed

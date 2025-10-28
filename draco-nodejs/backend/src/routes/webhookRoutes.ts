@@ -107,7 +107,6 @@ router.get(
       last_event_timestamp: null,
       provider_status: {
         sendgrid: settings.provider === 'sendgrid',
-        ses: settings.provider === 'ses',
         ethereal: settings.provider === 'ethereal',
       },
     };

@@ -111,7 +111,7 @@ export const registerWebhooksEndpoints = ({ registry, schemaRefs, z }: RegisterC
       .string()
       .describe('ISO 8601 timestamp describing when the health check was generated.'),
     provider: z
-      .enum(['sendgrid', 'ses', 'ethereal'])
+      .enum(['sendgrid', 'ethereal'])
       .describe('Configured email provider handling outbound email and webhooks.'),
     webhooks: z.object({
       sendgrid: z.object({
@@ -162,9 +162,6 @@ export const registerWebhooksEndpoints = ({ registry, schemaRefs, z }: RegisterC
       sendgrid: z
         .boolean()
         .describe('Indicates whether SendGrid is the active outbound email provider.'),
-      ses: z
-        .boolean()
-        .describe('Indicates whether AWS SES is the active outbound email provider.'),
       ethereal: z
         .boolean()
         .describe('Indicates whether the Ethereal test provider is active for outbound email.'),

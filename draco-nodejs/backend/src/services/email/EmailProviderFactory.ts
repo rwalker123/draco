@@ -5,7 +5,6 @@ import { IEmailProvider } from '../../interfaces/emailInterfaces.js';
 import { EmailConfig, EmailSettings, EmailConfigFactory } from '../../config/email.js';
 import { SendGridProvider } from './providers/SendGridProvider.js';
 import { EtherealProvider } from './providers/EtherealProvider.js';
-import { SesProvider } from './providers/SesProvider.js';
 
 export class EmailProviderFactory {
   private static instance: IEmailProvider | null = null;
@@ -35,9 +34,6 @@ export class EmailProviderFactory {
       case 'sendgrid':
         return new SendGridProvider(emailConfig);
 
-      case 'ses':
-        return new SesProvider(emailConfig);
-
       case 'ethereal':
         return new EtherealProvider(emailConfig);
 
@@ -56,7 +52,7 @@ export class EmailProviderFactory {
   /**
    * Get provider type for current configuration
    */
-  static getProviderType(): 'sendgrid' | 'ethereal' | 'ses' {
+  static getProviderType(): 'sendgrid' | 'ethereal' {
     const settings = EmailConfigFactory.getEmailSettings();
     return settings.provider;
   }
