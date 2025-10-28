@@ -35,6 +35,7 @@ import {
   IHallOfFameRepository,
   IHofNominationRepository,
   IHofNominationSetupRepository,
+  IStatsEntryRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -71,6 +72,7 @@ import {
   PrismaHallOfFameRepository,
   PrismaHofNominationRepository,
   PrismaHofNominationSetupRepository,
+  PrismaStatsEntryRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -114,6 +116,7 @@ export class RepositoryFactory {
   private static hallOfFameRepository: IHallOfFameRepository;
   private static hofNominationRepository: IHofNominationRepository;
   private static hofNominationSetupRepository: IHofNominationSetupRepository;
+  private static statsEntryRepository: IStatsEntryRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -195,6 +198,13 @@ export class RepositoryFactory {
       this.memberBusinessRepository = new PrismaMemberBusinessRepository(prisma);
     }
     return this.memberBusinessRepository;
+  }
+
+  static getStatsEntryRepository(): IStatsEntryRepository {
+    if (!this.statsEntryRepository) {
+      this.statsEntryRepository = new PrismaStatsEntryRepository(prisma);
+    }
+    return this.statsEntryRepository;
   }
 
   static getContactRepository(): IContactRepository {

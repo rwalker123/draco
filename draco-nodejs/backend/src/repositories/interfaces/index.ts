@@ -33,3 +33,4 @@ export * from './IMemberBusinessRepository.js';
 export * from './IHallOfFameRepository.js';
 export * from './IHofNominationRepository.js';
 export * from './IHofNominationSetupRepository.js';
+export * from './IStatsEntryRepository.js';
