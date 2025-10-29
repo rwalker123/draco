@@ -223,7 +223,7 @@ export const GameBattingStatInputSchema = z.object({
 });
 
 export const CreateGameBattingStatSchema = GameBattingStatInputSchema.extend({
-  rosterSeasonId: bigintToStringSchema,
+  rosterSeasonId: z.string(),
 });
 
 export const GameBattingStatLineSchema = GameBattingStatInputSchema.extend({

@@ -16,6 +16,15 @@ declare module '@mui/x-data-grid' {
     field: string;
   }
 
+  export interface GridPreProcessEditCellProps {
+    id: string | number;
+    field: string;
+    props: {
+      value: unknown;
+      error?: boolean;
+    };
+  }
+
   export interface GridApiRef {
     startCellEditMode: (params: { id: string | number; field: string }) => void;
     getCellMode?: (id: string | number, field: string) => 'view' | 'edit';
@@ -41,6 +50,9 @@ declare module '@mui/x-data-grid' {
     }) => React.ReactNode;
     renderCell?: (params: GridRenderCellParams<RowType>) => React.ReactNode;
     getCellClassName?: (params: GridCellParams<RowType>) => string;
+    preProcessEditCellProps?: (
+      params: GridPreProcessEditCellProps,
+    ) => GridPreProcessEditCellProps['props'];
   }
 
   export interface DataGridProps<RowType extends GridRowBase = GridRowBase> {
