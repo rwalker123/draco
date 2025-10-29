@@ -1,26 +1,44 @@
 'use client';
 
-import React from 'react';
-import { Alert, Box, Card, CardContent, Tabs, Tab, CircularProgress } from '@mui/material';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Alert, Box, Button, Card, CardContent, CircularProgress, Tab, Tabs } from '@mui/material';
 import type {
+  CreateGameBattingStatType,
+  CreateGamePitchingStatType,
   GameBattingStatLineType,
   GameBattingStatsType,
   GamePitchingStatLineType,
   GamePitchingStatsType,
+  PlayerBattingStatsType,
+  PlayerPitchingStatsType,
   TeamStatsPlayerSummaryType,
+  UpdateGameBattingStatType,
+  UpdateGamePitchingStatType,
 } from '@draco/shared-schemas';
 
+import AttendanceSection from './AttendanceSection';
 import BattingStatsSection from './BattingStatsSection';
 import PitchingStatsSection from './PitchingStatsSection';
-import AttendanceSection from './AttendanceSection';
+import SeasonBattingStatsSection from './SeasonBattingStatsSection';
+import SeasonPitchingStatsSection from './SeasonPitchingStatsSection';
+import UnsavedChangesDialog from './dialogs/UnsavedChangesDialog';
+import type {
+  EditableGridHandle,
+  StatsTabsCardHandle,
+  UnsavedChangesDecision,
+  UnsavedChangesPrompt,
+  UnsavedChangesReason,
+} from './types';
 
-export const TabIndexMap = {
-  batting: 0,
-  pitching: 1,
-  attendance: 2,
-} as const;
-
-export type TabKey = keyof typeof TabIndexMap;
+export type TabKey = 'batting' | 'pitching' | 'attendance';
 
 interface StatsTabsCardProps {
   tab: TabKey;
@@ -35,12 +53,13 @@ interface StatsTabsCardProps {
   pitchingTotals: GamePitchingStatsType['totals'] | null;
   availableBatters: TeamStatsPlayerSummaryType[];
   availablePitchers: TeamStatsPlayerSummaryType[];
-  onAddBatter: () => void;
-  onEditBatter: (stat: GameBattingStatLineType) => void;
-  onDeleteBatter: (stat: GameBattingStatLineType) => void;
-  onAddPitcher: () => void;
-  onEditPitcher: (stat: GamePitchingStatLineType) => void;
-  onDeletePitcher: (stat: GamePitchingStatLineType) => void;
+  onCreateBattingStat: (payload: CreateGameBattingStatType) => Promise<void>;
+  onUpdateBattingStat: (statId: string, payload: UpdateGameBattingStatType) => Promise<void>;
+  onDeleteBattingStat: (stat: GameBattingStatLineType) => void;
+  onCreatePitchingStat: (payload: CreateGamePitchingStatType) => Promise<void>;
+  onUpdatePitchingStat: (statId: string, payload: UpdateGamePitchingStatType) => Promise<void>;
+  onDeletePitchingStat: (stat: GamePitchingStatLineType) => void;
+  onProcessError: (error: Error) => void;
   attendanceOptions: TeamStatsPlayerSummaryType[];
   attendanceSelection: string[];
   onAttendanceSelectionChange: (selection: string[]) => void;
@@ -48,116 +67,377 @@ interface StatsTabsCardProps {
   attendanceLoading: boolean;
   attendanceError: string | null;
   attendanceSaving: boolean;
+  seasonBattingStats: PlayerBattingStatsType[] | null;
+  seasonPitchingStats: PlayerPitchingStatsType[] | null;
+  seasonLoading: boolean;
+  seasonError: string | null;
+  onClearGameSelection?: () => void;
 }
 
-const StatsTabsCard: React.FC<StatsTabsCardProps> = ({
-  tab,
-  onTabChange,
-  canManageStats,
-  loading,
-  error,
-  selectedGameId,
-  battingStats,
-  pitchingStats,
-  battingTotals,
-  pitchingTotals,
-  availableBatters,
-  availablePitchers,
-  onAddBatter,
-  onEditBatter,
-  onDeleteBatter,
-  onAddPitcher,
-  onEditPitcher,
-  onDeletePitcher,
-  attendanceOptions,
-  attendanceSelection,
-  onAttendanceSelectionChange,
-  lockedAttendanceRosterIds,
-  attendanceLoading,
-  attendanceError,
-  attendanceSaving,
-}) => {
-  const handleTabChange = (_event: React.SyntheticEvent, newIndex: number) => {
-    if (newIndex === TabIndexMap.pitching) {
-      onTabChange('pitching');
-    } else if (newIndex === TabIndexMap.attendance && canManageStats) {
-      onTabChange('attendance');
-    } else {
-      onTabChange('batting');
-    }
-  };
+const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
+  (
+    {
+      tab,
+      onTabChange,
+      canManageStats,
+      loading,
+      error,
+      selectedGameId,
+      battingStats,
+      pitchingStats,
+      battingTotals,
+      pitchingTotals,
+      availableBatters,
+      availablePitchers,
+      onCreateBattingStat,
+      onUpdateBattingStat,
+      onDeleteBattingStat,
+      onCreatePitchingStat,
+      onUpdatePitchingStat,
+      onDeletePitchingStat,
+      onProcessError,
+      attendanceOptions,
+      attendanceSelection,
+      onAttendanceSelectionChange,
+      lockedAttendanceRosterIds,
+      attendanceLoading,
+      attendanceError,
+      attendanceSaving,
+      seasonBattingStats,
+      seasonPitchingStats,
+      seasonLoading,
+      seasonError,
+      onClearGameSelection,
+    },
+    ref,
+  ) => {
+    const [editMode, setEditMode] = useState(false);
+    const battingGridRef = useRef<EditableGridHandle | null>(null);
+    const pitchingGridRef = useRef<EditableGridHandle | null>(null);
 
-  return (
-    <Card>
-      <Tabs
-        value={TabIndexMap[tab]}
-        onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
-        aria-label="Game statistics tabs"
-      >
-        <Tab label="Batting" />
-        <Tab label="Pitching" />
-        {canManageStats && <Tab label="Attendance" />}
-      </Tabs>
+    const [battingDirty, setBattingDirty] = useState(false);
+    const [pitchingDirty, setPitchingDirty] = useState(false);
 
-      <CardContent>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress size={32} aria-label="Loading statistics" />
+    const [unsavedPrompt, setUnsavedPrompt] = useState<UnsavedChangesPrompt | null>(null);
+    const unsavedResolverRef = useRef<((decision: UnsavedChangesDecision) => void) | null>(null);
+
+    useEffect(() => {
+      if (!selectedGameId || !canManageStats) {
+        setEditMode(false);
+      }
+    }, [selectedGameId, canManageStats]);
+
+    const showAttendanceTab = canManageStats && Boolean(selectedGameId);
+
+    const availableTabs: TabKey[] = useMemo(
+      () => (showAttendanceTab ? ['batting', 'pitching', 'attendance'] : ['batting', 'pitching']),
+      [showAttendanceTab],
+    );
+
+    const currentTab = availableTabs.includes(tab) ? tab : 'batting';
+
+    const requestUnsavedDecision = useCallback(
+      (prompt: UnsavedChangesPrompt) =>
+        new Promise<UnsavedChangesDecision>((resolve) => {
+          unsavedResolverRef.current = resolve;
+          setUnsavedPrompt(prompt);
+        }),
+      [],
+    );
+
+    const handleUnsavedDecision = useCallback((decision: UnsavedChangesDecision) => {
+      const resolver = unsavedResolverRef.current;
+      unsavedResolverRef.current = null;
+      setUnsavedPrompt(null);
+      resolver?.(decision);
+    }, []);
+
+    const resolveGridDirtyRows = useCallback(
+      async (
+        gridRef: React.RefObject<EditableGridHandle | null>,
+        reason: UnsavedChangesReason,
+        tabKey: 'batting' | 'pitching',
+      ): Promise<boolean> => {
+        const handle = gridRef.current;
+        if (!handle || !handle.hasDirtyRow()) {
+          return true;
+        }
+
+        const info = handle.getDirtyRowInfo();
+        if (!info) {
+          return true;
+        }
+
+        const decision = await requestUnsavedDecision({
+          reason,
+          playerName: info.playerName,
+          tab: tabKey,
+        });
+
+        if (decision === 'save') {
+          return handle.saveDirtyRow();
+        }
+
+        if (decision === 'discard') {
+          handle.discardDirtyRow();
+          return true;
+        }
+
+        return false;
+      },
+      [requestUnsavedDecision],
+    );
+
+    const ensureTabClean = useCallback(
+      async (tabKey: TabKey, reason: UnsavedChangesReason) => {
+        if (tabKey === 'batting') {
+          return resolveGridDirtyRows(battingGridRef, reason, 'batting');
+        }
+        if (tabKey === 'pitching') {
+          return resolveGridDirtyRows(pitchingGridRef, reason, 'pitching');
+        }
+        return true;
+      },
+      [resolveGridDirtyRows],
+    );
+
+    const attemptTabChange = useCallback(
+      async (nextTab: TabKey) => {
+        if (nextTab === currentTab) {
+          return;
+        }
+
+        if (editMode && (currentTab === 'batting' || currentTab === 'pitching')) {
+          const ok = await ensureTabClean(currentTab, 'tab-change');
+          if (!ok) {
+            return;
+          }
+        }
+
+        onTabChange(nextTab);
+      },
+      [currentTab, editMode, ensureTabClean, onTabChange],
+    );
+
+    const handleTabsChange = useCallback(
+      (_event: React.SyntheticEvent, newIndex: number) => {
+        const nextTab = availableTabs[newIndex] ?? 'batting';
+        void attemptTabChange(nextTab);
+      },
+      [attemptTabChange, availableTabs],
+    );
+
+    const handleToggleEditMode = useCallback(async () => {
+      if (!canManageStats || !selectedGameId) {
+        return;
+      }
+
+      try {
+        if (!editMode) {
+          setEditMode(true);
+          return;
+        }
+
+        const battingOk = await resolveGridDirtyRows(battingGridRef, 'exit-edit', 'batting');
+        if (!battingOk) {
+          return;
+        }
+        const pitchingOk = await resolveGridDirtyRows(pitchingGridRef, 'exit-edit', 'pitching');
+        if (!pitchingOk) {
+          return;
+        }
+
+        setEditMode(false);
+      } catch (error) {
+        console.error('Unable to toggle edit mode', error);
+        onProcessError(error instanceof Error ? error : new Error('Unable to toggle edit mode.'));
+      }
+    }, [canManageStats, editMode, onProcessError, resolveGridDirtyRows, selectedGameId]);
+
+    const handleViewSeason = useCallback(async () => {
+      if (!onClearGameSelection) {
+        return;
+      }
+
+      const battingOk = await resolveGridDirtyRows(battingGridRef, 'game-change', 'batting');
+      if (!battingOk) {
+        return;
+      }
+      const pitchingOk = await resolveGridDirtyRows(pitchingGridRef, 'game-change', 'pitching');
+      if (!pitchingOk) {
+        return;
+      }
+
+      onClearGameSelection();
+    }, [onClearGameSelection, resolveGridDirtyRows]);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        hasPendingEdits: () => battingDirty || pitchingDirty,
+        resolvePendingEdits: async (reason: UnsavedChangesReason) => {
+          if (!battingDirty && !pitchingDirty) {
+            return true;
+          }
+
+          const battingOk = await resolveGridDirtyRows(battingGridRef, reason, 'batting');
+          if (!battingOk) {
+            return false;
+          }
+          const pitchingOk = await resolveGridDirtyRows(pitchingGridRef, reason, 'pitching');
+          return pitchingOk;
+        },
+      }),
+      [battingDirty, pitchingDirty, resolveGridDirtyRows],
+    );
+
+    return (
+      <>
+        <Card>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: 1,
+              borderColor: 'divider',
+              pl: 2,
+              pr: 2,
+            }}
+          >
+            <Tabs
+              value={availableTabs.indexOf(currentTab)}
+              onChange={handleTabsChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              aria-label="Team statistics tabs"
+              sx={{ flexGrow: 1 }}
+            >
+              <Tab label="Batting" />
+              <Tab label="Pitching" />
+              {showAttendanceTab && <Tab label="Attendance" />}
+            </Tabs>
+            {canManageStats && selectedGameId && (
+              <Button
+                variant={editMode ? 'contained' : 'outlined'}
+                size="small"
+                onClick={() => void handleToggleEditMode()}
+                sx={{ ml: 2 }}
+              >
+                {editMode ? 'Exit edit mode' : 'Edit stats'}
+              </Button>
+            )}
           </Box>
-        )}
 
-        {!loading && error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+          <CardContent>
+            {selectedGameId ? (
+              error ? (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {error}
+                </Alert>
+              ) : loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress aria-label="Loading game statistics" />
+                </Box>
+              ) : (
+                <>
+                  {currentTab === 'batting' && (
+                    <BattingStatsSection
+                      mode={editMode ? 'edit' : 'view'}
+                      stats={battingStats}
+                      totals={battingTotals}
+                      availablePlayers={availableBatters}
+                      onCreateStat={onCreateBattingStat}
+                      onUpdateStat={onUpdateBattingStat}
+                      onDeleteStat={onDeleteBattingStat}
+                      onProcessError={onProcessError}
+                      onRequestUnsavedDecision={requestUnsavedDecision}
+                      onDirtyStateChange={setBattingDirty}
+                      gridRef={battingGridRef}
+                      showViewSeason={Boolean(editMode && selectedGameId && onClearGameSelection)}
+                      onViewSeason={handleViewSeason}
+                    />
+                  )}
 
-        {!loading && !error && selectedGameId && (
-          <>
-            {tab === 'batting' && (
-              <BattingStatsSection
-                canManage={canManageStats}
-                stats={battingStats}
-                totals={battingTotals}
-                availablePlayers={availableBatters}
-                onAdd={onAddBatter}
-                onEdit={onEditBatter}
-                onDelete={onDeleteBatter}
-              />
+                  {currentTab === 'pitching' && (
+                    <PitchingStatsSection
+                      mode={editMode ? 'edit' : 'view'}
+                      stats={pitchingStats}
+                      totals={pitchingTotals}
+                      availablePlayers={availablePitchers}
+                      onCreateStat={onCreatePitchingStat}
+                      onUpdateStat={onUpdatePitchingStat}
+                      onDeleteStat={onDeletePitchingStat}
+                      onProcessError={onProcessError}
+                      onRequestUnsavedDecision={requestUnsavedDecision}
+                      onDirtyStateChange={setPitchingDirty}
+                      gridRef={pitchingGridRef}
+                      showViewSeason={Boolean(editMode && selectedGameId && onClearGameSelection)}
+                      onViewSeason={handleViewSeason}
+                    />
+                  )}
+
+                  {currentTab === 'attendance' && showAttendanceTab && (
+                    <AttendanceSection
+                      options={attendanceOptions}
+                      selection={attendanceSelection}
+                      lockedRosterIds={lockedAttendanceRosterIds}
+                      onSelectionChange={onAttendanceSelectionChange}
+                      loading={attendanceLoading}
+                      error={attendanceError}
+                      saving={attendanceSaving}
+                      canEdit={canManageStats}
+                    />
+                  )}
+                </>
+              )
+            ) : seasonError ? (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {seasonError}
+              </Alert>
+            ) : seasonLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress aria-label="Loading season statistics" />
+              </Box>
+            ) : (
+              <>
+                {currentTab === 'batting' && (
+                  <SeasonBattingStatsSection stats={seasonBattingStats} />
+                )}
+
+                {currentTab === 'pitching' && (
+                  <SeasonPitchingStatsSection stats={seasonPitchingStats} />
+                )}
+
+                {currentTab === 'attendance' && (
+                  <Alert severity="info">
+                    Attendance tracking is available once a completed game is selected.
+                  </Alert>
+                )}
+
+                {canManageStats && (
+                  <Alert severity="info" sx={{ mt: 3 }}>
+                    Select a completed game to enable inline editing and attendance management.
+                  </Alert>
+                )}
+              </>
             )}
+          </CardContent>
+        </Card>
 
-            {tab === 'pitching' && (
-              <PitchingStatsSection
-                canManage={canManageStats}
-                stats={pitchingStats}
-                totals={pitchingTotals}
-                availablePlayers={availablePitchers}
-                onAdd={onAddPitcher}
-                onEdit={onEditPitcher}
-                onDelete={onDeletePitcher}
-              />
-            )}
+        <UnsavedChangesDialog
+          open={Boolean(unsavedPrompt)}
+          prompt={unsavedPrompt}
+          busyAction={null}
+          error={null}
+          onDecision={handleUnsavedDecision}
+          onClose={() => handleUnsavedDecision('cancel')}
+        />
+      </>
+    );
+  },
+);
 
-            {tab === 'attendance' && canManageStats && (
-              <AttendanceSection
-                options={attendanceOptions}
-                selection={attendanceSelection}
-                lockedRosterIds={lockedAttendanceRosterIds}
-                onSelectionChange={onAttendanceSelectionChange}
-                loading={attendanceLoading}
-                error={attendanceError}
-                saving={attendanceSaving}
-                canEdit={canManageStats}
-              />
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+StatsTabsCard.displayName = 'StatsTabsCard';
 
 export default StatsTabsCard;

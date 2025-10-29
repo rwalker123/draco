@@ -10,6 +10,8 @@ import {
   deleteApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGamesByGameIdPitchingByStatId as apiDeleteGamePitchingStat,
   getApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGamesByGameIdAttendance as apiGetGameAttendance,
   putApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGamesByGameIdAttendance as apiUpdateGameAttendance,
+  listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
+  listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import type {
@@ -21,6 +23,8 @@ import type {
   UpdateGameBattingStatType,
   CreateGamePitchingStatType,
   UpdateGamePitchingStatType,
+  PlayerBattingStatsType,
+  PlayerPitchingStatsType,
 } from '@draco/shared-schemas';
 
 import { createApiClient } from '../lib/apiClientFactory';
@@ -81,6 +85,34 @@ export class TeamStatsEntryService {
     });
 
     return unwrapApiResult(result, 'Failed to load completed games for team');
+  }
+
+  async getSeasonBattingStats(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+  ): Promise<PlayerBattingStatsType[]> {
+    const result = await apiListTeamSeasonBattingStats({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to load season batting statistics for team');
+  }
+
+  async getSeasonPitchingStats(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+  ): Promise<PlayerPitchingStatsType[]> {
+    const result = await apiListTeamSeasonPitchingStats({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to load season pitching statistics for team');
   }
 
   async getGameBattingStats(

@@ -6220,7 +6220,6 @@ components:
           type: array
           items:
             type: string
-            pattern: ^d+$
       required:
         - playerIds
     UpdateGameAttendance:
@@ -6230,7 +6229,6 @@ components:
           type: array
           items:
             type: string
-            pattern: ^d+$
       required:
         - playerIds
     BattingStatisticsFilters:

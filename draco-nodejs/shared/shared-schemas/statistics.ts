@@ -369,7 +369,7 @@ export const TeamCompletedGameSchema = z.object({
 export const TeamCompletedGamesSchema = TeamCompletedGameSchema.array();
 
 export const GameAttendanceSchema = z.object({
-  playerIds: bigintToStringSchema.array(),
+  playerIds: z.string().array(),
 });
 
 export const UpdateGameAttendanceSchema = GameAttendanceSchema;

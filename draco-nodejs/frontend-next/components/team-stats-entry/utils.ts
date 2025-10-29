@@ -7,12 +7,17 @@ import type {
   TeamStatsPlayerSummaryType,
 } from '@draco/shared-schemas';
 
-export const formatStatDecimal = (value: number | undefined | null, digits = 3) => {
-  if (value === undefined || value === null || Number.isNaN(value)) {
+export const formatStatDecimal = (value: number | string | undefined | null, digits = 3) => {
+  if (value === undefined || value === null) {
     return '-';
   }
 
-  return value.toFixed(digits);
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (Number.isNaN(numeric)) {
+    return '-';
+  }
+
+  return numeric.toFixed(digits);
 };
 
 export const formatInnings = (ipDecimal: number) => {

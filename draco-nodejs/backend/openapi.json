@@ -8348,8 +8348,7 @@
           "playerIds": {
             "type": "array",
             "items": {
-              "type": "string",
-              "pattern": "^d+$"
+              "type": "string"
             }
           }
         },
@@ -8363,8 +8362,7 @@
           "playerIds": {
             "type": "array",
             "items": {
-              "type": "string",
-              "pattern": "^d+$"
+              "type": "string"
             }
           }
         },

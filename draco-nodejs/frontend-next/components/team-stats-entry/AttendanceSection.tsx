@@ -62,63 +62,63 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
         </Typography>
       </Stack>
 
-      {loading ? (
+      {loading && (
         <Typography variant="body2" color="text.secondary">
-          Loading roster attendance...
+          Updating attendance...
         </Typography>
-      ) : (
-        <List dense disablePadding>
-          {sortedPlayers.map((player) => {
-            const rosterId = player.rosterSeasonId;
-            const isSelected = selectionSet.has(rosterId);
-            const isLocked = lockedSet.has(rosterId);
-
-            return (
-              <ListItemButton
-                key={rosterId}
-                disableGutters
-                disableRipple
-                selected={isSelected}
-                onClick={canEdit ? () => handleToggle(rosterId) : undefined}
-                sx={{
-                  py: 0.5,
-                  px: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <Tooltip
-                  title={isLocked ? 'Player has recorded stats for this game' : ''}
-                  disableHoverListener={!isLocked}
-                >
-                  <span>
-                    <Switch
-                      checked={isSelected}
-                      onChange={(event) => {
-                        event.stopPropagation();
-                        handleToggle(rosterId);
-                      }}
-                      disabled={!canEdit || isLocked || saving}
-                      inputProps={{ 'aria-label': `Mark ${buildPlayerLabel(player)} present` }}
-                    />
-                  </span>
-                </Tooltip>
-                <Stack spacing={0.25} alignItems="flex-start">
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {buildPlayerLabel(player)}
-                  </Typography>
-                  {isLocked && (
-                    <Typography variant="caption" color="text.secondary">
-                      Recorded stats
-                    </Typography>
-                  )}
-                </Stack>
-              </ListItemButton>
-            );
-          })}
-        </List>
       )}
+      <List dense disablePadding>
+        {sortedPlayers.map((player) => {
+          const rosterId = player.rosterSeasonId;
+          const isSelected = selectionSet.has(rosterId);
+          const isLocked = lockedSet.has(rosterId);
+
+          return (
+            <ListItemButton
+              key={rosterId}
+              disableGutters
+              disableRipple
+              selected={isSelected}
+              onClick={canEdit && !loading && !saving ? () => handleToggle(rosterId) : undefined}
+              disabled={!canEdit || loading || saving}
+              sx={{
+                py: 0.5,
+                px: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <Tooltip
+                title={isLocked ? 'Player has recorded stats for this game' : ''}
+                disableHoverListener={!isLocked}
+              >
+                <span>
+                  <Switch
+                    checked={isSelected}
+                    onChange={(event) => {
+                      event.stopPropagation();
+                      handleToggle(rosterId);
+                    }}
+                    disabled={!canEdit || isLocked || saving || loading}
+                    inputProps={{ 'aria-label': `Mark ${buildPlayerLabel(player)} present` }}
+                  />
+                </span>
+              </Tooltip>
+              <Stack spacing={0.25} alignItems="flex-start">
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {buildPlayerLabel(player)}
+                </Typography>
+                {isLocked && (
+                  <Typography variant="caption" color="text.secondary">
+                    Recorded stats
+                  </Typography>
+                )}
+              </Stack>
+            </ListItemButton>
+          );
+        })}
+      </List>
     </Stack>
   );
 };
