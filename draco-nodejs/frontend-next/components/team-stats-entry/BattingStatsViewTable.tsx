@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   Box,
   Chip,
   Paper,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -17,42 +16,49 @@ import {
 } from '@mui/material';
 import type { GameBattingStatLineType, GameBattingStatsType } from '@draco/shared-schemas';
 
+import {
+  BATTING_FIELD_LABELS,
+  battingAverageFields,
+  battingViewFieldOrder,
+  type BattingViewField,
+} from './battingColumns';
 import { formatStatDecimal } from './utils';
-
-const headers: { key: keyof GameBattingStatLineType | 'playerName'; label: string }[] = [
-  { key: 'playerName', label: 'Player' },
-  { key: 'ab', label: 'AB' },
-  { key: 'h', label: 'H' },
-  { key: 'r', label: 'R' },
-  { key: 'd', label: '2B' },
-  { key: 't', label: '3B' },
-  { key: 'hr', label: 'HR' },
-  { key: 'rbi', label: 'RBI' },
-  { key: 'so', label: 'SO' },
-  { key: 'bb', label: 'BB' },
-  { key: 'hbp', label: 'HBP' },
-  { key: 'sb', label: 'SB' },
-  { key: 'cs', label: 'CS' },
-  { key: 'sf', label: 'SF' },
-  { key: 'sh', label: 'SH' },
-  { key: 're', label: 'RE' },
-  { key: 'intr', label: 'INTR' },
-  { key: 'lob', label: 'LOB' },
-  { key: 'tb', label: 'TB' },
-  { key: 'pa', label: 'PA' },
-  { key: 'avg', label: 'AVG' },
-  { key: 'obp', label: 'OBP' },
-  { key: 'slg', label: 'SLG' },
-  { key: 'ops', label: 'OPS' },
-];
 
 interface BattingStatsViewTableProps {
   stats: GameBattingStatsType | null;
   totals: GameBattingStatsType['totals'] | null;
 }
 
+const battingDecimalDigits: Partial<Record<BattingViewField, number>> = {
+  avg: 3,
+  obp: 3,
+  slg: 3,
+  ops: 3,
+};
+
 const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);
+
+  const headers = useMemo(
+    () =>
+      battingViewFieldOrder.map((key) => ({
+        key,
+        label: BATTING_FIELD_LABELS[key],
+        align: key === 'playerName' ? ('left' as const) : ('center' as const),
+      })),
+    [],
+  );
+
+  const formatValue = useCallback(
+    (value: number | string | null | undefined, field: BattingViewField) => {
+      if ((battingAverageFields as readonly string[]).includes(field)) {
+        return formatStatDecimal(value, battingDecimalDigits[field] ?? 3);
+      }
+
+      return value ?? '-';
+    },
+    [],
+  );
 
   return (
     <Box>
@@ -67,7 +73,7 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
           <TableHead>
             <TableRow>
               {headers.map((header) => (
-                <TableCell key={header.key} align={header.key === 'playerName' ? 'left' : 'center'}>
+                <TableCell key={header.key} align={header.align}>
                   {header.label}
                 </TableCell>
               ))}
@@ -76,107 +82,62 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
           <TableBody>
             {stats?.stats.map((stat) => (
               <TableRow key={stat.statId} hover>
-                <TableCell>
-                  <Stack spacing={0.5}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {stat.playerName}
-                    </Typography>
-                    {stat.playerNumber !== null && (
-                      <Typography variant="caption" color="text.secondary">
-                        #{stat.playerNumber}
-                      </Typography>
-                    )}
-                  </Stack>
-                </TableCell>
-                {headers
-                  .filter((header) => header.key !== 'playerName')
-                  .map((header) => {
-                    const value = stat[header.key as keyof GameBattingStatLineType];
-                    const isAvgField = ['avg', 'obp', 'slg', 'ops'].includes(header.key);
-
+                {headers.map((header) => {
+                  if (header.key === 'playerNumber') {
+                    const value = stat.playerNumber;
                     return (
                       <TableCell key={header.key} align="center">
-                        {isAvgField ? formatStatDecimal(value as number | null | undefined) : value}
+                        {value === null || value === undefined ? null : (
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {value}
+                          </Typography>
+                        )}
                       </TableCell>
                     );
-                  })}
+                  }
+
+                  if (header.key === 'playerName') {
+                    return (
+                      <TableCell key={header.key} align="left">
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {stat.playerName}
+                        </Typography>
+                      </TableCell>
+                    );
+                  }
+
+                  const value = stat[header.key as keyof GameBattingStatLineType];
+                  return (
+                    <TableCell key={header.key} align="center">
+                      {formatValue(value, header.key)}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))}
 
             {totals && (
               <TableRow>
-                <TableCell>
-                  <Chip label="Totals" color="primary" size="small" />
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.ab}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.h}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.r}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.d}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.t}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.hr}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.rbi}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.so}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.bb}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.hbp}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.sb}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.cs}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.sf}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.sh}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.re}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.intr}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {totals.lob}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {formatStatDecimal(totals.tb)}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {formatStatDecimal(totals.pa)}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {formatStatDecimal(totals.avg)}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {formatStatDecimal(totals.obp)}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {formatStatDecimal(totals.slg)}
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  {formatStatDecimal(totals.ops)}
-                </TableCell>
+                {headers.map((header) => {
+                  if (header.key === 'playerNumber') {
+                    return <TableCell key={header.key} />;
+                  }
+
+                  if (header.key === 'playerName') {
+                    return (
+                      <TableCell key={header.key} align="left">
+                        <Chip label="Totals" color="primary" size="small" />
+                      </TableCell>
+                    );
+                  }
+
+                  const value = totals[header.key as keyof typeof totals];
+                  return (
+                    <TableCell key={header.key} align="center" sx={{ fontWeight: 700 }}>
+                      {formatValue(value, header.key)}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             )}
           </TableBody>

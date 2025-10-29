@@ -44,79 +44,12 @@ import type {
   UnsavedChangesPrompt,
   UnsavedChangesReason,
 } from './types';
-
-const editableFields = [
-  'ipDecimal',
-  'w',
-  'l',
-  's',
-  'h',
-  'r',
-  'er',
-  'd',
-  't',
-  'hr',
-  'so',
-  'bb',
-  'bf',
-  'wp',
-  'hbp',
-  'bk',
-  'sc',
-] as const;
-
-type EditablePitchingField = (typeof editableFields)[number];
-
-type PitchingTotalKey =
-  | 'ipDecimal'
-  | 'w'
-  | 'l'
-  | 's'
-  | 'h'
-  | 'r'
-  | 'er'
-  | 'd'
-  | 't'
-  | 'hr'
-  | 'so'
-  | 'bb'
-  | 'bf'
-  | 'wp'
-  | 'hbp'
-  | 'bk'
-  | 'sc'
-  | 'era'
-  | 'whip'
-  | 'k9'
-  | 'bb9'
-  | 'oba'
-  | 'slg';
-
-const totalsFields: Array<{ key: PitchingTotalKey; label: string; digits?: number }> = [
-  { key: 'ipDecimal', label: 'IP', digits: 1 },
-  { key: 'w', label: 'W' },
-  { key: 'l', label: 'L' },
-  { key: 's', label: 'S' },
-  { key: 'h', label: 'H' },
-  { key: 'r', label: 'R' },
-  { key: 'er', label: 'ER' },
-  { key: 'd', label: '2B' },
-  { key: 't', label: '3B' },
-  { key: 'hr', label: 'HR' },
-  { key: 'so', label: 'SO' },
-  { key: 'bb', label: 'BB' },
-  { key: 'bf', label: 'BF' },
-  { key: 'wp', label: 'WP' },
-  { key: 'hbp', label: 'HBP' },
-  { key: 'bk', label: 'BK' },
-  { key: 'sc', label: 'SC' },
-  { key: 'era', label: 'ERA', digits: 2 },
-  { key: 'whip', label: 'WHIP', digits: 2 },
-  { key: 'k9', label: 'K/9', digits: 2 },
-  { key: 'bb9', label: 'BB/9', digits: 2 },
-  { key: 'oba', label: 'OBA', digits: 3 },
-  { key: 'slg', label: 'SLG', digits: 3 },
-];
+import {
+  editablePitchingFields as editableFields,
+  type EditablePitchingField,
+  type PitchingSummaryField,
+  PITCHING_FIELD_LABELS,
+} from './pitchingColumns';
 
 interface PitchingStatsEditableGridProps {
   stats: GamePitchingStatsType | null;
@@ -193,9 +126,25 @@ type PitchingTotalsRow = {
   isTotals: true;
   playerName: string;
   playerNumber: null;
-} & Record<EditablePitchingField | 'ip' | 'era' | 'whip' | 'k9' | 'bb9' | 'oba' | 'slg', number>;
+} & Record<EditablePitchingField | PitchingSummaryField, number>;
 
 type PitchingGridRow = PitchingRow | PitchingNewRow | PitchingTotalsRow;
+
+const getNumericPitchingFieldValue = (
+  row: PitchingGridRow | undefined,
+  field: EditablePitchingField,
+): number | null => {
+  if (!row) {
+    return null;
+  }
+  const rawValue = row[field];
+  if (rawValue === null || rawValue === undefined) {
+    return null;
+  }
+
+  const numeric = typeof rawValue === 'number' ? rawValue : Number(rawValue);
+  return Number.isNaN(numeric) ? null : numeric;
+};
 
 const PitchingStatsEditableGrid = forwardRef<
   EditableGridHandle | null,
@@ -705,7 +654,7 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         {
           field: 'playerNumber',
-          headerName: '#',
+          headerName: PITCHING_FIELD_LABELS.playerNumber,
           width: 70,
           align: 'center',
           headerAlign: 'center',
@@ -734,11 +683,11 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         {
           field: 'playerName',
-          headerName: 'Player',
+          headerName: PITCHING_FIELD_LABELS.playerName,
           flex: 1.2,
           minWidth: 180,
           sortable: false,
-          renderCell: (params) => {
+          renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
             if (params.id === NEW_ROW_ID) {
               return (
                 <Box
@@ -785,7 +734,7 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         ...editableFields.map<GridColDef<PitchingGridRow>>((field) => ({
           field,
-          headerName: field.toUpperCase(),
+          headerName: PITCHING_FIELD_LABELS[field],
           type: 'number',
           align: 'center',
           headerAlign: 'center',
@@ -794,7 +743,8 @@ const PitchingStatsEditableGrid = forwardRef<
           preProcessEditCellProps: buildNonNegativePreProcessor(field === 'ipDecimal'),
           valueFormatter:
             field === 'ipDecimal'
-              ? ({ value }) => {
+              ? (params) => {
+                  const value = params?.value;
                   if (value === null || value === undefined) {
                     return formatInnings(Number.NaN);
                   }
@@ -803,6 +753,21 @@ const PitchingStatsEditableGrid = forwardRef<
                 }
               : (params) =>
                   formatStatDecimal(params?.value as number | string | null | undefined, 0),
+          renderCell: (params) => {
+            const numeric = getNumericPitchingFieldValue(
+              params.row as PitchingGridRow | undefined,
+              field,
+            );
+            if (numeric === null) {
+              return '-';
+            }
+
+            if (field === 'ipDecimal') {
+              return formatInnings(numeric);
+            }
+
+            return formatStatDecimal(numeric, 0);
+          },
         })),
         {
           field: 'ip',
@@ -1130,45 +1095,6 @@ const PitchingStatsEditableGrid = forwardRef<
             '& .MuiDataGrid-cell': { outline: 'none !important' },
           }}
         />
-
-        {totals && (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: `1.2fr repeat(${totalsFields.length}, minmax(70px, 1fr))`,
-              alignItems: 'center',
-              gap: 1,
-              p: 1,
-              bgcolor: 'grey.100',
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              Totals
-            </Typography>
-            {totalsFields.map(({ key, label, digits }) => {
-              const value = totals[key];
-
-              let display: string | number = value as number;
-              if (key === 'ipDecimal') {
-                display = formatInnings(Number(value ?? 0));
-              } else if (typeof value === 'number' && digits !== undefined) {
-                display = formatStatDecimal(value, digits);
-              }
-
-              return (
-                <Typography
-                  key={`total-${label}`}
-                  variant="body2"
-                  textAlign="center"
-                  sx={{ fontWeight: 600 }}
-                >
-                  {display}
-                </Typography>
-              );
-            })}
-          </Box>
-        )}
       </Box>
     );
   },

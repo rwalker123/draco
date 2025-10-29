@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   Box,
   Chip,
   Paper,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -17,42 +16,62 @@ import {
 } from '@mui/material';
 import type { GamePitchingStatLineType, GamePitchingStatsType } from '@draco/shared-schemas';
 
+import {
+  PITCHING_FIELD_LABELS,
+  pitchingSummaryFields,
+  pitchingViewFieldOrder,
+  type PitchingViewField,
+} from './pitchingColumns';
 import { formatInnings, formatStatDecimal } from './utils';
-
-const headers: { key: keyof GamePitchingStatLineType | 'playerName'; label: string }[] = [
-  { key: 'playerName', label: 'Player' },
-  { key: 'ipDecimal', label: 'IP' },
-  { key: 'w', label: 'W' },
-  { key: 'l', label: 'L' },
-  { key: 's', label: 'S' },
-  { key: 'h', label: 'H' },
-  { key: 'r', label: 'R' },
-  { key: 'er', label: 'ER' },
-  { key: 'd', label: '2B' },
-  { key: 't', label: '3B' },
-  { key: 'hr', label: 'HR' },
-  { key: 'so', label: 'SO' },
-  { key: 'bb', label: 'BB' },
-  { key: 'bf', label: 'BF' },
-  { key: 'wp', label: 'WP' },
-  { key: 'hbp', label: 'HBP' },
-  { key: 'bk', label: 'BK' },
-  { key: 'sc', label: 'SC' },
-  { key: 'era', label: 'ERA' },
-  { key: 'whip', label: 'WHIP' },
-  { key: 'k9', label: 'K/9' },
-  { key: 'bb9', label: 'BB/9' },
-  { key: 'oba', label: 'OBA' },
-  { key: 'slg', label: 'SLG' },
-];
 
 interface PitchingStatsViewTableProps {
   stats: GamePitchingStatsType | null;
   totals: GamePitchingStatsType['totals'] | null;
 }
 
+const decimalDigits: Partial<Record<PitchingViewField, number>> = {
+  era: 2,
+  whip: 2,
+  k9: 2,
+  bb9: 2,
+  oba: 3,
+  slg: 3,
+};
+
+const inningsFields: PitchingViewField[] = ['ipDecimal', 'ip'];
+
 const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);
+
+  const headers = useMemo(
+    () =>
+      pitchingViewFieldOrder.map((key) => ({
+        key,
+        label: PITCHING_FIELD_LABELS[key],
+        align: key === 'playerName' ? ('left' as const) : ('center' as const),
+      })),
+    [],
+  );
+
+  const formatValue = useCallback(
+    (value: number | string | null | undefined, field: PitchingViewField) => {
+      if (inningsFields.includes(field)) {
+        return formatInnings(Number(value ?? 0));
+      }
+
+      const digits = decimalDigits[field];
+      if (digits !== undefined) {
+        return formatStatDecimal(value, digits);
+      }
+
+      if ((pitchingSummaryFields as readonly string[]).includes(field)) {
+        return value ?? '-';
+      }
+
+      return value ?? '-';
+    },
+    [],
+  );
 
   return (
     <Box>
@@ -67,7 +86,7 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
           <TableHead>
             <TableRow>
               {headers.map((header) => (
-                <TableCell key={header.key} align={header.key === 'playerName' ? 'left' : 'center'}>
+                <TableCell key={header.key} align={header.align}>
                   {header.label}
                 </TableCell>
               ))}
@@ -76,80 +95,62 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
           <TableBody>
             {stats?.stats.map((stat) => (
               <TableRow key={stat.statId} hover>
-                <TableCell>
-                  <Stack spacing={0.25}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {stat.playerName}
-                    </Typography>
-                    {stat.playerNumber !== null && (
-                      <Typography variant="caption" color="text.secondary">
-                        #{stat.playerNumber}
-                      </Typography>
-                    )}
-                  </Stack>
-                </TableCell>
-                {headers
-                  .filter((header) => header.key !== 'playerName')
-                  .map((header) => {
-                    const value = stat[header.key as keyof GamePitchingStatLineType];
-                    const isDecimal = ['era', 'whip', 'k9', 'bb9', 'oba', 'slg'].includes(
-                      header.key,
-                    );
-
-                    if (header.key === 'ipDecimal') {
-                      return (
-                        <TableCell key={header.key} align="center">
-                          {formatInnings(Number(value ?? 0))}
-                        </TableCell>
-                      );
-                    }
-
+                {headers.map((header) => {
+                  if (header.key === 'playerNumber') {
+                    const value = stat.playerNumber;
                     return (
                       <TableCell key={header.key} align="center">
-                        {isDecimal
-                          ? formatStatDecimal(
-                              value as number | null | undefined,
-                              header.key === 'oba' || header.key === 'slg' ? 3 : 2,
-                            )
-                          : value}
+                        {value === null || value === undefined ? null : (
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {value}
+                          </Typography>
+                        )}
                       </TableCell>
                     );
-                  })}
+                  }
+
+                  if (header.key === 'playerName') {
+                    return (
+                      <TableCell key={header.key} align="left">
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {stat.playerName}
+                        </Typography>
+                      </TableCell>
+                    );
+                  }
+
+                  const value = stat[header.key as keyof GamePitchingStatLineType];
+                  return (
+                    <TableCell key={header.key} align="center">
+                      {formatValue(value, header.key)}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))}
 
             {totals && (
               <TableRow>
-                <TableCell>
-                  <Chip label="Totals" color="primary" size="small" />
-                </TableCell>
-                {headers
-                  .filter((header) => header.key !== 'playerName')
-                  .map((header) => {
-                    const value = totals[header.key as keyof typeof totals];
+                {headers.map((header) => {
+                  if (header.key === 'playerNumber') {
+                    return <TableCell key={header.key} />;
+                  }
 
-                    if (header.key === 'ipDecimal') {
-                      return (
-                        <TableCell key={header.key} align="center" sx={{ fontWeight: 700 }}>
-                          {formatInnings(Number(value ?? 0))}
-                        </TableCell>
-                      );
-                    }
-
-                    const isDecimal = ['era', 'whip', 'k9', 'bb9', 'oba', 'slg'].includes(
-                      header.key,
-                    );
+                  if (header.key === 'playerName') {
                     return (
-                      <TableCell key={header.key} align="center" sx={{ fontWeight: 700 }}>
-                        {isDecimal
-                          ? formatStatDecimal(
-                              value as number | null | undefined,
-                              header.key === 'oba' || header.key === 'slg' ? 3 : 2,
-                            )
-                          : value}
+                      <TableCell key={header.key} align="left">
+                        <Chip label="Totals" color="primary" size="small" />
                       </TableCell>
                     );
-                  })}
+                  }
+
+                  const value = totals[header.key as keyof typeof totals];
+                  return (
+                    <TableCell key={header.key} align="center" sx={{ fontWeight: 700 }}>
+                      {formatValue(value, header.key)}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             )}
           </TableBody>

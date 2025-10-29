@@ -298,7 +298,7 @@ export const GamePitchingStatInputSchema = z.object({
 });
 
 export const CreateGamePitchingStatSchema = GamePitchingStatInputSchema.extend({
-  rosterSeasonId: bigintToStringSchema,
+  rosterSeasonId: z.string(),
 });
 
 export const GamePitchingStatLineSchema = GamePitchingStatInputSchema.extend({

@@ -6056,7 +6056,6 @@ components:
           minimum: 0
         rosterSeasonId:
           type: string
-          pattern: ^d+$
       required:
         - ipDecimal
         - w
