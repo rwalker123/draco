@@ -704,6 +704,35 @@ const PitchingStatsEditableGrid = forwardRef<
           },
         },
         {
+          field: 'playerNumber',
+          headerName: '#',
+          width: 70,
+          align: 'center',
+          headerAlign: 'center',
+          sortable: false,
+          filterable: false,
+          renderCell: (params: GridRenderCellParams<PitchingGridRow>) => {
+            if (params.id === TOTALS_ROW_ID) {
+              return null;
+            }
+
+            const value =
+              params.id === NEW_ROW_ID
+                ? (selectedNewRowPlayer?.playerNumber ?? null)
+                : (params.row as PitchingRow).playerNumber;
+
+            if (value === null || value === undefined) {
+              return null;
+            }
+
+            return (
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {value}
+              </Typography>
+            );
+          },
+        },
+        {
           field: 'playerName',
           headerName: 'Player',
           flex: 1.2,
@@ -748,16 +777,9 @@ const PitchingStatsEditableGrid = forwardRef<
 
             const pitchingRow = params.row as PitchingRow;
             return (
-              <Stack spacing={0.25}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {pitchingRow.playerName}
-                </Typography>
-                {pitchingRow.playerNumber !== null && (
-                  <Typography variant="caption" color="text.secondary">
-                    #{pitchingRow.playerNumber}
-                  </Typography>
-                )}
-              </Stack>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {pitchingRow.playerName}
+              </Typography>
             );
           },
         },

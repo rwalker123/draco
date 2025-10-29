@@ -697,6 +697,35 @@ const BattingStatsEditableGrid = forwardRef<
           },
         },
         {
+          field: 'playerNumber',
+          headerName: '#',
+          width: 70,
+          align: 'center',
+          headerAlign: 'center',
+          sortable: false,
+          filterable: false,
+          renderCell: (params: GridRenderCellParams<BattingGridRow>) => {
+            if (params.id === TOTALS_ROW_ID) {
+              return null;
+            }
+
+            const value =
+              params.id === NEW_ROW_ID
+                ? (selectedNewRowPlayer?.playerNumber ?? null)
+                : (params.row as BattingRow).playerNumber;
+
+            if (value === null || value === undefined) {
+              return null;
+            }
+
+            return (
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {value}
+              </Typography>
+            );
+          },
+        },
+        {
           field: 'playerName',
           headerName: 'Player',
           flex: 1.2,
@@ -741,16 +770,9 @@ const BattingStatsEditableGrid = forwardRef<
 
             const battingRow = params.row as BattingRow;
             return (
-              <Stack spacing={0.25}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {battingRow.playerName}
-                </Typography>
-                {battingRow.playerNumber !== null && (
-                  <Typography variant="caption" color="text.secondary">
-                    #{battingRow.playerNumber}
-                  </Typography>
-                )}
-              </Stack>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {battingRow.playerName}
+              </Typography>
             );
           },
         },
@@ -1045,6 +1067,10 @@ const BattingStatsEditableGrid = forwardRef<
             return '';
           }}
           sx={{
+            '& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell': {
+              py: 0.25, // vertical padding (theme spacing units)
+              px: 0.5, // horizontal padding
+            },
             '& .MuiDataGrid-cell--editing': {
               bgcolor: 'action.selected',
             },
