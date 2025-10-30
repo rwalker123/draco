@@ -12,7 +12,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   Typography,
 } from '@mui/material';
 import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
@@ -20,6 +19,7 @@ import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
 import { formatStatDecimal } from './utils';
 import { PITCHING_COLUMN_DECIMAL_DIGITS, type PitchingViewField } from './pitchingColumns';
 import { useSortableRows } from './tableUtils';
+import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
 
 interface SeasonPitchingStatsSectionProps {
   stats: PlayerPitchingStatsType[] | null;
@@ -158,13 +158,13 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                     align={column.align ?? (column.key === 'playerName' ? 'left' : 'center')}
                     sortDirection={sortConfig?.key === column.key ? sortConfig.direction : false}
                   >
-                    <TableSortLabel
+                    <RightAlignedTableSortLabel
                       active={sortConfig?.key === column.key}
                       direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
                       onClick={() => handleSort(column.key)}
                     >
                       {column.label}
-                    </TableSortLabel>
+                    </RightAlignedTableSortLabel>
                   </TableCell>
                 ))}
               </TableRow>

@@ -1441,7 +1441,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
               href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`}
               underline="hover"
               color="inherit"
-              sx={{ fontWeight: 500 }}
+              sx={{ fontWeight: 500, ml: 3 }}
             >
               {teamHeaderData?.teamName ?? 'Team'}
             </MuiLink>

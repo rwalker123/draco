@@ -12,7 +12,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   Typography,
 } from '@mui/material';
 import type { GamePitchingStatLineType, GamePitchingStatsType } from '@draco/shared-schemas';
@@ -25,6 +24,7 @@ import {
 } from './pitchingColumns';
 import { formatInnings, formatStatDecimal } from './utils';
 import { useSortableRows } from './tableUtils';
+import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
 
 interface PitchingStatsViewTableProps {
   stats: GamePitchingStatsType | null;
@@ -88,13 +88,13 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
                   align={header.align}
                   sortDirection={sortConfig?.key === header.key ? sortConfig.direction : false}
                 >
-                  <TableSortLabel
+                  <RightAlignedTableSortLabel
                     active={sortConfig?.key === header.key}
                     direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
                     onClick={() => handleSort(header.key)}
                   >
                     {header.label}
-                  </TableSortLabel>
+                  </RightAlignedTableSortLabel>
                 </TableCell>
               ))}
             </TableRow>
