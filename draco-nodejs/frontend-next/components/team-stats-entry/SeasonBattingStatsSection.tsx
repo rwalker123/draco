@@ -12,7 +12,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   Typography,
 } from '@mui/material';
 import type { PlayerBattingStatsType } from '@draco/shared-schemas';
@@ -20,6 +19,7 @@ import type { PlayerBattingStatsType } from '@draco/shared-schemas';
 import { formatStatDecimal } from './utils';
 import { BATTING_COLUMN_DECIMAL_DIGITS, type BattingViewField } from './battingColumns';
 import { useSortableRows } from './tableUtils';
+import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
 
 interface SeasonBattingStatsSectionProps {
   stats: PlayerBattingStatsType[] | null;
@@ -156,13 +156,13 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                     align={column.align ?? (column.key === 'playerName' ? 'left' : 'center')}
                     sortDirection={sortConfig?.key === column.key ? sortConfig.direction : false}
                   >
-                    <TableSortLabel
+                    <RightAlignedTableSortLabel
                       active={sortConfig?.key === column.key}
                       direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
                       onClick={() => handleSort(column.key)}
                     >
                       {column.label}
-                    </TableSortLabel>
+                    </RightAlignedTableSortLabel>
                   </TableCell>
                 ))}
               </TableRow>
