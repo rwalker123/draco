@@ -29,6 +29,7 @@ describe('GameListCard', () => {
         onSortOrderChange={() => {}}
         loading={false}
         error={null}
+        canManageStats={false}
       />,
     );
 
@@ -51,6 +52,7 @@ describe('GameListCard', () => {
         onSortOrderChange={() => {}}
         loading={false}
         error={null}
+        canManageStats={false}
       />,
     );
 

@@ -372,7 +372,10 @@ export const GameAttendanceSchema = z.object({
   playerIds: z.string().array(),
 });
 
-export const UpdateGameAttendanceSchema = GameAttendanceSchema;
+export const UpdateGameAttendanceSchema = z.object({
+  rosterSeasonId: z.string(),
+  present: z.boolean(),
+});
 
 export type TeamStatsPlayerSummaryType = z.infer<typeof TeamStatsPlayerSummarySchema>;
 export type GameBattingStatLineType = z.infer<typeof GameBattingStatLineSchema>;

@@ -40,6 +40,7 @@ import type {
 import { formatInnings, formatStatDecimal } from './utils';
 import type {
   EditableGridHandle,
+  GameOutcome,
   UnsavedChangesDecision,
   UnsavedChangesPrompt,
   UnsavedChangesReason,
@@ -63,6 +64,7 @@ interface PitchingStatsEditableGridProps {
   onViewSeason?: () => void;
   onRequestUnsavedDecision?: (prompt: UnsavedChangesPrompt) => Promise<UnsavedChangesDecision>;
   onDirtyStateChange?: (hasDirtyRow: boolean) => void;
+  gameOutcome?: GameOutcome;
 }
 
 type PitchingRow = GamePitchingStatLineType & { id: string };
@@ -146,6 +148,143 @@ const getNumericPitchingFieldValue = (
   return Number.isNaN(numeric) ? null : numeric;
 };
 
+type OutcomeRowInput = {
+  id: string;
+  playerName?: string | null;
+  w?: number | null;
+  l?: number | null;
+  s?: number | null;
+};
+
+type OutcomeRow = {
+  id: string;
+  playerName: string;
+  w: number;
+  l: number;
+  s: number;
+};
+
+const toOutcomeRow = (row: OutcomeRowInput): OutcomeRow => {
+  const normalize = (value: number | null | undefined): number => {
+    if (value === null || value === undefined) {
+      return 0;
+    }
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return 0;
+    }
+    return numeric;
+  };
+
+  return {
+    id: row.id,
+    playerName: row.playerName?.trim() || 'Unnamed pitcher',
+    w: normalize(row.w),
+    l: normalize(row.l),
+    s: normalize(row.s),
+  };
+};
+
+const describePlayers = (entries: OutcomeRow[]): string =>
+  entries.map((entry) => entry.playerName).join(', ');
+
+const validatePitchingOutcomes = (
+  rows: OutcomeRowInput[],
+  gameOutcome: GameOutcome | undefined,
+): void => {
+  const normalizedRows = rows.map(toOutcomeRow);
+  const assignments = {
+    w: [] as OutcomeRow[],
+    l: [] as OutcomeRow[],
+    s: [] as OutcomeRow[],
+  };
+
+  normalizedRows.forEach((row) => {
+    (['w', 'l', 's'] as const).forEach((field) => {
+      const label = PITCHING_FIELD_LABELS[field];
+      const value = row[field];
+      if (!Number.isFinite(value) || value < 0) {
+        throw new Error(`${label} must be a non-negative whole number for ${row.playerName}.`);
+      }
+      if (!Number.isInteger(value)) {
+        throw new Error(`${label} must be a whole number for ${row.playerName}.`);
+      }
+      if (value > 1) {
+        throw new Error(`${label} can only be 0 or 1 for ${row.playerName}.`);
+      }
+      if (value === 1) {
+        assignments[field].push(row);
+      }
+    });
+
+    if (row.w === 1 && row.s === 1) {
+      throw new Error(
+        `${row.playerName} cannot be credited with both a ${PITCHING_FIELD_LABELS.w} and a ${PITCHING_FIELD_LABELS.s}.`,
+      );
+    }
+  });
+
+  if (assignments.w.length > 1) {
+    throw new Error(
+      `Only one pitcher can be assigned a ${PITCHING_FIELD_LABELS.w}. Currently assigned to ${describePlayers(
+        assignments.w,
+      )}.`,
+    );
+  }
+  if (assignments.l.length > 1) {
+    throw new Error(
+      `Only one pitcher can be assigned a ${PITCHING_FIELD_LABELS.l}. Currently assigned to ${describePlayers(
+        assignments.l,
+      )}.`,
+    );
+  }
+  if (assignments.s.length > 1) {
+    throw new Error(
+      `Only one pitcher can be assigned a ${PITCHING_FIELD_LABELS.s}. Currently assigned to ${describePlayers(
+        assignments.s,
+      )}.`,
+    );
+  }
+
+  if (!gameOutcome) {
+    return;
+  }
+
+  if (gameOutcome === 'win') {
+    if (assignments.l.length > 0) {
+      throw new Error('Cannot assign a loss to your team in a game they won.');
+    }
+    return;
+  }
+
+  if (gameOutcome === 'loss') {
+    if (assignments.w.length > 0) {
+      throw new Error('Cannot assign a win to your team in a game they lost.');
+    }
+    if (assignments.s.length > 0) {
+      throw new Error('A save can only be recorded when the team wins.');
+    }
+    return;
+  }
+
+  // tie
+  if (assignments.w.length > 0 || assignments.l.length > 0) {
+    throw new Error('Wins and losses cannot be recorded for a tied game.');
+  }
+  if (assignments.s.length > 0) {
+    throw new Error('A save can only be recorded when the team wins.');
+  }
+};
+
+const mapRowsToOutcomeInputs = (rows: PitchingRow[]): OutcomeRowInput[] =>
+  rows.map((row) => ({
+    id: row.id,
+    playerName: row.playerName,
+    w: Number(row.w ?? 0),
+    l: Number(row.l ?? 0),
+    s: Number(row.s ?? 0),
+  }));
+
 const PitchingStatsEditableGrid = forwardRef<
   EditableGridHandle | null,
   PitchingStatsEditableGridProps
@@ -159,6 +298,7 @@ const PitchingStatsEditableGrid = forwardRef<
       onUpdateStat,
       onDeleteStat,
       onProcessError,
+      gameOutcome = null,
       showViewSeason = false,
       onViewSeason,
       onRequestUnsavedDecision,
@@ -241,6 +381,23 @@ const PitchingStatsEditableGrid = forwardRef<
           throw new Error('Select a player to add.');
         }
 
+        const playerSummary =
+          availablePlayers.find((player) => player.rosterSeasonId === newRow.rosterSeasonId) ??
+          null;
+        validatePitchingOutcomes(
+          [
+            ...mapRowsToOutcomeInputs(rowsState),
+            {
+              id: NEW_ROW_ID,
+              playerName: playerSummary?.playerName ?? 'New player',
+              w: newRow.w,
+              l: newRow.l,
+              s: newRow.s,
+            },
+          ],
+          gameOutcome,
+        );
+
         await onCreateStat({ ...newRow, ipDecimal: Number(newRow.ipDecimal) });
         setNewRow(emptyPitchingNewRow);
         clearDirtyState();
@@ -255,7 +412,16 @@ const PitchingStatsEditableGrid = forwardRef<
         onProcessError(error instanceof Error ? error : new Error('Unable to add stat line.'));
         return false;
       }
-    }, [apiRef, clearDirtyState, newRow, onCreateStat, onProcessError]);
+    }, [
+      apiRef,
+      availablePlayers,
+      clearDirtyState,
+      gameOutcome,
+      newRow,
+      onCreateStat,
+      onProcessError,
+      rowsState,
+    ]);
 
     const selectedNewRowPlayer = useMemo(
       () =>
@@ -441,6 +607,7 @@ const PitchingStatsEditableGrid = forwardRef<
       }
 
       try {
+        validatePitchingOutcomes(mapRowsToOutcomeInputs(rowsState), gameOutcome);
         await onUpdateStat(current.statId, diff);
         originalRowsRef.current.set(current.id, current);
         const api = apiRef.current;
@@ -460,6 +627,7 @@ const PitchingStatsEditableGrid = forwardRef<
       handleAddRow,
       onProcessError,
       onUpdateStat,
+      gameOutcome,
       rowsState,
     ]);
 
@@ -903,6 +1071,20 @@ const PitchingStatsEditableGrid = forwardRef<
           });
           sanitized.isNew = true;
 
+          validatePitchingOutcomes(
+            [
+              ...mapRowsToOutcomeInputs(rowsState),
+              {
+                id: sanitized.id,
+                playerName: sanitized.playerName,
+                w: sanitized.w,
+                l: sanitized.l,
+                s: sanitized.s,
+              },
+            ],
+            gameOutcome,
+          );
+
           setNewRow((prev) => {
             const updates: Partial<CreateGamePitchingStatType> = {};
             editableFields.forEach((field) => {
@@ -932,6 +1114,9 @@ const PitchingStatsEditableGrid = forwardRef<
           }
           sanitized[field] = field === 'ipDecimal' ? Number(value) : Math.trunc(value);
         });
+
+        const candidateRows = rowsState.map((row) => (row.id === sanitized.id ? sanitized : row));
+        validatePitchingOutcomes(mapRowsToOutcomeInputs(candidateRows), gameOutcome);
 
         applyRowUpdate(sanitized);
         markDirty(sanitized);
@@ -1016,7 +1201,7 @@ const PitchingStatsEditableGrid = forwardRef<
       <Box display="flex" flexDirection="column" gap={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={2}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Pitching Box Score
+            Pitching Statistics
           </Typography>
           {showViewSeason && onViewSeason && (
             <Button

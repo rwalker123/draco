@@ -19,6 +19,7 @@ import type {
   GameBattingStatsType,
   GamePitchingStatsType,
   GameAttendanceType,
+  UpdateGameAttendanceType,
   CreateGameBattingStatType,
   UpdateGameBattingStatType,
   CreateGamePitchingStatType,
@@ -267,7 +268,7 @@ export class TeamStatsEntryService {
     seasonId: string,
     teamSeasonId: string,
     gameId: string,
-    payload: GameAttendanceType,
+    payload: UpdateGameAttendanceType,
   ): Promise<GameAttendanceType> {
     const result = await apiUpdateGameAttendance({
       client: this.client,

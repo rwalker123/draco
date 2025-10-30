@@ -10,7 +10,12 @@ import type {
   UpdateGamePitchingStatType,
 } from '@draco/shared-schemas';
 
-import type { EditableGridHandle, UnsavedChangesDecision, UnsavedChangesPrompt } from './types';
+import type {
+  EditableGridHandle,
+  GameOutcome,
+  UnsavedChangesDecision,
+  UnsavedChangesPrompt,
+} from './types';
 import PitchingStatsEditableGrid from './PitchingStatsEditableGrid';
 import PitchingStatsViewTable from './PitchingStatsViewTable';
 
@@ -30,6 +35,7 @@ interface PitchingStatsSectionProps {
   gridRef?: React.Ref<EditableGridHandle>;
   showViewSeason?: boolean;
   onViewSeason?: () => void;
+  gameOutcome?: GameOutcome;
 }
 
 const PitchingStatsSection: React.FC<PitchingStatsSectionProps> = ({
@@ -46,6 +52,7 @@ const PitchingStatsSection: React.FC<PitchingStatsSectionProps> = ({
   gridRef,
   showViewSeason,
   onViewSeason,
+  gameOutcome,
 }) => {
   if (
     mode === 'edit' &&
@@ -70,6 +77,7 @@ const PitchingStatsSection: React.FC<PitchingStatsSectionProps> = ({
         onDirtyStateChange={onDirtyStateChange}
         showViewSeason={showViewSeason}
         onViewSeason={onViewSeason}
+        gameOutcome={gameOutcome}
       />
     );
   }
@@ -77,7 +85,7 @@ const PitchingStatsSection: React.FC<PitchingStatsSectionProps> = ({
   return (
     <Box>
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-        Pitching Box Score
+        Pitching Statistics
       </Typography>
       <PitchingStatsViewTable stats={stats} totals={totals} />
     </Box>

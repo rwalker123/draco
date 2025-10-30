@@ -77,4 +77,6 @@ export interface IStatsEntryRepository {
 
   listAttendance(gameId: bigint, teamSeasonId: bigint): Promise<dbGameAttendance[]>;
   replaceAttendance(gameId: bigint, teamSeasonId: bigint, playerIds: bigint[]): Promise<void>;
+  addAttendance(gameId: bigint, teamSeasonId: bigint, playerId: bigint): Promise<void>;
+  removeAttendance(gameId: bigint, teamSeasonId: bigint, playerId: bigint): Promise<void>;
 }

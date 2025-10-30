@@ -199,15 +199,16 @@ describe('StatsTabsCard', () => {
         onProcessError={noop}
         attendanceOptions={emptyPlayers}
         attendanceSelection={[]}
-        onAttendanceSelectionChange={noop}
+        onAttendanceToggle={noop}
         lockedAttendanceRosterIds={[]}
         attendanceLoading={false}
         attendanceError={null}
-        attendanceSaving={false}
+        pendingAttendanceRosterId={null}
         seasonBattingStats={[]}
         seasonPitchingStats={[]}
         seasonLoading={false}
         seasonError={null}
+        gameOutcome={null}
       />,
     );
 
@@ -240,15 +241,16 @@ describe('StatsTabsCard', () => {
         onProcessError={noop}
         attendanceOptions={emptyPlayers}
         attendanceSelection={[]}
-        onAttendanceSelectionChange={noop}
+        onAttendanceToggle={noop}
         lockedAttendanceRosterIds={[]}
         attendanceLoading={false}
         attendanceError={null}
-        attendanceSaving={false}
+        pendingAttendanceRosterId={null}
         seasonBattingStats={[]}
         seasonPitchingStats={[]}
         seasonLoading={false}
         seasonError={null}
+        gameOutcome={null}
         onClearGameSelection={noop}
       />,
     );
@@ -283,15 +285,16 @@ describe('StatsTabsCard', () => {
         onProcessError={noop}
         attendanceOptions={emptyPlayers}
         attendanceSelection={[]}
-        onAttendanceSelectionChange={noop}
+        onAttendanceToggle={noop}
         lockedAttendanceRosterIds={[]}
         attendanceLoading={false}
         attendanceError={null}
-        attendanceSaving={false}
+        pendingAttendanceRosterId={null}
         seasonBattingStats={[]}
         seasonPitchingStats={[]}
         seasonLoading={false}
         seasonError={null}
+        gameOutcome={null}
       />,
     );
 

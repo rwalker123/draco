@@ -32,6 +32,7 @@ import SeasonPitchingStatsSection from './SeasonPitchingStatsSection';
 import UnsavedChangesDialog from './dialogs/UnsavedChangesDialog';
 import type {
   EditableGridHandle,
+  GameOutcome,
   StatsTabsCardHandle,
   UnsavedChangesDecision,
   UnsavedChangesPrompt,
@@ -62,15 +63,16 @@ interface StatsTabsCardProps {
   onProcessError: (error: Error) => void;
   attendanceOptions: TeamStatsPlayerSummaryType[];
   attendanceSelection: string[];
-  onAttendanceSelectionChange: (selection: string[]) => void;
+  onAttendanceToggle: (rosterSeasonId: string, present: boolean) => void;
   lockedAttendanceRosterIds: string[];
   attendanceLoading: boolean;
   attendanceError: string | null;
-  attendanceSaving: boolean;
+  pendingAttendanceRosterId: string | null;
   seasonBattingStats: PlayerBattingStatsType[] | null;
   seasonPitchingStats: PlayerPitchingStatsType[] | null;
   seasonLoading: boolean;
   seasonError: string | null;
+  gameOutcome: GameOutcome;
   onClearGameSelection?: () => void;
 }
 
@@ -98,15 +100,16 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       onProcessError,
       attendanceOptions,
       attendanceSelection,
-      onAttendanceSelectionChange,
+      onAttendanceToggle,
       lockedAttendanceRosterIds,
       attendanceLoading,
       attendanceError,
-      attendanceSaving,
+      pendingAttendanceRosterId,
       seasonBattingStats,
       seasonPitchingStats,
       seasonLoading,
       seasonError,
+      gameOutcome,
       onClearGameSelection,
     },
     ref,
@@ -331,66 +334,82 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
 
           <CardContent>
             {selectedGameId ? (
-              error ? (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                  {error}
-                </Alert>
-              ) : loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress aria-label="Loading game statistics" />
-                </Box>
-              ) : (
-                <>
-                  {currentTab === 'batting' && (
-                    <BattingStatsSection
-                      mode={editMode ? 'edit' : 'view'}
-                      stats={battingStats}
-                      totals={battingTotals}
-                      availablePlayers={availableBatters}
-                      onCreateStat={onCreateBattingStat}
-                      onUpdateStat={onUpdateBattingStat}
-                      onDeleteStat={onDeleteBattingStat}
-                      onProcessError={onProcessError}
-                      onRequestUnsavedDecision={requestUnsavedDecision}
-                      onDirtyStateChange={setBattingDirty}
-                      gridRef={battingGridRef}
-                      showViewSeason={Boolean(editMode && selectedGameId && onClearGameSelection)}
-                      onViewSeason={handleViewSeason}
-                    />
-                  )}
+              <>
+                {!editMode && onClearGameSelection && (
+                  <Box display="flex" justifyContent="flex-end" mb={2}>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={handleViewSeason}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      View season totals
+                    </Button>
+                  </Box>
+                )}
 
-                  {currentTab === 'pitching' && (
-                    <PitchingStatsSection
-                      mode={editMode ? 'edit' : 'view'}
-                      stats={pitchingStats}
-                      totals={pitchingTotals}
-                      availablePlayers={availablePitchers}
-                      onCreateStat={onCreatePitchingStat}
-                      onUpdateStat={onUpdatePitchingStat}
-                      onDeleteStat={onDeletePitchingStat}
-                      onProcessError={onProcessError}
-                      onRequestUnsavedDecision={requestUnsavedDecision}
-                      onDirtyStateChange={setPitchingDirty}
-                      gridRef={pitchingGridRef}
-                      showViewSeason={Boolean(editMode && selectedGameId && onClearGameSelection)}
-                      onViewSeason={handleViewSeason}
-                    />
-                  )}
+                {error ? (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                  </Alert>
+                ) : loading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress aria-label="Loading game statistics" />
+                  </Box>
+                ) : (
+                  <>
+                    {currentTab === 'batting' && (
+                      <BattingStatsSection
+                        mode={editMode ? 'edit' : 'view'}
+                        stats={battingStats}
+                        totals={battingTotals}
+                        availablePlayers={availableBatters}
+                        onCreateStat={onCreateBattingStat}
+                        onUpdateStat={onUpdateBattingStat}
+                        onDeleteStat={onDeleteBattingStat}
+                        onProcessError={onProcessError}
+                        onRequestUnsavedDecision={requestUnsavedDecision}
+                        onDirtyStateChange={setBattingDirty}
+                        gridRef={battingGridRef}
+                        showViewSeason={!editMode}
+                        onViewSeason={handleViewSeason}
+                      />
+                    )}
 
-                  {currentTab === 'attendance' && showAttendanceTab && (
-                    <AttendanceSection
-                      options={attendanceOptions}
-                      selection={attendanceSelection}
-                      lockedRosterIds={lockedAttendanceRosterIds}
-                      onSelectionChange={onAttendanceSelectionChange}
-                      loading={attendanceLoading}
-                      error={attendanceError}
-                      saving={attendanceSaving}
-                      canEdit={canManageStats}
-                    />
-                  )}
-                </>
-              )
+                    {currentTab === 'pitching' && (
+                      <PitchingStatsSection
+                        mode={editMode ? 'edit' : 'view'}
+                        stats={pitchingStats}
+                        totals={pitchingTotals}
+                        availablePlayers={availablePitchers}
+                        onCreateStat={onCreatePitchingStat}
+                        onUpdateStat={onUpdatePitchingStat}
+                        onDeleteStat={onDeletePitchingStat}
+                        onProcessError={onProcessError}
+                        onRequestUnsavedDecision={requestUnsavedDecision}
+                        onDirtyStateChange={setPitchingDirty}
+                        gridRef={pitchingGridRef}
+                        showViewSeason={!editMode}
+                        onViewSeason={handleViewSeason}
+                        gameOutcome={gameOutcome}
+                      />
+                    )}
+
+                    {currentTab === 'attendance' && showAttendanceTab && (
+                      <AttendanceSection
+                        options={attendanceOptions}
+                        selection={attendanceSelection}
+                        lockedRosterIds={lockedAttendanceRosterIds}
+                        onToggleAttendance={onAttendanceToggle}
+                        loading={attendanceLoading}
+                        error={attendanceError}
+                        pendingRosterId={pendingAttendanceRosterId}
+                        canEdit={canManageStats}
+                      />
+                    )}
+                  </>
+                )}
+              </>
             ) : seasonError ? (
               <Alert severity="error" sx={{ mb: 3 }}>
                 {seasonError}

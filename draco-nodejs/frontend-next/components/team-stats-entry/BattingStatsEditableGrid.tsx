@@ -940,7 +940,7 @@ const BattingStatsEditableGrid = forwardRef<
       <Box display="flex" flexDirection="column" gap={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={2}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Batting Box Score
+            Batting Statistics
           </Typography>
           {showViewSeason && onViewSeason && (
             <Button

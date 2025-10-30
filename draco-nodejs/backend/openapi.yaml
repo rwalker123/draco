@@ -6223,12 +6223,13 @@ components:
     UpdateGameAttendance:
       type: object
       properties:
-        playerIds:
-          type: array
-          items:
-            type: string
+        rosterSeasonId:
+          type: string
+        present:
+          type: boolean
       required:
-        - playerIds
+        - rosterSeasonId
+        - present
     BattingStatisticsFilters:
       type: object
       properties:

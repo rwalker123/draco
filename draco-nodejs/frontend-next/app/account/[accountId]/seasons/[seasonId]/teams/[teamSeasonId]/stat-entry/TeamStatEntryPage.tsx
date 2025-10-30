@@ -31,7 +31,10 @@ import GameListCard, {
 import StatsTabsCard, {
   type TabKey,
 } from '../../../../../../../../components/team-stats-entry/StatsTabsCard';
-import type { StatsTabsCardHandle } from '../../../../../../../../components/team-stats-entry/types';
+import type {
+  GameOutcome,
+  StatsTabsCardHandle,
+} from '../../../../../../../../components/team-stats-entry/types';
 import AsyncConfirmDialog from '../../../../../../../../components/team-stats-entry/dialogs/AsyncConfirmDialog';
 import { emptyAttendance } from '../../../../../../../../components/team-stats-entry/constants';
 
@@ -192,6 +195,25 @@ const calculatePitchingTotals = (
   return totals;
 };
 
+const determineGameOutcome = (game: TeamCompletedGameType | null): GameOutcome => {
+  if (!game) {
+    return null;
+  }
+
+  const teamScore = game.isHomeTeam ? game.homeScore : game.visitorScore;
+  const opponentScore = game.isHomeTeam ? game.visitorScore : game.homeScore;
+
+  if (teamScore > opponentScore) {
+    return 'win';
+  }
+
+  if (teamScore < opponentScore) {
+    return 'loss';
+  }
+
+  return 'tie';
+};
+
 const getLockedRosterIds = (
   batting: GameBattingStatsType | null,
   pitching: GamePitchingStatsType | null,
@@ -301,7 +323,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   );
 
   const [attendanceSelection, setAttendanceSelection] = useState<string[]>([]);
-  const [attendanceSaving, setAttendanceSaving] = useState(false);
+  const [pendingAttendanceRosterId, setPendingAttendanceRosterId] = useState<string | null>(null);
   const cachedGameStatsRef = useRef<Map<string, CachedGameStats>>(new Map());
   const statsTabsCardRef = useRef<StatsTabsCardHandle | null>(null);
 
@@ -356,6 +378,13 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     });
     return next;
   }, [games, sortOrder]);
+
+  const selectedGame = useMemo(
+    () => (selectedGameId ? (games.find((game) => game.gameId === selectedGameId) ?? null) : null),
+    [games, selectedGameId],
+  );
+
+  const gameOutcome = useMemo(() => determineGameOutcome(selectedGame), [selectedGame]);
 
   useEffect(() => {
     let active = true;
@@ -1184,25 +1213,25 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     });
     return Array.from(ids);
   }, [battingStats, pitchingStats]);
+  const handleAttendanceToggle = useCallback(
+    async (rosterSeasonId: string, present: boolean) => {
+      if (!selectedGameId || !canManageStats || pendingAttendanceRosterId) {
+        return;
+      }
 
-  const handleSaveAttendance = useCallback(
-    async (overrideSelection?: string[]) => {
-      if (!selectedGameId) return;
-      if (!canManageStats) return;
       try {
-        setAttendanceSaving(true);
+        setPendingAttendanceRosterId(rosterSeasonId);
         setAttendanceError(null);
-
-        const selectionToPersist = (overrideSelection ?? attendanceSelection).filter(
-          (id): id is string => Boolean(id),
-        );
 
         const updated = await statsService.updateGameAttendance(
           accountId,
           seasonId,
           teamSeasonId,
           selectedGameId,
-          { playerIds: selectionToPersist },
+          {
+            rosterSeasonId,
+            present,
+          },
         );
 
         setAttendance(updated);
@@ -1215,14 +1244,14 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         setAttendanceError(message);
         showSnackbar(message, 'error');
       } finally {
-        setAttendanceSaving(false);
+        setPendingAttendanceRosterId(null);
       }
     },
     [
       accountId,
-      attendanceSelection,
-      lockedAttendanceRosterIds,
       canManageStats,
+      pendingAttendanceRosterId,
+      lockedAttendanceRosterIds,
       seasonId,
       selectedGameId,
       showSnackbar,
@@ -1234,18 +1263,6 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
 
   const battingTotals = battingStats?.totals ?? null;
   const pitchingTotals = pitchingStats?.totals ?? null;
-
-  const handleAttendanceSelectionChange = useCallback(
-    (nextSelection: string[]) => {
-      if (!canManageStats) {
-        return;
-      }
-      const combined = Array.from(new Set([...nextSelection, ...lockedAttendanceRosterIds]));
-      setAttendanceSelection(combined);
-      void handleSaveAttendance(combined);
-    },
-    [canManageStats, handleSaveAttendance, lockedAttendanceRosterIds],
-  );
 
   useEffect(() => {
     if (!lockedAttendanceRosterIds.length) {
@@ -1395,6 +1412,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           onSortOrderChange={handleSortOrderChange}
           loading={gamesLoading}
           error={gamesError}
+          canManageStats={canManageStats}
         />
 
         <StatsTabsCard
@@ -1420,15 +1438,16 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           onProcessError={handleGridError}
           attendanceOptions={attendanceOptions}
           attendanceSelection={attendanceSelection}
-          onAttendanceSelectionChange={handleAttendanceSelectionChange}
+          onAttendanceToggle={handleAttendanceToggle}
           lockedAttendanceRosterIds={lockedAttendanceRosterIds}
           attendanceLoading={attendanceLoading}
           attendanceError={attendanceError}
-          attendanceSaving={attendanceSaving}
+          pendingAttendanceRosterId={pendingAttendanceRosterId}
           seasonBattingStats={seasonBattingStats}
           seasonPitchingStats={seasonPitchingStats}
           seasonLoading={seasonStatsLoading}
           seasonError={seasonStatsError}
+          gameOutcome={gameOutcome}
           onClearGameSelection={() => {
             setSelectedGameId(null);
           }}

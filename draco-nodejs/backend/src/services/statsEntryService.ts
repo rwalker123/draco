@@ -12,6 +12,7 @@ import {
   TeamStatsPlayerSummaryType,
   UpdateGameBattingStatType,
   UpdateGamePitchingStatType,
+  UpdateGameAttendanceType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import {
@@ -41,6 +42,19 @@ const formatName = (first?: string | null, last?: string | null): string => {
   const trimmedLast = last?.trim() ?? '';
   const combined = `${trimmedFirst} ${trimmedLast}`.trim();
   return combined.length > 0 ? combined : 'Unknown Player';
+};
+
+const PITCHING_RESULT_LABELS = {
+  w: 'W',
+  l: 'L',
+  s: 'S',
+} as const;
+
+type PitchingOutcomeRow = {
+  playerName: string;
+  w: number;
+  l: number;
+  s: number;
 };
 
 const sumPitchingValues = (
@@ -185,6 +199,7 @@ export class StatsEntryService {
         rosterMember.id,
         battingValues,
       );
+      await this.statsEntryRepository.addAttendance(gameId, teamSeasonId, rosterMember.id);
       return this.mapBattingStatRow(stat);
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2002') {
@@ -293,7 +308,7 @@ export class StatsEntryService {
     gameId: bigint,
     payload: CreateGamePitchingStatType,
   ): Promise<GamePitchingStatLineType> {
-    await this.ensureGameForTeam(accountId, seasonId, teamSeasonId, gameId);
+    const leagueSeasonId = await this.ensureGameForTeam(accountId, seasonId, teamSeasonId, gameId);
     const rosterMember = await this.ensureRosterMember(
       teamSeasonId,
       BigInt(payload.rosterSeasonId),
@@ -302,6 +317,23 @@ export class StatsEntryService {
     validatePitchingInput(payload);
     const pitchingValues = convertPitchingInput(payload);
 
+    const playerName = formatName(
+      rosterMember.roster?.contacts?.firstname,
+      rosterMember.roster?.contacts?.lastname,
+    );
+
+    await this.enforcePitchingOutcomeConstraints({
+      teamSeasonId,
+      gameId,
+      leagueSeasonId,
+      candidate: {
+        playerName,
+        w: pitchingValues.w,
+        l: pitchingValues.l,
+        s: pitchingValues.s,
+      },
+    });
+
     try {
       const stat = await this.statsEntryRepository.createGamePitchingStat(
         gameId,
@@ -309,6 +341,7 @@ export class StatsEntryService {
         rosterMember.id,
         pitchingValues,
       );
+      await this.statsEntryRepository.addAttendance(gameId, teamSeasonId, rosterMember.id);
       return this.mapPitchingStatRow(stat);
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2002') {
@@ -326,7 +359,7 @@ export class StatsEntryService {
     statId: bigint,
     payload: UpdateGamePitchingStatType,
   ): Promise<GamePitchingStatLineType> {
-    await this.ensureGameForTeam(accountId, seasonId, teamSeasonId, gameId);
+    const leagueSeasonId = await this.ensureGameForTeam(accountId, seasonId, teamSeasonId, gameId);
     const existing = await this.statsEntryRepository.findPitchingStatById(statId);
 
     if (!existing || existing.gameid !== gameId || existing.teamid !== teamSeasonId) {
@@ -335,6 +368,24 @@ export class StatsEntryService {
 
     validatePitchingInput(payload);
     const pitchingValues = convertPitchingInput(payload);
+
+    const playerName = formatName(
+      existing.rosterseason?.roster?.contacts?.firstname,
+      existing.rosterseason?.roster?.contacts?.lastname,
+    );
+
+    await this.enforcePitchingOutcomeConstraints({
+      teamSeasonId,
+      gameId,
+      leagueSeasonId,
+      candidate: {
+        statId,
+        playerName,
+        w: pitchingValues.w,
+        l: pitchingValues.l,
+        s: pitchingValues.s,
+      },
+    });
 
     const stat = await this.statsEntryRepository.updateGamePitchingStat(statId, pitchingValues);
     return this.mapPitchingStatRow(stat);
@@ -375,7 +426,7 @@ export class StatsEntryService {
     seasonId: bigint,
     teamSeasonId: bigint,
     gameId: bigint,
-    payload: GameAttendanceType,
+    payload: UpdateGameAttendanceType,
   ): Promise<GameAttendanceType> {
     await this.ensureGameForTeam(accountId, seasonId, teamSeasonId, gameId);
     const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
@@ -383,14 +434,18 @@ export class StatsEntryService {
       rosterMembers.filter((member) => !member.inactive).map((member) => member.id.toString()),
     );
 
-    const playerIds = payload.playerIds.map((id) => {
-      if (!memberLookup.has(id)) {
-        throw new ValidationError('Player does not belong to this team roster.');
-      }
-      return BigInt(id);
-    });
+    if (!memberLookup.has(payload.rosterSeasonId)) {
+      throw new ValidationError('Player does not belong to this team roster.');
+    }
 
-    await this.statsEntryRepository.replaceAttendance(gameId, teamSeasonId, playerIds);
+    const playerId = BigInt(payload.rosterSeasonId);
+
+    if (payload.present) {
+      await this.statsEntryRepository.addAttendance(gameId, teamSeasonId, playerId);
+    } else {
+      await this.statsEntryRepository.removeAttendance(gameId, teamSeasonId, playerId);
+    }
+
     const updated = await this.statsEntryRepository.listAttendance(gameId, teamSeasonId);
 
     return {
@@ -550,6 +605,128 @@ export class StatsEntryService {
       ...totals,
       ...derived,
     };
+  }
+
+  private async enforcePitchingOutcomeConstraints({
+    teamSeasonId,
+    gameId,
+    leagueSeasonId,
+    candidate,
+  }: {
+    teamSeasonId: bigint;
+    gameId: bigint;
+    leagueSeasonId: bigint;
+    candidate: { statId?: bigint; playerName: string; w: number; l: number; s: number };
+  }): Promise<void> {
+    const existingStats = await this.statsEntryRepository.listGamePitchingStats(
+      gameId,
+      teamSeasonId,
+    );
+    const candidateStatId = candidate.statId ? candidate.statId.toString() : null;
+
+    const outcomeRows: PitchingOutcomeRow[] = existingStats
+      .map((row) => this.mapPitchingStatRow(row))
+      .filter((row) => row.statId !== candidateStatId)
+      .map((row) => ({
+        playerName: row.playerName,
+        w: Number(row.w ?? 0),
+        l: Number(row.l ?? 0),
+        s: Number(row.s ?? 0),
+      }));
+
+    outcomeRows.push({
+      playerName: candidate.playerName || 'Unknown Player',
+      w: Number(candidate.w ?? 0),
+      l: Number(candidate.l ?? 0),
+      s: Number(candidate.s ?? 0),
+    });
+
+    const assignments = {
+      w: [] as string[],
+      l: [] as string[],
+      s: [] as string[],
+    };
+
+    outcomeRows.forEach((row) => {
+      (['w', 'l', 's'] as const).forEach((field) => {
+        const label = PITCHING_RESULT_LABELS[field];
+        const value = row[field];
+
+        if (!Number.isFinite(value) || value < 0) {
+          throw new ValidationError(
+            `${label} must be a non-negative whole number for ${row.playerName}.`,
+          );
+        }
+
+        if (!Number.isInteger(value)) {
+          throw new ValidationError(`${label} must be a whole number for ${row.playerName}.`);
+        }
+
+        if (value > 1) {
+          throw new ValidationError(`${label} must be 0 or 1 for ${row.playerName}.`);
+        }
+
+        if (value === 1) {
+          assignments[field].push(row.playerName);
+        }
+      });
+
+      if (row.w === 1 && row.s === 1) {
+        throw new ValidationError(
+          `${row.playerName} cannot be credited with both a ${PITCHING_RESULT_LABELS.w} and a ${PITCHING_RESULT_LABELS.s}.`,
+        );
+      }
+    });
+
+    const formatPlayers = (players: string[]): string => players.join(', ');
+
+    if (assignments.w.length > 1) {
+      throw new ValidationError(
+        `Only one pitcher can be assigned a ${PITCHING_RESULT_LABELS.w}. Currently assigned to ${formatPlayers(assignments.w)}.`,
+      );
+    }
+
+    if (assignments.l.length > 1) {
+      throw new ValidationError(
+        `Only one pitcher can be assigned a ${PITCHING_RESULT_LABELS.l}. Currently assigned to ${formatPlayers(assignments.l)}.`,
+      );
+    }
+
+    if (assignments.s.length > 1) {
+      throw new ValidationError(
+        `Only one pitcher can be assigned a ${PITCHING_RESULT_LABELS.s}. Currently assigned to ${formatPlayers(assignments.s)}.`,
+      );
+    }
+
+    const game = await this.statsEntryRepository.findTeamGame(gameId, teamSeasonId, leagueSeasonId);
+    if (!game) {
+      throw new NotFoundError('Game not found for this team in the specified season.');
+    }
+
+    const isHomeTeam = game.hteamid === teamSeasonId;
+    const teamScore = isHomeTeam ? (game.hscore ?? 0) : (game.vscore ?? 0);
+    const opponentScore = isHomeTeam ? (game.vscore ?? 0) : (game.hscore ?? 0);
+
+    if (teamScore > opponentScore) {
+      if (assignments.l.length > 0) {
+        throw new ValidationError('Cannot assign a loss to your team in a game they won.');
+      }
+      // saves allowed when winning (handled above for duplicates)
+    } else if (teamScore < opponentScore) {
+      if (assignments.w.length > 0) {
+        throw new ValidationError('Cannot assign a win to your team in a game they lost.');
+      }
+      if (assignments.s.length > 0) {
+        throw new ValidationError('A save can only be recorded when the team wins.');
+      }
+    } else {
+      if (assignments.w.length > 0 || assignments.l.length > 0) {
+        throw new ValidationError('Wins and losses cannot be recorded for a tied game.');
+      }
+      if (assignments.s.length > 0) {
+        throw new ValidationError('A save can only be recorded when the team wins.');
+      }
+    }
   }
 
   private mapPitchingStatRow(stat: dbGamePitchingStat): GamePitchingStatLineType {

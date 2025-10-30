@@ -10,10 +10,10 @@ interface AttendanceSectionProps {
   options: TeamStatsPlayerSummaryType[];
   selection: string[];
   lockedRosterIds: string[];
-  onSelectionChange: (selection: string[]) => void;
+  onToggleAttendance: (rosterSeasonId: string, present: boolean) => void;
+  pendingRosterId: string | null;
   loading: boolean;
   error: string | null;
-  saving: boolean;
   canEdit: boolean;
 }
 
@@ -21,10 +21,10 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
   options,
   selection,
   lockedRosterIds,
-  onSelectionChange,
+  onToggleAttendance,
+  pendingRosterId,
   loading,
   error,
-  saving,
   canEdit,
 }) => {
   const selectionSet = useMemo(() => new Set(selection), [selection]);
@@ -36,18 +36,12 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
   const totalCount = options.length;
 
   const handleToggle = (rosterSeasonId: string) => {
-    if (lockedSet.has(rosterSeasonId) || !canEdit) {
+    if (lockedSet.has(rosterSeasonId) || !canEdit || loading || pendingRosterId !== null) {
       return;
     }
 
-    const next = new Set(selectionSet);
-    if (next.has(rosterSeasonId)) {
-      next.delete(rosterSeasonId);
-    } else {
-      next.add(rosterSeasonId);
-    }
-
-    onSelectionChange(Array.from(next));
+    const isSelected = selectionSet.has(rosterSeasonId);
+    onToggleAttendance(rosterSeasonId, !isSelected);
   };
 
   return (
@@ -62,16 +56,14 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
         </Typography>
       </Stack>
 
-      {loading && (
-        <Typography variant="body2" color="text.secondary">
-          Updating attendance...
-        </Typography>
-      )}
       <List dense disablePadding>
         {sortedPlayers.map((player) => {
           const rosterId = player.rosterSeasonId;
           const isSelected = selectionSet.has(rosterId);
           const isLocked = lockedSet.has(rosterId);
+
+          const disabled =
+            !canEdit || loading || (isLocked && !isSelected) || pendingRosterId === rosterId;
 
           return (
             <ListItemButton
@@ -79,8 +71,8 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
               disableGutters
               disableRipple
               selected={isSelected}
-              onClick={canEdit && !loading && !saving ? () => handleToggle(rosterId) : undefined}
-              disabled={!canEdit || loading || saving}
+              onClick={!disabled ? () => handleToggle(rosterId) : undefined}
+              disabled={disabled}
               sx={{
                 py: 0.5,
                 px: 0,
@@ -100,7 +92,7 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                       event.stopPropagation();
                       handleToggle(rosterId);
                     }}
-                    disabled={!canEdit || isLocked || saving || loading}
+                    disabled={disabled}
                     inputProps={{ 'aria-label': `Mark ${buildPlayerLabel(player)} present` }}
                   />
                 </span>

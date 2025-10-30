@@ -117,6 +117,54 @@ describe('statsEntryValidators', () => {
         }),
       ).toThrow(ValidationError);
     });
+
+    it('throws when win and save are both set', () => {
+      expect(() =>
+        validatePitchingInput({
+          ipDecimal: 4,
+          bf: 20,
+          w: 1,
+          l: 0,
+          s: 1,
+          h: 4,
+          r: 1,
+          er: 1,
+          d: 0,
+          t: 0,
+          hr: 0,
+          so: 5,
+          bb: 1,
+          wp: 0,
+          hbp: 0,
+          bk: 0,
+          sc: 0,
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('throws when win is not 0 or 1', () => {
+      expect(() =>
+        validatePitchingInput({
+          ipDecimal: 4,
+          bf: 20,
+          w: 2,
+          l: 0,
+          s: 0,
+          h: 4,
+          r: 1,
+          er: 1,
+          d: 0,
+          t: 0,
+          hr: 0,
+          so: 5,
+          bb: 1,
+          wp: 0,
+          hbp: 0,
+          bk: 0,
+          sc: 0,
+        }),
+      ).toThrow(ValidationError);
+    });
   });
 
   describe('calculatePitchingDerived', () => {

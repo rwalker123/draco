@@ -30,6 +30,7 @@ interface GameListCardProps {
   onSortOrderChange: (order: SortOrder) => void;
   loading: boolean;
   error: string | null;
+  canManageStats: boolean;
 }
 
 const scrollStep = 320;
@@ -42,6 +43,7 @@ const GameListCard: React.FC<GameListCardProps> = ({
   onSortOrderChange,
   loading,
   error,
+  canManageStats,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const handleSortChange = (_event: React.MouseEvent<HTMLElement>, value: SortOrder | null) => {
@@ -54,7 +56,11 @@ const GameListCard: React.FC<GameListCardProps> = ({
     <Card sx={{ height: '100%' }}>
       <CardHeader
         title="Completed Games"
-        subheader="Select a game to view statistics"
+        subheader={
+          canManageStats
+            ? 'Select a game to view or edit statistics'
+            : 'Select a game to view statistics'
+        }
         action={
           <ToggleButtonGroup
             value={sortOrder}

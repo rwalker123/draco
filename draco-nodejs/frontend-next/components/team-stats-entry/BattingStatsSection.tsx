@@ -77,7 +77,7 @@ const BattingStatsSection: React.FC<BattingStatsSectionProps> = ({
   return (
     <Box>
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-        Batting Box Score
+        Batting Statistics
       </Typography>
       <BattingStatsViewTable stats={stats} totals={totals} />
     </Box>

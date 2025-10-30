@@ -310,4 +310,27 @@ export class PrismaStatsEntryRepository implements IStatsEntryRepository {
         : []),
     ]);
   }
+
+  async addAttendance(gameId: bigint, teamSeasonId: bigint, playerId: bigint): Promise<void> {
+    await this.prisma.playerrecap.createMany({
+      data: [
+        {
+          playerid: playerId,
+          gameid: gameId,
+          teamid: teamSeasonId,
+        },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
+  async removeAttendance(gameId: bigint, teamSeasonId: bigint, playerId: bigint): Promise<void> {
+    await this.prisma.playerrecap.deleteMany({
+      where: {
+        playerid: playerId,
+        gameid: gameId,
+        teamid: teamSeasonId,
+      },
+    });
+  }
 }

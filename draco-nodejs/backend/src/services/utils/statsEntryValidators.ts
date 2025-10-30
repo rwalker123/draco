@@ -133,6 +133,25 @@ export const calculatePitchingDerived = (values: PitchingStatValues) => {
 export const validatePitchingInput = (input: PitchingInputValues): void => {
   splitInnings(input.ipDecimal);
 
+  (['w', 'l', 's'] as const).forEach((field) => {
+    const value = input[field];
+    if (!Number.isFinite(value) || value < 0) {
+      throw new ValidationError(`${field.toUpperCase()} must be a non-negative whole number.`);
+    }
+
+    if (!Number.isInteger(value)) {
+      throw new ValidationError(`${field.toUpperCase()} must be a whole number.`);
+    }
+
+    if (value > 1) {
+      throw new ValidationError(`${field.toUpperCase()} must be 0 or 1.`);
+    }
+  });
+
+  if (input.w > 0 && input.s > 0) {
+    throw new ValidationError('A pitcher cannot be credited with both a win and a save.');
+  }
+
   if (input.bf < input.h + input.bb + input.hbp + input.so) {
     throw new ValidationError(
       'Batters faced must be greater than or equal to hits + walks + hit by pitch + strikeouts.',
