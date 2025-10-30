@@ -20,7 +20,7 @@ export const calculateBattingDerived = (values: BattingStatValues) => {
   const singles = clampSingles(values);
   const totalBases = singles + values.d * 2 + values.t * 3 + values.hr * 4;
   const plateAppearances = values.ab + values.bb + values.hbp + values.sf + values.sh + values.intr;
-  const obDenominator = values.ab + values.bb + values.hbp;
+  const obDenominator = values.ab + values.bb + values.hbp + values.sf;
   const avg = values.ab === 0 ? 0 : roundTo(values.h / values.ab, 3);
   const obp =
     obDenominator === 0 ? 0 : roundTo((values.h + values.bb + values.hbp) / obDenominator, 3);
