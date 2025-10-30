@@ -22503,8 +22503,8 @@ paths:
           in: path
           required: true
           schema: &a3
-            type: integer
-            format: int64
+            type: string
+            format: number
         - &a5
           name: seasonId
           in: path

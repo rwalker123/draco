@@ -147,8 +147,9 @@ const calculatePitchingTotals = (
     slg: 0,
   };
 
+  let totalOuts = 0;
   stats.forEach((line) => {
-    totals.ipDecimal += line.ipDecimal ?? 0;
+    totalOuts += line.ip * 3 + line.ip2;
     totals.w += line.w ?? 0;
     totals.l += line.l ?? 0;
     totals.s += line.s ?? 0;
@@ -167,17 +168,18 @@ const calculatePitchingTotals = (
     totals.sc += line.sc ?? 0;
   });
 
-  const wholeInnings = Math.floor(totals.ipDecimal);
-  const fractional = totals.ipDecimal - wholeInnings;
+  const wholeInnings = Math.floor(totalOuts / 3);
+  const remainingOuts = totalOuts - wholeInnings * 3;
   totals.ip = wholeInnings;
-  totals.ip2 = Math.round(fractional * 3);
+  totals.ip2 = remainingOuts;
+  totals.ipDecimal = totals.ip + totals.ip2 / 10;
 
-  const innings = totals.ipDecimal > 0 ? totals.ipDecimal : 0;
-  if (innings > 0) {
-    totals.era = (totals.er * 9) / innings;
-    totals.whip = (totals.bb + totals.h) / innings;
-    totals.k9 = (totals.so * 9) / innings;
-    totals.bb9 = (totals.bb * 9) / innings;
+  const inningsForRates = totalOuts / 3;
+  if (inningsForRates > 0) {
+    totals.era = (totals.er * 9) / inningsForRates;
+    totals.whip = (totals.bb + totals.h) / inningsForRates;
+    totals.k9 = (totals.so * 9) / inningsForRates;
+    totals.bb9 = (totals.bb * 9) / inningsForRates;
   } else {
     totals.era = 0;
     totals.whip = 0;

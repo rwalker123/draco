@@ -22,8 +22,8 @@ const registerTeamStatsEntryEndpoints = ({ registry, schemaRefs }: RegisterConte
   } = schemaRefs;
 
   const integerIdSchema = {
-    type: 'integer' as const,
-    format: 'int64' as const,
+    type: 'string' as const,
+    format: 'number' as const,
   };
 
   const accountIdParameter = {

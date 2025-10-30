@@ -38,42 +38,6 @@ export class TeamStatsEntryService {
     this.client = client ?? createApiClient({ token: token ?? undefined });
   }
 
-  private parseId(value: string, label: string): number {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) {
-      throw new Error(`Invalid ${label} "${value}"`);
-    }
-    return parsed;
-  }
-
-  private buildTeamPath(accountId: string, seasonId: string, teamSeasonId: string) {
-    return {
-      accountId: this.parseId(accountId, 'accountId'),
-      seasonId: this.parseId(seasonId, 'seasonId'),
-      teamSeasonId: this.parseId(teamSeasonId, 'teamSeasonId'),
-    };
-  }
-
-  private buildGamePath(accountId: string, seasonId: string, teamSeasonId: string, gameId: string) {
-    return {
-      ...this.buildTeamPath(accountId, seasonId, teamSeasonId),
-      gameId: this.parseId(gameId, 'gameId'),
-    };
-  }
-
-  private buildStatPath(
-    accountId: string,
-    seasonId: string,
-    teamSeasonId: string,
-    gameId: string,
-    statId: string,
-  ) {
-    return {
-      ...this.buildGamePath(accountId, seasonId, teamSeasonId, gameId),
-      statId: this.parseId(statId, 'statId'),
-    };
-  }
-
   async listCompletedGames(
     accountId: string,
     seasonId: string,
@@ -81,7 +45,11 @@ export class TeamStatsEntryService {
   ): Promise<TeamCompletedGameType[]> {
     const result = await apiListTeamStatEntryGames({
       client: this.client,
-      path: this.buildTeamPath(accountId, seasonId, teamSeasonId),
+      path: {
+        accountId,
+        seasonId,
+        teamSeasonId,
+      },
       throwOnError: false,
     });
 
@@ -124,7 +92,7 @@ export class TeamStatsEntryService {
   ): Promise<GameBattingStatsType> {
     const result = await apiGetGameBattingStats({
       client: this.client,
-      path: this.buildGamePath(accountId, seasonId, teamSeasonId, gameId),
+      path: { accountId, seasonId, teamSeasonId, gameId },
       throwOnError: false,
     });
 
@@ -140,7 +108,7 @@ export class TeamStatsEntryService {
   ): Promise<GameBattingStatsType['stats'][number]> {
     const result = await apiCreateGameBattingStat({
       client: this.client,
-      path: this.buildGamePath(accountId, seasonId, teamSeasonId, gameId),
+      path: { accountId, seasonId, teamSeasonId, gameId },
       body: payload,
       throwOnError: false,
     });
@@ -158,7 +126,7 @@ export class TeamStatsEntryService {
   ): Promise<GameBattingStatsType['stats'][number]> {
     const result = await apiUpdateGameBattingStat({
       client: this.client,
-      path: this.buildStatPath(accountId, seasonId, teamSeasonId, gameId, statId),
+      path: { accountId, seasonId, teamSeasonId, gameId, statId },
       body: payload,
       throwOnError: false,
     });
@@ -175,7 +143,7 @@ export class TeamStatsEntryService {
   ): Promise<void> {
     const result = await apiDeleteGameBattingStat({
       client: this.client,
-      path: this.buildStatPath(accountId, seasonId, teamSeasonId, gameId, statId),
+      path: { accountId, seasonId, teamSeasonId, gameId, statId },
       throwOnError: false,
     });
 
@@ -190,7 +158,7 @@ export class TeamStatsEntryService {
   ): Promise<GamePitchingStatsType> {
     const result = await apiGetGamePitchingStats({
       client: this.client,
-      path: this.buildGamePath(accountId, seasonId, teamSeasonId, gameId),
+      path: { accountId, seasonId, teamSeasonId, gameId },
       throwOnError: false,
     });
 
@@ -206,7 +174,7 @@ export class TeamStatsEntryService {
   ): Promise<GamePitchingStatsType['stats'][number]> {
     const result = await apiCreateGamePitchingStat({
       client: this.client,
-      path: this.buildGamePath(accountId, seasonId, teamSeasonId, gameId),
+      path: { accountId, seasonId, teamSeasonId, gameId },
       body: payload,
       throwOnError: false,
     });
@@ -224,7 +192,7 @@ export class TeamStatsEntryService {
   ): Promise<GamePitchingStatsType['stats'][number]> {
     const result = await apiUpdateGamePitchingStat({
       client: this.client,
-      path: this.buildStatPath(accountId, seasonId, teamSeasonId, gameId, statId),
+      path: { accountId, seasonId, teamSeasonId, gameId, statId },
       body: payload,
       throwOnError: false,
     });
@@ -241,7 +209,7 @@ export class TeamStatsEntryService {
   ): Promise<void> {
     const result = await apiDeleteGamePitchingStat({
       client: this.client,
-      path: this.buildStatPath(accountId, seasonId, teamSeasonId, gameId, statId),
+      path: { accountId, seasonId, teamSeasonId, gameId, statId },
       throwOnError: false,
     });
 
@@ -256,7 +224,7 @@ export class TeamStatsEntryService {
   ): Promise<GameAttendanceType> {
     const result = await apiGetGameAttendance({
       client: this.client,
-      path: this.buildGamePath(accountId, seasonId, teamSeasonId, gameId),
+      path: { accountId, seasonId, teamSeasonId, gameId },
       throwOnError: false,
     });
 
@@ -272,7 +240,7 @@ export class TeamStatsEntryService {
   ): Promise<GameAttendanceType> {
     const result = await apiUpdateGameAttendance({
       client: this.client,
-      path: this.buildGamePath(accountId, seasonId, teamSeasonId, gameId),
+      path: { accountId, seasonId, teamSeasonId, gameId },
       body: payload,
       throwOnError: false,
     });
