@@ -8,6 +8,8 @@ export interface UnsavedChangesPrompt {
   tab: 'batting' | 'pitching';
 }
 
+export type GameOutcome = 'win' | 'loss' | 'tie' | null;
+
 export interface EditableGridHandle {
   hasDirtyRow: () => boolean;
   getDirtyRowInfo: () => { rowId: string; playerName: string } | null;
@@ -16,5 +18,6 @@ export interface EditableGridHandle {
 }
 
 export interface StatsTabsCardHandle {
+  hasPendingEdits: () => boolean;
   resolvePendingEdits: (reason: UnsavedChangesReason) => Promise<boolean>;
 }
