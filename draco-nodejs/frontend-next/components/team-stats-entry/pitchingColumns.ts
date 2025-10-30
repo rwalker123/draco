@@ -20,7 +20,7 @@ export const editablePitchingFields = [
 
 export type EditablePitchingField = (typeof editablePitchingFields)[number];
 
-export const pitchingSummaryFields = ['ip', 'era', 'whip', 'k9', 'bb9', 'oba', 'slg'] as const;
+export const pitchingSummaryFields = ['era', 'whip', 'k9', 'bb9', 'oba', 'slg'] as const;
 
 export const pitchingViewFieldOrder = [
   'playerNumber',
@@ -54,7 +54,6 @@ export const PITCHING_FIELD_LABELS: FieldLabelMap = {
   hbp: 'HBP',
   bk: 'BK',
   sc: 'SC',
-  ip: 'IP',
   era: 'ERA',
   whip: 'WHIP',
   k9: 'K/9',

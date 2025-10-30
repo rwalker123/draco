@@ -38,7 +38,7 @@ const decimalDigits: Partial<Record<PitchingViewField, number>> = {
   slg: 3,
 };
 
-const inningsFields: PitchingViewField[] = ['ipDecimal', 'ip'];
+const inningsFields: PitchingViewField[] = ['ipDecimal'];
 
 const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);

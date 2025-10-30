@@ -938,32 +938,6 @@ const PitchingStatsEditableGrid = forwardRef<
           },
         })),
         {
-          field: 'ip',
-          headerName: 'IP',
-          align: 'center',
-          headerAlign: 'center',
-          width: 100,
-          valueFormatter: (params) => {
-            const value = params?.value;
-            if (value === null || value === undefined) {
-              return formatInnings(Number.NaN);
-            }
-            const numeric = typeof value === 'number' ? value : Number(value);
-            return formatInnings(Number.isNaN(numeric) ? Number.NaN : numeric);
-          },
-          renderCell: (params) => {
-            if (params.id === NEW_ROW_ID) {
-              return '-';
-            }
-            const value = params.value;
-            if (value === null || value === undefined) {
-              return formatInnings(Number.NaN);
-            }
-            const numeric = typeof value === 'number' ? value : Number(value);
-            return formatInnings(Number.isNaN(numeric) ? Number.NaN : numeric);
-          },
-        },
-        {
           field: 'era',
           headerName: 'ERA',
           align: 'center',
