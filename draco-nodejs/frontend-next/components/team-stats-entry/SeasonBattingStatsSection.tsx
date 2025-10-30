@@ -12,12 +12,18 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import type { PlayerBattingStatsType } from '@draco/shared-schemas';
 
 import { formatStatDecimal } from './utils';
-import { BATTING_COLUMN_DECIMAL_DIGITS, type BattingViewField } from './battingColumns';
+import {
+  BATTING_COLUMN_DECIMAL_DIGITS,
+  BATTING_FIELD_LABELS,
+  BATTING_FIELD_TOOLTIPS,
+  type BattingViewField,
+} from './battingColumns';
 import { useSortableRows } from './tableUtils';
 import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
 
@@ -28,32 +34,49 @@ interface SeasonBattingStatsSectionProps {
 type BattingColumn = {
   key: keyof PlayerBattingStatsType | 'ops';
   label: string;
-  align?: 'left' | 'center' | 'right';
+  tooltip: string;
+  align: 'left' | 'center' | 'right';
   digits?: number;
 };
 
-const columns: BattingColumn[] = [
-  { key: 'playerName', label: 'Player', align: 'left' },
-  { key: 'ab', label: 'AB' },
-  { key: 'h', label: 'H' },
-  { key: 'r', label: 'R' },
-  { key: 'd', label: '2B' },
-  { key: 't', label: '3B' },
-  { key: 'hr', label: 'HR' },
-  { key: 'rbi', label: 'RBI' },
-  { key: 'bb', label: 'BB' },
-  { key: 'so', label: 'SO' },
-  { key: 'hbp', label: 'HBP' },
-  { key: 'sb', label: 'SB' },
-  { key: 'sf', label: 'SF' },
-  { key: 'sh', label: 'SH' },
-  { key: 'tb', label: 'TB' },
-  { key: 'pa', label: 'PA' },
-  { key: 'avg', label: 'AVG', digits: 3 },
-  { key: 'obp', label: 'OBP', digits: 3 },
-  { key: 'slg', label: 'SLG', digits: 3 },
-  { key: 'ops', label: 'OPS', digits: 3 },
-];
+const seasonColumnKeys = [
+  'playerName',
+  'ab',
+  'h',
+  'r',
+  'd',
+  't',
+  'hr',
+  'rbi',
+  'bb',
+  'so',
+  'hbp',
+  'sb',
+  'sf',
+  'sh',
+  'tb',
+  'pa',
+  'avg',
+  'obp',
+  'slg',
+  'ops',
+] as const;
+
+const columns: BattingColumn[] = seasonColumnKeys.map((key) => {
+  const field = key as BattingViewField;
+  const label = BATTING_FIELD_LABELS[field] ?? String(key).toUpperCase();
+  const tooltip = BATTING_FIELD_TOOLTIPS[field] ?? label;
+  const align: BattingColumn['align'] = key === 'playerName' ? 'left' : 'center';
+  const digits = BATTING_COLUMN_DECIMAL_DIGITS[field];
+
+  return {
+    key,
+    label,
+    tooltip,
+    align,
+    digits,
+  };
+});
 
 const getColumnValue = (
   stat: PlayerBattingStatsType,
@@ -153,16 +176,20 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                 {columns.map((column) => (
                   <TableCell
                     key={column.key}
-                    align={column.align ?? (column.key === 'playerName' ? 'left' : 'center')}
+                    align={column.align}
                     sortDirection={sortConfig?.key === column.key ? sortConfig.direction : false}
                   >
-                    <RightAlignedTableSortLabel
-                      active={sortConfig?.key === column.key}
-                      direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
-                      onClick={() => handleSort(column.key)}
-                    >
-                      {column.label}
-                    </RightAlignedTableSortLabel>
+                    <Tooltip title={column.tooltip} enterTouchDelay={0} placement="top">
+                      <Box component="span">
+                        <RightAlignedTableSortLabel
+                          active={sortConfig?.key === column.key}
+                          direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
+                          onClick={() => handleSort(column.key)}
+                        >
+                          {column.label}
+                        </RightAlignedTableSortLabel>
+                      </Box>
+                    </Tooltip>
                   </TableCell>
                 ))}
               </TableRow>
@@ -182,16 +209,14 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                     }
 
                     const rawValue = getColumnValue(stat, column.key);
-                    const digits =
-                      column.digits ??
-                      BATTING_COLUMN_DECIMAL_DIGITS[column.key as BattingViewField];
+                    const digits = column.digits;
                     const displayValue =
                       digits !== undefined
                         ? formatStatDecimal(rawValue ?? null, digits)
                         : (rawValue ?? '-');
 
                     return (
-                      <TableCell key={column.key} align={column.align ?? 'center'}>
+                      <TableCell key={column.key} align={column.align}>
                         {displayValue}
                       </TableCell>
                     );
@@ -208,20 +233,14 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                     .filter((column) => column.key !== 'playerName')
                     .map((column) => {
                       const value = totals[column.key as keyof typeof totals];
-                      const digits =
-                        column.digits ??
-                        BATTING_COLUMN_DECIMAL_DIGITS[column.key as BattingViewField];
+                      const digits = column.digits;
                       const displayValue =
                         digits !== undefined
                           ? formatStatDecimal(value as number | string | null | undefined, digits)
                           : (value ?? '-');
 
                       return (
-                        <TableCell
-                          key={column.key}
-                          align={column.align ?? 'center'}
-                          sx={{ fontWeight: 700 }}
-                        >
+                        <TableCell key={column.key} align={column.align} sx={{ fontWeight: 700 }}>
                           {displayValue}
                         </TableCell>
                       );

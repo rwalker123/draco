@@ -12,12 +12,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import type { GamePitchingStatLineType, GamePitchingStatsType } from '@draco/shared-schemas';
 
 import {
   PITCHING_FIELD_LABELS,
+  PITCHING_FIELD_TOOLTIPS,
   PITCHING_COLUMN_DECIMAL_DIGITS,
   pitchingViewFieldOrder,
   type PitchingViewField,
@@ -41,6 +43,7 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
       pitchingViewFieldOrder.map((key) => ({
         key,
         label: PITCHING_FIELD_LABELS[key],
+        tooltip: PITCHING_FIELD_TOOLTIPS[key],
         align: key === 'playerName' ? ('left' as const) : ('center' as const),
       })),
     [],
@@ -88,13 +91,17 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
                   align={header.align}
                   sortDirection={sortConfig?.key === header.key ? sortConfig.direction : false}
                 >
-                  <RightAlignedTableSortLabel
-                    active={sortConfig?.key === header.key}
-                    direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
-                    onClick={() => handleSort(header.key)}
-                  >
-                    {header.label}
-                  </RightAlignedTableSortLabel>
+                  <Tooltip title={header.tooltip} enterTouchDelay={0} placement="top">
+                    <Box component="span">
+                      <RightAlignedTableSortLabel
+                        active={sortConfig?.key === header.key}
+                        direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
+                        onClick={() => handleSort(header.key)}
+                      >
+                        {header.label}
+                      </RightAlignedTableSortLabel>
+                    </Box>
+                  </Tooltip>
                 </TableCell>
               ))}
             </TableRow>

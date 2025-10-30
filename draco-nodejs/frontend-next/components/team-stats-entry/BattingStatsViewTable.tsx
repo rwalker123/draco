@@ -12,12 +12,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import type { GameBattingStatLineType, GameBattingStatsType } from '@draco/shared-schemas';
 
 import {
   BATTING_FIELD_LABELS,
+  BATTING_FIELD_TOOLTIPS,
   BATTING_COLUMN_DECIMAL_DIGITS,
   battingViewFieldOrder,
   type BattingViewField,
@@ -39,6 +41,7 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
       battingViewFieldOrder.map((key) => ({
         key,
         label: BATTING_FIELD_LABELS[key],
+        tooltip: BATTING_FIELD_TOOLTIPS[key],
         align: key === 'playerName' ? ('left' as const) : ('center' as const),
       })),
     [],
@@ -82,13 +85,17 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
                   align={header.align}
                   sortDirection={sortConfig?.key === header.key ? sortConfig.direction : false}
                 >
-                  <RightAlignedTableSortLabel
-                    active={sortConfig?.key === header.key}
-                    direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
-                    onClick={() => handleSort(header.key)}
-                  >
-                    {header.label}
-                  </RightAlignedTableSortLabel>
+                  <Tooltip title={header.tooltip} enterTouchDelay={0} placement="top">
+                    <Box component="span">
+                      <RightAlignedTableSortLabel
+                        active={sortConfig?.key === header.key}
+                        direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
+                        onClick={() => handleSort(header.key)}
+                      >
+                        {header.label}
+                      </RightAlignedTableSortLabel>
+                    </Box>
+                  </Tooltip>
                 </TableCell>
               ))}
             </TableRow>

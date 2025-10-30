@@ -48,7 +48,9 @@ import {
   editableBattingFields as editableFields,
   type EditableBattingField,
   type BattingSummaryField,
+  type BattingViewField,
   BATTING_FIELD_LABELS,
+  BATTING_FIELD_TOOLTIPS,
 } from './battingColumns';
 
 interface BattingStatsEditableGridProps {
@@ -128,6 +130,18 @@ type BattingTotalsRow = {
 } & Record<EditableBattingField | BattingSummaryField, number>;
 
 type BattingGridRow = BattingRow | BattingNewRow | BattingTotalsRow;
+
+const renderHeaderWithTooltip = (field: BattingViewField) => {
+  const HeaderComponent: React.FC = () => (
+    <Tooltip title={BATTING_FIELD_TOOLTIPS[field]}>
+      <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
+        {BATTING_FIELD_LABELS[field]}
+      </Typography>
+    </Tooltip>
+  );
+  HeaderComponent.displayName = `BattingHeader_${field}`;
+  return HeaderComponent;
+};
 
 const BattingStatsEditableGrid = forwardRef<
   EditableGridHandle | null,
@@ -632,6 +646,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'playerNumber',
           headerName: BATTING_FIELD_LABELS.playerNumber,
+          renderHeader: renderHeaderWithTooltip('playerNumber'),
           width: 70,
           align: 'center',
           headerAlign: 'center',
@@ -661,6 +676,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'playerName',
           headerName: BATTING_FIELD_LABELS.playerName,
+          renderHeader: renderHeaderWithTooltip('playerName'),
           flex: 1.2,
           minWidth: 180,
           sortable: false,
@@ -712,6 +728,7 @@ const BattingStatsEditableGrid = forwardRef<
         ...editableFields.map<GridColDef<BattingGridRow>>((field) => ({
           field,
           headerName: BATTING_FIELD_LABELS[field],
+          renderHeader: renderHeaderWithTooltip(field),
           type: 'number',
           align: 'center',
           headerAlign: 'center',
@@ -723,6 +740,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'tb',
           headerName: BATTING_FIELD_LABELS.tb,
+          renderHeader: renderHeaderWithTooltip('tb'),
           type: 'number',
           align: 'center',
           headerAlign: 'center',
@@ -738,6 +756,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'pa',
           headerName: BATTING_FIELD_LABELS.pa,
+          renderHeader: renderHeaderWithTooltip('pa'),
           type: 'number',
           align: 'center',
           headerAlign: 'center',
@@ -753,6 +772,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'avg',
           headerName: BATTING_FIELD_LABELS.avg,
+          renderHeader: renderHeaderWithTooltip('avg'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -767,6 +787,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'obp',
           headerName: BATTING_FIELD_LABELS.obp,
+          renderHeader: renderHeaderWithTooltip('obp'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -781,6 +802,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'slg',
           headerName: BATTING_FIELD_LABELS.slg,
+          renderHeader: renderHeaderWithTooltip('slg'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -795,6 +817,7 @@ const BattingStatsEditableGrid = forwardRef<
         {
           field: 'ops',
           headerName: BATTING_FIELD_LABELS.ops,
+          renderHeader: renderHeaderWithTooltip('ops'),
           align: 'center',
           headerAlign: 'center',
           width: 90,

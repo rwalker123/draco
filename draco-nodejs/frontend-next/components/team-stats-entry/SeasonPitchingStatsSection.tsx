@@ -12,43 +12,76 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
 
 import { formatStatDecimal } from './utils';
-import { PITCHING_COLUMN_DECIMAL_DIGITS, type PitchingViewField } from './pitchingColumns';
+import {
+  PITCHING_COLUMN_DECIMAL_DIGITS,
+  PITCHING_FIELD_LABELS,
+  PITCHING_FIELD_TOOLTIPS,
+  type PitchingViewField,
+} from './pitchingColumns';
 import { useSortableRows } from './tableUtils';
 import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
+
+const seasonColumnKeys = [
+  'playerName',
+  'w',
+  'l',
+  's',
+  'ipDecimal',
+  'h',
+  'r',
+  'er',
+  'bb',
+  'so',
+  'hr',
+  'era',
+  'whip',
+  'k9',
+  'bb9',
+] as const;
+
+type SeasonPitchingColumnKey = (typeof seasonColumnKeys)[number];
 
 interface SeasonPitchingStatsSectionProps {
   stats: PlayerPitchingStatsType[] | null;
 }
 
 type PitchingColumn = {
-  key: keyof PlayerPitchingStatsType;
+  key: SeasonPitchingColumnKey;
   label: string;
-  align?: 'left' | 'center' | 'right';
+  tooltip: string;
+  align: 'left' | 'center' | 'right';
   digits?: number;
 };
 
-const columns: PitchingColumn[] = [
-  { key: 'playerName', label: 'Player', align: 'left' },
-  { key: 'w', label: 'W' },
-  { key: 'l', label: 'L' },
-  { key: 's', label: 'S' },
-  { key: 'ipDecimal', label: 'IP', digits: 1 },
-  { key: 'h', label: 'H' },
-  { key: 'r', label: 'R' },
-  { key: 'er', label: 'ER' },
-  { key: 'bb', label: 'BB' },
-  { key: 'so', label: 'SO' },
-  { key: 'hr', label: 'HR' },
-  { key: 'era', label: 'ERA', digits: 2 },
-  { key: 'whip', label: 'WHIP', digits: 2 },
-  { key: 'k9', label: 'K/9', digits: 2 },
-  { key: 'bb9', label: 'BB/9', digits: 2 },
-];
+const columnDigits: Partial<Record<SeasonPitchingColumnKey, number>> = {
+  ipDecimal: 1,
+  era: 2,
+  whip: 2,
+  k9: 2,
+  bb9: 2,
+};
+
+const columns: PitchingColumn[] = seasonColumnKeys.map((key) => {
+  const field = key as PitchingViewField;
+  const label = PITCHING_FIELD_LABELS[field] ?? String(key).toUpperCase();
+  const tooltip = PITCHING_FIELD_TOOLTIPS[field] ?? label;
+  const align: PitchingColumn['align'] = key === 'playerName' ? 'left' : 'center';
+  const digits = columnDigits[key] ?? PITCHING_COLUMN_DECIMAL_DIGITS[field];
+
+  return {
+    key,
+    label,
+    tooltip,
+    align,
+    digits,
+  };
+});
 
 const getColumnValue = (
   stat: PlayerPitchingStatsType,
@@ -155,16 +188,20 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                 {columns.map((column) => (
                   <TableCell
                     key={column.key}
-                    align={column.align ?? (column.key === 'playerName' ? 'left' : 'center')}
+                    align={column.align}
                     sortDirection={sortConfig?.key === column.key ? sortConfig.direction : false}
                   >
-                    <RightAlignedTableSortLabel
-                      active={sortConfig?.key === column.key}
-                      direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
-                      onClick={() => handleSort(column.key)}
-                    >
-                      {column.label}
-                    </RightAlignedTableSortLabel>
+                    <Tooltip title={column.tooltip} enterTouchDelay={0} placement="top">
+                      <Box component="span">
+                        <RightAlignedTableSortLabel
+                          active={sortConfig?.key === column.key}
+                          direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
+                          onClick={() => handleSort(column.key)}
+                        >
+                          {column.label}
+                        </RightAlignedTableSortLabel>
+                      </Box>
+                    </Tooltip>
                   </TableCell>
                 ))}
               </TableRow>
@@ -185,19 +222,17 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
 
                     if (column.key === 'ipDecimal') {
                       return (
-                        <TableCell key={column.key} align={column.align ?? 'center'}>
+                        <TableCell key={column.key} align={column.align}>
                           {formatBaseballInnings(stat.ip, stat.ip2)}
                         </TableCell>
                       );
                     }
 
                     const rawValue = getColumnValue(stat, column.key);
-                    const digits =
-                      column.digits ??
-                      PITCHING_COLUMN_DECIMAL_DIGITS[column.key as PitchingViewField];
+                    const digits = column.digits;
 
                     return (
-                      <TableCell key={column.key} align={column.align ?? 'center'}>
+                      <TableCell key={column.key} align={column.align}>
                         {digits !== undefined
                           ? formatStatDecimal(
                               rawValue as number | string | null | undefined,
@@ -220,27 +255,17 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                     .map((column) => {
                       if (column.key === 'ipDecimal') {
                         return (
-                          <TableCell
-                            key={column.key}
-                            align={column.align ?? 'center'}
-                            sx={{ fontWeight: 700 }}
-                          >
+                          <TableCell key={column.key} align={column.align} sx={{ fontWeight: 700 }}>
                             {formatBaseballInnings(totals.ip, totals.ip2)}
                           </TableCell>
                         );
                       }
 
                       const value = totals[column.key as keyof typeof totals];
-                      const digits =
-                        column.digits ??
-                        PITCHING_COLUMN_DECIMAL_DIGITS[column.key as PitchingViewField];
+                      const digits = column.digits;
 
                       return (
-                        <TableCell
-                          key={column.key}
-                          align={column.align ?? 'center'}
-                          sx={{ fontWeight: 700 }}
-                        >
+                        <TableCell key={column.key} align={column.align} sx={{ fontWeight: 700 }}>
                           {digits !== undefined
                             ? formatStatDecimal(value as number | string | null | undefined, digits)
                             : (value ?? '-')}
