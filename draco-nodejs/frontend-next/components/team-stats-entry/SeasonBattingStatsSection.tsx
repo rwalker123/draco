@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -12,6 +12,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   Typography,
 } from '@mui/material';
 import type { PlayerBattingStatsType } from '@draco/shared-schemas';
@@ -52,7 +53,87 @@ const columns: BattingColumn[] = [
   { key: 'ops', label: 'OPS', digits: 3 },
 ];
 
+type SortDirection = 'asc' | 'desc';
+
+type BattingSortConfig = {
+  key: BattingColumn['key'];
+  direction: SortDirection;
+};
+
+const compareValues = (a: unknown, b: unknown): number => {
+  if (a === b) {
+    return 0;
+  }
+
+  if (a === null || a === undefined) {
+    return 1;
+  }
+
+  if (b === null || b === undefined) {
+    return -1;
+  }
+
+  const aNumber = typeof a === 'number' ? a : Number(a);
+  const bNumber = typeof b === 'number' ? b : Number(b);
+  const aIsNumber = Number.isFinite(aNumber);
+  const bIsNumber = Number.isFinite(bNumber);
+
+  if (aIsNumber && bIsNumber) {
+    return aNumber - bNumber;
+  }
+
+  return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+};
+
+const getColumnValue = (
+  stat: PlayerBattingStatsType,
+  key: BattingColumn['key'],
+): number | string | null | undefined => {
+  if (key === 'playerName') {
+    return stat.playerName;
+  }
+
+  if (key === 'ops') {
+    const slg = stat.slg ?? 0;
+    const obp = stat.obp ?? 0;
+    return obp + slg;
+  }
+
+  return stat[key as keyof PlayerBattingStatsType] as number | string | null | undefined;
+};
+
 const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ stats }) => {
+  const [sortConfig, setSortConfig] = useState<BattingSortConfig | null>(null);
+
+  const sortedStats = useMemo(() => {
+    if (!stats) {
+      return [] as PlayerBattingStatsType[];
+    }
+
+    if (!sortConfig) {
+      return stats;
+    }
+
+    const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
+
+    return [...stats].sort((a, b) => {
+      const aValue = getColumnValue(a, sortConfig.key);
+      const bValue = getColumnValue(b, sortConfig.key);
+      return compareValues(aValue, bValue) * directionMultiplier;
+    });
+  }, [stats, sortConfig]);
+
+  const handleSort = useCallback((key: BattingColumn['key']) => {
+    setSortConfig((previous) => {
+      if (previous?.key === key) {
+        const nextDirection: SortDirection = previous.direction === 'asc' ? 'desc' : 'asc';
+        return { key, direction: nextDirection };
+      }
+
+      return { key, direction: 'asc' };
+    });
+  }, []);
+
   const totals = useMemo(() => {
     if (!stats || stats.length === 0) {
       return null;
@@ -129,14 +210,21 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                   <TableCell
                     key={column.key}
                     align={column.align ?? (column.key === 'playerName' ? 'left' : 'center')}
+                    sortDirection={sortConfig?.key === column.key ? sortConfig.direction : false}
                   >
-                    {column.label}
+                    <TableSortLabel
+                      active={sortConfig?.key === column.key}
+                      direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
+                      onClick={() => handleSort(column.key)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
                   </TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {stats.map((stat) => (
+              {sortedStats.map((stat) => (
                 <TableRow key={stat.playerId} hover>
                   {columns.map((column) => {
                     if (column.key === 'playerName') {
@@ -149,22 +237,16 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                       );
                     }
 
-                    const rawValue =
-                      column.key === 'ops'
-                        ? stat.obp + stat.slg
-                        : (stat[column.key as keyof PlayerBattingStatsType] as
-                            | number
-                            | null
-                            | undefined);
-
+                    const rawValue = getColumnValue(stat, column.key);
                     const digits = column.digits ?? 0;
-                    const displayValue = column.digits
-                      ? formatStatDecimal(rawValue ?? null, digits)
-                      : (rawValue ?? 0);
+                    const displayValue =
+                      column.digits !== undefined
+                        ? formatStatDecimal(rawValue ?? null, digits)
+                        : (rawValue ?? '-');
 
                     return (
                       <TableCell key={column.key} align={column.align ?? 'center'}>
-                        {column.digits ? displayValue : rawValue}
+                        {displayValue}
                       </TableCell>
                     );
                   })}

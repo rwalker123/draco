@@ -908,6 +908,7 @@ const PitchingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           editable: true,
+          sortable: false,
           preProcessEditCellProps: buildNonNegativePreProcessor(field === 'ipDecimal'),
           valueFormatter:
             field === 'ipDecimal'
@@ -943,6 +944,7 @@ const PitchingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
@@ -956,6 +958,7 @@ const PitchingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
@@ -969,6 +972,7 @@ const PitchingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
@@ -982,6 +986,7 @@ const PitchingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 2),
           renderCell: (params) =>
@@ -995,6 +1000,7 @@ const PitchingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>

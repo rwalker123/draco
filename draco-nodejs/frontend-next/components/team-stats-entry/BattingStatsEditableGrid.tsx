@@ -717,6 +717,7 @@ const BattingStatsEditableGrid = forwardRef<
           headerAlign: 'center',
           width: 90,
           editable: true,
+          sortable: false,
           preProcessEditCellProps: buildNonNegativeIntegerPreProcessor(),
         })),
         {
@@ -726,6 +727,7 @@ const BattingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 0),
           renderCell: (params) =>
@@ -740,6 +742,7 @@ const BattingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 0),
           renderCell: (params) =>
@@ -753,6 +756,7 @@ const BattingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
@@ -766,6 +770,7 @@ const BattingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
@@ -779,6 +784,7 @@ const BattingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
@@ -792,6 +798,7 @@ const BattingStatsEditableGrid = forwardRef<
           align: 'center',
           headerAlign: 'center',
           width: 90,
+          sortable: false,
           valueFormatter: (params) =>
             formatStatDecimal(params?.value as number | string | null | undefined, 3),
           renderCell: (params) =>
