@@ -47,6 +47,18 @@ const columns: PitchingColumn[] = [
   { key: 'bb9', label: 'BB/9', digits: 2 },
 ];
 
+const formatBaseballInnings = (ip: number, ip2: number): string => {
+  if (!Number.isFinite(ip) || !Number.isFinite(ip2)) {
+    return '-';
+  }
+
+  const totalOuts = Math.round(ip * 3 + ip2);
+  const innings = Math.floor(totalOuts / 3);
+  const remainingOuts = totalOuts % 3;
+
+  return `${innings}.${remainingOuts}`;
+};
+
 const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({ stats }) => {
   const totals = useMemo(() => {
     if (!stats || stats.length === 0) {
@@ -58,6 +70,8 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
         acc.w += current.w;
         acc.l += current.l;
         acc.s += current.s;
+        acc.ip += current.ip;
+        acc.ip2 += current.ip2;
         acc.ipDecimal += current.ipDecimal;
         acc.h += current.h;
         acc.r += current.r;
@@ -71,6 +85,8 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
         w: 0,
         l: 0,
         s: 0,
+        ip: 0,
+        ip2: 0,
         ipDecimal: 0,
         h: 0,
         r: 0,
@@ -135,6 +151,14 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                       );
                     }
 
+                    if (column.key === 'ipDecimal') {
+                      return (
+                        <TableCell key={column.key} align={column.align ?? 'center'}>
+                          {formatBaseballInnings(stat.ip, stat.ip2)}
+                        </TableCell>
+                      );
+                    }
+
                     const rawValue = stat[column.key];
                     const digits = column.digits ?? 0;
 
@@ -157,6 +181,18 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                   {columns
                     .filter((column) => column.key !== 'playerName')
                     .map((column) => {
+                      if (column.key === 'ipDecimal') {
+                        return (
+                          <TableCell
+                            key={column.key}
+                            align={column.align ?? 'center'}
+                            sx={{ fontWeight: 700 }}
+                          >
+                            {formatBaseballInnings(totals.ip, totals.ip2)}
+                          </TableCell>
+                        );
+                      }
+
                       const value = totals[column.key as keyof typeof totals];
                       const digits = column.digits ?? 0;
 

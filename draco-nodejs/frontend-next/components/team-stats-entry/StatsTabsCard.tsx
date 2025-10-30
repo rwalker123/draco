@@ -296,6 +296,12 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
 
     return (
       <>
+        {canManageStats && !selectedGameId && (
+          <Alert severity="info" sx={{ mt: 3 }}>
+            Select a completed game to enable inline editing and attendance management.
+          </Alert>
+        )}
+
         <Card>
           <Box
             sx={{
@@ -431,12 +437,6 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                 {currentTab === 'attendance' && (
                   <Alert severity="info">
                     Attendance tracking is available once a completed game is selected.
-                  </Alert>
-                )}
-
-                {canManageStats && (
-                  <Alert severity="info" sx={{ mt: 3 }}>
-                    Select a completed game to enable inline editing and attendance management.
                   </Alert>
                 )}
               </>

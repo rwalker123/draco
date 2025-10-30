@@ -428,6 +428,30 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     return { batting, pitching };
   }, [accountId, seasonId, teamSeasonId, statsService]);
 
+  const refreshSeasonBattingStats = useCallback(async () => {
+    try {
+      const batting = await statsService.getSeasonBattingStats(accountId, seasonId, teamSeasonId);
+      setSeasonBattingStats(batting);
+      setSeasonStatsError(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to refresh season batting statistics.';
+      setSeasonStatsError(message);
+    }
+  }, [accountId, seasonId, teamSeasonId, statsService]);
+
+  const refreshSeasonPitchingStats = useCallback(async () => {
+    try {
+      const pitching = await statsService.getSeasonPitchingStats(accountId, seasonId, teamSeasonId);
+      setSeasonPitchingStats(pitching);
+      setSeasonStatsError(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to refresh season pitching statistics.';
+      setSeasonStatsError(message);
+    }
+  }, [accountId, seasonId, teamSeasonId, statsService]);
+
   useEffect(() => {
     let active = true;
     setSeasonStatsLoading(true);
@@ -779,6 +803,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         }
 
         showSnackbar('Batting stat added.');
+        void refreshSeasonBattingStats();
       } catch (error) {
         const err = error instanceof Error ? error : new Error('Unable to add batting stat.');
         showSnackbar(err.message, 'error');
@@ -793,6 +818,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       seasonId,
       selectedGameId,
       showSnackbar,
+      refreshSeasonBattingStats,
       statsService,
       teamSeasonId,
     ],
@@ -868,6 +894,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         }
 
         showSnackbar('Batting stat updated.');
+        void refreshSeasonBattingStats();
       } catch (error) {
         const err = error instanceof Error ? error : new Error('Unable to update batting stat.');
         showSnackbar(err.message, 'error');
@@ -882,6 +909,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       seasonId,
       selectedGameId,
       showSnackbar,
+      refreshSeasonBattingStats,
       statsService,
       teamSeasonId,
     ],
@@ -951,6 +979,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           attendanceSelection: nextSelection,
         });
       }
+
+      void refreshSeasonBattingStats();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to delete batting stat.';
       showSnackbar(message, 'error');
@@ -1025,6 +1055,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         }
 
         showSnackbar('Pitching stat added.');
+        void refreshSeasonPitchingStats();
       } catch (error) {
         const err = error instanceof Error ? error : new Error('Unable to add pitching stat.');
         showSnackbar(err.message, 'error');
@@ -1039,6 +1070,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       seasonId,
       selectedGameId,
       showSnackbar,
+      refreshSeasonPitchingStats,
       statsService,
       teamSeasonId,
     ],
@@ -1111,6 +1143,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         }
 
         showSnackbar('Pitching stat updated.');
+        void refreshSeasonPitchingStats();
       } catch (error) {
         const err = error instanceof Error ? error : new Error('Unable to update pitching stat.');
         showSnackbar(err.message, 'error');
@@ -1125,6 +1158,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       seasonId,
       selectedGameId,
       showSnackbar,
+      refreshSeasonPitchingStats,
       statsService,
       teamSeasonId,
     ],
@@ -1195,6 +1229,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           attendanceSelection: nextSelection,
         });
       }
+
+      void refreshSeasonPitchingStats();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to delete pitching stat.';
       showSnackbar(message, 'error');
