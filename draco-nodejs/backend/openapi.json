@@ -6820,6 +6820,1555 @@
           "ip"
         ]
       },
+      "TeamStatsPlayerSummary": {
+        "type": "object",
+        "properties": {
+          "rosterSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "contactId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "playerNumber": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          }
+        },
+        "required": [
+          "rosterSeasonId",
+          "playerId",
+          "contactId",
+          "playerName",
+          "playerNumber"
+        ]
+      },
+      "GameBattingStatLine": {
+        "type": "object",
+        "properties": {
+          "ab": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "r": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "d": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rbi": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "so": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hbp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sf": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sh": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "re": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "intr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lob": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "statId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "rosterSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "contactId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "playerNumber": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "tb": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pa": {
+            "type": "number",
+            "minimum": 0
+          },
+          "avg": {
+            "type": "number",
+            "minimum": 0
+          },
+          "obp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "slg": {
+            "type": "number",
+            "minimum": 0
+          },
+          "ops": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ab",
+          "h",
+          "r",
+          "d",
+          "t",
+          "hr",
+          "rbi",
+          "so",
+          "bb",
+          "hbp",
+          "sb",
+          "cs",
+          "sf",
+          "sh",
+          "re",
+          "intr",
+          "lob",
+          "statId",
+          "rosterSeasonId",
+          "playerId",
+          "contactId",
+          "playerName",
+          "playerNumber",
+          "tb",
+          "pa",
+          "avg",
+          "obp",
+          "slg",
+          "ops"
+        ]
+      },
+      "GameBattingStats": {
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "stats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ab": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "h": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "r": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "d": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "t": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "hr": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "rbi": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "so": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "bb": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "hbp": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sb": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sf": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sh": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "re": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "intr": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "lob": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "statId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "rosterSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "playerNumber": {
+                  "type": "integer",
+                  "nullable": true,
+                  "minimum": 0
+                },
+                "tb": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "pa": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "avg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "obp": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "slg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "ops": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "ab",
+                "h",
+                "r",
+                "d",
+                "t",
+                "hr",
+                "rbi",
+                "so",
+                "bb",
+                "hbp",
+                "sb",
+                "cs",
+                "sf",
+                "sh",
+                "re",
+                "intr",
+                "lob",
+                "statId",
+                "rosterSeasonId",
+                "playerId",
+                "contactId",
+                "playerName",
+                "playerNumber",
+                "tb",
+                "pa",
+                "avg",
+                "obp",
+                "slg",
+                "ops"
+              ]
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "ab": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "h": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "r": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "d": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "t": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hr": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "rbi": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "so": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bb": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hbp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sb": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cs": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sf": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sh": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "re": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "intr": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "lob": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "tb": {
+                "type": "number",
+                "minimum": 0
+              },
+              "pa": {
+                "type": "number",
+                "minimum": 0
+              },
+              "avg": {
+                "type": "number",
+                "minimum": 0
+              },
+              "obp": {
+                "type": "number",
+                "minimum": 0
+              },
+              "slg": {
+                "type": "number",
+                "minimum": 0
+              },
+              "ops": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "ab",
+              "h",
+              "r",
+              "d",
+              "t",
+              "hr",
+              "rbi",
+              "so",
+              "bb",
+              "hbp",
+              "sb",
+              "cs",
+              "sf",
+              "sh",
+              "re",
+              "intr",
+              "lob",
+              "tb",
+              "pa",
+              "avg",
+              "obp",
+              "slg",
+              "ops"
+            ]
+          },
+          "availablePlayers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rosterSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "playerNumber": {
+                  "type": "integer",
+                  "nullable": true,
+                  "minimum": 0
+                },
+                "photoUrl": {
+                  "type": "string",
+                  "nullable": true,
+                  "format": "uri"
+                }
+              },
+              "required": [
+                "rosterSeasonId",
+                "playerId",
+                "contactId",
+                "playerName",
+                "playerNumber"
+              ]
+            }
+          }
+        },
+        "required": [
+          "gameId",
+          "teamSeasonId",
+          "stats",
+          "totals",
+          "availablePlayers"
+        ]
+      },
+      "GamePitchingStatLine": {
+        "type": "object",
+        "properties": {
+          "ipDecimal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "w": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "l": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "s": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "r": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "er": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "d": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "so": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bf": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hbp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bk": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sc": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "statId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "rosterSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "contactId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "playerNumber": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "ip": {
+            "type": "number",
+            "minimum": 0
+          },
+          "ip2": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "era": {
+            "type": "number",
+            "minimum": 0
+          },
+          "whip": {
+            "type": "number",
+            "minimum": 0
+          },
+          "k9": {
+            "type": "number",
+            "minimum": 0
+          },
+          "bb9": {
+            "type": "number",
+            "minimum": 0
+          },
+          "oba": {
+            "type": "number",
+            "minimum": 0
+          },
+          "slg": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ipDecimal",
+          "w",
+          "l",
+          "s",
+          "h",
+          "r",
+          "er",
+          "d",
+          "t",
+          "hr",
+          "so",
+          "bb",
+          "bf",
+          "wp",
+          "hbp",
+          "bk",
+          "sc",
+          "statId",
+          "rosterSeasonId",
+          "playerId",
+          "contactId",
+          "playerName",
+          "playerNumber",
+          "ip",
+          "ip2",
+          "era",
+          "whip",
+          "k9",
+          "bb9",
+          "oba",
+          "slg"
+        ]
+      },
+      "GamePitchingStats": {
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "stats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ipDecimal": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "w": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "l": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "s": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "h": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "r": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "er": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "d": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "t": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "hr": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "so": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "bb": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "bf": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "wp": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "hbp": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "bk": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sc": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "statId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "rosterSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "playerNumber": {
+                  "type": "integer",
+                  "nullable": true,
+                  "minimum": 0
+                },
+                "ip": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "ip2": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "era": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "whip": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "k9": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "bb9": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "oba": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "slg": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "ipDecimal",
+                "w",
+                "l",
+                "s",
+                "h",
+                "r",
+                "er",
+                "d",
+                "t",
+                "hr",
+                "so",
+                "bb",
+                "bf",
+                "wp",
+                "hbp",
+                "bk",
+                "sc",
+                "statId",
+                "rosterSeasonId",
+                "playerId",
+                "contactId",
+                "playerName",
+                "playerNumber",
+                "ip",
+                "ip2",
+                "era",
+                "whip",
+                "k9",
+                "bb9",
+                "oba",
+                "slg"
+              ]
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "ipDecimal": {
+                "type": "number",
+                "minimum": 0
+              },
+              "w": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "l": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "s": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "h": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "r": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "er": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "d": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "t": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hr": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "so": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bb": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bf": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "wp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hbp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bk": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sc": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "ip": {
+                "type": "number",
+                "minimum": 0
+              },
+              "ip2": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "era": {
+                "type": "number",
+                "minimum": 0
+              },
+              "whip": {
+                "type": "number",
+                "minimum": 0
+              },
+              "k9": {
+                "type": "number",
+                "minimum": 0
+              },
+              "bb9": {
+                "type": "number",
+                "minimum": 0
+              },
+              "oba": {
+                "type": "number",
+                "minimum": 0
+              },
+              "slg": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "ipDecimal",
+              "w",
+              "l",
+              "s",
+              "h",
+              "r",
+              "er",
+              "d",
+              "t",
+              "hr",
+              "so",
+              "bb",
+              "bf",
+              "wp",
+              "hbp",
+              "bk",
+              "sc",
+              "ip",
+              "ip2",
+              "era",
+              "whip",
+              "k9",
+              "bb9",
+              "oba",
+              "slg"
+            ]
+          },
+          "availablePlayers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rosterSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "playerNumber": {
+                  "type": "integer",
+                  "nullable": true,
+                  "minimum": 0
+                },
+                "photoUrl": {
+                  "type": "string",
+                  "nullable": true,
+                  "format": "uri"
+                }
+              },
+              "required": [
+                "rosterSeasonId",
+                "playerId",
+                "contactId",
+                "playerName",
+                "playerNumber"
+              ]
+            }
+          }
+        },
+        "required": [
+          "gameId",
+          "teamSeasonId",
+          "stats",
+          "totals",
+          "availablePlayers"
+        ]
+      },
+      "CreateGameBattingStat": {
+        "type": "object",
+        "properties": {
+          "ab": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "r": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "d": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rbi": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "so": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hbp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sf": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sh": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "re": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "intr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lob": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rosterSeasonId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ab",
+          "h",
+          "r",
+          "d",
+          "t",
+          "hr",
+          "rbi",
+          "so",
+          "bb",
+          "hbp",
+          "sb",
+          "cs",
+          "sf",
+          "sh",
+          "re",
+          "intr",
+          "lob",
+          "rosterSeasonId"
+        ]
+      },
+      "UpdateGameBattingStat": {
+        "type": "object",
+        "properties": {
+          "ab": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "r": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "d": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rbi": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "so": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hbp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sf": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sh": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "re": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "intr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lob": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ab",
+          "h",
+          "r",
+          "d",
+          "t",
+          "hr",
+          "rbi",
+          "so",
+          "bb",
+          "hbp",
+          "sb",
+          "cs",
+          "sf",
+          "sh",
+          "re",
+          "intr",
+          "lob"
+        ]
+      },
+      "CreateGamePitchingStat": {
+        "type": "object",
+        "properties": {
+          "ipDecimal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "w": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "l": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "s": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "r": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "er": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "d": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "so": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bf": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hbp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bk": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sc": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rosterSeasonId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ipDecimal",
+          "w",
+          "l",
+          "s",
+          "h",
+          "r",
+          "er",
+          "d",
+          "t",
+          "hr",
+          "so",
+          "bb",
+          "bf",
+          "wp",
+          "hbp",
+          "bk",
+          "sc",
+          "rosterSeasonId"
+        ]
+      },
+      "UpdateGamePitchingStat": {
+        "type": "object",
+        "properties": {
+          "ipDecimal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "w": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "l": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "s": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "r": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "er": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "d": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "so": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bf": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hbp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bk": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sc": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ipDecimal",
+          "w",
+          "l",
+          "s",
+          "h",
+          "r",
+          "er",
+          "d",
+          "t",
+          "hr",
+          "so",
+          "bb",
+          "bf",
+          "wp",
+          "hbp",
+          "bk",
+          "sc"
+        ]
+      },
+      "TeamCompletedGame": {
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "gameDate": {
+            "type": "string",
+            "description": "ISO date string"
+          },
+          "opponentTeamName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "isHomeTeam": {
+            "type": "boolean"
+          },
+          "homeScore": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "visitorScore": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "gameStatus": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "gameId",
+          "gameDate",
+          "opponentTeamName",
+          "isHomeTeam",
+          "homeScore",
+          "visitorScore",
+          "gameStatus"
+        ]
+      },
+      "TeamCompletedGames": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "gameId": {
+              "type": "string",
+              "pattern": "^d+$"
+            },
+            "gameDate": {
+              "type": "string",
+              "description": "ISO date string"
+            },
+            "opponentTeamName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "isHomeTeam": {
+              "type": "boolean"
+            },
+            "homeScore": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "visitorScore": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "gameStatus": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "gameId",
+            "gameDate",
+            "opponentTeamName",
+            "isHomeTeam",
+            "homeScore",
+            "visitorScore",
+            "gameStatus"
+          ]
+        }
+      },
+      "GameAttendance": {
+        "type": "object",
+        "properties": {
+          "playerIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "playerIds"
+        ]
+      },
+      "UpdateGameAttendance": {
+        "type": "object",
+        "properties": {
+          "rosterSeasonId": {
+            "type": "string"
+          },
+          "present": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "rosterSeasonId",
+          "present"
+        ]
+      },
       "BattingStatisticsFilters": {
         "type": "object",
         "properties": {
@@ -31563,6 +33112,1323 @@
           },
           "500": {
             "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/games": {
+      "get": {
+        "summary": "List completed games for stat entry",
+        "description": "Returns all games eligible for stat entry for the specified team.",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Completed games retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamCompletedGames"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/games/{gameId}/batting": {
+      "get": {
+        "summary": "Get batting stats for a game",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batting stats retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameBattingStats"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add batting line for a player",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGameBattingStat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Batting stat created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameBattingStatLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Player already has batting stats for this game.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/games/{gameId}/batting/{statId}": {
+      "put": {
+        "summary": "Update batting line for a player",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "statId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGameBattingStat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batting stat updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameBattingStatLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete batting line for a player",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "statId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Batting stat deleted."
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/games/{gameId}/pitching": {
+      "get": {
+        "summary": "Get pitching stats for a game",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pitching stats retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePitchingStats"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add pitching line for a player",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGamePitchingStat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pitching stat created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePitchingStatLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Player already has pitching stats for this game.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/games/{gameId}/pitching/{statId}": {
+      "put": {
+        "summary": "Update pitching line for a player",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "statId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGamePitchingStat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pitching stat updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePitchingStatLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete pitching line for a player",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "statId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pitching stat deleted."
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/games/{gameId}/attendance": {
+      "get": {
+        "summary": "Get attendance for a game",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attendance retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameAttendance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update attendance for a game",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGameAttendance"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attendance updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameAttendance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
             "content": {
               "application/json": {
                 "schema": {

@@ -69,6 +69,19 @@ import {
   HofNominationQuerySchema,
   PlayerPitchingStatsSchema,
   PlayerPitchingStatsBriefSchema,
+  TeamStatsPlayerSummarySchema,
+  GameBattingStatLineSchema,
+  GameBattingStatsSchema,
+  GamePitchingStatLineSchema,
+  GamePitchingStatsSchema,
+  CreateGameBattingStatSchema,
+  UpdateGameBattingStatSchema,
+  CreateGamePitchingStatSchema,
+  UpdateGamePitchingStatSchema,
+  TeamCompletedGameSchema,
+  TeamCompletedGamesSchema,
+  GameAttendanceSchema,
+  UpdateGameAttendanceSchema,
   PlayerClassifiedSearchQuerySchema,
   PlayersWantedClassifiedPagedSchema,
   PlayersWantedClassifiedSchema,
@@ -408,6 +421,52 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const PlayerPitchingStatsBriefSchemaRef = registry.register(
     'PlayerPitchingStatsBrief',
     PlayerPitchingStatsBriefSchema,
+  );
+  const TeamStatsPlayerSummarySchemaRef = registry.register(
+    'TeamStatsPlayerSummary',
+    TeamStatsPlayerSummarySchema,
+  );
+  const GameBattingStatLineSchemaRef = registry.register(
+    'GameBattingStatLine',
+    GameBattingStatLineSchema,
+  );
+  const GameBattingStatsSchemaRef = registry.register('GameBattingStats', GameBattingStatsSchema);
+  const GamePitchingStatLineSchemaRef = registry.register(
+    'GamePitchingStatLine',
+    GamePitchingStatLineSchema,
+  );
+  const GamePitchingStatsSchemaRef = registry.register(
+    'GamePitchingStats',
+    GamePitchingStatsSchema,
+  );
+  const CreateGameBattingStatSchemaRef = registry.register(
+    'CreateGameBattingStat',
+    CreateGameBattingStatSchema,
+  );
+  const UpdateGameBattingStatSchemaRef = registry.register(
+    'UpdateGameBattingStat',
+    UpdateGameBattingStatSchema,
+  );
+  const CreateGamePitchingStatSchemaRef = registry.register(
+    'CreateGamePitchingStat',
+    CreateGamePitchingStatSchema,
+  );
+  const UpdateGamePitchingStatSchemaRef = registry.register(
+    'UpdateGamePitchingStat',
+    UpdateGamePitchingStatSchema,
+  );
+  const TeamCompletedGameSchemaRef = registry.register(
+    'TeamCompletedGame',
+    TeamCompletedGameSchema,
+  );
+  const TeamCompletedGamesSchemaRef = registry.register(
+    'TeamCompletedGames',
+    TeamCompletedGamesSchema,
+  );
+  const GameAttendanceSchemaRef = registry.register('GameAttendance', GameAttendanceSchema);
+  const UpdateGameAttendanceSchemaRef = registry.register(
+    'UpdateGameAttendance',
+    UpdateGameAttendanceSchema,
   );
   const BattingStatisticsFiltersSchemaRef = registry.register(
     'BattingStatisticsFilters',
@@ -801,6 +860,19 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PlayerBattingStatsBriefSchemaRef,
     PlayerPitchingStatsSchemaRef,
     PlayerPitchingStatsBriefSchemaRef,
+    TeamStatsPlayerSummarySchemaRef,
+    GameBattingStatLineSchemaRef,
+    GameBattingStatsSchemaRef,
+    GamePitchingStatLineSchemaRef,
+    GamePitchingStatsSchemaRef,
+    CreateGameBattingStatSchemaRef,
+    UpdateGameBattingStatSchemaRef,
+    CreateGamePitchingStatSchemaRef,
+    UpdateGamePitchingStatSchemaRef,
+    TeamCompletedGameSchemaRef,
+    TeamCompletedGamesSchemaRef,
+    GameAttendanceSchemaRef,
+    UpdateGameAttendanceSchemaRef,
     BattingStatisticsFiltersSchemaRef,
     PitchingStatisticsFiltersSchemaRef,
     LeaderStatisticsFiltersSchemaRef,

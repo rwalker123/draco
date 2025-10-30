@@ -732,6 +732,64 @@ export type dbGameRecap = Prisma.gamerecapGetPayload<{
   };
 }>;
 
+export type dbStatsEntryGame = Prisma.leaguescheduleGetPayload<{
+  select: {
+    id: true;
+    gamedate: true;
+    hteamid: true;
+    vteamid: true;
+    hscore: true;
+    vscore: true;
+    gamestatus: true;
+    hometeam: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+    visitingteam: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+  };
+}>;
+
+export type dbGameBattingStat = Prisma.batstatsumGetPayload<{
+  include: {
+    rosterseason: {
+      include: {
+        roster: {
+          include: {
+            contacts: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbGamePitchingStat = Prisma.pitchstatsumGetPayload<{
+  include: {
+    rosterseason: {
+      include: {
+        roster: {
+          include: {
+            contacts: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbGameAttendance = Prisma.playerrecapGetPayload<{
+  select: {
+    playerid: true;
+  };
+}>;
+
 export type dbScheduleCreateData = Pick<
   Prisma.leaguescheduleUncheckedCreateInput,
   | 'gamedate'

@@ -56,6 +56,7 @@ import { MemberBusinessService } from './memberBusinessService.js';
 import { HallOfFameService } from './hallOfFameService.js';
 import { HofNominationService } from './hofNominationService.js';
 import { HofSetupService } from './hofSetupService.js';
+import { StatsEntryService } from './statsEntryService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -109,6 +110,7 @@ export class ServiceFactory {
   private static hallOfFameService: HallOfFameService;
   private static hofNominationService: HofNominationService;
   private static hofSetupService: HofSetupService;
+  private static statsEntryService: StatsEntryService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -451,6 +453,21 @@ export class ServiceFactory {
     }
 
     return this.hofNominationService;
+  }
+
+  static getStatsEntryService(): StatsEntryService {
+    if (!this.statsEntryService) {
+      const statsEntryRepository = RepositoryFactory.getStatsEntryRepository();
+      const rosterRepository = RepositoryFactory.getRosterRepository();
+      const teamService = this.getTeamService();
+      this.statsEntryService = new StatsEntryService(
+        statsEntryRepository,
+        rosterRepository,
+        teamService,
+      );
+    }
+
+    return this.statsEntryService;
   }
 
   static getHofSetupService(): HofSetupService {
