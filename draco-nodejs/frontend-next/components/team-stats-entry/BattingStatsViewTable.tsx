@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   Box,
@@ -19,55 +19,17 @@ import type { GameBattingStatLineType, GameBattingStatsType } from '@draco/share
 
 import {
   BATTING_FIELD_LABELS,
-  battingAverageFields,
+  BATTING_COLUMN_DECIMAL_DIGITS,
   battingViewFieldOrder,
   type BattingViewField,
 } from './battingColumns';
 import { formatStatDecimal } from './utils';
+import { useSortableRows } from './tableUtils';
 
 interface BattingStatsViewTableProps {
   stats: GameBattingStatsType | null;
   totals: GameBattingStatsType['totals'] | null;
 }
-
-const battingDecimalDigits: Partial<Record<BattingViewField, number>> = {
-  avg: 3,
-  obp: 3,
-  slg: 3,
-  ops: 3,
-};
-
-type SortDirection = 'asc' | 'desc';
-
-type BattingSortConfig = {
-  field: BattingViewField;
-  direction: SortDirection;
-};
-
-const compareValues = (a: unknown, b: unknown): number => {
-  if (a === b) {
-    return 0;
-  }
-
-  if (a === null || a === undefined) {
-    return 1;
-  }
-
-  if (b === null || b === undefined) {
-    return -1;
-  }
-
-  const aNumber = typeof a === 'number' ? a : Number(a);
-  const bNumber = typeof b === 'number' ? b : Number(b);
-  const aIsNumber = Number.isFinite(aNumber);
-  const bIsNumber = Number.isFinite(bNumber);
-
-  if (aIsNumber && bIsNumber) {
-    return aNumber - bNumber;
-  }
-
-  return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
-};
 
 const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);
@@ -82,41 +44,19 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
     [],
   );
 
-  const [sortConfig, setSortConfig] = useState<BattingSortConfig | null>(null);
+  const getValue = useCallback(
+    (row: GameBattingStatLineType, field: BattingViewField) =>
+      row[field as keyof GameBattingStatLineType],
+    [],
+  );
 
-  const sortedStats = useMemo(() => {
-    if (!stats?.stats) {
-      return [] as GameBattingStatLineType[];
-    }
-
-    if (!sortConfig) {
-      return stats.stats;
-    }
-
-    const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
-
-    return [...stats.stats].sort((a, b) => {
-      const aValue = a[sortConfig.field as keyof GameBattingStatLineType];
-      const bValue = b[sortConfig.field as keyof GameBattingStatLineType];
-      return compareValues(aValue, bValue) * directionMultiplier;
-    });
-  }, [stats, sortConfig]);
-
-  const handleSort = useCallback((field: BattingViewField) => {
-    setSortConfig((previous) => {
-      if (previous?.field === field) {
-        const nextDirection: SortDirection = previous.direction === 'asc' ? 'desc' : 'asc';
-        return { field, direction: nextDirection };
-      }
-
-      return { field, direction: 'asc' };
-    });
-  }, []);
+  const { sortedRows, sortConfig, handleSort } = useSortableRows(stats?.stats ?? [], getValue);
 
   const formatValue = useCallback(
     (value: number | string | null | undefined, field: BattingViewField) => {
-      if ((battingAverageFields as readonly string[]).includes(field)) {
-        return formatStatDecimal(value, battingDecimalDigits[field] ?? 3);
+      const digits = BATTING_COLUMN_DECIMAL_DIGITS[field];
+      if (digits !== undefined) {
+        return formatStatDecimal(value, digits);
       }
 
       return value ?? '-';
@@ -140,11 +80,11 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
                 <TableCell
                   key={header.key}
                   align={header.align}
-                  sortDirection={sortConfig?.field === header.key ? sortConfig.direction : false}
+                  sortDirection={sortConfig?.key === header.key ? sortConfig.direction : false}
                 >
                   <TableSortLabel
-                    active={sortConfig?.field === header.key}
-                    direction={sortConfig?.field === header.key ? sortConfig.direction : 'asc'}
+                    active={sortConfig?.key === header.key}
+                    direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
                     onClick={() => handleSort(header.key)}
                   >
                     {header.label}
@@ -154,7 +94,7 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedStats.map((stat) => (
+            {sortedRows.map((stat) => (
               <TableRow key={stat.statId} hover>
                 {headers.map((header) => {
                   if (header.key === 'playerNumber') {

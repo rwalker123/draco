@@ -63,3 +63,10 @@ export const BATTING_FIELD_LABELS: FieldLabelMap = {
   slg: 'SLG',
   ops: 'OPS',
 };
+
+export const BATTING_COLUMN_DECIMAL_DIGITS: Partial<Record<BattingViewField, number>> = {
+  avg: 3,
+  obp: 3,
+  slg: 3,
+  ops: 3,
+};

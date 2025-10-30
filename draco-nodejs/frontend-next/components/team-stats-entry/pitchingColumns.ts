@@ -61,3 +61,12 @@ export const PITCHING_FIELD_LABELS: FieldLabelMap = {
   oba: 'OBA',
   slg: 'SLG',
 };
+
+export const PITCHING_COLUMN_DECIMAL_DIGITS: Partial<Record<PitchingViewField, number>> = {
+  era: 2,
+  whip: 2,
+  k9: 2,
+  bb9: 2,
+  oba: 3,
+  slg: 3,
+};

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   Box,
@@ -18,6 +18,8 @@ import {
 import type { PlayerBattingStatsType } from '@draco/shared-schemas';
 
 import { formatStatDecimal } from './utils';
+import { BATTING_COLUMN_DECIMAL_DIGITS, type BattingViewField } from './battingColumns';
+import { useSortableRows } from './tableUtils';
 
 interface SeasonBattingStatsSectionProps {
   stats: PlayerBattingStatsType[] | null;
@@ -53,38 +55,6 @@ const columns: BattingColumn[] = [
   { key: 'ops', label: 'OPS', digits: 3 },
 ];
 
-type SortDirection = 'asc' | 'desc';
-
-type BattingSortConfig = {
-  key: BattingColumn['key'];
-  direction: SortDirection;
-};
-
-const compareValues = (a: unknown, b: unknown): number => {
-  if (a === b) {
-    return 0;
-  }
-
-  if (a === null || a === undefined) {
-    return 1;
-  }
-
-  if (b === null || b === undefined) {
-    return -1;
-  }
-
-  const aNumber = typeof a === 'number' ? a : Number(a);
-  const bNumber = typeof b === 'number' ? b : Number(b);
-  const aIsNumber = Number.isFinite(aNumber);
-  const bIsNumber = Number.isFinite(bNumber);
-
-  if (aIsNumber && bIsNumber) {
-    return aNumber - bNumber;
-  }
-
-  return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
-};
-
 const getColumnValue = (
   stat: PlayerBattingStatsType,
   key: BattingColumn['key'],
@@ -94,45 +64,19 @@ const getColumnValue = (
   }
 
   if (key === 'ops') {
-    const slg = stat.slg ?? 0;
-    const obp = stat.obp ?? 0;
-    return obp + slg;
+    return stat.ops;
   }
 
   return stat[key as keyof PlayerBattingStatsType] as number | string | null | undefined;
 };
 
 const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ stats }) => {
-  const [sortConfig, setSortConfig] = useState<BattingSortConfig | null>(null);
+  const getValue = useCallback(
+    (row: PlayerBattingStatsType, key: BattingColumn['key']) => getColumnValue(row, key),
+    [],
+  );
 
-  const sortedStats = useMemo(() => {
-    if (!stats) {
-      return [] as PlayerBattingStatsType[];
-    }
-
-    if (!sortConfig) {
-      return stats;
-    }
-
-    const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
-
-    return [...stats].sort((a, b) => {
-      const aValue = getColumnValue(a, sortConfig.key);
-      const bValue = getColumnValue(b, sortConfig.key);
-      return compareValues(aValue, bValue) * directionMultiplier;
-    });
-  }, [stats, sortConfig]);
-
-  const handleSort = useCallback((key: BattingColumn['key']) => {
-    setSortConfig((previous) => {
-      if (previous?.key === key) {
-        const nextDirection: SortDirection = previous.direction === 'asc' ? 'desc' : 'asc';
-        return { key, direction: nextDirection };
-      }
-
-      return { key, direction: 'asc' };
-    });
-  }, []);
+  const { sortedRows, sortConfig, handleSort } = useSortableRows(stats ?? [], getValue);
 
   const totals = useMemo(() => {
     if (!stats || stats.length === 0) {
@@ -224,7 +168,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedStats.map((stat) => (
+              {sortedRows.map((stat) => (
                 <TableRow key={stat.playerId} hover>
                   {columns.map((column) => {
                     if (column.key === 'playerName') {
@@ -238,9 +182,11 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                     }
 
                     const rawValue = getColumnValue(stat, column.key);
-                    const digits = column.digits ?? 0;
+                    const digits =
+                      column.digits ??
+                      BATTING_COLUMN_DECIMAL_DIGITS[column.key as BattingViewField];
                     const displayValue =
-                      column.digits !== undefined
+                      digits !== undefined
                         ? formatStatDecimal(rawValue ?? null, digits)
                         : (rawValue ?? '-');
 
@@ -262,7 +208,13 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                     .filter((column) => column.key !== 'playerName')
                     .map((column) => {
                       const value = totals[column.key as keyof typeof totals];
-                      const digits = column.digits ?? 0;
+                      const digits =
+                        column.digits ??
+                        BATTING_COLUMN_DECIMAL_DIGITS[column.key as BattingViewField];
+                      const displayValue =
+                        digits !== undefined
+                          ? formatStatDecimal(value as number | string | null | undefined, digits)
+                          : (value ?? '-');
 
                       return (
                         <TableCell
@@ -270,9 +222,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
                           align={column.align ?? 'center'}
                           sx={{ fontWeight: 700 }}
                         >
-                          {column.digits
-                            ? formatStatDecimal(value as number | null | undefined, digits)
-                            : value}
+                          {displayValue}
                         </TableCell>
                       );
                     })}

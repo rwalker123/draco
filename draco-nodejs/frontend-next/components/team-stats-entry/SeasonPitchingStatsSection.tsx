@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   Box,
@@ -18,6 +18,8 @@ import {
 import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
 
 import { formatStatDecimal } from './utils';
+import { PITCHING_COLUMN_DECIMAL_DIGITS, type PitchingViewField } from './pitchingColumns';
+import { useSortableRows } from './tableUtils';
 
 interface SeasonPitchingStatsSectionProps {
   stats: PlayerPitchingStatsType[] | null;
@@ -48,38 +50,6 @@ const columns: PitchingColumn[] = [
   { key: 'bb9', label: 'BB/9', digits: 2 },
 ];
 
-type SortDirection = 'asc' | 'desc';
-
-type PitchingSortConfig = {
-  key: PitchingColumn['key'];
-  direction: SortDirection;
-};
-
-const compareValues = (a: unknown, b: unknown): number => {
-  if (a === b) {
-    return 0;
-  }
-
-  if (a === null || a === undefined) {
-    return 1;
-  }
-
-  if (b === null || b === undefined) {
-    return -1;
-  }
-
-  const aNumber = typeof a === 'number' ? a : Number(a);
-  const bNumber = typeof b === 'number' ? b : Number(b);
-  const aIsNumber = Number.isFinite(aNumber);
-  const bIsNumber = Number.isFinite(bNumber);
-
-  if (aIsNumber && bIsNumber) {
-    return aNumber - bNumber;
-  }
-
-  return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
-};
-
 const getColumnValue = (
   stat: PlayerPitchingStatsType,
   key: PitchingColumn['key'],
@@ -92,7 +62,7 @@ const getColumnValue = (
     return stat.ipDecimal;
   }
 
-  return stat[key];
+  return stat[key] as number | string | null | undefined;
 };
 
 const formatBaseballInnings = (ip: number, ip2: number): string => {
@@ -108,36 +78,12 @@ const formatBaseballInnings = (ip: number, ip2: number): string => {
 };
 
 const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({ stats }) => {
-  const [sortConfig, setSortConfig] = useState<PitchingSortConfig | null>(null);
+  const getValue = useCallback(
+    (row: PlayerPitchingStatsType, key: PitchingColumn['key']) => getColumnValue(row, key),
+    [],
+  );
 
-  const sortedStats = useMemo(() => {
-    if (!stats) {
-      return [] as PlayerPitchingStatsType[];
-    }
-
-    if (!sortConfig) {
-      return stats;
-    }
-
-    const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
-
-    return [...stats].sort((a, b) => {
-      const aValue = getColumnValue(a, sortConfig.key);
-      const bValue = getColumnValue(b, sortConfig.key);
-      return compareValues(aValue, bValue) * directionMultiplier;
-    });
-  }, [stats, sortConfig]);
-
-  const handleSort = useCallback((key: PitchingColumn['key']) => {
-    setSortConfig((previous) => {
-      if (previous?.key === key) {
-        const nextDirection: SortDirection = previous.direction === 'asc' ? 'desc' : 'asc';
-        return { key, direction: nextDirection };
-      }
-
-      return { key, direction: 'asc' };
-    });
-  }, []);
+  const { sortedRows, sortConfig, handleSort } = useSortableRows(stats ?? [], getValue);
 
   const totals = useMemo(() => {
     if (!stats || stats.length === 0) {
@@ -224,7 +170,7 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedStats.map((stat) => (
+              {sortedRows.map((stat) => (
                 <TableRow key={stat.playerId} hover>
                   {columns.map((column) => {
                     if (column.key === 'playerName') {
@@ -246,11 +192,13 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                     }
 
                     const rawValue = getColumnValue(stat, column.key);
-                    const digits = column.digits ?? 0;
+                    const digits =
+                      column.digits ??
+                      PITCHING_COLUMN_DECIMAL_DIGITS[column.key as PitchingViewField];
 
                     return (
                       <TableCell key={column.key} align={column.align ?? 'center'}>
-                        {column.digits !== undefined
+                        {digits !== undefined
                           ? formatStatDecimal(
                               rawValue as number | string | null | undefined,
                               digits,
@@ -283,7 +231,9 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                       }
 
                       const value = totals[column.key as keyof typeof totals];
-                      const digits = column.digits ?? 0;
+                      const digits =
+                        column.digits ??
+                        PITCHING_COLUMN_DECIMAL_DIGITS[column.key as PitchingViewField];
 
                       return (
                         <TableCell
@@ -291,9 +241,9 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
                           align={column.align ?? 'center'}
                           sx={{ fontWeight: 700 }}
                         >
-                          {column.digits
-                            ? formatStatDecimal(value as number | null | undefined, digits)
-                            : value}
+                          {digits !== undefined
+                            ? formatStatDecimal(value as number | string | null | undefined, digits)
+                            : (value ?? '-')}
                         </TableCell>
                       );
                     })}

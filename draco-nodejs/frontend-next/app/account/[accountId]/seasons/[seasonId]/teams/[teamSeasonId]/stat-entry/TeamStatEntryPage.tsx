@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Box, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, Breadcrumbs, Link as MuiLink, Snackbar, Typography } from '@mui/material';
+import NextLink from 'next/link';
 import {
   type GameAttendanceType,
   type GameBattingStatLineType,
@@ -1432,6 +1433,23 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
             </Box>
           </Box>
         </AccountPageHeader>
+
+        <Box sx={{ mb: 3 }}>
+          <Breadcrumbs aria-label="breadcrumb">
+            <MuiLink
+              component={NextLink}
+              href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`}
+              underline="hover"
+              color="inherit"
+              sx={{ fontWeight: 500 }}
+            >
+              {teamHeaderData?.teamName ?? 'Team'}
+            </MuiLink>
+            <Typography color="text.primary" sx={{ fontWeight: 500 }}>
+              Statistics
+            </Typography>
+          </Breadcrumbs>
+        </Box>
 
         <div style={{ display: 'none' }}>
           <TeamInfoCard
