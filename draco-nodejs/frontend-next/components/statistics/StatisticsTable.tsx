@@ -272,11 +272,6 @@ export const formatERA = (value: unknown): string => {
   return Number.isFinite(num) ? num.toFixed(2) : '0.00';
 };
 
-export const formatIP = (ip: number, ip2: number) => {
-  const totalInnings = ip + ip2 / 3;
-  return Number.isFinite(totalInnings) ? totalInnings.toFixed(1) : '0.0';
-};
-
 export const formatIPDecimal = (value: unknown): string => {
   const num = typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
   return Number.isFinite(num) ? num.toFixed(1) : '0.0';
@@ -433,14 +428,40 @@ const buildColumns = <T extends StatsRowBase>(
     let formatter: ColumnConfig<T>['formatter'];
 
     if (field === 'ipDecimal') {
-      formatter = (value, row) => {
-        const ip = typeof row.ip === 'number' ? row.ip : null;
-        const ip2 = typeof row.ip2 === 'number' ? row.ip2 : null;
+      formatter = (rawValue, row) => {
+        const ip = typeof row.ip === 'number' && Number.isFinite(row.ip) ? row.ip : null;
+        const ip2 = typeof row.ip2 === 'number' && Number.isFinite(row.ip2) ? row.ip2 : null;
+
+        const convertOutsToDisplay = (outs: number) => {
+          const normalizedOuts = Math.max(0, Math.round(outs));
+          const innings = Math.floor(normalizedOuts / 3);
+          const remainingOuts = normalizedOuts % 3;
+          return innings + remainingOuts / 10;
+        };
+
         if (ip !== null || ip2 !== null) {
-          const totalInnings = (ip ?? 0) + (ip2 ?? 0) / 3;
-          return formatNumber(totalInnings, 1);
+          const totalOuts =
+            (ip !== null ? Math.trunc(ip) * 3 : 0) + (ip2 !== null ? Math.trunc(ip2) : 0);
+          return formatNumber(convertOutsToDisplay(totalOuts), 1);
         }
-        return formatNumber(value, 1);
+
+        const numericValue =
+          typeof rawValue === 'number'
+            ? rawValue
+            : typeof rawValue === 'string'
+              ? Number(rawValue)
+              : null;
+
+        if (numericValue !== null && Number.isFinite(numericValue)) {
+          const decimalPart = Math.round((numericValue - Math.trunc(numericValue)) * 10);
+          if ([0, 1, 2].includes(decimalPart)) {
+            return formatNumber(numericValue, 1);
+          }
+
+          return formatNumber(convertOutsToDisplay(numericValue * 3), 1);
+        }
+
+        return formatNumber(rawValue, 1);
       };
     } else if (digits !== undefined) {
       formatter = (value) => formatNumber(value, digits);

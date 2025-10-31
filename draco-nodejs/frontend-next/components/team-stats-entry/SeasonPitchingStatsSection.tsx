@@ -136,7 +136,7 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
       const id =
         stat.playerId !== undefined && stat.playerId !== null && stat.playerId !== ''
           ? String(stat.playerId)
-          : (stat.playerName ?? undefined ?? `player-${stat.playerId ?? 'unknown'}`);
+          : (stat.playerName ?? `player-${stat.playerId ?? 'unknown'}`);
 
       const row: SeasonPitchingRow = {
         ...(values as Record<string, StatValue>),

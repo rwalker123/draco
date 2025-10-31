@@ -150,7 +150,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
       const id =
         stat.playerId !== undefined && stat.playerId !== null && stat.playerId !== ''
           ? String(stat.playerId)
-          : (stat.playerName ?? undefined ?? `player-${stat.playerId ?? 'unknown'}`);
+          : (stat.playerName ?? `player-${stat.playerId ?? 'unknown'}`);
 
       const row: SeasonBattingRow = {
         ...(values as Record<string, StatValue>),
