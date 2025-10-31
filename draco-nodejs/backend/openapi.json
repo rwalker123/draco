@@ -36298,7 +36298,8 @@
                         "sendgrid",
                         "ses",
                         "ethereal",
-                        "resend"
+                        "resend",
+                        "none"
                       ],
                       "description": "Configured email provider handling outbound email and webhooks."
                     },
@@ -36413,13 +36414,18 @@
                         "resend": {
                           "type": "boolean",
                           "description": "Indicates whether Resend is the active outbound email provider."
+                        },
+                        "none": {
+                          "type": "boolean",
+                          "description": "Indicates whether outbound email is disabled via the None provider."
                         }
                       },
                       "required": [
                         "sendgrid",
                         "ses",
                         "ethereal",
-                        "resend"
+                        "resend",
+                        "none"
                       ]
                     }
                   },

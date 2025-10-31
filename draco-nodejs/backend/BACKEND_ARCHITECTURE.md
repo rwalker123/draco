@@ -687,6 +687,15 @@ RESEND_WEBHOOK_SECRET=<svix signing secret for webhook verification>
 - Configure verified senders/domains in Resend before enabling production sends.
 - When using webhooks, supply `RESEND_WEBHOOK_SECRET` so the backend can verify signatures.
 
+### None (email disabled)
+
+```
+EMAIL_PROVIDER=none
+```
+
+- No outbound email is attempted; payloads are logged for debugging only.
+- Useful for accounts that elect to manage communications outside the platform.
+
 ### Ethereal (local testing)
 
 ```

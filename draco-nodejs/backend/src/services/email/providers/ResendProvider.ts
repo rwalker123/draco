@@ -266,8 +266,8 @@ export class ResendProvider implements IEmailProvider {
   }
 
   private formatFromAddress(email?: string, name?: string): string {
-    const fromEmail = email || 'noreply@example.com';
-    const fromName = name || 'Draco Sports Manager';
+    const fromEmail = email || 'noreply@ezrecsports.com';
+    const fromName = name || 'ezRecSports';
     return `${fromName ? `"${fromName}" ` : ''}<${fromEmail}>`;
   }
 

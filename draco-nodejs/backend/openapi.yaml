@@ -24279,6 +24279,7 @@ paths:
                       - ses
                       - ethereal
                       - resend
+                      - none
                     description: Configured email provider handling outbound email and webhooks.
                   webhooks:
                     type: object
@@ -24361,11 +24362,15 @@ paths:
                       resend:
                         type: boolean
                         description: Indicates whether Resend is the active outbound email provider.
+                      none:
+                        type: boolean
+                        description: Indicates whether outbound email is disabled via the None provider.
                     required:
                       - sendgrid
                       - ses
                       - ethereal
                       - resend
+                      - none
                 required:
                   - total_events_processed
                   - last_event_timestamp

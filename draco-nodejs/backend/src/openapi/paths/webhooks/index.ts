@@ -206,7 +206,7 @@ export const registerWebhooksEndpoints = ({ registry, schemaRefs, z }: RegisterC
       .string()
       .describe('ISO 8601 timestamp describing when the health check was generated.'),
     provider: z
-      .enum(['sendgrid', 'ses', 'ethereal', 'resend'])
+      .enum(['sendgrid', 'ses', 'ethereal', 'resend', 'none'])
       .describe('Configured email provider handling outbound email and webhooks.'),
     webhooks: z.object({
       sendgrid: z.object({
@@ -268,6 +268,9 @@ export const registerWebhooksEndpoints = ({ registry, schemaRefs, z }: RegisterC
       resend: z
         .boolean()
         .describe('Indicates whether Resend is the active outbound email provider.'),
+      none: z
+        .boolean()
+        .describe('Indicates whether outbound email is disabled via the None provider.'),
     }),
   });
 

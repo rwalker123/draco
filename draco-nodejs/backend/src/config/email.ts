@@ -21,7 +21,7 @@ export interface EmailConfig {
 }
 
 export interface EmailSettings {
-  provider: 'sendgrid' | 'ethereal' | 'ses' | 'resend';
+  provider: 'sendgrid' | 'ethereal' | 'ses' | 'resend' | 'none';
   fromEmail: string;
   fromName: string;
   replyTo?: string;
@@ -44,6 +44,9 @@ export class EmailConfigFactory {
 
       case 'resend':
         return this.getResendConfig();
+
+      case 'none':
+        return this.getNoneConfig();
 
       case 'ethereal':
       default:
@@ -76,7 +79,8 @@ export class EmailConfigFactory {
         override === 'sendgrid' ||
         override === 'ethereal' ||
         override === 'ses' ||
-        override === 'resend'
+        override === 'resend' ||
+        override === 'none'
       ) {
         return override;
       }
@@ -85,7 +89,7 @@ export class EmailConfigFactory {
     }
 
     const nodeEnv = process.env.NODE_ENV || 'development';
-    return nodeEnv === 'production' ? 'ethereal' : 'ethereal';
+    return nodeEnv === 'production' ? 'ses' : 'ethereal';
   }
 
   /**
@@ -158,6 +162,15 @@ export class EmailConfigFactory {
   }
 
   /**
+   * Configuration when email sending is disabled
+   */
+  private static getNoneConfig(): EmailConfig {
+    return {
+      service: 'None',
+    };
+  }
+
+  /**
    * Development configuration using Ethereal Email
    * Creates test accounts dynamically if no credentials provided
    */
@@ -225,6 +238,10 @@ export class EmailConfigFactory {
 
     if (provider === 'resend' && !process.env.RESEND_API_KEY) {
       throw new Error('RESEND_API_KEY is required when using the Resend email provider');
+    }
+
+    if (provider === 'none') {
+      console.warn('EMAIL_PROVIDER set to "none" – outbound emails are disabled.');
     }
 
     if (!process.env.EMAIL_FROM) {

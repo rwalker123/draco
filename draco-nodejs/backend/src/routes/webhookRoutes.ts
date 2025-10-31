@@ -171,6 +171,7 @@ router.get(
         ses: settings.provider === 'ses',
         ethereal: settings.provider === 'ethereal',
         resend: settings.provider === 'resend',
+        none: settings.provider === 'none',
       },
     };
 
