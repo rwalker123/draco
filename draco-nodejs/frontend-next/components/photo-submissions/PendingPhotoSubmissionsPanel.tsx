@@ -14,6 +14,8 @@ import {
   Grid,
   Stack,
   Typography,
+  type SxProps,
+  type Theme,
 } from '@mui/material';
 import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 import DenyPhotoSubmissionDialog from './DenyPhotoSubmissionDialog';
@@ -32,7 +34,15 @@ export interface PendingPhotoSubmissionsPanelProps {
   onApprove: (submissionId: string) => Promise<boolean> | boolean;
   onDeny: (submissionId: string, reason: string) => Promise<boolean> | boolean;
   onClearStatus?: () => void;
+  ContainerComponent?: React.ElementType;
+  containerSx?: SxProps<Theme>;
 }
+
+// Match common permission-denied phrases (US/UK spellings and variations like authorize/authorise).
+const permissionDeniedPattern = /(permission|authori[sz](?:e|ation|ed|ing)?|forbid|denied)/i;
+
+const isPermissionDeniedError = (message: string | null): boolean =>
+  Boolean(message && permissionDeniedPattern.test(message));
 
 const buildAssetUrl = (path?: string | null): string | undefined => {
   if (!path) {
@@ -75,6 +85,8 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
   onApprove,
   onDeny,
   onClearStatus,
+  ContainerComponent = Box,
+  containerSx,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogSubmission, setDialogSubmission] = useState<PhotoSubmissionDetailType | null>(null);
@@ -133,10 +145,30 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
     return 'success';
   }, [error]);
 
+  const shouldHidePanel = useMemo(() => {
+    if (loading) {
+      return false;
+    }
+
+    if (submissions.length === 0 && !error && !successMessage) {
+      return true;
+    }
+
+    if (submissions.length > 0) {
+      return false;
+    }
+
+    return isPermissionDeniedError(error);
+  }, [error, loading, submissions.length, successMessage]);
+
+  if (shouldHidePanel) {
+    return null;
+  }
+
   const activeSubmissionId = dialogSubmission?.id ?? '';
 
   return (
-    <Box data-testid="pending-photo-submissions-panel">
+    <ContainerComponent data-testid="pending-photo-submissions-panel" sx={containerSx}>
       <Typography variant="h5" mb={2}>
         Pending Photo Submissions
       </Typography>
@@ -270,7 +302,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
         onClose={handleCloseDialog}
         onConfirm={handleConfirmDeny}
       />
-    </Box>
+    </ContainerComponent>
   );
 };
 
