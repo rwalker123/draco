@@ -27,7 +27,6 @@ import {
   AttachFile as AttachFileIcon,
   Close as CloseIcon,
   People as PeopleIcon,
-  ShowChart as ShowChartIcon,
   TaskAlt as TaskAltIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
@@ -171,23 +170,20 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
         totalRecipients: 0,
         successfulDeliveries: 0,
         failedDeliveries: 0,
-        openRate: 0,
-        clickRate: 0,
+        deliverability: 0,
       };
     }
 
     const totalRecipients = source.totalRecipients;
     const successfulDeliveries = source.successfulDeliveries;
     const failedDeliveries = source.failedDeliveries;
-    const openRate = totalRecipients > 0 ? (source.openCount / totalRecipients) * 100 : 0;
-    const clickRate = totalRecipients > 0 ? (source.clickCount / totalRecipients) * 100 : 0;
+    const deliverability = totalRecipients > 0 ? (successfulDeliveries / totalRecipients) * 100 : 0;
 
     return {
       totalRecipients,
       successfulDeliveries,
       failedDeliveries,
-      openRate,
-      clickRate,
+      deliverability,
     };
   }, [detail, summary]);
 
@@ -239,23 +235,9 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
             <MetricCard
               icon={<TaskAltIcon fontSize="small" />}
               label="Deliverability"
-              value={
-                detailAnalytics.totalRecipients > 0
-                  ? formatRate(
-                      (detailAnalytics.successfulDeliveries / detailAnalytics.totalRecipients) *
-                        100,
-                    )
-                  : '0.0%'
-              }
+              value={formatRate(detailAnalytics.deliverability)}
               helper="Successful deliveries"
               color="success"
-            />
-            <MetricCard
-              icon={<ShowChartIcon fontSize="small" />}
-              label="Engagement"
-              value={`${formatRate(detailAnalytics.openRate)} open • ${formatRate(detailAnalytics.clickRate)} click`}
-              helper="Open and click rates"
-              color="info"
             />
           </Stack>
 
@@ -301,8 +283,6 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
                       <TableCell>Status</TableCell>
                       <TableCell>Sent</TableCell>
                       <TableCell>Delivered</TableCell>
-                      <TableCell>Opened</TableCell>
-                      <TableCell>Clicked</TableCell>
                       <TableCell>Error</TableCell>
                     </TableRow>
                   </TableHead>
@@ -320,12 +300,6 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
                         </TableCell>
                         <TableCell>
                           {recipient.deliveredAt ? formatDateTime(recipient.deliveredAt) : '—'}
-                        </TableCell>
-                        <TableCell>
-                          {recipient.openedAt ? formatDateTime(recipient.openedAt) : '—'}
-                        </TableCell>
-                        <TableCell>
-                          {recipient.clickedAt ? formatDateTime(recipient.clickedAt) : '—'}
                         </TableCell>
                         <TableCell>
                           {recipient.bounceReason || recipient.errorMessage || '—'}

@@ -103,11 +103,12 @@ router.get(
 
 /**
  * POST /api/accounts
- * Create new account (public access with Turnstile verification)
+ * Create new account (Administrator only with Turnstile verification)
  */
 router.post(
   '/',
   authenticateToken,
+  routeProtection.requireAdministrator(),
   accountCreationRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     await turnstileService.assertValid(req.get(turnstileService.getHeaderName()), req.ip);
