@@ -5,6 +5,7 @@ import type { FC } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRole } from '../../context/RoleContext';
 import OrganizationsWidget from '../../components/OrganizationsWidget';
 import { AccountType as SharedAccountType } from '@draco/shared-schemas';
 import CreateAccountDialog from '../../components/account-management/dialogs/CreateAccountDialog';
@@ -26,10 +27,14 @@ const Accounts: FC = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useAuth();
+  const { isAdministrator } = useRole();
   const router = useRouter();
   const params = useParams();
   const accountId = params?.accountId as string | undefined;
   const { searchAccounts: searchAccountsOperation } = useAccountManagementService();
+  const showCreateOrganizationAction = isAdministrator;
+  const showPublicAuthActions = !user;
+  const shouldRenderActionBar = showCreateOrganizationAction || showPublicAuthActions;
 
   // If accountId is provided, redirect to that account's home page
   useEffect(() => {
@@ -80,12 +85,17 @@ const Accounts: FC = () => {
   }, [searchTerm]);
 
   const handleCreateAccount = useCallback(() => {
-    if (user) {
-      setCtaState('createAccount');
-    } else {
+    if (!user) {
       setCtaState('signupPrompt');
+      return;
     }
-  }, [user]);
+
+    if (!isAdministrator) {
+      return;
+    }
+
+    setCtaState('createAccount');
+  }, [isAdministrator, user]);
 
   const handleCloseCreateDialog = useCallback(() => {
     setCtaState('idle');
@@ -115,26 +125,35 @@ const Accounts: FC = () => {
       </Typography>
 
       {/* Action Buttons */}
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>
-          {user ? 'Quick Actions' : 'Get Started'}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button variant="contained" color="primary" size="large" onClick={handleCreateAccount}>
-            {user ? 'Create New Organization' : 'Create Your Organization'}
-          </Button>
-          {!user && (
-            <Button variant="contained" color="primary" size="large" onClick={handleSignup}>
-              Sign Up
-            </Button>
-          )}
-          {!user && (
-            <Button variant="outlined" color="primary" size="large" onClick={handleLogin}>
-              Sign In
-            </Button>
-          )}
+      {shouldRenderActionBar && (
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Typography variant="h6" gutterBottom>
+            {showCreateOrganizationAction ? 'Quick Actions' : 'Get Started'}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {showCreateOrganizationAction && (
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                onClick={handleCreateAccount}
+              >
+                Create New Organization
+              </Button>
+            )}
+            {!user && (
+              <Button variant="contained" color="primary" size="large" onClick={handleSignup}>
+                Sign Up
+              </Button>
+            )}
+            {!user && (
+              <Button variant="outlined" color="primary" size="large" onClick={handleLogin}>
+                Sign In
+              </Button>
+            )}
+          </Box>
         </Box>
-      </Box>
+      )}
 
       {/* Organizations Widget - Show for all users */}
       <OrganizationsWidget
@@ -177,7 +196,7 @@ const Accounts: FC = () => {
       )}
 
       <CreateAccountDialog
-        open={ctaState === 'createAccount'}
+        open={isAdministrator && ctaState === 'createAccount'}
         onClose={handleCloseCreateDialog}
         onSuccess={handleCreateDialogSuccess}
       />

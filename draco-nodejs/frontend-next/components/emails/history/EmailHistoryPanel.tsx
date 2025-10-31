@@ -35,7 +35,6 @@ import {
   Refresh as RefreshIcon,
   Schedule as ScheduleIcon,
   Search as SearchIcon,
-  ShowChart as ShowChartIcon,
   TaskAlt as TaskAltIcon,
   VisibilityOutlined as ViewDetailsIcon,
 } from '@mui/icons-material';
@@ -135,30 +134,20 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
     let totalRecipients = 0;
     let successful = 0;
     let failed = 0;
-    let open = 0;
-    let clicks = 0;
 
     filteredEmails.forEach((email) => {
       totalRecipients += email.totalRecipients;
       successful += email.successfulDeliveries;
       failed += email.failedDeliveries;
-      open += email.openCount;
-      clicks += email.clickCount;
     });
 
     const deliverability = totalRecipients > 0 ? (successful / totalRecipients) * 100 : 0;
-    const openRate = totalRecipients > 0 ? (open / totalRecipients) * 100 : 0;
-    const clickRate = totalRecipients > 0 ? (clicks / totalRecipients) * 100 : 0;
 
     return {
       totalRecipients,
       successful,
       failed,
-      open,
-      clicks,
       deliverability,
-      openRate,
-      clickRate,
     };
   }, [filteredEmails]);
 
@@ -237,7 +226,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
             Email History
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Review sent messages, delivery outcomes, and engagement metrics for your organization.
+            Review sent messages, delivery outcomes, and queue activity for your organization.
           </Typography>
         </Box>
       )}
@@ -262,13 +251,6 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
           value={formatRate(analytics.deliverability)}
           helper={`${analytics.successful} successful • ${analytics.failed} failed`}
           color="success"
-        />
-        <MetricCard
-          icon={<ShowChartIcon fontSize="small" />}
-          label="Engagement"
-          value={`${formatRate(analytics.openRate)} open • ${formatRate(analytics.clickRate)} click`}
-          helper={`${analytics.open} opens • ${analytics.clicks} clicks`}
-          color="info"
         />
         <MetricCard
           icon={<ScheduleIcon fontSize="small" />}
@@ -387,76 +369,61 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({ accountId, showHe
                     <TableCell align="right">Recipients</TableCell>
                     <TableCell align="right">Delivered</TableCell>
                     <TableCell align="right">Failed</TableCell>
-                    <TableCell align="right">Open rate</TableCell>
-                    <TableCell align="right">Click rate</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredEmails.map((email) => {
-                    const openRate =
-                      email.totalRecipients > 0
-                        ? (email.openCount / email.totalRecipients) * 100
-                        : 0;
-                    const clickRate =
-                      email.totalRecipients > 0
-                        ? (email.clickCount / email.totalRecipients) * 100
-                        : 0;
-
-                    return (
-                      <TableRow key={email.id} hover>
-                        <TableCell>
-                          <Stack spacing={0.5}>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                              {email.subject}
-                            </Typography>
+                  {filteredEmails.map((email) => (
+                    <TableRow key={email.id} hover>
+                      <TableCell>
+                        <Stack spacing={0.5}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {email.subject}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {email.templateId ? `Template #${email.templateId}` : 'Custom email'}
+                          </Typography>
+                          {email.createdByUserId && (
                             <Typography variant="caption" color="text.secondary">
-                              {email.templateId ? `Template #${email.templateId}` : 'Custom email'}
+                              Author: {email.createdByUserId}
                             </Typography>
-                            {email.createdByUserId && (
-                              <Typography variant="caption" color="text.secondary">
-                                Author: {email.createdByUserId}
-                              </Typography>
-                            )}
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <StatusChip status={email.status} />
-                        </TableCell>
-                        <TableCell>
-                          {email.createdAt ? formatDateTime(email.createdAt) : '—'}
-                        </TableCell>
-                        <TableCell>{email.sentAt ? formatDateTime(email.sentAt) : '—'}</TableCell>
-                        <TableCell align="right">{email.totalRecipients}</TableCell>
-                        <TableCell align="right">{email.successfulDeliveries}</TableCell>
-                        <TableCell align="right">{email.failedDeliveries}</TableCell>
-                        <TableCell align="right">{formatRate(openRate)}</TableCell>
-                        <TableCell align="right">{formatRate(clickRate)}</TableCell>
-                        <TableCell align="right">
-                          <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                            <Tooltip title="View details">
-                              <span>
-                                <IconButton size="small" onClick={() => handleOpenDetail(email)}>
-                                  <ViewDetailsIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                            <Tooltip title="Delete email">
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => handleOpenDeleteDialog(email)}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          )}
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <StatusChip status={email.status} />
+                      </TableCell>
+                      <TableCell>
+                        {email.createdAt ? formatDateTime(email.createdAt) : '—'}
+                      </TableCell>
+                      <TableCell>{email.sentAt ? formatDateTime(email.sentAt) : '—'}</TableCell>
+                      <TableCell align="right">{email.totalRecipients}</TableCell>
+                      <TableCell align="right">{email.successfulDeliveries}</TableCell>
+                      <TableCell align="right">{email.failedDeliveries}</TableCell>
+                      <TableCell align="right">
+                        <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                          <Tooltip title="View details">
+                            <span>
+                              <IconButton size="small" onClick={() => handleOpenDetail(email)}>
+                                <ViewDetailsIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Delete email">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleOpenDeleteDialog(email)}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </TableContainer>
