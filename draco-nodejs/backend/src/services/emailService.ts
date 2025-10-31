@@ -132,6 +132,20 @@ export class EmailService {
       EMAIL_DELAY_MS: 12, // Very fast for development
       PROCESS_INTERVAL_MS: 100, // Faster processing for dev
     },
+    resend: {
+      MAX_EMAILS_PER_SECOND: 50, // Resend default limits support high throughput
+      MAX_EMAILS_PER_MINUTE: 3000,
+      RATE_LIMIT_ENABLED: true,
+      EMAIL_DELAY_MS: 20,
+      PROCESS_INTERVAL_MS: 100,
+    },
+    none: {
+      MAX_EMAILS_PER_SECOND: 0,
+      MAX_EMAILS_PER_MINUTE: 0,
+      RATE_LIMIT_ENABLED: false,
+      EMAIL_DELAY_MS: 0,
+      PROCESS_INTERVAL_MS: 100,
+    },
   } as const;
 
   private readonly BATCH_SIZE = 100;
@@ -139,7 +153,7 @@ export class EmailService {
   private readonly RETRY_DELAYS = [1000, 5000, 15000]; // ms delays for retries
   private readonly MAX_RATE_LIMIT_RETRIES = 5;
   private readonly RATE_LIMIT_BACKOFF_MS = [5000, 10000, 20000, 35000, 55000];
-  private currentProviderType: 'sendgrid' | 'ethereal' | 'ses' | null = null;
+  private currentProviderType: 'sendgrid' | 'ethereal' | 'ses' | 'resend' | 'none' | null = null;
 
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
     // Legacy constructor for backward compatibility
@@ -164,7 +178,7 @@ export class EmailService {
   /**
    * Detect current email provider type
    */
-  private async getProviderType(): Promise<'sendgrid' | 'ethereal' | 'ses'> {
+  private async getProviderType(): Promise<'sendgrid' | 'ethereal' | 'ses' | 'resend' | 'none'> {
     if (this.currentProviderType) {
       return this.currentProviderType;
     }
