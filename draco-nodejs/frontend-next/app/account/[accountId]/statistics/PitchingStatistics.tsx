@@ -12,8 +12,7 @@ import {
   MenuItem,
   SelectChangeEvent,
 } from '@mui/material';
-import StatisticsTable, { formatERA, formatIPDecimal } from './StatisticsTable';
-import type { ColumnConfig } from './StatisticsTable';
+import StatisticsTable from '../../../../components/statistics/StatisticsTable';
 import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { fetchPitchingStatistics } from '../../../../services/statisticsService';
@@ -34,64 +33,6 @@ interface PitchingStatisticsProps {
 
 type SortField = keyof PitchingStatsRow;
 type SortOrder = 'asc' | 'desc';
-
-const PITCHING_COLUMNS: ColumnConfig<PitchingStatsRow>[] = [
-  { field: 'playerName', label: 'Player', align: 'left', sortable: false },
-  { field: 'teamName', label: 'Team', align: 'left', sortable: false },
-  { field: 'w', label: 'W', align: 'right', tooltip: 'Wins' },
-  { field: 'l', label: 'L', align: 'right', tooltip: 'Losses' },
-  { field: 's', label: 'S', align: 'right', tooltip: 'Saves' },
-  {
-    field: 'ipDecimal',
-    label: 'IP',
-    align: 'right',
-    tooltip: 'Innings Pitched',
-    formatter: formatIPDecimal,
-  },
-  { field: 'h', label: 'H', align: 'right', tooltip: 'Hits Allowed' },
-  { field: 'r', label: 'R', align: 'right', tooltip: 'Runs Allowed' },
-  { field: 'er', label: 'ER', align: 'right', tooltip: 'Earned Runs' },
-  { field: 'bb', label: 'BB', align: 'right', tooltip: 'Walks' },
-  { field: 'so', label: 'SO', align: 'right', tooltip: 'Strikeouts' },
-  { field: 'hr', label: 'HR', align: 'right', tooltip: 'Home Runs Allowed' },
-  {
-    field: 'era',
-    label: 'ERA',
-    align: 'right',
-    tooltip: 'Earned Run Average',
-    primary: true,
-    formatter: formatERA,
-  },
-  {
-    field: 'whip',
-    label: 'WHIP',
-    align: 'right',
-    tooltip: 'Walks + Hits per Inning Pitched',
-    formatter: formatERA,
-  },
-  {
-    field: 'k9',
-    label: 'K/9',
-    align: 'right',
-    tooltip: 'Strikeouts per 9 Innings',
-    formatter: (value: unknown) => {
-      const num =
-        typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
-      return isNaN(num) ? '0.0' : num.toFixed(1);
-    },
-  },
-  {
-    field: 'bb9',
-    label: 'BB/9',
-    align: 'right',
-    tooltip: 'Walks per 9 Innings',
-    formatter: (value: unknown) => {
-      const num =
-        typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
-      return isNaN(num) ? '0.0' : num.toFixed(1);
-    },
-  },
-];
 
 export default function PitchingStatistics({ accountId, filters }: PitchingStatisticsProps) {
   const apiClient = useApiClient();
@@ -257,14 +198,15 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
       </Box>
 
       <StatisticsTable
+        variant="pitching"
+        extendedStats={false}
         data={loading && previousStats.length > 0 ? previousStats : stats}
-        columns={PITCHING_COLUMNS}
         loading={loading && previousStats.length === 0}
         emptyMessage="No pitching statistics available for the selected filters."
         getRowKey={(player, index) => `${player.playerId}-${index}`}
-        sortField={sortField}
+        sortField={String(sortField)}
         sortOrder={sortOrder}
-        onSort={handleSort}
+        onSort={(field) => handleSort(field as SortField)}
       />
 
       <Box display="flex" justifyContent="center" mt={3}>

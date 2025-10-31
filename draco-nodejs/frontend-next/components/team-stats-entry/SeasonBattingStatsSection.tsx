@@ -1,43 +1,11 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Typography } from '@mui/material';
 import type { PlayerBattingStatsType } from '@draco/shared-schemas';
 
-import { formatStatDecimal } from './utils';
-import {
-  BATTING_COLUMN_DECIMAL_DIGITS,
-  BATTING_FIELD_LABELS,
-  BATTING_FIELD_TOOLTIPS,
-  type BattingViewField,
-} from './battingColumns';
 import { useSortableRows } from './tableUtils';
-import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
-
-interface SeasonBattingStatsSectionProps {
-  stats: PlayerBattingStatsType[] | null;
-}
-
-type BattingColumn = {
-  key: keyof PlayerBattingStatsType | 'ops';
-  label: string;
-  tooltip: string;
-  align: 'left' | 'center' | 'right';
-  digits?: number;
-};
+import StatisticsTable, { type StatsRowBase } from '../statistics/StatisticsTable';
 
 const seasonColumnKeys = [
   'playerName',
@@ -62,25 +30,22 @@ const seasonColumnKeys = [
   'ops',
 ] as const;
 
-const columns: BattingColumn[] = seasonColumnKeys.map((key) => {
-  const field = key as BattingViewField;
-  const label = BATTING_FIELD_LABELS[field] ?? String(key).toUpperCase();
-  const tooltip = BATTING_FIELD_TOOLTIPS[field] ?? label;
-  const align: BattingColumn['align'] = key === 'playerName' ? 'left' : 'center';
-  const digits = BATTING_COLUMN_DECIMAL_DIGITS[field];
+type SeasonBattingColumnKey = (typeof seasonColumnKeys)[number];
 
-  return {
-    key,
-    label,
-    tooltip,
-    align,
-    digits,
-  };
-});
+type StatValue = number | string | null;
+
+type SeasonBattingRow = StatsRowBase & {
+  id: string;
+  playerName: string | null;
+};
+
+interface SeasonBattingStatsSectionProps {
+  stats: PlayerBattingStatsType[] | null;
+}
 
 const getColumnValue = (
   stat: PlayerBattingStatsType,
-  key: BattingColumn['key'],
+  key: SeasonBattingColumnKey,
 ): number | string | null | undefined => {
   if (key === 'playerName') {
     return stat.playerName;
@@ -95,11 +60,14 @@ const getColumnValue = (
 
 const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ stats }) => {
   const getValue = useCallback(
-    (row: PlayerBattingStatsType, key: BattingColumn['key']) => getColumnValue(row, key),
+    (row: PlayerBattingStatsType, key: SeasonBattingColumnKey) => getColumnValue(row, key),
     [],
   );
 
-  const { sortedRows, sortConfig, handleSort } = useSortableRows(stats ?? [], getValue);
+  const { sortedRows, sortConfig, handleSort } = useSortableRows<
+    PlayerBattingStatsType,
+    SeasonBattingColumnKey
+  >(stats ?? [], getValue);
 
   const totals = useMemo(() => {
     if (!stats || stats.length === 0) {
@@ -157,8 +125,82 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
       obp,
       slg,
       ops,
-    };
+    } as Record<string, number | string | null>;
   }, [stats]);
+
+  const tableRows = useMemo<SeasonBattingRow[]>(() => {
+    const rows = sortedRows.map((stat) => {
+      const values: Partial<Record<SeasonBattingColumnKey, StatValue>> = {};
+      seasonColumnKeys.forEach((key) => {
+        if (key === 'playerName') {
+          values[key] = stat.playerName ?? null;
+        } else {
+          const raw = (stat as Record<string, unknown>)[key];
+          if (typeof raw === 'number' || typeof raw === 'string') {
+            values[key] = raw;
+          } else if (raw === null || raw === undefined) {
+            values[key] = null;
+          } else {
+            values[key] = null;
+          }
+        }
+      });
+
+      const resolvedPlayerName = values.playerName;
+      const id =
+        stat.playerId !== undefined && stat.playerId !== null && stat.playerId !== ''
+          ? String(stat.playerId)
+          : (stat.playerName ?? undefined ?? `player-${stat.playerId ?? 'unknown'}`);
+
+      const row: SeasonBattingRow = {
+        ...(values as Record<string, StatValue>),
+        id,
+        playerName:
+          typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
+      };
+
+      return row;
+    });
+
+    if (totals) {
+      const totalsValues: Partial<Record<SeasonBattingColumnKey, StatValue>> = {};
+      seasonColumnKeys.forEach((key) => {
+        if (key === 'playerName') {
+          totalsValues[key] = 'Totals';
+        } else {
+          const raw = totals[key];
+          if (typeof raw === 'number' || typeof raw === 'string') {
+            totalsValues[key] = raw;
+          } else if (raw === null || raw === undefined) {
+            totalsValues[key] = null;
+          } else {
+            totalsValues[key] = null;
+          }
+        }
+      });
+
+      const totalsRow: SeasonBattingRow = {
+        ...(totalsValues as Record<string, StatValue>),
+        id: 'totals',
+        playerName: 'Totals',
+        isTotals: true,
+      };
+
+      rows.push(totalsRow);
+    }
+
+    return rows;
+  }, [sortedRows, totals]);
+
+  const sortField = sortConfig?.key as keyof SeasonBattingRow | undefined;
+  const sortOrder = sortConfig?.direction ?? 'asc';
+
+  const handleTableSort = useCallback(
+    (field: keyof SeasonBattingRow) => {
+      handleSort(field as SeasonBattingColumnKey);
+    },
+    [handleSort],
+  );
 
   return (
     <Box>
@@ -169,87 +211,16 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
       {!stats || stats.length === 0 ? (
         <Alert severity="info">No batting statistics have been recorded for this season yet.</Alert>
       ) : (
-        <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-          <Table size="small" stickyHeader aria-label="Season batting statistics table">
-            <TableHead>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.key}
-                    align={column.align}
-                    sortDirection={sortConfig?.key === column.key ? sortConfig.direction : false}
-                  >
-                    <Tooltip title={column.tooltip} enterTouchDelay={0} placement="top">
-                      <Box component="span">
-                        <RightAlignedTableSortLabel
-                          active={sortConfig?.key === column.key}
-                          direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
-                          onClick={() => handleSort(column.key)}
-                        >
-                          {column.label}
-                        </RightAlignedTableSortLabel>
-                      </Box>
-                    </Tooltip>
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedRows.map((stat) => (
-                <TableRow key={stat.playerId} hover>
-                  {columns.map((column) => {
-                    if (column.key === 'playerName') {
-                      return (
-                        <TableCell key={column.key} align="left">
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {stat.playerName}
-                          </Typography>
-                        </TableCell>
-                      );
-                    }
-
-                    const rawValue = getColumnValue(stat, column.key);
-                    const digits = column.digits;
-                    const displayValue =
-                      digits !== undefined
-                        ? formatStatDecimal(rawValue ?? null, digits)
-                        : (rawValue ?? '-');
-
-                    return (
-                      <TableCell key={column.key} align={column.align}>
-                        {displayValue}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
-
-              {totals && (
-                <TableRow>
-                  <TableCell align="left">
-                    <Chip label="Totals" color="primary" size="small" />
-                  </TableCell>
-                  {columns
-                    .filter((column) => column.key !== 'playerName')
-                    .map((column) => {
-                      const value = totals[column.key as keyof typeof totals];
-                      const digits = column.digits;
-                      const displayValue =
-                        digits !== undefined
-                          ? formatStatDecimal(value as number | string | null | undefined, digits)
-                          : (value ?? '-');
-
-                      return (
-                        <TableCell key={column.key} align={column.align} sx={{ fontWeight: 700 }}>
-                          {displayValue}
-                        </TableCell>
-                      );
-                    })}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <StatisticsTable
+          variant="batting"
+          extendedStats={false}
+          data={tableRows}
+          getRowKey={(row) => row.id}
+          sortField={sortField ? String(sortField) : undefined}
+          sortOrder={sortOrder}
+          onSort={(field) => handleTableSort(field as keyof SeasonBattingRow)}
+          emptyMessage="No batting statistics available for this season."
+        />
       )}
     </Box>
   );

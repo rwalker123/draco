@@ -12,11 +12,7 @@ import {
   MenuItem,
   SelectChangeEvent,
 } from '@mui/material';
-import StatisticsTable, {
-  ColumnConfig,
-  formatBattingAverage,
-  formatPercentage,
-} from './StatisticsTable';
+import StatisticsTable from '../../../../components/statistics/StatisticsTable';
 import type { PlayerBattingStatsType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { fetchBattingStatistics } from '../../../../services/statisticsService';
@@ -37,50 +33,6 @@ interface BattingStatisticsProps {
 
 type SortField = keyof BattingStatsRow;
 type SortOrder = 'asc' | 'desc';
-
-const BATTING_COLUMNS: ColumnConfig<BattingStatsRow>[] = [
-  { field: 'playerName', label: 'Player', align: 'left', sortable: false },
-  { field: 'teamName', label: 'Team', align: 'left', sortable: false },
-  { field: 'ab', label: 'AB', align: 'right', tooltip: 'At Bats' },
-  { field: 'h', label: 'H', align: 'right', tooltip: 'Hits' },
-  { field: 'r', label: 'R', align: 'right', tooltip: 'Runs' },
-  { field: 'd', label: '2B', align: 'right', tooltip: 'Doubles' },
-  { field: 't', label: '3B', align: 'right', tooltip: 'Triples' },
-  { field: 'hr', label: 'HR', align: 'right', tooltip: 'Home Runs' },
-  { field: 'rbi', label: 'RBI', align: 'right', tooltip: 'Runs Batted In' },
-  { field: 'bb', label: 'BB', align: 'right', tooltip: 'Walks' },
-  { field: 'so', label: 'SO', align: 'right', tooltip: 'Strikeouts' },
-  { field: 'sb', label: 'SB', align: 'right', tooltip: 'Stolen Bases' },
-  {
-    field: 'avg',
-    label: 'AVG',
-    align: 'right',
-    tooltip: 'Batting Average',
-    primary: true,
-    formatter: formatBattingAverage,
-  },
-  {
-    field: 'obp',
-    label: 'OBP',
-    align: 'right',
-    tooltip: 'On-Base Percentage',
-    formatter: formatPercentage,
-  },
-  {
-    field: 'slg',
-    label: 'SLG',
-    align: 'right',
-    tooltip: 'Slugging Percentage',
-    formatter: formatPercentage,
-  },
-  {
-    field: 'ops',
-    label: 'OPS',
-    align: 'right',
-    tooltip: 'On-Base Plus Slugging',
-    formatter: formatPercentage,
-  },
-];
 
 export default function BattingStatistics({ accountId, filters }: BattingStatisticsProps) {
   const apiClient = useApiClient();
@@ -239,14 +191,15 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
       </Box>
 
       <StatisticsTable
+        variant="batting"
+        extendedStats={false}
         data={loading && previousStats.length > 0 ? previousStats : stats}
-        columns={BATTING_COLUMNS}
         loading={loading && previousStats.length === 0}
         emptyMessage="No batting statistics available for the selected filters."
         getRowKey={(player, index) => `${player.playerId}-${index}`}
-        sortField={sortField}
+        sortField={String(sortField)}
         sortOrder={sortOrder}
-        onSort={handleSort}
+        onSort={(field) => handleSort(field as SortField)}
       />
 
       <Box display="flex" justifyContent="center" mt={3}>
