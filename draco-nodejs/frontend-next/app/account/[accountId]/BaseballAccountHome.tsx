@@ -48,9 +48,8 @@ import {
 import HandoutSection from '@/components/handouts/HandoutSection';
 import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
 import PendingPhotoSubmissionsPanel from '@/components/photo-submissions/PendingPhotoSubmissionsPanel';
-import PhotoSubmissionForm, {
-  type PhotoAlbumOption,
-} from '@/components/photo-submissions/PhotoSubmissionForm';
+import PhotoSubmissionPanel from '@/components/photo-submissions/PhotoSubmissionPanel';
+import type { PhotoAlbumOption } from '@/components/photo-submissions/PhotoSubmissionForm';
 import { usePendingPhotoSubmissions } from '../../../hooks/usePendingPhotoSubmissions';
 import { usePhotoGallery } from '../../../hooks/usePhotoGallery';
 import PhotoGallerySection, {
@@ -102,7 +101,6 @@ const BaseballAccountHome: React.FC = () => {
   }, [accountIdStr, hasRole, hasRoleInAccount]);
 
   const shouldShowPendingPanel = Boolean(token && canModerateAccountPhotos && accountIdStr);
-
   const {
     submissions: pendingSubmissions,
     loading: pendingLoading,
@@ -338,6 +336,8 @@ const BaseballAccountHome: React.FC = () => {
     },
     [approvePendingSubmission, refreshGallery],
   );
+
+  const accountDisplayName = account?.name ?? 'this organization';
 
   // Fetch public account data
   useEffect(() => {
@@ -672,23 +672,23 @@ const BaseballAccountHome: React.FC = () => {
           isAccountMember={isAccountMember}
         />
 
-        {shouldShowPendingPanel && (
-          <Paper sx={{ p: 3, mb: 2 }}>
-            <PendingPhotoSubmissionsPanel
-              contextLabel={account.name}
-              submissions={pendingSubmissions}
-              loading={pendingLoading}
-              error={pendingError}
-              successMessage={pendingSuccess}
-              processingIds={pendingProcessingIds}
-              onRefresh={refreshPendingSubmissions}
-              onApprove={handleApprovePendingSubmission}
-              onDeny={denyPendingSubmission}
-              onClearStatus={clearPendingStatus}
-              emptyMessage="No pending photo submissions for this account."
-            />
-          </Paper>
-        )}
+        {shouldShowPendingPanel ? (
+          <PendingPhotoSubmissionsPanel
+            ContainerComponent={Paper}
+            containerSx={{ p: 3, mb: 2 }}
+            contextLabel={accountDisplayName}
+            submissions={pendingSubmissions}
+            loading={pendingLoading}
+            error={pendingError}
+            successMessage={pendingSuccess}
+            processingIds={pendingProcessingIds}
+            onRefresh={refreshPendingSubmissions}
+            onApprove={handleApprovePendingSubmission}
+            onDeny={denyPendingSubmission}
+            onClearStatus={clearPendingStatus}
+            emptyMessage="No pending photo submissions for this account."
+          />
+        ) : null}
 
         {/* Scoreboard Layout Toggle */}
         {hasAnyGames && (
@@ -755,18 +755,19 @@ const BaseballAccountHome: React.FC = () => {
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns: showSubmissionPanel
-              ? {
-                  xs: '1fr',
-                  lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
-                }
-              : '1fr',
+            gridTemplateColumns:
+              showSubmissionPanel && (membershipLoading || canSubmitPhotos)
+                ? {
+                    xs: '1fr',
+                    lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
+                  }
+                : '1fr',
             alignItems: 'stretch',
           }}
         >
           <PhotoGallerySection
             title="Photo Gallery"
-            description={`Relive the highlights from ${account?.name ?? 'this organization'}.`}
+            description={`Relive the highlights from ${accountDisplayName}.`}
             photos={filteredGalleryPhotos}
             albums={seasonFilteredAlbums}
             loading={galleryLoading}
@@ -780,33 +781,19 @@ const BaseballAccountHome: React.FC = () => {
             teamAlbumHierarchy={teamAlbumHierarchy}
             sx={{ height: '100%' }}
           />
-          {showSubmissionPanel ? (
-            <Paper sx={{ p: 3, height: '100%' }}>
-              {membershipLoading ? (
-                <Box display="flex" alignItems="center" gap={2}>
-                  <CircularProgress size={24} />
-                  <Typography variant="body2">Checking your access…</Typography>
-                </Box>
-              ) : membershipError ? (
-                <Alert severity="error">{membershipError}</Alert>
-              ) : canSubmitPhotos ? (
-                <PhotoSubmissionForm
-                  variant="account"
-                  accountId={accountIdStr ?? ''}
-                  contextName={account.name}
-                  albumOptions={submissionAlbumOptions}
-                  onSubmitted={() => {
-                    void refreshPendingSubmissions();
-                  }}
-                />
-              ) : (
-                <Alert severity="info">
-                  You need to be a registered contact for this account to submit photos for
-                  moderation.
-                </Alert>
-              )}
-            </Paper>
-          ) : null}
+          <PhotoSubmissionPanel
+            variant="account"
+            enabled={showSubmissionPanel}
+            isLoading={membershipLoading}
+            error={membershipError}
+            canSubmit={canSubmitPhotos}
+            accountId={accountIdStr ?? ''}
+            contextName={accountDisplayName}
+            albumOptions={submissionAlbumOptions}
+            onSubmitted={() => {
+              void refreshPendingSubmissions();
+            }}
+          />
         </Box>
 
         <Box sx={{ display: 'grid', gap: 2 }}>

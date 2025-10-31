@@ -223,6 +223,22 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
   const gridPhotos = photos.slice(heroPhotos.length);
   const lightboxPhoto = lightboxIndex !== null ? (photos[lightboxIndex] ?? null) : null;
 
+  const shouldRender = React.useMemo(() => {
+    if (loading) {
+      return true;
+    }
+
+    if (error) {
+      return true;
+    }
+
+    return photos.length > 0;
+  }, [error, loading, photos.length]);
+
+  if (!shouldRender) {
+    return null;
+  }
+
   return (
     <Paper
       sx={{

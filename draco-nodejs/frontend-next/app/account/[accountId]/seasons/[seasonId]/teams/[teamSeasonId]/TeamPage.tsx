@@ -14,8 +14,6 @@ import AccountPageHeader from '../../../../../../../components/AccountPageHeader
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
-import Paper from '@mui/material/Paper';
-import CircularProgress from '@mui/material/CircularProgress';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
@@ -34,8 +32,8 @@ import {
 import HandoutSection from '@/components/handouts/HandoutSection';
 import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePlayersWantedDialog';
 import PendingPhotoSubmissionsPanel from '../../../../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
+import PhotoSubmissionPanel from '../../../../../../../components/photo-submissions/PhotoSubmissionPanel';
 import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendingPhotoSubmissions';
-import PhotoSubmissionForm from '../../../../../../../components/photo-submissions/PhotoSubmissionForm';
 import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
 import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 import { useGameRecapFlow } from '../../../../../../../hooks/useGameRecapFlow';
@@ -454,23 +452,22 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         />
       )}
 
-      {shouldShowTeamPendingPanel && (
-        <Box sx={{ mb: 4 }}>
-          <PendingPhotoSubmissionsPanel
-            contextLabel={teamData?.teamName ?? 'this team'}
-            submissions={teamPendingSubmissions}
-            loading={teamPendingLoading}
-            error={teamPendingError}
-            successMessage={teamPendingSuccess}
-            processingIds={teamPendingProcessing}
-            onRefresh={refreshTeamPending}
-            onApprove={handleApproveTeamPhoto}
-            onDeny={denyTeamSubmission}
-            onClearStatus={clearTeamPendingStatus}
-            emptyMessage="No pending photo submissions for this team."
-          />
-        </Box>
-      )}
+      {shouldShowTeamPendingPanel ? (
+        <PendingPhotoSubmissionsPanel
+          contextLabel={teamData?.teamName ?? 'this team'}
+          submissions={teamPendingSubmissions}
+          loading={teamPendingLoading}
+          error={teamPendingError}
+          successMessage={teamPendingSuccess}
+          processingIds={teamPendingProcessing}
+          onRefresh={refreshTeamPending}
+          onApprove={handleApproveTeamPhoto}
+          onDeny={denyTeamSubmission}
+          onClearStatus={clearTeamPendingStatus}
+          emptyMessage="No pending photo submissions for this team."
+          containerSx={{ mb: 4 }}
+        />
+      ) : null}
 
       {teamData?.teamId && (
         <>
@@ -478,12 +475,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             sx={{
               display: 'grid',
               gap: 3,
-              gridTemplateColumns: showTeamSubmissionPanel
-                ? {
-                    xs: '1fr',
-                    lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
-                  }
-                : '1fr',
+              gridTemplateColumns:
+                showTeamSubmissionPanel && (teamMembershipLoading || isTeamMember)
+                  ? {
+                      xs: '1fr',
+                      lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
+                    }
+                  : '1fr',
               alignItems: 'stretch',
               mb: 6,
             }}
@@ -500,32 +498,19 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               totalCountOverride={teamGalleryPhotos.length}
               sx={{ height: '100%' }}
             />
-            {showTeamSubmissionPanel ? (
-              <Paper sx={{ p: 3, height: '100%' }}>
-                {teamMembershipLoading ? (
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <CircularProgress size={24} />
-                    <Typography variant="body2">Checking your team access…</Typography>
-                  </Box>
-                ) : teamMembershipError ? (
-                  <Alert severity="error">{teamMembershipError}</Alert>
-                ) : isTeamMember ? (
-                  <PhotoSubmissionForm
-                    variant="team"
-                    accountId={accountId}
-                    teamId={teamData.teamId}
-                    contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
-                    onSubmitted={() => {
-                      void refreshTeamPending();
-                    }}
-                  />
-                ) : (
-                  <Alert severity="info">
-                    You need to be on this roster to submit photos for review.
-                  </Alert>
-                )}
-              </Paper>
-            ) : null}
+            <PhotoSubmissionPanel
+              variant="team"
+              enabled={showTeamSubmissionPanel}
+              isLoading={teamMembershipLoading}
+              error={teamMembershipError}
+              canSubmit={isTeamMember}
+              accountId={accountId}
+              contextName={teamData.teamName ?? teamSeason?.name ?? 'this team'}
+              teamId={teamData.teamId}
+              onSubmitted={() => {
+                void refreshTeamPending();
+              }}
+            />
           </Box>
 
           <Card className="mb-8">
