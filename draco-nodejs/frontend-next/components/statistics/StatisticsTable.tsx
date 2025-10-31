@@ -541,9 +541,7 @@ const buildColumns = <T extends StatsRowBase>(
       columnConfig.formatter = formatter;
     }
 
-    if (render) {
-      columnConfig.render = render;
-    }
+    columnConfig.render = render;
 
     columns.push(columnConfig);
   };
