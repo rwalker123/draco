@@ -755,13 +755,12 @@ const BaseballAccountHome: React.FC = () => {
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns:
-              showSubmissionPanel && (membershipLoading || canSubmitPhotos)
-                ? {
-                    xs: '1fr',
-                    lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
-                  }
-                : '1fr',
+            gridTemplateColumns: showSubmissionPanel
+              ? {
+                  xs: '1fr',
+                  lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
+                }
+              : '1fr',
             alignItems: 'stretch',
           }}
         >

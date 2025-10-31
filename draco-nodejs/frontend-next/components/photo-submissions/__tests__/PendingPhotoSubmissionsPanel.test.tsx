@@ -63,9 +63,10 @@ describe('PendingPhotoSubmissionsPanel', () => {
   });
 
   it('renders empty state when no submissions are available', () => {
-    renderPanel({ submissions: [] });
+    const { container } = renderPanel({ submissions: [] });
 
-    expect(screen.getByText('No pending photo submissions right now.')).toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByText('No pending photo submissions right now.')).toBeNull();
   });
 
   it('calls onApprove when approve button is clicked', async () => {

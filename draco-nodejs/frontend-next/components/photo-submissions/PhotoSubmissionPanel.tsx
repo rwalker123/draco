@@ -51,39 +51,44 @@ const PhotoSubmissionPanel: React.FC<PhotoSubmissionPanelProps> = ({
     return null;
   }
 
-  if (variant === 'team' && !teamId) {
-    return null;
-  }
-
   const loadingMessage =
     variant === 'team' ? 'Checking your team access…' : 'Checking your access…';
 
-  return (
-    <Paper sx={{ p: 3, height: '100%', ...containerSx }}>
-      {isLoading ? (
-        <Box display="flex" alignItems="center" gap={2}>
-          <CircularProgress size={24} />
-          <Typography variant="body2">{loadingMessage}</Typography>
-        </Box>
-      ) : variant === 'team' ? (
-        <PhotoSubmissionForm
-          variant="team"
-          accountId={accountId}
-          contextName={contextName}
-          teamId={teamId}
-          onSubmitted={onSubmitted}
-        />
-      ) : (
-        <PhotoSubmissionForm
-          variant="account"
-          accountId={accountId}
-          contextName={contextName}
-          albumOptions={albumOptions}
-          onSubmitted={onSubmitted}
-        />
-      )}
-    </Paper>
-  );
+  let content: React.ReactNode;
+  if (isLoading) {
+    content = (
+      <Box display="flex" alignItems="center" gap={2}>
+        <CircularProgress size={24} />
+        <Typography variant="body2">{loadingMessage}</Typography>
+      </Box>
+    );
+  } else if (variant === 'team') {
+    const ensuredTeamId = teamId;
+    if (!ensuredTeamId) {
+      return null;
+    }
+    content = (
+      <PhotoSubmissionForm
+        variant="team"
+        accountId={accountId}
+        contextName={contextName}
+        teamId={ensuredTeamId}
+        onSubmitted={onSubmitted}
+      />
+    );
+  } else {
+    content = (
+      <PhotoSubmissionForm
+        variant="account"
+        accountId={accountId}
+        contextName={contextName}
+        albumOptions={albumOptions}
+        onSubmitted={onSubmitted}
+      />
+    );
+  }
+
+  return <Paper sx={{ p: 3, height: '100%', ...containerSx }}>{content}</Paper>;
 };
 
 export default PhotoSubmissionPanel;

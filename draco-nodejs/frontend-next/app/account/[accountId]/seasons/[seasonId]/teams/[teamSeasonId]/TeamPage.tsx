@@ -475,13 +475,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             sx={{
               display: 'grid',
               gap: 3,
-              gridTemplateColumns:
-                showTeamSubmissionPanel && (teamMembershipLoading || isTeamMember)
-                  ? {
-                      xs: '1fr',
-                      lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
-                    }
-                  : '1fr',
+              gridTemplateColumns: showTeamSubmissionPanel
+                ? {
+                    xs: '1fr',
+                    lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
+                  }
+                : '1fr',
               alignItems: 'stretch',
               mb: 6,
             }}

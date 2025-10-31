@@ -38,7 +38,8 @@ export interface PendingPhotoSubmissionsPanelProps {
   containerSx?: SxProps<Theme>;
 }
 
-const permissionDeniedPattern = /(permission|authoriz|forbid|denied)/i;
+// Match common permission-denied phrases (US/UK spellings and variations like authorize/authorise).
+const permissionDeniedPattern = /(permission|authori[sz](?:e|ation|ed|ing)?|forbid|denied)/i;
 
 const isPermissionDeniedError = (message: string | null): boolean =>
   Boolean(message && permissionDeniedPattern.test(message));
