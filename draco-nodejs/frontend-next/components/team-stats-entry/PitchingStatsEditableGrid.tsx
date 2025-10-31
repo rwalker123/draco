@@ -49,7 +49,9 @@ import {
   editablePitchingFields as editableFields,
   type EditablePitchingField,
   type PitchingSummaryField,
+  type PitchingViewField,
   PITCHING_FIELD_LABELS,
+  PITCHING_FIELD_TOOLTIPS,
 } from './pitchingColumns';
 
 interface PitchingStatsEditableGridProps {
@@ -131,6 +133,18 @@ type PitchingTotalsRow = {
 } & Record<EditablePitchingField | PitchingSummaryField, number>;
 
 type PitchingGridRow = PitchingRow | PitchingNewRow | PitchingTotalsRow;
+
+const renderHeaderWithTooltip = (field: PitchingViewField) => {
+  const HeaderComponent: React.FC = () => (
+    <Tooltip title={PITCHING_FIELD_TOOLTIPS[field]}>
+      <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
+        {PITCHING_FIELD_LABELS[field]}
+      </Typography>
+    </Tooltip>
+  );
+  HeaderComponent.displayName = `PitchingHeader_${field}`;
+  return HeaderComponent;
+};
 
 const getNumericPitchingFieldValue = (
   row: PitchingGridRow | undefined,
@@ -823,6 +837,7 @@ const PitchingStatsEditableGrid = forwardRef<
         {
           field: 'playerNumber',
           headerName: PITCHING_FIELD_LABELS.playerNumber,
+          renderHeader: renderHeaderWithTooltip('playerNumber'),
           width: 70,
           align: 'center',
           headerAlign: 'center',
@@ -852,6 +867,7 @@ const PitchingStatsEditableGrid = forwardRef<
         {
           field: 'playerName',
           headerName: PITCHING_FIELD_LABELS.playerName,
+          renderHeader: renderHeaderWithTooltip('playerName'),
           flex: 1.2,
           minWidth: 180,
           sortable: false,
@@ -903,6 +919,7 @@ const PitchingStatsEditableGrid = forwardRef<
         ...editableFields.map<GridColDef<PitchingGridRow>>((field) => ({
           field,
           headerName: PITCHING_FIELD_LABELS[field],
+          renderHeader: renderHeaderWithTooltip(field),
           type: 'number',
           align: 'center',
           headerAlign: 'center',
@@ -940,7 +957,8 @@ const PitchingStatsEditableGrid = forwardRef<
         })),
         {
           field: 'era',
-          headerName: 'ERA',
+          headerName: PITCHING_FIELD_LABELS.era,
+          renderHeader: renderHeaderWithTooltip('era'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -954,7 +972,8 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         {
           field: 'whip',
-          headerName: 'WHIP',
+          headerName: PITCHING_FIELD_LABELS.whip,
+          renderHeader: renderHeaderWithTooltip('whip'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -968,7 +987,8 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         {
           field: 'k9',
-          headerName: 'K/9',
+          headerName: PITCHING_FIELD_LABELS.k9,
+          renderHeader: renderHeaderWithTooltip('k9'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -982,7 +1002,8 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         {
           field: 'bb9',
-          headerName: 'BB/9',
+          headerName: PITCHING_FIELD_LABELS.bb9,
+          renderHeader: renderHeaderWithTooltip('bb9'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -996,7 +1017,8 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         {
           field: 'oba',
-          headerName: 'OBA',
+          headerName: PITCHING_FIELD_LABELS.oba,
+          renderHeader: renderHeaderWithTooltip('oba'),
           align: 'center',
           headerAlign: 'center',
           width: 90,
@@ -1010,7 +1032,8 @@ const PitchingStatsEditableGrid = forwardRef<
         },
         {
           field: 'slg',
-          headerName: 'SLG',
+          headerName: PITCHING_FIELD_LABELS.slg,
+          renderHeader: renderHeaderWithTooltip('slg'),
           align: 'center',
           headerAlign: 'center',
           width: 90,

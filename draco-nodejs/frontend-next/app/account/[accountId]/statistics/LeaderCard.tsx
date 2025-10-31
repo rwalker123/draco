@@ -3,7 +3,7 @@
 import React from 'react';
 import { Box, Typography, Card, CardContent, Avatar, Chip, useTheme, alpha } from '@mui/material';
 import { Star as StarIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
-import TeamBadges from './TeamBadges';
+import TeamBadges from '../../../../components/statistics/TeamBadges';
 
 interface LeaderRow {
   playerId: string;

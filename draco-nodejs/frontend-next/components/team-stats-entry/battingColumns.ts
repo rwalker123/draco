@@ -34,35 +34,125 @@ export const battingViewFieldOrder = [
 
 export type BattingViewField = (typeof battingViewFieldOrder)[number];
 
+export type BattingFieldMetadata = {
+  label: string;
+  tooltip: string;
+};
+
+const battingFieldMetadata: Record<BattingViewField, BattingFieldMetadata> = {
+  playerNumber: {
+    label: '#',
+    tooltip: 'Player number',
+  },
+  playerName: {
+    label: 'Player',
+    tooltip: 'Player name',
+  },
+  ab: {
+    label: 'AB',
+    tooltip: 'At Bats',
+  },
+  h: {
+    label: 'H',
+    tooltip: 'Hits',
+  },
+  r: {
+    label: 'R',
+    tooltip: 'Runs',
+  },
+  d: {
+    label: '2B',
+    tooltip: 'Doubles',
+  },
+  t: {
+    label: '3B',
+    tooltip: 'Triples',
+  },
+  hr: {
+    label: 'HR',
+    tooltip: 'Home Runs',
+  },
+  rbi: {
+    label: 'RBI',
+    tooltip: 'Runs Batted In',
+  },
+  so: {
+    label: 'SO',
+    tooltip: 'Strikeouts',
+  },
+  bb: {
+    label: 'BB',
+    tooltip: 'Walks',
+  },
+  hbp: {
+    label: 'HBP',
+    tooltip: 'Hit By Pitch',
+  },
+  sb: {
+    label: 'SB',
+    tooltip: 'Stolen Bases',
+  },
+  cs: {
+    label: 'CS',
+    tooltip: 'Caught Stealing',
+  },
+  sf: {
+    label: 'SF',
+    tooltip: 'Sacrifice Flies',
+  },
+  sh: {
+    label: 'SH',
+    tooltip: 'Sacrifice Hits',
+  },
+  re: {
+    label: 'RE',
+    tooltip: 'RE',
+  },
+  intr: {
+    label: 'INTR',
+    tooltip: 'INTR',
+  },
+  lob: {
+    label: 'LOB',
+    tooltip: 'Left On Base',
+  },
+  tb: {
+    label: 'TB',
+    tooltip: 'Total Bases',
+  },
+  pa: {
+    label: 'PA',
+    tooltip: 'Plate Appearances',
+  },
+  avg: {
+    label: 'AVG',
+    tooltip: 'Batting Average',
+  },
+  obp: {
+    label: 'OBP',
+    tooltip: 'On-Base Percentage',
+  },
+  slg: {
+    label: 'SLG',
+    tooltip: 'Slugging Percentage',
+  },
+  ops: {
+    label: 'OPS',
+    tooltip: 'On-base Plus Slugging',
+  },
+};
+
+export const BATTING_FIELD_METADATA = battingFieldMetadata;
+
 type FieldLabelMap = Record<BattingViewField, string>;
 
-export const BATTING_FIELD_LABELS: FieldLabelMap = {
-  playerNumber: '#',
-  playerName: 'Player',
-  ab: 'AB',
-  h: 'H',
-  r: 'R',
-  d: '2B',
-  t: '3B',
-  hr: 'HR',
-  rbi: 'RBI',
-  so: 'SO',
-  bb: 'BB',
-  hbp: 'HBP',
-  sb: 'SB',
-  cs: 'CS',
-  sf: 'SF',
-  sh: 'SH',
-  re: 'RE',
-  intr: 'INTR',
-  lob: 'LOB',
-  tb: 'TB',
-  pa: 'PA',
-  avg: 'AVG',
-  obp: 'OBP',
-  slg: 'SLG',
-  ops: 'OPS',
-};
+export const BATTING_FIELD_LABELS: FieldLabelMap = Object.fromEntries(
+  Object.entries(battingFieldMetadata).map(([field, { label }]) => [field, label]),
+) as FieldLabelMap;
+
+export const BATTING_FIELD_TOOLTIPS: Record<BattingViewField, string> = Object.fromEntries(
+  Object.entries(battingFieldMetadata).map(([field, { tooltip }]) => [field, tooltip]),
+) as Record<BattingViewField, string>;
 
 export const BATTING_COLUMN_DECIMAL_DIGITS: Partial<Record<BattingViewField, number>> = {
   avg: 3,

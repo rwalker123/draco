@@ -1,89 +1,64 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Typography } from '@mui/material';
 import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
 
-import { formatStatDecimal } from './utils';
-import { PITCHING_COLUMN_DECIMAL_DIGITS, type PitchingViewField } from './pitchingColumns';
 import { useSortableRows } from './tableUtils';
-import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
+import StatisticsTable, { type StatsRowBase } from '../statistics/StatisticsTable';
+
+const seasonColumnKeys = [
+  'playerName',
+  'w',
+  'l',
+  's',
+  'ipDecimal',
+  'h',
+  'r',
+  'er',
+  'bb',
+  'so',
+  'hr',
+  'era',
+  'whip',
+  'k9',
+  'bb9',
+] as const;
+
+type SeasonPitchingColumnKey = (typeof seasonColumnKeys)[number];
+
+type StatValue = number | string | null;
+
+type SeasonPitchingRow = StatsRowBase & {
+  id: string;
+  playerName: string | null;
+};
 
 interface SeasonPitchingStatsSectionProps {
   stats: PlayerPitchingStatsType[] | null;
 }
 
-type PitchingColumn = {
-  key: keyof PlayerPitchingStatsType;
-  label: string;
-  align?: 'left' | 'center' | 'right';
-  digits?: number;
-};
-
-const columns: PitchingColumn[] = [
-  { key: 'playerName', label: 'Player', align: 'left' },
-  { key: 'w', label: 'W' },
-  { key: 'l', label: 'L' },
-  { key: 's', label: 'S' },
-  { key: 'ipDecimal', label: 'IP', digits: 1 },
-  { key: 'h', label: 'H' },
-  { key: 'r', label: 'R' },
-  { key: 'er', label: 'ER' },
-  { key: 'bb', label: 'BB' },
-  { key: 'so', label: 'SO' },
-  { key: 'hr', label: 'HR' },
-  { key: 'era', label: 'ERA', digits: 2 },
-  { key: 'whip', label: 'WHIP', digits: 2 },
-  { key: 'k9', label: 'K/9', digits: 2 },
-  { key: 'bb9', label: 'BB/9', digits: 2 },
-];
-
 const getColumnValue = (
   stat: PlayerPitchingStatsType,
-  key: PitchingColumn['key'],
+  key: SeasonPitchingColumnKey,
 ): number | string | null | undefined => {
   if (key === 'playerName') {
     return stat.playerName;
   }
 
-  if (key === 'ipDecimal') {
-    return stat.ipDecimal;
-  }
-
-  return stat[key] as number | string | null | undefined;
-};
-
-const formatBaseballInnings = (ip: number, ip2: number): string => {
-  if (!Number.isFinite(ip) || !Number.isFinite(ip2)) {
-    return '-';
-  }
-
-  const totalOuts = Math.round(ip * 3 + ip2);
-  const innings = Math.floor(totalOuts / 3);
-  const remainingOuts = totalOuts % 3;
-
-  return `${innings}.${remainingOuts}`;
+  return stat[key as keyof PlayerPitchingStatsType] as number | string | null | undefined;
 };
 
 const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({ stats }) => {
   const getValue = useCallback(
-    (row: PlayerPitchingStatsType, key: PitchingColumn['key']) => getColumnValue(row, key),
+    (row: PlayerPitchingStatsType, key: SeasonPitchingColumnKey) => getColumnValue(row, key),
     [],
   );
 
-  const { sortedRows, sortConfig, handleSort } = useSortableRows(stats ?? [], getValue);
+  const { sortedRows, sortConfig, handleSort } = useSortableRows<
+    PlayerPitchingStatsType,
+    SeasonPitchingColumnKey
+  >(stats ?? [], getValue);
 
   const totals = useMemo(() => {
     if (!stats || stats.length === 0) {
@@ -134,8 +109,82 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
       whip,
       k9,
       bb9,
-    };
+    } as Record<string, number | string | null>;
   }, [stats]);
+
+  const tableRows = useMemo<SeasonPitchingRow[]>(() => {
+    const rows = sortedRows.map((stat) => {
+      const values: Partial<Record<SeasonPitchingColumnKey, StatValue>> = {};
+      seasonColumnKeys.forEach((key) => {
+        if (key === 'playerName') {
+          values[key] = stat.playerName ?? null;
+        } else if (key === 'ipDecimal') {
+          values[key] = stat.ipDecimal;
+        } else {
+          const raw = (stat as Record<string, unknown>)[key];
+          if (typeof raw === 'number' || typeof raw === 'string') {
+            values[key] = raw;
+          } else if (raw === null || raw === undefined) {
+            values[key] = null;
+          } else {
+            values[key] = null;
+          }
+        }
+      });
+
+      const resolvedPlayerName = values.playerName;
+      const id =
+        stat.playerId !== undefined && stat.playerId !== null && stat.playerId !== ''
+          ? String(stat.playerId)
+          : (stat.playerName ?? `player-${stat.playerId ?? 'unknown'}`);
+
+      const row: SeasonPitchingRow = {
+        ...(values as Record<string, StatValue>),
+        id,
+        playerName:
+          typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
+        ip: stat.ip ?? null,
+        ip2: stat.ip2 ?? null,
+      };
+
+      return row;
+    });
+
+    if (totals) {
+      const totalsValues: Partial<Record<SeasonPitchingColumnKey, StatValue>> = {};
+      seasonColumnKeys.forEach((key) => {
+        if (key === 'playerName') {
+          totalsValues[key] = 'Totals';
+        } else {
+          const raw = totals[key];
+          totalsValues[key] = typeof raw === 'number' || typeof raw === 'string' ? raw : null;
+        }
+      });
+
+      const totalsRow: SeasonPitchingRow = {
+        ...(totalsValues as Record<string, StatValue>),
+        id: 'totals',
+        playerName: 'Totals',
+        isTotals: true,
+        ip: Number(totals.ip ?? 0),
+        ip2: Number(totals.ip2 ?? 0),
+      };
+
+      rows.push(totalsRow);
+    }
+
+    return rows;
+  }, [sortedRows, totals]);
+
+  const sortField = sortConfig?.key as keyof SeasonPitchingRow | undefined;
+  const sortOrder = sortConfig?.direction ?? 'asc';
+
+  const handleTableSort = useCallback(
+    (field: keyof SeasonPitchingRow) => {
+      handleSort(field as SeasonPitchingColumnKey);
+    },
+    [handleSort],
+  );
 
   return (
     <Box>
@@ -148,110 +197,16 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
           No pitching statistics have been recorded for this season yet.
         </Alert>
       ) : (
-        <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-          <Table size="small" stickyHeader aria-label="Season pitching statistics table">
-            <TableHead>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.key}
-                    align={column.align ?? (column.key === 'playerName' ? 'left' : 'center')}
-                    sortDirection={sortConfig?.key === column.key ? sortConfig.direction : false}
-                  >
-                    <RightAlignedTableSortLabel
-                      active={sortConfig?.key === column.key}
-                      direction={sortConfig?.key === column.key ? sortConfig.direction : 'asc'}
-                      onClick={() => handleSort(column.key)}
-                    >
-                      {column.label}
-                    </RightAlignedTableSortLabel>
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedRows.map((stat) => (
-                <TableRow key={stat.playerId} hover>
-                  {columns.map((column) => {
-                    if (column.key === 'playerName') {
-                      return (
-                        <TableCell key={column.key} align="left">
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {stat.playerName}
-                          </Typography>
-                        </TableCell>
-                      );
-                    }
-
-                    if (column.key === 'ipDecimal') {
-                      return (
-                        <TableCell key={column.key} align={column.align ?? 'center'}>
-                          {formatBaseballInnings(stat.ip, stat.ip2)}
-                        </TableCell>
-                      );
-                    }
-
-                    const rawValue = getColumnValue(stat, column.key);
-                    const digits =
-                      column.digits ??
-                      PITCHING_COLUMN_DECIMAL_DIGITS[column.key as PitchingViewField];
-
-                    return (
-                      <TableCell key={column.key} align={column.align ?? 'center'}>
-                        {digits !== undefined
-                          ? formatStatDecimal(
-                              rawValue as number | string | null | undefined,
-                              digits,
-                            )
-                          : (rawValue ?? '-')}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
-
-              {totals && (
-                <TableRow>
-                  <TableCell align="left">
-                    <Chip label="Totals" color="primary" size="small" />
-                  </TableCell>
-                  {columns
-                    .filter((column) => column.key !== 'playerName')
-                    .map((column) => {
-                      if (column.key === 'ipDecimal') {
-                        return (
-                          <TableCell
-                            key={column.key}
-                            align={column.align ?? 'center'}
-                            sx={{ fontWeight: 700 }}
-                          >
-                            {formatBaseballInnings(totals.ip, totals.ip2)}
-                          </TableCell>
-                        );
-                      }
-
-                      const value = totals[column.key as keyof typeof totals];
-                      const digits =
-                        column.digits ??
-                        PITCHING_COLUMN_DECIMAL_DIGITS[column.key as PitchingViewField];
-
-                      return (
-                        <TableCell
-                          key={column.key}
-                          align={column.align ?? 'center'}
-                          sx={{ fontWeight: 700 }}
-                        >
-                          {digits !== undefined
-                            ? formatStatDecimal(value as number | string | null | undefined, digits)
-                            : (value ?? '-')}
-                        </TableCell>
-                      );
-                    })}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <StatisticsTable
+          variant="pitching"
+          extendedStats={false}
+          data={tableRows}
+          getRowKey={(row) => row.id}
+          sortField={sortField ? String(sortField) : undefined}
+          sortOrder={sortOrder}
+          onSort={(field) => handleTableSort(field as keyof SeasonPitchingRow)}
+          emptyMessage="No pitching statistics available for this season."
+        />
       )}
     </Box>
   );

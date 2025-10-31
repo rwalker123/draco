@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import StatisticsTable, {
+import {
+  StatisticsTableBase,
   formatBattingAverage,
   formatERA,
   formatIPDecimal,
-} from './StatisticsTable';
-import type { ColumnConfig } from './StatisticsTable';
+  type ColumnConfig,
+} from '../../../../components/statistics/StatisticsTable';
+import TeamBadges from '../../../../components/statistics/TeamBadges';
 import LeaderCard from './LeaderCard';
 import type {
   LeaderCategoriesType,
@@ -191,12 +193,24 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
         label: 'Player',
         align: 'left',
         sortable: false,
+        render: ({ formattedValue }) => (
+          <Typography variant="body2" fontWeight="medium">
+            {formattedValue as React.ReactNode}
+          </Typography>
+        ),
       },
       {
         field: 'teamName',
         label: 'Team',
         align: 'left',
         sortable: false,
+        render: ({ row }) => (
+          <TeamBadges
+            teams={row.teams as string[] | undefined}
+            teamName={row.teamName as string | undefined}
+            maxVisible={3}
+          />
+        ),
       },
       {
         field: 'statValue',
@@ -325,7 +339,7 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
 
                   {/* Statistics Table */}
                   {processedLeaders.length > 0 && (
-                    <StatisticsTable
+                    <StatisticsTableBase
                       data={processedLeaders}
                       columns={createLeaderColumns(category, processedLeaders)}
                       loading={loading}
@@ -364,7 +378,7 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
 
                   {/* Statistics Table */}
                   {processedLeaders.length > 0 && (
-                    <StatisticsTable
+                    <StatisticsTableBase
                       data={processedLeaders}
                       columns={createLeaderColumns(category, processedLeaders)}
                       loading={loading}

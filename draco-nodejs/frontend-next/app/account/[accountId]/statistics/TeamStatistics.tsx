@@ -16,12 +16,7 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
-import StatisticsTable, {
-  formatBattingAverage,
-  formatPercentage,
-  formatERA,
-  formatIPDecimal,
-} from './StatisticsTable';
+import StatisticsTable from '../../../../components/statistics/StatisticsTable';
 import { Team } from '@/types/schedule';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
@@ -31,99 +26,6 @@ import {
   listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
 } from '@draco/shared-api-client';
 import type { PlayerBattingStatsType, PlayerPitchingStatsType } from '@draco/shared-schemas';
-
-// Column configurations matching the exact order from BattingStatistics
-const BATTING_COLUMNS = [
-  { field: 'playerName' as const, label: 'Player', align: 'left' as const, sortable: false },
-  { field: 'ab' as const, label: 'AB', align: 'right' as const, tooltip: 'At Bats' },
-  { field: 'h' as const, label: 'H', align: 'right' as const, tooltip: 'Hits' },
-  { field: 'r' as const, label: 'R', align: 'right' as const, tooltip: 'Runs' },
-  { field: 'd' as const, label: '2B', align: 'right' as const, tooltip: 'Doubles' },
-  { field: 't' as const, label: '3B', align: 'right' as const, tooltip: 'Triples' },
-  { field: 'hr' as const, label: 'HR', align: 'right' as const, tooltip: 'Home Runs' },
-  { field: 'rbi' as const, label: 'RBI', align: 'right' as const, tooltip: 'Runs Batted In' },
-  { field: 'bb' as const, label: 'BB', align: 'right' as const, tooltip: 'Walks' },
-  { field: 'so' as const, label: 'SO', align: 'right' as const, tooltip: 'Strikeouts' },
-  { field: 'sb' as const, label: 'SB', align: 'right' as const, tooltip: 'Stolen Bases' },
-  {
-    field: 'avg' as const,
-    label: 'AVG',
-    align: 'right' as const,
-    tooltip: 'Batting Average',
-    primary: true,
-    formatter: formatBattingAverage,
-  },
-  {
-    field: 'obp' as const,
-    label: 'OBP',
-    align: 'right' as const,
-    tooltip: 'On-Base Percentage',
-    formatter: formatPercentage,
-  },
-  {
-    field: 'slg' as const,
-    label: 'SLG',
-    align: 'right' as const,
-    tooltip: 'Slugging Percentage',
-    formatter: formatPercentage,
-  },
-  {
-    field: 'ops' as const,
-    label: 'OPS',
-    align: 'right' as const,
-    tooltip: 'On-Base Plus Slugging',
-    formatter: formatPercentage,
-  },
-];
-
-const PITCHING_COLUMNS = [
-  { field: 'playerName' as const, label: 'Player', align: 'left' as const, sortable: false },
-  { field: 'w' as const, label: 'W', align: 'right' as const, tooltip: 'Wins' },
-  { field: 'l' as const, label: 'L', align: 'right' as const, tooltip: 'Losses' },
-  { field: 's' as const, label: 'S', align: 'right' as const, tooltip: 'Saves' },
-  {
-    field: 'ipDecimal' as const,
-    label: 'IP',
-    align: 'right' as const,
-    tooltip: 'Innings Pitched',
-    formatter: formatIPDecimal,
-  },
-  { field: 'h' as const, label: 'H', align: 'right' as const, tooltip: 'Hits Allowed' },
-  { field: 'r' as const, label: 'R', align: 'right' as const, tooltip: 'Runs Allowed' },
-  { field: 'er' as const, label: 'ER', align: 'right' as const, tooltip: 'Earned Runs' },
-  { field: 'bb' as const, label: 'BB', align: 'right' as const, tooltip: 'Walks' },
-  { field: 'so' as const, label: 'SO', align: 'right' as const, tooltip: 'Strikeouts' },
-  { field: 'hr' as const, label: 'HR', align: 'right' as const, tooltip: 'Home Runs Allowed' },
-  {
-    field: 'era' as const,
-    label: 'ERA',
-    align: 'right' as const,
-    tooltip: 'Earned Run Average',
-    primary: true,
-    formatter: formatERA,
-  },
-  {
-    field: 'whip' as const,
-    label: 'WHIP',
-    align: 'right' as const,
-    tooltip: 'Walks + Hits per Inning Pitched',
-    formatter: formatERA,
-  },
-  {
-    field: 'k9' as const,
-    label: 'K/9',
-    align: 'right' as const,
-    tooltip: 'Strikeouts per 9 Innings',
-    formatter: formatERA,
-  },
-  {
-    field: 'bb9' as const,
-    label: 'BB/9',
-    align: 'right' as const,
-    tooltip: 'Walks per 9 Innings',
-    formatter: formatERA,
-  },
-];
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -417,27 +319,29 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
             <TabPanel value={tabValue} index={0}>
               <StatisticsTable
+                variant="batting"
+                extendedStats={false}
                 data={sortedBattingStats}
-                columns={BATTING_COLUMNS}
                 loading={loading.batting}
                 emptyMessage="No batting statistics available"
                 getRowKey={(stat) => stat.playerId}
-                sortField={battingSortField}
+                sortField={String(battingSortField)}
                 sortOrder={battingSortOrder}
-                onSort={handleBattingSort}
+                onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
               />
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
               <StatisticsTable
+                variant="pitching"
+                extendedStats={false}
                 data={sortedPitchingStats}
-                columns={PITCHING_COLUMNS}
                 loading={loading.pitching}
                 emptyMessage="No pitching statistics available"
                 getRowKey={(stat) => stat.playerId}
-                sortField={pitchingSortField}
+                sortField={String(pitchingSortField)}
                 sortOrder={pitchingSortOrder}
-                onSort={handlePitchingSort}
+                onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
               />
             </TabPanel>
           </Paper>

@@ -1,50 +1,29 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Alert, Box } from '@mui/material';
 import type { GamePitchingStatLineType, GamePitchingStatsType } from '@draco/shared-schemas';
 
-import {
-  PITCHING_FIELD_LABELS,
-  PITCHING_COLUMN_DECIMAL_DIGITS,
-  pitchingViewFieldOrder,
-  type PitchingViewField,
-} from './pitchingColumns';
-import { formatInnings, formatStatDecimal } from './utils';
+import StatisticsTable, { type StatsRowBase } from '../statistics/StatisticsTable';
+import { pitchingViewFieldOrder, type PitchingViewField } from './pitchingColumns';
 import { useSortableRows } from './tableUtils';
-import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
 
 interface PitchingStatsViewTableProps {
   stats: GamePitchingStatsType | null;
   totals: GamePitchingStatsType['totals'] | null;
 }
 
-const inningsFields: PitchingViewField[] = ['ipDecimal'];
+type StatValue = number | string | null;
+
+type PitchingTableRow = StatsRowBase & {
+  id: string;
+  playerName: string | null;
+  ip?: number | null;
+  ip2?: number | null;
+};
 
 const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);
-
-  const headers = useMemo(
-    () =>
-      pitchingViewFieldOrder.map((key) => ({
-        key,
-        label: PITCHING_FIELD_LABELS[key],
-        align: key === 'playerName' ? ('left' as const) : ('center' as const),
-      })),
-    [],
-  );
 
   const getValue = useCallback(
     (row: GamePitchingStatLineType, field: PitchingViewField) =>
@@ -54,20 +33,76 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
 
   const { sortedRows, sortConfig, handleSort } = useSortableRows(stats?.stats ?? [], getValue);
 
-  const formatValue = useCallback(
-    (value: number | string | null | undefined, field: PitchingViewField) => {
-      if (inningsFields.includes(field)) {
-        return formatInnings(Number(value ?? 0));
-      }
+  const tableRows = useMemo<PitchingTableRow[]>(() => {
+    const rows = sortedRows.map((stat) => {
+      const values: Partial<Record<PitchingViewField, StatValue>> = {};
+      pitchingViewFieldOrder.forEach((field) => {
+        if (field === 'playerNumber') {
+          const numberValue = stat.playerNumber;
+          values[field] = numberValue === null || numberValue === undefined ? null : numberValue;
+        } else if (field === 'playerName') {
+          values[field] = stat.playerName ?? null;
+        } else {
+          values[field] =
+            (stat as Record<string, number | string | null | undefined>)[field] ?? null;
+        }
+      });
 
-      const digits = PITCHING_COLUMN_DECIMAL_DIGITS[field];
-      if (digits !== undefined) {
-        return formatStatDecimal(value, digits);
-      }
+      const resolvedPlayerName = values.playerName;
+      const resolvedPlayerNumber = values.playerNumber;
 
-      return value ?? '-';
+      const row: PitchingTableRow = {
+        ...(values as Record<string, StatValue>),
+        id: stat.statId,
+        playerName:
+          typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
+        playerNumber:
+          typeof resolvedPlayerNumber === 'number' || typeof resolvedPlayerNumber === 'string'
+            ? resolvedPlayerNumber
+            : null,
+        ip: stat.ip ?? null,
+        ip2: stat.ip2 ?? null,
+      };
+
+      return row;
+    });
+
+    if (totals) {
+      const totalsValues: Partial<Record<PitchingViewField, StatValue>> = {};
+      pitchingViewFieldOrder.forEach((field) => {
+        if (field === 'playerNumber') {
+          totalsValues[field] = null;
+        } else if (field === 'playerName') {
+          totalsValues[field] = 'Totals';
+        } else {
+          totalsValues[field] =
+            (totals as Record<string, number | string | null | undefined>)[field] ?? null;
+        }
+      });
+
+      const totalsRow: PitchingTableRow = {
+        ...(totalsValues as Record<string, StatValue>),
+        id: 'totals',
+        playerName: 'Totals',
+        isTotals: true,
+        ip: Number(totals.ip ?? 0),
+        ip2: Number(totals.ip2 ?? 0),
+      };
+
+      rows.push(totalsRow);
+    }
+
+    return rows;
+  }, [sortedRows, totals]);
+
+  const sortField = sortConfig?.key as keyof PitchingTableRow | undefined;
+  const sortOrder = sortConfig?.direction ?? 'asc';
+
+  const handleTableSort = useCallback(
+    (field: keyof PitchingTableRow) => {
+      handleSort(field as PitchingViewField);
     },
-    [],
+    [handleSort],
   );
 
   return (
@@ -78,91 +113,18 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
         </Alert>
       )}
 
-      <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-        <Table size="small" stickyHeader aria-label="Pitching statistics table">
-          <TableHead>
-            <TableRow>
-              {headers.map((header) => (
-                <TableCell
-                  key={header.key}
-                  align={header.align}
-                  sortDirection={sortConfig?.key === header.key ? sortConfig.direction : false}
-                >
-                  <RightAlignedTableSortLabel
-                    active={sortConfig?.key === header.key}
-                    direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
-                    onClick={() => handleSort(header.key)}
-                  >
-                    {header.label}
-                  </RightAlignedTableSortLabel>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedRows.map((stat) => (
-              <TableRow key={stat.statId} hover>
-                {headers.map((header) => {
-                  if (header.key === 'playerNumber') {
-                    const value = stat.playerNumber;
-                    return (
-                      <TableCell key={header.key} align="center">
-                        {value === null || value === undefined ? null : (
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {value}
-                          </Typography>
-                        )}
-                      </TableCell>
-                    );
-                  }
-
-                  if (header.key === 'playerName') {
-                    return (
-                      <TableCell key={header.key} align="left">
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {stat.playerName}
-                        </Typography>
-                      </TableCell>
-                    );
-                  }
-
-                  const value = stat[header.key as keyof GamePitchingStatLineType];
-                  return (
-                    <TableCell key={header.key} align="center">
-                      {formatValue(value, header.key)}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
-
-            {totals && (
-              <TableRow>
-                {headers.map((header) => {
-                  if (header.key === 'playerNumber') {
-                    return <TableCell key={header.key} />;
-                  }
-
-                  if (header.key === 'playerName') {
-                    return (
-                      <TableCell key={header.key} align="left">
-                        <Chip label="Totals" color="primary" size="small" />
-                      </TableCell>
-                    );
-                  }
-
-                  const value = totals[header.key as keyof typeof totals];
-                  return (
-                    <TableCell key={header.key} align="center" sx={{ fontWeight: 700 }}>
-                      {formatValue(value, header.key)}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {tableRows.length > 0 && (
+        <StatisticsTable
+          variant="pitching"
+          extendedStats
+          data={tableRows}
+          getRowKey={(row) => row.id}
+          sortField={sortField ? String(sortField) : undefined}
+          sortOrder={sortOrder}
+          onSort={(field) => handleTableSort(field as keyof PitchingTableRow)}
+          emptyMessage="No pitching statistics available for this game."
+        />
+      )}
     </Box>
   );
 };

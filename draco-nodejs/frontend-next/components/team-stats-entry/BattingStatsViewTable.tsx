@@ -1,48 +1,22 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Alert, Box } from '@mui/material';
 import type { GameBattingStatLineType, GameBattingStatsType } from '@draco/shared-schemas';
 
-import {
-  BATTING_FIELD_LABELS,
-  BATTING_COLUMN_DECIMAL_DIGITS,
-  battingViewFieldOrder,
-  type BattingViewField,
-} from './battingColumns';
-import { formatStatDecimal } from './utils';
+import StatisticsTable, { type StatsRowBase } from '../statistics/StatisticsTable';
+import { battingViewFieldOrder, type BattingViewField } from './battingColumns';
 import { useSortableRows } from './tableUtils';
-import RightAlignedTableSortLabel from './RightAlignedTableSortLabel';
 
 interface BattingStatsViewTableProps {
   stats: GameBattingStatsType | null;
   totals: GameBattingStatsType['totals'] | null;
 }
 
+type BattingTableRow = StatsRowBase & { id: string };
+
 const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, totals }) => {
   const hasStats = Boolean(stats && stats.stats.length > 0);
-
-  const headers = useMemo(
-    () =>
-      battingViewFieldOrder.map((key) => ({
-        key,
-        label: BATTING_FIELD_LABELS[key],
-        align: key === 'playerName' ? ('left' as const) : ('center' as const),
-      })),
-    [],
-  );
 
   const getValue = useCallback(
     (row: GameBattingStatLineType, field: BattingViewField) =>
@@ -52,16 +26,62 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
 
   const { sortedRows, sortConfig, handleSort } = useSortableRows(stats?.stats ?? [], getValue);
 
-  const formatValue = useCallback(
-    (value: number | string | null | undefined, field: BattingViewField) => {
-      const digits = BATTING_COLUMN_DECIMAL_DIGITS[field];
-      if (digits !== undefined) {
-        return formatStatDecimal(value, digits);
-      }
+  const tableRows = useMemo<BattingTableRow[]>(() => {
+    const rows = sortedRows.map((stat) => {
+      const row: BattingTableRow = {
+        id: stat.statId,
+        playerName: stat.playerName ?? null,
+        playerNumber: stat.playerNumber ?? null,
+      };
 
-      return value ?? '-';
+      battingViewFieldOrder.forEach((field) => {
+        if (field === 'playerNumber') {
+          row.playerNumber = stat.playerNumber ?? null;
+        } else if (field === 'playerName') {
+          row.playerName = stat.playerName ?? null;
+        } else {
+          row[field] = ((stat as Record<string, number | string | null | undefined>)[field] ??
+            null) as number | string | null;
+        }
+      });
+
+      return row;
+    });
+
+    if (totals) {
+      const totalsRow: BattingTableRow = {
+        id: 'totals',
+        playerName: 'Totals',
+        playerNumber: null,
+        isTotals: true,
+      };
+
+      battingViewFieldOrder.forEach((field) => {
+        if (field === 'playerNumber') {
+          totalsRow.playerNumber = null;
+        } else if (field === 'playerName') {
+          totalsRow.playerName = 'Totals';
+        } else {
+          totalsRow[field] = ((totals as Record<string, number | string | null | undefined>)[
+            field
+          ] ?? null) as number | string | null;
+        }
+      });
+
+      rows.push(totalsRow);
+    }
+
+    return rows;
+  }, [sortedRows, totals]);
+
+  const sortField = sortConfig?.key as keyof BattingTableRow | undefined;
+  const sortOrder = sortConfig?.direction ?? 'asc';
+
+  const handleTableSort = useCallback(
+    (field: keyof BattingTableRow) => {
+      handleSort(field as BattingViewField);
     },
-    [],
+    [handleSort],
   );
 
   return (
@@ -72,91 +92,18 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
         </Alert>
       )}
 
-      <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-        <Table size="small" stickyHeader aria-label="Batting statistics table">
-          <TableHead>
-            <TableRow>
-              {headers.map((header) => (
-                <TableCell
-                  key={header.key}
-                  align={header.align}
-                  sortDirection={sortConfig?.key === header.key ? sortConfig.direction : false}
-                >
-                  <RightAlignedTableSortLabel
-                    active={sortConfig?.key === header.key}
-                    direction={sortConfig?.key === header.key ? sortConfig.direction : 'asc'}
-                    onClick={() => handleSort(header.key)}
-                  >
-                    {header.label}
-                  </RightAlignedTableSortLabel>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedRows.map((stat) => (
-              <TableRow key={stat.statId} hover>
-                {headers.map((header) => {
-                  if (header.key === 'playerNumber') {
-                    const value = stat.playerNumber;
-                    return (
-                      <TableCell key={header.key} align="center">
-                        {value === null || value === undefined ? null : (
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {value}
-                          </Typography>
-                        )}
-                      </TableCell>
-                    );
-                  }
-
-                  if (header.key === 'playerName') {
-                    return (
-                      <TableCell key={header.key} align="left">
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {stat.playerName}
-                        </Typography>
-                      </TableCell>
-                    );
-                  }
-
-                  const value = stat[header.key as keyof GameBattingStatLineType];
-                  return (
-                    <TableCell key={header.key} align="center">
-                      {formatValue(value, header.key)}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
-
-            {totals && (
-              <TableRow>
-                {headers.map((header) => {
-                  if (header.key === 'playerNumber') {
-                    return <TableCell key={header.key} />;
-                  }
-
-                  if (header.key === 'playerName') {
-                    return (
-                      <TableCell key={header.key} align="left">
-                        <Chip label="Totals" color="primary" size="small" />
-                      </TableCell>
-                    );
-                  }
-
-                  const value = totals[header.key as keyof typeof totals];
-                  return (
-                    <TableCell key={header.key} align="center" sx={{ fontWeight: 700 }}>
-                      {formatValue(value, header.key)}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {tableRows.length > 0 && (
+        <StatisticsTable
+          variant="batting"
+          extendedStats
+          data={tableRows}
+          getRowKey={(row) => row.id}
+          sortField={sortField ? String(sortField) : undefined}
+          sortOrder={sortOrder}
+          onSort={(field) => handleTableSort(field as keyof BattingTableRow)}
+          emptyMessage="No batting statistics available for this game."
+        />
+      )}
     </Box>
   );
 };

@@ -9,14 +9,14 @@ import React, {
   useMemo,
   useLayoutEffect,
 } from 'react';
-
-// Store scroll position outside component to survive re-mounts
-const scrollPositionStore = new Map<string, number>();
 import { Box, IconButton, Fade } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
+
+// Store scroll position outside component to survive re-mounts
+const scrollPositionStore = new Map<string, number>();
 
 interface ScrollableTableProps {
   children: ReactNode;
