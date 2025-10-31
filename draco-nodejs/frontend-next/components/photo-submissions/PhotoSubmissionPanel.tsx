@@ -51,6 +51,10 @@ const PhotoSubmissionPanel: React.FC<PhotoSubmissionPanelProps> = ({
     return null;
   }
 
+  if (variant === 'team' && !teamId) {
+    return null;
+  }
+
   const loadingMessage =
     variant === 'team' ? 'Checking your team access…' : 'Checking your access…';
 
@@ -66,7 +70,7 @@ const PhotoSubmissionPanel: React.FC<PhotoSubmissionPanelProps> = ({
           variant="team"
           accountId={accountId}
           contextName={contextName}
-          teamId={teamId ?? ''}
+          teamId={teamId}
           onSubmitted={onSubmitted}
         />
       ) : (
