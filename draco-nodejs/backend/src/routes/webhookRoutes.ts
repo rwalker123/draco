@@ -4,7 +4,8 @@
 import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { SendGridProvider } from '../services/email/providers/SendGridProvider.js';
-import { SendGridWebhookEvent } from '../interfaces/emailInterfaces.js';
+import { ResendProvider } from '../services/email/providers/ResendProvider.js';
+import { SendGridWebhookEvent, ResendWebhookEvent } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from '../services/email/EmailProviderFactory.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -71,6 +72,62 @@ router.post(
 );
 
 /**
+ * POST /api/webhooks/resend
+ * Receives webhook events from Resend and processes delivery updates.
+ */
+router.post(
+  '/resend',
+  asyncHandler(async (req: Request, res: Response) => {
+    const secret = process.env.RESEND_WEBHOOK_SECRET;
+
+    if (process.env.NODE_ENV === 'production' && secret) {
+      const payload = JSON.stringify(req.body);
+      const headers = {
+        'svix-id': req.get('svix-id') ?? undefined,
+        'svix-timestamp': req.get('svix-timestamp') ?? undefined,
+        'svix-signature': req.get('svix-signature') ?? undefined,
+      };
+
+      if (!ResendProvider.verifyWebhookSignature(payload, headers, secret)) {
+        console.warn('Invalid Resend webhook signature');
+        throw new AuthenticationError('Invalid webhook signature');
+      }
+    }
+
+    const events: ResendWebhookEvent[] = Array.isArray(req.body) ? req.body : [req.body];
+
+    if (events.length === 0) {
+      console.warn('Empty Resend webhook payload received');
+      throw new ValidationError('Empty webhook payload');
+    }
+
+    console.log(`📨 Received ${events.length} Resend webhook events`);
+
+    const provider = await EmailProviderFactory.getProvider();
+
+    if (!(provider instanceof ResendProvider)) {
+      console.error('Resend webhook received but current provider is not Resend');
+      throw new InternalServerError('Resend webhook provider mismatch');
+    }
+
+    const result = await provider.processWebhookEvents(events);
+
+    console.log(`✅ Processed ${result.processed}/${events.length} Resend webhook events`);
+
+    if (result.errors.length > 0) {
+      console.warn('Resend webhook processing errors:', result.errors);
+    }
+
+    res.status(200).json({
+      message: 'Webhook processed successfully',
+      processed: result.processed,
+      total: events.length,
+      errors: result.errors.length,
+    });
+  }),
+);
+
+/**
  * GET /api/webhooks/health
  * Provides a basic health check for webhook integrations.
  */
@@ -87,6 +144,10 @@ router.get(
         sendgrid: {
           enabled: settings.provider === 'sendgrid',
           endpoint: '/api/webhooks/sendgrid',
+        },
+        resend: {
+          enabled: settings.provider === 'resend',
+          endpoint: '/api/webhooks/resend',
         },
       },
     });
@@ -109,6 +170,7 @@ router.get(
         sendgrid: settings.provider === 'sendgrid',
         ses: settings.provider === 'ses',
         ethereal: settings.provider === 'ethereal',
+        resend: settings.provider === 'resend',
       },
     };
 

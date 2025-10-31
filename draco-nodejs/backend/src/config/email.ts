@@ -11,6 +11,8 @@ export interface EmailConfig {
   };
   service?: string;
   region?: string;
+  resendApiKey?: string;
+  resendWebhookSecret?: string;
   credentials?: {
     accessKeyId: string;
     secretAccessKey: string;
@@ -19,7 +21,7 @@ export interface EmailConfig {
 }
 
 export interface EmailSettings {
-  provider: 'sendgrid' | 'ethereal' | 'ses';
+  provider: 'sendgrid' | 'ethereal' | 'ses' | 'resend';
   fromEmail: string;
   fromName: string;
   replyTo?: string;
@@ -39,6 +41,9 @@ export class EmailConfigFactory {
 
       case 'ses':
         return this.getSesConfig();
+
+      case 'resend':
+        return this.getResendConfig();
 
       case 'ethereal':
       default:
@@ -67,7 +72,12 @@ export class EmailConfigFactory {
     const override = process.env.EMAIL_PROVIDER?.toLowerCase();
 
     if (override) {
-      if (override === 'sendgrid' || override === 'ethereal' || override === 'ses') {
+      if (
+        override === 'sendgrid' ||
+        override === 'ethereal' ||
+        override === 'ses' ||
+        override === 'resend'
+      ) {
         return override;
       }
 
@@ -75,7 +85,7 @@ export class EmailConfigFactory {
     }
 
     const nodeEnv = process.env.NODE_ENV || 'development';
-    return nodeEnv === 'production' ? 'ses' : 'ethereal';
+    return nodeEnv === 'production' ? 'ethereal' : 'ethereal';
   }
 
   /**
@@ -128,6 +138,22 @@ export class EmailConfigFactory {
         secretAccessKey,
         ...(sessionToken ? { sessionToken } : {}),
       },
+    };
+  }
+
+  /**
+   * Configuration using Resend
+   */
+  private static getResendConfig(): EmailConfig {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is required for Resend email provider');
+    }
+
+    return {
+      service: 'Resend',
+      resendApiKey: apiKey,
+      resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET,
     };
   }
 
@@ -195,6 +221,10 @@ export class EmailConfigFactory {
           'SES_ACCESS_KEY_ID/SES_SECRET_ACCESS_KEY or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY are required when using the SES email provider',
         );
       }
+    }
+
+    if (provider === 'resend' && !process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is required when using the Resend email provider');
     }
 
     if (!process.env.EMAIL_FROM) {

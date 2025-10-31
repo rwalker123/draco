@@ -676,6 +676,17 @@ SENDGRID_WEBHOOK_PUBLIC_KEY=<optional, required only for signed event webhooks>
 
 - These settings remain available for legacy deployments that still require SendGrid.
 
+### Resend
+
+```
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=<production API key>
+RESEND_WEBHOOK_SECRET=<svix signing secret for webhook verification>
+```
+
+- Configure verified senders/domains in Resend before enabling production sends.
+- When using webhooks, supply `RESEND_WEBHOOK_SECRET` so the backend can verify signatures.
+
 ### Ethereal (local testing)
 
 ```

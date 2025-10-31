@@ -36032,6 +36032,242 @@
         }
       }
     },
+    "/api/webhooks/resend": {
+      "post": {
+        "operationId": "processResendWebhook",
+        "summary": "Process Resend webhook events",
+        "description": "Receives webhook events from Resend and updates email delivery status for tracked recipients.",
+        "tags": [
+          "Webhooks"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "description": "Resend event type (for example, email.delivered)."
+                      },
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "event": {
+                            "type": "string",
+                            "description": "Normalized event type reported by Resend."
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "description": "ISO 8601 timestamp describing when the event occurred."
+                          },
+                          "timestamp": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ],
+                            "description": "Unix timestamp of when the event occurred."
+                          },
+                          "reason": {
+                            "type": "string",
+                            "description": "Failure reason supplied by Resend, when available."
+                          },
+                          "smtp_response": {
+                            "type": "string",
+                            "description": "Raw SMTP response captured for the event, if provided."
+                          },
+                          "email": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Unique email identifier assigned by Resend."
+                              },
+                              "to": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "format": "email"
+                                },
+                                "description": "Recipient email addresses associated with the event."
+                              },
+                              "from": {
+                                "type": "string",
+                                "description": "Fully qualified sender address."
+                              },
+                              "subject": {
+                                "type": "string",
+                                "description": "Email subject line."
+                              }
+                            },
+                            "description": "Email metadata for the event."
+                          }
+                        },
+                        "description": "Event metadata returned by Resend."
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "Resend event type (for example, email.delivered)."
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "event": {
+                              "type": "string",
+                              "description": "Normalized event type reported by Resend."
+                            },
+                            "created_at": {
+                              "type": "string",
+                              "description": "ISO 8601 timestamp describing when the event occurred."
+                            },
+                            "timestamp": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string"
+                                }
+                              ],
+                              "description": "Unix timestamp of when the event occurred."
+                            },
+                            "reason": {
+                              "type": "string",
+                              "description": "Failure reason supplied by Resend, when available."
+                            },
+                            "smtp_response": {
+                              "type": "string",
+                              "description": "Raw SMTP response captured for the event, if provided."
+                            },
+                            "email": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "description": "Unique email identifier assigned by Resend."
+                                },
+                                "to": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "format": "email"
+                                  },
+                                  "description": "Recipient email addresses associated with the event."
+                                },
+                                "from": {
+                                  "type": "string",
+                                  "description": "Fully qualified sender address."
+                                },
+                                "subject": {
+                                  "type": "string",
+                                  "description": "Email subject line."
+                                }
+                              },
+                              "description": "Email metadata for the event."
+                            }
+                          },
+                          "description": "Event metadata returned by Resend."
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ]
+                    },
+                    "minItems": 1
+                  }
+                ],
+                "description": "Resend webhook payload containing one or more events."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook events were processed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Status message describing the processing outcome."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of events successfully processed."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Total number of events received in the webhook payload."
+                    },
+                    "errors": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of events that encountered processing errors."
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "processed",
+                    "total",
+                    "errors"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The webhook payload was empty or malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The webhook signature could not be validated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected server error occurred while processing webhook events.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/webhooks/health": {
       "get": {
         "operationId": "getWebhookHealth",
@@ -36061,7 +36297,8 @@
                       "enum": [
                         "sendgrid",
                         "ses",
-                        "ethereal"
+                        "ethereal",
+                        "resend"
                       ],
                       "description": "Configured email provider handling outbound email and webhooks."
                     },
@@ -36084,10 +36321,28 @@
                             "enabled",
                             "endpoint"
                           ]
+                        },
+                        "resend": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean",
+                              "description": "Indicates whether the Resend webhook is enabled."
+                            },
+                            "endpoint": {
+                              "type": "string",
+                              "description": "Webhook endpoint path configured for Resend."
+                            }
+                          },
+                          "required": [
+                            "enabled",
+                            "endpoint"
+                          ]
                         }
                       },
                       "required": [
-                        "sendgrid"
+                        "sendgrid",
+                        "resend"
                       ]
                     }
                   },
@@ -36154,12 +36409,17 @@
                         "ethereal": {
                           "type": "boolean",
                           "description": "Indicates whether the Ethereal test provider is active for outbound email."
+                        },
+                        "resend": {
+                          "type": "boolean",
+                          "description": "Indicates whether Resend is the active outbound email provider."
                         }
                       },
                       "required": [
                         "sendgrid",
                         "ses",
-                        "ethereal"
+                        "ethereal",
+                        "resend"
                       ]
                     }
                   },

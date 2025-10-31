@@ -121,7 +121,7 @@ export interface EmailSettings {
   fromEmail: string;
   fromName: string;
   replyTo?: string;
-  provider: 'sendgrid' | 'ethereal' | 'ses';
+  provider: 'sendgrid' | 'ethereal' | 'ses' | 'resend';
 }
 
 export interface EtherealTestAccount {
@@ -158,6 +158,29 @@ export interface SendGridWebhookEvent {
   unique_args?: Record<string, string>;
   marketing_campaign_id?: string;
   marketing_campaign_name?: string;
+}
+
+export interface ResendWebhookEvent {
+  type: string;
+  object?: string;
+  data?: {
+    event?: string;
+    created_at?: string;
+    timestamp?: number;
+    reason?: string;
+    smtp_response?: string;
+    tags?: Array<Record<string, unknown>>;
+    email?: {
+      id?: string;
+      to?: string[];
+      from?: string;
+      subject?: string;
+      cc?: string[];
+      bcc?: string[];
+      reply_to?: string[] | string;
+      headers?: Record<string, unknown>;
+    };
+  };
 }
 
 export interface WebhookProcessingResult {
