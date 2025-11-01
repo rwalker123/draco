@@ -291,7 +291,7 @@ export class StatisticsService {
       ? await this.getBattingLeaders(accountId, category, updatedFilters)
       : await this.getPitchingLeaders(accountId, category, updatedFilters);
 
-    return StatsResponseFormatter.formatLeaderRows(leaders);
+    return StatsResponseFormatter.formatLeaderRows(leaders, accountId);
   }
 
   // Get standings for a season

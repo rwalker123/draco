@@ -168,6 +168,7 @@ export const LeaderRowSchema = z.object({
   rank: z.number(),
   isTie: z.boolean().optional(),
   tieCount: z.number().optional(),
+  photoUrl: z.string().optional(),
 });
 
 export const LeaderCategorySchema = z.object({

@@ -31,6 +31,7 @@ import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
+import AccountLeadersWidget from '../../../components/statistics/AccountLeadersWidget';
 import {
   getAccountById,
   getAccountUserTeams,
@@ -296,6 +297,29 @@ const BaseballAccountHome: React.FC = () => {
 
     return groups;
   }, [seasonLeagueHierarchy, teamAlbumsByTeamId]);
+
+  const currentSeasonId = useMemo(() => {
+    if (!currentSeason?.id) {
+      return null;
+    }
+    return String(currentSeason.id);
+  }, [currentSeason]);
+
+  const leaderLeagues = useMemo(() => {
+    if (seasonLeagueHierarchy.length === 0) {
+      return [];
+    }
+
+    return seasonLeagueHierarchy
+      .map((leagueSeason) => {
+        const id = leagueSeason.id ? String(leagueSeason.id) : null;
+        const name = leagueSeason.league?.name ?? 'League';
+        return id ? { id, name } : null;
+      })
+      .filter(
+        (league): league is { id: string; name: string } => league !== null && league.id.length > 0,
+      );
+  }, [seasonLeagueHierarchy]);
 
   useEffect(() => {
     if (selectedAlbumKey === 'all') {
@@ -747,6 +771,23 @@ const BaseballAccountHome: React.FC = () => {
               onGamesLoaded={(games) => {
                 if (games && games.length > 0) setHasAnyGames(true);
               }}
+            />
+          </Box>
+        )}
+
+        {leaderLeagues.length > 0 && accountIdStr && (
+          <Box
+            sx={{
+              mt: 3,
+              display: 'flex',
+              justifyContent: 'flex-start',
+            }}
+          >
+            <AccountLeadersWidget
+              accountId={accountIdStr}
+              seasonId={currentSeasonId}
+              leagues={leaderLeagues}
+              divisionId="0"
             />
           </Box>
         )}

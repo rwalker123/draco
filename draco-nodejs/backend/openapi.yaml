@@ -6357,6 +6357,8 @@ components:
           type: boolean
         tieCount:
           type: number
+        photoUrl:
+          type: string
       required:
         - playerId
         - playerName
