@@ -324,6 +324,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     [openViewRecap],
   );
 
+  const shouldShowTeamSponsors = teamSponsors.length > 0 || Boolean(teamSponsorError);
+
   const canManageTeamSponsors = React.useMemo(() => {
     return (
       hasRole('Administrator') ||
@@ -607,11 +609,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       {/* Stats Leaders & Sponsors */}
       <div className="flex flex-col md:flex-row gap-6 mb-8">
         <div className="flex-1 min-w-0">
-          <SponsorCard
-            sponsors={teamSponsors}
-            title="Team Sponsors"
-            emptyMessage={teamSponsorError ?? 'No team sponsors have been added yet.'}
-          />
+          {shouldShowTeamSponsors && (
+            <SponsorCard
+              sponsors={teamSponsors}
+              title="Team Sponsors"
+              emptyMessage={teamSponsorError ?? undefined}
+            />
+          )}
         </div>
       </div>
 
