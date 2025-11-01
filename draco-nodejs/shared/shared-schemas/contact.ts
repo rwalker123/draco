@@ -126,6 +126,32 @@ export const PagedContactSchema = z
     description: 'Response for contact search',
   });
 
+export const PublicContactSummarySchema = z.object({
+  id: bigintToStringSchema,
+  firstName: nameSchema,
+  lastName: nameSchema,
+  photoUrl: z.string().trim().optional(),
+});
+
+export const PublicContactSearchResponseSchema = z.object({
+  results: PublicContactSummarySchema.array(),
+});
+
+export const PublicContactSearchQuerySchema = z.object({
+  query: z
+    .string()
+    .trim()
+    .min(1, 'query must be at least 1 character')
+    .max(100, 'query must be at most 100 characters'),
+  limit: z
+    .string()
+    .transform((val) => parseInt(val))
+    .refine((val) => Number.isFinite(val) && val > 0, {
+      message: 'limit must be a positive number',
+    })
+    .default(15),
+});
+
 export const TeamWithNameSchema = z.object({
   teamSeasonId: z.string(),
   teamName: z.string(),
@@ -232,6 +258,9 @@ export type RoleWithContactType = z.infer<typeof RoleWithContactSchema>;
 export type CreateContactRoleType = z.infer<typeof CreateContactRoleSchema>;
 export type UserRolesType = z.infer<typeof UserRolesSchema>;
 export type PagedContactType = z.infer<typeof PagedContactSchema>;
+export type PublicContactSummaryType = z.infer<typeof PublicContactSummarySchema>;
+export type PublicContactSearchResponseType = z.infer<typeof PublicContactSearchResponseSchema>;
+export type PublicContactSearchQueryType = z.infer<typeof PublicContactSearchQuerySchema>;
 export type TeamWithNameType = z.infer<typeof TeamWithNameSchema>;
 export type TeamManagerWithTeamsType = z.infer<typeof TeamManagerWithTeamsSchema>;
 export type AutomaticRoleHoldersType = z.infer<typeof AutomaticRoleHoldersSchema>;

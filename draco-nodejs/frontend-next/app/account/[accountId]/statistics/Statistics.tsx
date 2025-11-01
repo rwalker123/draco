@@ -9,6 +9,7 @@ import BattingStatistics from './BattingStatistics';
 import PitchingStatistics from './PitchingStatistics';
 import TeamStatistics from './TeamStatistics';
 import Standings from '../../../../components/Standings';
+import PlayerCareerSearchTab from './PlayerCareerSearchTab';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -126,7 +127,8 @@ export default function Statistics({ accountId }: StatisticsProps) {
               <Tab label="Batting" {...a11yProps(1)} />
               <Tab label="Pitching" {...a11yProps(2)} />
               <Tab label="Teams" {...a11yProps(3)} />
-              <Tab label="Standings" {...a11yProps(4)} />
+              <Tab label="Players" {...a11yProps(4)} />
+              <Tab label="Standings" {...a11yProps(5)} />
             </Tabs>
           </Box>
 
@@ -147,6 +149,10 @@ export default function Statistics({ accountId }: StatisticsProps) {
           </TabPanel>
 
           <TabPanel value={tabValue} index={4}>
+            <PlayerCareerSearchTab accountId={accountId} />
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={5}>
             <Standings accountId={accountId} seasonId={filters.seasonId} showHeader={false} />
           </TabPanel>
         </Paper>

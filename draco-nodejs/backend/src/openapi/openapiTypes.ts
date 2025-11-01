@@ -67,8 +67,12 @@ import {
   HofEligibleContactsQuerySchema,
   HofEligibleContactsResponseSchema,
   HofNominationQuerySchema,
+  PlayerCareerStatisticsSchema,
   PlayerPitchingStatsSchema,
   PlayerPitchingStatsBriefSchema,
+  PublicContactSummarySchema,
+  PublicContactSearchResponseSchema,
+  PublicContactSearchQuerySchema,
   TeamStatsPlayerSummarySchema,
   GameBattingStatLineSchema,
   GameBattingStatsSchema,
@@ -421,6 +425,22 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const PlayerPitchingStatsBriefSchemaRef = registry.register(
     'PlayerPitchingStatsBrief',
     PlayerPitchingStatsBriefSchema,
+  );
+  const PlayerCareerStatisticsSchemaRef = registry.register(
+    'PlayerCareerStatistics',
+    PlayerCareerStatisticsSchema,
+  );
+  const PublicContactSummarySchemaRef = registry.register(
+    'PublicContactSummary',
+    PublicContactSummarySchema,
+  );
+  const PublicContactSearchResponseSchemaRef = registry.register(
+    'PublicContactSearchResponse',
+    PublicContactSearchResponseSchema,
+  );
+  const PublicContactSearchQuerySchemaRef = registry.register(
+    'PublicContactSearchQuery',
+    PublicContactSearchQuerySchema,
   );
   const TeamStatsPlayerSummarySchemaRef = registry.register(
     'TeamStatsPlayerSummary',
@@ -860,6 +880,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PlayerBattingStatsBriefSchemaRef,
     PlayerPitchingStatsSchemaRef,
     PlayerPitchingStatsBriefSchemaRef,
+    PlayerCareerStatisticsSchemaRef,
+    PublicContactSummarySchemaRef,
+    PublicContactSearchResponseSchemaRef,
+    PublicContactSearchQuerySchemaRef,
     TeamStatsPlayerSummarySchemaRef,
     GameBattingStatLineSchemaRef,
     GameBattingStatsSchemaRef,

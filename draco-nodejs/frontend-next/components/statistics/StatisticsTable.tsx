@@ -73,7 +73,7 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
   sortOrder = 'asc',
   onSort,
   hideHeader = false,
-  maxHeight = '70vh',
+  maxHeight,
 }: StatisticsTableBaseProps<T>) => {
   const activeField = sortField !== undefined ? String(sortField) : undefined;
   const dataVersion = `${String(activeField)}-${sortOrder}-${data.length}`;
@@ -120,8 +120,12 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
       <TableContainer
         component={Paper}
         sx={{
-          maxHeight,
-          overflowY: 'auto',
+          ...(maxHeight
+            ? {
+                maxHeight,
+                overflowY: 'auto',
+              }
+            : {}),
           '& .MuiTableHead-root': {
             position: 'sticky',
             top: 0,
@@ -317,6 +321,8 @@ interface SharedStatisticsTableProps<T extends StatsRowBase> {
   onSort?: (field: string) => void;
   hideHeader?: boolean;
   maxHeight?: string | number;
+  prependColumns?: ColumnConfig<T>[];
+  omitFields?: string[];
 }
 
 const BATTER_COMPACT_FIELDS: ReadonlyArray<string> = [
@@ -399,6 +405,7 @@ const buildColumns = <T extends StatsRowBase>(
   variant: StatisticsTableVariant,
   extendedStats: boolean,
   rows: T[],
+  omitFields: Set<string>,
 ): ColumnConfig<T>[] => {
   const columns: ColumnConfig<T>[] = [];
   const includeTeamColumn = !extendedStats && hasTeamInformation(rows);
@@ -567,12 +574,18 @@ const buildColumns = <T extends StatsRowBase>(
       if (field === 'teamName' && !includeTeamColumn) {
         return;
       }
+      if (omitFields.has(field)) {
+        return;
+      }
       pushColumn(field);
     });
   } else {
     const fields = extendedStats ? pitchingViewFieldOrder : PITCHER_COMPACT_FIELDS;
     fields.forEach((field) => {
       if (field === 'teamName' && !includeTeamColumn) {
+        return;
+      }
+      if (omitFields.has(field)) {
         return;
       }
       pushColumn(field);
@@ -594,11 +607,17 @@ const StatisticsTable = <T extends StatsRowBase>({
   onSort,
   hideHeader,
   maxHeight,
+  prependColumns,
+  omitFields,
 }: SharedStatisticsTableProps<T>) => {
-  const columns = useMemo(
-    () => buildColumns<T>(variant, extendedStats, data),
-    [variant, extendedStats, data],
-  );
+  const omitSet = useMemo(() => new Set(omitFields ?? []), [omitFields]);
+  const columns = useMemo(() => {
+    const baseColumns = buildColumns<T>(variant, extendedStats, data, omitSet);
+    if (!prependColumns || prependColumns.length === 0) {
+      return baseColumns;
+    }
+    return [...prependColumns, ...baseColumns];
+  }, [variant, extendedStats, data, prependColumns, omitSet]);
 
   const handleInternalSort = useCallback(
     (field: string) => {

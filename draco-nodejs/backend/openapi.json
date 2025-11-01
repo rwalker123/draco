@@ -6820,6 +6820,480 @@
           "ip"
         ]
       },
+      "PlayerCareerStatistics": {
+        "type": "object",
+        "properties": {
+          "playerId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "playerNumber": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "batting": {
+            "type": "object",
+            "properties": {
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "playerId": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "playerName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "teams": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "teamName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "ab": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "h": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "r": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "d": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "t": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "hr": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "rbi": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "bb": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "so": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "hbp": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "sb": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "sf": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "sh": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "avg": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "obp": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "slg": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "ops": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "tb": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "pa": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "seasonId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$"
+                    },
+                    "seasonName": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "leagueId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$"
+                    },
+                    "leagueName": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "teamId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$"
+                    },
+                    "seasonSortOrder": {
+                      "type": "number"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "season",
+                        "team",
+                        "career"
+                      ]
+                    },
+                    "isTotals": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "playerId",
+                    "playerName",
+                    "teamName",
+                    "ab",
+                    "h",
+                    "r",
+                    "d",
+                    "t",
+                    "hr",
+                    "rbi",
+                    "bb",
+                    "so",
+                    "hbp",
+                    "sb",
+                    "sf",
+                    "sh",
+                    "avg",
+                    "obp",
+                    "slg",
+                    "ops",
+                    "tb",
+                    "pa",
+                    "level"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "rows"
+            ]
+          },
+          "pitching": {
+            "type": "object",
+            "properties": {
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "playerId": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "playerName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "teams": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "teamName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "ip": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "ip2": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "w": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "l": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "s": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "h": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "r": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "er": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "bb": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "so": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "hr": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "bf": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "wp": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "hbp": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "era": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "whip": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "k9": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "bb9": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "oba": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "slg": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "ipDecimal": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "seasonId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$"
+                    },
+                    "seasonName": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "leagueId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$"
+                    },
+                    "leagueName": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "teamId": {
+                      "type": "string",
+                      "nullable": true,
+                      "pattern": "^d+$"
+                    },
+                    "seasonSortOrder": {
+                      "type": "number"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "season",
+                        "team",
+                        "career"
+                      ]
+                    },
+                    "isTotals": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "playerId",
+                    "playerName",
+                    "teamName",
+                    "ip",
+                    "ip2",
+                    "w",
+                    "l",
+                    "s",
+                    "h",
+                    "r",
+                    "er",
+                    "bb",
+                    "so",
+                    "hr",
+                    "bf",
+                    "wp",
+                    "hbp",
+                    "era",
+                    "whip",
+                    "k9",
+                    "bb9",
+                    "oba",
+                    "slg",
+                    "ipDecimal",
+                    "level"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "rows"
+            ]
+          }
+        },
+        "required": [
+          "playerId",
+          "playerName",
+          "batting",
+          "pitching"
+        ]
+      },
+      "PublicContactSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "photoUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "PublicContactSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "firstName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "lastName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "photoUrl": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "firstName",
+                "lastName"
+              ]
+            }
+          }
+        },
+        "required": [
+          "results"
+        ]
+      },
+      "PublicContactSearchQuery": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "limit": {
+            "type": "string",
+            "default": 15
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
       "TeamStatsPlayerSummary": {
         "type": "object",
         "properties": {
@@ -19095,6 +19569,78 @@
                   "items": {
                     "$ref": "#/components/schemas/BaseContact"
                   }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/contacts/public-search": {
+      "get": {
+        "operationId": "searchPublicContacts",
+        "summary": "Public contact search",
+        "description": "Search contacts within an account by name. Returns limited contact fields safe for public use.",
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": true,
+            "name": "query",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "default": 15
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching contacts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicContactSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
                 }
               }
             }
@@ -32583,6 +33129,78 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/statistics/players/{playerId}": {
+      "get": {
+        "operationId": "getPlayerCareerStatistics",
+        "summary": "Get player career statistics",
+        "description": "Fetch batting and pitching statistics for a single player across all recorded seasons, including per-season breakdowns and career totals.",
+        "tags": [
+          "Statistics"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player career statistics retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerCareerStatistics"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Player not found for account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }
