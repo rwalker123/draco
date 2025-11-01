@@ -2,7 +2,17 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Alert, Box, Button, Paper, Tab, Tabs, Typography, useTheme } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Paper,
+  Tab,
+  Tabs,
+  Typography,
+  useTheme,
+  type Theme,
+} from '@mui/material';
 import LeaderCategoryPanel from './LeaderCategoryPanel';
 import { useLeaderCategories } from '../../hooks/useLeaderCategories';
 import { useStatisticalLeaders } from '../../hooks/useStatisticalLeaders';
@@ -43,6 +53,19 @@ type LeadersWidgetProps = AccountLeadersWidgetProps | TeamLeadersWidgetProps;
 
 const DEFAULT_ACCOUNT_TITLE = 'League Leaders';
 const DEFAULT_TEAM_TITLE = 'Team Leaders';
+
+const buildStatTypeTabSx = (muiTheme: Theme) => ({
+  minWidth: 120,
+  borderRadius: 2,
+  textTransform: 'none',
+  border: `1px solid ${muiTheme.palette.divider}`,
+  backgroundColor: muiTheme.palette.background.paper,
+  color: muiTheme.palette.text.primary,
+  '&.Mui-selected': {
+    backgroundColor: muiTheme.palette.primary.main,
+    color: muiTheme.palette.primary.contrastText,
+  },
+});
 
 const isTeamVariantProps = (props: LeadersWidgetProps): props is TeamLeadersWidgetProps => {
   return props.variant === 'team';
@@ -453,38 +476,8 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           },
         }}
       >
-        <Tab
-          label="Batting"
-          value="batting"
-          sx={(muiTheme) => ({
-            minWidth: 120,
-            borderRadius: 2,
-            textTransform: 'none',
-            border: `1px solid ${muiTheme.palette.divider}`,
-            backgroundColor: muiTheme.palette.background.paper,
-            color: muiTheme.palette.text.primary,
-            '&.Mui-selected': {
-              backgroundColor: muiTheme.palette.primary.main,
-              color: muiTheme.palette.primary.contrastText,
-            },
-          })}
-        />
-        <Tab
-          label="Pitching"
-          value="pitching"
-          sx={(muiTheme) => ({
-            minWidth: 120,
-            borderRadius: 2,
-            textTransform: 'none',
-            border: `1px solid ${muiTheme.palette.divider}`,
-            backgroundColor: muiTheme.palette.background.paper,
-            color: muiTheme.palette.text.primary,
-            '&.Mui-selected': {
-              backgroundColor: muiTheme.palette.primary.main,
-              color: muiTheme.palette.primary.contrastText,
-            },
-          })}
-        />
+        <Tab label="Batting" value="batting" sx={buildStatTypeTabSx} />
+        <Tab label="Pitching" value="pitching" sx={buildStatTypeTabSx} />
       </Tabs>
 
       {activeCategories.length > 0 ? (
