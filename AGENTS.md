@@ -21,6 +21,10 @@ Always execute scripts from the repository root. Use `npm run dev` for the full 
 ## Coding Style & Naming Conventions
 TypeScript, ES modules, two-space indentation, and trailing commas are standard. ESLint and Prettier run through Husky, so lint before pushing with `npm run lint --workspaces` and rely on the staged formatter. Prefer `camelCase` for variables and functions, `PascalCase` for React components, services, and types, and `SCREAMING_SNAKE_CASE` for constants. Match filenames to their primary export.
 
+### Optimistic Updates
+- **NEVER** introduce optimistic state changes, UI transitions, or server updates. Wait for confirmed data before mutating state or rendering new values.
+- This prohibition applies across the entire codebase, including leader tables, filters, and any client interactions that could display stale data. The cost of removing optimistic paths outweighs the perceived responsiveness.
+
 ## Testing Guidelines
 Vitest powers backend and frontend suites, with Testing Library utilities under `frontend-next/test-utils`. Keep unit tests close to source in `__tests__` directories using `*.test.ts` or `*.test.tsx`, and reserve `*.integration.test.ts` for backend flows in `backend/src/__tests__`. Run `npm run backend:test` and `npm run test:coverage -w @draco/frontend-next` before opening a PR, updating fixtures when API responses shift.
 

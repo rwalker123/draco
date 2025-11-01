@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Play, Star, Award, Target } from 'lucide-react';
+import { MessageSquare, Play, Target } from 'lucide-react';
 import Image from 'next/image';
 import GameListDisplay, { Game } from '../../../../../../../components/GameListDisplay';
 import React from 'react';
@@ -37,6 +36,7 @@ import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendin
 import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
 import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 import { useGameRecapFlow } from '../../../../../../../hooks/useGameRecapFlow';
+import LeadersWidget from '../../../../../../../components/statistics/LeadersWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -57,6 +57,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
     teamId?: string;
+    leagueId?: string;
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
@@ -452,6 +453,26 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         />
       )}
 
+      {teamData?.leagueId && (
+        <Box sx={{ mt: 4 }}>
+          <LeadersWidget
+            variant="team"
+            accountId={accountId}
+            seasonId={seasonId}
+            teamSeasonId={teamSeasonId}
+            leagueId={teamData.leagueId}
+            leagueName={teamData.leagueName}
+            leagues={[
+              {
+                id: teamData.leagueId,
+                name: teamData.leagueName ?? 'League',
+              },
+            ]}
+            teamId={teamSeasonId}
+          />
+        </Box>
+      )}
+
       {shouldShowTeamPendingPanel ? (
         <PendingPhotoSubmissionsPanel
           contextLabel={teamData?.teamName ?? 'this team'}
@@ -584,53 +605,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       )}
 
       {/* Stats Leaders & Sponsors */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5" />
-              Top Performers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src="/placeholder.png" alt="Alex Johnson" />
-                </Avatar>
-                <div>
-                  <h4 className="font-semibold">Alex Johnson</h4>
-                  <p className="text-sm text-muted-foreground">Pitcher</p>
-                  <div className="flex gap-4 text-xs text-muted-foreground mt-1">
-                    <span>45 hits</span>
-                    <span>32 RBIs</span>
-                    <span>.312 avg</span>
-                  </div>
-                </div>
-                <Star className="w-5 h-5 text-yellow-400 ml-auto" />
-              </div>
-              <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src="/placeholder.png" alt="Sarah Chen" />
-                </Avatar>
-                <div>
-                  <h4 className="font-semibold">Sarah Chen</h4>
-                  <p className="text-sm text-muted-foreground">Catcher</p>
-                  <div className="flex gap-4 text-xs text-muted-foreground mt-1">
-                    <span>52 hits</span>
-                    <span>41 RBIs</span>
-                    <span>.298 avg</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <SponsorCard
-          sponsors={teamSponsors}
-          title="Team Sponsors"
-          emptyMessage={teamSponsorError ?? 'No team sponsors have been added yet.'}
-        />
+      <div className="flex flex-col md:flex-row gap-6 mb-8">
+        <div className="flex-1 min-w-0">
+          <SponsorCard
+            sponsors={teamSponsors}
+            title="Team Sponsors"
+            emptyMessage={teamSponsorError ?? 'No team sponsors have been added yet.'}
+          />
+        </div>
       </div>
 
       {/* Community Section */}

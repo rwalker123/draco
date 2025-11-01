@@ -17,6 +17,7 @@ import {
   dbPitchingStatisticsRow,
 } from '../repositories/types/dbTypes.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { getContactPhotoUrl } from '../config/logo.js';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameStatus.js';
 import { formatFieldFromAvailableField } from './fieldFormatterUtils.js';
 
@@ -110,7 +111,7 @@ export class StatsResponseFormatter {
     });
   }
 
-  static formatLeaderRows(rows: LeaderRowType[]): LeaderRowType[] {
+  static formatLeaderRows(rows: LeaderRowType[], accountId?: bigint | string): LeaderRowType[] {
     return rows.map((row) => {
       const teams = row.teams?.length ? row.teams : undefined;
       const teamName = row.isTie
@@ -136,6 +137,10 @@ export class StatsResponseFormatter {
 
       if (row.tieCount !== undefined) {
         formatted.tieCount = row.tieCount;
+      }
+
+      if (accountId) {
+        formatted.photoUrl = getContactPhotoUrl(accountId.toString(), row.playerId.toString());
       }
 
       return formatted;

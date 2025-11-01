@@ -130,7 +130,22 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
           },
         }}
       >
-        <Table size="small" stickyHeader={!hideHeader}>
+        <Table
+          size="small"
+          stickyHeader={!hideHeader}
+          sx={{
+            tableLayout: 'auto',
+            '& .MuiTableCell-root': {
+              py: 0.75,
+              px: 1.25,
+              fontSize: '0.85rem',
+            },
+            '& .MuiTableCell-head': {
+              fontSize: '0.75rem',
+              letterSpacing: 0.4,
+            },
+          }}
+        >
           {!hideHeader && (
             <TableHead>
               <TableRow>

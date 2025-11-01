@@ -23,6 +23,7 @@ interface TeamInfoCardProps {
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
     teamId?: string;
+    leagueId?: string;
   }) => void;
 }
 
@@ -42,6 +43,7 @@ export default function TeamInfoCard({
   const [accountName, setAccountName] = useState<string>('');
   const [seasonName, setSeasonName] = useState<string>('');
   const [leagueName, setLeagueName] = useState<string>('');
+  const [leagueId, setLeagueId] = useState<string>('');
 
   useEffect(() => {
     if (!accountId || !seasonId || !teamSeasonId) {
@@ -82,6 +84,7 @@ export default function TeamInfoCard({
         setTeam(teamData);
         setSeasonName(data.season?.name ?? '');
         setLeagueName(data.league?.name ?? '');
+        setLeagueId(data.league?.id ? String(data.league.id) : '');
         setRecord({
           wins: data.record.w,
           losses: data.record.l,
@@ -132,9 +135,10 @@ export default function TeamInfoCard({
         logoUrl: team.logoUrl,
         record: record || undefined,
         teamId: team.teamId,
+        leagueId: leagueId || undefined,
       });
     }
-  }, [team, accountName, seasonName, leagueName, record, onTeamDataLoaded]);
+  }, [team, accountName, seasonName, leagueName, record, leagueId, onTeamDataLoaded]);
 
   return (
     <section className="flex flex-col items-center mb-10">

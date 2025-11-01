@@ -289,6 +289,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
     teamId?: string;
+    leagueId?: string;
   } | null>(null);
 
   const [games, setGames] = useState<TeamCompletedGameType[]>([]);
@@ -1337,6 +1338,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       logoUrl?: string;
       record?: { wins: number; losses: number; ties: number };
       teamId?: string;
+      leagueId?: string;
     }) => {
       setTeamHeaderData((previous) => {
         const recordsMatch = (() => {
@@ -1361,7 +1363,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           previous.accountName === data.accountName &&
           previous.logoUrl === data.logoUrl &&
           recordsMatch &&
-          previous.teamId === data.teamId
+          previous.teamId === data.teamId &&
+          previous.leagueId === data.leagueId
         ) {
           return previous;
         }
@@ -1374,6 +1377,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           logoUrl: data.logoUrl,
           record: data.record,
           teamId: data.teamId,
+          leagueId: data.leagueId,
         };
       });
     },
