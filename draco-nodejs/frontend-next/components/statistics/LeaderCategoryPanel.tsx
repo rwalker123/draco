@@ -72,40 +72,49 @@ const processLeadersForTable = (
   return processed;
 };
 
-const createLeaderColumns = (category: LeaderCategoryType): ColumnConfig<LeaderRow>[] => [
-  {
-    field: 'rank',
-    label: '#',
-    align: 'center',
-    tooltip: 'Rank',
-    sortable: false,
-    formatter: (value: unknown) => String(value ?? ''),
-  },
-  {
-    field: 'playerName',
-    label: 'Player',
-    align: 'left',
-    sortable: false,
-    render: ({ formattedValue }) => (
-      <Typography variant="body2" fontWeight="medium">
-        {formattedValue as React.ReactNode}
-      </Typography>
-    ),
-  },
-  {
-    field: 'teamName',
-    label: 'Team',
-    align: 'left',
-    sortable: false,
-    render: ({ row }) => (
-      <TeamBadges
-        teams={row.teams as string[] | undefined}
-        teamName={row.teamName as string | undefined}
-        maxVisible={3}
-      />
-    ),
-  },
-  {
+const createLeaderColumns = (
+  category: LeaderCategoryType,
+  includeTeamColumn: boolean,
+): ColumnConfig<LeaderRow>[] => {
+  const columns: ColumnConfig<LeaderRow>[] = [
+    {
+      field: 'rank',
+      label: '#',
+      align: 'center',
+      tooltip: 'Rank',
+      sortable: false,
+      formatter: (value: unknown) => String(value ?? ''),
+    },
+    {
+      field: 'playerName',
+      label: 'Player',
+      align: 'left',
+      sortable: false,
+      render: ({ formattedValue }) => (
+        <Typography variant="body2" fontWeight="medium">
+          {formattedValue as React.ReactNode}
+        </Typography>
+      ),
+    },
+  ];
+
+  if (includeTeamColumn) {
+    columns.push({
+      field: 'teamName',
+      label: 'Team',
+      align: 'left',
+      sortable: false,
+      render: ({ row }) => (
+        <TeamBadges
+          teams={row.teams as string[] | undefined}
+          teamName={row.teamName as string | undefined}
+          maxVisible={3}
+        />
+      ),
+    });
+  }
+
+  columns.push({
     field: 'statValue',
     label: category.label,
     align: 'right',
@@ -113,8 +122,10 @@ const createLeaderColumns = (category: LeaderCategoryType): ColumnConfig<LeaderR
     primary: true,
     sortable: false,
     formatter: getFormatter(category.format),
-  },
-];
+  });
+
+  return columns;
+};
 
 const getRowKey = (item: LeaderRow, index: number) => {
   if (item.isTie) {
@@ -130,6 +141,7 @@ interface LeaderCategoryPanelProps {
   emptyMessage?: string;
   hideHeaderWhenCard?: boolean;
   onWidthChange?: (width?: number) => void;
+  hideTeamInfo?: boolean;
 }
 
 export default function LeaderCategoryPanel({
@@ -139,6 +151,7 @@ export default function LeaderCategoryPanel({
   emptyMessage,
   hideHeaderWhenCard = true,
   onWidthChange,
+  hideTeamInfo = false,
 }: LeaderCategoryPanelProps) {
   const leaderForCard = useMemo(() => getLeaderForCard(leaders), [leaders]);
   const processedLeaders = useMemo(
@@ -220,6 +233,7 @@ export default function LeaderCategoryPanel({
             leader={leaderForCard}
             statLabel={category.label}
             formatter={getFormatter(category.format)}
+            hideTeamInfo={hideTeamInfo}
           />
         </Box>
       )}
@@ -233,7 +247,7 @@ export default function LeaderCategoryPanel({
         >
           <StatisticsTableBase
             data={processedLeaders}
-            columns={createLeaderColumns(category)}
+            columns={createLeaderColumns(category, !hideTeamInfo)}
             loading={loading}
             emptyMessage={message}
             getRowKey={getRowKey}

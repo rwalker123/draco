@@ -114,7 +114,7 @@ export class TeamResponseFormatter {
         logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
       },
       league: {
-        id: teamSeason.leagueseason.league.id.toString(),
+        id: teamSeason.leagueseason.id.toString(),
         name: teamSeason.leagueseason.league.name,
       },
       division: undefined, // Not included in details query currently

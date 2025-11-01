@@ -31,7 +31,7 @@ import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
-import AccountLeadersWidget from '../../../components/statistics/AccountLeadersWidget';
+import LeadersWidget from '../../../components/statistics/LeadersWidget';
 import {
   getAccountById,
   getAccountUserTeams,
@@ -783,7 +783,7 @@ const BaseballAccountHome: React.FC = () => {
               justifyContent: 'flex-start',
             }}
           >
-            <AccountLeadersWidget
+            <LeadersWidget
               accountId={accountIdStr}
               seasonId={currentSeasonId}
               leagues={leaderLeagues}

@@ -13,31 +13,110 @@ export interface LeagueOption {
   name: string;
 }
 
-interface AccountLeadersWidgetProps {
-  accountId: string;
-  seasonId?: string | null;
-  leagues: LeagueOption[];
-  divisionId?: string | null;
-  isHistorical?: boolean;
-  title?: string;
-  leaderLimit?: number;
-}
-
 type StatType = 'batting' | 'pitching';
 
-export default function AccountLeadersWidget({
-  accountId,
-  seasonId,
-  leagues,
-  divisionId = '0',
-  isHistorical = false,
-  title = 'League Leaders',
-  leaderLimit = 5,
-}: AccountLeadersWidgetProps) {
+interface BaseLeadersWidgetProps {
+  accountId: string;
+  title?: string;
+  leaderLimit?: number;
+  divisionId?: string | null;
+  isHistorical?: boolean;
+}
+
+interface AccountLeadersWidgetProps extends BaseLeadersWidgetProps {
+  variant?: 'account';
+  leagues: LeagueOption[];
+  seasonId?: string | null;
+}
+
+interface TeamLeadersWidgetProps extends BaseLeadersWidgetProps {
+  variant: 'team';
+  seasonId: string;
+  teamSeasonId: string;
+  leagueId: string;
+  leagueName?: string;
+  leagues?: LeagueOption[];
+  teamId?: string | null;
+}
+
+type LeadersWidgetProps = AccountLeadersWidgetProps | TeamLeadersWidgetProps;
+
+const DEFAULT_ACCOUNT_TITLE = 'League Leaders';
+const DEFAULT_TEAM_TITLE = 'Team Leaders';
+
+const isTeamVariantProps = (props: LeadersWidgetProps): props is TeamLeadersWidgetProps => {
+  return props.variant === 'team';
+};
+
+export default function LeadersWidget(props: LeadersWidgetProps) {
   const theme = useTheme();
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(
-    leagues.length > 0 ? leagues[0].id : null,
-  );
+  const leaderLimit = props.leaderLimit ?? 5;
+  const accountId = props.accountId;
+  const isTeamVariant = isTeamVariantProps(props);
+  const showTeamInfo = !isTeamVariant;
+  const divisionId = props.divisionId ?? (isTeamVariant ? null : '0');
+  const isHistorical = props.isHistorical ?? false;
+
+  let resolvedLeagues: LeagueOption[] = [];
+  let defaultLeagueId: string | null = null;
+  let fullStatisticsHref: string;
+  let teamIdFilter: string | undefined;
+
+  if (isTeamVariant) {
+    const {
+      leagues: providedLeagues,
+      leagueId,
+      leagueName,
+      seasonId,
+      teamSeasonId: teamSeasonIdProp,
+      teamId,
+    } = props;
+
+    resolvedLeagues =
+      providedLeagues && providedLeagues.length > 0
+        ? providedLeagues
+        : leagueId
+          ? [{ id: leagueId, name: leagueName ?? 'League' }]
+          : [];
+
+    defaultLeagueId = leagueId ?? resolvedLeagues[0]?.id ?? null;
+    fullStatisticsHref = `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonIdProp}/stat-entry`;
+    teamIdFilter = teamId ?? teamSeasonIdProp;
+  } else {
+    const { leagues, seasonId } = props;
+    resolvedLeagues = leagues;
+    defaultLeagueId = leagues[0]?.id ?? null;
+    fullStatisticsHref = seasonId
+      ? `/account/${accountId}/statistics?seasonId=${seasonId}`
+      : `/account/${accountId}/statistics`;
+  }
+
+  const title = props.title ?? (isTeamVariant ? DEFAULT_TEAM_TITLE : DEFAULT_ACCOUNT_TITLE);
+
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(defaultLeagueId);
+
+  useEffect(() => {
+    const desiredLeagueId = defaultLeagueId ?? null;
+
+    if (isTeamVariant) {
+      if (desiredLeagueId !== selectedLeagueId) {
+        setSelectedLeagueId(desiredLeagueId);
+      }
+      return;
+    }
+
+    if (resolvedLeagues.length === 0) {
+      if (selectedLeagueId !== null) {
+        setSelectedLeagueId(null);
+      }
+      return;
+    }
+
+    if (!selectedLeagueId || !resolvedLeagues.some((league) => league.id === selectedLeagueId)) {
+      setSelectedLeagueId(resolvedLeagues[0].id);
+    }
+  }, [defaultLeagueId, isTeamVariant, resolvedLeagues, selectedLeagueId]);
+
   const [statType, setStatType] = useState<StatType>('batting');
   const [requestedCategoryByType, setRequestedCategoryByType] = useState<
     Partial<Record<StatType, string>>
@@ -57,15 +136,9 @@ export default function AccountLeadersWidget({
     error: categoriesError,
   } = useLeaderCategories(accountId);
 
-  useEffect(() => {
-    if (!selectedLeagueId && leagues.length > 0) {
-      setSelectedLeagueId(leagues[0].id);
-    }
-  }, [leagues, selectedLeagueId]);
-
   const ensureCategoryState = useCallback((type: StatType, categories: LeaderCategoryType[]) => {
     if (categories.length === 0) {
-      console.debug('[AccountLeadersWidget] no categories available', { statType: type });
+      console.debug('[LeadersWidget] no categories available', { statType: type });
       return;
     }
 
@@ -78,7 +151,7 @@ export default function AccountLeadersWidget({
       if (current === next) {
         return previous;
       }
-      console.debug('[AccountLeadersWidget] initializing requested category', {
+      console.debug('[LeadersWidget] initializing requested category', {
         statType: type,
         next,
       });
@@ -117,8 +190,11 @@ export default function AccountLeadersWidget({
     }
     return activeCategories.find((category) => category.key === requestedCategoryKey) ?? null;
   }, [activeCategories, requestedCategoryKey]);
+
   const tabCategoryKey =
     displayedCategory?.key ?? requestedCategory?.key ?? activeCategories[0]?.key ?? '';
+
+  const canFetchTeamData = !isTeamVariant || Boolean(teamIdFilter && selectedLeagueId);
 
   const {
     leaders,
@@ -130,13 +206,14 @@ export default function AccountLeadersWidget({
     leagueId: selectedLeagueId,
     categoryKey: requestedCategory?.key,
     divisionId: divisionId ?? undefined,
+    teamId: canFetchTeamData ? teamIdFilter : undefined,
     isHistorical,
     limit: leaderLimit,
-    enabled: Boolean(selectedLeagueId && requestedCategory?.key),
+    enabled: Boolean(selectedLeagueId && requestedCategory?.key && canFetchTeamData),
   });
 
   const error = categoriesError ?? leadersError;
-  const showLeagueTabs = leagues.length > 1;
+  const showLeagueTabs = resolvedLeagues.length > 1;
   const buildCacheKey = useCallback(
     (category?: string | null) => {
       if (!selectedLeagueId || !category) {
@@ -147,13 +224,13 @@ export default function AccountLeadersWidget({
         leagueId: selectedLeagueId,
         categoryKey: category,
         divisionId: divisionId ?? null,
-        teamId: null,
+        teamId: teamIdFilter ?? null,
         isHistorical: isHistorical ?? null,
         includeAllGameTypes: null,
         limit: leaderLimit ?? null,
       });
     },
-    [accountId, divisionId, isHistorical, leaderLimit, selectedLeagueId],
+    [accountId, divisionId, isHistorical, leaderLimit, selectedLeagueId, teamIdFilter],
   );
 
   const requestedCacheKey = buildCacheKey(requestedCategoryKey ?? null);
@@ -187,7 +264,7 @@ export default function AccountLeadersWidget({
     if (value !== 'batting' && value !== 'pitching') {
       return;
     }
-    console.debug('[AccountLeadersWidget] stat type change requested', {
+    console.debug('[LeadersWidget] stat type change requested', {
       from: statType,
       to: value,
     });
@@ -196,7 +273,7 @@ export default function AccountLeadersWidget({
 
   useEffect(() => {
     if (!requestedCategoryKey || !requestedCacheKey) {
-      console.debug('[AccountLeadersWidget] awaiting category initialization', {
+      console.debug('[LeadersWidget] awaiting category initialization', {
         statType,
         requestedCategoryKey,
         requestedCacheKey,
@@ -204,7 +281,7 @@ export default function AccountLeadersWidget({
       return;
     }
     if (leadersLoading || leadersError) {
-      console.debug('[AccountLeadersWidget] waiting for leaders response', {
+      console.debug('[LeadersWidget] waiting for leaders response', {
         statType,
         requestedCategoryKey,
         leadersLoading,
@@ -213,7 +290,7 @@ export default function AccountLeadersWidget({
       return;
     }
     if (resolvedCacheKey !== requestedCacheKey) {
-      console.debug('[AccountLeadersWidget] resolved data not yet for requested category', {
+      console.debug('[LeadersWidget] resolved data not yet for requested category', {
         statType,
         requestedCategoryKey,
         resolvedCacheKey,
@@ -226,7 +303,7 @@ export default function AccountLeadersWidget({
         return previous;
       }
 
-      console.debug('[AccountLeadersWidget] updating displayed category', {
+      console.debug('[LeadersWidget] updating displayed category', {
         statType,
         requestedCategoryKey,
       });
@@ -257,14 +334,14 @@ export default function AccountLeadersWidget({
 
   const handleCategoryChange = (_: React.SyntheticEvent, value: string) => {
     if (!value || value === requestedCategoryKey) {
-      console.debug('[AccountLeadersWidget] category change ignored', {
+      console.debug('[LeadersWidget] category change ignored', {
         statType,
         value,
         requestedCategoryKey,
       });
       return;
     }
-    console.debug('[AccountLeadersWidget] category change requested', {
+    console.debug('[LeadersWidget] category change requested', {
       statType,
       value,
       requestedCategoryKey,
@@ -276,10 +353,6 @@ export default function AccountLeadersWidget({
       return { ...previous, [statType]: value };
     });
   };
-
-  const accountStatisticsHref = seasonId
-    ? `/account/${accountId}/statistics?seasonId=${seasonId}`
-    : `/account/${accountId}/statistics`;
 
   return (
     <Paper
@@ -297,7 +370,7 @@ export default function AccountLeadersWidget({
         <Typography variant="h5" fontWeight="bold">
           {title}
         </Typography>
-        <Button component={Link} href={accountStatisticsHref} variant="outlined" size="small">
+        <Button component={Link} href={fullStatisticsHref} variant="outlined" size="small">
           View Full Statistics
         </Button>
       </Box>
@@ -321,7 +394,7 @@ export default function AccountLeadersWidget({
             allowScrollButtonsMobile
             aria-label="Select league"
             sx={{
-              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+              borderBottom: (muiTheme) => `1px solid ${muiTheme.palette.divider}`,
               minHeight: 48,
               '& .MuiTabs-flexContainer': {
                 minHeight: 48,
@@ -333,18 +406,16 @@ export default function AccountLeadersWidget({
               },
             }}
           >
-            {leagues.map((league) => (
+            {resolvedLeagues.map((league) => (
               <Tab key={league.id} label={league.name} value={league.id} />
             ))}
           </Tabs>
         </Box>
-      ) : (
-        leagues[0] && (
-          <Typography variant="subtitle1" color="text.secondary">
-            {leagues[0].name}
-          </Typography>
-        )
-      )}
+      ) : resolvedLeagues[0] ? (
+        <Typography variant="subtitle1" color="text.secondary">
+          {resolvedLeagues[0].name}
+        </Typography>
+      ) : null}
 
       <Tabs
         value={statType}
@@ -361,12 +432,12 @@ export default function AccountLeadersWidget({
             minWidth: 120,
             borderRadius: 2,
             textTransform: 'none',
-            border: (theme) => `1px solid ${theme.palette.divider}`,
-            backgroundColor: (theme) => theme.palette.background.paper,
+            border: (muiTheme) => `1px solid ${muiTheme.palette.divider}`,
+            backgroundColor: (muiTheme) => muiTheme.palette.background.paper,
           },
           '& .Mui-selected': {
-            backgroundColor: (theme) => theme.palette.primary.main,
-            color: (theme) => theme.palette.primary.contrastText,
+            backgroundColor: (muiTheme) => muiTheme.palette.primary.main,
+            color: (muiTheme) => muiTheme.palette.primary.contrastText,
           },
         }}
       >
@@ -413,6 +484,8 @@ export default function AccountLeadersWidget({
             loading={false}
             emptyMessage={`No additional ${displayedCategory.label.toLowerCase()} data available`}
             onWidthChange={handlePanelWidthChange}
+            hideTeamInfo={!showTeamInfo}
+            hideHeaderWhenCard
           />
         ) : activeCategories.length === 0 ? (
           <Typography variant="body2" color="text.secondary">

@@ -22,9 +22,15 @@ interface LeaderCardProps {
   leader: LeaderRow;
   statLabel: string;
   formatter: (value: unknown) => string;
+  hideTeamInfo?: boolean;
 }
 
-export default function LeaderCard({ leader, statLabel, formatter }: LeaderCardProps) {
+export default function LeaderCard({
+  leader,
+  statLabel,
+  formatter,
+  hideTeamInfo = false,
+}: LeaderCardProps) {
   const theme = useTheme();
   const [imageError, setImageError] = useState(false);
 
@@ -130,7 +136,7 @@ export default function LeaderCard({ leader, statLabel, formatter }: LeaderCardP
                     backgroundColor: secondaryColor,
                     color: theme.palette.secondary.contrastText,
                     fontWeight: 600,
-                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                    fontSize: { xs: '0.5rem', sm: '0.65rem' },
                     px: { xs: 0.75, sm: 1 },
                     py: { xs: 0.1, sm: 0.2 },
                   }}
@@ -143,13 +149,13 @@ export default function LeaderCard({ leader, statLabel, formatter }: LeaderCardP
                   color: theme.palette.text.primary,
                   mb: { xs: 0.5, sm: 1 },
                   lineHeight: 1.2,
-                  fontSize: { xs: '1.05rem', sm: '1.35rem' },
+                  fontSize: { xs: '.90rem', sm: '1.0rem' },
                 }}
               >
                 {leader.playerName}
               </Typography>
 
-              {!isTie && (
+              {!hideTeamInfo && !isTie && (
                 <TeamBadges teams={leader.teams} teamName={leader.teamName} maxVisible={3} />
               )}
             </Box>
@@ -172,7 +178,7 @@ export default function LeaderCard({ leader, statLabel, formatter }: LeaderCardP
                 color: theme.palette.text.primary,
                 lineHeight: 1,
                 mb: { xs: 0.25, sm: 0.5 },
-                fontSize: { xs: '1.85rem', sm: '2.6rem' },
+                fontSize: { xs: '1.15', sm: '1.5rem' },
               }}
             >
               {formatter(leader.statValue)}
