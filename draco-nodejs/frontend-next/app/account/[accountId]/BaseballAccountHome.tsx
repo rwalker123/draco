@@ -550,6 +550,8 @@ const BaseballAccountHome: React.FC = () => {
       });
   }, [accountIdStr]);
 
+  const shouldShowAccountSponsors = accountSponsors.length > 0 || Boolean(sponsorError);
+
   const handleViewTeam = (teamSeasonId: string) => {
     if (!currentSeason) return;
     router.push(`/account/${accountIdStr}/seasons/${currentSeason.id}/teams/${teamSeasonId}`);
@@ -883,11 +885,13 @@ const BaseballAccountHome: React.FC = () => {
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}
 
-        <SponsorCard
-          sponsors={accountSponsors}
-          title="Account Sponsors"
-          emptyMessage={sponsorError ?? 'No sponsors have been added yet.'}
-        />
+        {shouldShowAccountSponsors && (
+          <SponsorCard
+            sponsors={accountSponsors}
+            title="Account Sponsors"
+            emptyMessage={sponsorError ?? undefined}
+          />
+        )}
 
         {/* User Teams Section */}
         {user && userTeams.length > 0 && (
