@@ -9,6 +9,7 @@ import type {
 import StatsTabsCard, { type TabKey } from '../StatsTabsCard';
 
 const mockResizeObserver = class {
+  constructor(_callback?: unknown) {}
   observe() {}
   disconnect() {}
   unobserve() {}
