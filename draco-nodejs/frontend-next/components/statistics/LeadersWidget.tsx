@@ -448,21 +448,43 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           '& .MuiTabs-flexContainer': {
             gap: 1,
           },
-          '& .MuiTab-root': {
-            minWidth: 120,
-            borderRadius: 2,
-            textTransform: 'none',
-            border: (muiTheme) => `1px solid ${muiTheme.palette.divider}`,
-            backgroundColor: (muiTheme) => muiTheme.palette.background.paper,
-          },
-          '& .Mui-selected': {
-            backgroundColor: (muiTheme) => muiTheme.palette.primary.main,
-            color: (muiTheme) => muiTheme.palette.primary.contrastText,
+          '& .MuiTabs-indicator': {
+            display: 'none',
           },
         }}
       >
-        <Tab label="Batting" value="batting" />
-        <Tab label="Pitching" value="pitching" />
+        <Tab
+          label="Batting"
+          value="batting"
+          sx={(muiTheme) => ({
+            minWidth: 120,
+            borderRadius: 2,
+            textTransform: 'none',
+            border: `1px solid ${muiTheme.palette.divider}`,
+            backgroundColor: muiTheme.palette.background.paper,
+            color: muiTheme.palette.text.primary,
+            '&.Mui-selected': {
+              backgroundColor: muiTheme.palette.primary.main,
+              color: muiTheme.palette.primary.contrastText,
+            },
+          })}
+        />
+        <Tab
+          label="Pitching"
+          value="pitching"
+          sx={(muiTheme) => ({
+            minWidth: 120,
+            borderRadius: 2,
+            textTransform: 'none',
+            border: `1px solid ${muiTheme.palette.divider}`,
+            backgroundColor: muiTheme.palette.background.paper,
+            color: muiTheme.palette.text.primary,
+            '&.Mui-selected': {
+              backgroundColor: muiTheme.palette.primary.main,
+              color: muiTheme.palette.primary.contrastText,
+            },
+          })}
+        />
       </Tabs>
 
       {activeCategories.length > 0 ? (
