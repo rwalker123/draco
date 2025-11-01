@@ -53,46 +53,63 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const leaderLimit = props.leaderLimit ?? 5;
   const accountId = props.accountId;
   const isTeamVariant = isTeamVariantProps(props);
+  const teamProps = isTeamVariant ? (props as TeamLeadersWidgetProps) : null;
   const showTeamInfo = !isTeamVariant;
   const divisionId = props.divisionId ?? (isTeamVariant ? null : '0');
   const isHistorical = props.isHistorical ?? false;
 
-  const { resolvedLeagues, defaultLeagueId, fullStatisticsHref, teamIdFilter } = useMemo(() => {
-    if (isTeamVariant) {
-      const {
-        leagues: providedLeagues,
-        leagueId,
-        leagueName,
-        seasonId,
-        teamSeasonId: teamSeasonIdProp,
-        teamId,
-      } = props;
+  const leaguesProp = props.leagues;
+  const seasonIdProp = props.seasonId;
+  const teamLeagueIdProp = teamProps?.leagueId;
+  const teamLeagueNameProp = teamProps?.leagueName;
+  const teamSeasonIdProp = teamProps?.teamSeasonId;
+  const teamIdProp = teamProps?.teamId;
+  const teamLeaguesProp = teamProps?.leagues;
+  const teamSeasonIdForHref = teamProps?.teamSeasonId;
+  const teamSeasonSeasonIdProp = teamProps?.seasonId;
 
+  const { resolvedLeagues, defaultLeagueId, fullStatisticsHref, teamIdFilter } = useMemo(() => {
+    if (isTeamVariant && teamSeasonIdForHref) {
       const leaguesList =
-        providedLeagues && providedLeagues.length > 0
-          ? providedLeagues
-          : leagueId
-            ? [{ id: leagueId, name: leagueName ?? 'League' }]
+        teamLeaguesProp && teamLeaguesProp.length > 0
+          ? teamLeaguesProp
+          : teamLeagueIdProp
+            ? [{ id: teamLeagueIdProp, name: teamLeagueNameProp ?? 'League' }]
             : [];
 
       return {
         resolvedLeagues: leaguesList,
-        defaultLeagueId: leagueId ?? leaguesList[0]?.id ?? null,
-        fullStatisticsHref: `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonIdProp}/stat-entry`,
-        teamIdFilter: teamId ?? teamSeasonIdProp,
+        defaultLeagueId: teamLeagueIdProp ?? leaguesList[0]?.id ?? null,
+        fullStatisticsHref: `/account/${accountId}/seasons/${teamSeasonSeasonIdProp}/teams/${teamSeasonIdForHref}/stat-entry`,
+        teamIdFilter: teamIdProp ?? teamSeasonIdProp,
       };
     }
 
-    const { leagues, seasonId } = props;
+    const leaguesList = leaguesProp ?? [];
+    const defaultId = leaguesList[0]?.id ?? null;
+    const statsHref = seasonIdProp
+      ? `/account/${accountId}/statistics?seasonId=${seasonIdProp}`
+      : `/account/${accountId}/statistics`;
+
     return {
-      resolvedLeagues: leagues,
-      defaultLeagueId: leagues[0]?.id ?? null,
-      fullStatisticsHref: seasonId
-        ? `/account/${accountId}/statistics?seasonId=${seasonId}`
-        : `/account/${accountId}/statistics`,
+      resolvedLeagues: leaguesList,
+      defaultLeagueId: defaultId,
+      fullStatisticsHref: statsHref,
       teamIdFilter: undefined,
     };
-  }, [accountId, isTeamVariant, props]);
+  }, [
+    accountId,
+    isTeamVariant,
+    leaguesProp,
+    seasonIdProp,
+    teamLeaguesProp,
+    teamLeagueIdProp,
+    teamLeagueNameProp,
+    teamSeasonIdProp,
+    teamIdProp,
+    teamSeasonIdForHref,
+    teamSeasonSeasonIdProp,
+  ]);
 
   const title = props.title ?? (isTeamVariant ? DEFAULT_TEAM_TITLE : DEFAULT_ACCOUNT_TITLE);
 
