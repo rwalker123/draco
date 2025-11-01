@@ -38,6 +38,15 @@ function logError(err: Error, req: Request): void {
     return;
   }
 
+  // Users without membership routinely hit the account team list; avoid noisy logs.
+  if (
+    err instanceof AuthorizationError &&
+    req.method === 'GET' &&
+    /\/api\/accounts\/[^/]+\/user-teams$/i.test(req.path ?? '')
+  ) {
+    return;
+  }
+
   const logData = {
     error: err.message,
     stack: err.stack,
