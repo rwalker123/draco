@@ -152,6 +152,127 @@ export interface dbTeamSeasonValidationResult {
   };
 }
 
+export type dbPlayerSurveyCategory = Prisma.profilecategoryGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    categoryname: true;
+    priority: true;
+    profilequestion: {
+      select: {
+        id: true;
+        categoryid: true;
+        question: true;
+        questionnum: true;
+      };
+      orderBy: [{ questionnum: 'asc' }, { id: 'asc' }];
+    };
+  };
+}>;
+
+export type dbPlayerSurveyQuestion = Prisma.profilequestionGetPayload<{
+  select: {
+    id: true;
+    categoryid: true;
+    question: true;
+    questionnum: true;
+    profilecategory: {
+      select: {
+        id: true;
+        accountid: true;
+        categoryname: true;
+        priority: true;
+      };
+    };
+  };
+}>;
+
+export type dbPlayerSurveyAnswer = Prisma.playerprofileGetPayload<{
+  select: {
+    id: true;
+    playerid: true;
+    questionid: true;
+    answer: true;
+    profilequestion: {
+      select: {
+        id: true;
+        question: true;
+        questionnum: true;
+        profilecategory: {
+          select: {
+            id: true;
+            categoryname: true;
+            priority: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbPlayerSurveyContactWithAnswers = Prisma.contactsGetPayload<{
+  select: {
+    id: true;
+    firstname: true;
+    lastname: true;
+    middlename: true;
+    playerprofile: {
+      select: {
+        id: true;
+        playerid: true;
+        questionid: true;
+        answer: true;
+        profilequestion: {
+          select: {
+            id: true;
+            question: true;
+            questionnum: true;
+            profilecategory: {
+              select: {
+                id: true;
+                categoryname: true;
+                priority: true;
+              };
+            };
+          };
+        };
+      };
+      orderBy: [
+        {
+          profilequestion: {
+            profilecategory: {
+              priority: 'asc';
+            };
+          };
+        },
+        {
+          profilequestion: {
+            questionnum: 'asc';
+          };
+        },
+        {
+          id: 'asc';
+        },
+      ];
+    };
+  };
+}>;
+
+export interface dbPlayerSurveyListResult {
+  players: dbPlayerSurveyContactWithAnswers[];
+  total: number;
+}
+
+export interface dbPlayerSurveySpotlight {
+  playerId: bigint;
+  firstName: string;
+  lastName: string;
+  photoUrl?: string | null;
+  question: string;
+  answer: string;
+  teamName?: string | null;
+}
+
 // db types used to map to the response schemas
 export type dbLeague = Prisma.leagueGetPayload<{
   select: {

@@ -1,5 +1,6 @@
 export * from './AccountResponseFormatter.js';
 export * from './responseFormatters.js';
+export * from './playerSurveyResponseFormatter.js';
 export * from './RosterResponseFormatter.js';
 export * from './roleResponseFormatter.js';
 export * from './teamResponseFormatter.js';

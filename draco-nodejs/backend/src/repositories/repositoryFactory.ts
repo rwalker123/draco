@@ -36,6 +36,7 @@ import {
   IHofNominationRepository,
   IHofNominationSetupRepository,
   IStatsEntryRepository,
+  IPlayerSurveyRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -73,6 +74,7 @@ import {
   PrismaHofNominationRepository,
   PrismaHofNominationSetupRepository,
   PrismaStatsEntryRepository,
+  PrismaPlayerSurveyRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -117,6 +119,7 @@ export class RepositoryFactory {
   private static hofNominationRepository: IHofNominationRepository;
   private static hofNominationSetupRepository: IHofNominationSetupRepository;
   private static statsEntryRepository: IStatsEntryRepository;
+  private static playerSurveyRepository: IPlayerSurveyRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -198,6 +201,13 @@ export class RepositoryFactory {
       this.memberBusinessRepository = new PrismaMemberBusinessRepository(prisma);
     }
     return this.memberBusinessRepository;
+  }
+
+  static getPlayerSurveyRepository(): IPlayerSurveyRepository {
+    if (!this.playerSurveyRepository) {
+      this.playerSurveyRepository = new PrismaPlayerSurveyRepository(prisma);
+    }
+    return this.playerSurveyRepository;
   }
 
   static getStatsEntryRepository(): IStatsEntryRepository {

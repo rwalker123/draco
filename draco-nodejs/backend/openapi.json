@@ -9484,7 +9484,7 @@
         "properties": {
           "categoryId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$"
           },
           "question": {
             "type": "string",

@@ -8,9 +8,10 @@
 - [x] Confirm shared schema updates were required, obtained approval, and documented regeneration workflow.
 
 ## Phase 2 – Backend Implementation
-- [ ] Implement repositories/services for categories, questions, answers, and random spotlight queries constrained to the current season.
-- [ ] Add Express routes enforcing authentication/authorization per account boundary rules and documenting endpoints in OpenAPI.
-- [ ] Cover new logic with unit/integration tests (season filtering, permissions, cascade deletes, random selection).
+- [x] Implement Prisma-backed player survey repository (categories, questions, answers, listings, spotlights) with current-season filters.
+- [x] Add response formatter and PlayerSurveyService handling permissions, season lookups, and business rules.
+- [x] Wire ServiceFactory/RepositoryFactory entries and create Express routes for `/surveys` endpoints with appropriate middleware.
+- [ ] Author backend tests covering repository queries, service permission logic, and route integration (auth + search/pagination + spotlights).
 
 ## Phase 3 – Shared Schema & Client Sync
 - [x] Apply approved schema updates (if any) under `shared/shared-schemas` and run `npm run sync:api`.

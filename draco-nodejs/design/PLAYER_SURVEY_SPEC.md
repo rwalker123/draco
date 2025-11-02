@@ -82,6 +82,36 @@ All endpoints live under `/api/accounts/{accountId}/surveys` and must be declare
 - Frontend: unit tests for admin dialogs, list search, widget empty states; integration test for player edit flow.
 - Manual QA checklist includes admin CRUD, player self-edit, public visibility, and widget output.
 
+## Backend Implementation Plan
+- **Repositories**
+  - `IPlayerSurveyRepository` to encapsulate Prisma access for categories, questions, answers, and aggregated survey listings.
+  - Methods include:
+    - `listCategories(accountId)` returning categories with nested questions ordered by priority and question number.
+    - `createCategory(accountId, data)` / `updateCategory(categoryId, data)` / `deleteCategory(categoryId)` with cascade handling inside a transaction.
+    - `createQuestion(categoryId, data)` / `updateQuestion(questionId, data)` / `deleteQuestion(questionId)` verifying account ownership.
+    - `listPlayerSurveys(accountId, seasonId, paging, search)` returning `{ rows, total }` of contacts and answers limited to current-season rosters.
+    - `getPlayerSurvey(accountId, playerId)` returning full answer set regardless of season (service will gate visibility).
+    - `upsertAnswer(playerId, questionId, answer)` and `deleteAnswer(playerId, questionId)`.
+    - `findRandomAnswerForAccount(accountId, seasonId)` and `findRandomAnswerForTeam(accountId, teamSeasonId)` returning question/answer + player metadata.
+  - `db` types added in `src/repositories/types/dbTypes.ts` to describe payloads consumed by response formatter.
+- **Response Formatter**
+  - `PlayerSurveyResponseFormatter` to translate repository payloads into shared schema types (categories, list responses, detail view, spotlights).
+- **Service**
+  - `PlayerSurveyService` orchestrates account boundary checks, season resolution (via `SeasonService`), permission logic, and uses repositories + formatter.
+  - Methods: `listCategories`, `createCategory`, `updateCategory`, `deleteCategory`, `createQuestion`, `updateQuestion`, `deleteQuestion`, `listPlayerSurveys`, `getPlayerSurvey`, `upsertAnswer`, `deleteAnswer`, `getSpotlight`, `getTeamSpotlight`.
+  - Service enforces:
+    - Account Admin restrictions on structural CRUD and cross-player answer modifications.
+    - Player self-access for answer updates.
+    - Current-season filtering for listings and spotlights.
+    - Graceful handling when no current season is configured (empty listings, 404 for spotlights).
+- **Routing**
+  - New `accounts-player-surveys.ts` router mounted at `/api/accounts/:accountId/surveys` with endpoints aligned to the OpenAPI contract.
+  - Uses `authenticateToken`, `routeProtection.enforceAccountBoundary()`, and a new `account.player-surveys.manage` permission (granted to Account Admins) before calling service methods that mutate structure or other players' answers.
+- **Tests**
+  - Repository tests targeting new Prisma queries (especially season filtering).
+  - Service tests verifying permission branches and random selection behavior.
+  - Route tests covering admin CRUD, player self-edit, and public listing/search happy paths and error cases.
+
 ## Shared Schema Impact
 - New schemas required to represent survey categories, questions, answers, listings, and update payloads (e.g., `PlayerSurveyCategoryType`, `PlayerSurveyQuestionType`, `PlayerSurveyAnswerType`, paginated response wrappers).
 - These schemas must live under `shared/shared-schemas` with OpenAPI metadata, requiring maintainer approval before implementation.

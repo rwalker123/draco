@@ -7057,7 +7057,7 @@ components:
       properties:
         categoryId:
           type: string
-          pattern: ^d+$
+          pattern: ^\d+$
         question:
           type: string
           minLength: 1
