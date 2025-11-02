@@ -11168,10 +11168,39 @@ paths:
                             - accountName
                             - attachmentBytes
                             - attachmentCount
+                      recentCreations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            accountId:
+                              type: string
+                              example: "42"
+                            accountName:
+                              type: string
+                              example: Springfield Tigers
+                            ownerUserId:
+                              type: string
+                              example: user-123
+                            ownerUserName:
+                              type: string
+                              example: alex.coach
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: 2024-01-01T00:00:00.000Z
+                          required:
+                            - accountId
+                            - accountName
+                            - ownerUserId
+                            - ownerUserName
+                            - createdAt
+                        description: Account registrations recorded within the past 90 days.
                     required:
                       - total
                       - withEmailActivity
                       - topStorageAccounts
+                      - recentCreations
                   storage:
                     type: object
                     properties:

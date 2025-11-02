@@ -1,4 +1,6 @@
 import { MonitoringService } from './monitoringService.js';
+import { AccountCreationLogEntry, AccountCreationLogService } from './accountCreationLogService.js';
+import { ServiceFactory } from './serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import {
   dbAdminAccountEmailActivity,
@@ -17,6 +19,7 @@ export interface AdminAnalyticsSummary {
     total: number;
     withEmailActivity: number;
     topStorageAccounts: AdminAccountStorageMetric[];
+    recentCreations: AdminAccountCreationLogEntry[];
   };
   storage: {
     totalAttachmentBytes: number;
@@ -85,24 +88,36 @@ export interface AdminPhotoEventMetric {
   detail?: string | null;
 }
 
+export type AdminAccountCreationLogEntry = AccountCreationLogEntry;
+
 export class AdminAnalyticsService {
   private readonly monitoringService: MonitoringService;
   private readonly adminAnalyticsRepository = RepositoryFactory.getAdminAnalyticsRepository();
+  private readonly accountCreationLogService: AccountCreationLogService;
 
-  constructor(monitoringService?: MonitoringService) {
-    this.monitoringService = monitoringService ?? new MonitoringService();
+  constructor() {
+    this.monitoringService = ServiceFactory.getMonitoringService();
+    this.accountCreationLogService = ServiceFactory.getAccountCreationLogService();
   }
 
   async getSummary(): Promise<AdminAnalyticsSummary> {
-    const [totalAccounts, storageUsage, emailSummary, accountEmailActivity, health, performance] =
-      await Promise.all([
-        this.adminAnalyticsRepository.getTotalAccountCount(),
-        this.adminAnalyticsRepository.getAccountStorageUsage(),
-        this.adminAnalyticsRepository.getEmailSummary(),
-        this.adminAnalyticsRepository.getAccountEmailActivity(),
-        this.monitoringService.getHealthOverview(),
-        this.monitoringService.getPerformanceMetrics(15),
-      ]);
+    const [
+      totalAccounts,
+      storageUsage,
+      emailSummary,
+      accountEmailActivity,
+      health,
+      performance,
+      recentAccountCreations,
+    ] = await Promise.all([
+      this.adminAnalyticsRepository.getTotalAccountCount(),
+      this.adminAnalyticsRepository.getAccountStorageUsage(),
+      this.adminAnalyticsRepository.getEmailSummary(),
+      this.adminAnalyticsRepository.getAccountEmailActivity(),
+      this.monitoringService.getHealthOverview(),
+      this.monitoringService.getPerformanceMetrics(15),
+      this.accountCreationLogService.getRecentEntries(),
+    ]);
 
     const storageMetrics = this.buildStorageMetrics(storageUsage);
     const emailMetrics = this.buildEmailMetrics(emailSummary, accountEmailActivity);
@@ -117,6 +132,7 @@ export class AdminAnalyticsService {
         total: totalAccounts,
         withEmailActivity: emailMetrics.perAccount.length,
         topStorageAccounts: storageMetrics.byAccount.slice(0, 5),
+        recentCreations: recentAccountCreations,
       },
       storage: storageMetrics,
       email: emailMetrics,

@@ -24,6 +24,14 @@ const registerAdminAnalyticsEndpoints = ({ registry, z }: RegisterContext) => {
     clickRate: z.number().min(0).max(100).openapi({ example: 28.1 }),
   });
 
+  const accountCreationLogEntrySchema = z.object({
+    accountId: z.string().openapi({ example: '42' }),
+    accountName: z.string().openapi({ example: 'Springfield Tigers' }),
+    ownerUserId: z.string().openapi({ example: 'user-123' }),
+    ownerUserName: z.string().openapi({ example: 'alex.coach' }),
+    createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00.000Z' }),
+  });
+
   const monitoringHealthSchema = z.object({
     status: z.enum(['healthy', 'warning', 'critical']),
     timestamp: z.string().openapi({ format: 'date-time' }),
@@ -143,6 +151,9 @@ const registerAdminAnalyticsEndpoints = ({ registry, z }: RegisterContext) => {
       total: z.number().int().nonnegative(),
       withEmailActivity: z.number().int().nonnegative(),
       topStorageAccounts: accountStorageMetricSchema.array(),
+      recentCreations: accountCreationLogEntrySchema
+        .array()
+        .openapi({ description: 'Account registrations recorded within the past 90 days.' }),
     }),
     storage: z.object({
       totalAttachmentBytes: z.number().nonnegative(),

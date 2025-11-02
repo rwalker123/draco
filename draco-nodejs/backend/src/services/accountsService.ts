@@ -40,6 +40,8 @@ import { ROLE_IDS } from '../config/roles.js';
 import { RoleNamesType } from '../types/roles.js';
 import { getAccountLogoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { AccountCreationLogService } from './accountCreationLogService.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 type OwnerSummary = AccountOwnerSummary;
 
@@ -51,6 +53,7 @@ export class AccountsService {
   private readonly userRepository: IUserRepository;
   private readonly roleRepository: IRoleRepository;
   private readonly seasonRepository: ISeasonsRepository;
+  private readonly accountCreationLogService: AccountCreationLogService;
 
   constructor() {
     this.accountRepository = RepositoryFactory.getAccountRepository();
@@ -58,6 +61,7 @@ export class AccountsService {
     this.userRepository = RepositoryFactory.getUserRepository();
     this.roleRepository = RepositoryFactory.getRoleRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
+    this.accountCreationLogService = ServiceFactory.getAccountCreationLogService();
   }
 
   async getAccountsForUser(userId: string): Promise<AccountType[]> {
@@ -302,6 +306,13 @@ export class AccountsService {
       ownerContact: ownerContactRecord,
       ownerUser,
     } = await this.loadAccountContext(accountRecord.id);
+
+    await this.accountCreationLogService.recordEntry({
+      accountId: accountRecord.id.toString(),
+      accountName: accountRecord.name ?? payload.name ?? 'Unknown account',
+      ownerUserId: accountOwnerUserId,
+      ownerUserName: accountOwnerUserName,
+    });
 
     return AccountResponseFormatter.formatAccount(
       account,

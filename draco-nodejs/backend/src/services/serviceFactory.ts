@@ -43,6 +43,7 @@ import { SeasonService } from './seasonService.js';
 import { TurnstileService } from './turnstileService.js';
 import { HandoutService } from './handoutService.js';
 import { AdminAnalyticsService } from './adminAnalyticsService.js';
+import { AccountCreationLogService } from './accountCreationLogService.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryService } from './photoGalleryService.js';
 import { PhotoGalleryAdminService } from './photoGalleryAdminService.js';
@@ -103,6 +104,7 @@ export class ServiceFactory {
   private static photoSubmissionModerationService: PhotoSubmissionModerationService;
   private static photoSubmissionAssetService: PhotoSubmissionAssetService;
   private static photoSubmissionNotificationService: PhotoSubmissionNotificationService;
+  private static accountCreationLogService: AccountCreationLogService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -357,8 +359,7 @@ export class ServiceFactory {
 
   static getAdminAnalyticsService(): AdminAnalyticsService {
     if (!this.adminAnalyticsService) {
-      const monitoringService = this.getMonitoringService();
-      this.adminAnalyticsService = new AdminAnalyticsService(monitoringService);
+      this.adminAnalyticsService = new AdminAnalyticsService();
     }
 
     return this.adminAnalyticsService;
@@ -413,6 +414,14 @@ export class ServiceFactory {
     }
 
     return this.photoSubmissionNotificationService;
+  }
+
+  static getAccountCreationLogService(): AccountCreationLogService {
+    if (!this.accountCreationLogService) {
+      this.accountCreationLogService = new AccountCreationLogService();
+    }
+
+    return this.accountCreationLogService;
   }
 
   static getPhotoSubmissionModerationService(): PhotoSubmissionModerationService {

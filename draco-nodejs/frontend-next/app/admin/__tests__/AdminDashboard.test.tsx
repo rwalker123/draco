@@ -40,6 +40,15 @@ const createSummary = (): AdminAnalyticsSummary => ({
         attachmentCount: 12,
       },
     ],
+    recentCreations: [
+      {
+        accountId: '42',
+        accountName: 'Springfield Tigers',
+        ownerUserId: 'user-1',
+        ownerUserName: 'admin',
+        createdAt: '2024-01-01T10:00:00.000Z',
+      },
+    ],
   },
   storage: {
     totalAttachmentBytes: 1048576,
@@ -189,5 +198,10 @@ describe('AdminDashboard photo metrics', () => {
     expect(screen.getByText('Failures 2 • Quota 1 • Email 1')).toBeInTheDocument();
     expect(screen.getByText('Submission failure')).toBeInTheDocument();
     expect(screen.getByText('Stage "team-create" failed: Storage unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Recent account registrations')).toBeInTheDocument();
+    expect(screen.getByText('Springfield Tigers')).toBeInTheDocument();
+    expect(
+      screen.getByText('Entries older than 90 days are automatically removed from the log.'),
+    ).toBeInTheDocument();
   });
 });

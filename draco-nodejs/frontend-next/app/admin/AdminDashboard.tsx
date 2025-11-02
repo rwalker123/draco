@@ -177,6 +177,7 @@ const AdminDashboard: React.FC = () => {
 
   const topStorageAccounts = useMemo(() => summary?.accounts.topStorageAccounts ?? [], [summary]);
   const emailAccounts = useMemo(() => summary?.email.perAccount ?? [], [summary]);
+  const accountCreationLog = useMemo(() => summary?.accounts.recentCreations ?? [], [summary]);
   const photoCounters = summary?.photos.counters ?? {
     submissionFailures: 0,
     quotaViolations: 0,
@@ -399,6 +400,42 @@ const AdminDashboard: React.FC = () => {
               )}
             </Paper>
           </Stack>
+
+          <Paper sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+              <GroupsIcon fontSize="small" />
+              <Typography variant="h6">Recent account registrations</Typography>
+            </Stack>
+            {accountCreationLog.length > 0 ? (
+              <Table size="small" aria-label="Recent account registrations">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Created</TableCell>
+                    <TableCell>Account</TableCell>
+                    <TableCell>Owner username</TableCell>
+                    <TableCell>Owner user ID</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {accountCreationLog.map((entry) => (
+                    <TableRow key={`${entry.accountId}-${entry.createdAt}`} hover>
+                      <TableCell>{formatDateTime(entry.createdAt)}</TableCell>
+                      <TableCell sx={{ fontWeight: 500 }}>{entry.accountName}</TableCell>
+                      <TableCell>{entry.ownerUserName}</TableCell>
+                      <TableCell>{entry.ownerUserId}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No accounts have been created in the last 90 days.
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+              Entries older than 90 days are automatically removed from the log.
+            </Typography>
+          </Paper>
 
           <Paper sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
