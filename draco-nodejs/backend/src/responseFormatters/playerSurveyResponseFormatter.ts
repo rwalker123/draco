@@ -2,7 +2,8 @@ import {
   PlayerSurveyCategoryType,
   PlayerSurveyQuestionType,
   PlayerSurveyDetailType,
-  PlayerSurveyListResponseType,
+  PlayerSurveySummaryType,
+  PlayerSurveySummaryListResponseType,
   PlayerSurveyAnswerType,
   PlayerSurveySpotlightType,
   PublicContactSummaryType,
@@ -97,13 +98,28 @@ export class PlayerSurveyResponseFormatter {
     };
   }
 
+  static formatSurveySummary(
+    accountId: bigint,
+    contact: dbPlayerSurveyContactWithAnswers,
+  ): PlayerSurveySummaryType {
+    const answeredQuestionCount = contact.playerprofile.filter((answer) =>
+      answer.answer.trim(),
+    ).length;
+
+    return {
+      player: this.toPublicContactSummary(accountId, contact),
+      answeredQuestionCount,
+      hasResponses: answeredQuestionCount > 0,
+    };
+  }
+
   static formatSurveyList(
     accountId: bigint,
     result: dbPlayerSurveyListResult,
     page: number,
     pageSize: number,
-  ): PlayerSurveyListResponseType {
-    const surveys = result.players.map((player) => this.formatSurveyDetail(accountId, player));
+  ): PlayerSurveySummaryListResponseType {
+    const surveys = result.players.map((player) => this.formatSurveySummary(accountId, player));
     const pagination = PaginationHelper.createMeta(page, pageSize, result.total);
     return {
       surveys,
@@ -131,7 +147,7 @@ export class PlayerSurveyResponseFormatter {
 
   private static toPublicContactSummary(
     accountId: bigint,
-    contact: dbPlayerSurveyContactWithAnswers,
+    contact: { id: bigint; firstname: string; lastname: string },
   ): PublicContactSummaryType {
     return {
       id: contact.id.toString(),

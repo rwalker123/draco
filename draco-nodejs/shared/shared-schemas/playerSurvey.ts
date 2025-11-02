@@ -125,15 +125,28 @@ export const PlayerSurveyDetailSchema = z
     description: 'Full set of answers for a player.',
   });
 
-export const PlayerSurveyListResponseSchema = z
+export const PlayerSurveySummarySchema = z
   .object({
-    surveys: PlayerSurveyDetailSchema.array(),
+    player: PublicContactSummarySchema,
+    answeredQuestionCount: z.number().int().min(0),
+    hasResponses: z.boolean(),
+  })
+  .openapi({
+    title: 'PlayerSurveySummary',
+    description: 'Summary information for a player survey.',
+  });
+
+export const PlayerSurveySummaryListResponseSchema = z
+  .object({
+    surveys: PlayerSurveySummarySchema.array(),
     pagination: PaginationWithTotalSchema,
   })
   .openapi({
-    title: 'PlayerSurveyListResponse',
-    description: 'Paginated list of player surveys.',
+    title: 'PlayerSurveySummaryListResponse',
+    description: 'Paginated list of player survey summaries.',
   });
+
+export const PlayerSurveyListResponseSchema = PlayerSurveySummaryListResponseSchema;
 
 export const PlayerSurveyListQuerySchema = z
   .object({
@@ -172,6 +185,10 @@ export type UpdatePlayerSurveyQuestionType = z.infer<typeof UpdatePlayerSurveyQu
 export type PlayerSurveyAnswerType = z.infer<typeof PlayerSurveyAnswerSchema>;
 export type PlayerSurveyAnswerUpsertType = z.infer<typeof PlayerSurveyAnswerUpsertSchema>;
 export type PlayerSurveyDetailType = z.infer<typeof PlayerSurveyDetailSchema>;
-export type PlayerSurveyListResponseType = z.infer<typeof PlayerSurveyListResponseSchema>;
+export type PlayerSurveySummaryType = z.infer<typeof PlayerSurveySummarySchema>;
+export type PlayerSurveySummaryListResponseType = z.infer<
+  typeof PlayerSurveySummaryListResponseSchema
+>;
+export type PlayerSurveyListResponseType = PlayerSurveySummaryListResponseType;
 export type PlayerSurveyListQueryType = z.infer<typeof PlayerSurveyListQuerySchema>;
 export type PlayerSurveySpotlightType = z.infer<typeof PlayerSurveySpotlightSchema>;

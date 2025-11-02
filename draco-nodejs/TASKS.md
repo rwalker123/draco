@@ -18,9 +18,18 @@
 - [x] Verify generated SDK changes in `@draco/shared-api-client` and update consumers.
 
 ## Phase 4 – Frontend Admin Experience
-- [ ] Build account admin survey management page (category/question/answer CRUD, pagination, search) using generated client and architecture patterns.
-- [ ] Add confirmation dialogs and success/error messaging consistent with existing admin tools.
-- [ ] Write component/unit tests for admin flows.
+- [x] Build account admin survey management page (category/question/answer CRUD, pagination, search) using generated client and architecture patterns (`frontend-next/app/account/[accountId]/surveys/manage/SurveyManagementPage.tsx`).
+- [x] Add confirmation dialogs and success/error messaging consistent with existing admin tools (`SurveyManagementPage.tsx` delete dialogs and toast alerts).
+- [x] Write component/unit tests for admin flows (`frontend-next/app/account/[accountId]/surveys/manage/__tests__/SurveyManagementPage.test.tsx`).
+- [x] Profile `listPlayerSurveys` end-to-end (Prisma query logs, EXPLAIN plans, UI timings) to quantify current latency.
+- [x] Implement lighter survey response payload (summary list + lazy detail fetch) to reduce render weight.
+- [x] Plan frontend state/rendering changes to decouple the player search field from the heavy response list.
+  - [x] Extracted `SurveyPlayerSearchPanel` to own debounced search state and results rendering (`frontend-next/app/account/[accountId]/surveys/manage/SurveyPlayerSearchPanel.tsx`).
+  - Lift selection callbacks to `SurveyPlayerResponsesManager`, exposing a `handleContactSelected` that refreshes summaries without resetting pagination.
+  - [x] Memoize the response list (`useMemo` + stable props) and gate detail fetches behind controlled expansion so search input updates never re-trigger accordion renders (`frontend-next/app/account/[accountId]/surveys/manage/SurveyManagementPage.tsx`).
+  - Introduce a small `useSurveyResponses` hook to encapsulate summary/detail loading, allowing both the search panel and list to subscribe without sharing mutable state.
+- [x] Implement decoupled player search panel and shared response hook to prevent response list re-renders during typing.
+- [x] Recommend database indexes or query tweaks that target the roster/answer search filters surfaced in the profiling step.
 
 ## Phase 5 – Player & Public Survey Pages
 - [ ] Create account survey page listing current-season player surveys with search/pagination and player-specific editor access.

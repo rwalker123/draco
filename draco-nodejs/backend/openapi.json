@@ -9668,7 +9668,53 @@
         "title": "PlayerSurveyDetail",
         "description": "Full set of answers for a player."
       },
-      "PlayerSurveyListResponse": {
+      "PlayerSurveySummary": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "photoUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "answeredQuestionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hasResponses": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "player",
+          "answeredQuestionCount",
+          "hasResponses"
+        ],
+        "title": "PlayerSurveySummary",
+        "description": "Summary information for a player survey."
+      },
+      "PlayerSurveySummaryListResponse": {
         "type": "object",
         "properties": {
           "surveys": {
@@ -9703,63 +9749,21 @@
                     "lastName"
                   ]
                 },
-                "answers": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "questionId": {
-                        "type": "string",
-                        "pattern": "^d+$"
-                      },
-                      "categoryId": {
-                        "type": "string",
-                        "pattern": "^d+$"
-                      },
-                      "categoryName": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 40
-                      },
-                      "question": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 255
-                      },
-                      "questionNumber": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 999
-                      },
-                      "answer": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 2000
-                      }
-                    },
-                    "required": [
-                      "questionId",
-                      "categoryId",
-                      "categoryName",
-                      "question",
-                      "questionNumber",
-                      "answer"
-                    ],
-                    "title": "PlayerSurveyAnswer",
-                    "description": "Answer to a survey question including category context."
-                  }
+                "answeredQuestionCount": {
+                  "type": "integer",
+                  "minimum": 0
                 },
-                "lastUpdatedAt": {
-                  "type": "string",
-                  "format": "date-time"
+                "hasResponses": {
+                  "type": "boolean"
                 }
               },
               "required": [
                 "player",
-                "answers"
+                "answeredQuestionCount",
+                "hasResponses"
               ],
-              "title": "PlayerSurveyDetail",
-              "description": "Full set of answers for a player."
+              "title": "PlayerSurveySummary",
+              "description": "Summary information for a player survey."
             }
           },
           "pagination": {
@@ -9796,8 +9800,8 @@
           "surveys",
           "pagination"
         ],
-        "title": "PlayerSurveyListResponse",
-        "description": "Paginated list of player surveys."
+        "title": "PlayerSurveySummaryListResponse",
+        "description": "Paginated list of player survey summaries."
       },
       "PlayerSurveyListQuery": {
         "type": "object",
@@ -30997,7 +31001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlayerSurveyListResponse"
+                  "$ref": "#/components/schemas/PlayerSurveySummaryListResponse"
                 }
               }
             }

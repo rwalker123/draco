@@ -47,7 +47,7 @@ const registerPlayerSurveyEndpoints = ({ registry, schemaRefs }: RegisterContext
     CreatePlayerSurveyQuestionSchemaRef,
     UpdatePlayerSurveyQuestionSchemaRef,
     PlayerSurveyListQuerySchemaRef,
-    PlayerSurveyListResponseSchemaRef,
+    PlayerSurveySummaryListResponseSchemaRef,
     PlayerSurveyDetailSchemaRef,
     PlayerSurveyAnswerUpsertSchemaRef,
     PlayerSurveyAnswerSchemaRef,
@@ -487,7 +487,7 @@ const registerPlayerSurveyEndpoints = ({ registry, schemaRefs }: RegisterContext
         description: 'Paginated player survey results.',
         content: {
           'application/json': {
-            schema: PlayerSurveyListResponseSchemaRef,
+            schema: PlayerSurveySummaryListResponseSchemaRef,
           },
         },
       },

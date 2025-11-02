@@ -6,7 +6,7 @@ import {
   PlayerSurveyCategoryType,
   PlayerSurveyQuestionType,
   PlayerSurveyListQueryType,
-  PlayerSurveyListResponseType,
+  PlayerSurveySummaryListResponseType,
   PlayerSurveyDetailType,
   PlayerSurveyAnswerUpsertType,
   PlayerSurveyAnswerType,
@@ -162,7 +162,7 @@ export class PlayerSurveyService {
   async listPlayerSurveys(
     accountId: bigint,
     query: PlayerSurveyListQueryType,
-  ): Promise<PlayerSurveyListResponseType> {
+  ): Promise<PlayerSurveySummaryListResponseType> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
     const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);

@@ -96,7 +96,7 @@ import {
   PitchingStatisticsFiltersSchema,
   PollVoteRequestSchema,
   PlayerSurveyListQuerySchema,
-  PlayerSurveyListResponseSchema,
+  PlayerSurveySummaryListResponseSchema,
   PlayerSurveyQuestionSchema,
   RecentGamesQuerySchema,
   RecentGamesSchema,
@@ -557,9 +557,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'PlayerSurveyDetail',
     PlayerSurveyDetailSchema,
   );
-  const PlayerSurveyListResponseSchemaRef = registry.register(
-    'PlayerSurveyListResponse',
-    PlayerSurveyListResponseSchema,
+  const PlayerSurveySummaryListResponseSchemaRef = registry.register(
+    'PlayerSurveySummaryListResponse',
+    PlayerSurveySummaryListResponseSchema,
   );
   const PlayerSurveyListQuerySchemaRef = registry.register(
     'PlayerSurveyListQuery',
@@ -874,7 +874,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PlayerSurveyAnswerSchemaRef,
     PlayerSurveyAnswerUpsertSchemaRef,
     PlayerSurveyDetailSchemaRef,
-    PlayerSurveyListResponseSchemaRef,
+    PlayerSurveySummaryListResponseSchemaRef,
     PlayerSurveyListQuerySchemaRef,
     PlayerSurveySpotlightSchemaRef,
     HofContactSummarySchemaRef,
