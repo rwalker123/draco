@@ -15,7 +15,7 @@
 
 ## Phase 3 – Shared Schema & Client Sync
 - [x] Apply approved schema updates (if any) under `shared/shared-schemas` and run `npm run sync:api`.
-- [ ] Verify generated SDK changes in `@draco/shared-api-client` and update consumers.
+- [x] Verify generated SDK changes in `@draco/shared-api-client` and update consumers.
 
 ## Phase 4 – Frontend Admin Experience
 - [ ] Build account admin survey management page (category/question/answer CRUD, pagination, search) using generated client and architecture patterns.
