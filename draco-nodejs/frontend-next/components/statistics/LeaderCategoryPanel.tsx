@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import NextLink from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
 import {
   StatisticsTableBase,
@@ -75,6 +77,7 @@ const processLeadersForTable = (
 const createLeaderColumns = (
   category: LeaderCategoryType,
   includeTeamColumn: boolean,
+  renderPlayerName: ColumnConfig<LeaderRow>['render'],
 ): ColumnConfig<LeaderRow>[] => {
   const columns: ColumnConfig<LeaderRow>[] = [
     {
@@ -90,11 +93,7 @@ const createLeaderColumns = (
       label: 'Player',
       align: 'left',
       sortable: false,
-      render: ({ formattedValue }) => (
-        <Typography variant="body2" fontWeight="medium">
-          {formattedValue as React.ReactNode}
-        </Typography>
-      ),
+      render: renderPlayerName,
     },
   ];
 
@@ -142,6 +141,8 @@ interface LeaderCategoryPanelProps {
   hideHeaderWhenCard?: boolean;
   onWidthChange?: (width?: number) => void;
   hideTeamInfo?: boolean;
+  accountId: string;
+  playerLinkLabelPrefix?: string;
 }
 
 export default function LeaderCategoryPanel({
@@ -152,6 +153,8 @@ export default function LeaderCategoryPanel({
   hideHeaderWhenCard = true,
   onWidthChange,
   hideTeamInfo = false,
+  accountId,
+  playerLinkLabelPrefix,
 }: LeaderCategoryPanelProps) {
   const leaderForCard = useMemo(() => getLeaderForCard(leaders), [leaders]);
   const processedLeaders = useMemo(
@@ -160,6 +163,104 @@ export default function LeaderCategoryPanel({
   );
   const cardContainerRef = useRef<HTMLDivElement | null>(null);
   const [cardWidth, setCardWidth] = useState<number>();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentLocation = useMemo(() => {
+    if (!pathname) {
+      return null;
+    }
+    if (!searchParams) {
+      return pathname;
+    }
+    const query = searchParams.toString();
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  }, [pathname, searchParams]);
+
+  const playerLinkLabel = useMemo(() => {
+    const prefix = playerLinkLabelPrefix?.trim() ?? '';
+    const categoryLabel = category.label?.trim() ?? '';
+
+    if (prefix && categoryLabel) {
+      return `${prefix} • ${categoryLabel}`;
+    }
+
+    if (prefix) {
+      return prefix;
+    }
+
+    return categoryLabel || 'Leaders';
+  }, [playerLinkLabelPrefix, category.label]);
+
+  const buildPlayerHref = useMemo(() => {
+    if (!accountId) {
+      return undefined;
+    }
+
+    return (row: LeaderRow): string | null => {
+      if (row.isTie) {
+        return null;
+      }
+
+      const rawId = row.playerId ?? null;
+      if (rawId === null || rawId === undefined) {
+        return null;
+      }
+
+      const playerId = typeof rawId === 'string' ? rawId.trim() : String(rawId);
+      if (!playerId) {
+        return null;
+      }
+
+      const basePath = `/account/${accountId}/players/${playerId}/statistics`;
+      const query = new URLSearchParams();
+
+      if (currentLocation) {
+        query.set('returnTo', currentLocation);
+        if (playerLinkLabel) {
+          query.set('returnLabel', playerLinkLabel);
+        }
+      }
+
+      const queryString = query.toString();
+      return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
+    };
+  }, [accountId, currentLocation, playerLinkLabel]) as
+    | ((row: LeaderRow) => string | null)
+    | undefined;
+
+  const renderPlayerName: ColumnConfig<LeaderRow>['render'] = ({ row, formattedValue }) => {
+    const text =
+      typeof formattedValue === 'string' || typeof formattedValue === 'number'
+        ? formattedValue
+        : (row.playerName ?? '');
+
+    const href = buildPlayerHref?.(row) ?? null;
+    if (href) {
+      return (
+        <Typography
+          component={NextLink}
+          href={href}
+          prefetch={false}
+          variant="body2"
+          fontWeight="medium"
+          sx={{
+            color: 'primary.main',
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
+          {text}
+        </Typography>
+      );
+    }
+
+    return (
+      <Typography variant="body2" fontWeight="medium">
+        {text}
+      </Typography>
+    );
+  };
 
   useEffect(() => {
     const element = cardContainerRef.current;
@@ -234,6 +335,8 @@ export default function LeaderCategoryPanel({
             statLabel={category.label}
             formatter={getFormatter(category.format)}
             hideTeamInfo={hideTeamInfo}
+            accountId={accountId}
+            playerLinkLabel={playerLinkLabel}
           />
         </Box>
       )}
@@ -247,7 +350,7 @@ export default function LeaderCategoryPanel({
         >
           <StatisticsTableBase
             data={processedLeaders}
-            columns={createLeaderColumns(category, !hideTeamInfo)}
+            columns={createLeaderColumns(category, !hideTeamInfo, renderPlayerName)}
             loading={loading}
             emptyMessage={message}
             getRowKey={getRowKey}

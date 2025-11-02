@@ -8,9 +8,13 @@ import {
   PitchingStatisticsFiltersType,
   PlayerBattingStatsType,
   PlayerPitchingStatsType,
+  PlayerCareerBattingRowType,
+  PlayerCareerPitchingRowType,
+  PlayerCareerStatisticsType,
 } from '@draco/shared-schemas';
 import {
   IBattingStatisticsRepository,
+  IContactRepository,
   ILeagueLeadersDisplayRepository,
   IPitchingStatisticsRepository,
   PlayerTeamsQueryOptions,
@@ -19,8 +23,12 @@ import {
   dbBattingStatisticsRow,
   dbPitchingStatisticsRow,
   dbPlayerTeamAssignment,
+  dbPlayerCareerBattingRow,
+  dbPlayerCareerPitchingRow,
 } from '../repositories/types/dbTypes.js';
 import { StatsResponseFormatter } from '../responseFormatters/statsResponseFormatter.js';
+import { NotFoundError } from '../utils/customErrors.js';
+import { getContactPhotoUrl } from '../config/logo.js';
 
 export interface StandingsRow {
   teamName: string;
@@ -78,6 +86,7 @@ export class StatisticsService {
     private readonly battingStatisticsRepository: IBattingStatisticsRepository,
     private readonly pitchingStatisticsRepository: IPitchingStatisticsRepository,
     private readonly leagueLeadersDisplayRepository: ILeagueLeadersDisplayRepository,
+    private readonly contactRepository: IContactRepository,
   ) {
     this.minimumCalculator = new MinimumCalculator(prisma);
   }
@@ -193,6 +202,51 @@ export class StatisticsService {
   ): Promise<PlayerPitchingStatsType[]> {
     const stats = await this.queryPitchingStats(filters);
     return StatsResponseFormatter.formatPlayerPitchingStats(stats);
+  }
+
+  async getPlayerCareerStatistics(
+    accountId: bigint,
+    playerId: bigint,
+  ): Promise<PlayerCareerStatisticsType> {
+    const contact = await this.contactRepository.findContactInAccount(playerId, accountId);
+
+    if (!contact) {
+      throw new NotFoundError('Player not found for account');
+    }
+
+    const rosterEntry = await this.contactRepository.findRosterByContactId(playerId);
+
+    const [battingRowsRaw, pitchingRowsRaw] = await Promise.all([
+      this.battingStatisticsRepository.findPlayerCareerBattingStats(accountId, playerId),
+      this.pitchingStatisticsRepository.findPlayerCareerPitchingStats(accountId, playerId),
+    ]);
+
+    const battingRows = this.buildCareerBattingRows(battingRowsRaw);
+    const pitchingRows = this.buildCareerPitchingRows(pitchingRowsRaw);
+
+    const nameFallback = `${contact.firstname ?? ''} ${contact.lastname ?? ''}`.trim();
+    const playerName =
+      battingRowsRaw[0]?.playerName ??
+      pitchingRowsRaw[0]?.playerName ??
+      (nameFallback !== '' ? nameFallback : 'Unknown');
+
+    const playerNumber =
+      rosterEntry && 'playernumber' in rosterEntry && rosterEntry.playernumber !== null
+        ? Number(rosterEntry.playernumber)
+        : null;
+
+    return {
+      playerId: playerId.toString(),
+      playerName,
+      playerNumber,
+      photoUrl: getContactPhotoUrl(accountId.toString(), playerId.toString()),
+      batting: {
+        rows: battingRows,
+      },
+      pitching: {
+        rows: pitchingRows,
+      },
+    };
   }
 
   private async queryPitchingStats(
@@ -514,6 +568,413 @@ export class StatisticsService {
         a.leagueName.localeCompare(b.leagueName),
       ),
     };
+  }
+
+  private buildCareerBattingRows(rows: dbPlayerCareerBattingRow[]): PlayerCareerBattingRowType[] {
+    if (rows.length === 0) {
+      return [];
+    }
+
+    const formattedTeamRows = StatsResponseFormatter.formatPlayerCareerBattingRows(rows, 'team');
+    const groups = new Map<
+      string,
+      {
+        rawRows: dbPlayerCareerBattingRow[];
+        teamRows: PlayerCareerBattingRowType[];
+        sortOrder: number;
+      }
+    >();
+
+    rows.forEach((rawRow, index) => {
+      const key = this.buildSeasonGroupKey(rawRow);
+      if (!groups.has(key)) {
+        const sortOrder =
+          rawRow.seasonStartDate instanceof Date
+            ? rawRow.seasonStartDate.getTime()
+            : rawRow.seasonId
+              ? Number(rawRow.seasonId)
+              : Number.NEGATIVE_INFINITY;
+
+        groups.set(key, {
+          rawRows: [],
+          teamRows: [],
+          sortOrder,
+        });
+      }
+
+      const group = groups.get(key)!;
+      group.rawRows.push(rawRow);
+      group.teamRows.push(formattedTeamRows[index]);
+    });
+
+    const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+      if (a.sortOrder === b.sortOrder) {
+        const seasonNameA = a.rawRows[0].seasonName ?? '';
+        const seasonNameB = b.rawRows[0].seasonName ?? '';
+        if (seasonNameA !== seasonNameB) {
+          return seasonNameB.localeCompare(seasonNameA);
+        }
+        const leagueA = a.rawRows[0].leagueName ?? '';
+        const leagueB = b.rawRows[0].leagueName ?? '';
+        return leagueA.localeCompare(leagueB);
+      }
+      return b.sortOrder - a.sortOrder;
+    });
+
+    const results: PlayerCareerBattingRowType[] = [];
+
+    for (const group of sortedGroups) {
+      const orderedTeams = group.teamRows
+        .map((row) => ({ ...row, level: 'team' as const }))
+        .sort((a, b) => (a.teamName ?? '').localeCompare(b.teamName ?? ''));
+
+      results.push(...orderedTeams);
+    }
+
+    const careerAggregate = this.aggregateBattingRows(rows, {
+      seasonId: null,
+      seasonName: 'Career',
+      leagueId: null,
+      leagueName: null,
+      seasonStartDate: null,
+      teamSeasonId: null,
+      teamName: 'All Teams',
+    });
+
+    const [careerRow] = StatsResponseFormatter.formatPlayerCareerBattingRows(
+      [careerAggregate],
+      'career',
+      true,
+    );
+
+    results.push(careerRow);
+
+    return results;
+  }
+
+  private buildCareerPitchingRows(
+    rows: dbPlayerCareerPitchingRow[],
+  ): PlayerCareerPitchingRowType[] {
+    if (rows.length === 0) {
+      return [];
+    }
+
+    const formattedTeamRows = StatsResponseFormatter.formatPlayerCareerPitchingRows(rows, 'team');
+    const groups = new Map<
+      string,
+      {
+        rawRows: dbPlayerCareerPitchingRow[];
+        teamRows: PlayerCareerPitchingRowType[];
+        sortOrder: number;
+      }
+    >();
+
+    rows.forEach((rawRow, index) => {
+      const key = this.buildSeasonGroupKey(rawRow);
+      if (!groups.has(key)) {
+        const sortOrder =
+          rawRow.seasonStartDate instanceof Date
+            ? rawRow.seasonStartDate.getTime()
+            : rawRow.seasonId
+              ? Number(rawRow.seasonId)
+              : Number.NEGATIVE_INFINITY;
+
+        groups.set(key, {
+          rawRows: [],
+          teamRows: [],
+          sortOrder,
+        });
+      }
+
+      const group = groups.get(key)!;
+      group.rawRows.push(rawRow);
+      group.teamRows.push(formattedTeamRows[index]);
+    });
+
+    const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+      if (a.sortOrder === b.sortOrder) {
+        const seasonNameA = a.rawRows[0].seasonName ?? '';
+        const seasonNameB = b.rawRows[0].seasonName ?? '';
+        if (seasonNameA !== seasonNameB) {
+          return seasonNameB.localeCompare(seasonNameA);
+        }
+        const leagueA = a.rawRows[0].leagueName ?? '';
+        const leagueB = b.rawRows[0].leagueName ?? '';
+        return leagueA.localeCompare(leagueB);
+      }
+      return b.sortOrder - a.sortOrder;
+    });
+
+    const results: PlayerCareerPitchingRowType[] = [];
+
+    for (const group of sortedGroups) {
+      const orderedTeams = group.teamRows
+        .map((row) => ({ ...row, level: 'team' as const }))
+        .sort((a, b) => (a.teamName ?? '').localeCompare(b.teamName ?? ''));
+
+      results.push(...orderedTeams);
+    }
+
+    const careerAggregate = this.aggregatePitchingRows(rows, {
+      seasonId: null,
+      seasonName: 'Career',
+      leagueId: null,
+      leagueName: null,
+      seasonStartDate: null,
+      teamSeasonId: null,
+      teamName: 'All Teams',
+    });
+
+    const [careerRow] = StatsResponseFormatter.formatPlayerCareerPitchingRows(
+      [careerAggregate],
+      'career',
+      true,
+    );
+
+    results.push(careerRow);
+
+    return results;
+  }
+
+  private aggregateBattingRows(
+    rows: dbPlayerCareerBattingRow[],
+    overrides: Partial<dbPlayerCareerBattingRow> = {},
+  ): dbPlayerCareerBattingRow {
+    const [first] = rows;
+    const totals = {
+      ab: 0,
+      h: 0,
+      r: 0,
+      d: 0,
+      t: 0,
+      hr: 0,
+      rbi: 0,
+      bb: 0,
+      so: 0,
+      hbp: 0,
+      sb: 0,
+      sf: 0,
+      sh: 0,
+      tb: 0,
+      pa: 0,
+    };
+
+    const teamNames = new Set<string>();
+
+    for (const row of rows) {
+      totals.ab += row.ab ?? 0;
+      totals.h += row.h ?? 0;
+      totals.r += row.r ?? 0;
+      totals.d += row.d ?? 0;
+      totals.t += row.t ?? 0;
+      totals.hr += row.hr ?? 0;
+      totals.rbi += row.rbi ?? 0;
+      totals.bb += row.bb ?? 0;
+      totals.so += row.so ?? 0;
+      totals.hbp += row.hbp ?? 0;
+      totals.sb += row.sb ?? 0;
+      totals.sf += row.sf ?? 0;
+      totals.sh += row.sh ?? 0;
+      totals.tb += row.tb ?? 0;
+      totals.pa += row.pa ?? 0;
+
+      if (row.teams && row.teams.length > 0) {
+        row.teams.forEach((team) => teamNames.add(team));
+      } else if (row.teamName) {
+        teamNames.add(row.teamName);
+      }
+    }
+
+    const singles = totals.h - totals.d - totals.t - totals.hr;
+    const avg = totals.ab === 0 ? 0 : totals.h / totals.ab;
+    const obpDenominator = totals.ab + totals.bb + totals.hbp;
+    const obp = obpDenominator === 0 ? 0 : (totals.h + totals.bb + totals.hbp) / obpDenominator;
+    const slg =
+      totals.ab === 0 ? 0 : (singles + totals.d * 2 + totals.t * 3 + totals.hr * 4) / totals.ab;
+    const ops = obp + slg;
+
+    const teamsArray =
+      overrides.teams ??
+      (teamNames.size > 0 ? Array.from(teamNames).sort((a, b) => a.localeCompare(b)) : undefined);
+    const resolvedTeamName =
+      overrides.teamName ??
+      (teamNames.size === 1
+        ? Array.from(teamNames)[0]
+        : teamNames.size > 1
+          ? 'All Teams'
+          : (first.teamName ?? 'Unknown'));
+
+    return {
+      playerId: overrides.playerId ?? first.playerId,
+      playerName: overrides.playerName ?? first.playerName,
+      seasonId: overrides.seasonId !== undefined ? overrides.seasonId : (first.seasonId ?? null),
+      seasonName:
+        overrides.seasonName !== undefined ? overrides.seasonName : (first.seasonName ?? null),
+      seasonStartDate:
+        overrides.seasonStartDate !== undefined
+          ? overrides.seasonStartDate
+          : (first.seasonStartDate ?? null),
+      leagueId: overrides.leagueId !== undefined ? overrides.leagueId : (first.leagueId ?? null),
+      leagueName:
+        overrides.leagueName !== undefined ? overrides.leagueName : (first.leagueName ?? null),
+      teamSeasonId: overrides.teamSeasonId !== undefined ? overrides.teamSeasonId : null,
+      teamName: resolvedTeamName,
+      teams: teamsArray,
+      ab: totals.ab,
+      h: totals.h,
+      r: totals.r,
+      d: totals.d,
+      t: totals.t,
+      hr: totals.hr,
+      rbi: totals.rbi,
+      bb: totals.bb,
+      so: totals.so,
+      hbp: totals.hbp,
+      sb: totals.sb,
+      sf: totals.sf,
+      sh: totals.sh,
+      avg,
+      obp,
+      slg,
+      ops,
+      tb: totals.tb,
+      pa: totals.pa,
+    };
+  }
+
+  private aggregatePitchingRows(
+    rows: dbPlayerCareerPitchingRow[],
+    overrides: Partial<dbPlayerCareerPitchingRow> = {},
+  ): dbPlayerCareerPitchingRow {
+    const [first] = rows;
+    let totalOuts = 0;
+    const totals = {
+      w: 0,
+      l: 0,
+      s: 0,
+      h: 0,
+      r: 0,
+      er: 0,
+      bb: 0,
+      so: 0,
+      hr: 0,
+      bf: 0,
+      wp: 0,
+      hbp: 0,
+      d: 0,
+      t: 0,
+      ab: 0,
+    };
+
+    const teamNames = new Set<string>();
+
+    for (const row of rows) {
+      totalOuts += (row.ip ?? 0) * 3 + (row.ip2 ?? 0);
+      totals.w += row.w ?? 0;
+      totals.l += row.l ?? 0;
+      totals.s += row.s ?? 0;
+      totals.h += row.h ?? 0;
+      totals.r += row.r ?? 0;
+      totals.er += row.er ?? 0;
+      totals.bb += row.bb ?? 0;
+      totals.so += row.so ?? 0;
+      totals.hr += row.hr ?? 0;
+      totals.bf += row.bf ?? 0;
+      totals.wp += row.wp ?? 0;
+      totals.hbp += row.hbp ?? 0;
+      totals.d += row.d ?? 0;
+      totals.t += row.t ?? 0;
+      totals.ab += row.ab ?? 0;
+
+      if (row.teams && row.teams.length > 0) {
+        row.teams.forEach((team) => teamNames.add(team));
+      } else if (row.teamName) {
+        teamNames.add(row.teamName);
+      }
+    }
+
+    const innings = Math.trunc(totalOuts / 3);
+    const remainingOuts = totalOuts % 3;
+    const inningsAsDecimal = totalOuts === 0 ? 0 : totalOuts / 3;
+
+    const era = inningsAsDecimal === 0 ? 0 : (totals.er * 9) / inningsAsDecimal;
+    const whip = inningsAsDecimal === 0 ? 0 : (totals.bb + totals.h) / inningsAsDecimal;
+    const k9 = inningsAsDecimal === 0 ? 0 : (totals.so * 9) / inningsAsDecimal;
+    const bb9 = inningsAsDecimal === 0 ? 0 : (totals.bb * 9) / inningsAsDecimal;
+    const singles = totals.h - totals.d - totals.t - totals.hr;
+    const oba = totals.ab === 0 ? 0 : totals.h / totals.ab;
+    const slg =
+      totals.ab === 0 ? 0 : (singles + totals.d * 2 + totals.t * 3 + totals.hr * 4) / totals.ab;
+
+    const teamsArray =
+      overrides.teams ??
+      (teamNames.size > 0 ? Array.from(teamNames).sort((a, b) => a.localeCompare(b)) : undefined);
+    const resolvedTeamName =
+      overrides.teamName ??
+      (teamNames.size === 1
+        ? Array.from(teamNames)[0]
+        : teamNames.size > 1
+          ? 'All Teams'
+          : (first.teamName ?? 'Unknown'));
+
+    return {
+      playerId: overrides.playerId ?? first.playerId,
+      playerName: overrides.playerName ?? first.playerName,
+      seasonId: overrides.seasonId !== undefined ? overrides.seasonId : (first.seasonId ?? null),
+      seasonName:
+        overrides.seasonName !== undefined ? overrides.seasonName : (first.seasonName ?? null),
+      seasonStartDate:
+        overrides.seasonStartDate !== undefined
+          ? overrides.seasonStartDate
+          : (first.seasonStartDate ?? null),
+      leagueId: overrides.leagueId !== undefined ? overrides.leagueId : (first.leagueId ?? null),
+      leagueName:
+        overrides.leagueName !== undefined ? overrides.leagueName : (first.leagueName ?? null),
+      teamSeasonId: overrides.teamSeasonId !== undefined ? overrides.teamSeasonId : null,
+      teamName: resolvedTeamName,
+      teams: teamsArray,
+      ip: innings,
+      ip2: remainingOuts,
+      w: totals.w,
+      l: totals.l,
+      s: totals.s,
+      h: totals.h,
+      r: totals.r,
+      er: totals.er,
+      bb: totals.bb,
+      so: totals.so,
+      hr: totals.hr,
+      bf: totals.bf,
+      wp: totals.wp,
+      hbp: totals.hbp,
+      d: totals.d,
+      t: totals.t,
+      ab: totals.ab,
+      era,
+      whip,
+      k9,
+      bb9,
+      oba,
+      slg,
+      ipDecimal: inningsAsDecimal,
+    };
+  }
+
+  private buildSeasonGroupKey(row: {
+    seasonId: bigint | null;
+    leagueId: bigint | null;
+    seasonStartDate: Date | null;
+  }): string {
+    const seasonIdPart = row.seasonId ? row.seasonId.toString() : 'none';
+    const leagueIdPart = row.leagueId ? row.leagueId.toString() : 'none';
+    const startDatePart =
+      row.seasonStartDate instanceof Date && !Number.isNaN(row.seasonStartDate.getTime())
+        ? row.seasonStartDate.getTime().toString()
+        : row.seasonId
+          ? row.seasonId.toString()
+          : '0';
+
+    return `${seasonIdPart}:${leagueIdPart}:${startDatePart}`;
   }
 
   // Helper methods

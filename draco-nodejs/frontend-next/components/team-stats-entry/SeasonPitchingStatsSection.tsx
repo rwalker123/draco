@@ -145,6 +145,7 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
           typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
         ip: stat.ip ?? null,
         ip2: stat.ip2 ?? null,
+        playerId: stat.playerId ?? null,
       };
 
       return row;
@@ -168,6 +169,7 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
         isTotals: true,
         ip: Number(totals.ip ?? 0),
         ip2: Number(totals.ip2 ?? 0),
+        playerId: null,
       };
 
       rows.push(totalsRow);
@@ -206,6 +208,7 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
           sortOrder={sortOrder}
           onSort={(field) => handleTableSort(field as keyof SeasonPitchingRow)}
           emptyMessage="No pitching statistics available for this season."
+          playerLinkLabel="Season Pitching Stats"
         />
       )}
     </Box>

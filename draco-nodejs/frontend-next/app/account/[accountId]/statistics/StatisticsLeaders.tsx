@@ -181,6 +181,8 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
                     leaders={leaders}
                     loading={leadersLoading}
                     emptyMessage={`No additional ${category.label.toLowerCase()} data available`}
+                    accountId={accountId}
+                    playerLinkLabelPrefix="League Leaders • Batting"
                   />
                 </Box>
               );
@@ -204,6 +206,8 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
                     leaders={leaders}
                     loading={leadersLoading}
                     emptyMessage={`No additional ${category.label.toLowerCase()} data available`}
+                    accountId={accountId}
+                    playerLinkLabelPrefix="League Leaders • Pitching"
                   />
                 </Box>
               );

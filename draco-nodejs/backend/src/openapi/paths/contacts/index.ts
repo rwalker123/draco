@@ -18,6 +18,8 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     RosterPlayerSchemaRef,
     ValidationErrorSchemaRef,
     ContactSearchParamsSchemaRef,
+    PublicContactSearchResponseSchemaRef,
+    PublicContactSearchQuerySchemaRef,
   } = schemaRefs;
 
   registry.registerPath({
@@ -45,6 +47,56 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         content: {
           'application/json': {
             schema: BaseContactSchemaRef.array(),
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/contacts/public-search',
+    operationId: 'searchPublicContacts',
+    summary: 'Public contact search',
+    description:
+      'Search contacts within an account by name. Returns limited contact fields safe for public use.',
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      query: PublicContactSearchQuerySchemaRef,
+    },
+    responses: {
+      200: {
+        description: 'Matching contacts',
+        content: {
+          'application/json': {
+            schema: PublicContactSearchResponseSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
           },
         },
       },

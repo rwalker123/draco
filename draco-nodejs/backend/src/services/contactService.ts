@@ -9,6 +9,7 @@ import {
   RosterPlayerType,
   ContactValidationType,
   NamedContactType,
+  PublicContactSummaryType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError } from '../utils/customErrors.js';
 import { ContactResponseFormatter, TeamResponseFormatter } from '../responseFormatters/index.js';
@@ -281,6 +282,27 @@ export class ContactService {
       pagination,
     );
     return response;
+  }
+
+  async searchContactsPublic(
+    accountId: bigint,
+    query: string,
+    limit = 15,
+  ): Promise<PublicContactSummaryType[]> {
+    const sanitizedLimit = Math.max(1, Math.min(limit, 100));
+    const contactsWithTotalCount = await this.contactRepository.searchContactsByName(accountId, {
+      searchQuery: query,
+      pagination: {
+        page: 1,
+        limit: sanitizedLimit,
+        skip: 0,
+        sortOrder: 'asc',
+      },
+    });
+
+    return contactsWithTotalCount.contacts.map((contact) =>
+      ContactResponseFormatter.formatPublicContactSummary(accountId, contact),
+    );
   }
 
   /**

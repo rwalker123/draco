@@ -1,15 +1,19 @@
 import {
   getLeaderCategories,
+  getPlayerCareerStatistics,
   listBattingStatistics,
   listPitchingStatistics,
   listStatisticalLeaders,
+  searchPublicContacts as apiSearchPublicContacts,
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import type {
   LeaderCategoriesType,
   LeaderRowType,
   PlayerBattingStatsType,
+  PlayerCareerStatisticsType,
   PlayerPitchingStatsType,
+  PublicContactSearchResponseType,
 } from '@draco/shared-schemas';
 
 import { createApiClient } from '../lib/apiClientFactory';
@@ -211,4 +215,46 @@ export async function fetchStatisticalLeaders(
   });
 
   return unwrapApiResult(result, 'Failed to load statistical leaders');
+}
+
+export interface PublicContactSearchParams {
+  query: string;
+  limit?: number;
+}
+
+export async function searchPublicContacts(
+  accountId: string,
+  searchParams: PublicContactSearchParams,
+  options?: ClientOptions,
+): Promise<PublicContactSearchResponseType> {
+  const client = resolveClient(options);
+  const { query, limit } = searchParams;
+
+  const result = await apiSearchPublicContacts({
+    client,
+    path: { accountId },
+    query: {
+      query,
+      limit: toStringIfDefined(limit),
+    },
+    throwOnError: false,
+  });
+
+  return unwrapApiResult(result, 'Failed to search players');
+}
+
+export async function fetchPlayerCareerStatistics(
+  accountId: string,
+  playerId: string,
+  options?: ClientOptions,
+): Promise<PlayerCareerStatisticsType> {
+  const client = resolveClient(options);
+
+  const result = await getPlayerCareerStatistics({
+    client,
+    path: { accountId, playerId },
+    throwOnError: false,
+  });
+
+  return unwrapApiResult(result, 'Failed to load player career statistics');
 }

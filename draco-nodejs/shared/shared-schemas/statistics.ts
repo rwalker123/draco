@@ -90,6 +90,30 @@ export const PlayerPitchingStatsBriefSchema = PlayerPitchingStatsSchema.omit({
   ip: z.string().describe('Innings pitched, rounded to nearest whole inning'),
 });
 
+export const PlayerCareerRowLevelSchema = z.enum(['season', 'team', 'career']);
+
+export const PlayerCareerBattingRowSchema = PlayerBattingStatsSchema.extend({
+  seasonId: bigintToStringSchema.nullable().optional(),
+  seasonName: z.string().nullable().optional(),
+  leagueId: bigintToStringSchema.nullable().optional(),
+  leagueName: z.string().nullable().optional(),
+  teamId: bigintToStringSchema.nullable().optional(),
+  seasonSortOrder: z.number().optional(),
+  level: PlayerCareerRowLevelSchema,
+  isTotals: z.boolean().optional(),
+});
+
+export const PlayerCareerPitchingRowSchema = PlayerPitchingStatsSchema.extend({
+  seasonId: bigintToStringSchema.nullable().optional(),
+  seasonName: z.string().nullable().optional(),
+  leagueId: bigintToStringSchema.nullable().optional(),
+  leagueName: z.string().nullable().optional(),
+  teamId: bigintToStringSchema.nullable().optional(),
+  seasonSortOrder: z.number().optional(),
+  level: PlayerCareerRowLevelSchema,
+  isTotals: z.boolean().optional(),
+});
+
 export const StatisticsFiltersSchema = z.object({
   seasonId: z
     .string()
@@ -182,6 +206,19 @@ export const LeaderCategoriesSchema = z.object({
   pitching: LeaderCategorySchema.array(),
 });
 
+export const PlayerCareerStatisticsSchema = z.object({
+  playerId: bigintToStringSchema,
+  playerName: nameSchema,
+  playerNumber: z.number().int().min(0).nullable().optional(),
+  photoUrl: z.string().url().nullable().optional(),
+  batting: z.object({
+    rows: PlayerCareerBattingRowSchema.array(),
+  }),
+  pitching: z.object({
+    rows: PlayerCareerPitchingRowSchema.array(),
+  }),
+});
+
 export type PlayerBattingStatsType = z.infer<typeof PlayerBattingStatsSchema>;
 export type PlayerPitchingStatsType = z.infer<typeof PlayerPitchingStatsSchema>;
 export type StatisticsFiltersType = z.infer<typeof StatisticsFiltersSchema>;
@@ -193,7 +230,10 @@ export type PitchingStatisticsFiltersType = z.infer<typeof PitchingStatisticsFil
 export type LeaderStatisticsFiltersType = z.infer<typeof LeaderStatisticsFiltersSchema>;
 export type PlayerBattingStatsBriefType = z.infer<typeof PlayerBattingStatsBriefSchema>;
 export type PlayerPitchingStatsBriefType = z.infer<typeof PlayerPitchingStatsBriefSchema>;
-
+export type PlayerCareerRowLevelType = z.infer<typeof PlayerCareerRowLevelSchema>;
+export type PlayerCareerBattingRowType = z.infer<typeof PlayerCareerBattingRowSchema>;
+export type PlayerCareerPitchingRowType = z.infer<typeof PlayerCareerPitchingRowSchema>;
+export type PlayerCareerStatisticsType = z.infer<typeof PlayerCareerStatisticsSchema>;
 export const TeamStatsPlayerSummarySchema = z.object({
   rosterSeasonId: bigintToStringSchema,
   playerId: bigintToStringSchema,

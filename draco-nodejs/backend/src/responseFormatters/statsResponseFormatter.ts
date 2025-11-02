@@ -8,6 +8,9 @@ import {
   PlayerBattingStatsType,
   PlayerPitchingStatsBriefType,
   PlayerPitchingStatsType,
+  PlayerCareerBattingRowType,
+  PlayerCareerPitchingRowType,
+  PlayerCareerRowLevelType,
   RecentGamesType,
 } from '@draco/shared-schemas';
 import { dbGameInfo } from '../repositories/index.js';
@@ -15,6 +18,8 @@ import {
   dbBattingStatisticsRow,
   dbLeaderCategoryConfig,
   dbPitchingStatisticsRow,
+  dbPlayerCareerBattingRow,
+  dbPlayerCareerPitchingRow,
 } from '../repositories/types/dbTypes.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { getContactPhotoUrl } from '../config/logo.js';
@@ -108,6 +113,110 @@ export class StatsResponseFormatter {
       } satisfies PlayerPitchingStatsType;
 
       return formatted;
+    });
+  }
+
+  static formatPlayerCareerBattingRows(
+    stats: dbPlayerCareerBattingRow[],
+    level: PlayerCareerRowLevelType = 'team',
+    markTotals = false,
+  ): PlayerCareerBattingRowType[] {
+    return stats.map((stat) => {
+      const teams =
+        stat.teams && stat.teams.length > 0
+          ? stat.teams
+          : stat.teamName && stat.teamName.trim() !== ''
+            ? [stat.teamName]
+            : undefined;
+
+      return {
+        playerId: stat.playerId.toString(),
+        playerName: stat.playerName,
+        teamName: StatsResponseFormatter.resolveTeamName(stat.teamName, teams),
+        teams,
+        ab: stat.ab,
+        h: stat.h,
+        r: stat.r,
+        d: stat.d,
+        t: stat.t,
+        hr: stat.hr,
+        rbi: stat.rbi,
+        bb: stat.bb,
+        so: stat.so,
+        hbp: stat.hbp ?? 0,
+        sb: stat.sb ?? 0,
+        sf: stat.sf ?? 0,
+        sh: stat.sh ?? 0,
+        avg: stat.avg,
+        obp: stat.obp,
+        slg: stat.slg,
+        ops: stat.ops,
+        tb: stat.tb ?? 0,
+        pa: stat.pa ?? 0,
+        seasonId: stat.seasonId ? stat.seasonId.toString() : null,
+        seasonName: stat.seasonName ?? null,
+        leagueId: stat.leagueId ? stat.leagueId.toString() : null,
+        leagueName: stat.leagueName ?? null,
+        teamId: stat.teamSeasonId ? stat.teamSeasonId.toString() : null,
+        seasonSortOrder: stat.seasonStartDate
+          ? new Date(stat.seasonStartDate).getTime()
+          : undefined,
+        level,
+        ...(markTotals ? { isTotals: true } : {}),
+      };
+    });
+  }
+
+  static formatPlayerCareerPitchingRows(
+    stats: dbPlayerCareerPitchingRow[],
+    level: PlayerCareerRowLevelType = 'team',
+    markTotals = false,
+  ): PlayerCareerPitchingRowType[] {
+    return stats.map((stat) => {
+      const teams =
+        stat.teams && stat.teams.length > 0
+          ? stat.teams
+          : stat.teamName && stat.teamName.trim() !== ''
+            ? [stat.teamName]
+            : undefined;
+
+      return {
+        playerId: stat.playerId.toString(),
+        playerName: stat.playerName,
+        teamName: StatsResponseFormatter.resolveTeamName(stat.teamName, teams),
+        teams,
+        ip: stat.ip,
+        ip2: stat.ip2,
+        w: stat.w,
+        l: stat.l,
+        s: stat.s,
+        h: stat.h,
+        r: stat.r,
+        er: stat.er,
+        bb: stat.bb,
+        so: stat.so,
+        hr: stat.hr,
+        bf: stat.bf,
+        wp: stat.wp,
+        hbp: stat.hbp,
+        era: stat.era,
+        whip: stat.whip,
+        k9: stat.k9,
+        bb9: stat.bb9,
+        oba: stat.oba,
+        slg: stat.slg,
+        ipDecimal: stat.ipDecimal,
+        seasonId: stat.seasonId ? stat.seasonId.toString() : null,
+        seasonName: stat.seasonName ?? null,
+        leagueId: stat.leagueId ? stat.leagueId.toString() : null,
+        leagueName: stat.leagueName ?? null,
+        teamId: stat.teamSeasonId ? stat.teamSeasonId.toString() : null,
+        seasonSortOrder: stat.seasonStartDate
+          ? new Date(stat.seasonStartDate).getTime()
+          : undefined,
+        level,
+        ...(markTotals ? { isTotals: true } : {}),
+      };
     });
   }
 

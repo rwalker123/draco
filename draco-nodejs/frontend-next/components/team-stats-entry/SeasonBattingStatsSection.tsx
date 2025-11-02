@@ -157,6 +157,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
         id,
         playerName:
           typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
+        playerId: stat.playerId ?? null,
       };
 
       return row;
@@ -184,6 +185,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
         id: 'totals',
         playerName: 'Totals',
         isTotals: true,
+        playerId: null,
       };
 
       rows.push(totalsRow);
@@ -220,6 +222,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
           sortOrder={sortOrder}
           onSort={(field) => handleTableSort(field as keyof SeasonBattingRow)}
           emptyMessage="No batting statistics available for this season."
+          playerLinkLabel="Season Batting Stats"
         />
       )}
     </Box>

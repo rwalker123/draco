@@ -65,6 +65,21 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/statistics/players/:playerId
+ * Retrieve career statistics for a single player
+ */
+router.get(
+  '/players/:playerId',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, playerId } = extractBigIntParams(req.params, 'accountId', 'playerId');
+
+    const playerStats = await statisticsService.getPlayerCareerStatistics(accountId, playerId);
+
+    res.json(playerStats);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/statistics/leaders/:leagueId
  *
  * Get statistical leaders for a specified category within a league.

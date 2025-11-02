@@ -471,6 +471,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               },
             ]}
             teamId={teamSeasonId}
+            randomize
           />
         </Box>
       )}

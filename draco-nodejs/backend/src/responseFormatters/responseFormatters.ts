@@ -5,6 +5,7 @@ import {
   ContactType,
   PagedContactType,
   AccountPollType,
+  PublicContactSummaryType,
 } from '@draco/shared-schemas';
 import { getContactPhotoUrl } from '../config/logo.js';
 import { DateUtils } from '../utils/dateUtils.js';
@@ -65,6 +66,18 @@ export class ContactResponseFormatter {
 
   static formatManyContactsResponse(contacts: dbBaseContact[]): BaseContactType[] {
     return contacts.map((contact) => this.formatContactResponse(contact));
+  }
+
+  static formatPublicContactSummary(
+    accountId: bigint,
+    contact: dbBaseContact,
+  ): PublicContactSummaryType {
+    return {
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+    };
   }
 
   static formatRosterPlayerResponse(dbRoster: dbRosterPlayer): RosterPlayerType {

@@ -87,6 +87,9 @@ export type dbPitchingStatisticsRow = {
   bf: number;
   wp: number;
   hbp: number;
+  d?: number;
+  t?: number;
+  ab?: number;
   era: number;
   whip: number;
   k9: number;
@@ -96,6 +99,21 @@ export type dbPitchingStatisticsRow = {
   ipDecimal: number;
   //[key: string]: string | number | bigint | string[] | undefined;
 };
+
+type dbPlayerCareerBaseRow = {
+  playerId: bigint;
+  playerName: string;
+  seasonId: bigint | null;
+  seasonName: string | null;
+  seasonStartDate: Date | null;
+  leagueId: bigint | null;
+  leagueName: string | null;
+  teamSeasonId: bigint | null;
+};
+
+export type dbPlayerCareerBattingRow = dbBattingStatisticsRow & dbPlayerCareerBaseRow;
+
+export type dbPlayerCareerPitchingRow = dbPitchingStatisticsRow & dbPlayerCareerBaseRow;
 
 export interface dbTeamSeasonValidationResult {
   id: bigint;

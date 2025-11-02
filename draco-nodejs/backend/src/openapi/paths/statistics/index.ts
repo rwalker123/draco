@@ -10,6 +10,7 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
     NotFoundErrorSchemaRef,
     PitchingStatisticsFiltersSchemaRef,
     PlayerBattingStatsSchemaRef,
+    PlayerCareerStatisticsSchemaRef,
     PlayerPitchingStatsSchemaRef,
     RecentGamesQuerySchemaRef,
     RecentGamesSchemaRef,
@@ -170,6 +171,71 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
         content: {
           'application/json': {
             schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/statistics/players/{playerId}
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/players/{playerId}',
+    operationId: 'getPlayerCareerStatistics',
+    summary: 'Get player career statistics',
+    description:
+      'Fetch batting and pitching statistics for a single player across all recorded seasons, including per-season breakdowns and career totals.',
+    tags: ['Statistics'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'playerId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Player career statistics retrieved',
+        content: {
+          'application/json': {
+            schema: PlayerCareerStatisticsSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Player not found for account',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
           },
         },
       },

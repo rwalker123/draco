@@ -790,6 +790,7 @@ const BaseballAccountHome: React.FC = () => {
               seasonId={currentSeasonId}
               leagues={leaderLeagues}
               divisionId="0"
+              randomize
             />
           </Box>
         )}

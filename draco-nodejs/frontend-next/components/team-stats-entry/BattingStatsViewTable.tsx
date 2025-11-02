@@ -32,6 +32,8 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
         id: stat.statId,
         playerName: stat.playerName ?? null,
         playerNumber: stat.playerNumber ?? null,
+        playerId: stat.playerId ?? null,
+        contactId: stat.contactId ?? null,
       };
 
       battingViewFieldOrder.forEach((field) => {
@@ -54,6 +56,8 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
         playerName: 'Totals',
         playerNumber: null,
         isTotals: true,
+        playerId: null,
+        contactId: null,
       };
 
       battingViewFieldOrder.forEach((field) => {
@@ -102,6 +106,7 @@ const BattingStatsViewTable: React.FC<BattingStatsViewTableProps> = ({ stats, to
           sortOrder={sortOrder}
           onSort={(field) => handleTableSort(field as keyof BattingTableRow)}
           emptyMessage="No batting statistics available for this game."
+          playerLinkLabel="Game Batting Stats"
         />
       )}
     </Box>

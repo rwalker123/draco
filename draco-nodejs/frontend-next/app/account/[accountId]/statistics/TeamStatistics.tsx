@@ -328,6 +328,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                 sortField={String(battingSortField)}
                 sortOrder={battingSortOrder}
                 onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
+                playerLinkLabel="Team Batting Stats"
               />
             </TabPanel>
 
@@ -342,6 +343,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                 sortField={String(pitchingSortField)}
                 sortOrder={pitchingSortOrder}
                 onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
+                playerLinkLabel="Team Pitching Stats"
               />
             </TabPanel>
           </Paper>

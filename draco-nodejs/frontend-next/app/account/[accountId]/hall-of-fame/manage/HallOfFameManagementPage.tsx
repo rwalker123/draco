@@ -40,14 +40,28 @@ const HallOfFameManagementPage: React.FC<HallOfFameManagementPageProps> = ({ acc
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box textAlign="center" sx={{ color: 'white' }}>
-          <Typography variant="h3" sx={{ fontWeight: 700 }}>
-            Hall of Fame Management
-          </Typography>
-          <Typography variant="body1" sx={{ mt: 1, opacity: 0.85, maxWidth: 600, mx: 'auto' }}>
-            Manage inductees, review nominations, and control the public nomination experience for
-            your organization.
-          </Typography>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ position: 'relative' }}
+        >
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                <Typography
+                  variant="h4"
+                  sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}
+                >
+                  Hall of Fame Management
+                </Typography>
+              </Box>
+              <Typography variant="body1" sx={{ mt: 1, opacity: 0.85, maxWidth: 600, mx: 'auto' }}>
+                Manage inductees, review nominations, and control the public nomination experience
+                for your organization.
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       </AccountPageHeader>
 

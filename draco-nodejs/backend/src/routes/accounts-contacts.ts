@@ -18,6 +18,8 @@ import {
   RoleWithContactType,
   ContactSearchParamsSchema,
   ContactValidationSchema,
+  PublicContactSearchQuerySchema,
+  PublicContactSummaryType,
 } from '@draco/shared-schemas';
 import {
   handlePhotoUploadMiddleware,
@@ -71,6 +73,22 @@ const buildSelfUpdatePayload = (
 
   return mergedContact;
 };
+
+router.get(
+  '/:accountId/contacts/public-search',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { query, limit } = PublicContactSearchQuerySchema.parse(req.query);
+
+    const results: PublicContactSummaryType[] = await contactService.searchContactsPublic(
+      accountId,
+      query,
+      limit,
+    );
+
+    res.json({ results });
+  }),
+);
 
 /**
  * GET /api/accounts/:accountId/contacts/:contactId/roster

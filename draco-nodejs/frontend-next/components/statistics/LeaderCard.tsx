@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import NextLink from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Typography, Card, CardContent, Avatar, Chip, useTheme, alpha } from '@mui/material';
 import { Star as StarIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
 import TeamBadges from './TeamBadges';
@@ -23,6 +25,8 @@ interface LeaderCardProps {
   statLabel: string;
   formatter: (value: unknown) => string;
   hideTeamInfo?: boolean;
+  accountId?: string;
+  playerLinkLabel?: string;
 }
 
 export default function LeaderCard({
@@ -30,9 +34,52 @@ export default function LeaderCard({
   statLabel,
   formatter,
   hideTeamInfo = false,
+  accountId,
+  playerLinkLabel,
 }: LeaderCardProps) {
   const theme = useTheme();
   const [imageError, setImageError] = useState(false);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentLocation = useMemo(() => {
+    if (!pathname) {
+      return null;
+    }
+    if (!searchParams) {
+      return pathname;
+    }
+    const query = searchParams.toString();
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  }, [pathname, searchParams]);
+
+  const playerHref = useMemo(() => {
+    if (!accountId) {
+      return null;
+    }
+    if (leader.isTie) {
+      return null;
+    }
+    const rawId = leader.playerId;
+    if (!rawId) {
+      return null;
+    }
+    const playerId = rawId.trim();
+    if (playerId.length === 0) {
+      return null;
+    }
+    const basePath = `/account/${accountId}/players/${playerId}/statistics`;
+    const query = new URLSearchParams();
+    if (currentLocation) {
+      query.set('returnTo', currentLocation);
+      const label = (playerLinkLabel ?? '').trim();
+      if (label.length > 0) {
+        query.set('returnLabel', label);
+      }
+    }
+    const queryString = query.toString();
+    return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
+  }, [accountId, leader.isTie, leader.playerId, currentLocation, playerLinkLabel]);
 
   const getPlayerInitials = (name: string) => {
     const parts = name.split(' ');
@@ -143,17 +190,36 @@ export default function LeaderCard({
                 />
               </Box>
 
-              <Typography
-                fontWeight="bold"
-                sx={{
-                  color: theme.palette.text.primary,
-                  mb: { xs: 0.5, sm: 1 },
-                  lineHeight: 1.2,
-                  fontSize: { xs: '.90rem', sm: '1.0rem' },
-                }}
-              >
-                {leader.playerName}
-              </Typography>
+              {playerHref ? (
+                <Typography
+                  component={NextLink}
+                  href={playerHref}
+                  prefetch={false}
+                  fontWeight="bold"
+                  sx={{
+                    color: 'primary.main',
+                    mb: { xs: 0.5, sm: 1 },
+                    lineHeight: 1.2,
+                    fontSize: { xs: '.90rem', sm: '1.0rem' },
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {leader.playerName}
+                </Typography>
+              ) : (
+                <Typography
+                  fontWeight="bold"
+                  sx={{
+                    color: theme.palette.text.primary,
+                    mb: { xs: 0.5, sm: 1 },
+                    lineHeight: 1.2,
+                    fontSize: { xs: '.90rem', sm: '1.0rem' },
+                  }}
+                >
+                  {leader.playerName}
+                </Typography>
+              )}
 
               {!hideTeamInfo && !isTie && (
                 <TeamBadges teams={leader.teams} teamName={leader.teamName} maxVisible={3} />

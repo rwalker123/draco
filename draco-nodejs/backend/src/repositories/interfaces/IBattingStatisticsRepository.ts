@@ -1,4 +1,8 @@
-import { dbBattingStatisticsRow, dbPlayerTeamAssignment } from '../types/dbTypes.js';
+import {
+  dbBattingStatisticsRow,
+  dbPlayerTeamAssignment,
+  dbPlayerCareerBattingRow,
+} from '../types/dbTypes.js';
 
 export interface BattingStatisticsQueryOptions {
   leagueId?: bigint;
@@ -26,4 +30,8 @@ export interface IBattingStatisticsRepository {
     playerIds: bigint[],
     query: PlayerTeamsQueryOptions,
   ): Promise<dbPlayerTeamAssignment[]>;
+  findPlayerCareerBattingStats(
+    accountId: bigint,
+    playerId: bigint,
+  ): Promise<dbPlayerCareerBattingRow[]>;
 }

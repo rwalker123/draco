@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Alert,
@@ -31,6 +31,7 @@ interface BaseLeadersWidgetProps {
   leaderLimit?: number;
   divisionId?: string | null;
   isHistorical?: boolean;
+  randomize?: boolean;
 }
 
 interface AccountLeadersWidgetProps extends BaseLeadersWidgetProps {
@@ -75,6 +76,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const theme = useTheme();
   const leaderLimit = props.leaderLimit ?? 5;
   const accountId = props.accountId;
+  const randomize = props.randomize === true;
   const isTeamVariant = isTeamVariantProps(props);
   const teamProps = isTeamVariant ? (props as TeamLeadersWidgetProps) : null;
   const showTeamInfo = !isTeamVariant;
@@ -172,6 +174,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
       Record<StatType, { leagueId: string | null; categoryKey: string; leaders: LeaderRowType[] }>
     >
   >({});
+  const randomizationAppliedRef = useRef(false);
 
   const {
     battingCategories,
@@ -209,6 +212,41 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   useEffect(() => {
     ensureCategoryState('pitching', pitchingCategories);
   }, [pitchingCategories, ensureCategoryState]);
+
+  useEffect(() => {
+    if (!randomize || randomizationAppliedRef.current) {
+      return;
+    }
+
+    const battingCount = battingCategories.length;
+    const pitchingCount = pitchingCategories.length;
+    const totalCategories = battingCount + pitchingCount;
+
+    if (totalCategories === 0) {
+      return;
+    }
+
+    const seed = Math.floor(Math.random() * totalCategories);
+    const chosenType: StatType = seed < battingCount ? 'batting' : 'pitching';
+    const categoryIndex = chosenType === 'batting' ? seed : seed - battingCount;
+    const categoriesForType = chosenType === 'batting' ? battingCategories : pitchingCategories;
+    const chosenCategory = categoriesForType[categoryIndex];
+
+    if (!chosenCategory) {
+      return;
+    }
+
+    randomizationAppliedRef.current = true;
+    setStatType(chosenType);
+    setRequestedCategoryByType((previous) => ({
+      ...previous,
+      [chosenType]: chosenCategory.key,
+    }));
+    setDisplayedCategoryByType((previous) => ({
+      ...previous,
+      [chosenType]: chosenCategory.key,
+    }));
+  }, [randomize, battingCategories, pitchingCategories]);
 
   const activeCategories: LeaderCategoryType[] =
     statType === 'batting' ? battingCategories : pitchingCategories;
@@ -521,6 +559,8 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
             onWidthChange={handlePanelWidthChange}
             hideTeamInfo={!showTeamInfo}
             hideHeaderWhenCard
+            accountId={accountId}
+            playerLinkLabelPrefix={title}
           />
         ) : activeCategories.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
