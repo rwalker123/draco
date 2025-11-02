@@ -216,15 +216,19 @@ export class StatisticsService {
 
     const rosterEntry = await this.contactRepository.findRosterByContactId(playerId);
 
-    const [battingRaw, pitchingRaw] = await Promise.all([
+    const [battingRowsRaw, pitchingRowsRaw] = await Promise.all([
       this.battingStatisticsRepository.findPlayerCareerBattingStats(accountId, playerId),
       this.pitchingStatisticsRepository.findPlayerCareerPitchingStats(accountId, playerId),
     ]);
 
-    const battingRows = this.buildCareerBattingRows(battingRaw);
-    const pitchingRows = this.buildCareerPitchingRows(pitchingRaw);
+    const battingRows = this.buildCareerBattingRows(battingRowsRaw);
+    const pitchingRows = this.buildCareerPitchingRows(pitchingRowsRaw);
 
-    const playerName = `${contact.firstname ?? ''} ${contact.lastname ?? ''}`.trim() || 'Unknown';
+    const nameFallback = `${contact.firstname ?? ''} ${contact.lastname ?? ''}`.trim();
+    const playerName =
+      battingRowsRaw[0]?.playerName ??
+      pitchingRowsRaw[0]?.playerName ??
+      (nameFallback !== '' ? nameFallback : 'Unknown');
 
     const playerNumber =
       rosterEntry && 'playernumber' in rosterEntry && rosterEntry.playernumber !== null

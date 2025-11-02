@@ -31,13 +31,6 @@ interface UsePlayerCareerStatisticsResult {
   resetPlayer: () => void;
 }
 
-const buildDisplayName = (firstName: string, lastName: string): string => {
-  const trimmedFirst = firstName.trim();
-  const trimmedLast = lastName.trim();
-  const combined = `${trimmedFirst} ${trimmedLast}`.trim();
-  return combined.length > 0 ? combined : 'Unknown Player';
-};
-
 export const usePlayerCareerStatistics = ({
   accountId,
   initialResults = [],
@@ -138,4 +131,4 @@ export const usePlayerCareerStatistics = ({
 };
 
 export const formatPlayerDisplayName = (result: PlayerCareerSearchResult): string =>
-  buildDisplayName(result.firstName, result.lastName);
+  `${result.firstName.trim()} ${result.lastName.trim()}`.trim() || 'Unknown Player';
