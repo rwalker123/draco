@@ -27,3 +27,4 @@ export * from './handout.js';
 export * from './photoSubmission.js';
 export * from './photoGallery.js';
 export * from './hallOfFame.js';
+export * from './playerSurvey.js';
