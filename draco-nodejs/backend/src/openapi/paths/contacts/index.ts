@@ -18,7 +18,6 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     RosterPlayerSchemaRef,
     ValidationErrorSchemaRef,
     ContactSearchParamsSchemaRef,
-    PublicContactSummarySchemaRef,
     PublicContactSearchResponseSchemaRef,
     PublicContactSearchQuerySchemaRef,
   } = schemaRefs;
