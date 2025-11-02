@@ -62,6 +62,8 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
             : null,
         ip: stat.ip ?? null,
         ip2: stat.ip2 ?? null,
+        playerId: stat.playerId ?? null,
+        contactId: stat.contactId ?? null,
       };
 
       return row;
@@ -87,6 +89,8 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
         isTotals: true,
         ip: Number(totals.ip ?? 0),
         ip2: Number(totals.ip2 ?? 0),
+        playerId: null,
+        contactId: null,
       };
 
       rows.push(totalsRow);
@@ -123,6 +127,7 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
           sortOrder={sortOrder}
           onSort={(field) => handleTableSort(field as keyof PitchingTableRow)}
           emptyMessage="No pitching statistics available for this game."
+          playerLinkLabel="Game Pitching Stats"
         />
       )}
     </Box>

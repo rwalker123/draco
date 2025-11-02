@@ -207,6 +207,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
         sortField={String(sortField)}
         sortOrder={sortOrder}
         onSort={(field) => handleSort(field as SortField)}
+        playerLinkLabel="Pitching Statistics"
       />
 
       <Box display="flex" justifyContent="center" mt={3}>

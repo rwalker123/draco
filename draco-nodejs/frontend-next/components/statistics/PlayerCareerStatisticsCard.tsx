@@ -209,6 +209,7 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
                 prependColumns={battingPrependColumns}
                 omitFields={['playerName', 'playerNumber', 'teamName']}
                 emptyMessage="No batting statistics recorded for this player."
+                playerLinkLabel="Player Statistics"
               />
             )}
           </Box>
@@ -225,6 +226,7 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
                 prependColumns={pitchingPrependColumns}
                 omitFields={['playerName', 'playerNumber', 'teamName']}
                 emptyMessage="No pitching statistics recorded for this player."
+                playerLinkLabel="Player Statistics"
               />
             )}
           </Box>

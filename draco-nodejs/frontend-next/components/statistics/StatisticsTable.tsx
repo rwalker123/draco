@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
+import NextLink from 'next/link';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import {
   Box,
   Table,
@@ -299,6 +301,8 @@ export const formatIPDecimal = (value: unknown): string => {
 export type StatisticsTableVariant = 'batting' | 'pitching';
 
 export type StatsRowBase = {
+  playerId?: string | number | null;
+  contactId?: string | number | null;
   playerName?: string | null;
   playerNumber?: number | string | null;
   teamName?: string | null;
@@ -323,6 +327,8 @@ interface SharedStatisticsTableProps<T extends StatsRowBase> {
   maxHeight?: string | number;
   prependColumns?: ColumnConfig<T>[];
   omitFields?: string[];
+  buildPlayerHref?: (row: T) => string | null;
+  playerLinkLabel?: string;
 }
 
 const BATTER_COMPACT_FIELDS: ReadonlyArray<string> = [
@@ -406,6 +412,7 @@ const buildColumns = <T extends StatsRowBase>(
   extendedStats: boolean,
   rows: T[],
   omitFields: Set<string>,
+  buildPlayerHref?: (row: T) => string | null,
 ): ColumnConfig<T>[] => {
   const columns: ColumnConfig<T>[] = [];
   const includeTeamColumn = !extendedStats && hasTeamInformation(rows);
@@ -512,6 +519,25 @@ const buildColumns = <T extends StatsRowBase>(
           return <Chip label="Totals" color="primary" size="small" />;
         }
         const text = extractText(formattedValue);
+        const href = buildPlayerHref?.(row as T) ?? null;
+        if (href) {
+          return (
+            <Typography
+              component={NextLink}
+              href={href}
+              prefetch={false}
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                color: 'primary.main',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              {text}
+            </Typography>
+          );
+        }
         return (
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             {text}
@@ -609,15 +635,87 @@ const StatisticsTable = <T extends StatsRowBase>({
   maxHeight,
   prependColumns,
   omitFields,
+  buildPlayerHref,
+  playerLinkLabel,
 }: SharedStatisticsTableProps<T>) => {
+  const params = useParams();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const rawAccountId = params?.accountId;
+  const accountId =
+    typeof rawAccountId === 'string'
+      ? rawAccountId
+      : Array.isArray(rawAccountId)
+        ? rawAccountId[0]
+        : undefined;
+
+  const currentLocation = useMemo(() => {
+    if (!pathname) {
+      return null;
+    }
+    if (!searchParams) {
+      return pathname;
+    }
+    const query = searchParams.toString();
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  }, [pathname, searchParams]);
+
+  const defaultBuildPlayerHref = useMemo(() => {
+    if (!accountId) {
+      return undefined;
+    }
+
+    return (row: T): string | null => {
+      if (row.isTotals) {
+        return null;
+      }
+
+      const candidate = row.playerId ?? row.contactId;
+      if (candidate === null || candidate === undefined) {
+        return null;
+      }
+
+      let identifier: string | null = null;
+      if (typeof candidate === 'string') {
+        identifier = candidate.trim();
+      } else if (typeof candidate === 'number') {
+        identifier = String(candidate);
+      }
+
+      if (!identifier || identifier.length === 0) {
+        return null;
+      }
+
+      const basePath = `/account/${accountId}/players/${identifier}/statistics`;
+      const query = new URLSearchParams();
+      if (currentLocation) {
+        query.set('returnTo', currentLocation);
+        if (playerLinkLabel && playerLinkLabel.trim().length > 0) {
+          query.set('returnLabel', playerLinkLabel.trim());
+        }
+      }
+
+      const queryString = query.toString();
+      return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
+    };
+  }, [accountId, currentLocation, playerLinkLabel]) as ((row: T) => string | null) | undefined;
+
+  const resolvedBuildPlayerHref = buildPlayerHref ?? defaultBuildPlayerHref;
+
   const omitSet = useMemo(() => new Set(omitFields ?? []), [omitFields]);
   const columns = useMemo(() => {
-    const baseColumns = buildColumns<T>(variant, extendedStats, data, omitSet);
+    const baseColumns = buildColumns<T>(
+      variant,
+      extendedStats,
+      data,
+      omitSet,
+      resolvedBuildPlayerHref,
+    );
     if (!prependColumns || prependColumns.length === 0) {
       return baseColumns;
     }
     return [...prependColumns, ...baseColumns];
-  }, [variant, extendedStats, data, prependColumns, omitSet]);
+  }, [variant, extendedStats, data, prependColumns, omitSet, resolvedBuildPlayerHref]);
 
   const handleInternalSort = useCallback(
     (field: string) => {

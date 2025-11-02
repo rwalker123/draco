@@ -200,6 +200,7 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
         sortField={String(sortField)}
         sortOrder={sortOrder}
         onSort={(field) => handleSort(field as SortField)}
+        playerLinkLabel="Batting Statistics"
       />
 
       <Box display="flex" justifyContent="center" mt={3}>
