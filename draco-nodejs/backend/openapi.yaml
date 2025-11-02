@@ -7197,40 +7197,6 @@ components:
         - answers
       title: PlayerSurveyDetail
       description: Full set of answers for a player.
-    PlayerSurveySummary:
-      type: object
-      properties:
-        player:
-          type: object
-          properties:
-            id:
-              type: string
-              pattern: ^d+$
-            firstName:
-              type: string
-              minLength: 1
-              maxLength: 100
-            lastName:
-              type: string
-              minLength: 1
-              maxLength: 100
-            photoUrl:
-              type: string
-          required:
-            - id
-            - firstName
-            - lastName
-        answeredQuestionCount:
-          type: integer
-          minimum: 0
-        hasResponses:
-          type: boolean
-      required:
-        - player
-        - answeredQuestionCount
-        - hasResponses
-      title: PlayerSurveySummary
-      description: Summary information for a player survey.
     PlayerSurveySummaryListResponse:
       type: object
       properties:

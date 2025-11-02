@@ -21,6 +21,8 @@ interface UseSurveyResponsesArgs {
   apiClient: Client;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
+  viewerContact?: ContactOption | null;
+  viewerHasFullAccess?: boolean;
 }
 
 interface PaginationState {
@@ -34,6 +36,8 @@ export const useSurveyResponses = ({
   apiClient,
   onSuccess,
   onError,
+  viewerContact,
+  viewerHasFullAccess = false,
 }: UseSurveyResponsesArgs) => {
   const [playerSummaries, setPlayerSummaries] = useState<PlayerSurveySummaryType[]>([]);
   const [playerDetails, setPlayerDetails] = useState<Record<string, PlayerSurveyDetailType>>({});
@@ -47,17 +51,50 @@ export const useSurveyResponses = ({
   const [selectedContact, setSelectedContact] = useState<ContactOption | null>(null);
   const [selectedContactMessage, setSelectedContactMessage] = useState<string | null>(null);
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<string[]>([]);
+  const expandedPlayerIdsRef = useRef<string[]>([]);
+  const playerDetailsRef = useRef<Record<string, PlayerSurveyDetailType>>({});
+  const playerDetailLoadingRef = useRef<Record<string, boolean>>({});
+  const viewerSelectionAppliedRef = useRef(false);
   const pageRef = useRef<number>(1);
   const [page, setPage] = useState<number>(1);
 
-  const resetDetailState = useCallback(() => {
-    setPlayerDetails({});
-    setPlayerDetailLoading({});
-    setPlayerDetailErrors({});
-    setAnswerDrafts({});
-    setPendingKeys({});
-    setExpandedPlayerIds([]);
-  }, []);
+  useEffect(() => {
+    expandedPlayerIdsRef.current = expandedPlayerIds;
+  }, [expandedPlayerIds]);
+
+  useEffect(() => {
+    playerDetailsRef.current = playerDetails;
+  }, [playerDetails]);
+
+  useEffect(() => {
+    playerDetailLoadingRef.current = playerDetailLoading;
+  }, [playerDetailLoading]);
+
+  useEffect(() => {
+    viewerSelectionAppliedRef.current = false;
+  }, [viewerContact?.id]);
+
+  const resetDetailState = useCallback(
+    (options?: { preserveExpanded?: boolean; preserveDrafts?: boolean }) => {
+      setPlayerDetails(() => {
+        playerDetailsRef.current = {};
+        return {};
+      });
+      setPlayerDetailLoading(() => {
+        playerDetailLoadingRef.current = {};
+        return {};
+      });
+      setPlayerDetailErrors({});
+      if (!options?.preserveDrafts) {
+        setAnswerDrafts({});
+      }
+      setPendingKeys({});
+      if (!options?.preserveExpanded) {
+        setExpandedPlayerIds([]);
+      }
+    },
+    [],
+  );
 
   const updateDraftsFromDetail = useCallback((detail: PlayerSurveyDetailType) => {
     setAnswerDrafts((prev) => {
@@ -69,66 +106,17 @@ export const useSurveyResponses = ({
     });
   }, []);
 
-  const loadPlayers = useCallback(
-    async (pageArg?: number) => {
-      const targetPage = pageArg ?? pageRef.current ?? 1;
-      setLoading(true);
-      setError(null);
-      setSelectedContactMessage(null);
-      resetDetailState();
-
-      try {
-        const response = await listPlayerSurveys({
-          client: apiClient,
-          path: { accountId },
-          query: {
-            page: targetPage,
-            pageSize: 20,
-          },
-          throwOnError: false,
-        });
-
-        const data = unwrapApiResult(response, 'Failed to load player surveys');
-        const summaries = data?.surveys ?? [];
-        setPlayerSummaries(summaries);
-
-        if (data) {
-          const paginationMeta: PaginationState = {
-            page: data.pagination.page,
-            limit: data.pagination.limit,
-            total: data.pagination.total ?? data.pagination.limit * data.pagination.page,
-          };
-          setPagination(paginationMeta);
-          pageRef.current = paginationMeta.page;
-          setPage(paginationMeta.page);
-        } else {
-          const fallback: PaginationState = { page: targetPage, limit: 20, total: 0 };
-          setPagination(fallback);
-          pageRef.current = targetPage;
-          setPage(targetPage);
-        }
-      } catch (err) {
-        console.error('Failed to load player surveys', err);
-        setError('Failed to load player surveys.');
-        setPlayerSummaries([]);
-        const fallback: PaginationState = { page: targetPage, limit: 20, total: 0 };
-        setPagination(fallback);
-        pageRef.current = targetPage;
-        setPage(targetPage);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accountId, apiClient, resetDetailState],
-  );
-
   const fetchPlayerDetail = useCallback(
     async (playerId: string) => {
-      if (playerDetails[playerId] || playerDetailLoading[playerId]) {
+      if (playerDetailsRef.current[playerId] || playerDetailLoadingRef.current[playerId]) {
         return;
       }
 
-      setPlayerDetailLoading((prev) => ({ ...prev, [playerId]: true }));
+      setPlayerDetailLoading((prev) => {
+        const next = { ...prev, [playerId]: true };
+        playerDetailLoadingRef.current = next;
+        return next;
+      });
       setPlayerDetailErrors((prev) => ({ ...prev, [playerId]: null }));
 
       try {
@@ -156,7 +144,11 @@ export const useSurveyResponses = ({
           throw new Error('Failed to load player survey.');
         }
 
-        setPlayerDetails((prev) => ({ ...prev, [playerId]: detail }));
+        setPlayerDetails((prev) => {
+          const next = { ...prev, [playerId]: detail };
+          playerDetailsRef.current = next;
+          return next;
+        });
         updateDraftsFromDetail(detail);
 
         if (selectedContact && selectedContact.id === playerId) {
@@ -171,17 +163,99 @@ export const useSurveyResponses = ({
         const message = err instanceof Error ? err.message : 'Failed to load player survey.';
         setPlayerDetailErrors((prev) => ({ ...prev, [playerId]: message }));
       } finally {
-        setPlayerDetailLoading((prev) => ({ ...prev, [playerId]: false }));
+        setPlayerDetailLoading((prev) => {
+          const next = { ...prev, [playerId]: false };
+          playerDetailLoadingRef.current = next;
+          return next;
+        });
       }
     },
-    [
-      accountId,
-      apiClient,
-      playerDetailLoading,
-      playerDetails,
-      selectedContact,
-      updateDraftsFromDetail,
-    ],
+    [accountId, apiClient, selectedContact, updateDraftsFromDetail],
+  );
+
+  const loadPlayers = useCallback(
+    async (pageArg?: number) => {
+      const targetPage = pageArg ?? pageRef.current ?? 1;
+      const previouslyExpanded = expandedPlayerIdsRef.current;
+      setLoading(true);
+      setError(null);
+      setSelectedContactMessage(null);
+      resetDetailState({ preserveExpanded: true, preserveDrafts: true });
+
+      try {
+        const response = await listPlayerSurveys({
+          client: apiClient,
+          path: { accountId },
+          query: {
+            page: targetPage,
+            pageSize: 20,
+          },
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult(response, 'Failed to load player surveys');
+        const summaries = data?.surveys ?? [];
+        setPlayerSummaries(summaries);
+
+        const visiblePlayerIds = new Set(summaries.map((summary) => summary.player.id));
+        const nextExpanded = previouslyExpanded.filter((playerId) =>
+          visiblePlayerIds.has(playerId),
+        );
+        setExpandedPlayerIds(nextExpanded);
+
+        if (summaries.length === 0) {
+          setAnswerDrafts({});
+        } else {
+          const prefixes = summaries.map((summary) => `${summary.player.id}-`);
+          setAnswerDrafts((prev) => {
+            if (!prev || Object.keys(prev).length === 0) {
+              return prev;
+            }
+            const entries = Object.entries(prev).filter(([key]) =>
+              prefixes.some((prefix) => key.startsWith(prefix)),
+            );
+            if (entries.length === Object.keys(prev).length) {
+              return prev;
+            }
+            return Object.fromEntries(entries);
+          });
+        }
+
+        if (nextExpanded.length > 0) {
+          nextExpanded.forEach((playerId) => {
+            void fetchPlayerDetail(playerId);
+          });
+        }
+
+        if (data) {
+          const paginationMeta: PaginationState = {
+            page: data.pagination.page,
+            limit: data.pagination.limit,
+            total: data.pagination.total ?? data.pagination.limit * data.pagination.page,
+          };
+          setPagination(paginationMeta);
+          pageRef.current = paginationMeta.page;
+          setPage(paginationMeta.page);
+        } else {
+          const fallback: PaginationState = { page: targetPage, limit: 20, total: 0 };
+          setPagination(fallback);
+          pageRef.current = targetPage;
+          setPage(targetPage);
+        }
+      } catch (err) {
+        console.error('Failed to load player surveys', err);
+        setError('Failed to load player surveys.');
+        setPlayerSummaries([]);
+        setAnswerDrafts({});
+        const fallback: PaginationState = { page: targetPage, limit: 20, total: 0 };
+        setPagination(fallback);
+        pageRef.current = targetPage;
+        setPage(targetPage);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accountId, apiClient, fetchPlayerDetail, resetDetailState],
   );
 
   const loadSurveyForContact = useCallback(
@@ -226,8 +300,14 @@ export const useSurveyResponses = ({
           );
           setPlayerSummaries([]);
           setPagination(null);
-          setPlayerDetails({});
-          setPlayerDetailLoading({});
+          setPlayerDetails(() => {
+            playerDetailsRef.current = {};
+            return {};
+          });
+          setPlayerDetailLoading(() => {
+            playerDetailLoadingRef.current = {};
+            return {};
+          });
           setPlayerDetailErrors({});
           setPendingKeys({});
           setAnswerDrafts({});
@@ -245,8 +325,16 @@ export const useSurveyResponses = ({
 
         setPlayerSummaries([summary]);
         setPagination(null);
-        setPlayerDetails({ [contact.id]: survey });
-        setPlayerDetailLoading({ [contact.id]: false });
+        setPlayerDetails(() => {
+          const map = { [contact.id]: survey } as Record<string, PlayerSurveyDetailType>;
+          playerDetailsRef.current = map;
+          return map;
+        });
+        setPlayerDetailLoading(() => {
+          const map = { [contact.id]: false } as Record<string, boolean>;
+          playerDetailLoadingRef.current = map;
+          return map;
+        });
         setPlayerDetailErrors({});
         setPendingKeys({});
         setAnswerDrafts(() => {
@@ -390,10 +478,12 @@ export const useSurveyResponses = ({
             ...current,
             answers: filteredAnswers,
           };
-          return {
+          const next = {
             ...prev,
             [playerId]: updated,
           };
+          playerDetailsRef.current = next;
+          return next;
         });
 
         setAnswerDrafts((prev) => ({
@@ -468,6 +558,40 @@ export const useSurveyResponses = ({
   useEffect(() => {
     void loadPlayers(pageRef.current);
   }, [loadPlayers]);
+
+  useEffect(() => {
+    if (!viewerContact || viewerHasFullAccess) {
+      return;
+    }
+
+    if (viewerSelectionAppliedRef.current) {
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    if (selectedContact && selectedContact.id !== viewerContact.id) {
+      return;
+    }
+
+    const viewerInSummaries = playerSummaries.some(
+      (summary) => summary.player.id === viewerContact.id,
+    );
+
+    if (!viewerInSummaries && !selectedContact) {
+      viewerSelectionAppliedRef.current = true;
+      void handleContactSelected(viewerContact);
+    }
+  }, [
+    viewerContact,
+    viewerHasFullAccess,
+    loading,
+    playerSummaries,
+    selectedContact,
+    handleContactSelected,
+  ]);
 
   const detailState = useMemo(
     () => ({

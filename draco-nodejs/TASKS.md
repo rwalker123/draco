@@ -32,10 +32,10 @@
 - [x] Recommend database indexes or query tweaks that target the roster/answer search filters surfaced in the profiling step.
 
 ## Phase 5 – Player & Public Survey Pages
-- [ ] Create account survey page listing current-season player surveys with search/pagination and player-specific editor access.
-- [ ] Ensure logged-in players can edit their survey regardless of current-season status while others remain filtered.
-- [ ] Update profile Contact Info card (and other entry points) to link into the new survey experience.
-- [ ] Add frontend tests covering visibility rules and edit flows.
+- [x] Create account survey page listing current-season player surveys with search/pagination and player-specific editor access.
+- [x] Ensure logged-in players can edit their survey regardless of current-season status while others remain filtered.
+- [x] Update profile Contact Info card (and other entry points) to link into the new survey experience.
+- [x] Add frontend tests covering visibility rules and edit flows.
 
 ## Phase 6 – Spotlight Widgets
 - [ ] Implement reusable survey spotlight widget that selects random current-season answers for account and team contexts.

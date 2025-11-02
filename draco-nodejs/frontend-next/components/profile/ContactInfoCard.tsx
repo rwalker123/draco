@@ -1,4 +1,5 @@
 import React from 'react';
+import NextLink from 'next/link';
 import {
   Avatar,
   Box,
@@ -18,6 +19,7 @@ interface ContactInfoCardProps {
   error?: string | null;
   accountName?: string;
   onEdit?: () => void;
+  surveyHref?: string;
 }
 
 const renderContactField = (label: string, value?: string | null) => {
@@ -75,6 +77,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   error,
   accountName,
   onEdit,
+  surveyHref,
 }) => {
   if (loading) {
     return (
@@ -163,15 +166,31 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
               )}
             </Box>
           </Box>
-          {onEdit && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={onEdit}
-              data-testid="profile-contact-edit-button"
-            >
-              Edit
-            </Button>
+          {(surveyHref || onEdit) && (
+            <Stack direction="row" spacing={1}>
+              {surveyHref && (
+                <Button
+                  component={NextLink}
+                  href={surveyHref}
+                  variant="contained"
+                  size="small"
+                  color="primary"
+                  data-testid="profile-contact-survey-link"
+                >
+                  Player Survey
+                </Button>
+              )}
+              {onEdit && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={onEdit}
+                  data-testid="profile-contact-edit-button"
+                >
+                  Edit
+                </Button>
+              )}
+            </Stack>
           )}
         </Box>
 

@@ -43,9 +43,26 @@ const buildAnswerActorContext = (req: Request) => {
 
 router.get(
   '/:accountId/surveys/categories',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  optionalAuth,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    if (req.user?.id) {
+      const enforceBoundary = routeProtection.enforceAccountBoundary();
+      try {
+        await new Promise<void>((resolve, reject) => {
+          enforceBoundary(req, res, (err?: unknown) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve();
+          });
+        });
+      } catch (error) {
+        next(error);
+        return;
+      }
+    }
+
     const { accountId } = extractAccountParams(req.params);
     const categories = await playerSurveyService.listCategories(accountId);
     res.json(categories);

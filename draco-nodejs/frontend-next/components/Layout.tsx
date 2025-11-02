@@ -364,6 +364,16 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             <ListItemText>Account Management</ListItemText>
           </MenuItem>
         )}
+        {currentAccount?.id && (
+          <MenuItem
+            onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/surveys`)}
+          >
+            <ListItemIcon>
+              <QuestionAnswerIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Player Surveys</ListItemText>
+          </MenuItem>
+        )}
         {(() => {
           if (
             user &&

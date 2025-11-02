@@ -46,8 +46,8 @@ import type { Client } from '@draco/shared-api-client/generated/client';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import { useApiClient } from '../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
-import SurveyPlayerSearchPanel from './SurveyPlayerSearchPanel';
-import { getAnswerKey, useSurveyResponses } from './useSurveyResponses';
+import SurveyPlayerSearchPanel from '../common/SurveyPlayerSearchPanel';
+import { getAnswerKey, useSurveyResponses } from '../common/useSurveyResponses';
 
 interface SurveyManagementPageProps {
   accountId: string;

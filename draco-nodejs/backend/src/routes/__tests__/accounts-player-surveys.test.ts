@@ -278,6 +278,27 @@ describe('Accounts player surveys routes', () => {
     expect(res.body).toEqual(categories);
   });
 
+  it('returns survey categories without authentication', async () => {
+    const categories = [
+      {
+        id: '1',
+        accountId: '1',
+        categoryName: 'Favorites',
+        priority: 1,
+        questions: [],
+      },
+    ];
+    playerSurveyServiceMock.listCategories.mockResolvedValue(categories);
+
+    const { res } = await runRoute('get', '/:accountId/surveys/categories', {
+      params: { accountId: '1' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(playerSurveyServiceMock.listCategories).toHaveBeenCalledWith(1n);
+    expect(res.body).toEqual(categories);
+  });
+
   it('creates a survey category when permission granted', async () => {
     const created = {
       id: '10',

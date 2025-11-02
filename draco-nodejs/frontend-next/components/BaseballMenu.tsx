@@ -21,6 +21,7 @@ import {
   EmojiEvents as StandingsIcon,
   Group as TeamsIcon,
   Menu as HamburgerIcon,
+  QuestionAnswer as SurveysIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { getCurrentSeason } from '@draco/shared-api-client';
@@ -97,6 +98,11 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
       path: `/account/${accountId}/statistics`,
     },
     {
+      label: 'Surveys',
+      icon: <SurveysIcon />,
+      path: `/account/${accountId}/surveys`,
+    },
+    {
       label: 'Standings',
       icon: <StandingsIcon />,
       onClick: () => {
@@ -147,55 +153,58 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
           alignItems: 'center',
         }}
       >
-        {menuItems.map((item, index) => (
-          <React.Fragment key={item.label}>
-            <Button
-              variant="text"
-              startIcon={item.icon}
-              onClick={item.onClick || (() => handleNavigation(item.path))}
-              sx={{
-                color: 'white',
-                textTransform: 'none',
-                fontWeight: 500,
-                fontSize: '0.75rem',
-                px: 1,
-                py: 0.5,
-                minWidth: 'auto',
-                '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  color: 'white',
-                },
-                '&:active': {
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                },
-              }}
-              disabled={loadingSeason}
-            >
-              {loadingSeason ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 500,
-                  }}
-                >
-                  {item.label}
-                </Typography>
-              )}
-            </Button>
-            {index < menuItems.length - 1 && (
-              <Divider
-                orientation="vertical"
-                flexItem
+        {menuItems.map((item, index) => {
+          const isBusy = Boolean(item.needsSeason && loadingSeason);
+          return (
+            <React.Fragment key={item.label}>
+              <Button
+                variant="text"
+                startIcon={item.icon}
+                onClick={item.onClick || (() => handleNavigation(item.path))}
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  height: 20,
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  fontSize: '0.75rem',
+                  px: 1,
+                  py: 0.5,
+                  minWidth: 'auto',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                  },
+                  '&:active': {
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                  },
                 }}
-              />
-            )}
-          </React.Fragment>
-        ))}
+                disabled={isBusy}
+              >
+                {isBusy ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                )}
+              </Button>
+              {index < menuItems.length - 1 && (
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    height: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
       </Box>
     );
   }
@@ -213,55 +222,58 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
           alignItems: 'center',
         }}
       >
-        {visibleItems.map((item, index) => (
-          <React.Fragment key={item.label}>
-            <Button
-              variant="text"
-              startIcon={item.icon}
-              onClick={item.onClick || (() => handleNavigation(item.path))}
-              sx={{
-                color: 'white',
-                textTransform: 'none',
-                fontWeight: 500,
-                fontSize: '0.75rem',
-                px: 1,
-                py: 0.5,
-                minWidth: 'auto',
-                '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  color: 'white',
-                },
-                '&:active': {
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                },
-              }}
-              disabled={loadingSeason}
-            >
-              {loadingSeason ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 500,
-                  }}
-                >
-                  {item.label}
-                </Typography>
-              )}
-            </Button>
-            {index < visibleItems.length - 1 && (
-              <Divider
-                orientation="vertical"
-                flexItem
+        {visibleItems.map((item, index) => {
+          const isBusy = Boolean(item.needsSeason && loadingSeason);
+          return (
+            <React.Fragment key={item.label}>
+              <Button
+                variant="text"
+                startIcon={item.icon}
+                onClick={item.onClick || (() => handleNavigation(item.path))}
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  height: 20,
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  fontSize: '0.75rem',
+                  px: 1,
+                  py: 0.5,
+                  minWidth: 'auto',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                  },
+                  '&:active': {
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                  },
                 }}
-              />
-            )}
-          </React.Fragment>
-        ))}
+                disabled={isBusy}
+              >
+                {isBusy ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                )}
+              </Button>
+              {index < visibleItems.length - 1 && (
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    height: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
 
         {/* Hamburger menu for remaining items */}
         <Divider
@@ -298,18 +310,21 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
             horizontal: 'center',
           }}
         >
-          {hiddenItems.map((item) => (
-            <MenuItem
-              key={item.label}
-              onClick={item.onClick || (() => handleNavigation(item.path))}
-              disabled={loadingSeason}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText>
-                {loadingSeason ? <CircularProgress size={16} color="inherit" /> : item.label}
-              </ListItemText>
-            </MenuItem>
-          ))}
+          {hiddenItems.map((item) => {
+            const isBusy = Boolean(item.needsSeason && loadingSeason);
+            return (
+              <MenuItem
+                key={item.label}
+                onClick={item.onClick || (() => handleNavigation(item.path))}
+                disabled={isBusy}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText>
+                  {isBusy ? <CircularProgress size={16} color="inherit" /> : item.label}
+                </ListItemText>
+              </MenuItem>
+            );
+          })}
         </Menu>
       </Box>
     );
@@ -349,18 +364,21 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
           horizontal: 'center',
         }}
       >
-        {menuItems.map((item) => (
-          <MenuItem
-            key={item.label}
-            onClick={item.onClick || (() => handleNavigation(item.path))}
-            disabled={loadingSeason}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText>
-              {loadingSeason ? <CircularProgress size={16} color="inherit" /> : item.label}
-            </ListItemText>
-          </MenuItem>
-        ))}
+        {menuItems.map((item) => {
+          const isBusy = Boolean(item.needsSeason && loadingSeason);
+          return (
+            <MenuItem
+              key={item.label}
+              onClick={item.onClick || (() => handleNavigation(item.path))}
+              disabled={isBusy}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText>
+                {isBusy ? <CircularProgress size={16} color="inherit" /> : item.label}
+              </ListItemText>
+            </MenuItem>
+          );
+        })}
       </Menu>
     </Box>
   );

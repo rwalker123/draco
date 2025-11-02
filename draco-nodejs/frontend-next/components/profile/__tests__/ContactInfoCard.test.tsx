@@ -60,6 +60,23 @@ describe('ContactInfoCard', () => {
     expect(handleEdit).toHaveBeenCalledTimes(1);
   });
 
+  it('renders survey link when provided', () => {
+    const contact = buildContact();
+
+    render(
+      <ContactInfoCard
+        contact={contact}
+        loading={false}
+        accountName="Austin Tigers"
+        surveyHref="/account/1/surveys"
+      />,
+    );
+
+    const surveyLink = screen.getByTestId('profile-contact-survey-link');
+    expect(surveyLink).toBeInTheDocument();
+    expect(surveyLink).toHaveAttribute('href', '/account/1/surveys');
+  });
+
   it('shows skeletons while loading', () => {
     render(<ContactInfoCard contact={null} loading={true} />);
 

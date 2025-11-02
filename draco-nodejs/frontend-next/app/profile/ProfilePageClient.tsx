@@ -393,6 +393,9 @@ const ProfilePageClient: React.FC = () => {
               error={contactError}
               accountName={currentAccount?.name}
               onEdit={contact && currentAccount?.id ? handleEditContact : undefined}
+              surveyHref={
+                currentAccount?.id ? `/account/${String(currentAccount.id)}/surveys` : undefined
+              }
             />
             <MemberBusinessCard
               accountId={currentAccount?.id ?? null}
