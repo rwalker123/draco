@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import NextLink from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
@@ -229,41 +229,38 @@ export default function LeaderCategoryPanel({
     | ((row: LeaderRow) => string | null)
     | undefined;
 
-  const renderPlayerName = useCallback<ColumnConfig<LeaderRow>['render']>(
-    function renderPlayerNameCell({ row, formattedValue }) {
-      const text =
-        typeof formattedValue === 'string' || typeof formattedValue === 'number'
-          ? formattedValue
-          : (row.playerName ?? '');
+  const renderPlayerName: ColumnConfig<LeaderRow>['render'] = ({ row, formattedValue }) => {
+    const text =
+      typeof formattedValue === 'string' || typeof formattedValue === 'number'
+        ? formattedValue
+        : (row.playerName ?? '');
 
-      const href = buildPlayerHref?.(row) ?? null;
-      if (href) {
-        return (
-          <Typography
-            component={NextLink}
-            href={href}
-            prefetch={false}
-            variant="body2"
-            fontWeight="medium"
-            sx={{
-              color: 'primary.main',
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            {text}
-          </Typography>
-        );
-      }
-
+    const href = buildPlayerHref?.(row) ?? null;
+    if (href) {
       return (
-        <Typography variant="body2" fontWeight="medium">
+        <Typography
+          component={NextLink}
+          href={href}
+          prefetch={false}
+          variant="body2"
+          fontWeight="medium"
+          sx={{
+            color: 'primary.main',
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
           {text}
         </Typography>
       );
-    },
-    [buildPlayerHref],
-  );
+    }
+
+    return (
+      <Typography variant="body2" fontWeight="medium">
+        {text}
+      </Typography>
+    );
+  };
 
   useEffect(() => {
     const element = cardContainerRef.current;
