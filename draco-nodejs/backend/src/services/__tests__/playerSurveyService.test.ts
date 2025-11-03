@@ -425,10 +425,7 @@ describe('PlayerSurveyService', () => {
     repository.isPlayerActiveInSeasonMock.mockResolvedValue(false);
     repository.getPlayerSurveyMock.mockResolvedValue(defaultSurveyContact);
 
-    const result = await service.getPlayerSurvey(100n, 200n, {
-      contactId: 200n,
-      isAccountAdmin: false,
-    });
+    const result = await service.getPlayerSurvey(100n, 200n);
 
     expect(result.answers).toHaveLength(1);
   });

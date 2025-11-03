@@ -23,14 +23,6 @@ const SurveyPlayerSearchPanel: React.FC<SurveyPlayerSearchPanelProps> = React.me
     const debouncedInput = useDebouncedValue(inputValue, 300);
 
     useEffect(() => {
-      if (selectedContact) {
-        setInputValue(formatContactName(selectedContact));
-      } else {
-        setInputValue('');
-      }
-    }, [selectedContact]);
-
-    useEffect(() => {
       const trimmed = debouncedInput.trim();
       if (!trimmed) {
         setSearchResults([]);

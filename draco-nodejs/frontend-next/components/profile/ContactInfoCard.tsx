@@ -10,7 +10,10 @@ import {
   Typography,
   Alert,
   Button,
+  Tooltip,
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
 
 interface ContactInfoCardProps {
@@ -169,26 +172,32 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
           {(surveyHref || onEdit) && (
             <Stack direction="row" spacing={1}>
               {surveyHref && (
-                <Button
-                  component={NextLink}
-                  href={surveyHref}
-                  variant="contained"
-                  size="small"
-                  color="primary"
-                  data-testid="profile-contact-survey-link"
-                >
-                  Player Survey
-                </Button>
+                <Tooltip title="Open player survey">
+                  <Button
+                    component={NextLink}
+                    href={surveyHref}
+                    variant="contained"
+                    size="small"
+                    color="primary"
+                    data-testid="profile-contact-survey-link"
+                    sx={{ minWidth: 36, px: 1 }}
+                  >
+                    <DescriptionIcon fontSize="small" />
+                  </Button>
+                </Tooltip>
               )}
               {onEdit && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={onEdit}
-                  data-testid="profile-contact-edit-button"
-                >
-                  Edit
-                </Button>
+                <Tooltip title="Edit contact information">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={onEdit}
+                    data-testid="profile-contact-edit-button"
+                    sx={{ minWidth: 36, px: 1 }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </Button>
+                </Tooltip>
               )}
             </Stack>
           )}

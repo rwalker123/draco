@@ -3,6 +3,7 @@ import type {
   PlayerSurveyDetailType,
   PlayerSurveyQuestionType,
   PlayerSurveySummaryType,
+  PlayerSurveyAnswerType,
 } from '@draco/shared-schemas';
 import {
   deletePlayerSurveyAnswer,
@@ -23,6 +24,7 @@ interface UseSurveyResponsesArgs {
   onError: (message: string) => void;
   viewerContact?: ContactOption | null;
   viewerHasFullAccess?: boolean;
+  disableViewerAutoSelect?: boolean;
 }
 
 interface PaginationState {
@@ -38,6 +40,7 @@ export const useSurveyResponses = ({
   onError,
   viewerContact,
   viewerHasFullAccess = false,
+  disableViewerAutoSelect = false,
 }: UseSurveyResponsesArgs) => {
   const [playerSummaries, setPlayerSummaries] = useState<PlayerSurveySummaryType[]>([]);
   const [playerDetails, setPlayerDetails] = useState<Record<string, PlayerSurveyDetailType>>({});
@@ -407,7 +410,7 @@ export const useSurveyResponses = ({
       setPendingKeys((prev) => ({ ...prev, [key]: true }));
 
       try {
-        await upsertPlayerSurveyAnswer({
+        const response = await upsertPlayerSurveyAnswer({
           client: apiClient,
           path: {
             accountId,
@@ -418,15 +421,96 @@ export const useSurveyResponses = ({
           throwOnError: false,
         });
 
-        onSuccess('Answer saved.');
-
-        if (selectedContact) {
-          await loadSurveyForContact(selectedContact);
-        } else {
-          await loadPlayers(pageRef.current);
-          setExpandedPlayerIds([survey.player.id]);
-          void fetchPlayerDetail(survey.player.id);
+        if (response.error) {
+          throw response.error;
         }
+
+        const updatedAnswer = response.data;
+
+        setAnswerDrafts((prev) => ({
+          ...prev,
+          [key]: draft,
+        }));
+
+        let nextDetailForSummary: PlayerSurveyDetailType | undefined;
+
+        setPlayerDetails((prev) => {
+          const existing = prev[survey.player.id] ?? survey;
+          const fallbackCategoryName =
+            updatedAnswer?.categoryName ??
+            existing.answers?.find((item) => item.questionId === question.id)?.categoryName ??
+            survey.answers.find((item) => item.questionId === question.id)?.categoryName ??
+            '' ??
+            '';
+
+          const nextAnswer: PlayerSurveyAnswerType = updatedAnswer
+            ? {
+                questionId: updatedAnswer.questionId,
+                categoryId: updatedAnswer.categoryId,
+                categoryName: updatedAnswer.categoryName,
+                question: updatedAnswer.question,
+                questionNumber: updatedAnswer.questionNumber,
+                answer: updatedAnswer.answer,
+              }
+            : {
+                questionId: question.id,
+                categoryId: question.categoryId,
+                categoryName: fallbackCategoryName,
+                question: question.question,
+                questionNumber: question.questionNumber,
+                answer: draft,
+              };
+
+          const answersWithoutCurrent = (existing.answers ?? []).filter(
+            (item) => item.questionId !== question.id,
+          );
+          answersWithoutCurrent.push(nextAnswer);
+
+          const nextDetail: PlayerSurveyDetailType = {
+            ...existing,
+            answers: answersWithoutCurrent,
+          };
+
+          nextDetailForSummary = nextDetail;
+
+          return {
+            ...prev,
+            [survey.player.id]: nextDetail,
+          };
+        });
+
+        const answersCount = nextDetailForSummary?.answers?.length ?? 1;
+
+        setPlayerSummaries((prev) => {
+          let found = false;
+          const updated = prev.map((summary) => {
+            if (summary.player.id !== survey.player.id) {
+              return summary;
+            }
+            found = true;
+            return {
+              ...summary,
+              answeredQuestionCount: answersCount,
+              hasResponses: answersCount > 0,
+            };
+          });
+
+          if (!found) {
+            updated.push({
+              player: survey.player,
+              answeredQuestionCount: answersCount,
+              hasResponses: answersCount > 0,
+            });
+          }
+
+          return updated;
+        });
+
+        if (selectedContact && selectedContact.id === survey.player.id) {
+          setSelectedContactMessage(null);
+        }
+
+        onSuccess('Answer saved.');
       } catch (err) {
         console.error('Failed to save answer', err);
         onError('Failed to save answer.');
@@ -434,17 +518,7 @@ export const useSurveyResponses = ({
         setPendingKeys((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [
-      accountId,
-      answerDrafts,
-      apiClient,
-      fetchPlayerDetail,
-      loadPlayers,
-      loadSurveyForContact,
-      onError,
-      onSuccess,
-      selectedContact,
-    ],
+    [accountId, answerDrafts, apiClient, onError, onSuccess, selectedContact],
   );
 
   const handleDeleteAnswer = useCallback(
@@ -556,11 +630,14 @@ export const useSurveyResponses = ({
   );
 
   useEffect(() => {
+    if (selectedContact) {
+      return;
+    }
     void loadPlayers(pageRef.current);
-  }, [loadPlayers]);
+  }, [loadPlayers, selectedContact]);
 
   useEffect(() => {
-    if (!viewerContact || viewerHasFullAccess) {
+    if (!viewerContact || viewerHasFullAccess || disableViewerAutoSelect) {
       return;
     }
 
@@ -587,6 +664,7 @@ export const useSurveyResponses = ({
   }, [
     viewerContact,
     viewerHasFullAccess,
+    disableViewerAutoSelect,
     loading,
     playerSummaries,
     selectedContact,

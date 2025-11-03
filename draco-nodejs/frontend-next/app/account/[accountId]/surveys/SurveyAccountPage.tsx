@@ -6,6 +6,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Alert,
+  Avatar,
   Box,
   CircularProgress,
   Divider,
@@ -18,18 +19,20 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
+  Delete as DeleteIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
+import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 import SurveyPlayerSearchPanel from './common/SurveyPlayerSearchPanel';
 import { getAnswerKey, useSurveyResponses } from './common/useSurveyResponses';
 import type { ContactOption } from './common/surveyResponseTypes';
-import type { PlayerSurveyCategoryType } from '@draco/shared-schemas';
+import type { PlayerSurveyCategoryType, PlayerSurveyDetailType } from '@draco/shared-schemas';
 import { listPlayerSurveyCategories } from '@draco/shared-api-client';
 import { unwrapApiResult } from '@/utils/apiResult';
 
@@ -65,8 +68,10 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
     user?.contact?.photoUrl,
   ]);
 
-  const viewerContactId = viewerContact?.id ?? null;
   const isAccountAdmin = Boolean(user && hasRole('AccountAdmin', { accountId: String(accountId) }));
+  const { isMember } = useAccountMembership(accountId);
+  const canEditOwnSurvey = Boolean(isMember && viewerContact);
+  const [viewerAccordionExpanded, setViewerAccordionExpanded] = useState(false);
 
   const handleSuccess = (message: string) => {
     setGlobalSuccess(message);
@@ -141,6 +146,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
     handleDeleteAnswer,
     handleAccordionToggle,
     handlePageChange,
+    fetchPlayerDetail,
   } = useSurveyResponses({
     accountId,
     apiClient,
@@ -148,7 +154,65 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
     onError: handleError,
     viewerContact,
     viewerHasFullAccess: isAccountAdmin,
+    disableViewerAutoSelect: canEditOwnSurvey,
   });
+
+  const viewerPlayerId = viewerContact?.id ?? null;
+  const viewerDetail = viewerPlayerId ? playerDetails[viewerPlayerId] : undefined;
+  const viewerDetailIsLoading = viewerPlayerId ? playerDetailLoading[viewerPlayerId] : false;
+  const viewerDetailError = viewerPlayerId ? playerDetailErrors[viewerPlayerId] : null;
+  const viewerSurveyUnavailable = Boolean(
+    viewerDetailError && viewerDetailError.toLowerCase().includes('not available'),
+  );
+
+  const viewerSurveyForEdit = useMemo(() => {
+    if (!viewerPlayerId || !viewerContact) {
+      return null;
+    }
+    if (viewerDetail) {
+      return viewerDetail;
+    }
+    return {
+      player: {
+        id: viewerPlayerId,
+        firstName: viewerContact.firstName ?? '',
+        lastName: viewerContact.lastName ?? '',
+        photoUrl: viewerContact.photoUrl,
+      },
+      answers: [],
+    } as PlayerSurveyDetailType;
+  }, [viewerContact, viewerDetail, viewerPlayerId]);
+
+  useEffect(() => {
+    if (!viewerAccordionExpanded) {
+      return;
+    }
+    if (!canEditOwnSurvey || !viewerPlayerId) {
+      return;
+    }
+    if (viewerDetail || viewerDetailIsLoading || viewerDetailError) {
+      return;
+    }
+    fetchPlayerDetail(viewerPlayerId);
+  }, [
+    canEditOwnSurvey,
+    viewerAccordionExpanded,
+    viewerPlayerId,
+    viewerDetail,
+    viewerDetailError,
+    viewerDetailIsLoading,
+    fetchPlayerDetail,
+  ]);
+
+  const listSummaries = useMemo(() => {
+    if (selectedContact) {
+      return playerSummaries;
+    }
+    if (canEditOwnSurvey && viewerPlayerId) {
+      return playerSummaries.filter((summary) => summary.player.id !== viewerPlayerId);
+    }
+    return playerSummaries;
+  }, [canEditOwnSurvey, playerSummaries, selectedContact, viewerPlayerId]);
 
   const totalPages = useMemo(() => {
     if (!pagination) {
@@ -159,13 +223,12 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
 
   const summaryItems = useMemo(
     () =>
-      playerSummaries.map((summary) => {
+      listSummaries.map((summary) => {
         const playerId = summary.player.id;
         const detail = playerDetails[playerId];
         const detailIsLoading = playerDetailLoading[playerId];
         const detailError = playerDetailErrors[playerId];
         const isExpanded = expandedPlayerIds.includes(playerId);
-        const canEdit = viewerContactId === playerId || isAccountAdmin;
 
         return (
           <Accordion
@@ -175,17 +238,26 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
             onChange={handleAccordionToggle(playerId)}
           >
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Stack spacing={0.5}>
-                <Typography sx={{ fontWeight: 600 }}>
-                  {summary.player.firstName} {summary.player.lastName}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {summary.hasResponses
-                    ? `${summary.answeredQuestionCount} ${
-                        summary.answeredQuestionCount === 1 ? 'response' : 'responses'
-                      }`
-                    : 'No responses yet'}
-                </Typography>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Avatar
+                  src={summary.player.photoUrl}
+                  alt={`${summary.player.firstName} ${summary.player.lastName}`}
+                  sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}
+                >
+                  {summary.player.firstName?.[0]}
+                </Avatar>
+                <Stack spacing={0.5}>
+                  <Typography sx={{ fontWeight: 600 }}>
+                    {summary.player.firstName} {summary.player.lastName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {summary.hasResponses
+                      ? `${summary.answeredQuestionCount} ${
+                          summary.answeredQuestionCount === 1 ? 'response' : 'responses'
+                        }`
+                      : 'No responses yet'}
+                  </Typography>
+                </Stack>
               </Stack>
             </AccordionSummary>
             <AccordionDetails>
@@ -209,111 +281,66 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
                 </Typography>
               ) : (
                 <Stack spacing={2}>
-                  {detail.answers.length === 0 &&
-                    (canEdit ? (
-                      <Alert severity="info">
-                        You have not completed your survey yet. Share your answers below when
-                        you&apos;re ready.
-                      </Alert>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        This player has not submitted survey answers yet.
-                      </Typography>
-                    ))}
+                  {detail.answers.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      This player has not submitted survey answers yet.
+                    </Typography>
+                  )}
                   {categories.map((category) => {
                     const answersByQuestion = new Map(
                       detail.answers.map((answer) => [answer.questionId, answer]),
                     );
+
+                    const answeredQuestions = category.questions.filter((question) => {
+                      const answer = answersByQuestion.get(question.id);
+                      return Boolean(answer?.answer?.trim());
+                    });
+
+                    if (answeredQuestions.length === 0) {
+                      return null;
+                    }
+
                     return (
                       <Box key={`${playerId}-${category.id}`}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                           {category.categoryName}
                         </Typography>
-                        {category.questions.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary">
-                            No questions in this category.
-                          </Typography>
-                        ) : (
-                          <Stack spacing={1.5}>
-                            {category.questions.map((question) => {
-                              const key = getAnswerKey(playerId, question.id);
-                              const answer = answersByQuestion.get(question.id);
-                              const draftValue = answerDrafts[key] ?? answer?.answer ?? '';
-                              const isPending = Boolean(pendingKeys[key]);
+                        <Stack spacing={1.5}>
+                          {answeredQuestions.map((question) => {
+                            const answer = answersByQuestion.get(question.id);
+                            const answerText = answer?.answer?.trim() ?? '';
 
-                              return (
-                                <Paper key={question.id} variant="outlined" sx={{ p: 1.5 }}>
-                                  <Stack spacing={1}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                      {question.question}
+                            return (
+                              <Paper key={question.id} variant="outlined" sx={{ p: 1.5 }}>
+                                <Stack spacing={1}>
+                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {question.question}
+                                  </Typography>
+                                  <Box
+                                    sx={(theme) => ({
+                                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                      borderLeft: `4px solid ${theme.palette.primary.main}`,
+                                      borderRadius: 1,
+                                      px: 1.5,
+                                      py: 1,
+                                      color: theme.palette.text.primary,
+                                    })}
+                                  >
+                                    <Typography
+                                      variant="body1"
+                                      sx={{
+                                        fontWeight: 500,
+                                        whiteSpace: 'pre-wrap',
+                                      }}
+                                    >
+                                      {answerText}
                                     </Typography>
-                                    {canEdit ? (
-                                      <TextField
-                                        label="Answer"
-                                        value={draftValue}
-                                        onChange={(event) =>
-                                          handleDraftChange(key, event.target.value)
-                                        }
-                                        multiline
-                                        minRows={2}
-                                        size="small"
-                                        disabled={isPending}
-                                      />
-                                    ) : (
-                                      <Typography variant="body2" color="text.secondary">
-                                        {answer?.answer ?? 'No response yet.'}
-                                      </Typography>
-                                    )}
-                                    {canEdit && (
-                                      <Stack direction="row" spacing={1}>
-                                        <Tooltip
-                                          title={isPending ? 'Saving answer' : 'Save answer'}
-                                        >
-                                          <span>
-                                            <IconButton
-                                              color="primary"
-                                              aria-label="Save answer"
-                                              onClick={() =>
-                                                void handleSaveAnswer(detail, question)
-                                              }
-                                              disabled={isPending || !draftValue.trim()}
-                                            >
-                                              {isPending ? (
-                                                <CircularProgress size={20} color="inherit" />
-                                              ) : (
-                                                <SaveIcon />
-                                              )}
-                                            </IconButton>
-                                          </span>
-                                        </Tooltip>
-                                        <Tooltip
-                                          title={isPending ? 'Clearing answer' : 'Clear answer'}
-                                        >
-                                          <span>
-                                            <IconButton
-                                              color="error"
-                                              aria-label="Clear answer"
-                                              onClick={() =>
-                                                void handleDeleteAnswer(detail, question)
-                                              }
-                                              disabled={isPending || !answer?.answer}
-                                            >
-                                              {isPending ? (
-                                                <CircularProgress size={20} color="inherit" />
-                                              ) : (
-                                                <DeleteIcon />
-                                              )}
-                                            </IconButton>
-                                          </span>
-                                        </Tooltip>
-                                      </Stack>
-                                    )}
-                                  </Stack>
-                                </Paper>
-                              );
-                            })}
-                          </Stack>
-                        )}
+                                  </Box>
+                                </Stack>
+                              </Paper>
+                            );
+                          })}
+                        </Stack>
                       </Box>
                     );
                   })}
@@ -324,21 +351,14 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
         );
       }),
     [
-      answerDrafts,
       categories,
       categoriesLoading,
       expandedPlayerIds,
       handleAccordionToggle,
-      handleDeleteAnswer,
-      handleDraftChange,
-      handleSaveAnswer,
-      isAccountAdmin,
-      pendingKeys,
       playerDetailErrors,
       playerDetailLoading,
       playerDetails,
-      playerSummaries,
-      viewerContactId,
+      listSummaries,
     ],
   );
 
@@ -353,8 +373,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
             variant="body1"
             sx={{ mt: 1, maxWidth: 620, mx: 'auto', color: 'rgba(255,255,255,0.85)' }}
           >
-            Browse survey responses from current-season players. Log in as a rostered player to
-            update your answers.
+            Browse survey responses from current-season players.
           </Typography>
         </Box>
       </AccountPageHeader>
@@ -376,6 +395,203 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
               <Alert severity="error" sx={{ mb: 2 }}>
                 {categoriesError}
               </Alert>
+            )}
+
+            {canEditOwnSurvey && viewerPlayerId && (
+              <Box
+                sx={(theme) => ({
+                  mb: 3,
+                  border: '1px solid',
+                  borderColor: alpha(theme.palette.primary.main, 0.4),
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.08)}`,
+                  p: 2,
+                })}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Your Survey
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                  Only you can see and update this survey entry.
+                </Typography>
+
+                <Accordion
+                  disableGutters
+                  expanded={viewerAccordionExpanded}
+                  onChange={(_event, expanded) => {
+                    setViewerAccordionExpanded(expanded);
+                    if (expanded && !viewerDetail && !viewerDetailIsLoading) {
+                      fetchPlayerDetail(viewerPlayerId);
+                    }
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Avatar
+                        src={viewerContact?.photoUrl}
+                        alt={`${viewerContact?.firstName} ${viewerContact?.lastName}`}
+                        sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}
+                      >
+                        {viewerContact?.firstName?.[0]}
+                      </Avatar>
+                      <Stack spacing={0.5}>
+                        <Typography sx={{ fontWeight: 600 }}>
+                          {viewerContact?.firstName} {viewerContact?.lastName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {viewerDetail && viewerDetail.answers.length > 0
+                            ? `${viewerDetail.answers.length} ${
+                                viewerDetail.answers.length === 1 ? 'response' : 'responses'
+                              }`
+                            : 'No responses yet'}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    {categoriesLoading || viewerDetailIsLoading ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                        <CircularProgress size={24} />
+                      </Box>
+                    ) : viewerDetailError && !viewerSurveyUnavailable && !viewerSurveyForEdit ? (
+                      <Alert severity="error">{viewerDetailError}</Alert>
+                    ) : !viewerSurveyForEdit ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Expand to load your survey responses.
+                      </Typography>
+                    ) : categories.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        No survey structure defined yet.
+                      </Typography>
+                    ) : (
+                      <Stack spacing={2}>
+                        {viewerSurveyUnavailable && (
+                          <Alert severity="info">
+                            A survey has not been created for you yet. Use the fields below to add
+                            your responses.
+                          </Alert>
+                        )}
+                        {viewerSurveyForEdit.answers.length === 0 && !viewerSurveyUnavailable && (
+                          <Alert severity="info">
+                            You have not completed your survey yet. Use the fields below to add your
+                            answers.
+                          </Alert>
+                        )}
+                        {categories.map((category) => {
+                          const questions = category.questions ?? [];
+                          const answersByQuestion = new Map(
+                            viewerSurveyForEdit.answers.map((answer) => [
+                              answer.questionId,
+                              answer,
+                            ]),
+                          );
+
+                          if (questions.length === 0) {
+                            return (
+                              <Box key={`${viewerPlayerId}-${category.id}`}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                                  {category.categoryName}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  No questions in this category.
+                                </Typography>
+                              </Box>
+                            );
+                          }
+
+                          return (
+                            <Box key={`${viewerPlayerId}-${category.id}`}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                                {category.categoryName}
+                              </Typography>
+                              <Stack spacing={1.5}>
+                                {questions.map((question) => {
+                                  const key = getAnswerKey(viewerPlayerId, question.id);
+                                  const answer = answersByQuestion.get(question.id);
+                                  const draftValue = answerDrafts[key] ?? answer?.answer ?? '';
+                                  const isPending = Boolean(pendingKeys[key]);
+
+                                  return (
+                                    <Paper key={question.id} variant="outlined" sx={{ p: 1.5 }}>
+                                      <Stack spacing={1}>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                          {question.question}
+                                        </Typography>
+                                        <TextField
+                                          label="Answer"
+                                          value={draftValue}
+                                          onChange={(event) =>
+                                            handleDraftChange(key, event.target.value)
+                                          }
+                                          multiline
+                                          minRows={3}
+                                          size="small"
+                                          disabled={isPending}
+                                        />
+                                        <Stack direction="row" spacing={1}>
+                                          <Tooltip
+                                            title={isPending ? 'Saving answer' : 'Save answer'}
+                                          >
+                                            <span>
+                                              <IconButton
+                                                color="primary"
+                                                aria-label="Save answer"
+                                                onClick={() =>
+                                                  viewerSurveyForEdit &&
+                                                  void handleSaveAnswer(
+                                                    viewerSurveyForEdit,
+                                                    question,
+                                                  )
+                                                }
+                                                disabled={isPending || !draftValue.trim()}
+                                              >
+                                                {isPending ? (
+                                                  <CircularProgress size={20} color="inherit" />
+                                                ) : (
+                                                  <SaveIcon />
+                                                )}
+                                              </IconButton>
+                                            </span>
+                                          </Tooltip>
+                                          <Tooltip
+                                            title={isPending ? 'Clearing answer' : 'Clear answer'}
+                                          >
+                                            <span>
+                                              <IconButton
+                                                color="error"
+                                                aria-label="Clear answer"
+                                                onClick={() =>
+                                                  viewerSurveyForEdit &&
+                                                  void handleDeleteAnswer(
+                                                    viewerSurveyForEdit,
+                                                    question,
+                                                  )
+                                                }
+                                                disabled={isPending || !answer?.answer}
+                                              >
+                                                {isPending ? (
+                                                  <CircularProgress size={20} color="inherit" />
+                                                ) : (
+                                                  <DeleteIcon />
+                                                )}
+                                              </IconButton>
+                                            </span>
+                                          </Tooltip>
+                                        </Stack>
+                                      </Stack>
+                                    </Paper>
+                                  );
+                                })}
+                              </Stack>
+                            </Box>
+                          );
+                        })}
+                      </Stack>
+                    )}
+                  </AccordionDetails>
+                </Accordion>
+              </Box>
             )}
 
             <SurveyPlayerSearchPanel
@@ -404,9 +620,13 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                 <CircularProgress size={32} />
               </Box>
-            ) : playerSummaries.length === 0 ? (
+            ) : listSummaries.length === 0 ? (
               <Box sx={{ py: 4, textAlign: 'center', color: 'text.secondary' }}>
-                <Typography>No player survey responses yet.</Typography>
+                <Typography>
+                  {selectedContact
+                    ? 'No survey responses available for this player yet.'
+                    : 'No other player survey responses yet.'}
+                </Typography>
               </Box>
             ) : (
               <Stack spacing={2}>{summaryItems}</Stack>

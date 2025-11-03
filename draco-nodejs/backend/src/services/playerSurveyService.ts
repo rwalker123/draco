@@ -185,29 +185,18 @@ export class PlayerSurveyService {
     return PlayerSurveyResponseFormatter.formatSurveyList(accountId, result, page, pageSize);
   }
 
-  async getPlayerSurvey(
-    accountId: bigint,
-    playerId: bigint,
-    viewer?: ViewerContext,
-  ): Promise<PlayerSurveyDetailType> {
+  async getPlayerSurvey(accountId: bigint, playerId: bigint): Promise<PlayerSurveyDetailType> {
     const playerContact = await this.contactRepository.findContactInAccount(playerId, accountId);
     if (!playerContact) {
       throw new NotFoundError('Player not found');
     }
 
     const currentSeason = await this.seasonsRepository.findCurrentSeason(accountId);
-    let isActive = false;
     if (currentSeason) {
-      isActive = await this.surveyRepository.isPlayerActiveInSeason(
-        accountId,
-        currentSeason.id,
-        playerId,
-      );
+      await this.surveyRepository.isPlayerActiveInSeason(accountId, currentSeason.id, playerId);
     }
 
-    if (!isActive && !this.canViewInactiveSurvey(playerId, viewer)) {
-      throw new NotFoundError('Survey not available for this player');
-    }
+    // Allow survey retrieval regardless of current season participation.
 
     const survey = await this.surveyRepository.getPlayerSurvey(accountId, playerId);
     if (!survey) {
