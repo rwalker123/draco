@@ -440,7 +440,6 @@ export const useSurveyResponses = ({
             updatedAnswer?.categoryName ??
             existing.answers?.find((item) => item.questionId === question.id)?.categoryName ??
             survey.answers.find((item) => item.questionId === question.id)?.categoryName ??
-            '' ??
             '';
 
           const nextAnswer: PlayerSurveyAnswerType = updatedAnswer
