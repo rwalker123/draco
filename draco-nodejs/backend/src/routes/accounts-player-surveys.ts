@@ -192,8 +192,7 @@ router.get(
     }
 
     const { accountId, playerId } = extractBigIntParams(req.params, 'accountId', 'playerId');
-    const viewer = await playerSurveyService.resolveViewerContext(accountId, req.user?.id);
-    const survey = await playerSurveyService.getPlayerSurvey(accountId, playerId, viewer);
+    const survey = await playerSurveyService.getPlayerSurvey(accountId, playerId);
     res.json(survey);
   }),
 );
