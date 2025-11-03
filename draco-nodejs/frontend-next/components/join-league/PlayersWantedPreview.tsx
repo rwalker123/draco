@@ -9,6 +9,7 @@ import {
   Alert,
   Divider,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { Search } from '@mui/icons-material';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
@@ -171,15 +172,21 @@ const PlayersWantedPreview: React.FC<PlayersWantedPreviewProps> = ({
           playersWanted.map((team) => (
             <Card
               key={team.id}
-              sx={{
+              sx={(theme) => ({
                 borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'divider',
+                border: `1px solid ${theme.palette.widget.border}`,
+                backgroundColor: theme.palette.widget.surface,
+                transition:
+                  'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
                 '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'action.hover',
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.primary.main, 0.2)
+                      : alpha(theme.palette.primary.main, 0.08),
+                  boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 4],
                 },
-              }}
+              })}
             >
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>

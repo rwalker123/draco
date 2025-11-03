@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 
 interface SectionHeaderProps {
   icon: React.ReactNode;
@@ -17,37 +18,40 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   description,
   actionButton,
 }) => {
+  const theme = useTheme();
+  const iconBg = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1);
+
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 48,
-            height: 48,
+            width: 40,
+            height: 40,
             borderRadius: '50%',
-            bgcolor: 'primary.main',
-            color: 'white',
+            bgcolor: iconBg,
+            color: theme.palette.primary.main,
           }}
         >
           {icon}
         </Box>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.widget.headerText }}>
             {title}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color={theme.palette.widget.supportingText}>
             {description}
           </Typography>
         </Box>
       </Box>
-      {actionButton && (
-        <Button variant="outlined" onClick={actionButton.onClick}>
+      {actionButton ? (
+        <Button variant="outlined" onClick={actionButton.onClick} size="small" color="primary">
           {actionButton.label}
         </Button>
-      )}
+      ) : null}
     </Box>
   );
 };

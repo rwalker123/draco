@@ -236,7 +236,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
   return (
     <WidgetShell
       title={
-        <Typography variant="h5" fontWeight={700}>
+        <Typography variant="h5" fontWeight={700} color="text.primary">
           {title}
         </Typography>
       }

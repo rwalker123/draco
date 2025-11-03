@@ -2,10 +2,13 @@
 
 import React from 'react';
 import { Paper, Box, Typography, useTheme, type PaperProps } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
-type WidgetAccent = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error';
+type PaperPropsWithoutTitle = Omit<PaperProps, 'title'>;
 
-export interface WidgetShellProps extends PaperProps {
+export type WidgetAccent = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error';
+
+export interface WidgetShellProps extends PaperPropsWithoutTitle {
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
@@ -72,8 +75,14 @@ const WidgetShell = React.forwardRef<HTMLDivElement, WidgetShellProps>(
         : undefined,
     } as const;
 
+    const mergedSx: SxProps<Theme> = Array.isArray(sx)
+      ? [baseSx, ...sx]
+      : sx
+        ? [baseSx, sx]
+        : [baseSx];
+
     return (
-      <Paper ref={ref} elevation={0} sx={[baseSx, sx]} {...paperProps}>
+      <Paper ref={ref} elevation={0} sx={mergedSx} {...paperProps}>
         {headerContent ? <Box mb={disablePadding ? 0 : 2}>{headerContent}</Box> : null}
         {!headerContent && (resolvedTitle || resolvedSubtitle || actions) ? (
           <Box

@@ -17,6 +17,8 @@ import type { LeaderCategoryType, LeaderRowType } from '@draco/shared-schemas';
 
 type LeaderRow = LeaderRowType;
 
+const MIN_CARD_WIDTH = 380;
+
 const formatters: Record<string, (value: unknown) => string> = {
   average: formatBattingAverage,
   era: formatERA,
@@ -275,11 +277,12 @@ export default function LeaderCategoryPanel({
 
       setCardWidth((prev) => {
         if (prev === undefined) {
-          return measuredWidth;
+          return Math.max(measuredWidth, MIN_CARD_WIDTH);
         }
 
         const difference = Math.abs(prev - measuredWidth);
-        return difference > 1 ? measuredWidth : prev;
+        const nextWidth = Math.max(measuredWidth, MIN_CARD_WIDTH);
+        return difference > 1 ? nextWidth : prev;
       });
     };
 
@@ -305,7 +308,7 @@ export default function LeaderCategoryPanel({
       return;
     }
 
-    onWidthChange(cardWidth);
+    onWidthChange(cardWidth ? Math.max(cardWidth, MIN_CARD_WIDTH) : undefined);
   }, [cardWidth, onWidthChange]);
 
   if (!leaderForCard && processedLeaders.length === 0) {
@@ -317,7 +320,7 @@ export default function LeaderCategoryPanel({
   return (
     <Box
       sx={{
-        width: { xs: '100%', sm: cardWidth ?? 'auto' },
+        width: { xs: '100%', sm: Math.max(cardWidth ?? MIN_CARD_WIDTH, MIN_CARD_WIDTH) },
         maxWidth: '100%',
       }}
     >
@@ -344,7 +347,7 @@ export default function LeaderCategoryPanel({
       {processedLeaders.length > 0 && (
         <Box
           sx={{
-            width: { xs: '100%', sm: cardWidth ?? 'auto' },
+            width: { xs: '100%', sm: Math.max(cardWidth ?? MIN_CARD_WIDTH, MIN_CARD_WIDTH) },
             maxWidth: '100%',
           }}
         >

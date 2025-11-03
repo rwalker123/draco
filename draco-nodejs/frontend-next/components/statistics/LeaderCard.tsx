@@ -103,7 +103,8 @@ export default function LeaderCard({
         overflow: 'visible',
         backgroundColor: theme.palette.background.paper,
         borderRadius: 3,
-        width: { xs: '100%', sm: 'fit-content' },
+        width: { xs: '100%', sm: 'auto' },
+        minWidth: { sm: 380 },
         maxWidth: '100%',
       }}
     >
@@ -138,9 +139,9 @@ export default function LeaderCard({
       >
         <Box
           display="grid"
-          gridTemplateColumns={{ xs: 'minmax(0, 1fr)', sm: 'auto auto' }}
+          gridTemplateColumns={{ xs: 'minmax(0, 1fr)', sm: 'minmax(0, 1fr) auto' }}
           alignItems={{ xs: 'stretch', sm: 'center' }}
-          columnGap={{ xs: 1.5, sm: 1.5 }}
+          columnGap={{ xs: 1.5, sm: 2 }}
           rowGap={{ xs: 1.75, sm: 0 }}
           justifyContent={{ sm: 'flex-start' }}
         >
@@ -168,7 +169,13 @@ export default function LeaderCard({
               {(!showPhoto || isTie) && (isTie ? '#' : getPlayerInitials(leader.playerName))}
             </Avatar>
 
-            <Box sx={{ flex: { xs: 1, sm: '0 1 auto' } }}>
+            <Box
+              sx={{
+                flex: { xs: 1, sm: '0 1 auto' },
+                minWidth: 0,
+                maxWidth: { xs: '100%', sm: 260 },
+              }}
+            >
               <Box display="flex" alignItems="center" gap={0.75} mb={{ xs: 0.5, sm: 1 }}>
                 <StarIcon
                   sx={{
@@ -203,6 +210,10 @@ export default function LeaderCard({
                     fontSize: { xs: '.90rem', sm: '1.0rem' },
                     textDecoration: 'none',
                     '&:hover': { textDecoration: 'underline' },
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
                   {leader.playerName}
@@ -215,6 +226,10 @@ export default function LeaderCard({
                     mb: { xs: 0.5, sm: 1 },
                     lineHeight: 1.2,
                     fontSize: { xs: '.90rem', sm: '1.0rem' },
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
                   {leader.playerName}
@@ -222,7 +237,9 @@ export default function LeaderCard({
               )}
 
               {!hideTeamInfo && !isTie && (
-                <TeamBadges teams={leader.teams} teamName={leader.teamName} maxVisible={3} />
+                <Box sx={{ maxWidth: { xs: '100%', sm: 260 }, mt: 0.25 }}>
+                  <TeamBadges teams={leader.teams} teamName={leader.teamName} maxVisible={3} />
+                </Box>
               )}
             </Box>
           </Box>
@@ -233,7 +250,8 @@ export default function LeaderCard({
             alignItems="center"
             justifyContent="center"
             sx={{
-              minWidth: { xs: 'auto', sm: 96 },
+              minWidth: { xs: 'auto', sm: 128 },
+              px: { sm: 1 },
               textAlign: 'center',
               justifySelf: { xs: 'stretch', sm: 'end' },
             }}
