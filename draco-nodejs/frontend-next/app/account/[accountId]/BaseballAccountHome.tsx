@@ -59,6 +59,7 @@ import PhotoGallerySection, {
 import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import HofNominationWidget from '@/components/hall-of-fame/HofNominationWidget';
+import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -79,14 +80,14 @@ const BaseballAccountHome: React.FC = () => {
   const apiClient = useApiClient();
   const {
     isMember,
-    contact,
     loading: membershipLoading,
     error: membershipError,
   } = useAccountMembership(accountIdStr);
   const isAccountMember = isMember === true;
-  const hasAccountContact = Boolean(contact);
-  const canSubmitPhotos = Boolean(token && isAccountMember);
-  const showSubmissionPanel = Boolean(token && accountIdStr);
+  const hasAccountContact = Boolean(isAccountMember);
+  const canSubmitPhotos = Boolean(isAccountMember);
+  const showSubmissionPanel = Boolean(isAccountMember);
+  const canViewHandouts = Boolean(isAccountMember);
 
   const canModerateAccountPhotos = useMemo(() => {
     if (!accountIdStr) {
@@ -842,6 +843,9 @@ const BaseballAccountHome: React.FC = () => {
         <Box sx={{ display: 'grid', gap: 2 }}>
           <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
           {accountIdStr ? (
+            <SurveySpotlightWidget accountId={accountIdStr} canAnswerSurvey={hasAccountContact} />
+          ) : null}
+          {accountIdStr ? (
             <Box
               sx={{
                 display: 'flex',
@@ -860,7 +864,7 @@ const BaseballAccountHome: React.FC = () => {
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
 
-        {hasAccountContact && (
+        {canViewHandouts ? (
           <Box
             sx={{
               maxWidth: { xs: '100%', sm: 420 },
@@ -881,7 +885,7 @@ const BaseballAccountHome: React.FC = () => {
               hideWhenEmpty
             />
           </Box>
-        )}
+        ) : null}
 
         {/* Game Recaps Widget */}
         {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}

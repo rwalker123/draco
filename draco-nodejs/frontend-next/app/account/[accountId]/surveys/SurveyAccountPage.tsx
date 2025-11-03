@@ -70,7 +70,8 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
 
   const isAccountAdmin = Boolean(user && hasRole('AccountAdmin', { accountId: String(accountId) }));
   const { isMember } = useAccountMembership(accountId);
-  const canEditOwnSurvey = Boolean(isMember && viewerContact);
+  const isAccountMember = isMember === true;
+  const canEditOwnSurvey = Boolean(isAccountMember && viewerContact);
   const [viewerAccordionExpanded, setViewerAccordionExpanded] = useState(false);
 
   const handleSuccess = (message: string) => {
@@ -154,7 +155,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
     onError: handleError,
     viewerContact,
     viewerHasFullAccess: isAccountAdmin,
-    disableViewerAutoSelect: canEditOwnSurvey,
+    disableViewerAutoSelect: !canEditOwnSurvey,
   });
 
   const viewerPlayerId = viewerContact?.id ?? null;

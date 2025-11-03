@@ -21,7 +21,6 @@ import {
   EmojiEvents as StandingsIcon,
   Group as TeamsIcon,
   Menu as HamburgerIcon,
-  QuestionAnswer as SurveysIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { getCurrentSeason } from '@draco/shared-api-client';
@@ -96,11 +95,6 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
       label: 'Stats',
       icon: <StatsIcon />,
       path: `/account/${accountId}/statistics`,
-    },
-    {
-      label: 'Surveys',
-      icon: <SurveysIcon />,
-      path: `/account/${accountId}/surveys`,
     },
     {
       label: 'Standings',
