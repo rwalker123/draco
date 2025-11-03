@@ -164,7 +164,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     persistAccount,
   ]);
 
-  // Hydrate from localStorage on mount/refesh
+  // Hydrate from localStorage on mount/refresh
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
