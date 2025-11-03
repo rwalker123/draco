@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -13,6 +13,7 @@ import {
 import { colors } from '../../theme/colors';
 import { useScorecardStore } from '../../state/scorecardStore';
 import { useAuth } from '../../hooks/useAuth';
+import { useScoreSync } from '../../hooks/useScoreSync';
 import {
   type AtBatResult,
   type BaseName,
@@ -262,6 +263,7 @@ export function ScorecardView({ game }: ScorecardViewProps) {
   const undo = useScorecardStore((state) => state.undo);
   const redo = useScorecardStore((state) => state.redo);
   const deviceId = useRef(`device-${Platform.OS}`).current;
+  const { enqueueEvent, removeEventMutations, failedMutations, retry, status } = useScoreSync();
 
   const [formType, setFormType] = useState<ActiveFormType>('at_bat');
   const [atBatState, setAtBatState] = useState<AtBatFormState>(initialAtBatState);
@@ -269,6 +271,15 @@ export function ScorecardView({ game }: ScorecardViewProps) {
   const [substitutionState, setSubstitutionState] = useState<SubstitutionFormState>(initialSubstitutionState);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const buildAudit = useCallback(
+    () => ({
+      userName: session?.user.userName ?? 'Scorekeeper',
+      deviceId,
+      timestamp: new Date().toISOString(),
+    }),
+    [deviceId, session?.user.userName],
+  );
 
   const availableRunners = useMemo(() => {
     return runnerBaseOrder
@@ -290,11 +301,24 @@ export function ScorecardView({ game }: ScorecardViewProps) {
   const applyEventInput = async (input: ScoreEventInput) => {
     if (editingEventId) {
       await editEvent(game.metadata.gameId, editingEventId, input);
+      const latest = useScorecardStore
+        .getState()
+        .games[game.metadata.gameId]?.events.find((event) => event.id === editingEventId);
+
+      if (latest) {
+        await removeEventMutations(latest.id);
+        const audit = buildAudit();
+        const mutationType = latest.serverId ? 'update' : 'create';
+        await enqueueEvent(latest, audit, mutationType);
+      }
     } else {
-      await recordEvent(game.metadata.gameId, input, {
+      const created = await recordEvent(game.metadata.gameId, input, {
         userName: session?.user.userName ?? 'Scorekeeper',
-        deviceId
+        deviceId,
+        accountId: session?.accountId ?? 'offline'
       });
+      const audit = buildAudit();
+      await enqueueEvent(created, audit);
     }
   };
 
@@ -362,10 +386,22 @@ export function ScorecardView({ game }: ScorecardViewProps) {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          void deleteEvent(game.metadata.gameId, eventId);
-          if (editingEventId === eventId) {
-            resetForm();
-          }
+          void (async () => {
+            const currentGame = useScorecardStore.getState().games[game.metadata.gameId];
+            const target = currentGame?.events.find((event) => event.id === eventId);
+
+            await removeEventMutations(eventId);
+
+            if (target?.serverId) {
+              const audit = buildAudit();
+              await enqueueEvent(target, audit, 'delete');
+            }
+
+            await deleteEvent(game.metadata.gameId, eventId);
+            if (editingEventId === eventId) {
+              resetForm();
+            }
+          })();
         }
       }
     ]);
@@ -374,6 +410,25 @@ export function ScorecardView({ game }: ScorecardViewProps) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <SummaryCard game={game} />
+
+      {(status.pending > 0 || status.failed > 0) && (
+        <View style={[styles.syncBanner, status.failed > 0 && styles.syncBannerError]}>
+          <Text style={styles.syncBannerText}>
+            {status.failed > 0
+              ? `${status.failed} play${status.failed === 1 ? '' : 's'} need attention`
+              : `${status.pending} play${status.pending === 1 ? '' : 's'} syncing…`}
+          </Text>
+          {status.failed > 0 && failedMutations.length > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void retry(failedMutations[0].id)}
+              style={styles.syncBannerButton}
+            >
+              <Text style={styles.syncBannerButtonText}>Retry</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
 
       <View style={styles.toolbar}>
         <Pressable
@@ -932,6 +987,37 @@ const styles = StyleSheet.create({
   summaryText: {
     color: colors.primaryText,
     fontSize: 14
+  },
+  syncBanner: {
+    marginTop: 12,
+    marginBottom: 4,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12
+  },
+  syncBannerError: {
+    backgroundColor: '#7f1d1d'
+  },
+  syncBannerText: {
+    flex: 1,
+    color: colors.primaryText,
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  syncBannerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: colors.primary
+  },
+  syncBannerButtonText: {
+    color: colors.primaryText,
+    fontSize: 14,
+    fontWeight: '700'
   },
   toolbar: {
     flexDirection: 'row',

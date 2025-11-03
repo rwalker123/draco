@@ -98,8 +98,12 @@ export type DerivedStats = {
   batting: DerivedBattingLine;
 };
 
+export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'failed';
+
 export type ScoreEvent = {
   id: string;
+  serverId?: string;
+  clientEventId?: string;
   sequence: number;
   gameId: string;
   createdAt: string;
@@ -114,6 +118,9 @@ export type ScoreEvent = {
   outsAfter: number;
   scoreAfter: ScoreByTeam;
   basesAfter: BasesState;
+  syncStatus: SyncStatus;
+  syncError: string | null;
+  deleted?: boolean;
 };
 
 export type ScorecardMetadata = {
@@ -140,11 +147,15 @@ export type ScorecardSnapshot = {
 
 export type ScorecardStoredEvent = {
   id: string;
+  serverId?: string;
+  clientEventId?: string;
   input: ScoreEventInput;
   createdAt: string;
   createdBy: string;
   deviceId: string;
   sequence: number;
+  syncStatus: SyncStatus;
+  syncError?: string | null;
 };
 
 export type ScorecardStoredGame = {
@@ -154,3 +165,27 @@ export type ScorecardStoredGame = {
 };
 
 export type ScorecardInitializer = Pick<UpcomingGame, 'id' | 'homeTeam' | 'visitorTeam' | 'field' | 'startsAt'>;
+
+export type ScoreMutationType = 'create' | 'update' | 'delete';
+
+export type ScoreMutationAudit = {
+  userName: string;
+  deviceId: string;
+  timestamp: string;
+};
+
+export type ScoreEventMutation = {
+  id: string;
+  gameId: string;
+  accountId: string;
+  sequence: number;
+  eventId: string;
+  serverId?: string;
+  type: ScoreMutationType;
+  payload: ScoreEvent | null;
+  audit: ScoreMutationAudit;
+  attempts: number;
+  status: SyncStatus;
+  lastError: string | null;
+  nextRetryAt: number | null;
+};

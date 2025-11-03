@@ -62,6 +62,14 @@ Expo will display a QR code in the terminal you can scan with the Expo Go app, o
 - The store exposes derived summaries (pitch count, AB, hits, RBI) that update with every edit, giving scorekeepers instant validation without waiting for backend processing.
 - Logs automatically purge after 30 days to align with the wider offline retention policy; deleting or clearing a game removes its record from storage and resets the state machine.
 
+## Sync & Live Updates
+
+- Score events now flow through a persistent mutation queue (`src/state/scoreSyncStore.ts`). Each play captures audit metadata (user, device, timestamp) and is marked `pending`, `syncing`, `synced`, or `failed` so the scorecard UI can surface status without leaving the field.
+- Failed uploads back off exponentially (max 5 minutes) and expose manual retry controls from the scorecard banner. Clearing an event removes its queued mutations to avoid orphaned entries.
+- Background fetch tasks are registered via `registerScoreSyncTask()` to flush the queue even when the app is backgrounded. The worker loads the stored auth session, hydrates the queue, and attempts a flush when connectivity returns.
+- Live updates stream through a lightweight WebSocket client (`src/services/scoring/liveUpdates.ts`), allowing multiple devices to stay in sync while enforcing server ordering rules. Incoming payloads reconcile with the local state machine and prune deleted events automatically.
+- The scorecard banner surfaces current queue counts and failed mutations so operators have an at-a-glance signal when connectivity drops or conflicts require attention.
+
 ## Shared Contracts & API Client
 
 - All TypeScript types for authentication and future features should be imported from `@draco/shared-schemas` so the mobile app stays aligned with the backend Zod source of truth.

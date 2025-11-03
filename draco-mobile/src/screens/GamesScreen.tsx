@@ -6,6 +6,7 @@ import { useScheduleStore, selectUpcomingGames } from '../state/scheduleStore';
 import { useScorecardStore, selectActiveGame } from '../state/scorecardStore';
 import { ScorecardView } from '../components/scorecard/ScorecardView';
 import { useAuth } from '../hooks/useAuth';
+import { useGameLiveUpdates } from '../hooks/useGameLiveUpdates';
 
 function formatStartTime(isoDate: string): string {
   const date = new Date(isoDate);
@@ -27,6 +28,8 @@ export function GamesScreen() {
   const hydrateScorecard = useScorecardStore((state) => state.hydrate);
   const activeGame = useScorecardStore(selectActiveGame);
   const activeGameId = useScorecardStore((state) => state.activeGameId);
+
+  useGameLiveUpdates(activeGameId);
 
   useEffect(() => {
     void hydrateSchedule();

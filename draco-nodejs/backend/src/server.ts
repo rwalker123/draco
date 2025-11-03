@@ -3,6 +3,7 @@ import { initializeRoleIds } from './config/roles.js';
 import prisma from './lib/prisma.js';
 import fs from 'node:fs';
 import https from 'node:https';
+import { ServiceFactory } from './services/serviceFactory.js';
 
 async function bootstrap() {
   // Initialize role IDs synchronously - this ensures they're loaded when we need them
@@ -20,7 +21,9 @@ async function bootstrap() {
       key: fs.readFileSync('./certs/key.pem'),
       cert: fs.readFileSync('./certs/cert.pem'),
     };
-    https.createServer(options, app).listen(PORT, () => {
+    const server = https.createServer(options, app);
+    ServiceFactory.initializeScorekeeping(server);
+    server.listen(PORT, () => {
       const host = process.env.HOST || 'localhost';
       console.log(`HTTPS server running on https://${host}:${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -31,7 +34,9 @@ async function bootstrap() {
       key: fs.readFileSync('./certs/key.pem'),
       cert: fs.readFileSync('./certs/cert.pem'),
     };
-    https.createServer(options, app).listen(PORT, () => {
+    const server = https.createServer(options, app);
+    ServiceFactory.initializeScorekeeping(server);
+    server.listen(PORT, () => {
       const host = process.env.HOST || 'localhost';
       console.log(`🚀 Draco Sports Manager API server running on port ${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);

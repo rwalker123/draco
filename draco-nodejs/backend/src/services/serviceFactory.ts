@@ -44,6 +44,9 @@ import { TurnstileService } from './turnstileService.js';
 import { HandoutService } from './handoutService.js';
 import { AdminAnalyticsService } from './adminAnalyticsService.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
+import { ScorekeepingGateway } from './scorekeepingGateway.js';
+import { ScorekeepingService } from './scorekeepingService.js';
+import type { Server as HttpServer } from 'node:http';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -85,6 +88,8 @@ export class ServiceFactory {
   private static handoutService: HandoutService;
   private static adminAnalyticsService: AdminAnalyticsService;
   private static photoSubmissionService: PhotoSubmissionService;
+  private static scorekeepingGateway: ScorekeepingGateway | null = null;
+  private static scorekeepingService: ScorekeepingService | null = null;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -339,6 +344,25 @@ export class ServiceFactory {
     }
 
     return this.photoSubmissionService;
+  }
+
+  static initializeScorekeeping(server: HttpServer): void {
+    if (!this.scorekeepingGateway) {
+      this.scorekeepingGateway = new ScorekeepingGateway(this.getAuthService());
+      this.scorekeepingGateway.attach(server);
+    }
+
+    if (!this.scorekeepingService) {
+      this.scorekeepingService = new ScorekeepingService(this.scorekeepingGateway);
+    }
+  }
+
+  static getScorekeepingService(): ScorekeepingService {
+    if (!this.scorekeepingService) {
+      throw new Error('Scorekeeping service has not been initialized');
+    }
+
+    return this.scorekeepingService;
   }
 
   static getUserService(): UserService {

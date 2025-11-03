@@ -67,6 +67,7 @@ type ApplyResult = {
 type EventContext = {
   userName: string;
   deviceId: string;
+  accountId: string;
 };
 
 type ScorecardStatus = 'idle' | 'loading' | 'error';
@@ -89,6 +90,14 @@ type ScorecardState = {
   editEvent: (gameId: string, eventId: string, input: ScoreEventInput) => Promise<void>;
   deleteEvent: (gameId: string, eventId: string) => Promise<void>;
   clearGame: (gameId: string) => Promise<void>;
+  markEventSyncing: (gameId: string, eventId: string) => Promise<void>;
+  markEventSynced: (
+    gameId: string,
+    eventId: string,
+    payload: { serverId: string; sequence?: number; input?: ScoreEventInput; createdAt?: string },
+  ) => Promise<void>;
+  markEventFailed: (gameId: string, eventId: string, error: string) => Promise<void>;
+  ingestServerEvent: (gameId: string, event: ScoreEvent) => Promise<void>;
 };
 
 const isHit = (result: AtBatResult): boolean =>
@@ -403,11 +412,15 @@ const persistGames = async (games: Record<string, InternalGame>): Promise<void> 
         metadata: game.metadata,
         events: game.events.map((event) => ({
           id: event.id,
+          serverId: event.serverId,
+          clientEventId: event.clientEventId ?? event.id,
           sequence: event.sequence,
           createdAt: event.createdAt,
           createdBy: event.createdBy,
           deviceId: event.deviceId,
           input: event.input,
+          syncStatus: event.syncStatus,
+          syncError: event.syncError,
         })),
         lastUpdated: Date.now()
       }
@@ -450,7 +463,9 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
           const events: ScoreEvent[] = record.events
             .map(
               (storedEvent): ScoreEvent => ({
-                id: storedEvent.id,
+                id: storedEvent.clientEventId ?? storedEvent.id,
+                clientEventId: storedEvent.clientEventId ?? storedEvent.id,
+                serverId: storedEvent.serverId,
                 sequence: storedEvent.sequence,
                 gameId,
                 createdAt: storedEvent.createdAt,
@@ -464,7 +479,9 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
                 outsBefore: baseState.outs,
                 outsAfter: baseState.outs,
                 scoreAfter: baseState.score,
-                basesAfter: baseState.bases
+                basesAfter: baseState.bases,
+                syncStatus: storedEvent.syncStatus ?? 'pending',
+                syncError: storedEvent.syncError ?? null
               }),
             )
             .sort((a, b) => a.sequence - b.sequence);
@@ -521,8 +538,10 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
     }
 
     const sequence = nextSequence(game);
+    const eventId = generateId('event');
     const newEvent: ScoreEvent = {
-      id: generateId('event'),
+      id: eventId,
+      clientEventId: eventId,
       sequence,
       gameId,
       createdAt: new Date().toISOString(),
@@ -536,7 +555,9 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
       outsBefore: game.state.outs,
       outsAfter: game.state.outs,
       scoreAfter: game.state.score,
-      basesAfter: game.state.bases
+      basesAfter: game.state.bases,
+      syncStatus: 'pending',
+      syncError: null,
     };
 
     set((prev) => {
@@ -632,7 +653,9 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
               ...event,
               input,
               notation: '',
-              summary: ''
+              summary: '',
+              syncStatus: 'pending',
+              syncError: null
             }
           : event
       );
@@ -683,6 +706,182 @@ export const useScorecardStore = createStore<ScorecardState>((set, get) => ({
       return {
         games: nextGames,
         activeGameId: prev.activeGameId === gameId ? null : prev.activeGameId
+      };
+    });
+
+    await persistGames(get().games);
+  },
+  markEventSyncing: async (gameId, eventId) => {
+    set((prev) => {
+      const game = prev.games[gameId];
+      if (!game) {
+        return prev;
+      }
+
+      const events = game.events.map((event) =>
+        event.id === eventId
+          ? {
+              ...event,
+              syncStatus: 'syncing',
+              syncError: null
+            }
+          : event
+      );
+
+      return {
+        games: {
+          ...prev.games,
+          [gameId]: { ...game, events }
+        }
+      };
+    });
+
+    await persistGames(get().games);
+  },
+  markEventSynced: async (gameId, eventId, payload) => {
+    set((prev) => {
+      const game = prev.games[gameId];
+      if (!game) {
+        return prev;
+      }
+
+      const events = game.events.map((event) => {
+        if (event.id !== eventId) {
+          return event;
+        }
+
+        const updated: ScoreEvent = {
+          ...event,
+          serverId: payload.serverId,
+          syncStatus: 'synced',
+          syncError: null,
+          createdAt: payload.createdAt ?? event.createdAt,
+          sequence: payload.sequence ?? event.sequence,
+          input: payload.input ?? event.input
+        };
+
+        return updated;
+      });
+
+      const recomputed = recomputeGame({
+        ...game,
+        events
+      });
+
+      return {
+        games: {
+          ...prev.games,
+          [gameId]: recomputed
+        }
+      };
+    });
+
+    await persistGames(get().games);
+  },
+  markEventFailed: async (gameId, eventId, error) => {
+    set((prev) => {
+      const game = prev.games[gameId];
+      if (!game) {
+        return prev;
+      }
+
+      const events = game.events.map((event) =>
+        event.id === eventId
+          ? {
+              ...event,
+              syncStatus: 'failed',
+              syncError: error
+            }
+          : event
+      );
+
+      return {
+        games: {
+          ...prev.games,
+          [gameId]: { ...game, events }
+        }
+      };
+    });
+
+    await persistGames(get().games);
+  },
+  ingestServerEvent: async (gameId, event) => {
+    set((prev) => {
+      const game = prev.games[gameId];
+      if (!game) {
+        return prev;
+      }
+
+      const byServerId = game.events.findIndex((existing) => existing.serverId && event.serverId && existing.serverId === event.serverId);
+      const byClientId = event.clientEventId
+        ? game.events.findIndex((existing) => existing.id === event.clientEventId)
+        : -1;
+
+      let nextEvents: ScoreEvent[];
+
+      if (event.deleted) {
+        nextEvents = game.events.filter((existing, index) => {
+          if (index === byServerId || index === byClientId) {
+            return false;
+          }
+          if (event.serverId && existing.serverId === event.serverId) {
+            return false;
+          }
+          if (event.clientEventId && existing.id === event.clientEventId) {
+            return false;
+          }
+          return true;
+        });
+      } else if (byServerId >= 0) {
+        nextEvents = game.events.map((existing, index) =>
+          index === byServerId
+            ? {
+                ...existing,
+                ...event,
+                id: existing.id,
+                clientEventId: event.clientEventId ?? existing.clientEventId ?? existing.id,
+                syncStatus: 'synced',
+                syncError: null,
+                deleted: undefined
+              }
+            : existing
+        );
+      } else if (byClientId >= 0) {
+        nextEvents = game.events.map((existing, index) =>
+          index === byClientId
+            ? {
+                ...existing,
+                ...event,
+                id: existing.id,
+                clientEventId: event.clientEventId ?? existing.clientEventId ?? existing.id,
+                syncStatus: 'synced',
+                syncError: null,
+                deleted: undefined
+              }
+            : existing
+        );
+      } else {
+        const newEvent: ScoreEvent = {
+          ...event,
+          id: event.clientEventId ?? generateId('event'),
+          clientEventId: event.clientEventId ?? event.id,
+          syncStatus: 'synced',
+          syncError: null,
+          deleted: undefined
+        };
+        nextEvents = [...game.events, newEvent];
+      }
+
+      const recomputed = recomputeGame({
+        ...game,
+        events: nextEvents
+      });
+
+      return {
+        games: {
+          ...prev.games,
+          [gameId]: recomputed
+        }
       };
     });
 
