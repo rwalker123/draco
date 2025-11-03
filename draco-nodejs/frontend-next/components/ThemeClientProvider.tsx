@@ -4,7 +4,7 @@ import { ThemeProvider, Theme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { dracoTheme } from '../theme';
 import Layout from './Layout';
-import React, { useState, createContext, useContext, Suspense } from 'react';
+import React, { useState, createContext, useContext, Suspense, useEffect } from 'react';
 import EmotionCacheProvider from './EmotionCacheProvider';
 
 // Create context for theme management
@@ -28,6 +28,18 @@ export const useThemeContext = () => {
 export default function ThemeClientProvider({ children }: { children: React.ReactNode }) {
   const [currentTheme, setCurrentTheme] = useState(dracoTheme);
   const [currentThemeName, setCurrentThemeName] = useState('baseball');
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const root = document.documentElement;
+    root.classList.toggle(
+      'dark',
+      currentTheme.palette.mode === 'dark' || currentThemeName === 'dark',
+    );
+  }, [currentTheme, currentThemeName]);
 
   const value = {
     currentTheme,

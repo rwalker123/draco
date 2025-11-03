@@ -1,6 +1,6 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, type ThemeOptions } from '@mui/material/styles';
 
-export const dracoTheme = createTheme({
+export const dracoThemeOptions: ThemeOptions = {
   palette: {
     primary: {
       main: '#1976d2', // Blue for sports
@@ -80,4 +80,6 @@ export const dracoTheme = createTheme({
       },
     },
   },
-});
+};
+
+export const dracoTheme = createTheme(dracoThemeOptions);

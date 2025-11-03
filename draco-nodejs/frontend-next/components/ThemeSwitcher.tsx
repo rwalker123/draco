@@ -10,15 +10,20 @@ import {
   SportsHockey as HockeyIcon,
   DarkMode as DarkModeIcon,
 } from '@mui/icons-material';
-import { createTheme } from '@mui/material/styles';
+import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { deepmerge } from '@mui/utils';
 import { useThemeContext } from './ThemeClientProvider';
-import { dracoTheme } from '../theme';
+import { dracoTheme, dracoThemeOptions } from '../theme';
+
+const buildTheme = (overrides: ThemeOptions = {}) =>
+  createTheme(deepmerge(deepmerge({}, dracoThemeOptions), overrides));
 
 // Define different themes for testing
 const themes = {
   baseball: dracoTheme,
-  soccer: createTheme({
+  soccer: buildTheme({
     palette: {
+      mode: 'light',
       primary: {
         main: '#2e7d32', // Green
         light: '#4caf50',
@@ -36,8 +41,9 @@ const themes = {
       },
     },
   }),
-  basketball: createTheme({
+  basketball: buildTheme({
     palette: {
+      mode: 'light',
       primary: {
         main: '#d32f2f', // Red
         light: '#ef5350',
@@ -55,8 +61,9 @@ const themes = {
       },
     },
   }),
-  hockey: createTheme({
+  hockey: buildTheme({
     palette: {
+      mode: 'light',
       primary: {
         main: '#424242', // Grey
         light: '#616161',
@@ -74,7 +81,7 @@ const themes = {
       },
     },
   }),
-  dark: createTheme({
+  dark: buildTheme({
     palette: {
       mode: 'dark',
       primary: {
