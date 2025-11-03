@@ -12,6 +12,7 @@ import accountsWorkoutsRouter from './accounts-workouts.js';
 import accountsPlayerClassifiedsRouter from './accounts-player-classifieds.js';
 import accountsSponsorsRouter from './accounts-sponsors.js';
 import accountsPollsRouter from './accounts-polls.js';
+import accountsPlayerSurveysRouter from './accounts-player-surveys.js';
 import accountsHandoutsRouter from './accounts-handouts.js';
 import accountsPhotoSubmissionsRouter from './accounts-photo-submissions.js';
 import accountsPhotoGalleryRouter from './accounts-photo-gallery.js';
@@ -63,6 +64,9 @@ router.use('/', accountsMemberBusinessRouter);
 
 // Poll management endpoints
 router.use('/', accountsPollsRouter);
+
+// Player survey endpoints
+router.use('/', accountsPlayerSurveysRouter);
 
 // Handout management endpoints
 router.use('/', accountsHandoutsRouter);

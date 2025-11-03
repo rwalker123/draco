@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { ZodError } from 'zod';
-import { ApiError, AuthorizationError } from './customErrors.js';
+import { ApiError, AuthorizationError, NotFoundError } from './customErrors.js';
 import { DateUtils } from './dateUtils.js';
 
 export function hasCodeProperty(err: unknown): err is { code: string } {
@@ -44,6 +44,16 @@ function logError(err: Error, req: Request): void {
     req.method === 'GET' &&
     /\/api\/accounts\/[^/]+\/user-teams$/i.test(req.path ?? '')
   ) {
+    return;
+  }
+
+  const shouldSuppressLog =
+    err instanceof NotFoundError &&
+    req.method === 'GET' &&
+    /\/api\/accounts\/[^/]+\/surveys\/answers\/[^/]+$/i.test(req.path ?? '') &&
+    /survey not available/i.test(err.message);
+
+  if (shouldSuppressLog) {
     return;
   }
 

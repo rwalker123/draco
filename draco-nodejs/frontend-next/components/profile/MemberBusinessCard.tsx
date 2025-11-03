@@ -17,7 +17,6 @@ import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuth } from '@/context/AuthContext';
-import { unwrapApiResult } from '@/utils/apiResult';
 import MemberBusinessFormDialog, {
   type MemberBusinessDialogResult,
 } from './MemberBusinessFormDialog';
@@ -56,6 +55,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   const [memberBusinesses, setMemberBusinesses] = useState<MemberBusinessType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<DialogMode>('create');
@@ -66,12 +66,16 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
 
   const loadMemberBusinesses = useCallback(async () => {
     if (!accountId || !token) {
+      setMemberBusinesses([]);
+      setError(null);
+      setInfoMessage(null);
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
+      setInfoMessage(null);
 
       const result = await listMemberBusinesses({
         client: apiClient,
@@ -81,7 +85,21 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
         throwOnError: false,
       });
 
-      const payload = unwrapApiResult(result, 'Failed to load member businesses');
+      if (result.error) {
+        const status = result.response?.status;
+        if (status === 403) {
+          setMemberBusinesses([]);
+          setInfoMessage('Not a member of this organization.');
+          return;
+        }
+
+        const message = result.error.message ?? 'Unable to load member businesses right now.';
+        setMemberBusinesses([]);
+        setError(message);
+        return;
+      }
+
+      const payload = result.data;
       setMemberBusinesses(payload?.memberBusinesses ?? []);
     } catch (err) {
       console.error('Failed to load member businesses', err);
@@ -130,6 +148,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   const handleFormSuccess = (result: MemberBusinessDialogResult) => {
     setSuccess(result.message);
     setError(null);
+    setInfoMessage(null);
     handleCloseForm();
     void loadMemberBusinesses();
   };
@@ -141,11 +160,12 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   const handleDeleteSuccess = (result: MemberBusinessDeleteResult) => {
     setSuccess(result.message);
     setError(null);
+    setInfoMessage(null);
     handleCloseDelete();
     void loadMemberBusinesses();
   };
 
-  const showEmptyState = !loading && memberBusinesses.length === 0;
+  const showEmptyState = !loading && memberBusinesses.length === 0 && !infoMessage;
 
   return (
     <Paper sx={{ p: 4, borderRadius: 2 }}>
@@ -168,6 +188,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
         </Stack>
 
         {error && <Alert severity="error">{error}</Alert>}
+        {infoMessage && <Alert severity="info">{infoMessage}</Alert>}
         {success && <Alert severity="success">{success}</Alert>}
 
         {loading ? (

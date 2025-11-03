@@ -37,6 +37,7 @@ import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
 import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 import { useGameRecapFlow } from '../../../../../../../hooks/useGameRecapFlow';
 import LeadersWidget from '../../../../../../../components/statistics/LeadersWidget';
+import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -621,7 +622,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       </div>
 
       {/* Community Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,1fr)_auto] gap-6 mb-8">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -643,23 +644,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5" />
-              Player Survey Spotlight
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="italic text-gray-700 mb-2">
-              Q: What&#39;s your favorite pre-game meal?
-            </div>
-            <div className="font-semibold text-blue-800">A: Pasta! - Alex Johnson</div>
-            <Button variant="outline" className="w-full mt-4">
-              Answer a Survey
-            </Button>
-          </CardContent>
-        </Card>
+        <SurveySpotlightWidget
+          accountId={accountId}
+          teamSeasonId={teamSeasonId}
+          variant="card"
+          className="h-full"
+          icon={<Target className="h-5 w-5" />}
+          title="Player Survey Spotlight"
+          canAnswerSurvey={isAccountMember}
+        />
       </div>
 
       {recapError && (

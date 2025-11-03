@@ -114,6 +114,9 @@ export const routePermissions: Record<string, RoutePermission> = {
   '/account/[accountId]/statistics': {
     public: true,
   },
+  '/account/[accountId]/surveys': {
+    public: true,
+  },
   '/account/[accountId]/player-classifieds': {
     public: true,
   },

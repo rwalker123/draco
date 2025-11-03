@@ -9349,6 +9349,491 @@
           "optionId"
         ]
       },
+      "PlayerSurveyCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "categoryId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "question": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "questionNumber": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 999
+                }
+              },
+              "required": [
+                "id",
+                "categoryId",
+                "question",
+                "questionNumber"
+              ],
+              "title": "PlayerSurveyQuestion",
+              "description": "Survey question within a category, including ordering metadata."
+            },
+            "default": []
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "categoryName",
+          "priority"
+        ],
+        "title": "PlayerSurveyCategory",
+        "description": "Survey category with associated questions for an account."
+      },
+      "CreatePlayerSurveyCategory": {
+        "type": "object",
+        "properties": {
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "priority": {
+            "type": "integer",
+            "default": 0
+          }
+        },
+        "required": [
+          "categoryName"
+        ],
+        "title": "CreatePlayerSurveyCategory",
+        "description": "Payload to create a new survey category."
+      },
+      "UpdatePlayerSurveyCategory": {
+        "type": "object",
+        "properties": {
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "priority": {
+            "type": "integer",
+            "default": 0
+          }
+        },
+        "title": "UpdatePlayerSurveyCategory",
+        "description": "Payload to update an existing survey category."
+      },
+      "PlayerSurveyQuestion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "categoryId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "questionNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999
+          }
+        },
+        "required": [
+          "id",
+          "categoryId",
+          "question",
+          "questionNumber"
+        ],
+        "title": "PlayerSurveyQuestion",
+        "description": "Survey question within a category, including ordering metadata."
+      },
+      "CreatePlayerSurveyQuestion": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "questionNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999
+          }
+        },
+        "required": [
+          "categoryId",
+          "question",
+          "questionNumber"
+        ],
+        "title": "CreatePlayerSurveyQuestion",
+        "description": "Payload to create a new survey question under a category."
+      },
+      "UpdatePlayerSurveyQuestion": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "questionNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999
+          }
+        },
+        "title": "UpdatePlayerSurveyQuestion",
+        "description": "Payload to update an existing survey question."
+      },
+      "PlayerSurveyAnswer": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "categoryId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "questionNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "questionId",
+          "categoryId",
+          "categoryName",
+          "question",
+          "questionNumber",
+          "answer"
+        ],
+        "title": "PlayerSurveyAnswer",
+        "description": "Answer to a survey question including category context."
+      },
+      "PlayerSurveyAnswerUpsert": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "title": "PlayerSurveyAnswerUpsert",
+        "description": "Payload to create or update a player survey answer."
+      },
+      "PlayerSurveyDetail": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "photoUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "questionId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "categoryId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "categoryName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "question": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "questionNumber": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 999
+                },
+                "answer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              },
+              "required": [
+                "questionId",
+                "categoryId",
+                "categoryName",
+                "question",
+                "questionNumber",
+                "answer"
+              ],
+              "title": "PlayerSurveyAnswer",
+              "description": "Answer to a survey question including category context."
+            }
+          },
+          "lastUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "player",
+          "answers"
+        ],
+        "title": "PlayerSurveyDetail",
+        "description": "Full set of answers for a player."
+      },
+      "PlayerSurveySummaryListResponse": {
+        "type": "object",
+        "properties": {
+          "surveys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "player": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "photoUrl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "firstName",
+                    "lastName"
+                  ]
+                },
+                "answeredQuestionCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "hasResponses": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "player",
+                "answeredQuestionCount",
+                "hasResponses"
+              ],
+              "title": "PlayerSurveySummary",
+              "description": "Summary information for a player survey."
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "hasNext": {
+                "type": "boolean"
+              },
+              "hasPrev": {
+                "type": "boolean"
+              },
+              "total": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "page",
+              "limit",
+              "hasNext",
+              "hasPrev",
+              "total"
+            ],
+            "title": "PaginationWithTotal",
+            "description": "Pagination metadata that includes the total number of items"
+          }
+        },
+        "required": [
+          "surveys",
+          "pagination"
+        ],
+        "title": "PlayerSurveySummaryListResponse",
+        "description": "Paginated list of player survey summaries."
+      },
+      "PlayerSurveyListQuery": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "search": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "title": "PlayerSurveyListQuery",
+        "description": "Query parameters for listing player surveys."
+      },
+      "PlayerSurveySpotlight": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "photoUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "teamName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "player",
+          "question",
+          "answer"
+        ],
+        "title": "PlayerSurveySpotlight",
+        "description": "Randomly selected player survey highlight for widgets."
+      },
       "HofContactSummary": {
         "type": "object",
         "properties": {
@@ -29773,6 +30258,1099 @@
           },
           "500": {
             "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/categories": {
+      "get": {
+        "operationId": "listPlayerSurveyCategories",
+        "summary": "List player survey categories",
+        "description": "Returns survey categories and questions for an account. Requires authentication as either an account administrator or rostered player.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Survey categories available for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlayerSurveyCategory"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required to access survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to access survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPlayerSurveyCategory",
+        "summary": "Create a player survey category",
+        "description": "Creates a new survey category for an account. Account Admin permission required.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlayerSurveyCategory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Survey category created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveyCategory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error creating the survey category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required to create survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to create survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while creating the survey category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/categories/{categoryId}": {
+      "put": {
+        "operationId": "updatePlayerSurveyCategory",
+        "summary": "Update a player survey category",
+        "description": "Updates an existing survey category. Account Admin permission required.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlayerSurveyCategory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Survey category updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveyCategory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error updating the survey category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required to update survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to update survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Survey category not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while updating the survey category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePlayerSurveyCategory",
+        "summary": "Delete a player survey category",
+        "description": "Deletes a survey category and cascades its questions and answers. Account Admin permission required.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Survey category deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required to delete survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to delete survey categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Survey category not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the survey category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/categories/{categoryId}/questions": {
+      "post": {
+        "operationId": "createPlayerSurveyQuestion",
+        "summary": "Create a player survey question",
+        "description": "Creates a new survey question under a category. Account Admin permission required.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlayerSurveyQuestion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Survey question created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveyQuestion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error creating the survey question.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required to create survey questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to create survey questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Survey category not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while creating the survey question.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/questions/{questionId}": {
+      "put": {
+        "operationId": "updatePlayerSurveyQuestion",
+        "summary": "Update a player survey question",
+        "description": "Updates an existing survey question. Account Admin permission required.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlayerSurveyQuestion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Survey question updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveyQuestion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error updating the survey question.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required to update survey questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to update survey questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Survey question not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while updating the survey question.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePlayerSurveyQuestion",
+        "summary": "Delete a player survey question",
+        "description": "Deletes a survey question. Account Admin permission required.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Survey question deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required to delete survey questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to delete survey questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Survey question not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the survey question.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/answers": {
+      "get": {
+        "operationId": "listPlayerSurveys",
+        "summary": "List player surveys",
+        "description": "Returns a paginated list of player surveys limited to current-season participants. Supports optional search.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated player survey results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveySummaryListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error in the survey list request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving player surveys.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/answers/{playerId}": {
+      "get": {
+        "operationId": "getPlayerSurvey",
+        "summary": "Get a player survey",
+        "description": "Returns all survey answers for a specific player. Viewers only see current-season participants unless requesting their own survey.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player survey detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveyDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Player survey not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving the player survey.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/answers/{playerId}/questions/{questionId}": {
+      "put": {
+        "operationId": "upsertPlayerSurveyAnswer",
+        "summary": "Create or update a player survey answer",
+        "description": "Creates or updates a survey answer for a specific player and question. Players can update their own answers; Account Admins can manage any answer.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerSurveyAnswerUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Survey answer saved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveyAnswer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error updating the survey answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required to update survey answers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to update the survey answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Survey question or player not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while saving the survey answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePlayerSurveyAnswer",
+        "summary": "Delete a player survey answer",
+        "description": "Deletes a survey answer for a specific player and question. Players can delete their own answers; Account Admins can delete any answer.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Survey answer deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required to delete survey answers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to delete the survey answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Survey question or player not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the survey answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/spotlight": {
+      "get": {
+        "operationId": "getPlayerSurveySpotlight",
+        "summary": "Get a random player survey spotlight",
+        "description": "Returns a random question and answer from a current-season player for display in account widgets.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player survey spotlight result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveySpotlight"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No eligible survey answers found for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving the survey spotlight.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/surveys/teams/{teamSeasonId}/spotlight": {
+      "get": {
+        "operationId": "getPlayerSurveyTeamSpotlight",
+        "summary": "Get a random team player survey spotlight",
+        "description": "Returns a random question and answer from a current-season player on the specified team for display in team widgets.",
+        "tags": [
+          "Player Surveys"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team-specific player survey spotlight result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSurveySpotlight"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No eligible survey answers found for the team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving the team survey spotlight.",
             "content": {
               "application/json": {
                 "schema": {

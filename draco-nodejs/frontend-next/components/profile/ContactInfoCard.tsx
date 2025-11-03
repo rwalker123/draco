@@ -1,4 +1,5 @@
 import React from 'react';
+import NextLink from 'next/link';
 import {
   Avatar,
   Box,
@@ -9,7 +10,10 @@ import {
   Typography,
   Alert,
   Button,
+  Tooltip,
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
 
 interface ContactInfoCardProps {
@@ -18,6 +22,8 @@ interface ContactInfoCardProps {
   error?: string | null;
   accountName?: string;
   onEdit?: () => void;
+  surveyHref?: string;
+  infoMessage?: string | null;
 }
 
 const renderContactField = (label: string, value?: string | null) => {
@@ -75,6 +81,8 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   error,
   accountName,
   onEdit,
+  surveyHref,
+  infoMessage,
 }) => {
   if (loading) {
     return (
@@ -111,10 +119,9 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
           Contact Information
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          We could not find your contact details for this account yet. If you recently joined,
-          please allow a moment for synchronization or contact your organization administrator.
-        </Typography>
+        <Alert severity="info" data-testid="profile-contact-info">
+          {infoMessage ?? <>Not a member of this organization.</>}
+        </Alert>
       </Paper>
     );
   }
@@ -163,15 +170,37 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
               )}
             </Box>
           </Box>
-          {onEdit && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={onEdit}
-              data-testid="profile-contact-edit-button"
-            >
-              Edit
-            </Button>
+          {(surveyHref || onEdit) && (
+            <Stack direction="row" spacing={1}>
+              {surveyHref && (
+                <Tooltip title="Open player survey">
+                  <Button
+                    component={NextLink}
+                    href={surveyHref}
+                    variant="contained"
+                    size="small"
+                    color="primary"
+                    data-testid="profile-contact-survey-link"
+                    sx={{ minWidth: 36, px: 1 }}
+                  >
+                    <DescriptionIcon fontSize="small" />
+                  </Button>
+                </Tooltip>
+              )}
+              {onEdit && (
+                <Tooltip title="Edit contact information">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={onEdit}
+                    data-testid="profile-contact-edit-button"
+                    sx={{ minWidth: 36, px: 1 }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </Button>
+                </Tooltip>
+              )}
+            </Stack>
           )}
         </Box>
 

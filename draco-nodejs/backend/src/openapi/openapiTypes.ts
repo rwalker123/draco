@@ -70,9 +70,13 @@ import {
   PlayerCareerStatisticsSchema,
   PlayerPitchingStatsSchema,
   PlayerPitchingStatsBriefSchema,
+  PlayerSurveyAnswerSchema,
+  PlayerSurveyAnswerUpsertSchema,
   PublicContactSummarySchema,
   PublicContactSearchResponseSchema,
   PublicContactSearchQuerySchema,
+  PlayerSurveyCategorySchema,
+  PlayerSurveyDetailSchema,
   TeamStatsPlayerSummarySchema,
   GameBattingStatLineSchema,
   GameBattingStatsSchema,
@@ -91,6 +95,9 @@ import {
   PlayersWantedClassifiedSchema,
   PitchingStatisticsFiltersSchema,
   PollVoteRequestSchema,
+  PlayerSurveyListQuerySchema,
+  PlayerSurveySummaryListResponseSchema,
+  PlayerSurveyQuestionSchema,
   RecentGamesQuerySchema,
   RecentGamesSchema,
   UmpireSchema,
@@ -168,6 +175,11 @@ import {
   UpdateGameResultsSchema,
   UpsertGameSchema,
   UpsertGameRecapSchema,
+  CreatePlayerSurveyCategorySchema,
+  UpdatePlayerSurveyCategorySchema,
+  CreatePlayerSurveyQuestionSchema,
+  UpdatePlayerSurveyQuestionSchema,
+  PlayerSurveySpotlightSchema,
   RoleWithContactSchema,
   VerifyTokenRequestSchema,
   ChangePasswordRequestSchema,
@@ -509,6 +521,54 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const CreatePollSchemaRef = registry.register('CreatePoll', CreatePollSchema);
   const UpdatePollSchemaRef = registry.register('UpdatePoll', UpdatePollSchema);
   const PollVoteRequestSchemaRef = registry.register('PollVoteRequest', PollVoteRequestSchema);
+  const PlayerSurveyCategorySchemaRef = registry.register(
+    'PlayerSurveyCategory',
+    PlayerSurveyCategorySchema,
+  );
+  const CreatePlayerSurveyCategorySchemaRef = registry.register(
+    'CreatePlayerSurveyCategory',
+    CreatePlayerSurveyCategorySchema,
+  );
+  const UpdatePlayerSurveyCategorySchemaRef = registry.register(
+    'UpdatePlayerSurveyCategory',
+    UpdatePlayerSurveyCategorySchema,
+  );
+  const PlayerSurveyQuestionSchemaRef = registry.register(
+    'PlayerSurveyQuestion',
+    PlayerSurveyQuestionSchema,
+  );
+  const CreatePlayerSurveyQuestionSchemaRef = registry.register(
+    'CreatePlayerSurveyQuestion',
+    CreatePlayerSurveyQuestionSchema,
+  );
+  const UpdatePlayerSurveyQuestionSchemaRef = registry.register(
+    'UpdatePlayerSurveyQuestion',
+    UpdatePlayerSurveyQuestionSchema,
+  );
+  const PlayerSurveyAnswerSchemaRef = registry.register(
+    'PlayerSurveyAnswer',
+    PlayerSurveyAnswerSchema,
+  );
+  const PlayerSurveyAnswerUpsertSchemaRef = registry.register(
+    'PlayerSurveyAnswerUpsert',
+    PlayerSurveyAnswerUpsertSchema,
+  );
+  const PlayerSurveyDetailSchemaRef = registry.register(
+    'PlayerSurveyDetail',
+    PlayerSurveyDetailSchema,
+  );
+  const PlayerSurveySummaryListResponseSchemaRef = registry.register(
+    'PlayerSurveySummaryListResponse',
+    PlayerSurveySummaryListResponseSchema,
+  );
+  const PlayerSurveyListQuerySchemaRef = registry.register(
+    'PlayerSurveyListQuery',
+    PlayerSurveyListQuerySchema,
+  );
+  const PlayerSurveySpotlightSchemaRef = registry.register(
+    'PlayerSurveySpotlight',
+    PlayerSurveySpotlightSchema,
+  );
   const HofContactSummarySchemaRef = registry.register(
     'HofContactSummary',
     HofContactSummarySchema,
@@ -805,6 +865,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CreatePollSchemaRef,
     UpdatePollSchemaRef,
     PollVoteRequestSchemaRef,
+    PlayerSurveyCategorySchemaRef,
+    CreatePlayerSurveyCategorySchemaRef,
+    UpdatePlayerSurveyCategorySchemaRef,
+    PlayerSurveyQuestionSchemaRef,
+    CreatePlayerSurveyQuestionSchemaRef,
+    UpdatePlayerSurveyQuestionSchemaRef,
+    PlayerSurveyAnswerSchemaRef,
+    PlayerSurveyAnswerUpsertSchemaRef,
+    PlayerSurveyDetailSchemaRef,
+    PlayerSurveySummaryListResponseSchemaRef,
+    PlayerSurveyListQuerySchemaRef,
+    PlayerSurveySpotlightSchemaRef,
     HofContactSummarySchemaRef,
     HofMemberSchemaRef,
     HofClassSummarySchemaRef,

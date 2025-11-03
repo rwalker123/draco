@@ -27,6 +27,7 @@ import {
   Handshake as HandshakeIcon,
   HowToVote as HowToVoteIcon,
   Description as DescriptionIcon,
+  QuestionAnswer as QuestionAnswerIcon,
   PhotoLibrary as PhotoLibraryIcon,
   EmojiEvents as EmojiEventsIcon,
 } from '@mui/icons-material';
@@ -465,6 +466,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <HowToVoteIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Poll Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/surveys/manage`)
+                }
+                key="survey-management"
+              >
+                <ListItemIcon>
+                  <QuestionAnswerIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Survey Management</ListItemText>
               </MenuItem>
             );
           }

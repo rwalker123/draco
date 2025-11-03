@@ -7,6 +7,7 @@ export * from './PrismaSeasonsRepository.js';
 export * from './PrismaRoleRepository.js';
 export * from './PrismaLeagueRepository.js';
 export * from './PrismaPollRepository.js';
+export * from './PrismaPlayerSurveyRepository.js';
 export * from './PrismaTeamsWantedRepository.js';
 export * from './PrismaSponsorRepository.js';
 export * from './PrismaMemberBusinessRepository.js';
