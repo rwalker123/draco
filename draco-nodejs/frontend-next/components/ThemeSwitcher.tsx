@@ -186,7 +186,7 @@ const ThemeSwitcher: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {Object.keys(themes).map((key) => {
               const typedKey = key as keyof typeof themes;
-              const IconComponent = themeIcons[typedKey as keyof typeof themeIcons] ?? PaletteIcon;
+              const IconComponent = themeIcons[typedKey] ?? PaletteIcon;
               const isActive = currentThemeName === typedKey;
 
               return (
