@@ -26,7 +26,6 @@ import GameRecapsWidget from '../../../components/GameRecapsWidget';
 import MyTeams, { UserTeam } from '../../../components/MyTeams';
 import AccountPageHeader from '../../../components/AccountPageHeader';
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
-import ThemeSwitcher from '../../../components/ThemeSwitcher';
 import { JoinLeagueDashboard } from '../../../components/join-league';
 import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
@@ -669,14 +668,14 @@ const BaseballAccountHome: React.FC = () => {
                 )}
               </Box>
             )}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography
               variant="body1"
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                color: 'rgba(255,255,255,0.9)',
+                color: (theme) => theme.palette.text.primary,
                 textAlign: 'center',
               }}
             >
@@ -684,7 +683,6 @@ const BaseballAccountHome: React.FC = () => {
               {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
               {account.configuration?.firstYear}
             </Typography>
-            <ThemeSwitcher />
           </Box>
         </AccountPageHeader>
       </Box>

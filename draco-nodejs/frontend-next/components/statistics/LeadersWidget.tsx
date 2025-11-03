@@ -2,21 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import {
-  Alert,
-  Box,
-  Button,
-  Paper,
-  Tab,
-  Tabs,
-  Typography,
-  useTheme,
-  type Theme,
-} from '@mui/material';
+import { Alert, Box, Button, Tab, Tabs, Typography, useTheme, type Theme } from '@mui/material';
 import LeaderCategoryPanel from './LeaderCategoryPanel';
 import { useLeaderCategories } from '../../hooks/useLeaderCategories';
 import { useStatisticalLeaders } from '../../hooks/useStatisticalLeaders';
 import type { LeaderCategoryType, LeaderRowType } from '@draco/shared-schemas';
+import WidgetShell from '../ui/WidgetShell';
 
 export interface LeagueOption {
   id: string;
@@ -436,9 +427,19 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   };
 
   return (
-    <Paper
+    <WidgetShell
+      title={
+        <Typography variant="h5" fontWeight="bold">
+          {title}
+        </Typography>
+      }
+      actions={
+        <Button component={Link} href={fullStatisticsHref} variant="outlined" size="small">
+          View Full Statistics
+        </Button>
+      }
+      accent="primary"
       sx={{
-        p: 3,
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
@@ -447,15 +448,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
         maxWidth: '100%',
       }}
     >
-      <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
-        <Typography variant="h5" fontWeight="bold">
-          {title}
-        </Typography>
-        <Button component={Link} href={fullStatisticsHref} variant="outlined" size="small">
-          View Full Statistics
-        </Button>
-      </Box>
-
       {showLeagueTabs ? (
         <Box
           sx={{
@@ -568,6 +560,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           </Typography>
         ) : null}
       </Box>
-    </Paper>
+    </WidgetShell>
   );
 }
