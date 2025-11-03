@@ -49,6 +49,7 @@ const ProfilePageClient: React.FC = () => {
   const [contact, setContact] = useState<BaseContactType | null>(null);
   const [contactLoading, setContactLoading] = useState<boolean>(true);
   const [contactError, setContactError] = useState<string | null>(null);
+  const [contactInfoMessage, setContactInfoMessage] = useState<string | null>(null);
 
   const [organizations, setOrganizations] = useState<AccountType[]>([]);
   const [organizationsLoading, setOrganizationsLoading] = useState<boolean>(true);
@@ -67,6 +68,7 @@ const ProfilePageClient: React.FC = () => {
     if (!token || !currentAccount?.id) {
       setContact(null);
       setContactError(null);
+      setContactInfoMessage(null);
       setContactLoading(false);
       return;
     }
@@ -84,11 +86,35 @@ const ProfilePageClient: React.FC = () => {
           throwOnError: false,
         });
 
-        const data = unwrapApiResult(result, CONTACT_ERROR_MESSAGE) as BaseContactType;
+        if (result.error) {
+          const status = result.response?.status;
+          if (status === 403) {
+            if (!cancelled) {
+              setContact(null);
+              setContactError(null);
+              setContactInfoMessage('Not a member of this organization.');
+              setContactLoading(false);
+            }
+            return;
+          }
+
+          if (!cancelled) {
+            const message = result.error.message ?? CONTACT_ERROR_MESSAGE;
+            setContact(null);
+            setContactError(message);
+            setContactInfoMessage(null);
+            setContactLoading(false);
+          }
+          return;
+        }
+
+        const data = result.data as BaseContactType | null;
 
         if (!cancelled) {
           setContact(data ?? null);
           setContactLoading(false);
+          setContactError(null);
+          setContactInfoMessage(null);
         }
       } catch (error) {
         if (cancelled) {
@@ -98,10 +124,12 @@ const ProfilePageClient: React.FC = () => {
         if (error instanceof ApiClientError && error.status === 404) {
           setContact(null);
           setContactError(null);
+          setContactInfoMessage(null);
         } else {
           const message = error instanceof Error ? error.message : CONTACT_ERROR_MESSAGE;
           setContact(null);
           setContactError(message);
+          setContactInfoMessage(null);
         }
 
         setContactLoading(false);
@@ -391,6 +419,7 @@ const ProfilePageClient: React.FC = () => {
               contact={contact}
               loading={contactLoading}
               error={contactError}
+              infoMessage={contactInfoMessage}
               accountName={currentAccount?.name}
               onEdit={contact && currentAccount?.id ? handleEditContact : undefined}
               surveyHref={

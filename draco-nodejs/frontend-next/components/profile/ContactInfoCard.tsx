@@ -23,6 +23,7 @@ interface ContactInfoCardProps {
   accountName?: string;
   onEdit?: () => void;
   surveyHref?: string;
+  infoMessage?: string | null;
 }
 
 const renderContactField = (label: string, value?: string | null) => {
@@ -81,6 +82,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   accountName,
   onEdit,
   surveyHref,
+  infoMessage,
 }) => {
   if (loading) {
     return (
@@ -117,10 +119,9 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
           Contact Information
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          We could not find your contact details for this account yet. If you recently joined,
-          please allow a moment for synchronization or contact your organization administrator.
-        </Typography>
+        <Alert severity="info" data-testid="profile-contact-info">
+          {infoMessage ?? <>Not a member of this organization.</>}
+        </Alert>
       </Paper>
     );
   }

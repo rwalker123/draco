@@ -129,10 +129,6 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     if (!token) {
       setLoading(false);
       setInitialized(true);
-      if (currentAccount) {
-        setCurrentAccount(null);
-        persistAccount(null);
-      }
       return;
     }
 
@@ -224,7 +220,6 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     setUserAccounts([]);
     setError(null);
     setInitialized(true);
-    persistAccount(null);
   };
 
   return (

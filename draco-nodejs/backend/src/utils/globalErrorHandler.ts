@@ -38,6 +38,10 @@ function logError(err: Error, req: Request): void {
     return;
   }
 
+  if (err instanceof AuthorizationError) {
+    return;
+  }
+
   // Users without membership routinely hit the account team list; avoid noisy logs.
   if (
     err instanceof AuthorizationError &&
