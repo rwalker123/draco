@@ -14,6 +14,8 @@ import { useApiClient } from '../hooks/useApiClient';
 import { getAccountById } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
 
+const ACCOUNT_STORAGE_KEY = 'draco:selected-account';
+
 interface Account {
   id: string;
   name: string;
@@ -53,11 +55,33 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
           : DEFAULT_TIMEZONE,
       timeZoneSource:
         account.timeZoneSource ??
-        (account.timeZone && account.timeZone.trim().length > 0
-          ? 'account'
-          : 'fallback'),
+        (account.timeZone && account.timeZone.trim().length > 0 ? 'account' : 'fallback'),
     }),
     [],
+  );
+
+  const persistAccount = useCallback((account: Account | null) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      if (account) {
+        window.localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(account));
+      } else {
+        window.localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage failures
+    }
+  }, []);
+
+  const handleSetCurrentAccount = useCallback(
+    (account: Account) => {
+      const normalized = normalizeAccount(account);
+      setCurrentAccount(normalized);
+      persistAccount(normalized);
+    },
+    [normalizeAccount, persistAccount],
   );
 
   const fetchAccountDetails = useCallback(
@@ -75,7 +99,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         const data = unwrapApiResult(result, 'Failed to fetch account');
         const account = data.account;
 
-        setCurrentAccount({
+        handleSetCurrentAccount({
           id: account.id,
           name: account.name,
           accountType: account.configuration?.accountType?.name ?? undefined,
@@ -91,14 +115,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         setInitialized(true);
       }
     },
-    [apiClient],
-  );
-
-  const handleSetCurrentAccount = useCallback(
-    (account: Account) => {
-      setCurrentAccount(normalizeAccount(account));
-    },
-    [normalizeAccount],
+    [apiClient, handleSetCurrentAccount],
   );
 
   // Manage loading state based on dependencies
@@ -106,37 +123,108 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     if (authLoading || roleLoading) {
       setLoading(true);
       setInitialized(false);
-    } else if (token && userRoles && (userRoles.contactRoles?.length ?? 0) > 0) {
-      const primaryAccountId = userRoles.accountId;
-      if (
-        !currentAccount ||
-        currentAccount.id !== primaryAccountId ||
-        currentAccount.timeZoneSource !== 'account'
-      ) {
-        if (primaryAccountId) {
-          fetchAccountDetails(primaryAccountId).catch(() => {
-            // Error state handled in fetchAccountDetails
+      return;
+    }
+
+    if (!token) {
+      setLoading(false);
+      setInitialized(true);
+      if (currentAccount) {
+        setCurrentAccount(null);
+        persistAccount(null);
+      }
+      return;
+    }
+
+    if (!userRoles) {
+      setLoading(false);
+      setInitialized(true);
+      return;
+    }
+
+    const hasRoles = (userRoles.contactRoles?.length ?? 0) > 0;
+    if (!hasRoles) {
+      setLoading(false);
+      setInitialized(true);
+      return;
+    }
+
+    if (!currentAccount && userRoles.accountId) {
+      fetchAccountDetails(userRoles.accountId).catch(() => {
+        // Error state handled within fetchAccountDetails
+      });
+      return;
+    }
+
+    setLoading(false);
+    setInitialized(true);
+  }, [
+    authLoading,
+    roleLoading,
+    token,
+    userRoles,
+    currentAccount,
+    fetchAccountDetails,
+    persistAccount,
+  ]);
+
+  // Hydrate from localStorage on mount/refesh
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
+      if (!stored) {
+        return;
+      }
+      const parsed = JSON.parse(stored) as Account;
+      if (parsed?.id) {
+        handleSetCurrentAccount(parsed);
+        if (token) {
+          fetchAccountDetails(parsed.id).catch(() => {
+            // Ignore, already have persisted data
           });
         }
-      } else {
-        setLoading(false);
-        setInitialized(true);
       }
-    } else if (!token || !userRoles) {
-      setLoading(false);
-      setCurrentAccount(null);
-      setInitialized(true);
-    } else {
-      setLoading(false);
-      setInitialized(true);
+    } catch {
+      // Ignore malformed storage
     }
-  }, [authLoading, roleLoading, token, userRoles, currentAccount, fetchAccountDetails]);
+  }, [fetchAccountDetails, handleSetCurrentAccount, token]);
+
+  // Sync across tabs
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== ACCOUNT_STORAGE_KEY) {
+        return;
+      }
+      if (!event.newValue) {
+        setCurrentAccount(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(event.newValue) as Account;
+        if (parsed?.id) {
+          setCurrentAccount(normalizeAccount(parsed));
+        }
+      } catch {
+        // Ignore
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [normalizeAccount]);
 
   const clearAccounts = () => {
     setCurrentAccount(null);
     setUserAccounts([]);
     setError(null);
     setInitialized(true);
+    persistAccount(null);
   };
 
   return (
