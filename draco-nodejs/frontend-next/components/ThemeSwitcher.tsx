@@ -8,31 +8,15 @@ import {
   SportsSoccer as SoccerIcon,
   SportsBasketball as BasketballIcon,
   SportsHockey as HockeyIcon,
+  DarkMode as DarkModeIcon,
 } from '@mui/icons-material';
 import { createTheme } from '@mui/material/styles';
 import { useThemeContext } from './ThemeClientProvider';
+import { dracoTheme } from '../theme';
 
 // Define different themes for testing
 const themes = {
-  baseball: createTheme({
-    palette: {
-      primary: {
-        main: '#1976d2', // Blue
-        light: '#42a5f5',
-        dark: '#1565c0',
-      },
-      secondary: {
-        main: '#dc004e', // Red
-        light: '#ff5983',
-        dark: '#9a0036',
-      },
-      warning: {
-        main: '#ed6c02', // Orange
-        light: '#ff9800',
-        dark: '#e65100',
-      },
-    },
-  }),
+  baseball: dracoTheme,
   soccer: createTheme({
     palette: {
       primary: {
@@ -90,6 +74,53 @@ const themes = {
       },
     },
   }),
+  dark: createTheme({
+    palette: {
+      mode: 'dark',
+      primary: {
+        main: '#90caf9',
+        light: '#c3fdff',
+        dark: '#42a5f5',
+      },
+      secondary: {
+        main: '#f48fb1',
+        light: '#f8bbd0',
+        dark: '#f06292',
+      },
+      background: {
+        default: '#121212',
+        paper: '#1e1e1e',
+      },
+      text: {
+        primary: '#e0e0e0',
+        secondary: '#b0bec5',
+      },
+    },
+    components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+          },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 8,
+          },
+        },
+      },
+    },
+  }),
 };
 
 const themeIcons = {
@@ -97,6 +128,7 @@ const themeIcons = {
   soccer: SoccerIcon,
   basketball: BasketballIcon,
   hockey: HockeyIcon,
+  dark: DarkModeIcon,
 };
 
 const themeNames = {
@@ -104,14 +136,15 @@ const themeNames = {
   soccer: 'Soccer',
   basketball: 'Basketball',
   hockey: 'Hockey',
+  dark: 'Dark Mode',
 };
 
 const ThemeSwitcher: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { setCurrentTheme, currentThemeName, setCurrentThemeName } = useThemeContext();
 
-  const handleThemeSelect = (themeKey: string) => {
-    setCurrentTheme(themes[themeKey as keyof typeof themes]);
+  const handleThemeSelect = (themeKey: keyof typeof themes) => {
+    setCurrentTheme(themes[themeKey]);
     setCurrentThemeName(themeKey);
     setIsOpen(false);
   };
@@ -151,28 +184,29 @@ const ThemeSwitcher: React.FC = () => {
             Choose Theme
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {Object.entries(themes).map(([key, _theme]) => {
-              const IconComponent = themeIcons[key as keyof typeof themeIcons];
-              const isActive = currentThemeName === key;
+            {Object.keys(themes).map((key) => {
+              const typedKey = key as keyof typeof themes;
+              const IconComponent = themeIcons[typedKey] ?? PaletteIcon;
+              const isActive = currentThemeName === typedKey;
 
               return (
                 <Button
-                  key={key}
+                  key={typedKey}
                   variant={isActive ? 'contained' : 'outlined'}
                   size="small"
                   startIcon={<IconComponent />}
-                  onClick={() => handleThemeSelect(key)}
-                  sx={{
+                  onClick={() => handleThemeSelect(typedKey)}
+                  sx={(theme) => ({
                     justifyContent: 'flex-start',
                     textTransform: 'none',
-                    bgcolor: isActive ? 'primary.main' : 'transparent',
-                    color: isActive ? 'white' : 'text.primary',
+                    bgcolor: isActive ? theme.palette.primary.main : 'transparent',
+                    color: isActive ? theme.palette.common.white : theme.palette.text.primary,
                     '&:hover': {
-                      bgcolor: isActive ? 'primary.dark' : 'grey.100',
+                      bgcolor: isActive ? theme.palette.primary.dark : theme.palette.action.hover,
                     },
-                  }}
+                  })}
                 >
-                  {themeNames[key as keyof typeof themeNames]}
+                  {themeNames[typedKey as keyof typeof themeNames] ?? key}
                 </Button>
               );
             })}
