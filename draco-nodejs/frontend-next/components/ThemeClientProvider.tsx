@@ -62,9 +62,12 @@ const getInitialThemeName = (): ThemeName => {
 };
 
 export default function ThemeClientProvider({ children }: { children: React.ReactNode }) {
-  const [currentThemeName, setCurrentThemeNameState] = useState<ThemeName>(() =>
-    getInitialThemeName(),
-  );
+  const [currentThemeName, setCurrentThemeNameState] = useState<ThemeName>('light');
+
+  useEffect(() => {
+    const initial = getInitialThemeName();
+    setCurrentThemeNameState((prev) => (prev === initial ? prev : initial));
+  }, []);
 
   const setCurrentThemeName = useCallback((name: ThemeName) => {
     setCurrentThemeNameState(name);
