@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,6 +13,7 @@ import { HofMemberSchema, type HofMemberType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult, ApiClientError } from '@/utils/apiResult';
 import HofMemberCard from './HofMemberCard';
+import WidgetShell from '../ui/WidgetShell';
 
 export interface HofSpotlightWidgetProps {
   accountId: string;
@@ -53,11 +54,6 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
   const apiClient = useApiClient();
   const router = useRouter();
   const theme = useTheme();
-
-  const surfaceBorderColor = alpha(
-    theme.palette.primary.main,
-    theme.palette.mode === 'dark' ? 0.45 : 0.18,
-  );
 
   const [hasHallOfFame, setHasHallOfFame] = React.useState(false);
   const [hallOfFameMember, setHallOfFameMember] = React.useState<HofMemberType | null>(null);
@@ -152,60 +148,50 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
   }
 
   return (
-    <>
-      <Paper
-        sx={{
-          p: 3,
-          borderRadius: 2,
-          backgroundColor: theme.palette.background.paper,
-          border: '1px solid',
-          borderColor: surfaceBorderColor,
-          boxShadow: theme.shadows[3],
-          mt: 3,
-          width: { xs: '100%', md: 'fit-content' },
-          maxWidth: 520,
-          transition: 'box-shadow 0.2s ease',
-          '&:hover': {
-            boxShadow: theme.shadows[6],
-          },
-        }}
-      >
-        <Stack spacing={3} alignItems="flex-start">
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <EmojiEventsIcon sx={{ color: theme.palette.primary.main }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
-              Hall of Fame Spotlight
-            </Typography>
-          </Stack>
-
-          {hallOfFameLoading ? (
-            <Box display="flex" alignItems="center" gap={2}>
-              <CircularProgress size={20} />
-              <Typography variant="body2">Loading inductees…</Typography>
-            </Box>
-          ) : hallOfFameError ? (
-            <Alert severity="error">{hallOfFameError}</Alert>
-          ) : hallOfFameMember ? (
-            <HofMemberCard member={hallOfFameMember} />
-          ) : (
-            <Alert severity="info">Hall of Fame inductees will appear here soon.</Alert>
-          )}
-
-          {hideCta ? null : (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  void router.push(`/account/${accountId}/hall-of-fame`);
-                }}
-              >
-                View Hall of Fame
-              </Button>
-            </Stack>
-          )}
+    <WidgetShell
+      title={
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <EmojiEventsIcon sx={{ color: theme.palette.primary.main }} />
+          <Typography variant="h6" fontWeight={700} color="text.primary">
+            Hall of Fame Spotlight
+          </Typography>
         </Stack>
-      </Paper>
-    </>
+      }
+      accent="primary"
+      sx={{
+        mt: 3,
+        width: { xs: '100%', md: 'fit-content' },
+        maxWidth: 520,
+      }}
+    >
+      <Stack spacing={3} alignItems="flex-start">
+        {hallOfFameLoading ? (
+          <Box display="flex" alignItems="center" gap={2}>
+            <CircularProgress size={20} />
+            <Typography variant="body2">Loading inductees…</Typography>
+          </Box>
+        ) : hallOfFameError ? (
+          <Alert severity="error">{hallOfFameError}</Alert>
+        ) : hallOfFameMember ? (
+          <HofMemberCard member={hallOfFameMember} />
+        ) : (
+          <Alert severity="info">Hall of Fame inductees will appear here soon.</Alert>
+        )}
+
+        {hideCta ? null : (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Button
+              variant="contained"
+              onClick={() => {
+                void router.push(`/account/${accountId}/hall-of-fame`);
+              }}
+            >
+              View Hall of Fame
+            </Button>
+          </Stack>
+        )}
+      </Stack>
+    </WidgetShell>
   );
 };
 
