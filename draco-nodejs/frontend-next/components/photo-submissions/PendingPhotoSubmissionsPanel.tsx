@@ -4,10 +4,6 @@ import {
   AlertColor,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
   Chip,
   CircularProgress,
   Divider,
@@ -16,9 +12,12 @@ import {
   Typography,
   type SxProps,
   type Theme,
+  Paper,
 } from '@mui/material';
 import type { PhotoSubmissionDetailType } from '@draco/shared-schemas';
 import DenyPhotoSubmissionDialog from './DenyPhotoSubmissionDialog';
+import WidgetShell from '../ui/WidgetShell';
+import { alpha, useTheme } from '@mui/material/styles';
 
 const THUMBNAIL_MAX_WIDTH = 320;
 
@@ -34,7 +33,6 @@ export interface PendingPhotoSubmissionsPanelProps {
   onApprove: (submissionId: string) => Promise<boolean> | boolean;
   onDeny: (submissionId: string, reason: string) => Promise<boolean> | boolean;
   onClearStatus?: () => void;
-  ContainerComponent?: React.ElementType;
   containerSx?: SxProps<Theme>;
 }
 
@@ -85,11 +83,33 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
   onApprove,
   onDeny,
   onClearStatus,
-  ContainerComponent = Box,
   containerSx,
 }) => {
+  const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogSubmission, setDialogSubmission] = useState<PhotoSubmissionDetailType | null>(null);
+
+  const tileStyles = useMemo(() => {
+    const baseColor = theme.palette.primary.main;
+    const surface = theme.palette.widget.surface;
+    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
+    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
+    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
+    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
+      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
+      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
+
+    return {
+      background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
+      overlay,
+      border: theme.palette.widget.border,
+      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
+      detailBackdrop: alpha(
+        theme.palette.text.primary,
+        theme.palette.mode === 'dark' ? 0.18 : 0.06,
+      ),
+    };
+  }, [theme]);
 
   const isProcessing = useCallback(
     (submissionId: string) => (processingIds ? processingIds.has(submissionId) : false),
@@ -167,16 +187,37 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
 
   const activeSubmissionId = dialogSubmission?.id ?? '';
 
+  const widgetSx: SxProps<Theme> = [
+    {
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignSelf: 'flex-start',
+      width: 'auto',
+      maxWidth: '100%',
+    },
+    ...(Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : []),
+  ];
+
+  const shellTitle = (
+    <Typography variant="h6" fontWeight={700} color="text.primary">
+      Pending Photo Submissions
+    </Typography>
+  );
+
+  const shellSubtitle = (
+    <Typography variant="body2" color="text.secondary">
+      Review submissions awaiting moderation for {contextLabel}.
+    </Typography>
+  );
+
   return (
-    <ContainerComponent data-testid="pending-photo-submissions-panel" sx={containerSx}>
-      <Typography variant="h5" mb={2}>
-        Pending Photo Submissions
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary" mb={3}>
-        Review submissions awaiting moderation for {contextLabel}.
-      </Typography>
-
+    <WidgetShell
+      data-testid="pending-photo-submissions-panel"
+      title={shellTitle}
+      subtitle={shellSubtitle}
+      accent="secondary"
+      sx={widgetSx}
+    >
       {(error || successMessage) && (
         <Alert
           severity={alertSeverity}
@@ -209,21 +250,57 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
                 key={submission.id}
                 sx={{ display: 'flex', justifyContent: 'center' }}
               >
-                <Card variant="outlined" sx={{ width: '100%', maxWidth: THUMBNAIL_MAX_WIDTH }}>
-                  <CardHeader
-                    title={submission.title}
-                    subheader={`Submitted ${submittedAt}`}
-                    titleTypographyProps={{ variant: 'h6' }}
-                    subheaderTypographyProps={{ color: 'text.secondary' }}
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: THUMBNAIL_MAX_WIDTH,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: tileStyles.border,
+                    boxShadow: tileStyles.shadow,
+                    background: tileStyles.background,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    p: 2.5,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      pointerEvents: 'none',
+                      backgroundImage: tileStyles.overlay,
+                      opacity: theme.palette.mode === 'dark' ? 0.7 : 0.55,
+                    }}
                   />
-                  <Divider />
-                  <CardContent>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      zIndex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+                        {submission.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Submitted {submittedAt}
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ borderColor: tileStyles.border, opacity: 0.6 }} />
                     <Stack direction="column" spacing={2}>
                       <Box
                         sx={{
                           width: '100%',
-                          borderRadius: 1,
-                          bgcolor: 'grey.100',
+                          borderRadius: 1.5,
+                          bgcolor: tileStyles.detailBackdrop,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -262,28 +339,35 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
                         </Typography>
                       )}
                     </Stack>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'flex-end', gap: 1 }}>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleOpenDeny(submission)}
-                      disabled={processing}
-                    >
-                      Deny
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => {
-                        void handleApprove(submission.id);
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 1,
+                        flexWrap: 'wrap',
                       }}
-                      disabled={processing}
-                      startIcon={processing ? <CircularProgress size={18} /> : undefined}
                     >
-                      Approve
-                    </Button>
-                  </CardActions>
-                </Card>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleOpenDeny(submission)}
+                        disabled={processing}
+                      >
+                        Deny
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={() => {
+                          void handleApprove(submission.id);
+                        }}
+                        disabled={processing}
+                        startIcon={processing ? <CircularProgress size={18} /> : undefined}
+                      >
+                        Approve
+                      </Button>
+                    </Box>
+                  </Box>
+                </Paper>
               </Grid>
             );
           })}
@@ -302,7 +386,7 @@ const PendingPhotoSubmissionsPanel: React.FC<PendingPhotoSubmissionsPanelProps> 
         onClose={handleCloseDialog}
         onConfirm={handleConfirmDeny}
       />
-    </ContainerComponent>
+    </WidgetShell>
   );
 };
 

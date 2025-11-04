@@ -318,7 +318,7 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
       }
       accent="primary"
       disablePadding={false}
-      sx={{ width: 'fit-content', maxWidth: '30rem', alignSelf: 'flex-start', gap: 2 }}
+      sx={{ width: '100%', maxWidth: '100%' }}
     >
       {renderSpotlightContent()}
     </WidgetShell>

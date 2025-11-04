@@ -629,7 +629,14 @@ export function useGameRecapFlow<GameType extends RecapGameBase>(
         )}
         {selectionState && (
           <Dialog open onClose={() => setSelectionState(null)} fullWidth maxWidth="xs">
-            <DialogTitle>{selectionState.title}</DialogTitle>
+            <DialogTitle
+              sx={{
+                fontWeight: 700,
+                color: (theme) => theme.palette.widget.headerText,
+              }}
+            >
+              {selectionState.title}
+            </DialogTitle>
             <DialogContent dividers>
               <List>
                 {selectionState.options.map((option) => (

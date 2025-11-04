@@ -1,22 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Alert,
-  CircularProgress,
-  Container,
-  Chip,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
-import {
-  Group as GroupIcon,
-  LocationOn as LocationIcon,
-  ViewList as ViewListIcon,
-  ViewModule as ViewModuleIcon,
-} from '@mui/icons-material';
+import { Box, Typography, Button, Alert, CircularProgress, Container, Chip } from '@mui/material';
+import { Group as GroupIcon, LocationOn as LocationIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import { useRole } from '../../../context/RoleContext';
@@ -66,8 +50,6 @@ const BaseballAccountHome: React.FC = () => {
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
-  const [hasAnyGames, setHasAnyGames] = useState(false);
   const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
   const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
   const [sponsorError, setSponsorError] = useState<string | null>(null);
@@ -697,102 +679,70 @@ const BaseballAccountHome: React.FC = () => {
           isAccountMember={isAccountMember}
         />
 
-        {shouldShowPendingPanel ? (
-          <PendingPhotoSubmissionsPanel
-            ContainerComponent={Paper}
-            containerSx={{ p: 3, mb: 2 }}
-            contextLabel={accountDisplayName}
-            submissions={pendingSubmissions}
-            loading={pendingLoading}
-            error={pendingError}
-            successMessage={pendingSuccess}
-            processingIds={pendingProcessingIds}
-            onRefresh={refreshPendingSubmissions}
-            onApprove={handleApprovePendingSubmission}
-            onDeny={denyPendingSubmission}
-            onClearStatus={clearPendingStatus}
-            emptyMessage="No pending photo submissions for this account."
-          />
-        ) : null}
-
-        {/* Scoreboard Layout Toggle */}
-        {hasAnyGames && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <ToggleButtonGroup
-              value={scoreboardLayout}
-              exclusive
-              onChange={(_, newLayout) => {
-                if (newLayout !== null) {
-                  setScoreboardLayout(newLayout);
-                }
-              }}
-              aria-label="scoreboard layout"
-              size="small"
-            >
-              <ToggleButton value="vertical" aria-label="vertical layout">
-                <ViewListIcon sx={{ mr: 1 }} />
-                Vertical
-              </ToggleButton>
-              <ToggleButton value="horizontal" aria-label="horizontal layout">
-                <ViewModuleIcon sx={{ mr: 1 }} />
-                Horizontal
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-        )}
-
-        {/* Scoreboard Widgets - Layout changes based on selected layout */}
+        {/* Scoreboard Widgets */}
         {currentSeason && (
           <Box
             sx={{
-              display: scoreboardLayout === 'horizontal' ? 'flex' : 'grid',
-              flexDirection: scoreboardLayout === 'horizontal' ? 'column' : undefined,
-              gridTemplateColumns:
-                scoreboardLayout === 'vertical'
-                  ? {
-                      xs: '1fr',
-                      md: '1fr 1fr',
-                    }
-                  : undefined,
-              gap: scoreboardLayout === 'horizontal' ? 1 : 3,
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                lg: 'repeat(3, minmax(0, 1fr))',
+              },
+              gap: 3,
+              alignItems: 'stretch',
             }}
           >
             <TodayScoreboard
               accountId={accountIdStr}
-              layout={scoreboardLayout}
+              layout="vertical"
               currentSeasonId={currentSeason.id}
-              onGamesLoaded={(games) => {
-                if (games && games.length > 0) setHasAnyGames(true);
-              }}
             />
             <YesterdayScoreboard
               accountId={accountIdStr}
-              layout={scoreboardLayout}
+              layout="vertical"
               currentSeasonId={currentSeason.id}
-              onGamesLoaded={(games) => {
-                if (games && games.length > 0) setHasAnyGames(true);
-              }}
             />
+            <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
           </Box>
         )}
 
-        {leaderLeagues.length > 0 && accountIdStr && (
-          <Box
-            sx={{
-              mt: 3,
-              display: 'flex',
-              justifyContent: 'flex-start',
-            }}
-          >
-            <LeadersWidget
+        <Box
+          sx={{
+            mt: 3,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            alignItems: 'flex-start',
+          }}
+        >
+          {leaderLeagues.length > 0 && accountIdStr ? (
+            <Box sx={{ flex: { xs: '1 1 100%', lg: '0 1 420px' } }}>
+              <LeadersWidget
+                accountId={accountIdStr}
+                seasonId={currentSeasonId}
+                leagues={leaderLeagues}
+                divisionId="0"
+                randomize
+              />
+            </Box>
+          ) : null}
+          {accountIdStr ? (
+            <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+              <HofSpotlightWidget accountId={accountIdStr} />
+            </Box>
+          ) : null}
+          {accountIdStr ? (
+            <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+              <SurveySpotlightWidget accountId={accountIdStr} canAnswerSurvey={hasAccountContact} />
+            </Box>
+          ) : null}
+          <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+            <TodaysBirthdaysCard
               accountId={accountIdStr}
-              seasonId={currentSeasonId}
-              leagues={leaderLeagues}
-              divisionId="0"
-              randomize
+              hasActiveSeason={Boolean(currentSeason)}
             />
           </Box>
-        )}
+        </Box>
 
         <Box
           sx={{
@@ -836,29 +786,39 @@ const BaseballAccountHome: React.FC = () => {
               void refreshPendingSubmissions();
             }}
           />
+          {shouldShowPendingPanel ? (
+            <PendingPhotoSubmissionsPanel
+              containerSx={{ p: 3, mb: 2 }}
+              contextLabel={accountDisplayName}
+              submissions={pendingSubmissions}
+              loading={pendingLoading}
+              error={pendingError}
+              successMessage={pendingSuccess}
+              processingIds={pendingProcessingIds}
+              onRefresh={refreshPendingSubmissions}
+              onApprove={handleApprovePendingSubmission}
+              onDeny={denyPendingSubmission}
+              onClearStatus={clearPendingStatus}
+              emptyMessage="No pending photo submissions for this account."
+            />
+          ) : null}
         </Box>
 
-        <Box sx={{ display: 'grid', gap: 2 }}>
-          <TodaysBirthdaysCard accountId={accountIdStr} hasActiveSeason={Boolean(currentSeason)} />
-          {accountIdStr ? (
-            <SurveySpotlightWidget accountId={accountIdStr} canAnswerSurvey={hasAccountContact} />
-          ) : null}
-          {accountIdStr ? (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                gap: 2,
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                flexWrap: 'wrap',
-              }}
-            >
-              <HofSpotlightWidget accountId={accountIdStr} />
-              <HofNominationWidget accountId={accountIdStr} />
-            </Box>
-          ) : null}
-        </Box>
+        {accountIdStr ? (
+          <Box
+            sx={{
+              mt: 2,
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 2,
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start',
+              flexWrap: 'wrap',
+            }}
+          >
+            <HofNominationWidget accountId={accountIdStr} />
+          </Box>
+        ) : null}
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
 
@@ -884,9 +844,6 @@ const BaseballAccountHome: React.FC = () => {
             />
           </Box>
         ) : null}
-
-        {/* Game Recaps Widget */}
-        {currentSeason && <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />}
 
         {shouldShowAccountSponsors && (
           <SponsorCard

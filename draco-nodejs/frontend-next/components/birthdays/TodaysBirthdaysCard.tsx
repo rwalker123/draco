@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Alert, CircularProgress } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import type { BaseContact } from '@draco/shared-api-client';
 import { BaseContactType } from '@draco/shared-schemas';
 import { getAccountTodaysBirthdays } from '@draco/shared-api-client';
@@ -112,6 +112,13 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
         </Typography>
       }
       accent="secondary"
+      sx={{
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
+        width: '100%',
+        maxWidth: '100%',
+      }}
     >
       {!hasActiveSeason && (
         <Alert severity="info" sx={{ mb: 2 }}>
@@ -128,8 +135,9 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
         <Box
           sx={{
             display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
+            flexDirection: 'column',
+            gap: 1.5,
+            width: '100%',
           }}
         >
           {birthdays.map((contact) => (
@@ -138,17 +146,17 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
-                p: 1,
-                borderRadius: 1,
-                bgcolor: theme.palette.widget.surface,
+                gap: 1.25,
+                px: 1.5,
+                py: 1.25,
+                borderRadius: 1.5,
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.background.default, 0.35)
+                    : alpha(theme.palette.background.default, 0.4),
                 border: `1px solid ${theme.palette.widget.border}`,
-                boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
-                minWidth: 220,
-                maxWidth: 320,
-                flexGrow: 0,
-                flexShrink: 1,
-                flexBasis: '260px',
+                boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 6 : 1],
+                width: '100%',
               }}
             >
               <Box

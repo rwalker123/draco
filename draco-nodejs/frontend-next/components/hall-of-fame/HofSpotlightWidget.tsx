@@ -159,9 +159,8 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
       }
       accent="primary"
       sx={{
-        mt: 3,
-        width: { xs: '100%', md: 'fit-content' },
-        maxWidth: 520,
+        width: '100%',
+        maxWidth: '100%',
       }}
     >
       <Stack spacing={3} alignItems="flex-start">

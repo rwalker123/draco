@@ -36,7 +36,14 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
         </Typography>
       }
       accent="primary"
-      sx={{ mb: 3 }}
+      sx={{
+        mb: 3,
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
+        width: 'auto',
+        maxWidth: '100%',
+      }}
     >
       <Box
         sx={{

@@ -86,6 +86,15 @@ export default function LeaderCard({
     return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name.substring(0, 2);
   };
 
+  const shortPlayerName = useMemo(() => {
+    const trimmed = leader.playerName.trim();
+    if (!trimmed) {
+      return leader.playerName;
+    }
+    const parts = trimmed.split(/\s+/);
+    return parts.length > 0 ? parts[parts.length - 1] : trimmed;
+  }, [leader.playerName]);
+
   const primaryColor = theme.palette.primary.main;
   const primaryLight = theme.palette.primary.light;
   const secondaryColor = theme.palette.secondary.main;
@@ -216,7 +225,7 @@ export default function LeaderCard({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {leader.playerName}
+                  {shortPlayerName}
                 </Typography>
               ) : (
                 <Typography
@@ -232,7 +241,7 @@ export default function LeaderCard({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {leader.playerName}
+                  {shortPlayerName}
                 </Typography>
               )}
 

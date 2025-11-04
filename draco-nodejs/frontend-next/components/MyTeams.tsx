@@ -64,7 +64,17 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
     </Box>
   );
 
-  const widgetSx: SxProps<Theme> = [{ mb: 2 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])];
+  const widgetSx: SxProps<Theme> = [
+    {
+      mb: 2,
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignSelf: 'flex-start',
+      width: 'auto',
+      maxWidth: '100%',
+    },
+    ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+  ];
 
   if (!hasTeams) {
     return null;
@@ -72,20 +82,13 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
 
   return (
     <WidgetShell title={widgetTitle} accent="primary" sx={widgetSx}>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-          gap: 3,
-        }}
-      >
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
         {userTeams.map((team) => (
           <Paper
             key={team.teamId || team.id}
             variant="outlined"
             sx={{
               position: 'relative',
-              height: '100%',
               borderRadius: 2,
               p: { xs: 1.75, sm: 2.25 },
               border: '1px solid',
@@ -96,6 +99,9 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
               display: 'flex',
               flexDirection: 'column',
               gap: 1.5,
+              flex: '0 0 auto',
+              width: 'auto',
+              maxWidth: { xs: '100%', sm: 360 },
             }}
           >
             <Box

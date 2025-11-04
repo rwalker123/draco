@@ -21,6 +21,11 @@ interface ScoreboardBaseProps {
   onGamesLoaded?: (games: Game[]) => void;
   title: string;
   loadGames: () => Promise<Game[]>;
+  renderWrapper?: (
+    content: React.ReactNode,
+    state: 'loading' | 'error' | 'empty' | 'content',
+    context: { title: string },
+  ) => React.ReactNode;
 }
 
 const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
@@ -31,6 +36,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
   onGamesLoaded,
   title,
   loadGames,
+  renderWrapper,
 }) => {
   const [games, setGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -243,31 +249,48 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
 
   const sections = React.useMemo<GameListSection[]>(() => [{ title, games }], [title, games]);
 
+  const applyWrapper =
+    renderWrapper ??
+    ((content: React.ReactNode, state: 'loading' | 'error' | 'empty' | 'content') => {
+      if (state === 'empty') {
+        return null;
+      }
+      if (state === 'loading') {
+        return (
+          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            {content}
+          </Paper>
+        );
+      }
+      if (state === 'error') {
+        return (
+          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            {content}
+          </Paper>
+        );
+      }
+      return content;
+    });
+
   if (loading) {
-    return (
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-          <CircularProgress />
-        </Box>
-      </Paper>
+    return applyWrapper(
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+        <CircularProgress />
+      </Box>,
+      'loading',
+      { title },
     );
   }
 
   if (error) {
-    return (
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <Box color="error.main" p={2}>
-          {error}
-        </Box>
-      </Paper>
-    );
+    return applyWrapper(<Alert severity="error">{error}</Alert>, 'error', { title });
   }
 
   if (games.length === 0) {
-    return null;
+    return applyWrapper(null, 'empty', { title });
   }
 
-  return (
+  const content = (
     <>
       {recapError && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={clearRecapError}>
@@ -295,6 +318,8 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
       {recapDialogs}
     </>
   );
+
+  return applyWrapper(content, 'content', { title });
 };
 
 export default ScoreboardBase;

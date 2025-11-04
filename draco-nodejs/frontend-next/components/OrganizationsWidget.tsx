@@ -310,7 +310,17 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     return null;
   }
 
-  const widgetSx: SxProps<Theme> = [{ mb: 4 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])];
+  const widgetSx: SxProps<Theme> = [
+    {
+      mb: 4,
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignSelf: 'flex-start',
+      width: 'auto',
+      maxWidth: '100%',
+    },
+    ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+  ];
 
   const searchSection = showSearch ? (
     <Box>
@@ -458,8 +468,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
                 display: 'flex',
                 gap: 2,
                 flexWrap: 'wrap',
-                overflow: 'visible',
-                alignItems: 'stretch',
+                alignItems: 'flex-start',
                 py: 1,
               }}
             >
