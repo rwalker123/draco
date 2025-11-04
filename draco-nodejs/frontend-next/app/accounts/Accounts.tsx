@@ -125,7 +125,7 @@ const Accounts: FC = () => {
       sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
     >
       <Typography variant="h3" component="h1" gutterBottom align="center">
-        ezRecSports.com
+        ezRecSports
       </Typography>
 
       {/* Action Buttons */}

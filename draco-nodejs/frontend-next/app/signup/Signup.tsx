@@ -164,7 +164,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
               Sign Up
             </Typography>
             <Typography align="center" color="white" sx={{ mb: 3 }}>
-              Join ezRecSports.com to sign up and manage your sports organization
+              Join ezRecSports to sign up and manage your sports organization
             </Typography>
           </Box>
         </AccountPageHeader>
@@ -174,7 +174,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
             Sign Up
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-            Join ezRecSports.com to sign up and manage your sports organization
+            Join ezRecSports to sign up and manage your sports organization
           </Typography>
         </Box>
       )}

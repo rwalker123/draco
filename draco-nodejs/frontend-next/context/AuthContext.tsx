@@ -8,7 +8,7 @@ import React, {
   ReactNode,
 } from 'react';
 import { useParams } from 'next/navigation';
-import { ACCOUNT_STORAGE_KEY } from './AccountContext';
+import { ACCOUNT_STORAGE_KEY } from '../constants/storageKeys';
 import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 import {
   login as loginApi,
@@ -101,6 +101,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [accountIdFromPath, resolvePersistedAccountId],
   );
 
+  const fetchUser = useCallback(
+    async (overrideToken?: string, accountIdOverride?: string | null): Promise<void> => {
+      const authToken = overrideToken || token;
+      if (!authToken) {
+        setUser(null);
+        setLoading(false);
+        setInitialized(true);
+        setLastFetchedAccountId(null);
+        return;
+      }
+
+      // Set loading true when fetching user data
+      if (!overrideToken) {
+        setLoading(true);
+      }
+
+      const effectiveAccountId = resolveAccountId(accountIdOverride);
+
+      try {
+        const client = createApiClient({ token: authToken });
+        const result = await getAuthenticatedUser({
+          client,
+          query: {
+            accountId: effectiveAccountId || undefined,
+          },
+          throwOnError: false,
+        });
+
+        const payload = unwrapApiResult(result, 'Failed to load current user');
+
+        setUser(payload as RegisteredUserType);
+        setLastFetchedAccountId(effectiveAccountId ?? null);
+      } catch {
+        //const message = getApiErrorMessage(err, 'Failed to load current user');
+        //console.error('Failed to fetch authenticated user:', err);
+        //setError(message);
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('jwtToken');
+        setLastFetchedAccountId(null);
+      } finally {
+        setLoading(false);
+        setInitialized(true);
+      }
+    },
+    [token, resolveAccountId],
+  );
+
   useEffect(() => {
     if (token) {
       const effectiveAccountId = resolveAccountId();
@@ -115,8 +163,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setInitialized(true);
       setLastFetchedAccountId(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, accountIdFromPath, resolveAccountId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lastFetchedAccountId is intentionally omitted to prevent infinite refetch loops
+  }, [token, accountIdFromPath, resolveAccountId, fetchUser]);
 
   const login = async (creds: SignInCredentialsType) => {
     setLoading(true);
@@ -185,54 +233,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const setAuthToken = (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('jwtToken', newToken);
-  };
-
-  const fetchUser = async (
-    overrideToken?: string,
-    accountIdOverride?: string | null,
-  ): Promise<void> => {
-    const authToken = overrideToken || token;
-    if (!authToken) {
-      setUser(null);
-      setLoading(false);
-      setInitialized(true);
-      setLastFetchedAccountId(null);
-      return;
-    }
-
-    // Set loading true when fetching user data
-    if (!overrideToken) {
-      setLoading(true);
-    }
-
-    const effectiveAccountId = resolveAccountId(accountIdOverride);
-
-    try {
-      const client = createApiClient({ token: authToken });
-      const result = await getAuthenticatedUser({
-        client,
-        query: {
-          accountId: effectiveAccountId || undefined,
-        },
-        throwOnError: false,
-      });
-
-      const payload = unwrapApiResult(result, 'Failed to load current user');
-
-      setUser(payload as RegisteredUserType);
-      setLastFetchedAccountId(effectiveAccountId ?? null);
-    } catch {
-      //const message = getApiErrorMessage(err, 'Failed to load current user');
-      //console.error('Failed to fetch authenticated user:', err);
-      //setError(message);
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem('jwtToken');
-      setLastFetchedAccountId(null);
-    } finally {
-      setLoading(false);
-      setInitialized(true);
-    }
   };
 
   return (
