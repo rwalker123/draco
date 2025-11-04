@@ -7,7 +7,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Paper,
   Stack,
   Typography,
   type ButtonProps,
@@ -19,8 +18,7 @@ import { getPlayerSurveySpotlight, getPlayerSurveyTeamSpotlight } from '@draco/s
 import { PlayerSurveySpotlightSchema, type PlayerSurveySpotlightType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
 import { ApiClientError, unwrapApiResult } from '@/utils/apiResult';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import WidgetShell from '../ui/WidgetShell';
 
 type SpotlightStatus = 'loading' | 'success' | 'empty' | 'error';
 
@@ -106,7 +104,7 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
   viewSurveysLabel = 'View Surveys',
 }) => {
   const apiClient = useApiClient();
-  const theme = useTheme();
+  useTheme();
   const [status, setStatus] = React.useState<SpotlightStatus>('loading');
   const [spotlight, setSpotlight] = React.useState<PlayerSurveySpotlightType | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -307,45 +305,23 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
       <QuestionAnswerIcon fontSize="small" color="primary" />
     ));
 
-  if (variant === 'card') {
-    return (
-      <Card className={cn('max-w-[30rem] w-auto', className)} style={{ alignSelf: 'flex-start' }}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {headerIcon}
-            <span>{title}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">{renderSpotlightContent()}</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Paper
+    <WidgetShell
       className={className}
-      sx={{
-        p: 3,
-        borderRadius: 2,
-        border: `1px solid ${theme.palette.divider}`,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        width: 'fit-content',
-        maxWidth: '30rem',
-        alignSelf: 'flex-start',
-      }}
+      title={
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {headerIcon}
+          <Typography variant="h6" fontWeight={600} color="text.primary">
+            {title}
+          </Typography>
+        </Box>
+      }
+      accent="primary"
+      disablePadding={false}
+      sx={{ width: 'fit-content', maxWidth: '30rem', alignSelf: 'flex-start', gap: 2 }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        {headerIcon}
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          {title}
-        </Typography>
-      </Box>
       {renderSpotlightContent()}
-    </Paper>
+    </WidgetShell>
   );
 };
 
