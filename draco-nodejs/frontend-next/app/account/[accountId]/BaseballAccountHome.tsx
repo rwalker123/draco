@@ -901,65 +901,6 @@ const BaseballAccountHome: React.FC = () => {
           <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
         )}
 
-        {/* Contact & Links */}
-        <Paper sx={{ p: 4, borderRadius: 2, mb: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-            Connect With Us
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {account.urls.length > 0 && (
-              <Button
-                variant="contained"
-                href={account.urls[0].url}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  bgcolor: 'primary.main',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                }}
-              >
-                Visit Website
-              </Button>
-            )}
-            {account.socials?.twitterAccountName && (
-              <Button
-                variant="outlined"
-                href={`https://twitter.com/${account.socials.twitterAccountName?.replace('@', '') || account.socials.twitterAccountName}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  '&:hover': {
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                  },
-                }}
-              >
-                Twitter
-              </Button>
-            )}
-            {account.socials?.facebookFanPage && (
-              <Button
-                variant="outlined"
-                href={account.socials.facebookFanPage}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  '&:hover': {
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                  },
-                }}
-              >
-                Facebook
-              </Button>
-            )}
-          </Box>
-        </Paper>
-
         {/* User Organizations Widget */}
         {user && (
           <Box sx={{ display: showOrganizationsWidget ? 'block' : 'none' }}>
