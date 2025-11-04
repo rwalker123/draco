@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, CircularProgress, Paper, Typography, type SxProps, type Theme } from '@mui/material';
+import { Box, CircularProgress, Typography, type SxProps, type Theme } from '@mui/material';
 import PhotoSubmissionForm, { type PhotoAlbumOption } from './PhotoSubmissionForm';
+import WidgetShell from '../ui/WidgetShell';
 
 type Variant = 'account' | 'team';
 
@@ -31,6 +32,11 @@ const PhotoSubmissionPanel: React.FC<PhotoSubmissionPanelProps> = ({
   albumOptions,
   containerSx,
 }) => {
+  const widgetSx = React.useMemo(() => {
+    const extras = Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : [];
+    return [{ height: '100%' }, ...extras] as SxProps<Theme>;
+  }, [containerSx]);
+
   const shouldHide = React.useMemo(() => {
     if (!enabled) {
       return true;
@@ -88,7 +94,11 @@ const PhotoSubmissionPanel: React.FC<PhotoSubmissionPanelProps> = ({
     );
   }
 
-  return <Paper sx={{ p: 3, height: '100%', ...containerSx }}>{content}</Paper>;
+  return (
+    <WidgetShell accent={variant === 'team' ? 'secondary' : 'primary'} sx={widgetSx}>
+      {content}
+    </WidgetShell>
+  );
 };
 
 export default PhotoSubmissionPanel;

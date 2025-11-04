@@ -184,7 +184,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
 
   return (
     <Box component="section">
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" fontWeight={700} color="text.primary" gutterBottom>
         Submit a Photo for Review
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>

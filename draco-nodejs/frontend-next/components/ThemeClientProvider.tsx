@@ -15,6 +15,8 @@ import React, {
 } from 'react';
 import EmotionCacheProvider from './EmotionCacheProvider';
 
+const THEME_STORAGE_KEY = 'draco-theme';
+
 // Create context for theme management
 type ThemeName = 'light' | 'dark';
 
@@ -39,11 +41,36 @@ const themesByName: Record<ThemeName, Theme> = {
   dark: darkTheme,
 };
 
+const getInitialThemeName = (): ThemeName => {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === 'light' || stored === 'dark') {
+    return stored;
+  }
+
+  if (typeof window.matchMedia === 'function') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) {
+      return 'dark';
+    }
+  }
+
+  return 'light';
+};
+
 export default function ThemeClientProvider({ children }: { children: React.ReactNode }) {
-  const [currentThemeName, setCurrentThemeNameState] = useState<ThemeName>('light');
+  const [currentThemeName, setCurrentThemeNameState] = useState<ThemeName>(() =>
+    getInitialThemeName(),
+  );
 
   const setCurrentThemeName = useCallback((name: ThemeName) => {
     setCurrentThemeNameState(name);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(THEME_STORAGE_KEY, name);
+    }
   }, []);
 
   const currentTheme = useMemo(() => themesByName[currentThemeName], [currentThemeName]);

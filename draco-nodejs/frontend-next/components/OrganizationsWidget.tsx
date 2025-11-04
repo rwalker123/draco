@@ -3,9 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Card,
-  CardContent,
-  CardActions,
   Alert,
   CircularProgress,
   Button,
@@ -28,12 +25,14 @@ import { useApiClient } from '../hooks/useApiClient';
 import { getContactDisplayName } from '../utils/contactUtils';
 import { unwrapApiResult } from '../utils/apiResult';
 import useCarousel from './profile/useCarousel';
+import WidgetShell from './ui/WidgetShell';
+import { alpha, useTheme, type SxProps, type Theme } from '@mui/material/styles';
 
 interface OrganizationsWidgetProps {
   title?: string;
   showSearch?: boolean;
   maxDisplay?: number;
-  sx?: React.CSSProperties | Record<string, unknown>;
+  sx?: SxProps<Theme>;
   onOrganizationClick?: (accountId: string) => void;
   // If organizations are provided, use them instead of loading user's organizations
   organizations?: AccountType[];
@@ -72,6 +71,29 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const { user } = useAuth();
   const apiClient = useApiClient();
   const router = useRouter();
+  const theme = useTheme();
+
+  const tileStyles = React.useMemo(() => {
+    const baseColor = theme.palette.primary.main;
+    const surface = theme.palette.widget.surface;
+    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
+    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
+    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
+    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
+      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
+      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
+
+    return {
+      background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
+      overlay,
+      border: theme.palette.widget.border,
+      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
+      detailBackdrop: alpha(
+        theme.palette.text.primary,
+        theme.palette.mode === 'dark' ? 0.18 : 0.06,
+      ),
+    };
+  }, [theme]);
 
   // Use provided values if available, otherwise use internal state
   const displayAccounts: AccountType[] = providedOrganizations || accounts;
@@ -195,32 +217,51 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     const showOwner = Boolean(user && ownerDisplayName);
 
     return (
-      <Card
+      <Paper
         key={account.id}
+        variant="outlined"
         sx={{
           minWidth: isScrollable ? 320 : 280,
           maxWidth: isScrollable ? undefined : 360,
           flex: isScrollable ? '0 0 320px' : '0 1 360px',
           height: '100%',
           borderRadius: 2,
+          p: { xs: 1.75, sm: 2.25 },
           border: '1px solid',
-          borderColor: 'divider',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
-          scrollSnapAlign: isScrollable ? 'start' : undefined,
+          borderColor: tileStyles.border,
+          boxShadow: tileStyles.shadow,
+          background: tileStyles.background,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.75,
           position: 'relative',
+          transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+          scrollSnapAlign: isScrollable ? 'start' : undefined,
           '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: '0 12px 28px rgba(0,0,0,0.16)',
-            borderColor: 'primary.main',
+            boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 12 : 6],
+            borderColor: theme.palette.primary.main,
           },
         }}
       >
-        <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            backgroundImage: tileStyles.overlay,
+            opacity: theme.palette.mode === 'dark' ? 0.7 : 0.55,
+          }}
+        />
+        <Box
+          sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}
+        >
+          <Typography variant="subtitle1" component="h3" fontWeight={600} color="text.primary">
             {account.name}
           </Typography>
           {account.configuration?.accountType && (
-            <Typography color="text.secondary" gutterBottom>
+            <Typography variant="body2" color="text.secondary">
               {account.configuration.accountType.name}
             </Typography>
           )}
@@ -242,24 +283,25 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
               Owner: {ownerDisplayName}
             </Typography>
           )}
-        </CardContent>
-        <CardActions>
-          <Button
-            size="small"
-            startIcon={<ViewIcon />}
-            onClick={() => handleViewAccount(account.id)}
-            sx={{
-              color: 'primary.main',
-              '&:hover': {
-                bgcolor: 'transparent',
-                textDecoration: 'underline',
-              },
-            }}
-          >
-            View Organization
-          </Button>
-        </CardActions>
-      </Card>
+        </Box>
+        <Button
+          size="small"
+          startIcon={<ViewIcon />}
+          onClick={() => handleViewAccount(account.id)}
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            alignSelf: 'flex-start',
+            color: 'primary.main',
+            '&:hover': {
+              bgcolor: 'transparent',
+              textDecoration: 'underline',
+            },
+          }}
+        >
+          View Organization
+        </Button>
+      </Paper>
     );
   };
 
@@ -268,68 +310,64 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     return null;
   }
 
-  return (
-    <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', ...sx }}>
-      {/* Search Section */}
-      {showSearch && (
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Box sx={{ flex: 1, minWidth: 300 }}>
-              <TextField
-                fullWidth
-                placeholder="Search by organization name, type, or location..."
-                value={displaySearchTerm}
-                onChange={handleSearchTermChange}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleSearch} disabled={displayLoading}>
-                        {displayLoading ? <CircularProgress size={20} /> : <SearchIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Box>
-            <Box sx={{ minWidth: 120 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleSearch}
-                disabled={displayLoading || !displaySearchTerm.trim()}
-              >
-                Search
-              </Button>
-            </Box>
-          </Box>
-          {displaySearchTerm && (
-            <Box sx={{ mt: 2 }}>
-              <Button variant="outlined" size="small" onClick={handleClearSearch}>
-                {user ? 'Clear Search & Show My Organizations' : 'Clear Search'}
-              </Button>
-            </Box>
-          )}
+  const widgetSx: SxProps<Theme> = [{ mb: 4 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])];
+
+  const searchSection = showSearch ? (
+    <Box>
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ flex: 1, minWidth: 300 }}>
+          <TextField
+            fullWidth
+            placeholder="Search by organization name, type, or location..."
+            value={displaySearchTerm}
+            onChange={handleSearchTermChange}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleSearch} disabled={displayLoading}>
+                    {displayLoading ? <CircularProgress size={20} /> : <SearchIcon />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+        <Box sx={{ minWidth: 120 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleSearch}
+            disabled={displayLoading || !displaySearchTerm.trim()}
+          >
+            Search
+          </Button>
+        </Box>
+      </Box>
+      {displaySearchTerm && (
+        <Box sx={{ mt: 2 }}>
+          <Button variant="outlined" size="small" onClick={handleClearSearch}>
+            {user ? 'Clear Search & Show My Organizations' : 'Clear Search'}
+          </Button>
         </Box>
       )}
+    </Box>
+  ) : null;
 
-      {/* Title - shown below search or at top if no search */}
-      <Typography
-        variant="h5"
-        gutterBottom
-        sx={{
-          fontWeight: 'bold',
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          mb: 3,
-        }}
-      >
+  const headerContent = (
+    <Box display="flex" flexDirection="column" gap={showSearch ? 2 : 0}>
+      {searchSection}
+      <Box display="flex" alignItems="center" gap={1}>
         <StarIcon sx={{ color: 'warning.main' }} />
-        {title}
-      </Typography>
+        <Typography variant="h6" component="h2" fontWeight={600} color="text.primary">
+          {title}
+        </Typography>
+      </Box>
+    </Box>
+  );
 
+  return (
+    <WidgetShell accent="primary" headerContent={headerContent} sx={widgetSx}>
       {/* Loading State */}
       {displayLoading && (
         <Box sx={{ textAlign: 'center', py: 2 }}>
@@ -448,7 +486,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
           </Button>
         </Box>
       )}
-    </Paper>
+    </WidgetShell>
   );
 };
 
