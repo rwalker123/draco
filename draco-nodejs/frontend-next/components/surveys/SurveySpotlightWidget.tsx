@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import Avatar from '@mui/material/Avatar';
-import { useTheme } from '@mui/material/styles';
 import { getPlayerSurveySpotlight, getPlayerSurveyTeamSpotlight } from '@draco/shared-api-client';
 import { PlayerSurveySpotlightSchema, type PlayerSurveySpotlightType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
@@ -104,7 +103,6 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
   viewSurveysLabel = 'View Surveys',
 }) => {
   const apiClient = useApiClient();
-  useTheme();
   const [status, setStatus] = React.useState<SpotlightStatus>('loading');
   const [spotlight, setSpotlight] = React.useState<PlayerSurveySpotlightType | null>(null);
   const [error, setError] = React.useState<string | null>(null);

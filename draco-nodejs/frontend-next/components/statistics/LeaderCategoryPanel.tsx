@@ -320,7 +320,7 @@ export default function LeaderCategoryPanel({
   return (
     <Box
       sx={{
-        width: { xs: '100%', sm: Math.max(cardWidth ?? MIN_CARD_WIDTH, MIN_CARD_WIDTH) },
+        width: { xs: '100%', sm: cardWidth ?? MIN_CARD_WIDTH },
         maxWidth: '100%',
       }}
     >
@@ -347,7 +347,7 @@ export default function LeaderCategoryPanel({
       {processedLeaders.length > 0 && (
         <Box
           sx={{
-            width: { xs: '100%', sm: Math.max(cardWidth ?? MIN_CARD_WIDTH, MIN_CARD_WIDTH) },
+            width: { xs: '100%', sm: cardWidth ?? MIN_CARD_WIDTH },
             maxWidth: '100%',
           }}
         >

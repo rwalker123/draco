@@ -1,4 +1,4 @@
-import { createTheme, type ThemeOptions, type Theme } from '@mui/material/styles';
+import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { deepmerge } from '@mui/utils';
 
 interface WidgetPalette {
@@ -160,40 +160,40 @@ const darkThemeOverrides: ThemeOptions = {
   },
 };
 
-export const dracoTheme = createTheme(dracoThemeOptions);
-export const darkTheme = createTheme(
-  deepmerge(dracoThemeOptions, darkThemeOverrides, { clone: true }),
-);
-
-const applyCssBaselineOverrides = (theme: Theme) => {
-  const components = theme.components ?? {};
+const addCssBaselineOverrides = (options: ThemeOptions) => {
+  const baseTheme = createTheme(options);
+  const components = baseTheme.components ?? {};
   const existingStyleOverrides = (components.MuiCssBaseline?.styleOverrides ?? {}) as Record<
     string,
     unknown
   >;
 
-  theme.components = {
-    ...components,
-    MuiCssBaseline: {
-      ...(components.MuiCssBaseline ?? {}),
-      styleOverrides: {
-        ...existingStyleOverrides,
-        html: {
-          backgroundColor: theme.palette.background.default,
-        },
-        body: {
-          backgroundColor: theme.palette.background.default,
-          color: theme.palette.text.primary,
-          margin: 0,
-        },
-        '#__next': {
-          minHeight: '100%',
-          backgroundColor: theme.palette.background.default,
-        },
+  const mergedOverrides = deepmerge(existingStyleOverrides, {
+    html: {
+      backgroundColor: baseTheme.palette.background.default,
+    },
+    body: {
+      backgroundColor: baseTheme.palette.background.default,
+      color: baseTheme.palette.text.primary,
+      margin: 0,
+    },
+    '#__next': {
+      minHeight: '100%',
+      backgroundColor: baseTheme.palette.background.default,
+    },
+  });
+
+  return createTheme(baseTheme, {
+    components: {
+      MuiCssBaseline: {
+        ...(components.MuiCssBaseline ?? {}),
+        styleOverrides: mergedOverrides,
       },
     },
-  };
+  });
 };
 
-applyCssBaselineOverrides(dracoTheme);
-applyCssBaselineOverrides(darkTheme);
+export const dracoTheme = addCssBaselineOverrides(dracoThemeOptions);
+export const darkTheme = addCssBaselineOverrides(
+  deepmerge(dracoThemeOptions, darkThemeOverrides, { clone: true }),
+);
