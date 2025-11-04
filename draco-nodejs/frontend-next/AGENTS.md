@@ -1,7 +1,7 @@
 # Frontend Agent Guide
 
 - Ground yourself with the shared [Repository Guidelines](../../AGENTS.md).
-- UI architecture practices live in [Frontend Architecture - Draco Sports Manager](./FRONTEND_ARCHITECTURE.md).
+- UI architecture practices live in [Frontend Architecture - ezRecSports](./FRONTEND_ARCHITECTURE.md).
 
 ## Daily Workflow
 - Launch the Next.js app with `npm run dev -w @draco/frontend-next` from the repo root.

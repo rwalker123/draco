@@ -13,8 +13,7 @@ import { DEFAULT_TIMEZONE } from '../utils/timezones';
 import { useApiClient } from '../hooks/useApiClient';
 import { getAccountById } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
-
-const ACCOUNT_STORAGE_KEY = 'draco:selected-account';
+import { ACCOUNT_STORAGE_KEY } from '../constants/storageKeys';
 
 interface Account {
   id: string;

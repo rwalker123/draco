@@ -1,9 +1,9 @@
 import HomeClientWrapper from './HomeClientWrapper';
-import { DEFAULT_DESCRIPTION, buildSeoMetadata } from '../lib/seoMetadata';
+import { DEFAULT_DESCRIPTION, DEFAULT_SITE_NAME, buildSeoMetadata } from '../lib/seoMetadata';
 
 export async function generateMetadata() {
   return buildSeoMetadata({
-    title: 'Draco Sports Manager',
+    title: DEFAULT_SITE_NAME,
     description: DEFAULT_DESCRIPTION,
     path: '/',
   });

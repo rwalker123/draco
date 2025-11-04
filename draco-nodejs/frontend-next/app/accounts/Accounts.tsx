@@ -119,9 +119,13 @@ const Accounts: FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <Box
+      component="main"
+      className="min-h-screen bg-background"
+      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+    >
       <Typography variant="h3" component="h1" gutterBottom align="center">
-        Draco Sports Manager
+        ezRecSports
       </Typography>
 
       {/* Action Buttons */}
@@ -200,7 +204,7 @@ const Accounts: FC = () => {
         onClose={handleCloseCreateDialog}
         onSuccess={handleCreateDialogSuccess}
       />
-    </main>
+    </Box>
   );
 };
 

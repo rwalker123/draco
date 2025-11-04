@@ -70,8 +70,8 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
           <main>
             <h1>We&rsquo;ll be right back</h1>
             <p>
-              Draco Sports Manager is temporarily unable to load this content. Rankings and
-              structured data will be restored shortly.
+              ezRecSports is temporarily unable to load this content. Rankings and structured data
+              will be restored shortly.
             </p>
             <p>
               Please retry this request soon to keep indexes synchronized with the latest sports

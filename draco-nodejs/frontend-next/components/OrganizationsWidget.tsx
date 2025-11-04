@@ -313,10 +313,11 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   const widgetSx: SxProps<Theme> = [
     {
       mb: 4,
-      display: 'inline-flex',
+      display: showSearch ? 'flex' : 'inline-flex',
       flexDirection: 'column',
-      alignSelf: 'flex-start',
-      width: 'auto',
+      alignSelf: showSearch ? 'stretch' : 'flex-start',
+      width: showSearch ? '100%' : 'auto',
+      minWidth: showSearch ? '100%' : undefined,
       maxWidth: '100%',
     },
     ...(Array.isArray(sx) ? sx : sx ? [sx] : []),

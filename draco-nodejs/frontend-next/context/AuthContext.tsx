@@ -1,6 +1,14 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { useParams } from 'next/navigation';
+import { ACCOUNT_STORAGE_KEY } from '../constants/storageKeys';
 import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 import {
   login as loginApi,
@@ -60,9 +68,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const resolvePersistedAccountId = useCallback((): string | null => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
+      if (!stored) {
+        return null;
+      }
+
+      const parsed = JSON.parse(stored) as { id?: string | null } | null;
+      return parsed && typeof parsed.id === 'string' ? parsed.id : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const resolveAccountId = useCallback(
+    (accountIdOverride?: string | null) => {
+      if (accountIdOverride !== undefined) {
+        return accountIdOverride;
+      }
+
+      if (accountIdFromPath) {
+        return accountIdFromPath;
+      }
+
+      return resolvePersistedAccountId();
+    },
+    [accountIdFromPath, resolvePersistedAccountId],
+  );
+
+  const fetchUser = useCallback(
+    async (overrideToken?: string, accountIdOverride?: string | null): Promise<void> => {
+      const authToken = overrideToken || token;
+      if (!authToken) {
+        setUser(null);
+        setLoading(false);
+        setInitialized(true);
+        setLastFetchedAccountId(null);
+        return;
+      }
+
+      // Set loading true when fetching user data
+      if (!overrideToken) {
+        setLoading(true);
+      }
+
+      const effectiveAccountId = resolveAccountId(accountIdOverride);
+
+      try {
+        const client = createApiClient({ token: authToken });
+        const result = await getAuthenticatedUser({
+          client,
+          query: {
+            accountId: effectiveAccountId || undefined,
+          },
+          throwOnError: false,
+        });
+
+        const payload = unwrapApiResult(result, 'Failed to load current user');
+
+        setUser(payload as RegisteredUserType);
+        setLastFetchedAccountId(effectiveAccountId ?? null);
+      } catch {
+        //const message = getApiErrorMessage(err, 'Failed to load current user');
+        //console.error('Failed to fetch authenticated user:', err);
+        //setError(message);
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('jwtToken');
+        setLastFetchedAccountId(null);
+      } finally {
+        setLoading(false);
+        setInitialized(true);
+      }
+    },
+    [token, resolveAccountId],
+  );
+
   useEffect(() => {
     if (token) {
-      const effectiveAccountId = accountIdFromPath ?? null;
+      const effectiveAccountId = resolveAccountId();
 
       if (lastFetchedAccountId !== effectiveAccountId) {
         fetchUser(undefined, effectiveAccountId);
@@ -74,8 +163,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setInitialized(true);
       setLastFetchedAccountId(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, accountIdFromPath]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lastFetchedAccountId is intentionally omitted to prevent infinite refetch loops
+  }, [token, accountIdFromPath, resolveAccountId, fetchUser]);
 
   const login = async (creds: SignInCredentialsType) => {
     setLoading(true);
@@ -144,55 +233,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const setAuthToken = (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('jwtToken', newToken);
-  };
-
-  const fetchUser = async (
-    overrideToken?: string,
-    accountIdOverride?: string | null,
-  ): Promise<void> => {
-    const authToken = overrideToken || token;
-    if (!authToken) {
-      setUser(null);
-      setLoading(false);
-      setInitialized(true);
-      setLastFetchedAccountId(null);
-      return;
-    }
-
-    // Set loading true when fetching user data
-    if (!overrideToken) {
-      setLoading(true);
-    }
-
-    const effectiveAccountId =
-      accountIdOverride !== undefined ? accountIdOverride : accountIdFromPath;
-
-    try {
-      const client = createApiClient({ token: authToken });
-      const result = await getAuthenticatedUser({
-        client,
-        query: {
-          accountId: effectiveAccountId || undefined,
-        },
-        throwOnError: false,
-      });
-
-      const payload = unwrapApiResult(result, 'Failed to load current user');
-
-      setUser(payload as RegisteredUserType);
-      setLastFetchedAccountId(effectiveAccountId ?? null);
-    } catch {
-      //const message = getApiErrorMessage(err, 'Failed to load current user');
-      //console.error('Failed to fetch authenticated user:', err);
-      //setError(message);
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem('jwtToken');
-      setLastFetchedAccountId(null);
-    } finally {
-      setLoading(false);
-      setInitialized(true);
-    }
   };
 
   return (
