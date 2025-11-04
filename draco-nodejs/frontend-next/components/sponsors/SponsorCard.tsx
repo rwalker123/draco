@@ -30,22 +30,24 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
     setFailedLogos((prev) => ({ ...prev, [sponsorId]: true }));
   }, []);
 
-  const cardBackground = React.useMemo(
-    () =>
-      `linear-gradient(135deg,
-        ${theme.palette.background.paper} 0%,
-        ${alpha(theme.palette.background.paper, 0.94)} 40%,
-        ${alpha(theme.palette.background.paper, 0.88)} 100%)`,
-    [theme],
-  );
+  const tileStyles = React.useMemo(() => {
+    const baseColor = theme.palette.primary.main;
+    const surface = theme.palette.widget.surface;
+    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
+    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
+    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
+    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
+      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
+      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
 
-  const cardOverlayTexture = React.useMemo(
-    () =>
-      `radial-gradient(circle at 16% 20%, ${alpha(theme.palette.common.white, 0.8)} 0%, ${alpha(theme.palette.common.white, 0)} 55%),
-       radial-gradient(circle at 82% 25%, ${alpha(theme.palette.common.white, 0.65)} 0%, ${alpha(theme.palette.common.white, 0)} 60%),
-       radial-gradient(circle at 50% 80%, ${alpha(theme.palette.common.white, 0.55)} 0%, ${alpha(theme.palette.common.white, 0)} 70%)`,
-    [theme],
-  );
+    return {
+      background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
+      overlay,
+      border: theme.palette.widget.border,
+      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
+      logoBackdrop: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.18 : 0.06),
+    };
+  }, [theme]);
 
   if (sponsors.length === 0 && !emptyMessage) {
     return null;
@@ -101,10 +103,10 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                   columnGap: { xs: 1.25, sm: 2 },
                   rowGap: { xs: 1, sm: 1.25 },
                   alignItems: 'start',
-                  background: cardBackground,
+                  background: tileStyles.background,
                   border: '1px solid',
-                  borderColor: theme.palette.divider,
-                  boxShadow: `0 3px 10px ${alpha(theme.palette.common.black, 0.08)}`,
+                  borderColor: tileStyles.border,
+                  boxShadow: tileStyles.shadow,
                   position: 'relative',
                   overflow: 'hidden',
                 }}
@@ -114,8 +116,8 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                     position: 'absolute',
                     inset: 0,
                     pointerEvents: 'none',
-                    backgroundImage: cardOverlayTexture,
-                    opacity: 0.55,
+                    backgroundImage: tileStyles.overlay,
+                    opacity: theme.palette.mode === 'dark' ? 0.7 : 0.55,
                   }}
                 />
 
@@ -124,7 +126,7 @@ const SponsorCard: React.FC<SponsorCardProps> = ({
                     width: 78,
                     height: 78,
                     borderRadius: 2,
-                    bgcolor: alpha(theme.palette.text.primary, 0.04),
+                    bgcolor: tileStyles.logoBackdrop,
                     border: hasLogo ? 'none' : '1px dashed',
                     borderColor: hasLogo ? 'transparent' : theme.palette.divider,
                     display: 'flex',
