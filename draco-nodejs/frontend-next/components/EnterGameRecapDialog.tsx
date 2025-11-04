@@ -13,6 +13,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import { UpsertGameRecapSchema, UpsertGameRecapType } from '@draco/shared-schemas';
 import { useGameRecap } from '../hooks/useGameRecap';
 import RichTextEditor from './email/RichTextEditor';
@@ -66,6 +67,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   onError,
   loading = false,
 }) => {
+  const theme = useTheme();
   const { saveRecap, loading: isSaving } = useGameRecap({
     accountId,
     seasonId,
@@ -189,18 +191,36 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   }, [editorContent, loading, onClose, onError, onSuccess, readOnly, saveRecap]);
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: theme.palette.widget.surface,
+          color: theme.palette.text.primary,
+          borderRadius: 2,
+          boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 12 : 4],
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontWeight: 700,
+          color: theme.palette.widget.headerText,
+        }}
+      >
         {readOnly ? 'Game Recap for' : 'Enter Game Recap for'} {teamName}
       </DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ pt: 1 }}>
         {formattedGameDate && (
-          <Typography variant="body2" color="textSecondary" gutterBottom>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
             {formattedGameDate}
           </Typography>
         )}
         {scoreboardLine && (
-          <Typography variant="body2" color="textSecondary" gutterBottom>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
             {scoreboardLine}
           </Typography>
         )}
@@ -223,8 +243,13 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
                 sx={{
                   color: 'inherit',
                   fontSize: '1rem',
-                  padding: '12px 0',
+                  padding: '12px 16px',
                   minHeight: 200,
+                  borderRadius: 1,
+                  bgcolor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.background.default, 0.4)
+                      : alpha(theme.palette.background.default, 0.35),
                   '& p': { margin: '0 0 8px' },
                   '& ul, & ol': { margin: '0 0 8px 20px' },
                   '& li': { marginBottom: '4px' },

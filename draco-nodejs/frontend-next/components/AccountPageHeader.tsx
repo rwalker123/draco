@@ -35,8 +35,10 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
   const [imageError, setImageError] = useState(false);
 
   // Use theme colors for default background if none provided
-  const defaultBackground = `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`;
-  const headerBackground = background || defaultBackground;
+  const defaultBackground = theme.palette.background.paper;
+  const headerBackgroundStyles = background
+    ? { background }
+    : { backgroundColor: defaultBackground };
 
   useEffect(() => {
     setImageError(false);
@@ -46,8 +48,8 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
     <Box
       sx={{
         width: '100%',
-        background: headerBackground,
-        color: 'white',
+        ...headerBackgroundStyles,
+        color: theme.palette.text.primary,
         borderRadius: 2,
         boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
         overflow: 'visible',
@@ -89,7 +91,7 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
                 textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
                 letterSpacing: '0.05em',
                 fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                background: `linear-gradient(135deg, ${theme.palette.common.white} 0%, ${theme.palette.grey[100]} 100%)`,
+                background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.text.secondary} 100%)`,
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -109,7 +111,7 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
             <Typography
               variant="h6"
               sx={{
-                color: 'common.white',
+                color: theme.palette.text.primary,
                 opacity: 0.9,
                 fontWeight: 500,
                 textAlign: 'center',

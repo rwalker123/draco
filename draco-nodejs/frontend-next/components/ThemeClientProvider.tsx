@@ -2,17 +2,28 @@
 
 import { ThemeProvider, Theme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { dracoTheme } from '../theme';
+import { dracoTheme, darkTheme } from '../theme';
 import Layout from './Layout';
-import React, { useState, createContext, useContext, Suspense } from 'react';
+import React, {
+  useState,
+  createContext,
+  useContext,
+  Suspense,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import EmotionCacheProvider from './EmotionCacheProvider';
 
+const THEME_STORAGE_KEY = 'draco-theme';
+
 // Create context for theme management
+type ThemeName = 'light' | 'dark';
+
 interface ThemeContextType {
   currentTheme: Theme;
-  setCurrentTheme: (theme: Theme) => void;
-  currentThemeName: string;
-  setCurrentThemeName: (name: string) => void;
+  currentThemeName: ThemeName;
+  setCurrentThemeName: (name: ThemeName) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -25,16 +36,79 @@ export const useThemeContext = () => {
   return context;
 };
 
-export default function ThemeClientProvider({ children }: { children: React.ReactNode }) {
-  const [currentTheme, setCurrentTheme] = useState(dracoTheme);
-  const [currentThemeName, setCurrentThemeName] = useState('baseball');
+const themesByName: Record<ThemeName, Theme> = {
+  light: dracoTheme,
+  dark: darkTheme,
+};
 
-  const value = {
-    currentTheme,
-    setCurrentTheme,
-    currentThemeName,
-    setCurrentThemeName,
-  };
+const getInitialThemeName = (): ThemeName => {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === 'light' || stored === 'dark') {
+    return stored;
+  }
+
+  if (typeof window.matchMedia === 'function') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) {
+      return 'dark';
+    }
+  }
+
+  return 'light';
+};
+
+export default function ThemeClientProvider({ children }: { children: React.ReactNode }) {
+  const [currentThemeName, setCurrentThemeNameState] = useState<ThemeName>('light');
+
+  useEffect(() => {
+    const initial = getInitialThemeName();
+    setCurrentThemeNameState(initial);
+  }, []);
+
+  const setCurrentThemeName = useCallback((name: ThemeName) => {
+    setCurrentThemeNameState(name);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(THEME_STORAGE_KEY, name);
+    }
+  }, []);
+
+  const currentTheme = useMemo(() => themesByName[currentThemeName], [currentThemeName]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const root = document.documentElement;
+    root.classList.toggle('dark', currentThemeName === 'dark');
+  }, [currentThemeName]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const backgroundColor = currentTheme.palette.background.default;
+    document.documentElement.style.backgroundColor = backgroundColor;
+    document.body.style.backgroundColor = backgroundColor;
+    const nextRoot = document.getElementById('__next');
+    if (nextRoot) {
+      nextRoot.style.backgroundColor = backgroundColor;
+    }
+  }, [currentTheme]);
+
+  const value = useMemo(
+    () => ({
+      currentTheme,
+      currentThemeName,
+      setCurrentThemeName,
+    }),
+    [currentTheme, currentThemeName, setCurrentThemeName],
+  );
 
   return (
     <EmotionCacheProvider>

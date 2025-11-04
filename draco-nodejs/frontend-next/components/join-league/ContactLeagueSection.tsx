@@ -33,14 +33,9 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
               startIcon={<Language />}
               fullWidth
               sx={{
-                py: 1.5,
+                py: 1.25,
                 textTransform: 'none',
-                fontWeight: 'bold',
-                borderRadius: 2,
-                bgcolor: 'primary.main',
-                '&:hover': {
-                  bgcolor: 'primary.dark',
-                },
+                fontWeight: 600,
               }}
             >
               Visit Our Website
@@ -56,17 +51,10 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
               startIcon={<Twitter />}
               fullWidth
               sx={{
-                py: 1.5,
+                py: 1.25,
                 textTransform: 'none',
-                borderRadius: 2,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                '&:hover': {
-                  borderColor: 'primary.dark',
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                },
               }}
+              color="primary"
             >
               Follow on Twitter
             </Button>
@@ -81,17 +69,10 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
               startIcon={<Facebook />}
               fullWidth
               sx={{
-                py: 1.5,
+                py: 1.25,
                 textTransform: 'none',
-                borderRadius: 2,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                '&:hover': {
-                  borderColor: 'primary.dark',
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                },
               }}
+              color="primary"
             >
               Like on Facebook
             </Button>

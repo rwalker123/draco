@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Card,
-  CardContent,
   Typography,
   Box,
   CircularProgress,
@@ -10,6 +8,7 @@ import {
   IconButton,
   useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import NewspaperRecapIcon from './icons/NewspaperRecapIcon';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -21,6 +20,7 @@ import { listSeasonGames } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import { sanitizeRichContent } from '../utils/sanitization';
+import WidgetShell from './ui/WidgetShell';
 
 interface GameRecapFlat {
   id: string; // game id
@@ -201,197 +201,256 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     return sanitized;
   }, [currentIndex, recapList]);
 
-  if (loading) {
+  const tileStyles = useMemo(() => {
+    const baseColor = theme.palette.primary.main;
+    const surface = theme.palette.widget.surface;
+    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
+    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
+    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
+    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
+      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
+      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
+
+    return {
+      background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
+      overlay,
+      border: theme.palette.widget.border,
+      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
+    };
+  }, [theme]);
+
+  const renderRecapContent = () => {
+    if (!recapList.length) {
+      return null;
+    }
+
+    const clampedIndex = Math.min(currentIndex, recapList.length - 1);
+    const recapItem = recapList[clampedIndex];
+
+    const variants = {
+      slide: {
+        initial: { x: 40, opacity: 0 },
+        animate: { x: 0, opacity: 1 },
+        exit: { x: -40, opacity: 0 },
+        transition: { duration: 0.4 },
+      },
+      fade: {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.4 },
+      },
+    };
+
+    const handleNext = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      setProgress(0);
+      setCurrentIndex((prev) => (prev + 1) % recapList.length);
+    };
+
+    const handlePrev = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      setProgress(0);
+      setCurrentIndex((prev) => (prev - 1 + recapList.length) % recapList.length);
+    };
+
+    const handlePausePlay = () => {
+      setIsPaused((prev) => !prev);
+    };
+
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 180 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
-  }
-  if (!recapList.length) {
-    return null;
-  }
-
-  // Show the current recap
-  const clampedIndex = Math.min(currentIndex, recapList.length - 1);
-  const recapItem = recapList[clampedIndex];
-
-  // Animation variants for slide and fade
-  const variants = {
-    slide: {
-      initial: { x: 40, opacity: 0 },
-      animate: { x: 0, opacity: 1 },
-      exit: { x: -40, opacity: 0 },
-      transition: { duration: 0.4 },
-    },
-    fade: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-      transition: { duration: 0.4 },
-    },
-  };
-
-  // Handler for manual next click, resets the timer
-  const handleNext = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-    setProgress(0);
-    setCurrentIndex((prev) => (prev + 1) % recapList.length);
-  };
-
-  // Handler for manual previous click, resets the timer
-  const handlePrev = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-    setProgress(0);
-    setCurrentIndex((prev) => (prev - 1 + recapList.length) % recapList.length);
-  };
-
-  // Handler for pause/play toggle
-  const handlePausePlay = () => {
-    setIsPaused((prev) => !prev);
-  };
-
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={recapItem.id + '-' + recapItem.teamName}
-        initial={variants[ANIMATION_TYPE].initial}
-        animate={variants[ANIMATION_TYPE].animate}
-        exit={variants[ANIMATION_TYPE].exit}
-        transition={variants[ANIMATION_TYPE].transition}
-        style={{ width: '100%' }}
-      >
-        <Card
-          sx={{
-            mb: 2,
-            borderRadius: 2,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            position: 'relative',
-          }}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={recapItem.id + '-' + recapItem.teamName}
+          initial={variants[ANIMATION_TYPE].initial}
+          animate={variants[ANIMATION_TYPE].animate}
+          exit={variants[ANIMATION_TYPE].exit}
+          transition={variants[ANIMATION_TYPE].transition}
+          style={{ width: '100%' }}
         >
-          <CardContent sx={{ pb: 7 }}>
-            <Box
-              sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}
-            >
-              <Box
-                sx={{
-                  mr: 2,
-                  width: 40,
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <NewspaperRecapIcon size={28} color={theme.palette.warning.main} />
-              </Box>
-              <Box>
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
-                >
-                  Game Recap
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {recapItem.gameDate ? new Date(recapItem.gameDate).toLocaleDateString() : ''}{' '}
-                  &bull; {recapItem.league.name}
-                </Typography>
-              </Box>
-              {recapList.length > 1 && (
-                <Typography variant="caption" sx={{ ml: 2, minWidth: 60, textAlign: 'right' }}>
-                  {currentIndex + 1} of {recapList.length}
-                </Typography>
-              )}
-            </Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {recapItem.visitorTeamName} {recapItem.visitorScore} @ {recapItem.homeTeamName}{' '}
-              {recapItem.homeScore}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1, display: 'block' }}
-            >
-              {recapItem.teamName}
-            </Typography>
-            <Typography
-              variant="body2"
-              component="div"
-              sx={{
-                mb: 2,
-                '& p': { margin: '0 0 8px' },
-                '& ul, & ol': { margin: '0 0 8px 20px' },
-                '& li': { marginBottom: '4px' },
-                '& .editor-text-bold, & strong, & b': { fontWeight: 700 },
-                '& .editor-text-italic, & em, & i': { fontStyle: 'italic' },
-                '& .editor-text-underline, & u': { textDecoration: 'underline' },
-                '& .editor-heading-h1, & h1': {
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  margin: '16px 0 8px',
-                },
-                '& .editor-heading-h2, & h2': {
-                  fontSize: '1.3rem',
-                  fontWeight: 700,
-                  margin: '14px 0 6px',
-                },
-                '& .editor-heading-h3, & h3': {
-                  fontSize: '1.15rem',
-                  fontWeight: 600,
-                  margin: '12px 0 6px',
-                },
-              }}
-              dangerouslySetInnerHTML={{ __html: sanitizedRecapHtml }}
-            />
-          </CardContent>
-          {recapList.length > 1 && (
+          <Box
+            sx={{
+              position: 'relative',
+              borderRadius: 2,
+              border: `1px solid ${tileStyles.border}`,
+              boxShadow: tileStyles.shadow,
+              background: tileStyles.background,
+              overflow: 'hidden',
+              p: { xs: 2.5, sm: 3 },
+            }}
+          >
             <Box
               sx={{
                 position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: 0,
-                px: 2,
-                pb: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0.5,
-                zIndex: 1,
+                inset: 0,
+                pointerEvents: 'none',
+                backgroundImage: tileStyles.overlay,
+                opacity: theme.palette.mode === 'dark' ? 0.65 : 0.45,
               }}
-            >
+            />
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Box
-                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: 2,
+                  justifyContent: 'space-between',
+                }}
               >
-                <IconButton aria-label="Previous Recap" size="small" onClick={handlePrev}>
-                  <SkipPreviousIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  aria-label={isPaused ? 'Play' : 'Pause'}
-                  size="small"
-                  onClick={handlePausePlay}
-                  sx={{ mx: 1 }}
+                <Box
+                  sx={{
+                    mr: 2,
+                    width: 40,
+                    height: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  {isPaused ? <PlayArrowIcon fontSize="small" /> : <PauseIcon fontSize="small" />}
-                </IconButton>
-                <IconButton aria-label="Next Recap" size="small" onClick={handleNext}>
-                  <SkipNextIcon fontSize="small" />
-                </IconButton>
+                  <NewspaperRecapIcon size={28} color={theme.palette.warning.main} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                    Game Recap
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {recapItem.gameDate ? new Date(recapItem.gameDate).toLocaleDateString() : ''}{' '}
+                    &bull; {recapItem.league.name}
+                  </Typography>
+                </Box>
+                {recapList.length > 1 && (
+                  <Typography variant="caption" sx={{ ml: 2, minWidth: 60, textAlign: 'right' }}>
+                    {currentIndex + 1} of {recapList.length}
+                  </Typography>
+                )}
               </Box>
-              <LinearProgress
-                variant="determinate"
-                value={progress}
-                sx={{ height: 4, borderRadius: 2 }}
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {recapItem.visitorTeamName} {recapItem.visitorScore} @ {recapItem.homeTeamName}{' '}
+                {recapItem.homeScore}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 'bold',
+                  color: theme.palette.primary.main,
+                  mb: 1,
+                  display: 'block',
+                }}
+              >
+                {recapItem.teamName}
+              </Typography>
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{
+                  mb: 2,
+                  '& p': { margin: '0 0 8px' },
+                  '& ul, & ol': { margin: '0 0 8px 20px' },
+                  '& li': { marginBottom: '4px' },
+                  '& .editor-text-bold, & strong, & b': { fontWeight: 700 },
+                  '& .editor-text-italic, & em, & i': { fontStyle: 'italic' },
+                  '& .editor-text-underline, & u': { textDecoration: 'underline' },
+                  '& .editor-heading-h1, & h1': {
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                    margin: '16px 0 8px',
+                  },
+                  '& .editor-heading-h2, & h2': {
+                    fontSize: '1.3rem',
+                    fontWeight: 700,
+                    margin: '14px 0 6px',
+                  },
+                  '& .editor-heading-h3, & h3': {
+                    fontSize: '1.15rem',
+                    fontWeight: 600,
+                    margin: '12px 0 6px',
+                  },
+                }}
+                dangerouslySetInnerHTML={{ __html: sanitizedRecapHtml }}
               />
+              {recapList.length > 1 && (
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}
+                >
+                  <IconButton aria-label="Previous Recap" size="small" onClick={handlePrev}>
+                    <SkipPreviousIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    aria-label={isPaused ? 'Play' : 'Pause'}
+                    size="small"
+                    onClick={handlePausePlay}
+                    sx={{ mx: 1 }}
+                  >
+                    {isPaused ? <PlayArrowIcon fontSize="small" /> : <PauseIcon fontSize="small" />}
+                  </IconButton>
+                  <IconButton aria-label="Next Recap" size="small" onClick={handleNext}>
+                    <SkipNextIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              )}
+              {recapList.length > 1 && (
+                <LinearProgress
+                  variant="determinate"
+                  value={progress}
+                  sx={{
+                    height: 4,
+                    borderRadius: 2,
+                    bgcolor: alpha(theme.palette.common.white, 0.15),
+                  }}
+                />
+              )}
             </Box>
-          )}
-        </Card>
-      </motion.div>
-    </AnimatePresence>
+          </Box>
+        </motion.div>
+      </AnimatePresence>
+    );
+  };
+
+  if (!loading && !error && recapList.length === 0) {
+    return null;
+  }
+
+  const content = (() => {
+    if (loading) {
+      return (
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 180 }}
+        >
+          <CircularProgress />
+        </Box>
+      );
+    }
+    if (error) {
+      return <Alert severity="error">{error}</Alert>;
+    }
+    return renderRecapContent();
+  })();
+
+  return (
+    <WidgetShell
+      title={
+        <Typography variant="h6" fontWeight={700} color="text.primary">
+          Game Recaps
+        </Typography>
+      }
+      subtitle={
+        <Typography variant="body2" color="text.secondary">
+          Highlights from the last two weeks
+        </Typography>
+      }
+      accent="secondary"
+      sx={{
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
+        width: 'auto',
+        maxWidth: '100%',
+      }}
+    >
+      {content}
+    </WidgetShell>
   );
 };
 

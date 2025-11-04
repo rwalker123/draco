@@ -1,8 +1,10 @@
 import React from 'react';
-import { Box, Typography, Paper, Card, CardContent, Button, SxProps, Theme } from '@mui/material';
+import { Box, Typography, Paper, Button, SxProps, Theme } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import TeamAvatar from './TeamAvatar';
+import WidgetShell from './ui/WidgetShell';
+import { alpha, useTheme } from '@mui/material/styles';
 
 export interface UserTeam {
   id: string;
@@ -28,122 +30,187 @@ interface MyTeamsProps {
 }
 
 const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) => {
-  if (!userTeams || userTeams.length === 0) return null;
-  return (
-    <Paper sx={{ p: 4, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', ...sx }}>
-      <Typography
-        variant="h5"
-        gutterBottom
-        sx={{
-          fontWeight: 'bold',
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          mb: 3,
-        }}
-      >
-        <StarIcon sx={{ color: 'warning.main' }} />
+  const theme = useTheme();
+  const hasTeams = Boolean(userTeams && userTeams.length > 0);
+
+  const tileStyles = React.useMemo(() => {
+    const baseColor = theme.palette.primary.main;
+    const surface = theme.palette.widget.surface;
+    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
+    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
+    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
+    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
+      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
+      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
+
+    return {
+      background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
+      overlay,
+      border: theme.palette.widget.border,
+      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
+      detailBackdrop: alpha(
+        theme.palette.text.primary,
+        theme.palette.mode === 'dark' ? 0.18 : 0.06,
+      ),
+    };
+  }, [theme]);
+
+  const widgetTitle = (
+    <Box display="flex" alignItems="center" gap={1}>
+      <StarIcon sx={{ color: 'warning.main' }} />
+      <Typography variant="h6" component="h2" fontWeight={600} color="text.primary">
         {title || 'Your Teams'}
       </Typography>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-          gap: 3,
-        }}
-      >
+    </Box>
+  );
+
+  const widgetSx: SxProps<Theme> = [
+    {
+      mb: 2,
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignSelf: 'flex-start',
+      width: 'auto',
+      maxWidth: '100%',
+    },
+    ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+  ];
+
+  if (!hasTeams) {
+    return null;
+  }
+
+  return (
+    <WidgetShell title={widgetTitle} accent="primary" sx={widgetSx}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
         {userTeams.map((team) => (
-          <Card
+          <Paper
             key={team.teamId || team.id}
+            variant="outlined"
             sx={{
-              height: '100%',
+              position: 'relative',
               borderRadius: 2,
+              p: { xs: 1.75, sm: 2.25 },
               border: '1px solid',
-              borderColor: 'divider',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-                borderColor: 'primary.main',
-              },
+              borderColor: tileStyles.border,
+              boxShadow: tileStyles.shadow,
+              background: tileStyles.background,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+              flex: '0 0 auto',
+              width: 'auto',
+              maxWidth: { xs: '100%', sm: 360 },
             }}
           >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <TeamAvatar
-                  name={team.name}
-                  logoUrl={team.logoUrl}
-                  size={48}
-                  alt={team.name + ' logo'}
-                />
-                <Box sx={{ ml: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                    {team.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {team.leagueName}
-                  </Typography>
-                </Box>
-              </Box>
-              {team.record && (
-                <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
-                  <strong>Record:</strong> {team.record}
-                </Typography>
-              )}
-              {team.standing && (
-                <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
-                  <strong>Standing:</strong> {team.standing}
-                </Typography>
-              )}
-              {team.nextGame && (
-                <Box
-                  sx={{
-                    mt: 2,
-                    p: 2,
-                    bgcolor: 'grey.50',
-                    borderRadius: 1,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                  }}
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
+                backgroundImage: tileStyles.overlay,
+                opacity: theme.palette.mode === 'dark' ? 0.7 : 0.55,
+              }}
+            />
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
+              <TeamAvatar
+                name={team.name}
+                logoUrl={team.logoUrl}
+                size={48}
+                alt={team.name + ' logo'}
+              />
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  component="h3"
+                  fontWeight={600}
+                  color="text.primary"
                 >
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}
-                  >
-                    Next Game
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    vs {team.nextGame.opponent}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {new Date(team.nextGame.date).toLocaleDateString()}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {team.nextGame.location}
-                  </Typography>
-                </Box>
-              )}
-              <Button
-                size="small"
-                startIcon={<VisibilityIcon />}
-                onClick={() => onViewTeam(team.id)}
+                  {team.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {team.leagueName}
+                </Typography>
+              </Box>
+            </Box>
+            {team.record && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ position: 'relative', zIndex: 1 }}
+              >
+                <strong>Record:</strong> {team.record}
+              </Typography>
+            )}
+            {team.standing && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ position: 'relative', zIndex: 1 }}
+              >
+                <strong>Standing:</strong> {team.standing}
+              </Typography>
+            )}
+            {team.nextGame && (
+              <Box
                 sx={{
-                  mt: 2,
-                  color: 'primary.main',
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    textDecoration: 'underline',
-                  },
+                  position: 'relative',
+                  zIndex: 1,
+                  mt: 0.5,
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: tileStyles.border,
+                  bgcolor: tileStyles.detailBackdrop,
                 }}
               >
-                View Team
-              </Button>
-            </CardContent>
-          </Card>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, mb: 0.75, color: 'primary.main' }}
+                >
+                  Next Game
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  vs {team.nextGame.opponent}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {new Date(team.nextGame.date).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {team.nextGame.location}
+                </Typography>
+              </Box>
+            )}
+            <Button
+              size="small"
+              startIcon={<VisibilityIcon />}
+              onClick={() => onViewTeam(team.id)}
+              sx={{
+                position: 'relative',
+                zIndex: 1,
+                alignSelf: 'flex-start',
+                color: 'primary.main',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              View Team
+            </Button>
+          </Paper>
         ))}
       </Box>
-    </Paper>
+    </WidgetShell>
   );
 };
 

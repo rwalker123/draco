@@ -1,17 +1,8 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { HandoutType } from '@draco/shared-schemas';
 import HandoutList, { HandoutListVariant } from './HandoutList';
@@ -19,6 +10,7 @@ import HandoutFormDialog from './HandoutFormDialog';
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { HandoutScope, useHandoutOperations } from '../../hooks/useHandoutOperations';
 import NextLink from 'next/link';
+import WidgetShell from '../ui/WidgetShell';
 
 interface HandoutSectionProps {
   scope: HandoutScope;
@@ -46,7 +38,7 @@ type ConfirmState = {
 
 const HandoutSection: React.FC<HandoutSectionProps> = ({
   scope,
-  title,
+  title: sectionTitle,
   description,
   allowManage = false,
   maxItems,
@@ -187,6 +179,20 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
     </Stack>
   );
 
+  const widgetSx: SxProps<Theme> = React.useMemo(() => {
+    const base =
+      variant === 'card'
+        ? {
+            alignSelf: 'flex-start',
+            width: '100%',
+            maxWidth: { xs: '100%', md: 420 },
+          }
+        : {
+            width: '100%',
+          };
+    return [base];
+  }, [variant]);
+
   const shouldHideForEmpty =
     hideWhenEmpty && !fetching && !fetchError && handouts.length === 0 && !mutationError;
 
@@ -213,46 +219,33 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
       </Button>
     ) : null;
 
-  const headerContent = (
-    <Box display="flex" flexDirection="column" gap={1}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
-        <Typography variant={variant === 'card' ? 'h6' : 'h5'} component="h2">
-          {title}
-        </Typography>
-        {headerActions}
-      </Box>
-      {description && (
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      )}
-    </Box>
+  const titleNode = (
+    <Typography
+      variant={variant === 'card' ? 'h6' : 'h5'}
+      fontWeight={variant === 'card' ? 600 : 700}
+      color="text.primary"
+    >
+      {sectionTitle}
+    </Typography>
   );
 
-  const wrapper =
-    variant === 'card' ? (
-      <Card elevation={3}>
-        <CardHeader
-          title={
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Typography variant="h6">{title}</Typography>
-              {headerActions}
-            </Box>
-          }
-          subheader={description}
-        />
-        <CardContent>{content}</CardContent>
-      </Card>
-    ) : (
-      <Paper elevation={1} sx={{ p: 3 }}>
-        {headerContent}
-        <Box mt={2}>{content}</Box>
-      </Paper>
-    );
+  const subtitleNode = description ? (
+    <Typography variant="body2" color="text.secondary">
+      {description}
+    </Typography>
+  ) : undefined;
 
   return (
     <>
-      {wrapper}
+      <WidgetShell
+        title={titleNode}
+        subtitle={subtitleNode}
+        actions={headerActions}
+        accent="primary"
+        sx={widgetSx}
+      >
+        {content}
+      </WidgetShell>
       {customCreateTrigger}
       <HandoutFormDialog
         open={dialogState.open}

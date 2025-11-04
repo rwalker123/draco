@@ -2,21 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import {
-  Alert,
-  Box,
-  Button,
-  Paper,
-  Tab,
-  Tabs,
-  Typography,
-  useTheme,
-  type Theme,
-} from '@mui/material';
+import { Alert, Box, Button, Tab, Tabs, Typography, useTheme, type Theme } from '@mui/material';
 import LeaderCategoryPanel from './LeaderCategoryPanel';
 import { useLeaderCategories } from '../../hooks/useLeaderCategories';
 import { useStatisticalLeaders } from '../../hooks/useStatisticalLeaders';
 import type { LeaderCategoryType, LeaderRowType } from '@draco/shared-schemas';
+import WidgetShell from '../ui/WidgetShell';
 
 export interface LeagueOption {
   id: string;
@@ -175,6 +166,9 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     >
   >({});
   const randomizationAppliedRef = useRef(false);
+  const leagueTabsRef = useRef<HTMLDivElement | null>(null);
+  const statTabsRef = useRef<HTMLDivElement | null>(null);
+  const categoryTabsRef = useRef<HTMLDivElement | null>(null);
 
   const {
     battingCategories,
@@ -317,6 +311,15 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const requestedCacheKey = buildCacheKey(requestedCategoryKey ?? null);
   const displayedLeaders = renderState?.leaders ?? [];
   const [panelWidth, setPanelWidth] = useState<number>();
+  const resetTabsScrollLeft = useCallback((node: HTMLDivElement | null) => {
+    if (!node) {
+      return;
+    }
+    const scroller = node.querySelector<HTMLElement>('.MuiTabs-scroller');
+    if (scroller) {
+      scroller.scrollLeft = 0;
+    }
+  }, []);
 
   const handlePanelWidthChange = useCallback((width?: number) => {
     if (typeof width !== 'number') {
@@ -435,10 +438,32 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     });
   };
 
+  useEffect(() => {
+    resetTabsScrollLeft(leagueTabsRef.current);
+  }, [resetTabsScrollLeft, resolvedLeagues.length]);
+
+  useEffect(() => {
+    resetTabsScrollLeft(statTabsRef.current);
+  }, [resetTabsScrollLeft, statType]);
+
+  useEffect(() => {
+    resetTabsScrollLeft(categoryTabsRef.current);
+  }, [resetTabsScrollLeft, tabCategoryKey, activeCategories.length]);
+
   return (
-    <Paper
+    <WidgetShell
+      title={
+        <Typography variant="h5" fontWeight="bold" color="text.primary">
+          {title}
+        </Typography>
+      }
+      actions={
+        <Button component={Link} href={fullStatisticsHref} variant="outlined" size="small">
+          View Full Statistics
+        </Button>
+      }
+      accent="primary"
       sx={{
-        p: 3,
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
@@ -447,15 +472,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
         maxWidth: '100%',
       }}
     >
-      <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
-        <Typography variant="h5" fontWeight="bold">
-          {title}
-        </Typography>
-        <Button component={Link} href={fullStatisticsHref} variant="outlined" size="small">
-          View Full Statistics
-        </Button>
-      </Box>
-
       {showLeagueTabs ? (
         <Box
           sx={{
@@ -468,6 +484,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           }}
         >
           <Tabs
+            ref={leagueTabsRef}
             value={selectedLeagueId}
             onChange={handleLeagueChange}
             variant="scrollable"
@@ -479,11 +496,15 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
               minHeight: 48,
               '& .MuiTabs-flexContainer': {
                 minHeight: 48,
+                justifyContent: 'flex-start',
               },
               '& .MuiTab-root': {
                 textTransform: 'none',
                 fontWeight: 'medium',
                 minHeight: 48,
+                minWidth: 0,
+                paddingLeft: 1,
+                paddingRight: 1,
               },
             }}
           >
@@ -499,6 +520,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
       ) : null}
 
       <Tabs
+        ref={statTabsRef}
         value={statType}
         onChange={handleStatTypeChange}
         variant="scrollable"
@@ -508,9 +530,15 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
         sx={{
           '& .MuiTabs-flexContainer': {
             gap: 1,
+            justifyContent: 'flex-start',
           },
           '& .MuiTabs-indicator': {
             display: 'none',
+          },
+          '& .MuiTab-root': {
+            minWidth: 0,
+            paddingLeft: 2,
+            paddingRight: 2,
           },
         }}
       >
@@ -520,6 +548,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
 
       {activeCategories.length > 0 ? (
         <Tabs
+          ref={categoryTabsRef}
           value={tabCategoryKey}
           onChange={handleCategoryChange}
           variant="scrollable"
@@ -530,6 +559,12 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
             '& .MuiTab-root': {
               textTransform: 'none',
               minHeight: 36,
+              minWidth: 0,
+              paddingLeft: 1.5,
+              paddingRight: 1.5,
+            },
+            '& .MuiTabs-flexContainer': {
+              justifyContent: 'flex-start',
             },
           }}
         >
@@ -568,6 +603,6 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
           </Typography>
         ) : null}
       </Box>
-    </Paper>
+    </WidgetShell>
   );
 }

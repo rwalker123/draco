@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Box, Paper, Toolbar, IconButton, Divider, Typography } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import {
   FormatBold,
   FormatItalic,
@@ -50,6 +51,13 @@ interface RichTextEditorProps {
 
 // Toolbar component for format controls
 function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const toolbarBackground = isDark
+    ? alpha(theme.palette.background.default, 0.92)
+    : theme.palette.grey[50];
+  const iconColor = isDark ? theme.palette.grey[300] : theme.palette.text.secondary;
+
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = React.useState(false);
   const [isItalic, setIsItalic] = React.useState(false);
@@ -172,9 +180,22 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       variant="dense"
       sx={{
         minHeight: 48,
-        bgcolor: 'grey.50',
+        bgcolor: toolbarBackground,
         borderBottom: 1,
-        borderColor: 'divider',
+        borderColor: theme.palette.divider,
+        color: theme.palette.text.primary,
+        '& .MuiIconButton-root': {
+          color: iconColor,
+          '&.Mui-disabled': {
+            color: theme.palette.action.disabled,
+          },
+          '&.MuiIconButton-colorPrimary': {
+            color: theme.palette.primary.main,
+          },
+        },
+        '& .MuiDivider-root': {
+          borderColor: theme.palette.divider,
+        },
       }}
     >
       <IconButton
@@ -411,6 +432,7 @@ const RichTextEditor = React.forwardRef<
     },
     ref,
   ) => {
+    const theme = useTheme();
     // Ref to access the editor instance
     const editorRef = useRef<LexicalEditor | null>(null);
 
@@ -477,11 +499,13 @@ const RichTextEditor = React.forwardRef<
       <Paper
         variant="outlined"
         sx={{
-          borderColor: error ? 'error.main' : 'divider',
+          borderColor: error ? theme.palette.error.main : theme.palette.widget.border,
           borderWidth: error ? 2 : 1,
           borderRadius: 1,
           overflow: 'hidden',
           opacity: 1,
+          bgcolor: theme.palette.widget.surface,
+          color: theme.palette.text.primary,
         }}
       >
         <LexicalComposer
@@ -498,6 +522,11 @@ const RichTextEditor = React.forwardRef<
           <Box
             sx={{
               position: 'relative',
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.background.default, 0.45)
+                  : theme.palette.background.paper,
+              color: theme.palette.text.primary,
               '& .editor-text-bold': { fontWeight: 'bold' },
               '& .editor-text-italic': { fontStyle: 'italic' },
               '& .editor-text-underline': { textDecoration: 'underline' },
@@ -547,6 +576,8 @@ const RichTextEditor = React.forwardRef<
                     fontSize: '14px',
                     lineHeight: '1.5',
                     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                    backgroundColor: 'transparent',
+                    color: theme.palette.text.primary,
                   }}
                   readOnly={disabled}
                 />

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import WorkoutPreview from './WorkoutPreview';
 import PlayersWantedPreview from './PlayersWantedPreview';
 import ContactLeagueSection from './ContactLeagueSection';
 import { AccountType } from '@draco/shared-schemas';
+import WidgetShell from '../ui/WidgetShell';
 
 interface JoinLeagueDashboardProps {
   accountId: string;
@@ -23,32 +24,27 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
   isAccountMember = false,
 }) => {
   return (
-    <Paper
-      sx={{
-        p: { xs: 3, md: 4 },
-        mb: 3,
-        borderRadius: 3,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-      }}
-    >
-      {/* Main Header */}
-      <Box sx={{ textAlign: 'center', mb: 5 }}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 'bold',
-            color: 'primary.main',
-            mb: 1,
-          }}
-        >
+    <WidgetShell
+      title={
+        <Typography variant="h5" fontWeight={700} color="text.primary">
           Ways to Join {account.name}
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+      }
+      subtitle={
+        <Typography variant="body2" color="text.secondary">
           Discover opportunities to get involved in our baseball community
         </Typography>
-      </Box>
-
-      {/* Three-section layout */}
+      }
+      accent="primary"
+      sx={{
+        mb: 3,
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
+        width: 'auto',
+        maxWidth: '100%',
+      }}
+    >
       <Box
         sx={{
           display: 'grid',
@@ -65,25 +61,20 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
           gap: 4,
         }}
       >
-        {/* Training Section - spans full width on tablet */}
         <WorkoutPreview
           accountId={accountId}
           token={token}
           showViewAllWorkoutsButton={showViewAllWorkoutsButton}
           onViewAllWorkouts={onViewAllWorkouts}
         />
-
-        {/* Players Wanted Section */}
         <PlayersWantedPreview
           accountId={accountId}
           maxDisplay={3}
           isAccountMember={isAccountMember}
         />
-
-        {/* Contact Section */}
         <ContactLeagueSection account={account} />
       </Box>
-    </Paper>
+    </WidgetShell>
   );
 };
 

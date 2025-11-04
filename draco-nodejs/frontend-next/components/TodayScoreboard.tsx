@@ -3,6 +3,8 @@ import ScoreboardBase from './ScoreboardBase';
 import { Game } from './GameListDisplay';
 import { createGamesLoader } from '../utils/gameTransformers';
 import { useApiClient } from '../hooks/useApiClient';
+import WidgetShell from './ui/WidgetShell';
+import { Typography } from '@mui/material';
 
 interface TodayScoreboardProps {
   accountId: string;
@@ -32,6 +34,40 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
     return await gamesLoader(today, tomorrow);
   }, [accountId, apiClient, teamId, currentSeasonId]);
 
+  const renderWrapper = (
+    content: React.ReactNode,
+    state: 'loading' | 'error' | 'empty' | 'content',
+  ): React.ReactNode => {
+    if (state === 'empty') {
+      return null;
+    }
+
+    return (
+      <WidgetShell
+        title={
+          <Typography variant="h6" fontWeight={700} color="text.primary">
+            Today&apos;s Games
+          </Typography>
+        }
+        subtitle={
+          <Typography variant="body2" color="text.secondary">
+            Latest scores and results from today.
+          </Typography>
+        }
+        accent="primary"
+        sx={{
+          display: 'inline-flex',
+          flexDirection: 'column',
+          alignSelf: 'flex-start',
+          width: 'auto',
+          maxWidth: '100%',
+        }}
+      >
+        {content}
+      </WidgetShell>
+    );
+  };
+
   return (
     <ScoreboardBase
       accountId={accountId}
@@ -41,6 +77,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
       onGamesLoaded={onGamesLoaded}
       title="Today"
       loadGames={loadTodayGames}
+      renderWrapper={renderWrapper}
     />
   );
 };

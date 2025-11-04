@@ -2,9 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Card,
-  CardHeader,
-  CardContent,
   Typography,
   CircularProgress,
   Alert,
@@ -20,6 +17,7 @@ import { listActiveAccountPolls, voteOnAccountPoll } from '@draco/shared-api-cli
 import { useAuth } from '../../context/AuthContext';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
+import WidgetShell from '../ui/WidgetShell';
 
 interface AccountPollsCardProps {
   accountId: string;
@@ -42,12 +40,14 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
     [hasToken, isAuthorizedForAccount],
   );
 
-  const cardSx = useMemo(
-    () => ({
-      alignSelf: 'flex-start',
-      width: '100%',
-      maxWidth: { xs: '100%', sm: 420 },
-    }),
+  const widgetSx = useMemo(
+    () => [
+      {
+        alignSelf: 'flex-start',
+        width: '100%',
+        maxWidth: { xs: '100%', sm: 420 },
+      },
+    ],
     [],
   );
 
@@ -117,81 +117,89 @@ export const AccountPollsCard: React.FC<AccountPollsCardProps> = ({
   }
 
   return (
-    <Card elevation={3} sx={cardSx}>
-      <CardHeader title="Polls" subheader="Share your voice with the organization" />
-      <CardContent>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress size={32} />
-          </Box>
-        ) : error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        ) : (
-          <Stack spacing={3}>
-            {polls.map((poll) => {
-              const totalVotes = poll.totalVotes;
-              const selectedOptionId = poll.userVoteOptionId ?? '';
-              const isSubmitting = submittingPollId === poll.id;
+    <WidgetShell
+      title="Polls"
+      subtitle="Share your voice with the organization"
+      accent="secondary"
+      sx={widgetSx}
+    >
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={32} />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      ) : (
+        <Stack spacing={3}>
+          {polls.map((poll) => {
+            const totalVotes = poll.totalVotes;
+            const selectedOptionId = poll.userVoteOptionId ?? '';
+            const isSubmitting = submittingPollId === poll.id;
 
-              return (
-                <Box
-                  key={poll.id}
-                  sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}
+            return (
+              <Box
+                key={poll.id}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  p: 2,
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                  {poll.question}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {totalVotes === 1 ? '1 vote so far' : `${totalVotes} votes so far`}
+                </Typography>
+                <RadioGroup
+                  value={selectedOptionId}
+                  onChange={(event) => handleVote(poll.id, event.target.value)}
                 >
-                  <Typography variant="h6" sx={{ mb: 1 }}>
-                    {poll.question}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {totalVotes === 1 ? '1 vote so far' : `${totalVotes} votes so far`}
-                  </Typography>
-                  <RadioGroup
-                    value={selectedOptionId}
-                    onChange={(event) => handleVote(poll.id, event.target.value)}
-                  >
-                    {poll.options.map((option) => {
-                      const voteCount = option.voteCount;
-                      const percentage =
-                        totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+                  {poll.options.map((option) => {
+                    const voteCount = option.voteCount;
+                    const percentage =
+                      totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
 
-                      return (
-                        <Box key={option.id} sx={{ mb: 1.5 }}>
-                          <FormControlLabel
-                            value={option.id}
-                            control={<Radio disabled={isSubmitting} />}
-                            label={
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  width: '100%',
-                                }}
-                              >
-                                <Typography sx={{ mr: 2 }}>{option.optionText}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {voteCount} • {percentage}%
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                          <LinearProgress
-                            variant="determinate"
-                            value={totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0}
-                            sx={{ height: 6, borderRadius: 3, mt: 0.5 }}
-                          />
-                        </Box>
-                      );
-                    })}
-                  </RadioGroup>
-                </Box>
-              );
-            })}
-          </Stack>
-        )}
-      </CardContent>
-    </Card>
+                    return (
+                      <Box key={option.id} sx={{ mb: 1.5 }}>
+                        <FormControlLabel
+                          value={option.id}
+                          control={<Radio disabled={isSubmitting} />}
+                          label={
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                width: '100%',
+                              }}
+                            >
+                              <Typography sx={{ mr: 2 }}>{option.optionText}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {voteCount} • {percentage}%
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                        <LinearProgress
+                          variant="determinate"
+                          value={totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0}
+                          sx={{ height: 6, borderRadius: 3, mt: 0.5 }}
+                        />
+                      </Box>
+                    );
+                  })}
+                </RadioGroup>
+              </Box>
+            );
+          })}
+        </Stack>
+      )}
+    </WidgetShell>
   );
 };
 

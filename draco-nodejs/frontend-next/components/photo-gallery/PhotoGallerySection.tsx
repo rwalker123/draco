@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Alert,
   Box,
-  Paper,
   Skeleton,
   Tab,
   Tabs,
@@ -10,12 +9,14 @@ import {
   type SxProps,
   type Theme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import type { PhotoGalleryAlbumType, PhotoGalleryPhotoType } from '@draco/shared-schemas';
 import PhotoGalleryGrid from './PhotoGalleryGrid';
 import PhotoGalleryHero from './PhotoGalleryHero';
 import PhotoGalleryLightbox from './PhotoGalleryLightbox';
 import type { TeamAlbumHierarchyGroup } from './types';
 import TeamAlbumMenu from './TeamAlbumMenu';
+import WidgetShell from '../ui/WidgetShell';
 
 export interface PhotoGallerySectionProps {
   title: string;
@@ -34,17 +35,6 @@ export interface PhotoGallerySectionProps {
   teamAlbumHierarchy?: TeamAlbumHierarchyGroup[];
   sx?: SxProps<Theme>;
 }
-
-const gradientStyles: Record<'account' | 'team', (theme: Theme) => string> = {
-  account: (theme) =>
-    theme.palette.mode === 'dark'
-      ? 'linear-gradient(135deg, rgba(16,24,63,0.9) 0%, rgba(17,24,39,0.85) 100%)'
-      : 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
-  team: (theme) =>
-    theme.palette.mode === 'dark'
-      ? 'linear-gradient(135deg, rgba(16,24,63,0.92) 0%, rgba(17,24,39,0.88) 100%)'
-      : 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)',
-};
 
 const defaultEmptyMessage = 'No photos have been published yet.';
 
@@ -80,7 +70,7 @@ const renderAlbumTabs = (
               px: 1,
               py: 0.25,
               borderRadius: '999px',
-              bgcolor: 'rgba(99,102,241,0.15)',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.15),
               color: 'primary.main',
               fontSize: 12,
               fontWeight: 700,
@@ -114,7 +104,7 @@ const renderAlbumTabs = (
                     px: 1,
                     py: 0.25,
                     borderRadius: '999px',
-                    bgcolor: 'rgba(79,70,229,0.18)',
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.18),
                     color: 'primary.main',
                     fontSize: 12,
                     fontWeight: 700,
@@ -148,6 +138,10 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
 }) => {
   const totalCount = totalCountOverride ?? photos.length;
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const shellSx = React.useMemo(() => {
+    const extras = Array.isArray(sx) ? sx : sx ? [sx] : [];
+    return [{ mb: 2 }, ...extras] as SxProps<Theme>;
+  }, [sx]);
 
   const accountAlbums = React.useMemo(() => albums.filter((album) => !album.teamId), [albums]);
   const accountAlbumKeys = React.useMemo(() => {
@@ -240,59 +234,27 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
   }
 
   return (
-    <Paper
-      sx={{
-        p: 4,
-        borderRadius: 3,
-        mb: 2,
-        background: (theme) => gradientStyles[accent](theme),
-        color: (theme) =>
-          theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.92)' : theme.palette.text.primary,
-        overflow: 'hidden',
-        ...sx,
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'flex-start', md: 'center' },
-          justifyContent: 'space-between',
-          gap: 2,
-          mb: enableAlbumTabs || description ? 3 : 2,
-        }}
-      >
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-            {title}
+    <WidgetShell
+      title={
+        <Typography variant="h5" fontWeight={700} color="text.primary">
+          {title}
+        </Typography>
+      }
+      subtitle={
+        description ? (
+          <Typography variant="body2" color="text.secondary">
+            {description}
           </Typography>
-          {description ? (
-            <Typography
-              variant="body2"
-              sx={{
-                color: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(255,255,255,0.72)'
-                    : theme.palette.text.secondary,
-              }}
-            >
-              {description}
-            </Typography>
-          ) : null}
-        </Box>
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 600,
-            color: (theme) =>
-              theme.palette.mode === 'dark'
-                ? 'rgba(255,255,255,0.75)'
-                : theme.palette.text.secondary,
-          }}
-        >
+        ) : undefined
+      }
+      actions={
+        <Typography variant="body2" fontWeight={600} color="text.secondary">
           {totalCount} {totalCount === 1 ? 'photo' : 'photos'}
         </Typography>
-      </Box>
+      }
+      accent={accent === 'team' ? 'primary' : 'secondary'}
+      sx={shellSx}
+    >
       {enableAlbumTabs && albums.length > 0 ? (
         <Box
           sx={{
@@ -332,7 +294,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
         <Skeleton
           variant="rectangular"
           height={360}
-          sx={{ borderRadius: 4, mb: 4, bgcolor: 'rgba(15,23,42,0.08)' }}
+          sx={{ borderRadius: 4, mb: 4, bgcolor: (theme) => theme.palette.action.hover }}
         />
       ) : null}
       <PhotoGalleryGrid
@@ -349,7 +311,7 @@ const PhotoGallerySection: React.FC<PhotoGallerySectionProps> = ({
         onNext={handleNextLightbox}
         onPrev={handlePrevLightbox}
       />
-    </Paper>
+    </WidgetShell>
   );
 };
 

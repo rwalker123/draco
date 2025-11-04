@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Alert, CircularProgress } from '@mui/material';
+import { Box, Typography, Alert, CircularProgress } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import type { BaseContact } from '@draco/shared-api-client';
 import { BaseContactType } from '@draco/shared-schemas';
 import { getAccountTodaysBirthdays } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
+import WidgetShell from '../ui/WidgetShell';
 
 type TodaysBirthdaysCardProps = {
   accountId: string;
@@ -42,6 +44,7 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
   hasActiveSeason,
 }) => {
   const apiClient = useApiClient();
+  const theme = useTheme();
   const [birthdays, setBirthdays] = useState<BaseContactType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,16 +105,21 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
   }
 
   return (
-    <Paper
+    <WidgetShell
+      title={
+        <Typography variant="h6" fontWeight={700} color="text.primary">
+          Today&apos;s Birthdays
+        </Typography>
+      }
+      accent="secondary"
       sx={{
-        p: 3,
-        borderRadius: 2,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
+        width: '100%',
+        maxWidth: '100%',
       }}
     >
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-        Today&apos;s Birthdays
-      </Typography>
       {!hasActiveSeason && (
         <Alert severity="info" sx={{ mb: 2 }}>
           Birthdays will appear once an active season is selected.
@@ -127,8 +135,9 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
         <Box
           sx={{
             display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
+            flexDirection: 'column',
+            gap: 1.5,
+            width: '100%',
           }}
         >
           {birthdays.map((contact) => (
@@ -137,16 +146,17 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
-                p: 1,
-                borderRadius: 1,
-                bgcolor: 'background.paper',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-                minWidth: 220,
-                maxWidth: 320,
-                flexGrow: 0,
-                flexShrink: 1,
-                flexBasis: '260px',
+                gap: 1.25,
+                px: 1.5,
+                py: 1.25,
+                borderRadius: 1.5,
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.background.default, 0.35)
+                    : alpha(theme.palette.background.default, 0.4),
+                border: `1px solid ${theme.palette.widget.border}`,
+                boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 6 : 1],
+                width: '100%',
               }}
             >
               <Box
@@ -184,7 +194,7 @@ const TodaysBirthdaysCard: React.FC<TodaysBirthdaysCardProps> = ({
           No players are celebrating a birthday today.
         </Typography>
       )}
-    </Paper>
+    </WidgetShell>
   );
 };
 
