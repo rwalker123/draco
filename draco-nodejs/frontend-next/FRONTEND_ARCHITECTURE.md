@@ -1,8 +1,8 @@
-# Frontend Architecture - Draco Sports Manager
+# Frontend Architecture - ezRecSports
 
 ## Overview
 
-This document outlines the architectural patterns, principles, and best practices for the Draco Sports Manager frontend built with Next.js 15 (App Router), React 19, TypeScript, and Material-UI 7.
+This document outlines the architectural patterns, principles, and best practices for the ezRecSports frontend built with Next.js 15 (App Router), React 19, TypeScript, and Material-UI 7.
 
 ## Core Architectural Principles
 

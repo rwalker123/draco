@@ -1,5 +1,5 @@
 import { getTeamInfo } from '@/lib/metadataFetchers';
-import { buildSeoMetadata } from '@/lib/seoMetadata';
+import { buildSeoMetadata, DEFAULT_SITE_NAME } from '@/lib/seoMetadata';
 import TeamStatEntryPageClientWrapper from './TeamStatEntryPageClientWrapper';
 
 export async function generateMetadata({
@@ -9,7 +9,7 @@ export async function generateMetadata({
 }) {
   const { accountId, seasonId, teamSeasonId } = await params;
   const { account, league, team, iconUrl } = await getTeamInfo(accountId, seasonId, teamSeasonId);
-  const description = `${account} ${team} statistics entry and box scores for the ${league} league on Draco Sports Manager.`;
+  const description = `${account} ${team} statistics entry and box scores for the ${league} league on ${DEFAULT_SITE_NAME}.`;
 
   return buildSeoMetadata({
     title: `${team} Game Statistics`,

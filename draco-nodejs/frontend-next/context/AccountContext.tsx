@@ -14,7 +14,7 @@ import { useApiClient } from '../hooks/useApiClient';
 import { getAccountById } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
 
-const ACCOUNT_STORAGE_KEY = 'draco:selected-account';
+export const ACCOUNT_STORAGE_KEY = 'draco:selected-account';
 
 interface Account {
   id: string;

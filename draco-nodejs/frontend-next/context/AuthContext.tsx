@@ -1,6 +1,14 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { useParams } from 'next/navigation';
+import { ACCOUNT_STORAGE_KEY } from './AccountContext';
 import { RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 import {
   login as loginApi,
@@ -60,9 +68,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const resolvePersistedAccountId = useCallback((): string | null => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
+      if (!stored) {
+        return null;
+      }
+
+      const parsed = JSON.parse(stored) as { id?: string | null } | null;
+      return parsed && typeof parsed.id === 'string' ? parsed.id : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const resolveAccountId = useCallback(
+    (accountIdOverride?: string | null) => {
+      if (accountIdOverride !== undefined) {
+        return accountIdOverride;
+      }
+
+      if (accountIdFromPath) {
+        return accountIdFromPath;
+      }
+
+      return resolvePersistedAccountId();
+    },
+    [accountIdFromPath, resolvePersistedAccountId],
+  );
+
   useEffect(() => {
     if (token) {
-      const effectiveAccountId = accountIdFromPath ?? null;
+      const effectiveAccountId = resolveAccountId();
 
       if (lastFetchedAccountId !== effectiveAccountId) {
         fetchUser(undefined, effectiveAccountId);
@@ -75,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLastFetchedAccountId(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, accountIdFromPath]);
+  }, [token, accountIdFromPath, resolveAccountId]);
 
   const login = async (creds: SignInCredentialsType) => {
     setLoading(true);
@@ -164,8 +205,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
     }
 
-    const effectiveAccountId =
-      accountIdOverride !== undefined ? accountIdOverride : accountIdFromPath;
+    const effectiveAccountId = resolveAccountId(accountIdOverride);
 
     try {
       const client = createApiClient({ token: authToken });

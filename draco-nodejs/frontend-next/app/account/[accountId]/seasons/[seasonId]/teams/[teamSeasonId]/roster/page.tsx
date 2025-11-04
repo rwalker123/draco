@@ -1,5 +1,5 @@
 import { getAccountBranding } from '../../../../../../../../lib/metadataFetchers';
-import { buildSeoMetadata } from '../../../../../../../../lib/seoMetadata';
+import { buildSeoMetadata, DEFAULT_SITE_NAME } from '../../../../../../../../lib/seoMetadata';
 import TeamRosterManagementClientWrapper from './TeamRosterManagementClientWrapper';
 
 export async function generateMetadata({
@@ -9,7 +9,7 @@ export async function generateMetadata({
 }) {
   const { accountId, seasonId, teamSeasonId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  const description = `Manage roster assignments, jersey numbers, and player details for ${accountName} inside Draco Sports Manager.`;
+  const description = `Manage roster assignments, jersey numbers, and player details for ${accountName} inside ${DEFAULT_SITE_NAME}.`;
   return buildSeoMetadata({
     title: `${accountName} Team Roster`,
     description,

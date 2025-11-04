@@ -1,6 +1,6 @@
-# Draco Sports Manager - Frontend
+# ezRecSports - Frontend
 
-This is the frontend application for Draco Sports Manager, built with [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript, and Material-UI 7.
+This is the frontend application for ezRecSports, built with [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript, and Material-UI 7.
 
 ## Architecture
 

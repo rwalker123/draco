@@ -1,15 +1,11 @@
 import AccountPageClientWrapper from './AccountPageClientWrapper';
 import { getAccountBranding } from '../../../lib/metadataFetchers';
-import { buildSeoMetadata } from '../../../lib/seoMetadata';
+import { buildSeoMetadata, DEFAULT_SITE_NAME } from '../../../lib/seoMetadata';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ accountId: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
   const { accountId } = await params;
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
-  const description = `Learn more about ${accountName} on Draco Sports Manager, including schedules, rosters, workouts, and player development resources.`;
+  const description = `Learn more about ${accountName} on ${DEFAULT_SITE_NAME}, including schedules, rosters, workouts, and player development resources.`;
   return buildSeoMetadata({
     title: `${accountName} Programs`,
     description,

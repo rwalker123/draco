@@ -1,11 +1,10 @@
 import AccountsClientWrapper from './AccountsClientWrapper';
-import { buildSeoMetadata } from '../../lib/seoMetadata';
+import { buildSeoMetadata, DEFAULT_SITE_NAME } from '../../lib/seoMetadata';
 
 export async function generateMetadata() {
   return buildSeoMetadata({
-    title: 'Accounts - Draco Sports Manager',
-    description:
-      'Explore leagues, clubs, and programs powered by Draco Sports Manager to discover schedules, rosters, and team information.',
+    title: `Accounts - ${DEFAULT_SITE_NAME}`,
+    description: `Explore leagues, clubs, and programs powered by ${DEFAULT_SITE_NAME} to discover schedules, rosters, and team information.`,
     path: '/accounts',
   });
 }

@@ -68,6 +68,7 @@ interface BuildSeoMetadataOptions {
   icon?: string | null;
   index?: boolean;
   keywords?: string[];
+  siteName?: string;
 }
 
 export function buildSeoMetadata({
@@ -78,12 +79,14 @@ export function buildSeoMetadata({
   icon,
   index = true,
   keywords,
+  siteName,
 }: BuildSeoMetadataOptions): Metadata {
   const canonicalUrl = buildCanonicalUrl(path);
   const resolvedKeywords = resolveKeywords(keywords);
   const openGraphImages = image ? [image] : undefined;
   const twitterImages = image ? [image] : undefined;
   const resolvedIcon = icon ?? DEFAULT_ACCOUNT_FAVICON_PATH;
+  const resolvedSiteName = siteName ?? DEFAULT_SITE_NAME;
 
   return {
     title,
@@ -97,7 +100,7 @@ export function buildSeoMetadata({
       title,
       description,
       url: canonicalUrl,
-      siteName: DEFAULT_SITE_NAME,
+      siteName: resolvedSiteName,
       type: 'website',
       ...(openGraphImages ? { images: openGraphImages } : {}),
     },
