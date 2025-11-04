@@ -162,7 +162,7 @@ const darkThemeOverrides: ThemeOptions = {
 
 export const dracoTheme = createTheme(dracoThemeOptions);
 export const darkTheme = createTheme(
-  deepmerge(deepmerge({}, dracoThemeOptions), darkThemeOverrides),
+  deepmerge(dracoThemeOptions, darkThemeOverrides, { clone: true }),
 );
 
 const applyCssBaselineOverrides = (theme: Theme) => {
