@@ -1,16 +1,7 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Snackbar,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Snackbar, Stack, Typography } from '@mui/material';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import { getAccountHallOfFameNominationSetup } from '@draco/shared-api-client';
 import { type HofNominationSetupType } from '@draco/shared-schemas';
@@ -18,6 +9,7 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { sanitizeRichContent } from '@/utils/sanitization';
 import HofNominationDialog from './HofNominationDialog';
+import WidgetShell from '../ui/WidgetShell';
 
 const NOMINATION_SUCCESS_MESSAGE =
   'Thanks for the nomination! Our administrators will review it shortly.';
@@ -90,26 +82,23 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
 
   return (
     <>
-      <Paper
+      <WidgetShell
+        title={
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <HowToVoteIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h6" fontWeight={700} color="text.primary">
+              Nominate a Hall of Fame Member
+            </Typography>
+          </Stack>
+        }
+        accent="secondary"
         sx={{
-          p: 3,
-          borderRadius: 2,
-          background:
-            'linear-gradient(180deg, rgba(217,231,255,0.35) 0%, rgba(217,231,255,0.1) 100%)',
-          boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
           mt: 3,
           width: { xs: '100%', md: 'fit-content' },
           maxWidth: 520,
         }}
       >
         <Stack spacing={3} alignItems="flex-start" sx={{ minHeight: 0 }}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <HowToVoteIcon sx={{ color: 'primary.main' }} />
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Nominate a Hall of Fame Member
-            </Typography>
-          </Stack>
-
           {loading || !nominationSetup ? (
             <Box display="flex" alignItems="center" gap={2}>
               <CircularProgress size={20} />
@@ -154,7 +143,7 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
             </Stack>
           )}
         </Stack>
-      </Paper>
+      </WidgetShell>
 
       {nominationSetup?.enableNomination ? (
         <HofNominationDialog
