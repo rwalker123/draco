@@ -57,6 +57,20 @@ export default function ThemeClientProvider({ children }: { children: React.Reac
     root.classList.toggle('dark', currentThemeName === 'dark');
   }, [currentThemeName]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const backgroundColor = currentTheme.palette.background.default;
+    document.documentElement.style.backgroundColor = backgroundColor;
+    document.body.style.backgroundColor = backgroundColor;
+    const nextRoot = document.getElementById('__next');
+    if (nextRoot) {
+      nextRoot.style.backgroundColor = backgroundColor;
+    }
+  }, [currentTheme]);
+
   const value = useMemo(
     () => ({
       currentTheme,

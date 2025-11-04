@@ -1,4 +1,4 @@
-import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { createTheme, type ThemeOptions, type Theme } from '@mui/material/styles';
 import { deepmerge } from '@mui/utils';
 
 interface WidgetPalette {
@@ -120,7 +120,7 @@ const darkThemeOverrides: ThemeOptions = {
       dark: '#be185d',
     },
     background: {
-      default: '#121212',
+      default: '#1e1e1e',
       paper: '#1e1e1e',
     },
     text: {
@@ -164,3 +164,36 @@ export const dracoTheme = createTheme(dracoThemeOptions);
 export const darkTheme = createTheme(
   deepmerge(deepmerge({}, dracoThemeOptions), darkThemeOverrides),
 );
+
+const applyCssBaselineOverrides = (theme: Theme) => {
+  const components = theme.components ?? {};
+  const existingStyleOverrides = (components.MuiCssBaseline?.styleOverrides ?? {}) as Record<
+    string,
+    unknown
+  >;
+
+  theme.components = {
+    ...components,
+    MuiCssBaseline: {
+      ...(components.MuiCssBaseline ?? {}),
+      styleOverrides: {
+        ...existingStyleOverrides,
+        html: {
+          backgroundColor: theme.palette.background.default,
+        },
+        body: {
+          backgroundColor: theme.palette.background.default,
+          color: theme.palette.text.primary,
+          margin: 0,
+        },
+        '#__next': {
+          minHeight: '100%',
+          backgroundColor: theme.palette.background.default,
+        },
+      },
+    },
+  };
+};
+
+applyCssBaselineOverrides(dracoTheme);
+applyCssBaselineOverrides(darkTheme);
