@@ -260,7 +260,11 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{dialogTitle}</DialogTitle>
+      <DialogTitle>
+        <Typography component="span" variant="h6" fontWeight={700} color="text.primary">
+          {dialogTitle}
+        </Typography>
+      </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
           {submitError ? <Alert severity="error">{submitError}</Alert> : null}

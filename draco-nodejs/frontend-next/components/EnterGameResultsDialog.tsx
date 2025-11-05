@@ -227,7 +227,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           pb: 2,
         }}
       >
-        <Typography variant="h6" component="div" fontWeight={700}>
+        <Typography variant="h6" component="div" fontWeight={700} color="text.primary">
           Enter Game Results
         </Typography>
         <Button onClick={onClose} sx={{ color: 'text.secondary', minWidth: 'auto', p: 0 }}>
