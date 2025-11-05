@@ -18,6 +18,7 @@ import accountsPhotoSubmissionsRouter from './accounts-photo-submissions.js';
 import accountsPhotoGalleryRouter from './accounts-photo-gallery.js';
 import accountsMemberBusinessRouter from './accounts-member-businesses.js';
 import accountsHallOfFameRouter from './accounts-hall-of-fame.js';
+import accountsLeagueFaqRouter from './accounts-league-faq.js';
 
 const router = Router({ mergeParams: true });
 
@@ -61,6 +62,9 @@ router.use('/', accountsSponsorsRouter);
 
 // Member business endpoints
 router.use('/', accountsMemberBusinessRouter);
+
+// League FAQ endpoints
+router.use('/', accountsLeagueFaqRouter);
 
 // Poll management endpoints
 router.use('/', accountsPollsRouter);

@@ -12333,6 +12333,102 @@
           "name"
         ]
       },
+      "LeagueFaq": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^d+$"
+          }
+        },
+        "required": [
+          "question",
+          "answer",
+          "id",
+          "accountId"
+        ],
+        "title": "LeagueFaq",
+        "description": "League FAQ entry exposed to clients"
+      },
+      "UpsertLeagueFaq": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "question",
+          "answer"
+        ],
+        "title": "UpsertLeagueFaq",
+        "description": "Payload for creating or updating a league FAQ entry"
+      },
+      "LeagueFaqList": {
+        "type": "object",
+        "properties": {
+          "faqs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                },
+                "answer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                }
+              },
+              "required": [
+                "question",
+                "answer",
+                "id",
+                "accountId"
+              ],
+              "title": "LeagueFaq",
+              "description": "League FAQ entry exposed to clients"
+            }
+          }
+        },
+        "required": [
+          "faqs"
+        ],
+        "title": "LeagueFaqList",
+        "description": "Collection of FAQ entries for a league account"
+      },
       "Game": {
         "type": "object",
         "properties": {
@@ -25907,6 +26003,378 @@
           },
           "404": {
             "description": "Handout or team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/league-faq": {
+      "get": {
+        "operationId": "listLeagueFaqs",
+        "summary": "List league FAQs",
+        "description": "Returns league FAQ entries for the account. Accessible without authentication.",
+        "tags": [
+          "League FAQ"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "League FAQ entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaqList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLeagueFaq",
+        "summary": "Create a league FAQ entry",
+        "description": "Creates a new league FAQ entry within the account.",
+        "tags": [
+          "League FAQ"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertLeagueFaq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "League FAQ entry created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaq"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to manage league FAQs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/league-faq/{faqId}": {
+      "get": {
+        "operationId": "getLeagueFaq",
+        "summary": "Get a league FAQ entry",
+        "description": "Retrieves a single league FAQ entry by identifier. Accessible without authentication.",
+        "tags": [
+          "League FAQ"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "faqId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "League FAQ entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaq"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FAQ not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateLeagueFaq",
+        "summary": "Update a league FAQ entry",
+        "description": "Updates the question or answer for an existing league FAQ entry.",
+        "tags": [
+          "League FAQ"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "faqId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertLeagueFaq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated league FAQ entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaq"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to manage league FAQs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FAQ not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLeagueFaq",
+        "summary": "Delete a league FAQ entry",
+        "description": "Deletes an existing league FAQ entry from the account.",
+        "tags": [
+          "League FAQ"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "faqId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "League FAQ entry deleted"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to manage league FAQs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FAQ not found",
             "content": {
               "application/json": {
                 "schema": {

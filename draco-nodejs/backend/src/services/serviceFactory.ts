@@ -36,6 +36,7 @@ import { FieldService } from './fieldService.js';
 import { UmpireService } from './umpireService.js';
 import { ScheduleService } from './scheduleService.js';
 import { LeagueService } from './LeagueService.js';
+import { LeagueFaqService } from './LeagueFaqService.js';
 import { MonitoringService } from './monitoringService.js';
 import { UserService } from './userService.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
@@ -95,6 +96,7 @@ export class ServiceFactory {
   private static umpireService: UmpireService;
   private static scheduleService: ScheduleService;
   private static leagueService: LeagueService;
+  private static leagueFaqService: LeagueFaqService;
   private static monitoringService: MonitoringService;
   private static userService: UserService;
   private static turnstileService: TurnstileService;
@@ -344,6 +346,13 @@ export class ServiceFactory {
       this.leagueService = new LeagueService();
     }
     return this.leagueService;
+  }
+
+  static getLeagueFaqService(): LeagueFaqService {
+    if (!this.leagueFaqService) {
+      this.leagueFaqService = new LeagueFaqService();
+    }
+    return this.leagueFaqService;
   }
 
   static getEmailService(): EmailService {

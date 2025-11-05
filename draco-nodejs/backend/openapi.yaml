@@ -9164,6 +9164,79 @@ components:
           maxLength: 100
       required:
         - name
+    LeagueFaq:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 50
+        answer:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        id:
+          type: string
+          pattern: ^d+$
+        accountId:
+          type: string
+          pattern: ^d+$
+      required:
+        - question
+        - answer
+        - id
+        - accountId
+      title: LeagueFaq
+      description: League FAQ entry exposed to clients
+    UpsertLeagueFaq:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 50
+        answer:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+        - question
+        - answer
+      title: UpsertLeagueFaq
+      description: Payload for creating or updating a league FAQ entry
+    LeagueFaqList:
+      type: object
+      properties:
+        faqs:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+                minLength: 1
+                maxLength: 50
+              answer:
+                type: string
+                minLength: 1
+                maxLength: 1000
+              id:
+                type: string
+                pattern: ^d+$
+              accountId:
+                type: string
+                pattern: ^d+$
+            required:
+              - question
+              - answer
+              - id
+              - accountId
+            title: LeagueFaq
+            description: League FAQ entry exposed to clients
+      required:
+        - faqs
+      title: LeagueFaqList
+      description: Collection of FAQ entries for a league account
     Game:
       type: object
       properties:
@@ -18146,6 +18219,208 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/league-faq:
+    get:
+      operationId: listLeagueFaqs
+      summary: List league FAQs
+      description: Returns league FAQ entries for the account. Accessible without
+        authentication.
+      tags:
+        - League FAQ
+      parameters:
+        - &a1
+          name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: League FAQ entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeagueFaqList"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      operationId: createLeagueFaq
+      summary: Create a league FAQ entry
+      description: Creates a new league FAQ entry within the account.
+      tags:
+        - League FAQ
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertLeagueFaq"
+      responses:
+        "201":
+          description: League FAQ entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeagueFaq"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized to manage league FAQs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/league-faq/{faqId}:
+    get:
+      operationId: getLeagueFaq
+      summary: Get a league FAQ entry
+      description: Retrieves a single league FAQ entry by identifier. Accessible
+        without authentication.
+      tags:
+        - League FAQ
+      parameters:
+        - *a1
+        - &a2
+          name: faqId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: League FAQ entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeagueFaq"
+        "404":
+          description: FAQ not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      operationId: updateLeagueFaq
+      summary: Update a league FAQ entry
+      description: Updates the question or answer for an existing league FAQ entry.
+      tags:
+        - League FAQ
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+        - *a2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertLeagueFaq"
+      responses:
+        "200":
+          description: Updated league FAQ entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeagueFaq"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized to manage league FAQs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: FAQ not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      operationId: deleteLeagueFaq
+      summary: Delete a league FAQ entry
+      description: Deletes an existing league FAQ entry from the account.
+      tags:
+        - League FAQ
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+        - *a2
+      responses:
+        "204":
+          description: League FAQ entry deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Not authorized to manage league FAQs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: FAQ not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/leagues:
     get:
       operationId: listSeasonLeagueSeasons
@@ -19694,7 +19969,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a1
+        - &a3
           name: accountId
           in: path
           required: true
@@ -19728,7 +20003,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
+        - *a3
       requestBody:
         content:
           application/json:
@@ -19785,8 +20060,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a1
-        - &a2
+        - *a3
+        - &a4
           name: memberBusinessId
           in: path
           required: true
@@ -19821,8 +20096,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
-        - *a2
+        - *a3
+        - *a4
       requestBody:
         content:
           application/json:
@@ -19880,8 +20155,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
-        - *a2
+        - *a3
+        - *a4
       responses:
         "204":
           description: Member business entry deleted
@@ -20837,7 +21112,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a3
+        - &a5
           name: accountId
           in: path
           required: true
@@ -20881,7 +21156,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
+        - *a5
       requestBody:
         content:
           application/json:
@@ -20928,8 +21203,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - &a4
+        - *a5
+        - &a6
           name: categoryId
           in: path
           required: true
@@ -20988,8 +21263,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - *a4
+        - *a5
+        - *a6
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -21028,8 +21303,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - *a4
+        - *a5
+        - *a6
       requestBody:
         content:
           application/json:
@@ -21082,8 +21357,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - &a5
+        - *a5
+        - &a7
           name: questionId
           in: path
           required: true
@@ -21141,8 +21416,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
         - *a5
+        - *a7
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -21179,7 +21454,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a3
+        - *a5
         - schema:
             type: integer
             minimum: 1
@@ -21230,8 +21505,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a3
-        - &a6
+        - *a5
+        - &a8
           name: playerId
           in: path
           required: true
@@ -21269,9 +21544,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - *a6
         - *a5
+        - *a8
+        - *a7
       requestBody:
         content:
           application/json:
@@ -21324,9 +21599,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - *a6
         - *a5
+        - *a8
+        - *a7
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -21363,7 +21638,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a3
+        - *a5
       responses:
         "200":
           description: Player survey spotlight result.
@@ -21392,7 +21667,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a3
+        - *a5
         - name: teamSeasonId
           in: path
           required: true
@@ -23915,23 +24190,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a8
+        - &a10
           name: accountId
           in: path
           required: true
-          schema: &a7
+          schema: &a9
             type: string
             format: number
-        - &a9
+        - &a11
           name: seasonId
           in: path
           required: true
-          schema: *a7
-        - &a10
+          schema: *a9
+        - &a12
           name: teamSeasonId
           in: path
           required: true
-          schema: *a7
+          schema: *a9
       responses:
         "200":
           description: Completed games retrieved.
@@ -23977,14 +24252,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
-        - &a11
+        - *a11
+        - *a12
+        - &a13
           name: gameId
           in: path
           required: true
-          schema: *a7
+          schema: *a9
       responses:
         "200":
           description: Batting stats retrieved.
@@ -24029,10 +24304,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
+        - *a12
+        - *a13
       requestBody:
         required: true
         content:
@@ -24090,15 +24365,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
-        - &a12
+        - *a12
+        - *a13
+        - &a14
           name: statId
           in: path
           required: true
-          schema: *a7
+          schema: *a9
       requestBody:
         required: true
         content:
@@ -24149,11 +24424,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
         - *a12
+        - *a13
+        - *a14
       responses:
         "204":
           description: Batting stat deleted.
@@ -24195,10 +24470,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
+        - *a12
+        - *a13
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -24243,10 +24518,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
+        - *a12
+        - *a13
       requestBody:
         required: true
         content:
@@ -24304,11 +24579,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
         - *a12
+        - *a13
+        - *a14
       requestBody:
         required: true
         content:
@@ -24359,11 +24634,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
         - *a12
+        - *a13
+        - *a14
       responses:
         "204":
           description: Pitching stat deleted.
@@ -24405,10 +24680,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
+        - *a12
+        - *a13
       responses:
         "200":
           description: Attendance retrieved.
@@ -24453,10 +24728,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
         - *a10
         - *a11
+        - *a12
+        - *a13
       requestBody:
         required: true
         content:

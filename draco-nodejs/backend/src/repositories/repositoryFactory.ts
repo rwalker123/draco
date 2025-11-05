@@ -6,6 +6,7 @@ import {
   IRoleRepository,
   ISeasonsRepository,
   ILeagueRepository,
+  ILeagueFaqRepository,
   ICleanupRepository,
   IPollRepository,
   IPlayersWantedRepository,
@@ -46,6 +47,7 @@ import {
   PrismaRoleRepository,
   PrismaSeasonsRepository,
   PrismaLeagueRepository,
+  PrismaLeagueFaqRepository,
   PrismaCleanupRepository,
   PrismaPollRepository,
   PrismaTeamsWantedRepository,
@@ -91,6 +93,7 @@ export class RepositoryFactory {
   private static roleRepository: IRoleRepository;
   private static seasonsRepository: ISeasonsRepository;
   private static leagueRepository: ILeagueRepository;
+  private static leagueFaqRepository: ILeagueFaqRepository;
   private static cleanupRepository: ICleanupRepository;
   private static pollRepository: IPollRepository;
   private static playersWantedRepository: IPlayersWantedRepository;
@@ -126,6 +129,13 @@ export class RepositoryFactory {
       this.leagueRepository = new PrismaLeagueRepository(prisma);
     }
     return this.leagueRepository;
+  }
+
+  static getLeagueFaqRepository(): ILeagueFaqRepository {
+    if (!this.leagueFaqRepository) {
+      this.leagueFaqRepository = new PrismaLeagueFaqRepository(prisma);
+    }
+    return this.leagueFaqRepository;
   }
 
   static getUserRepository(): IUserRepository {

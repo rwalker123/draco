@@ -20,6 +20,7 @@ export * from './standardSchema.js';
 export * from './division.js';
 export * from './season.js';
 export * from './league.js';
+export * from './leagueFaq.js';
 export * from './game.js';
 export * from './standing.js';
 export * from './statistics.js';

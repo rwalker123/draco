@@ -41,6 +41,15 @@ export type dbMemberBusiness = Prisma.memberbusinessGetPayload<{
   };
 }>;
 
+export type dbLeagueFaq = Prisma.leaguefaqGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    question: true;
+    answer: true;
+  };
+}>;
+
 export type dbBattingStatisticsRow = {
   playerId: bigint;
   playerName: string;
