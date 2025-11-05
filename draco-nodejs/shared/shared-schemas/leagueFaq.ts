@@ -32,14 +32,11 @@ export const LeagueFaqSchema = UpsertLeagueFaqSchema.extend({
   description: 'League FAQ entry exposed to clients',
 });
 
-export const LeagueFaqListSchema = z
-  .object({
-    faqs: LeagueFaqSchema.array(),
-  })
-  .openapi({
-    title: 'LeagueFaqList',
-    description: 'Collection of FAQ entries for a league account',
-  });
+export const LeagueFaqListSchema = z.array(LeagueFaqSchema).openapi({
+  title: 'LeagueFaqList',
+  description: 'Collection of FAQ entries for a league account',
+});
 
 export type UpsertLeagueFaqType = z.infer<typeof UpsertLeagueFaqSchema>;
 export type LeagueFaqType = z.infer<typeof LeagueFaqSchema>;
+export type LeagueFaqListType = z.infer<typeof LeagueFaqListSchema>;

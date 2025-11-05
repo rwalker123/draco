@@ -12386,46 +12386,38 @@
         "description": "Payload for creating or updating a league FAQ entry"
       },
       "LeagueFaqList": {
-        "type": "object",
-        "properties": {
-          "faqs": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "question": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 50
-                },
-                "answer": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 1000
-                },
-                "id": {
-                  "type": "string",
-                  "pattern": "^d+$"
-                },
-                "accountId": {
-                  "type": "string",
-                  "pattern": "^d+$"
-                }
-              },
-              "required": [
-                "question",
-                "answer",
-                "id",
-                "accountId"
-              ],
-              "title": "LeagueFaq",
-              "description": "League FAQ entry exposed to clients"
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "answer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^d+$"
+            },
+            "accountId": {
+              "type": "string",
+              "pattern": "^d+$"
             }
-          }
+          },
+          "required": [
+            "question",
+            "answer",
+            "id",
+            "accountId"
+          ],
+          "title": "LeagueFaq",
+          "description": "League FAQ entry exposed to clients"
         },
-        "required": [
-          "faqs"
-        ],
         "title": "LeagueFaqList",
         "description": "Collection of FAQ entries for a league account"
       },

@@ -30,6 +30,7 @@ import {
   QuestionAnswer as QuestionAnswerIcon,
   PhotoLibrary as PhotoLibraryIcon,
   EmojiEvents as EmojiEventsIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -490,6 +491,28 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <QuestionAnswerIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Survey Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/league-faq/manage`)
+                }
+                key="league-faq-management"
+              >
+                <ListItemIcon>
+                  <HelpOutlineIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>FAQ Management</ListItemText>
               </MenuItem>
             );
           }
