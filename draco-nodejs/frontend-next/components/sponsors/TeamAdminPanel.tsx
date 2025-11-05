@@ -52,11 +52,9 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         }}
       >
         {shouldShowClassifiedsLink && (
-          <Stack spacing={0.5}>
-            <Typography variant="body2" color="text.secondary">
-              Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
-            </Typography>
-          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
+          </Typography>
         )}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
