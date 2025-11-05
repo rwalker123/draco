@@ -37,13 +37,10 @@ const HierarchicalHeader: React.FC<HierarchicalHeaderProps> = ({
   onEndDateChange,
   onNavigate,
   onGoToToday,
-  viewMode,
 }) => {
   const theme = useTheme();
   const borderColor = theme.palette.widget.border;
   const headerTextColor = theme.palette.widget.headerText;
-  const primaryBandIntensity = theme.palette.mode === 'dark' ? 0.45 : 0.12;
-  const primaryBandHoverIntensity = theme.palette.mode === 'dark' ? 0.6 : 0.18;
   const hierarchyIntensitiesDay =
     theme.palette.mode === 'dark' ? [0.32, 0.24, 0.18] : [0.1, 0.08, 0.06];
   const hierarchyIntensitiesOther = theme.palette.mode === 'dark' ? [0.32, 0.24] : [0.1, 0.08];
@@ -158,68 +155,8 @@ const HierarchicalHeader: React.FC<HierarchicalHeaderProps> = ({
       intensity: hierarchyIntensitiesOther[0],
     });
   }
-  const getViewModeTitle = () => {
-    return viewMode === 'calendar' ? 'Calendar View' : 'List View';
-  };
-
-  const getViewModeClickHandler = () => {
-    if (viewMode === 'list') {
-      // List view: click to go to calendar view
-      return () => {
-        onFilterTypeChange('month');
-        onFilterDateChange(filterDate);
-      };
-    } else {
-      // Calendar view: click to go to list view
-      return () => {
-        onFilterTypeChange('month');
-        onFilterDateChange(filterDate);
-      };
-    }
-  };
-
-  const getViewModeTooltip = () => {
-    if (viewMode === 'list') {
-      return `View ${format(filterDate, 'MMMM yyyy')} in calendar view`;
-    } else {
-      return `View ${format(filterDate, 'MMMM yyyy')} in list view`;
-    }
-  };
-
   return (
     <>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 2,
-          px: 2,
-          backgroundColor: alpha(theme.palette.primary.main, primaryBandIntensity),
-          borderBottom: `1px solid ${borderColor}`,
-          cursor: 'pointer',
-          transition: 'background-color 0.15s ease',
-          color:
-            theme.palette.mode === 'dark' ? theme.palette.primary.contrastText : headerTextColor,
-          '&:hover': {
-            backgroundColor: alpha(theme.palette.primary.main, primaryBandHoverIntensity),
-          },
-        }}
-        onClick={getViewModeClickHandler()}
-        title={getViewModeTooltip()}
-      >
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 'bold',
-            color:
-              theme.palette.mode === 'dark' ? theme.palette.primary.contrastText : headerTextColor,
-          }}
-        >
-          {getViewModeTitle()}
-        </Typography>
-      </Box>
-
       {hierarchyRows.map((row) => (
         <Box
           key={row.key}

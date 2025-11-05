@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper } from '@mui/material';
-import { addDays, subDays } from 'date-fns';
+import { addDays, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ViewComponentProps } from '@/types/schedule';
 import GameCard from '../../GameCard';
 import HierarchicalHeader from '../components/HierarchicalHeader';
@@ -112,6 +112,14 @@ const DayListView: React.FC<DayListViewProps> = ({
   const sortedDates = isDayView ? null : Object.keys(gamesByDate!).sort();
   const isToday = isDayView ? isSameDayInTimezone(currentDate, new Date(), timeZone) : false;
   const todayKey = React.useMemo(() => getDateKeyInTimezone(new Date(), timeZone), [timeZone]);
+  const computedWeekStart = React.useMemo(
+    () => (isDayView ? startOfWeek(currentDate) : _startDate),
+    [isDayView, currentDate, _startDate],
+  );
+  const computedWeekEnd = React.useMemo(
+    () => (isDayView ? endOfWeek(currentDate) : _endDate),
+    [isDayView, currentDate, _endDate],
+  );
 
   const renderDayContent = () => {
     if (dayGames.length === 0) {
@@ -285,8 +293,8 @@ const DayListView: React.FC<DayListViewProps> = ({
       <HierarchicalHeader
         filterType={filterType}
         filterDate={isDayView ? currentDate : filterDate}
-        startDate={_startDate}
-        endDate={_endDate}
+        startDate={computedWeekStart}
+        endDate={computedWeekEnd}
         isNavigating={isNavigating || false}
         onFilterTypeChange={setFilterType}
         onFilterDateChange={setFilterDate}

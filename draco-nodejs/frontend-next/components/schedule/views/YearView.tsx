@@ -111,7 +111,7 @@ const YearView: React.FC<ViewComponentProps> = ({
 
         return (
           <Box
-            key={`${month}-${index}`}
+            key={dateKey ?? `${monthKeyPrefix}-${index}`}
             sx={{
               width: '14.28%',
               height: 60,

@@ -95,6 +95,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
         canEditRecap={canEditRecap}
         isNavigating={isNavigating}
         timeZone={timeZone}
+        currentMonthDate={filterDate}
       />
     </WidgetShell>
   );

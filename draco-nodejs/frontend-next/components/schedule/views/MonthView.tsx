@@ -108,6 +108,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
         canEditRecap={canEditRecap}
         isNavigating={isNavigating || false}
         timeZone={timeZone}
+        currentMonthDate={currentMonth}
       />
     </WidgetShell>
   );
