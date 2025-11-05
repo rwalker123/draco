@@ -1,13 +1,14 @@
 import { getAccountBranding } from '../../../../../../lib/metadataFetchers';
 import { buildSeoMetadata } from '../../../../../../lib/seoMetadata';
+import { resolveRouteParams, type MetadataParams } from '../../../../../../lib/metadataParams';
 import TeamsClientWrapper from './TeamsClientWrapper';
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ accountId: string; seasonId: string }>;
+  params: MetadataParams<{ accountId: string; seasonId: string }>;
 }) {
-  const { accountId, seasonId } = await params;
+  const { accountId, seasonId } = await resolveRouteParams(params);
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
   const description = `Explore rosters, divisions, and program details for ${accountName} teams in the current season.`;
   return buildSeoMetadata({

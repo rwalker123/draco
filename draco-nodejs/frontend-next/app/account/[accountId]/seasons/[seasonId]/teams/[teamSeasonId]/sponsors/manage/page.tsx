@@ -1,12 +1,16 @@
 import { getTeamInfo } from '../../../../../../../../../lib/metadataFetchers';
+import {
+  resolveRouteParams,
+  type MetadataParams,
+} from '../../../../../../../../../lib/metadataParams';
 import TeamSponsorManagementClient from './TeamSponsorManagementClient';
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ accountId: string; seasonId: string; teamSeasonId: string }>;
+  params: MetadataParams<{ accountId: string; seasonId: string; teamSeasonId: string }>;
 }) {
-  const { accountId, seasonId, teamSeasonId } = await params;
+  const { accountId, seasonId, teamSeasonId } = await resolveRouteParams(params);
   const { account, league, team, iconUrl } = await getTeamInfo(accountId, seasonId, teamSeasonId);
 
   return {

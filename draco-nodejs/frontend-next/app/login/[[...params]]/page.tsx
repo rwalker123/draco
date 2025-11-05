@@ -1,15 +1,11 @@
 import { Suspense } from 'react';
 import { getAccountBranding } from '../../../lib/metadataFetchers';
 import { buildSeoMetadata, DEFAULT_SITE_NAME } from '../../../lib/seoMetadata';
+import { getFirstQueryValue, type MetadataSearchParams } from '../../../lib/metadataParams';
 import LoginClientWrapper from '../LoginClientWrapper';
 
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<URLSearchParams>;
-}) {
-  const params = await searchParams;
-  const accountId = params.get('accountId') ?? undefined;
+export async function generateMetadata({ searchParams }: { searchParams: MetadataSearchParams }) {
+  const accountId = await getFirstQueryValue(searchParams, 'accountId');
   let title = `Sign In - ${DEFAULT_SITE_NAME}`;
   let description = `Access ${DEFAULT_SITE_NAME} to stay in sync with team schedules, communications, and player development.`;
   let icons: { icon: string } | undefined;

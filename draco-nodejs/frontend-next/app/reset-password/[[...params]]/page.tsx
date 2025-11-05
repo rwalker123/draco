@@ -1,15 +1,11 @@
 import { Suspense } from 'react';
 import { getAccountBranding } from '../../../lib/metadataFetchers';
 import { buildSeoMetadata, DEFAULT_SITE_NAME } from '../../../lib/seoMetadata';
+import { getFirstQueryValue, type MetadataSearchParams } from '../../../lib/metadataParams';
 import ResetPasswordClientWrapper from '../ResetPasswordClientWrapper';
 
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<URLSearchParams>;
-}) {
-  const params = await searchParams;
-  const accountId = params.get('accountId') ?? undefined;
+export async function generateMetadata({ searchParams }: { searchParams: MetadataSearchParams }) {
+  const accountId = await getFirstQueryValue(searchParams, 'accountId');
   let title = `Password Reset - ${DEFAULT_SITE_NAME}`;
   let description = `Reset your ${DEFAULT_SITE_NAME} password to regain access to your sports organization tools.`;
   let icons: { icon: string } | undefined;
