@@ -71,7 +71,7 @@ export const resolveRouteParams = async <P extends Record<string, string>>(
   params: MetadataParams<P> | P,
 ): Promise<P> => {
   if (isPromise(params)) {
-    return params as Promise<P>;
+    return await params;
   }
 
   return params as P;
