@@ -81,6 +81,10 @@ export const FieldDetailsCard: React.FC<FieldDetailsCardProps> = ({
   placeholderDescription = 'Choose a field to view its location and details.',
   mapHeight = 320,
 }) => {
+  const stopClickPropagation = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  };
+
   const latitude = parseCoordinate(field?.latitude ?? null);
   const longitude = parseCoordinate(field?.longitude ?? null);
   const zip = field?.zip?.trim().length
@@ -109,10 +113,18 @@ export const FieldDetailsCard: React.FC<FieldDetailsCardProps> = ({
   }, [field, latitude, longitude, zip]);
 
   return (
-    <Card elevation={3}>
+    <Card
+      elevation={3}
+      onClick={stopClickPropagation}
+      onMouseDown={stopClickPropagation}
+      onTouchStart={stopClickPropagation}
+      onPointerDown={stopClickPropagation}
+    >
       <CardHeader
         title={field?.name ?? placeholderTitle}
         subheader={field?.address ?? placeholderDescription}
+        titleTypographyProps={{ color: 'text.primary', fontWeight: 600 }}
+        subheaderTypographyProps={{ color: 'text.secondary' }}
       />
       <CardContent>
         {field ? (

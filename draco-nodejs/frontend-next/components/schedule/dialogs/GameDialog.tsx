@@ -397,7 +397,7 @@ const GameDialog: React.FC<GameDialogProps> = ({
             mb: 1,
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }} color="text.primary">
             {title}
           </Typography>
         </Box>
