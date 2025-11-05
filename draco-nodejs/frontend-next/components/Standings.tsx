@@ -14,11 +14,13 @@ import {
   Paper,
   Chip,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { getSeasonStandings } from '@draco/shared-api-client';
 import type { SeasonStandingsResponse } from '@draco/shared-api-client';
 import { StandingsLeagueType, StandingsTeamType } from '@draco/shared-schemas';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
+import WidgetShell from './ui/WidgetShell';
 
 interface StandingsProps {
   accountId: string;
@@ -48,7 +50,12 @@ const formatTies = (value: number): string => {
   return value.toString();
 };
 
-export default function Standings({ accountId, seasonId, showHeader = true }: StandingsProps) {
+export default function Standings({
+  accountId,
+  seasonId,
+  title,
+  showHeader = true,
+}: StandingsProps) {
   const apiClient = useApiClient();
   const [groupedStandings, setGroupedStandings] = useState<StandingsLeagueType[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,34 +101,6 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
     });
   };
 
-  if (!seasonId || seasonId === '0') {
-    return (
-      <Box p={3}>
-        <Typography variant="body1" color="text.secondary">
-          Please select a season to view standings.
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={3}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
-
-  if (!loading && (!groupedStandings || groupedStandings.length === 0)) {
-    return (
-      <Box p={3}>
-        <Typography variant="body1" color="text.secondary">
-          No standings available for the selected season.
-        </Typography>
-      </Box>
-    );
-  }
-
   const renderStandingsTable = (teams: StandingsTeamType[], isFirstTable: boolean = false) => (
     <TableContainer
       component={Paper}
@@ -129,31 +108,42 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
         mb: 3,
         maxWidth: 800,
         mx: 'auto',
-        boxShadow: 2,
         borderRadius: 2,
+        backgroundColor: (theme) => theme.palette.widget.surface,
+        border: (theme) => `1px solid ${theme.palette.widget.border}`,
+        boxShadow: (theme) => theme.shadows[theme.palette.mode === 'dark' ? 8 : 1],
       }}
     >
       <Table size="small" sx={{ minWidth: 650 }}>
         {isFirstTable && (
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'grey.50' }}>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 200 }}>Team</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 50 }}>
+            <TableRow
+              sx={{
+                backgroundColor: (theme) =>
+                  alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.08),
+                '& .MuiTableCell-root': {
+                  borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
+                  color: (theme) => theme.palette.widget.headerText,
+                },
+              }}
+            >
+              <TableCell sx={{ fontWeight: 600, minWidth: 200 }}>Team</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 50 }}>
                 W
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 50 }}>
+              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 50 }}>
                 L
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 50 }}>
+              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 50 }}>
                 T
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 60 }}>
+              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 60 }}>
                 PCT
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 60 }}>
+              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 60 }}>
                 GB
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 100 }}>
+              <TableCell align="right" sx={{ fontWeight: 600, minWidth: 100 }}>
                 Div Record
               </TableCell>
             </TableRow>
@@ -164,11 +154,15 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
             <TableRow
               key={team.team.id}
               sx={{
-                '&:hover': { backgroundColor: 'action.hover' },
-                backgroundColor: index === 0 ? 'success.light' : 'inherit',
+                '&:hover': { backgroundColor: (theme) => theme.palette.action.hover },
+                backgroundColor: (theme) =>
+                  index === 0
+                    ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.3 : 0.12)
+                    : 'transparent',
+                borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
               }}
             >
-              <TableCell sx={{ minWidth: 200 }}>
+              <TableCell sx={{ minWidth: 200, color: 'text.primary' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {team.team.name ?? 'Unnamed Team'}
                   {index === 0 && (
@@ -192,7 +186,11 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
               </TableCell>
               <TableCell
                 align="right"
-                sx={{ minWidth: 60, fontWeight: 'bold', color: 'primary.main' }}
+                sx={{
+                  minWidth: 60,
+                  fontWeight: 700,
+                  color: (theme) => theme.palette.primary.main,
+                }}
               >
                 {formatPercentage(team.pct)}
               </TableCell>
@@ -227,9 +225,8 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
                 mb: 3,
                 fontWeight: 'bold',
                 textAlign: 'center',
-                color: 'primary.main',
-                borderBottom: '2px solid',
-                borderColor: 'primary.main',
+                color: (theme) => theme.palette.widget.headerText,
+                borderBottom: (theme) => `2px solid ${theme.palette.primary.main}`,
                 pb: 1,
                 letterSpacing: '0.05em',
               }}
@@ -249,14 +246,14 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
                     variant="h6"
                     sx={{
                       mb: 2,
-                      fontWeight: 'bold',
+                      fontWeight: 700,
                       textAlign: 'center',
-                      color: 'secondary.main',
+                      color: (theme) => theme.palette.secondary.main,
                       textTransform: 'uppercase',
                       fontSize: '1rem',
                       letterSpacing: '0.08em',
-                      borderBottom: '1px solid',
-                      borderColor: 'secondary.light',
+                      borderBottom: (theme) =>
+                        `1px solid ${alpha(theme.palette.secondary.main, 0.4)}`,
                       pb: 0.5,
                       display: 'inline-block',
                       minWidth: '200px',
@@ -283,23 +280,59 @@ export default function Standings({ accountId, seasonId, showHeader = true }: St
     );
   };
 
-  const content = (
-    <Box sx={{ py: 2 }}>
-      {loading ? (
+  const renderStatusMessage = (message: string) => (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: 160,
+        textAlign: 'center',
+      }}
+    >
+      <Typography variant="body1" color="text.secondary">
+        {message}
+      </Typography>
+    </Box>
+  );
+
+  const renderBody = () => {
+    if (!seasonId || seasonId === '0') {
+      return renderStatusMessage('Please select a season to view standings.');
+    }
+
+    if (error) {
+      return (
+        <Alert severity="error" sx={{ maxWidth: 600, mx: 'auto' }}>
+          {error}
+        </Alert>
+      );
+    }
+
+    if (loading) {
+      return (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
           <Typography variant="h6" color="text.secondary">
             Loading standings...
           </Typography>
         </Box>
-      ) : (
-        renderStandingsContent()
-      )}
-    </Box>
+      );
+    }
+
+    if (!groupedStandings || groupedStandings.length === 0) {
+      return renderStatusMessage('No standings available for the selected season.');
+    }
+
+    return renderStandingsContent();
+  };
+
+  return (
+    <WidgetShell
+      title={showHeader ? (title ?? 'Standings') : undefined}
+      accent="info"
+      disablePadding
+    >
+      <Box sx={{ px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>{renderBody()}</Box>
+    </WidgetShell>
   );
-
-  if (!showHeader) {
-    return content;
-  }
-
-  return <Box sx={{ py: 3, px: 2 }}>{content}</Box>;
 }
