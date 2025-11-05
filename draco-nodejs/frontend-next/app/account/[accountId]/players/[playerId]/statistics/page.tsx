@@ -1,13 +1,14 @@
 import { getAccountBranding } from '../../../../../../lib/metadataFetchers';
 import { buildSeoMetadata } from '../../../../../../lib/seoMetadata';
+import { resolveRouteParams, type MetadataParams } from '../../../../../../lib/metadataParams';
 import PlayerStatisticsClientWrapper from './PlayerStatisticsClientWrapper';
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ accountId: string; playerId: string }>;
+  params: MetadataParams<{ accountId: string; playerId: string }>;
 }) {
-  const { accountId } = await params;
+  const { accountId } = await resolveRouteParams(params);
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
 
   const title = `${accountName} Player Statistics`;
