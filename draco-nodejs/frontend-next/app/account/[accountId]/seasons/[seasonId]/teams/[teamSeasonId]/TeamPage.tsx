@@ -1,9 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { MessageSquare, Play, Target } from 'lucide-react';
-import Image from 'next/image';
+import { Target } from 'lucide-react';
 import GameListDisplay, { Game } from '../../../../../../../components/GameListDisplay';
 import React from 'react';
 import { getGameSummary } from '../../../../../../../lib/utils';
@@ -537,33 +534,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             />
           </Box>
 
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Play className="w-5 h-5" />
-                Videos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <Image
-                  src="/placeholder.png"
-                  alt="Video 1"
-                  width={120}
-                  height={80}
-                  className="rounded"
-                />
-                <Image
-                  src="/placeholder.png"
-                  alt="Video 2"
-                  width={120}
-                  height={80}
-                  className="rounded"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
           {isTeamMember && teamHandoutScope && (
             <Box
               sx={{
@@ -623,27 +593,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
       {/* Community Section */}
       <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,1fr)_auto] gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              Team Feed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="bg-blue-50 p-3 rounded">
-                Great batting practice today! Ready for the upcoming game ⚾
-              </div>
-              <div className="bg-blue-50 p-3 rounded">
-                Thanks to all the fans who came out to support us last weekend! 🙌
-              </div>
-              <Button variant="outline" className="w-full mt-2">
-                Share an Update
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
         <SurveySpotlightWidget
           accountId={accountId}
           teamSeasonId={teamSeasonId}
