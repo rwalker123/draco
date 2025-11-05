@@ -7,7 +7,17 @@ type SearchParamsInput =
 
 const cloneRecord = (
   record: Record<string, string | string[] | undefined>,
-): Record<string, string | string[] | undefined> => ({ ...record });
+): Record<string, string | string[] | undefined> => {
+  const clonedEntries = Object.entries(record).map(([key, value]) => {
+    if (Array.isArray(value)) {
+      return [key, [...value]] as const;
+    }
+
+    return [key, value] as const;
+  });
+
+  return Object.fromEntries(clonedEntries);
+};
 
 const isPromise = (value: unknown): value is Promise<unknown> => {
   return (

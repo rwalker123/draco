@@ -32,6 +32,7 @@ describe('normalizeSearchParams', () => {
 
     expect(normalized).toEqual(original);
     expect(normalized).not.toBe(original);
+    expect(normalized.filter).not.toBe(original.filter);
   });
 });
 
