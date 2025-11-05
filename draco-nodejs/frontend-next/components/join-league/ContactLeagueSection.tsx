@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { ContactSupport, Language, Twitter, Facebook } from '@mui/icons-material';
+import { ContactSupport, QuestionAnswer, Twitter, Facebook } from '@mui/icons-material';
+import Link from 'next/link';
 import SectionHeader from './SectionHeader';
 import SectionCard from '../common/SectionCard';
 import { AccountType } from '@draco/shared-schemas';
@@ -24,23 +25,20 @@ const ContactLeagueSection: React.FC<ContactLeagueSectionProps> = ({ account }) 
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {account.urls.length > 0 && (
-            <Button
-              variant="contained"
-              href={account.urls[0].url}
-              target="_blank"
-              rel="noopener noreferrer"
-              startIcon={<Language />}
-              fullWidth
-              sx={{
-                py: 1.25,
-                textTransform: 'none',
-                fontWeight: 600,
-              }}
-            >
-              Visit Our Website
-            </Button>
-          )}
+          <Button
+            component={Link}
+            variant="contained"
+            href={`/account/${account.id.toString()}/faq`}
+            startIcon={<QuestionAnswer />}
+            fullWidth
+            sx={{
+              py: 1.25,
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            View League FAQs
+          </Button>
 
           {account.socials?.twitterAccountName && (
             <Button

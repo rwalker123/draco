@@ -156,6 +156,8 @@ import {
   DivisionSeasonSchema,
   DivisionSeasonWithTeamsSchema,
   LeagueSchema,
+  LeagueFaqListSchema,
+  LeagueFaqSchema,
   LeagueSeasonQueryParamsSchema,
   LeagueSeasonSchema,
   LeagueSeasonWithDivisionSchema,
@@ -163,6 +165,7 @@ import {
   LeagueSetupSchema,
   UpsertDivisionSeasonSchema,
   UpsertLeagueSchema,
+  UpsertLeagueFaqSchema,
   UpsertSeasonSchema,
   GameSchema,
   GameResultSchema,
@@ -668,6 +671,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const LeagueSetupSchemaRef = registry.register('LeagueSetup', LeagueSetupSchema);
   const LeagueSchemaRef = registry.register('League', LeagueSchema);
   const UpsertLeagueSchemaRef = registry.register('UpsertLeague', UpsertLeagueSchema);
+  const LeagueFaqSchemaRef = registry.register('LeagueFaq', LeagueFaqSchema);
+  const UpsertLeagueFaqSchemaRef = registry.register('UpsertLeagueFaq', UpsertLeagueFaqSchema);
+  const LeagueFaqListSchemaRef = registry.register('LeagueFaqList', LeagueFaqListSchema);
   const GameSchemaRef = registry.register('Game', GameSchema);
   const GameResultSchemaRef = registry.register('GameResult', GameResultSchema);
   const RecentGamesSchemaRef = registry.register('RecentGames', RecentGamesSchema);
@@ -913,6 +919,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     LeagueSetupSchemaRef,
     LeagueSchemaRef,
     UpsertLeagueSchemaRef,
+    LeagueFaqSchemaRef,
+    UpsertLeagueFaqSchemaRef,
+    LeagueFaqListSchemaRef,
     GameSchemaRef,
     GameResultSchemaRef,
     RecentGamesSchemaRef,

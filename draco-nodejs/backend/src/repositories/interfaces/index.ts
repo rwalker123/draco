@@ -7,6 +7,7 @@ export * from './ISeasonsRepository.js';
 export * from './ICleanupRepository.js';
 export * from './IRoleRepository.js';
 export * from './ILeagueRepository.js';
+export * from './ILeagueFaqRepository.js';
 export * from './IPollRepository.js';
 export * from './IPlayerSurveyRepository.js';
 export * from './IPlayersWantedRepository.js';

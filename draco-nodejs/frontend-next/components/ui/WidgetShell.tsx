@@ -72,7 +72,14 @@ const WidgetShell = React.forwardRef<HTMLDivElement, WidgetShellProps>(
             borderTop: `4px solid ${accentColor}`,
             pointerEvents: 'none',
           }
-        : undefined,
+        : {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 'inherit',
+            borderTop: `4px solid ${theme.palette.widget.border}`,
+            pointerEvents: 'none',
+          },
     } as const;
 
     const mergedSx: SxProps<Theme> = Array.isArray(sx)

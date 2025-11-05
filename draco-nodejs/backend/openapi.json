@@ -73,7 +73,8 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "pattern": "^d+$"
+                    "pattern": "^\\d+$",
+                    "example": "12345"
                   },
                   "firstName": {
                     "type": "string",
@@ -194,7 +195,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -452,7 +454,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "firstName": {
             "type": "string",
@@ -546,7 +549,8 @@
                 },
                 "roleData": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contextName": {
                   "type": "string",
@@ -554,7 +558,8 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 }
               },
               "required": [
@@ -566,7 +571,8 @@
           },
           "creatoraccountid": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           }
         },
         "required": [
@@ -580,7 +586,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "firstName": {
             "type": "string",
@@ -670,7 +677,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "firstName": {
             "type": "string",
@@ -698,7 +706,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "firstName": {
             "type": "string",
@@ -792,7 +801,8 @@
                 },
                 "roleData": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contextName": {
                   "type": "string",
@@ -800,7 +810,8 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 }
               },
               "required": [
@@ -823,7 +834,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string",
@@ -914,7 +926,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "name": {
                   "type": "string",
@@ -1235,7 +1248,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -1342,7 +1356,8 @@
                 },
                 "roleData": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contextName": {
                   "type": "string",
@@ -1350,18 +1365,21 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contact": {
                   "type": "object",
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -1405,7 +1423,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -1526,7 +1545,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -1583,7 +1603,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -1598,7 +1619,8 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "name": {
                   "type": "string",
@@ -1632,7 +1654,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "firstName": {
                       "type": "string",
@@ -1689,7 +1712,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -1704,7 +1728,8 @@
                       },
                       "id": {
                         "type": "string",
-                        "pattern": "^d+$"
+                        "pattern": "^\\d+$",
+                        "example": "12345"
                       },
                       "name": {
                         "type": "string",
@@ -1733,7 +1758,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "name": {
                   "type": "string",
@@ -1754,7 +1780,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "name": {
                   "type": "string",
@@ -1780,14 +1807,16 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "team": {
             "type": "object",
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -1804,7 +1833,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -1894,14 +1924,16 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "league": {
                 "type": "object",
                 "properties": {
                   "id": {
                     "type": "string",
-                    "pattern": "^d+$"
+                    "pattern": "^\\d+$",
+                    "example": "12345"
                   },
                   "name": {
                     "type": "string",
@@ -1919,7 +1951,8 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "pattern": "^d+$"
+                    "pattern": "^\\d+$",
+                    "example": "12345"
                   },
                   "name": {
                     "type": "string",
@@ -1952,7 +1985,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string",
@@ -1961,7 +1995,8 @@
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "isCurrent": {
             "type": "boolean"
@@ -1980,7 +2015,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -1989,7 +2025,8 @@
               },
               "accountId": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "isCurrent": {
                 "type": "boolean"
@@ -2006,7 +2043,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -2015,7 +2053,8 @@
               },
               "accountId": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "isCurrent": {
                 "type": "boolean"
@@ -2027,14 +2066,16 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "league": {
                       "type": "object",
                       "properties": {
                         "id": {
                           "type": "string",
-                          "pattern": "^d+$"
+                          "pattern": "^\\d+$",
+                          "example": "12345"
                         },
                         "name": {
                           "type": "string",
@@ -2054,14 +2095,16 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "division": {
                             "type": "object",
                             "properties": {
                               "id": {
                                 "type": "string",
-                                "pattern": "^d+$"
+                                "pattern": "^\\d+$",
+                                "example": "12345"
                               },
                               "name": {
                                 "type": "string",
@@ -2124,14 +2167,16 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "team": {
             "type": "object",
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -2148,7 +2193,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -2308,7 +2354,8 @@
                       "properties": {
                         "id": {
                           "type": "string",
-                          "pattern": "^d+$"
+                          "pattern": "^\\d+$",
+                          "example": "12345"
                         },
                         "firstName": {
                           "type": "string",
@@ -2420,7 +2467,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string",
@@ -2432,7 +2480,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "webAddress": {
                 "type": "string",
@@ -2464,7 +2513,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -2473,7 +2523,8 @@
               },
               "accountId": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "isCurrent": {
                 "type": "boolean"
@@ -2490,7 +2541,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -2508,7 +2560,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -2551,7 +2604,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -2560,7 +2614,8 @@
               },
               "accountId": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "isCurrent": {
                 "type": "boolean"
@@ -2615,7 +2670,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -2624,7 +2680,8 @@
               },
               "accountId": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "isCurrent": {
                 "type": "boolean"
@@ -3396,7 +3453,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "firstName": {
                   "type": "string",
@@ -3532,7 +3590,8 @@
           },
           "roleData": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "contextName": {
             "type": "string",
@@ -3540,7 +3599,8 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           }
         },
         "required": [
@@ -3704,7 +3764,8 @@
           },
           "context": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           }
         },
         "required": [
@@ -3815,7 +3876,8 @@
                     "properties": {
                       "id": {
                         "type": "string",
-                        "pattern": "^d+$"
+                        "pattern": "^\\d+$",
+                        "example": "12345"
                       },
                       "firstName": {
                         "type": "string",
@@ -3911,7 +3973,8 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "pattern": "^d+$"
+                    "pattern": "^\\d+$",
+                    "example": "12345"
                   },
                   "firstName": {
                     "type": "string",
@@ -4096,7 +4159,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "firstName": {
                             "type": "string",
@@ -4192,7 +4256,8 @@
                     "properties": {
                       "id": {
                         "type": "string",
-                        "pattern": "^d+$"
+                        "pattern": "^\\d+$",
+                        "example": "12345"
                       },
                       "firstName": {
                         "type": "string",
@@ -4310,7 +4375,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -4402,7 +4468,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "firstName": {
                   "type": "string",
@@ -5234,7 +5301,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string"
@@ -5260,7 +5328,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string"
@@ -5284,7 +5353,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string"
@@ -5320,7 +5390,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string"
@@ -5346,7 +5417,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "firstName": {
                       "type": "string"
@@ -5370,7 +5442,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string"
@@ -5499,7 +5572,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamEventName": {
             "type": "string",
@@ -5573,7 +5647,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string"
@@ -5600,7 +5675,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string"
@@ -5728,7 +5804,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string"
@@ -5765,7 +5842,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string"
@@ -5902,7 +5980,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -5925,14 +6004,16 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "division": {
                       "type": "object",
                       "properties": {
                         "id": {
                           "type": "string",
-                          "pattern": "^d+$"
+                          "pattern": "^\\d+$",
+                          "example": "12345"
                         },
                         "name": {
                           "type": "string",
@@ -5974,7 +6055,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -5991,7 +6073,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -6009,7 +6092,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -6088,7 +6172,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -6105,7 +6190,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -6123,7 +6209,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -6176,7 +6263,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string",
@@ -6188,7 +6276,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "webAddress": {
                 "type": "string",
@@ -6220,7 +6309,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -6229,7 +6319,8 @@
               },
               "accountId": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "isCurrent": {
                 "type": "boolean"
@@ -6246,7 +6337,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -6264,7 +6356,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -6405,7 +6498,8 @@
         "properties": {
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -6532,7 +6626,8 @@
         "properties": {
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -6615,7 +6710,8 @@
         "properties": {
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -6752,7 +6848,8 @@
         "properties": {
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -6825,7 +6922,8 @@
         "properties": {
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -6852,7 +6950,8 @@
                   "properties": {
                     "playerId": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "playerName": {
                       "type": "string",
@@ -6951,7 +7050,8 @@
                     "seasonId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "seasonName": {
                       "type": "string",
@@ -6960,7 +7060,8 @@
                     "leagueId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "leagueName": {
                       "type": "string",
@@ -6969,7 +7070,8 @@
                     "teamId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "seasonSortOrder": {
                       "type": "number"
@@ -7028,7 +7130,8 @@
                   "properties": {
                     "playerId": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "playerName": {
                       "type": "string",
@@ -7135,7 +7238,8 @@
                     "seasonId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "seasonName": {
                       "type": "string",
@@ -7144,7 +7248,8 @@
                     "leagueId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "leagueName": {
                       "type": "string",
@@ -7153,7 +7258,8 @@
                     "teamId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "seasonSortOrder": {
                       "type": "number"
@@ -7217,7 +7323,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "firstName": {
             "type": "string",
@@ -7249,7 +7356,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "firstName": {
                   "type": "string",
@@ -7299,15 +7407,18 @@
         "properties": {
           "rosterSeasonId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "contactId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -7406,19 +7517,23 @@
           },
           "statId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "rosterSeasonId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "contactId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -7492,11 +7607,13 @@
         "properties": {
           "gameId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamSeasonId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "stats": {
             "type": "array",
@@ -7573,19 +7690,23 @@
                 },
                 "statId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "rosterSeasonId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contactId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerName": {
                   "type": "string",
@@ -7784,15 +7905,18 @@
               "properties": {
                 "rosterSeasonId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contactId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerName": {
                   "type": "string",
@@ -7901,19 +8025,23 @@
           },
           "statId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "rosterSeasonId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "contactId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -7997,11 +8125,13 @@
         "properties": {
           "gameId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamSeasonId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "stats": {
             "type": "array",
@@ -8078,19 +8208,23 @@
                 },
                 "statId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "rosterSeasonId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contactId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerName": {
                   "type": "string",
@@ -8309,15 +8443,18 @@
               "properties": {
                 "rosterSeasonId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "contactId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "playerName": {
                   "type": "string",
@@ -8734,7 +8871,8 @@
         "properties": {
           "gameId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "gameDate": {
             "type": "string",
@@ -8777,7 +8915,8 @@
           "properties": {
             "gameId": {
               "type": "string",
-              "pattern": "^d+$"
+              "pattern": "^\\d+$",
+              "example": "12345"
             },
             "gameDate": {
               "type": "string",
@@ -8982,7 +9121,8 @@
         "properties": {
           "playerId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "playerName": {
             "type": "string",
@@ -9111,7 +9251,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string"
@@ -9144,7 +9285,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string"
@@ -9354,11 +9496,13 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "categoryName": {
             "type": "string",
@@ -9375,11 +9519,13 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "categoryId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "question": {
                   "type": "string",
@@ -9453,11 +9599,13 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "categoryId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "question": {
             "type": "string",
@@ -9527,11 +9675,13 @@
         "properties": {
           "questionId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "categoryId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "categoryName": {
             "type": "string",
@@ -9588,7 +9738,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -9617,11 +9768,13 @@
               "properties": {
                 "questionId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "categoryId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "categoryName": {
                   "type": "string",
@@ -9681,7 +9834,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "firstName": {
                       "type": "string",
@@ -9788,7 +9942,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -10309,11 +10464,13 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "submittedAt": {
             "type": "string",
@@ -10366,11 +10523,13 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "submittedAt": {
                   "type": "string",
@@ -10455,7 +10614,8 @@
         "properties": {
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "enableNomination": {
             "type": "boolean"
@@ -10533,7 +10693,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -10648,7 +10809,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11095,14 +11257,16 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "division": {
             "type": "object",
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11120,7 +11284,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11148,14 +11313,16 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "division": {
             "type": "object",
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11173,7 +11340,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11196,7 +11364,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "name": {
                   "type": "string",
@@ -11208,7 +11377,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "webAddress": {
                       "type": "string",
@@ -11240,7 +11410,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11249,7 +11420,8 @@
                     },
                     "accountId": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "isCurrent": {
                       "type": "boolean"
@@ -11266,7 +11438,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11284,7 +11457,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11357,14 +11531,16 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "league": {
             "type": "object",
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11382,7 +11558,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11406,7 +11583,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string",
@@ -11415,7 +11593,8 @@
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "isCurrent": {
             "type": "boolean"
@@ -11427,14 +11606,16 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "league": {
                   "type": "object",
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11454,14 +11635,16 @@
                     "properties": {
                       "id": {
                         "type": "string",
-                        "pattern": "^d+$"
+                        "pattern": "^\\d+$",
+                        "example": "12345"
                       },
                       "division": {
                         "type": "object",
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -11505,14 +11688,16 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "league": {
             "type": "object",
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11530,7 +11715,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11550,14 +11736,16 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "division": {
                   "type": "object",
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11575,7 +11763,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11598,7 +11787,8 @@
                     "properties": {
                       "id": {
                         "type": "string",
-                        "pattern": "^d+$"
+                        "pattern": "^\\d+$",
+                        "example": "12345"
                       },
                       "name": {
                         "type": "string",
@@ -11610,7 +11800,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "webAddress": {
                             "type": "string",
@@ -11642,7 +11833,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -11651,7 +11843,8 @@
                           },
                           "accountId": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "isCurrent": {
                             "type": "boolean"
@@ -11668,7 +11861,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -11686,7 +11880,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -11742,7 +11937,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "name": {
                   "type": "string",
@@ -11754,7 +11950,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "webAddress": {
                       "type": "string",
@@ -11786,7 +11983,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11795,7 +11993,8 @@
                     },
                     "accountId": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "isCurrent": {
                       "type": "boolean"
@@ -11812,7 +12011,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11830,7 +12030,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11888,7 +12089,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -11897,7 +12099,8 @@
               },
               "accountId": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "isCurrent": {
                 "type": "boolean"
@@ -11916,14 +12119,16 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "league": {
                   "type": "object",
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11941,7 +12146,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -11961,14 +12167,16 @@
                     "properties": {
                       "id": {
                         "type": "string",
-                        "pattern": "^d+$"
+                        "pattern": "^\\d+$",
+                        "example": "12345"
                       },
                       "division": {
                         "type": "object",
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -11986,7 +12194,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -12009,7 +12218,8 @@
                           "properties": {
                             "id": {
                               "type": "string",
-                              "pattern": "^d+$"
+                              "pattern": "^\\d+$",
+                              "example": "12345"
                             },
                             "name": {
                               "type": "string",
@@ -12021,7 +12231,8 @@
                               "properties": {
                                 "id": {
                                   "type": "string",
-                                  "pattern": "^d+$"
+                                  "pattern": "^\\d+$",
+                                  "example": "12345"
                                 },
                                 "webAddress": {
                                   "type": "string",
@@ -12053,7 +12264,8 @@
                               "properties": {
                                 "id": {
                                   "type": "string",
-                                  "pattern": "^d+$"
+                                  "pattern": "^\\d+$",
+                                  "example": "12345"
                                 },
                                 "name": {
                                   "type": "string",
@@ -12062,7 +12274,8 @@
                                 },
                                 "accountId": {
                                   "type": "string",
-                                  "pattern": "^d+$"
+                                  "pattern": "^\\d+$",
+                                  "example": "12345"
                                 },
                                 "isCurrent": {
                                   "type": "boolean"
@@ -12079,7 +12292,8 @@
                               "properties": {
                                 "id": {
                                   "type": "string",
-                                  "pattern": "^d+$"
+                                  "pattern": "^\\d+$",
+                                  "example": "12345"
                                 },
                                 "name": {
                                   "type": "string",
@@ -12097,7 +12311,8 @@
                               "properties": {
                                 "id": {
                                   "type": "string",
-                                  "pattern": "^d+$"
+                                  "pattern": "^\\d+$",
+                                  "example": "12345"
                                 },
                                 "name": {
                                   "type": "string",
@@ -12153,7 +12368,8 @@
                     "properties": {
                       "id": {
                         "type": "string",
-                        "pattern": "^d+$"
+                        "pattern": "^\\d+$",
+                        "example": "12345"
                       },
                       "name": {
                         "type": "string",
@@ -12165,7 +12381,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "webAddress": {
                             "type": "string",
@@ -12197,7 +12414,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -12206,7 +12424,8 @@
                           },
                           "accountId": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "isCurrent": {
                             "type": "boolean"
@@ -12223,7 +12442,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -12241,7 +12461,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -12302,7 +12523,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string",
@@ -12311,7 +12533,8 @@
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           }
         },
         "required": [
@@ -12333,12 +12556,105 @@
           "name"
         ]
       },
+      "LeagueFaq": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          }
+        },
+        "required": [
+          "question",
+          "answer",
+          "id",
+          "accountId"
+        ],
+        "title": "LeagueFaq",
+        "description": "League FAQ entry exposed to clients"
+      },
+      "UpsertLeagueFaq": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "question",
+          "answer"
+        ],
+        "title": "UpsertLeagueFaq",
+        "description": "Payload for creating or updating a league FAQ entry"
+      },
+      "LeagueFaqList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "answer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "example": "12345"
+            },
+            "accountId": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "example": "12345"
+            }
+          },
+          "required": [
+            "question",
+            "answer",
+            "id",
+            "accountId"
+          ],
+          "title": "LeagueFaq",
+          "description": "League FAQ entry exposed to clients"
+        },
+        "title": "LeagueFaqList",
+        "description": "Collection of FAQ entries for a league account"
+      },
       "Game": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "gameDate": {
             "type": "string",
@@ -12349,7 +12665,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -12366,7 +12683,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -12383,7 +12701,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -12401,7 +12720,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -12433,7 +12753,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "name": {
                 "type": "string",
@@ -12552,7 +12873,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               }
             },
             "required": [
@@ -12564,7 +12886,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               }
             },
             "required": [
@@ -12576,7 +12899,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               }
             },
             "required": [
@@ -12588,7 +12912,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               }
             },
             "required": [
@@ -12613,7 +12938,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "homeScore": {
             "type": "number",
@@ -12647,7 +12973,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "gameDate": {
                   "type": "string",
@@ -12658,7 +12985,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12675,7 +13003,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12692,7 +13021,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12710,7 +13040,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12742,7 +13073,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12861,7 +13193,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -12873,7 +13206,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -12885,7 +13219,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -12897,7 +13232,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -12925,7 +13261,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "gameDate": {
                   "type": "string",
@@ -12936,7 +13273,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12953,7 +13291,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12970,7 +13309,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -12988,7 +13328,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -13020,7 +13361,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -13139,7 +13481,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13151,7 +13494,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13163,7 +13507,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13175,7 +13520,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13212,7 +13558,8 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "gameDate": {
                   "type": "string",
@@ -13223,7 +13570,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -13240,7 +13588,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -13257,7 +13606,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -13275,7 +13625,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -13307,7 +13658,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "name": {
                       "type": "string",
@@ -13426,7 +13778,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13438,7 +13791,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13450,7 +13804,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13462,7 +13817,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     }
                   },
                   "required": [
@@ -13479,7 +13835,8 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^d+$"
+                            "pattern": "^\\d+$",
+                            "example": "12345"
                           },
                           "name": {
                             "type": "string",
@@ -13551,7 +13908,8 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "fileName": {
             "type": "string",
@@ -13561,11 +13919,13 @@
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "downloadUrl": {
             "type": "string",
@@ -13598,7 +13958,8 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "fileName": {
                   "type": "string",
@@ -13608,11 +13969,13 @@
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "teamId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "downloadUrl": {
                   "type": "string",
@@ -13738,25 +14101,30 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "submissionId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "albumId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "albumTitle": {
             "type": "string",
@@ -13918,11 +14286,13 @@
           "id": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "title": {
             "type": "string",
@@ -13933,7 +14303,8 @@
           "teamId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Team identifier associated with the album when applicable"
           },
           "photoCount": {
@@ -13957,11 +14328,13 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "title": {
             "type": "string",
@@ -13972,13 +14345,15 @@
           "teamId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Team identifier associated with the album when applicable"
           },
           "parentAlbumId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Identifier of the parent album when the album is nested"
           },
           "photoCount": {
@@ -14008,11 +14383,13 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "title": {
                   "type": "string",
@@ -14023,13 +14400,15 @@
                 "teamId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$",
+                  "pattern": "^\\d+$",
+                  "example": "12345",
                   "description": "Team identifier associated with the album when applicable"
                 },
                 "parentAlbumId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$",
+                  "pattern": "^\\d+$",
+                  "example": "12345",
                   "description": "Identifier of the parent album when the album is nested"
                 },
                 "photoCount": {
@@ -14067,25 +14446,30 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "submissionId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "teamId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "albumId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "albumTitle": {
                   "type": "string",
@@ -14153,11 +14537,13 @@
                 "id": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "title": {
                   "type": "string",
@@ -14168,7 +14554,8 @@
                 "teamId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$",
+                  "pattern": "^\\d+$",
+                  "example": "12345",
                   "description": "Team identifier associated with the album when applicable"
                 },
                 "photoCount": {
@@ -14202,12 +14589,14 @@
           "albumId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           }
         },
         "title": "PhotoGalleryQuery",
@@ -14218,38 +14607,45 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Identifier for the associated team, if any"
           },
           "albumId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Identifier for the destination album, if any"
           },
           "submitterContactId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "moderatedByContactId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Moderator contact responsible for the decision"
           },
           "approvedPhotoId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Approved gallery photo identifier when promoted"
           },
           "title": {
@@ -14342,38 +14738,45 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "teamId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Identifier for the associated team, if any"
           },
           "albumId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Identifier for the destination album, if any"
           },
           "submitterContactId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "moderatedByContactId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Moderator contact responsible for the decision"
           },
           "approvedPhotoId": {
             "type": "string",
             "nullable": true,
-            "pattern": "^d+$",
+            "pattern": "^\\d+$",
+            "example": "12345",
             "description": "Approved gallery photo identifier when promoted"
           },
           "title": {
@@ -14447,7 +14850,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "title": {
                 "type": "string",
@@ -14457,7 +14861,8 @@
               "teamId": {
                 "type": "string",
                 "nullable": true,
-                "pattern": "^d+$",
+                "pattern": "^\\d+$",
+                "example": "12345",
                 "description": "Team identifier the album belongs to, when applicable"
               }
             },
@@ -14474,7 +14879,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "title": {
                 "type": "string",
@@ -14484,7 +14890,8 @@
               "albumId": {
                 "type": "string",
                 "nullable": true,
-                "pattern": "^d+$",
+                "pattern": "^\\d+$",
+                "example": "12345",
                 "description": "Album identifier for the approved photo, if any"
               }
             },
@@ -14501,7 +14908,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -14531,7 +14939,8 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               },
               "firstName": {
                 "type": "string",
@@ -14594,38 +15003,45 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "accountId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "teamId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$",
+                  "pattern": "^\\d+$",
+                  "example": "12345",
                   "description": "Identifier for the associated team, if any"
                 },
                 "albumId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$",
+                  "pattern": "^\\d+$",
+                  "example": "12345",
                   "description": "Identifier for the destination album, if any"
                 },
                 "submitterContactId": {
                   "type": "string",
-                  "pattern": "^d+$"
+                  "pattern": "^\\d+$",
+                  "example": "12345"
                 },
                 "moderatedByContactId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$",
+                  "pattern": "^\\d+$",
+                  "example": "12345",
                   "description": "Moderator contact responsible for the decision"
                 },
                 "approvedPhotoId": {
                   "type": "string",
                   "nullable": true,
-                  "pattern": "^d+$",
+                  "pattern": "^\\d+$",
+                  "example": "12345",
                   "description": "Approved gallery photo identifier when promoted"
                 },
                 "title": {
@@ -14699,7 +15115,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "title": {
                       "type": "string",
@@ -14709,7 +15126,8 @@
                     "teamId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$",
+                      "pattern": "^\\d+$",
+                      "example": "12345",
                       "description": "Team identifier the album belongs to, when applicable"
                     }
                   },
@@ -14726,7 +15144,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "title": {
                       "type": "string",
@@ -14736,7 +15155,8 @@
                     "albumId": {
                       "type": "string",
                       "nullable": true,
-                      "pattern": "^d+$",
+                      "pattern": "^\\d+$",
+                      "example": "12345",
                       "description": "Album identifier for the approved photo, if any"
                     }
                   },
@@ -14753,7 +15173,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "firstName": {
                       "type": "string",
@@ -14783,7 +15204,8 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "pattern": "^d+$"
+                      "pattern": "^\\d+$",
+                      "example": "12345"
                     },
                     "firstName": {
                       "type": "string",
@@ -15086,7 +15508,8 @@
         "properties": {
           "divisionId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "name": {
             "type": "string",
@@ -15332,7 +15755,8 @@
           },
           "roleData": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "contextName": {
             "type": "string",
@@ -15340,18 +15764,21 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "accountId": {
             "type": "string",
-            "pattern": "^d+$"
+            "pattern": "^\\d+$",
+            "example": "12345"
           },
           "contact": {
             "type": "object",
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^d+$"
+                "pattern": "^\\d+$",
+                "example": "12345"
               }
             },
             "required": [
@@ -15598,7 +16025,8 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "pattern": "^d+$"
+              "pattern": "^\\d+$",
+              "example": "12345"
             },
             "required": false,
             "name": "albumId",
@@ -15608,7 +16036,8 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "pattern": "^d+$"
+              "pattern": "^\\d+$",
+              "example": "12345"
             },
             "required": false,
             "name": "teamId",
@@ -18438,7 +18867,8 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "pattern": "^d+$"
+              "pattern": "^\\d+$",
+              "example": "12345"
             },
             "required": false,
             "name": "albumId",
@@ -18448,7 +18878,8 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "pattern": "^d+$"
+              "pattern": "^\\d+$",
+              "example": "12345"
             },
             "required": false,
             "name": "teamId",
@@ -25907,6 +26338,378 @@
           },
           "404": {
             "description": "Handout or team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/league-faq": {
+      "get": {
+        "operationId": "listLeagueFaqs",
+        "summary": "List league FAQs",
+        "description": "Returns league FAQ entries for the account. Accessible without authentication.",
+        "tags": [
+          "League FAQ"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "League FAQ entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaqList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLeagueFaq",
+        "summary": "Create a league FAQ entry",
+        "description": "Creates a new league FAQ entry within the account.",
+        "tags": [
+          "League FAQ"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertLeagueFaq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "League FAQ entry created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaq"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to manage league FAQs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/league-faq/{faqId}": {
+      "get": {
+        "operationId": "getLeagueFaq",
+        "summary": "Get a league FAQ entry",
+        "description": "Retrieves a single league FAQ entry by identifier. Accessible without authentication.",
+        "tags": [
+          "League FAQ"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "faqId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "League FAQ entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaq"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FAQ not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateLeagueFaq",
+        "summary": "Update a league FAQ entry",
+        "description": "Updates the question or answer for an existing league FAQ entry.",
+        "tags": [
+          "League FAQ"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "faqId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertLeagueFaq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated league FAQ entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeagueFaq"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to manage league FAQs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FAQ not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLeagueFaq",
+        "summary": "Delete a league FAQ entry",
+        "description": "Deletes an existing league FAQ entry from the account.",
+        "tags": [
+          "League FAQ"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "faqId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "League FAQ entry deleted"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to manage league FAQs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FAQ not found",
             "content": {
               "application/json": {
                 "schema": {
