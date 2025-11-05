@@ -1,7 +1,14 @@
 import { z } from 'zod';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { coerceToDate, formatDateToUtcString } from './date.js';
 
-export const bigintToStringSchema = z.bigint().transform((value) => value.toString());
+extendZodWithOpenApi(z);
+
+export const bigintToStringSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+$/, 'Value must be a numeric identifier')
+  .openapi({ pattern: '^\\d+$', example: '12345' });
 export const nameSchema = z.string().trim().min(1).max(100);
 
 export const birthDateStringSchema = z
