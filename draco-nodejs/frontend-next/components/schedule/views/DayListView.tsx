@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper } from '@mui/material';
-import { addDays, subDays } from 'date-fns';
+import { addDays, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ViewComponentProps } from '@/types/schedule';
 import GameCard from '../../GameCard';
 import HierarchicalHeader from '../components/HierarchicalHeader';
@@ -9,6 +9,8 @@ import {
   getDateKeyInTimezone,
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
+import WidgetShell from '../../ui/WidgetShell';
+import { alpha, useTheme } from '@mui/material/styles';
 
 interface DayListViewProps extends ViewComponentProps {
   viewMode: 'calendar' | 'list';
@@ -37,6 +39,7 @@ const DayListView: React.FC<DayListViewProps> = ({
   viewMode,
   canEditRecap,
 }) => {
+  const theme = useTheme();
   const [currentDate, setCurrentDate] = React.useState(filterDate);
 
   // Sync currentDate with filterDate when it changes
@@ -109,11 +112,22 @@ const DayListView: React.FC<DayListViewProps> = ({
   const sortedDates = isDayView ? null : Object.keys(gamesByDate!).sort();
   const isToday = isDayView ? isSameDayInTimezone(currentDate, new Date(), timeZone) : false;
   const todayKey = React.useMemo(() => getDateKeyInTimezone(new Date(), timeZone), [timeZone]);
+  const computedWeekStart = React.useMemo(
+    () => (isDayView ? startOfWeek(currentDate) : _startDate),
+    [isDayView, currentDate, _startDate],
+  );
+  const computedWeekEnd = React.useMemo(
+    () => (isDayView ? endOfWeek(currentDate) : _endDate),
+    [isDayView, currentDate, _endDate],
+  );
 
   const renderDayContent = () => {
     if (dayGames.length === 0) {
       return (
-        <Typography variant="body1" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          sx={{ textAlign: 'center', color: theme.palette.widget.supportingText }}
+        >
           No games scheduled for this day
         </Typography>
       );
@@ -156,7 +170,10 @@ const DayListView: React.FC<DayListViewProps> = ({
   const renderListContent = () => {
     if (filteredGames.length === 0) {
       return (
-        <Typography variant="h6" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+        <Typography
+          variant="h6"
+          sx={{ textAlign: 'center', color: theme.palette.widget.supportingText }}
+        >
           No games found for the selected time period
         </Typography>
       );
@@ -174,15 +191,25 @@ const DayListView: React.FC<DayListViewProps> = ({
             day: 'numeric',
             year: 'numeric',
           });
+          const highlightBg = alpha(
+            theme.palette.primary.main,
+            theme.palette.mode === 'dark' ? 0.32 : 0.12,
+          );
+          const highlightBorder = alpha(
+            theme.palette.primary.main,
+            theme.palette.mode === 'dark' ? 0.8 : 0.45,
+          );
 
           return (
             <Paper
               key={dateKey}
               sx={{
                 p: 2,
-                backgroundColor: isTodayDate ? 'primary.light' : 'background.paper',
-                border: isTodayDate ? 2 : 1,
-                borderColor: isTodayDate ? 'primary.main' : 'divider',
+                backgroundColor: isTodayDate ? highlightBg : theme.palette.widget.surface,
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: isTodayDate ? highlightBorder : theme.palette.widget.border,
+                boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 2],
               }}
             >
               <Typography
@@ -190,7 +217,9 @@ const DayListView: React.FC<DayListViewProps> = ({
                 sx={{
                   fontWeight: isTodayDate ? 'bold' : 'normal',
                   mb: 2,
-                  color: isTodayDate ? 'primary.contrastText' : 'text.primary',
+                  color: isTodayDate
+                    ? theme.palette.primary.contrastText
+                    : theme.palette.text.primary,
                 }}
               >
                 {formattedDate}
@@ -198,7 +227,13 @@ const DayListView: React.FC<DayListViewProps> = ({
                   <Typography
                     component="span"
                     variant="body2"
-                    sx={{ ml: 1, color: 'primary.light' }}
+                    sx={{
+                      ml: 1,
+                      color: alpha(
+                        theme.palette.primary.contrastText,
+                        theme.palette.mode === 'dark' ? 0.75 : 0.6,
+                      ),
+                    }}
                   >
                     (Today)
                   </Typography>
@@ -247,22 +282,19 @@ const DayListView: React.FC<DayListViewProps> = ({
   };
 
   return (
-    <Box
+    <WidgetShell
+      disablePadding
+      accent="info"
       sx={{
-        border: '3px solid',
-        borderColor: 'primary.main',
-        borderRadius: 2,
         overflow: 'hidden',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-        overflowX: 'auto',
         minWidth: 'fit-content',
       }}
     >
       <HierarchicalHeader
         filterType={filterType}
         filterDate={isDayView ? currentDate : filterDate}
-        startDate={_startDate}
-        endDate={_endDate}
+        startDate={computedWeekStart}
+        endDate={computedWeekEnd}
         isNavigating={isNavigating || false}
         onFilterTypeChange={setFilterType}
         onFilterDateChange={setFilterDate}
@@ -291,9 +323,15 @@ const DayListView: React.FC<DayListViewProps> = ({
           <Paper
             sx={{
               p: 2,
-              backgroundColor: isToday ? 'primary.light' : 'background.paper',
-              border: isToday ? 2 : 1,
-              borderColor: isToday ? 'primary.main' : 'divider',
+              backgroundColor: isToday
+                ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.32 : 0.12)
+                : theme.palette.widget.surface,
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: isToday
+                ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.8 : 0.45)
+                : theme.palette.widget.border,
+              boxShadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 2],
             }}
           >
             {renderDayContent()}
@@ -302,7 +340,7 @@ const DayListView: React.FC<DayListViewProps> = ({
           renderListContent()
         )}
       </Box>
-    </Box>
+    </WidgetShell>
   );
 };
 

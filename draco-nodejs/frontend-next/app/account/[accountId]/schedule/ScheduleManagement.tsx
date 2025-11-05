@@ -3,7 +3,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Button,
   Alert,
   CircularProgress,
@@ -12,6 +11,7 @@ import {
   MenuItem,
   useMediaQuery,
   Fab,
+  Paper,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -42,6 +42,8 @@ import {
   ViewMode,
   GameStatus,
 } from '../../../../components/schedule';
+import WidgetShell from '../../../../components/ui/WidgetShell';
+import { useTheme } from '@mui/material/styles';
 
 interface ScheduleManagementProps {
   accountId: string;
@@ -50,6 +52,7 @@ interface ScheduleManagementProps {
 const CALENDAR_VIEW_BREAKPOINT = 900;
 
 const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) => {
+  const theme = useTheme();
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { user, token } = useAuth();
   const { currentSeasonName, fetchCurrentSeason } = useCurrentSeason(accountId);
@@ -338,7 +341,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             sx={{ position: 'relative' }}
           >
             <Box sx={{ flex: 1, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              <Typography
+                variant="h4"
+                sx={{ color: theme.palette.widget.headerText, fontWeight: 'bold' }}
+              >
                 Schedule Management
               </Typography>
             </Box>
@@ -358,12 +364,26 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         )}
 
         {/* View Mode Tabs */}
-        <Paper sx={{ mb: 3 }}>
+        <Paper
+          elevation={1}
+          sx={{
+            mb: 3,
+            borderRadius: 3,
+            overflow: 'hidden',
+          }}
+        >
           <ViewModeTabs viewMode={viewMode} onViewModeChange={handleViewModeChange} />
         </Paper>
 
         {/* Filter Controls */}
-        <Paper sx={{ mb: 3, p: 2 }}>
+        <WidgetShell
+          accent="info"
+          sx={{
+            mb: 3,
+            px: 3,
+            py: 2,
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -447,7 +467,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               </FormControl>
             </Box>
           </Box>
-        </Paper>
+        </WidgetShell>
 
         {/* Schedule View */}
         <ViewFactory

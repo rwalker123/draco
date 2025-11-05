@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box } from '@mui/material';
 import { eachDayOfInterval } from 'date-fns';
 import { ViewComponentProps } from '@/types/schedule';
 import CalendarGrid from './CalendarGrid';
 import HierarchicalHeader from '../components/HierarchicalHeader';
+import WidgetShell from '../../ui/WidgetShell';
 
 const WeekView: React.FC<ViewComponentProps> = ({
   filteredGames,
@@ -51,14 +51,11 @@ const WeekView: React.FC<ViewComponentProps> = ({
   };
 
   return (
-    <Box
+    <WidgetShell
+      disablePadding
+      accent="info"
       sx={{
-        border: '3px solid',
-        borderColor: 'primary.main',
-        borderRadius: 2,
         overflow: 'hidden',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-        overflowX: 'auto',
         minWidth: 'fit-content',
       }}
     >
@@ -98,8 +95,9 @@ const WeekView: React.FC<ViewComponentProps> = ({
         canEditRecap={canEditRecap}
         isNavigating={isNavigating}
         timeZone={timeZone}
+        currentMonthDate={filterDate}
       />
-    </Box>
+    </WidgetShell>
   );
 };
 

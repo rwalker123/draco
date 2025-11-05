@@ -231,7 +231,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
+      <AppBar position="sticky" sx={{ top: 0 }}>
         <Toolbar
           sx={{
             minHeight: '64px !important',

@@ -9,11 +9,13 @@ import {
   getDateKeyInTimezone,
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
+import { alpha, useTheme } from '@mui/material/styles';
 
 export interface CalendarGridProps {
   // Grid configuration
   gridType: 'week' | 'month';
   showZoomColumn?: boolean;
+  currentMonthDate?: Date;
 
   // Data
   days: Date[];
@@ -47,6 +49,7 @@ export interface CalendarGridProps {
 const CalendarGrid: React.FC<CalendarGridProps> = ({
   gridType: _gridType,
   showZoomColumn = false,
+  currentMonthDate,
   days,
   filteredGames,
   minHeight = '300px',
@@ -63,14 +66,27 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   isNavigating = false,
   timeZone,
 }) => {
+  const theme = useTheme();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const columns = showZoomColumn ? `40px repeat(7, 1fr)` : `repeat(7, 1fr)`;
+  const borderColor = theme.palette.widget.border;
+  const headerBg = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.45 : 0.12);
+  const headerText = theme.palette.widget.headerText;
+  const cellHoverBg = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.25 : 0.08,
+  );
+  const todayBg = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.32 : 0.12);
+  const todayBorder = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.8 : 0.45);
+  const zoomColumnBg = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.35 : 0.08,
+  );
 
   // Common styling for consistent appearance
   const gridStyles = {
-    border: '2px solid',
-    borderColor: 'grey.400',
-    borderRadius: 1,
+    border: `1px solid ${borderColor}`,
+    borderRadius: theme.shape.borderRadius,
     overflow: 'hidden' as const,
     minWidth,
     width: '100%',
@@ -79,8 +95,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const headerStyles = {
     display: 'grid' as const,
     gridTemplateColumns: columns,
-    borderBottom: '2px solid',
-    borderBottomColor: 'grey.400',
+    borderBottom: `1px solid ${borderColor}`,
     minWidth,
     width: '100%',
   };
@@ -88,7 +103,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const dayHeaderStyles = {
     p: 1,
     textAlign: 'center' as const,
-    backgroundColor: 'primary.main',
+    backgroundColor: headerBg,
     display: 'flex' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
@@ -98,13 +113,13 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 
   const dayCellStyles = {
     minHeight,
-    backgroundColor: 'background.paper',
+    backgroundColor: theme.palette.widget.surface,
     cursor: onDayClick ? ('pointer' as const) : ('default' as const),
     minWidth: 0,
     overflow: 'hidden' as const,
     '&:hover': onDayClick
       ? {
-          backgroundColor: 'grey.100',
+          backgroundColor: cellHoverBg,
         }
       : {},
   };
@@ -124,6 +139,28 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     return map;
   }, [filteredGames, timeZone]);
 
+  const monthReference = React.useMemo(() => {
+    if (!currentMonthDate) {
+      return null;
+    }
+
+    return {
+      month: currentMonthDate.getMonth(),
+      year: currentMonthDate.getFullYear(),
+    };
+  }, [currentMonthDate]);
+
+  const isInCurrentMonth = React.useCallback(
+    (day: Date) => {
+      if (!monthReference) {
+        return true;
+      }
+
+      return day.getMonth() === monthReference.month && day.getFullYear() === monthReference.year;
+    },
+    [monthReference],
+  );
+
   const getGamesForDay = (day: Date) => {
     const dayKey = getDateKeyInTimezone(day, timeZone);
     if (!dayKey) {
@@ -142,13 +179,13 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
           <Box
             sx={{
               height: 40,
-              backgroundColor: 'primary.main',
+              backgroundColor: zoomColumnBg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="caption" sx={{ color: headerText, fontWeight: 600 }}>
               Zoom
             </Typography>
           </Box>
@@ -161,10 +198,10 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
             sx={{
               ...dayHeaderStyles,
               borderRight: index < 6 ? '1px solid' : 'none',
-              borderRightColor: 'primary.dark',
+              borderRightColor: theme.palette.primary.dark,
             }}
           >
-            <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="subtitle2" sx={{ color: headerText, fontWeight: 600 }}>
               {day}
             </Typography>
           </Box>
@@ -202,12 +239,12 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      borderRight: '1px solid',
-                      borderRightColor: 'grey.300',
+                      borderRight: `1px solid ${borderColor}`,
                       borderBottom:
-                        weekIndex < Math.ceil(days.length / 7) - 1 ? '1px solid' : 'none',
-                      borderBottomColor: 'grey.300',
-                      backgroundColor: 'background.paper',
+                        weekIndex < Math.ceil(days.length / 7) - 1
+                          ? `1px solid ${borderColor}`
+                          : 'none',
+                      backgroundColor: theme.palette.widget.surface,
                     }}
                   >
                     <Tooltip
@@ -223,7 +260,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                       <IconButton
                         size="small"
                         onClick={() => onZoomClick?.(weekStartDate)}
-                        sx={{ color: 'primary.main' }}
+                        sx={{ color: theme.palette.primary.main }}
                       >
                         <ZoomInIcon />
                       </IconButton>
@@ -231,250 +268,253 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                   </Box>
 
                   {/* Days for this week */}
-                  {weekDays.map((day) => (
-                    <Box
-                      key={day.toISOString()}
-                      sx={{
-                        ...dayCellStyles,
-                        borderRight: '1px solid',
-                        borderRightColor: 'grey.300',
-                        borderBottom: '1px solid',
-                        borderBottomColor: 'grey.300',
-                        backgroundColor: isSameDayInTimezone(day, new Date(), timeZone)
-                          ? 'primary.light'
-                          : 'background.paper',
-                        border: isSameDayInTimezone(day, new Date(), timeZone) ? 2 : 1,
-                        borderColor: isSameDayInTimezone(day, new Date(), timeZone)
-                          ? 'primary.main'
-                          : 'grey.300',
-                      }}
-                      onClick={() => onDayClick?.(day)}
-                      title={
-                        onDayClick
-                          ? `View ${formatDateInTimezone(day, timeZone, {
-                              weekday: 'long',
-                              month: 'long',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}`
-                          : undefined
-                      }
-                    >
-                      {/* Day Number */}
+                  {weekDays.map((day) => {
+                    const isToday = isSameDayInTimezone(day, new Date(), timeZone);
+                    const inCurrentMonth = isInCurrentMonth(day);
+                    const dayNumberColor = isToday
+                      ? theme.palette.primary.main
+                      : inCurrentMonth
+                        ? theme.palette.primary.main
+                        : theme.palette.text.disabled;
+
+                    return (
                       <Box
+                        key={day.toISOString()}
                         sx={{
-                          py: 1,
-                          px: 1,
-                          backgroundColor: 'grey.50',
-                          borderBottom: '1px solid',
-                          borderBottomColor: 'divider',
-                          textAlign: 'center',
+                          ...dayCellStyles,
+                          borderRight: `1px solid ${borderColor}`,
+                          borderBottom: `1px solid ${borderColor}`,
+                          backgroundColor: isToday ? todayBg : theme.palette.widget.surface,
+                          border: isToday ? `1px solid ${todayBorder}` : undefined,
                         }}
+                        onClick={() => onDayClick?.(day)}
+                        title={
+                          onDayClick
+                            ? `View ${formatDateInTimezone(day, timeZone, {
+                                weekday: 'long',
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}`
+                            : undefined
+                        }
                       >
-                        <Typography
-                          variant="h6"
+                        {/* Day Number */}
+                        <Box
                           sx={{
-                            fontWeight: 'bold',
-                            color: 'primary.main',
+                            py: 1,
+                            px: 1,
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              theme.palette.mode === 'dark' ? 0.15 : 0.08,
+                            ),
+                            borderBottom: `1px solid ${borderColor}`,
+                            textAlign: 'center',
                           }}
                         >
-                          {formatDateInTimezone(day, timeZone, { day: 'numeric' })}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          {formatDateInTimezone(day, timeZone, { month: 'short' })}
-                        </Typography>
-                      </Box>
-
-                      {/* Games for this day */}
-                      <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
-                        {getGamesForDay(day).length > 0 ? (
-                          getGamesForDay(day).map((game) => {
-                            const gameCardData = convertGameToGameCardData(game);
-                            const showActions =
-                              canEditSchedule ||
-                              (onViewRecap && gameCardData.hasGameRecap) ||
-                              (canEditRecap?.(gameCardData) ?? false);
-
-                            return (
-                              <Box
-                                key={game.id}
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Prevent triggering day view
-                                  onGameClick?.(game);
-                                }}
-                              >
-                                <GameCard
-                                  game={gameCardData}
-                                  layout="vertical"
-                                  compact={true}
-                                  calendar={true}
-                                  canEditGames={canEditSchedule}
-                                  onEnterGameResults={
-                                    canEditSchedule && onGameResults
-                                      ? (cardData) => {
-                                          // Find the original game by ID and call onGameResults
-                                          const originalGame = getGamesForDay(day).find(
-                                            (g) => g.id === cardData.id,
-                                          );
-                                          if (originalGame) {
-                                            onGameResults(originalGame);
-                                          }
-                                        }
-                                      : undefined
-                                  }
-                                  canEditRecap={canEditRecap}
-                                  onEditRecap={
-                                    canEditRecap && onEditRecap
-                                      ? () => onEditRecap(game)
-                                      : undefined
-                                  }
-                                  onViewRecap={
-                                    onViewRecap && gameCardData.hasGameRecap
-                                      ? () => onViewRecap(game)
-                                      : undefined
-                                  }
-                                  showActions={showActions}
-                                  onClick={() => onGameClick?.(game)}
-                                  timeZone={timeZone}
-                                />
-                              </Box>
-                            );
-                          })
-                        ) : (
                           <Typography
-                            variant="body2"
-                            color="textSecondary"
-                            sx={{ textAlign: 'center', mt: 2 }}
+                            variant="h6"
+                            sx={{
+                              fontWeight: 'bold',
+                              color: dayNumberColor,
+                            }}
                           >
-                            No games
+                            {formatDateInTimezone(day, timeZone, { day: 'numeric' })}
                           </Typography>
-                        )}
+                        </Box>
+
+                        {/* Games for this day */}
+                        <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
+                          {getGamesForDay(day).length > 0 ? (
+                            getGamesForDay(day).map((game) => {
+                              const gameCardData = convertGameToGameCardData(game);
+                              const showActions =
+                                canEditSchedule ||
+                                (onViewRecap && gameCardData.hasGameRecap) ||
+                                (canEditRecap?.(gameCardData) ?? false);
+
+                              return (
+                                <Box
+                                  key={game.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent triggering day view
+                                    onGameClick?.(game);
+                                  }}
+                                >
+                                  <GameCard
+                                    game={gameCardData}
+                                    layout="vertical"
+                                    compact={true}
+                                    calendar={true}
+                                    canEditGames={canEditSchedule}
+                                    onEnterGameResults={
+                                      canEditSchedule && onGameResults
+                                        ? (cardData) => {
+                                            // Find the original game by ID and call onGameResults
+                                            const originalGame = getGamesForDay(day).find(
+                                              (g) => g.id === cardData.id,
+                                            );
+                                            if (originalGame) {
+                                              onGameResults(originalGame);
+                                            }
+                                          }
+                                        : undefined
+                                    }
+                                    canEditRecap={canEditRecap}
+                                    onEditRecap={
+                                      canEditRecap && onEditRecap
+                                        ? () => onEditRecap(game)
+                                        : undefined
+                                    }
+                                    onViewRecap={
+                                      onViewRecap && gameCardData.hasGameRecap
+                                        ? () => onViewRecap(game)
+                                        : undefined
+                                    }
+                                    showActions={showActions}
+                                    onClick={() => onGameClick?.(game)}
+                                    timeZone={timeZone}
+                                  />
+                                </Box>
+                              );
+                            })
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              color={theme.palette.widget.supportingText}
+                              sx={{ textAlign: 'center', mt: 2 }}
+                            >
+                              No games
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
-                    </Box>
-                  ))}
+                    );
+                  })}
                 </React.Fragment>
               );
             })
           : // Week view without zoom column
-            days.map((day, index) => (
-              <Box
-                key={day.toISOString()}
-                sx={{
-                  ...dayCellStyles,
-                  borderRight: index < 6 ? '1px solid' : 'none',
-                  borderRightColor: 'grey.300',
-                  borderBottom: '1px solid',
-                  borderBottomColor: 'grey.300',
-                  backgroundColor: isSameDayInTimezone(day, new Date(), timeZone)
-                    ? 'primary.light'
-                    : 'background.paper',
-                  border: isSameDayInTimezone(day, new Date(), timeZone) ? 2 : 1,
-                  borderColor: isSameDayInTimezone(day, new Date(), timeZone)
-                    ? 'primary.main'
-                    : 'grey.300',
-                }}
-                onClick={() => onDayClick?.(day)}
-                title={
-                  onDayClick
-                    ? `View ${formatDateInTimezone(day, timeZone, {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })} in day view`
-                    : undefined
-                }
-              >
-                {/* Day Number */}
+            days.map((day, index) => {
+              const isToday = isSameDayInTimezone(day, new Date(), timeZone);
+              const inCurrentMonth = isInCurrentMonth(day);
+              const dayNumberColor = isToday
+                ? theme.palette.primary.main
+                : inCurrentMonth
+                  ? theme.palette.primary.main
+                  : theme.palette.text.disabled;
+
+              return (
                 <Box
+                  key={day.toISOString()}
                   sx={{
-                    py: 1,
-                    px: 1,
-                    backgroundColor: 'grey.50',
-                    borderBottom: '1px solid',
-                    borderBottomColor: 'divider',
-                    textAlign: 'center',
+                    ...dayCellStyles,
+                    borderRight: index < 6 ? `1px solid ${borderColor}` : 'none',
+                    borderBottom: `1px solid ${borderColor}`,
+                    backgroundColor: isToday ? todayBg : theme.palette.widget.surface,
+                    border: isToday ? `1px solid ${todayBorder}` : undefined,
                   }}
+                  onClick={() => onDayClick?.(day)}
+                  title={
+                    onDayClick
+                      ? `View ${formatDateInTimezone(day, timeZone, {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })} in day view`
+                      : undefined
+                  }
                 >
-                  <Typography
-                    variant="h6"
+                  {/* Day Number */}
+                  <Box
                     sx={{
-                      fontWeight: 'bold',
-                      color: 'primary.main',
+                      py: 1,
+                      px: 1,
+                      backgroundColor: alpha(
+                        theme.palette.primary.main,
+                        theme.palette.mode === 'dark' ? 0.15 : 0.08,
+                      ),
+                      borderBottom: `1px solid ${borderColor}`,
+                      textAlign: 'center',
                     }}
                   >
-                    {formatDateInTimezone(day, timeZone, { day: 'numeric' })}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {formatDateInTimezone(day, timeZone, { month: 'short' })}
-                  </Typography>
-                </Box>
-
-                {/* Games for this day */}
-                <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
-                  {getGamesForDay(day).length > 0 ? (
-                    getGamesForDay(day).map((game) => {
-                      const gameCardData = convertGameToGameCardData(game);
-                      const showActions =
-                        canEditSchedule ||
-                        (onViewRecap && gameCardData.hasGameRecap) ||
-                        (canEditRecap?.(gameCardData) ?? false);
-
-                      return (
-                        <Box
-                          key={game.id}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent triggering day view
-                            onGameClick?.(game);
-                          }}
-                        >
-                          <GameCard
-                            game={gameCardData}
-                            layout="vertical"
-                            compact={true}
-                            calendar={true}
-                            canEditGames={canEditSchedule}
-                            onEnterGameResults={
-                              canEditSchedule && onGameResults
-                                ? (cardData) => {
-                                    // Find the original game by ID and call onGameResults
-                                    const originalGame = getGamesForDay(day).find(
-                                      (g) => g.id === cardData.id,
-                                    );
-                                    if (originalGame) {
-                                      onGameResults(originalGame);
-                                    }
-                                  }
-                                : undefined
-                            }
-                            canEditRecap={canEditRecap}
-                            onEditRecap={
-                              canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined
-                            }
-                            onViewRecap={
-                              onViewRecap && gameCardData.hasGameRecap
-                                ? () => onViewRecap(game)
-                                : undefined
-                            }
-                            showActions={showActions}
-                            onClick={() => onGameClick?.(game)}
-                            timeZone={timeZone}
-                          />
-                        </Box>
-                      );
-                    })
-                  ) : (
                     <Typography
-                      variant="body2"
-                      color="textSecondary"
-                      sx={{ textAlign: 'center', mt: 2 }}
+                      variant="h6"
+                      sx={{
+                        fontWeight: 'bold',
+                        color: dayNumberColor,
+                      }}
                     >
-                      No games
+                      {formatDateInTimezone(day, timeZone, { day: 'numeric' })}
                     </Typography>
-                  )}
+                  </Box>
+
+                  {/* Games for this day */}
+                  <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
+                    {getGamesForDay(day).length > 0 ? (
+                      getGamesForDay(day).map((game) => {
+                        const gameCardData = convertGameToGameCardData(game);
+                        const showActions =
+                          canEditSchedule ||
+                          (onViewRecap && gameCardData.hasGameRecap) ||
+                          (canEditRecap?.(gameCardData) ?? false);
+
+                        return (
+                          <Box
+                            key={game.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onGameClick?.(game);
+                            }}
+                          >
+                            <GameCard
+                              game={gameCardData}
+                              layout="vertical"
+                              compact={true}
+                              calendar={true}
+                              canEditGames={canEditSchedule}
+                              onEnterGameResults={
+                                canEditSchedule && onGameResults
+                                  ? (cardData) => {
+                                      const originalGame = getGamesForDay(day).find(
+                                        (g) => g.id === cardData.id,
+                                      );
+                                      if (originalGame) {
+                                        onGameResults(originalGame);
+                                      }
+                                    }
+                                  : undefined
+                              }
+                              canEditRecap={canEditRecap}
+                              onEditRecap={
+                                canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined
+                              }
+                              onViewRecap={
+                                onViewRecap && gameCardData.hasGameRecap
+                                  ? () => onViewRecap(game)
+                                  : undefined
+                              }
+                              showActions={showActions}
+                              onClick={() => onGameClick?.(game)}
+                              timeZone={timeZone}
+                            />
+                          </Box>
+                        );
+                      })
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        color={theme.palette.widget.supportingText}
+                        sx={{ textAlign: 'center', mt: 2 }}
+                      >
+                        No games
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
       </Box>
     </Box>
   );

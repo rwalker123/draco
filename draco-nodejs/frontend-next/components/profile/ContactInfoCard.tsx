@@ -4,7 +4,6 @@ import {
   Avatar,
   Box,
   Divider,
-  Paper,
   Skeleton,
   Stack,
   Typography,
@@ -15,6 +14,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
+import WidgetShell from '../ui/WidgetShell';
 
 interface ContactInfoCardProps {
   contact: BaseContactType | null;
@@ -84,9 +84,11 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   surveyHref,
   infoMessage,
 }) => {
+  const widgetShellSx = { p: 4 };
+
   if (loading) {
     return (
-      <Paper sx={{ p: 4, borderRadius: 2 }} data-testid="profile-contact-loading">
+      <WidgetShell accent="primary" sx={widgetShellSx} data-testid="profile-contact-loading">
         <Stack spacing={2}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Skeleton variant="circular" width={64} height={64} />
@@ -99,30 +101,27 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
           <Skeleton variant="text" width="80%" height={20} />
           <Skeleton variant="rectangular" height={80} />
         </Stack>
-      </Paper>
+      </WidgetShell>
     );
   }
 
   if (error) {
     return (
-      <Paper sx={{ p: 4, borderRadius: 2 }}>
+      <WidgetShell accent="primary" sx={widgetShellSx}>
         <Alert severity="error" data-testid="profile-contact-error">
           {error}
         </Alert>
-      </Paper>
+      </WidgetShell>
     );
   }
 
   if (!contact) {
     return (
-      <Paper sx={{ p: 4, borderRadius: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-          Contact Information
-        </Typography>
+      <WidgetShell title="Contact Information" accent="primary" sx={widgetShellSx}>
         <Alert severity="info" data-testid="profile-contact-info">
           {infoMessage ?? <>Not a member of this organization.</>}
         </Alert>
-      </Paper>
+      </WidgetShell>
     );
   }
 
@@ -135,78 +134,88 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   const zip = contact.contactDetails?.zip || '';
   const dateOfBirth = contact.contactDetails?.dateOfBirth || '';
   const formattedDateOfBirth = formatDateOfBirth(dateOfBirth);
+  const actionButtons =
+    surveyHref || onEdit ? (
+      <Stack direction="row" spacing={1}>
+        {surveyHref && (
+          <Tooltip title="Open player survey">
+            <Button
+              component={NextLink}
+              href={surveyHref}
+              variant="contained"
+              size="small"
+              color="primary"
+              data-testid="profile-contact-survey-link"
+              sx={{ minWidth: 36, px: 1 }}
+            >
+              <DescriptionIcon fontSize="small" />
+            </Button>
+          </Tooltip>
+        )}
+        {onEdit && (
+          <Tooltip title="Edit contact information">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onEdit}
+              data-testid="profile-contact-edit-button"
+              sx={{ minWidth: 36, px: 1 }}
+            >
+              <EditIcon fontSize="small" />
+            </Button>
+          </Tooltip>
+        )}
+      </Stack>
+    ) : null;
 
   const addressLine = [streetAddress, [city, state].filter(Boolean).join(', '), zip]
     .filter((line) => line && line.trim().length > 0)
     .join('\n');
 
-  return (
-    <Paper sx={{ p: 4, borderRadius: 2 }} data-testid="profile-contact-card">
-      <Stack spacing={3}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar
-              src={contact.photoUrl}
-              alt={`${contact.firstName} ${contact.lastName}`}
-              sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: 28, fontWeight: 600 }}
-            >
-              {!contact.photoUrl ? contact.firstName?.[0] : undefined}
-            </Avatar>
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {contact.firstName} {contact.lastName}
+  const headerContent = (
+    <Stack spacing={2.5}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar
+            src={contact.photoUrl}
+            alt={`${contact.firstName} ${contact.lastName}`}
+            sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: 28, fontWeight: 600 }}
+          >
+            {!contact.photoUrl ? contact.firstName?.[0] : undefined}
+          </Avatar>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 700 }} color="text.primary">
+              {contact.firstName} {contact.lastName}
+            </Typography>
+            {accountName && (
+              <Typography variant="body2" color="text.secondary">
+                {accountName}
               </Typography>
-              {accountName && (
-                <Typography variant="body2" color="text.secondary">
-                  {accountName}
-                </Typography>
-              )}
-            </Box>
+            )}
           </Box>
-          {(surveyHref || onEdit) && (
-            <Stack direction="row" spacing={1}>
-              {surveyHref && (
-                <Tooltip title="Open player survey">
-                  <Button
-                    component={NextLink}
-                    href={surveyHref}
-                    variant="contained"
-                    size="small"
-                    color="primary"
-                    data-testid="profile-contact-survey-link"
-                    sx={{ minWidth: 36, px: 1 }}
-                  >
-                    <DescriptionIcon fontSize="small" />
-                  </Button>
-                </Tooltip>
-              )}
-              {onEdit && (
-                <Tooltip title="Edit contact information">
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={onEdit}
-                    data-testid="profile-contact-edit-button"
-                    sx={{ minWidth: 36, px: 1 }}
-                  >
-                    <EditIcon fontSize="small" />
-                  </Button>
-                </Tooltip>
-              )}
-            </Stack>
-          )}
         </Box>
+        {actionButtons}
+      </Box>
+      <Divider sx={{ borderColor: 'widget.border' }} />
+    </Stack>
+  );
 
-        <Divider />
-
-        <Stack spacing={2}>
+  return (
+    <WidgetShell
+      accent="primary"
+      sx={widgetShellSx}
+      data-testid="profile-contact-card"
+      headerContent={headerContent}
+    >
+      <Stack spacing={2.5}>
+        <Stack spacing={1.5}>
           {renderContactField('Email', contact.email ?? '')}
           {renderContactField('Primary Phone', primaryPhone)}
           {renderContactField('Secondary Phone', secondaryPhone)}
@@ -215,7 +224,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
         </Stack>
 
         {addressLine && (
-          <Box>
+          <Box sx={{ pt: 0.5 }}>
             <Typography
               variant="caption"
               sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
@@ -228,7 +237,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
           </Box>
         )}
       </Stack>
-    </Paper>
+    </WidgetShell>
   );
 };
 
