@@ -344,25 +344,13 @@ const ProfilePageClient: React.FC = () => {
             );
           }
 
-          if (teams.length === 0) {
-            return (
-              <Paper key={organization.id} sx={{ p: 4, borderRadius: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  {organization.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  No teams are associated with your profile for this organization yet.
-                </Typography>
-              </Paper>
-            );
-          }
-
           return (
             <MyTeams
               key={organization.id}
               userTeams={teams}
               onViewTeam={handleViewTeam}
               title={`Teams at ${organization.name}`}
+              emptyStateMessage="No teams are associated with your profile for this organization yet."
               sx={{ mb: 0 }}
             />
           );

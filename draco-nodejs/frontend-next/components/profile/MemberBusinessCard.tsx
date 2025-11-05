@@ -7,7 +7,6 @@ import {
   Button,
   Divider,
   IconButton,
-  Paper,
   Skeleton,
   Stack,
   Typography,
@@ -23,6 +22,7 @@ import MemberBusinessFormDialog, {
 import MemberBusinessDeleteDialog, {
   type MemberBusinessDeleteResult,
 } from './MemberBusinessDeleteDialog';
+import WidgetShell from '../ui/WidgetShell';
 
 interface MemberBusinessCardProps {
   accountId: string | null;
@@ -166,33 +166,29 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
   };
 
   const showEmptyState = !loading && memberBusinesses.length === 0 && !infoMessage;
+  const widgetShellSx = { p: 4 };
+  const actionsContent =
+    canManage && memberBusinesses.length === 0 ? (
+      <Button
+        variant="contained"
+        size="small"
+        startIcon={<AddIcon />}
+        onClick={handleOpenCreate}
+        disabled={loading}
+      >
+        Add Business
+      </Button>
+    ) : null;
 
   return (
-    <Paper sx={{ p: 4, borderRadius: 2 }}>
-      <Stack spacing={2}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-            Member Business
-          </Typography>
-          {canManage && memberBusinesses.length === 0 && (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreate}
-              disabled={loading}
-            >
-              Add Business
-            </Button>
-          )}
-        </Stack>
-
+    <WidgetShell accent="info" title="Member Business" actions={actionsContent} sx={widgetShellSx}>
+      <Stack spacing={2.5}>
         {error && <Alert severity="error">{error}</Alert>}
         {infoMessage && <Alert severity="info">{infoMessage}</Alert>}
         {success && <Alert severity="success">{success}</Alert>}
 
         {loading ? (
-          <Stack spacing={1}>
+          <Stack spacing={1.5}>
             <Skeleton variant="text" width="60%" height={24} />
             <Skeleton variant="text" width="40%" height={20} />
             <Skeleton variant="rectangular" height={80} />
@@ -202,7 +198,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
             You haven&apos;t added any member business information yet.
           </Typography>
         ) : (
-          <Stack spacing={2}>
+          <Stack spacing={2.5}>
             {memberBusinesses.map((business, index) => (
               <Box key={business.id}>
                 <Stack
@@ -251,7 +247,9 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
                     </Stack>
                   )}
                 </Stack>
-                {index < memberBusinesses.length - 1 && <Divider sx={{ mt: 2 }} />}
+                {index < memberBusinesses.length - 1 && (
+                  <Divider sx={{ mt: 2, borderColor: 'widget.border' }} />
+                )}
               </Box>
             ))}
           </Stack>
@@ -277,7 +275,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
         onSuccess={handleDeleteSuccess}
         onError={handleFormError}
       />
-    </Paper>
+    </WidgetShell>
   );
 };
 

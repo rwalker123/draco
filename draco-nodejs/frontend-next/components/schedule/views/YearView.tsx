@@ -8,6 +8,8 @@ import {
   getDateKeyInTimezone,
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
+import WidgetShell from '../../ui/WidgetShell';
+import { alpha, useTheme } from '@mui/material/styles';
 
 const YearView: React.FC<ViewComponentProps> = ({
   filteredGames,
@@ -21,6 +23,7 @@ const YearView: React.FC<ViewComponentProps> = ({
   navigate,
   isNavigating,
 }) => {
+  const theme = useTheme();
   const [currentYear, setCurrentYear] = React.useState(filterDate);
 
   // Sync currentYear with filterDate when it changes
@@ -47,20 +50,32 @@ const YearView: React.FC<ViewComponentProps> = ({
 
   const renderYearView = () => {
     const year = currentYear.getFullYear();
-    const months = [];
+    const months: React.ReactElement[] = [];
+    const today = new Date();
+    const dayHeaderBg = alpha(
+      theme.palette.primary.main,
+      theme.palette.mode === 'dark' ? 0.45 : 0.12,
+    );
+    const todayBg = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.32 : 0.12);
+    const todayBorder = alpha(
+      theme.palette.primary.main,
+      theme.palette.mode === 'dark' ? 0.8 : 0.45,
+    );
+    const offMonthBg =
+      theme.palette.mode === 'dark'
+        ? alpha(theme.palette.widget.surface, 0.3)
+        : alpha(theme.palette.widget.supportingText, 0.08);
 
     for (let month = 0; month < 12; month++) {
       const monthStart = new Date(year, month, 1);
       const monthName = formatDateInTimezone(monthStart, timeZone, { month: 'long' });
       const monthKeyPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-      // Get games for this month
       const monthGames = filteredGames.filter((game) => {
         const key = getDateKeyInTimezone(game.gameDate, timeZone);
         return key ? key.startsWith(monthKeyPrefix) : false;
       });
 
-      // Group games by day
       const gamesByDay = new Map<string, typeof filteredGames>();
       monthGames.forEach((game) => {
         const dateKey = getDateKeyInTimezone(game.gameDate, timeZone);
@@ -73,24 +88,19 @@ const YearView: React.FC<ViewComponentProps> = ({
         gamesByDay.get(dateKey)!.push(game);
       });
 
-      // Create calendar days for this month
-      const days: React.ReactElement[] = [];
       const firstDayOfMonth = new Date(year, month, 1);
       const lastDayOfMonth = new Date(year, month + 1, 0);
-      const startDate = startOfWeek(firstDayOfMonth);
-      const endDate = endOfWeek(lastDayOfMonth);
-
       const calendarDays = eachDayOfInterval({
-        start: startDate,
-        end: endDate,
+        start: startOfWeek(firstDayOfMonth),
+        end: endOfWeek(lastDayOfMonth),
       });
 
-      calendarDays.forEach((day, index) => {
+      const dayCells = calendarDays.map((day, index) => {
         const dateKey = getDateKeyInTimezone(day, timeZone);
         const isCurrentMonth = dateKey ? dateKey.startsWith(monthKeyPrefix) : false;
         const dayGames = dateKey ? gamesByDay.get(dateKey) || [] : [];
         const gameCount = dayGames.length;
-        const isToday = isSameDayInTimezone(day, new Date(), timeZone);
+        const isToday = isSameDayInTimezone(day, today, timeZone);
         const dayNumberLabel = formatDateInTimezone(day, timeZone, { day: 'numeric' });
         const dayTitle = formatDateInTimezone(day, timeZone, {
           weekday: 'long',
@@ -99,27 +109,36 @@ const YearView: React.FC<ViewComponentProps> = ({
           year: 'numeric',
         });
 
-        days.push(
+        return (
           <Box
-            key={index}
+            key={`${month}-${index}`}
             sx={{
               width: '14.28%',
-              height: '60px',
-              border: '1px solid',
-              borderColor: 'divider',
+              height: 60,
+              borderBottom: `1px solid ${theme.palette.widget.border}`,
+              borderRight:
+                (index + 1) % 7 === 0 ? 'none' : `1px solid ${theme.palette.widget.border}`,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'flex-start',
-              bgcolor: isCurrentMonth ? 'white' : 'grey.100',
+              bgcolor: isToday
+                ? todayBg
+                : isCurrentMonth
+                  ? theme.palette.widget.surface
+                  : offMonthBg,
               position: 'relative',
               cursor: 'pointer',
+              transition: 'background-color 0.15s ease',
               '&:hover': {
-                bgcolor: isCurrentMonth ? 'primary.50' : 'grey.200',
+                bgcolor: isCurrentMonth
+                  ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.28 : 0.1)
+                  : alpha(offMonthBg, 0.85),
                 '& .game-count': {
                   transform: 'scale(1.1)',
                 },
               },
+              border: isToday ? `1px solid ${todayBorder}` : undefined,
             }}
             onClick={() => {
               setFilterType('day');
@@ -130,7 +149,11 @@ const YearView: React.FC<ViewComponentProps> = ({
             <Typography
               variant="body2"
               sx={{
-                color: isCurrentMonth ? 'text.primary' : 'text.disabled',
+                color: isToday
+                  ? theme.palette.primary.contrastText
+                  : isCurrentMonth
+                    ? theme.palette.widget.headerText
+                    : theme.palette.widget.supportingText,
                 fontWeight: isToday ? 'bold' : 'normal',
                 fontSize: '0.75rem',
                 mt: 0.5,
@@ -143,14 +166,17 @@ const YearView: React.FC<ViewComponentProps> = ({
                 className="game-count"
                 sx={{
                   position: 'absolute',
-                  bottom: '2px',
+                  bottom: 2,
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  width: '20px',
-                  height: '20px',
+                  width: 20,
+                  height: 20,
                   borderRadius: '50%',
-                  bgcolor: 'primary.main',
-                  color: 'white',
+                  bgcolor: alpha(
+                    theme.palette.primary.main,
+                    theme.palette.mode === 'dark' ? 0.9 : 0.85,
+                  ),
+                  color: theme.palette.primary.contrastText,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -162,12 +188,12 @@ const YearView: React.FC<ViewComponentProps> = ({
                 {gameCount}
               </Box>
             )}
-          </Box>,
+          </Box>
         );
       });
 
       months.push(
-        <Box key={month} sx={{ mb: 4, width: '300px' }}>
+        <Box key={month} sx={{ mb: 4, width: { xs: '100%', sm: 300 } }}>
           <Typography
             variant="h6"
             sx={{
@@ -189,46 +215,67 @@ const YearView: React.FC<ViewComponentProps> = ({
           >
             {monthName}
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-            {/* Day headers */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              borderRadius: 2,
+              overflow: 'hidden',
+              border: `1px solid ${theme.palette.widget.border}`,
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.widget.surface, 0.8)
+                  : theme.palette.widget.surface,
+            }}
+          >
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
               <Box
-                key={index}
+                key={`header-${day}`}
                 sx={{
                   width: '14.28%',
-                  height: '30px',
+                  height: 30,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '0.8rem',
-                  color: 'text.secondary',
-                  borderBottom: '1px solid',
-                  borderBottomColor: 'divider',
+                  borderRight: index < 6 ? `1px solid ${theme.palette.widget.border}` : 'none',
+                  borderBottom: `1px solid ${theme.palette.widget.border}`,
+                  backgroundColor: dayHeaderBg,
                 }}
               >
-                {day}
+                <Typography
+                  variant="caption"
+                  sx={{ color: theme.palette.widget.headerText, fontWeight: 600 }}
+                >
+                  {day}
+                </Typography>
               </Box>
             ))}
-            {/* Calendar days */}
-            {days}
+            {dayCells}
           </Box>
         </Box>,
       );
     }
 
-    return months;
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: { xs: 2, md: 3 },
+          justifyContent: 'center',
+        }}
+      >
+        {months}
+      </Box>
+    );
   };
 
   return (
-    <Box
+    <WidgetShell
+      disablePadding
+      accent="info"
       sx={{
-        border: '3px solid',
-        borderColor: 'primary.main',
-        borderRadius: 2,
         overflow: 'hidden',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-        overflowX: 'auto',
         minWidth: 'fit-content',
       }}
     >
@@ -244,10 +291,16 @@ const YearView: React.FC<ViewComponentProps> = ({
       />
 
       {/* Year Grid */}
-      <Box sx={{ p: 2, opacity: isNavigating ? 0.7 : 1, transition: 'opacity 0.2s ease' }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>{renderYearView()}</Box>
+      <Box
+        sx={{
+          p: 2,
+          opacity: isNavigating ? 0.7 : 1,
+          transition: 'opacity 0.2s ease',
+        }}
+      >
+        {renderYearView()}
       </Box>
-    </Box>
+    </WidgetShell>
   );
 };
 
