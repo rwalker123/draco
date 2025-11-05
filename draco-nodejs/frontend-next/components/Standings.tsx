@@ -53,7 +53,7 @@ const formatTies = (value: number): string => {
 export default function Standings({
   accountId,
   seasonId,
-  title,
+  title = 'Standings',
   showHeader = true,
 }: StandingsProps) {
   const apiClient = useApiClient();
@@ -327,11 +327,7 @@ export default function Standings({
   };
 
   return (
-    <WidgetShell
-      title={showHeader ? (title ?? 'Standings') : undefined}
-      accent="info"
-      disablePadding
-    >
+    <WidgetShell title={showHeader ? title : undefined} accent="info" disablePadding>
       <Box sx={{ px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>{renderBody()}</Box>
     </WidgetShell>
   );
