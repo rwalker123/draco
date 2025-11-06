@@ -10454,6 +10454,129 @@ components:
         - description
       title: UpsertHandout
       description: Payload for creating or updating a handout record
+    Announcement:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        publishedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp string
+        isSpecial:
+          type: boolean
+          default: false
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        visibility:
+          type: string
+          enum:
+            - account
+            - team
+          description: Scope where the announcement is published
+      required:
+        - title
+        - body
+        - publishedAt
+        - id
+        - accountId
+        - visibility
+      title: Announcement
+      description: Announcement data shared between account and team contexts
+    AnnouncementList:
+      type: object
+      properties:
+        announcements:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                minLength: 1
+                maxLength: 100
+              body:
+                type: string
+                minLength: 1
+                maxLength: 5000
+              publishedAt:
+                type: string
+                format: date-time
+                description: ISO 8601 timestamp string
+              isSpecial:
+                type: boolean
+                default: false
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              accountId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              visibility:
+                type: string
+                enum:
+                  - account
+                  - team
+                description: Scope where the announcement is published
+            required:
+              - title
+              - body
+              - publishedAt
+              - id
+              - accountId
+              - visibility
+            title: Announcement
+            description: Announcement data shared between account and team contexts
+      required:
+        - announcements
+      title: AnnouncementList
+      description: Collection wrapper for announcement responses
+    UpsertAnnouncement:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        publishedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp string
+        isSpecial:
+          type: boolean
+          default: false
+      required:
+        - title
+        - body
+        - publishedAt
+      title: UpsertAnnouncement
+      description: Payload to create or update an announcement for an account or team
     CreatePhotoGalleryPhoto:
       type: object
       properties:
@@ -14568,6 +14691,419 @@ paths:
           description: Authentication required.
         "403":
           description: Administrator privileges are required to access analytics.
+  /api/accounts/{accountId}/announcements:
+    get:
+      summary: List account announcements
+      description: Retrieve public announcements for an account.
+      operationId: listAccountAnnouncements
+      tags:
+        - Announcements
+      parameters:
+        - &a1
+          name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Announcements published for the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementList"
+        "500":
+          description: Unexpected error while retrieving announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      summary: Create account announcement
+      description: Create a new announcement for an account. Requires communications
+        permission.
+      operationId: createAccountAnnouncement
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAnnouncement"
+      responses:
+        "201":
+          description: Announcement created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+        "400":
+          description: Invalid announcement payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permission to manage announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error creating the announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/announcements/{announcementId}:
+    get:
+      summary: Get account announcement
+      description: Retrieve a single announcement for the specified account.
+      operationId: getAccountAnnouncement
+      tags:
+        - Announcements
+      parameters:
+        - *a1
+        - &a2
+          name: announcementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Announcement details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+        "404":
+          description: Announcement not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error fetching the announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      summary: Update account announcement
+      description: Update an existing account announcement.
+      operationId: updateAccountAnnouncement
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+        - *a2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAnnouncement"
+      responses:
+        "200":
+          description: Updated announcement details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+        "400":
+          description: Invalid announcement payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permission to manage announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Announcement not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error updating the announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete account announcement
+      description: Delete an account announcement.
+      operationId: deleteAccountAnnouncement
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+        - *a2
+      responses:
+        "204":
+          description: Announcement deleted.
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permission to manage announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Announcement not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error deleting the announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/teams/{teamId}/announcements:
+    get:
+      summary: List team announcements
+      description: Retrieve announcements for a team within an account. Accessible
+        publicly to view current postings.
+      operationId: listTeamAnnouncements
+      tags:
+        - Announcements
+      parameters:
+        - *a1
+        - &a3
+          name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Team announcements for the specified account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementList"
+        "404":
+          description: Team not found for the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error retrieving team announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      summary: Create team announcement
+      description: Create a new team announcement. Requires team management permission.
+      operationId: createTeamAnnouncement
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+        - *a3
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAnnouncement"
+      responses:
+        "201":
+          description: Team announcement created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+        "400":
+          description: Invalid announcement payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permission to manage team announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team not found for the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error creating the team announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/teams/{teamId}/announcements/{announcementId}:
+    get:
+      summary: Get team announcement
+      description: Retrieve an individual team announcement for public display.
+      operationId: getTeamAnnouncement
+      tags:
+        - Announcements
+      parameters:
+        - *a1
+        - *a3
+        - *a2
+      responses:
+        "200":
+          description: Team announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+        "404":
+          description: Team announcement not found for the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error retrieving the team announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      summary: Update team announcement
+      description: Update the content of a team announcement.
+      operationId: updateTeamAnnouncement
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+        - *a3
+        - *a2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAnnouncement"
+      responses:
+        "200":
+          description: Updated team announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+        "400":
+          description: Invalid announcement payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permission to manage team announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team announcement not found for the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error updating the team announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete team announcement
+      description: Delete a team announcement.
+      operationId: deleteTeamAnnouncement
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a1
+        - *a3
+        - *a2
+      responses:
+        "204":
+          description: Team announcement deleted.
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permission to manage team announcements.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team announcement not found for the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error deleting the team announcement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/auth/login:
     post:
       operationId: login
@@ -18566,7 +19102,7 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - &a1
+        - &a4
           name: accountId
           in: path
           required: true
@@ -18595,7 +19131,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
+        - *a4
       requestBody:
         content:
           application/json:
@@ -18641,8 +19177,8 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - *a1
-        - &a2
+        - *a4
+        - &a5
           name: faqId
           in: path
           required: true
@@ -18677,8 +19213,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
-        - *a2
+        - *a4
+        - *a5
       requestBody:
         content:
           application/json:
@@ -18730,8 +19266,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a1
-        - *a2
+        - *a4
+        - *a5
       responses:
         "204":
           description: League FAQ entry deleted
@@ -20307,7 +20843,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a3
+        - &a6
           name: accountId
           in: path
           required: true
@@ -20341,7 +20877,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
+        - *a6
       requestBody:
         content:
           application/json:
@@ -20398,8 +20934,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a3
-        - &a4
+        - *a6
+        - &a7
           name: memberBusinessId
           in: path
           required: true
@@ -20434,8 +20970,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - *a4
+        - *a6
+        - *a7
       requestBody:
         content:
           application/json:
@@ -20493,8 +21029,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a3
-        - *a4
+        - *a6
+        - *a7
       responses:
         "204":
           description: Member business entry deleted
@@ -21450,7 +21986,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a5
+        - &a8
           name: accountId
           in: path
           required: true
@@ -21494,7 +22030,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
+        - *a8
       requestBody:
         content:
           application/json:
@@ -21541,8 +22077,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
-        - &a6
+        - *a8
+        - &a9
           name: categoryId
           in: path
           required: true
@@ -21601,8 +22137,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
-        - *a6
+        - *a8
+        - *a9
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -21641,8 +22177,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
-        - *a6
+        - *a8
+        - *a9
       requestBody:
         content:
           application/json:
@@ -21695,8 +22231,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
-        - &a7
+        - *a8
+        - &a10
           name: questionId
           in: path
           required: true
@@ -21754,8 +22290,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
-        - *a7
+        - *a8
+        - *a10
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -21792,7 +22328,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a5
+        - *a8
         - schema:
             type: integer
             minimum: 1
@@ -21843,8 +22379,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a5
-        - &a8
+        - *a8
+        - &a11
           name: playerId
           in: path
           required: true
@@ -21882,9 +22418,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
         - *a8
-        - *a7
+        - *a11
+        - *a10
       requestBody:
         content:
           application/json:
@@ -21937,9 +22473,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a5
         - *a8
-        - *a7
+        - *a11
+        - *a10
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -21976,7 +22512,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a5
+        - *a8
       responses:
         "200":
           description: Player survey spotlight result.
@@ -22005,7 +22541,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a5
+        - *a8
         - name: teamSeasonId
           in: path
           required: true
@@ -24528,23 +25064,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a10
+        - &a13
           name: accountId
           in: path
           required: true
-          schema: &a9
+          schema: &a12
             type: string
             format: number
-        - &a11
+        - &a14
           name: seasonId
           in: path
           required: true
-          schema: *a9
-        - &a12
+          schema: *a12
+        - &a15
           name: teamSeasonId
           in: path
           required: true
-          schema: *a9
+          schema: *a12
       responses:
         "200":
           description: Completed games retrieved.
@@ -24590,14 +25126,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
-        - &a13
+        - *a13
+        - *a14
+        - *a15
+        - &a16
           name: gameId
           in: path
           required: true
-          schema: *a9
+          schema: *a12
       responses:
         "200":
           description: Batting stats retrieved.
@@ -24642,10 +25178,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
+        - *a14
+        - *a15
+        - *a16
       requestBody:
         required: true
         content:
@@ -24703,15 +25239,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
-        - &a14
+        - *a14
+        - *a15
+        - *a16
+        - &a17
           name: statId
           in: path
           required: true
-          schema: *a9
+          schema: *a12
       requestBody:
         required: true
         content:
@@ -24762,11 +25298,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
         - *a14
+        - *a15
+        - *a16
+        - *a17
       responses:
         "204":
           description: Batting stat deleted.
@@ -24808,10 +25344,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
+        - *a14
+        - *a15
+        - *a16
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -24856,10 +25392,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
+        - *a14
+        - *a15
+        - *a16
       requestBody:
         required: true
         content:
@@ -24917,11 +25453,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
         - *a14
+        - *a15
+        - *a16
+        - *a17
       requestBody:
         required: true
         content:
@@ -24972,11 +25508,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
         - *a14
+        - *a15
+        - *a16
+        - *a17
       responses:
         "204":
           description: Pitching stat deleted.
@@ -25018,10 +25554,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
+        - *a14
+        - *a15
+        - *a16
       responses:
         "200":
           description: Attendance retrieved.
@@ -25066,10 +25602,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a10
-        - *a11
-        - *a12
         - *a13
+        - *a14
+        - *a15
+        - *a16
       requestBody:
         required: true
         content:

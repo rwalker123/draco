@@ -355,6 +355,34 @@ export type dbTeamHandout = Prisma.teamhandoutsGetPayload<{
   };
 }>;
 
+export type dbAccountAnnouncement = Prisma.leaguenewsGetPayload<{
+  select: {
+    id: true;
+    accountid: true;
+    date: true;
+    title: true;
+    text: true;
+    specialannounce: true;
+  };
+}>;
+
+export type dbTeamAnnouncement = Prisma.teamnewsGetPayload<{
+  select: {
+    id: true;
+    teamid: true;
+    date: true;
+    title: true;
+    text: true;
+    specialannounce: true;
+    teams: {
+      select: {
+        id: true;
+        accountid: true;
+      };
+    };
+  };
+}>;
+
 export type dbRosterMember = Prisma.rosterseasonGetPayload<{
   include: { roster: { include: { contacts: true } } };
 }>;
