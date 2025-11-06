@@ -73,6 +73,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
     reset,
     setValue,
     watch,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<HandoutFormValues>({
     resolver: zodResolver(HandoutFormSchema),
@@ -86,7 +87,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   } | null>(null);
 
   const fileValue = watch('file');
-  const descriptionValue = watch('description');
+  const [editorInitialValue, setEditorInitialValue] = React.useState<string>('');
   const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
   const [editorKey, setEditorKey] = React.useState<number>(0);
 
@@ -97,6 +98,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   React.useEffect(() => {
     if (!open) {
       reset(defaultValues);
+      setEditorInitialValue('');
       setPlainTextLength(0);
       setLocalError(null);
       clearError();
@@ -109,11 +111,12 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
       description: sanitizedDescription,
       file: null,
     });
+    setEditorInitialValue(getValues('description'));
     setPlainTextLength(computePlainTextLength(sanitizedDescription));
     setEditorKey((key) => key + 1);
     setLocalError(null);
     clearError();
-  }, [open, mode, initialHandout, reset, clearError, computePlainTextLength]);
+  }, [open, mode, initialHandout, reset, clearError, computePlainTextLength, getValues]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -217,7 +220,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
               <RichTextEditor
                 key={editorKey}
                 ref={editorRef}
-                initialValue={descriptionValue ?? ''}
+                initialValue={editorInitialValue}
                 onChange={(html) => {
                   const sanitizedHtml = sanitizeHandoutContent(html);
                   setPlainTextLength(computePlainTextLength(sanitizedHtml));
