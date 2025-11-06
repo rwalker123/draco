@@ -442,12 +442,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           seasonId={seasonId}
           teamSeasonId={teamSeasonId}
           canManageSponsors={canManageTeamSponsors}
+          canManageAnnouncements={Boolean(teamData?.teamId)}
           showPlayerClassifiedsLink={isAccountMember}
           playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=players-wanted`}
           onPostPlayersWanted={handleOpenPlayersWantedDialog}
           handoutsHref={
             teamData?.teamId
               ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts/manage`
+              : undefined
+          }
+          announcementsHref={
+            teamData?.teamId
+              ? `/account/${accountId}/teams/${teamData.teamId}/announcements/manage`
               : undefined
           }
         />
