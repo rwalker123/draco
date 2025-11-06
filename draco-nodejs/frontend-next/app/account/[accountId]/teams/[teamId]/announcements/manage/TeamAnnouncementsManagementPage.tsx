@@ -80,7 +80,7 @@ const TeamAnnouncementsManagementPage: React.FC = () => {
   };
 
   return (
-    <ProtectedRoute requiredRole="TeamAdmin" checkAccountBoundary>
+    <ProtectedRoute requiredPermission="team.manage" checkAccountBoundary>
       <main className="min-h-screen bg-background">
         <AccountPageHeader accountId={accountId}>
           <Box display="flex" justifyContent="center">
