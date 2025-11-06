@@ -37,6 +37,7 @@ import {
   IHofNominationRepository,
   IHofNominationSetupRepository,
   IStatsEntryRepository,
+  IAnnouncementRepository,
   IPlayerSurveyRepository,
 } from './interfaces/index.js';
 import {
@@ -76,6 +77,7 @@ import {
   PrismaHofNominationRepository,
   PrismaHofNominationSetupRepository,
   PrismaStatsEntryRepository,
+  PrismaAnnouncementRepository,
   PrismaPlayerSurveyRepository,
 } from './implementations/index.js';
 
@@ -123,6 +125,7 @@ export class RepositoryFactory {
   private static hofNominationSetupRepository: IHofNominationSetupRepository;
   private static statsEntryRepository: IStatsEntryRepository;
   private static playerSurveyRepository: IPlayerSurveyRepository;
+  private static announcementRepository: IAnnouncementRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -197,6 +200,13 @@ export class RepositoryFactory {
 
   static getPhotoGalleryAdminRepository(): IPhotoGalleryAdminRepository {
     return this.ensurePhotoGalleryRepository();
+  }
+
+  static getAnnouncementRepository(): IAnnouncementRepository {
+    if (!this.announcementRepository) {
+      this.announcementRepository = new PrismaAnnouncementRepository(prisma);
+    }
+    return this.announcementRepository;
   }
 
   static getAccountRepository(): IAccountRepository {

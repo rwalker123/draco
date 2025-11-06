@@ -6,6 +6,7 @@ import HandshakeIcon from '@mui/icons-material/Handshake';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import Link from 'next/link';
 import DescriptionIcon from '@mui/icons-material/Description';
+import CampaignIcon from '@mui/icons-material/Campaign';
 import WidgetShell from '../ui/WidgetShell';
 
 interface TeamAdminPanelProps {
@@ -13,10 +14,12 @@ interface TeamAdminPanelProps {
   seasonId: string;
   teamSeasonId: string;
   canManageSponsors?: boolean;
+  canManageAnnouncements?: boolean;
   showPlayerClassifiedsLink?: boolean;
   playerClassifiedsHref?: string;
   onPostPlayersWanted?: () => void;
   handoutsHref?: string;
+  announcementsHref?: string;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -24,14 +27,17 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   seasonId,
   teamSeasonId,
   canManageSponsors = true,
+  canManageAnnouncements = true,
   showPlayerClassifiedsLink = false,
   playerClassifiedsHref,
   onPostPlayersWanted,
   handoutsHref,
+  announcementsHref,
 }) => {
   const shouldShowClassifiedsLink =
     showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
   const shouldShowHandoutsLink = Boolean(handoutsHref);
+  const shouldShowAnnouncementsLink = canManageAnnouncements && Boolean(announcementsHref);
 
   return (
     <WidgetShell
@@ -70,6 +76,17 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
             >
               Manage Team Sponsors
+            </Button>
+          )}
+          {shouldShowAnnouncementsLink && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<CampaignIcon />}
+              component={Link}
+              href={announcementsHref!}
+            >
+              Manage Announcements
             </Button>
           )}
           {shouldShowHandoutsLink && (

@@ -35,3 +35,4 @@ export * from './PrismaHallOfFameRepository.js';
 export * from './PrismaHofNominationRepository.js';
 export * from './PrismaHofNominationSetupRepository.js';
 export * from './PrismaStatsEntryRepository.js';
+export * from './PrismaAnnouncementRepository.js';

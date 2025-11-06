@@ -19,6 +19,7 @@ import accountsPhotoGalleryRouter from './accounts-photo-gallery.js';
 import accountsMemberBusinessRouter from './accounts-member-businesses.js';
 import accountsHallOfFameRouter from './accounts-hall-of-fame.js';
 import accountsLeagueFaqRouter from './accounts-league-faq.js';
+import accountsAnnouncementsRouter from './accounts-announcements.js';
 
 const router = Router({ mergeParams: true });
 
@@ -74,5 +75,8 @@ router.use('/', accountsPlayerSurveysRouter);
 
 // Handout management endpoints
 router.use('/', accountsHandoutsRouter);
+
+// Announcement endpoints
+router.use('/', accountsAnnouncementsRouter);
 
 export default router;
