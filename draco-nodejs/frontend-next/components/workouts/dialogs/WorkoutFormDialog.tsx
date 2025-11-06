@@ -122,6 +122,12 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
     defaultValues: getDefaultValues(),
   });
 
+  const editorRef = React.useRef<{
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  } | null>(null);
+
   const dialogTitle = useMemo(
     () => (mode === 'create' ? 'Create Workout' : 'Edit Workout'),
     [mode],
@@ -200,7 +206,19 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
     onClose();
   }, [isSubmitting, onClose]);
 
-  const onSubmit = handleSubmit(async (values) => {
+  const syncComments = useCallback(() => {
+    if (!editorRef.current) {
+      return;
+    }
+    const html = editorRef.current.getCurrentContent();
+    setValue('comments', html, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [setValue]);
+
+  const submitHandler = handleSubmit(async (values) => {
     if (mode === 'edit' && !workoutId) {
       const message = 'Workout identifier is missing';
       setSubmitError(message);
@@ -243,10 +261,15 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
     }
   });
 
+  const handleFormSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    syncComments();
+    void submitHandler(event);
+  };
+
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
       <DialogTitle>{dialogTitle}</DialogTitle>
-      <Box component="form" onSubmit={onSubmit} noValidate>
+      <Box component="form" onSubmit={handleFormSubmit} noValidate>
         <DialogContent dividers>
           {submitError ? (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -342,16 +365,10 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
                 </Typography>
                 <RichTextEditor
                   key={editorKey}
+                  ref={editorRef}
                   initialValue={commentsValue ?? ''}
                   placeholder="Enter workout description..."
                   error={Boolean(errors.comments)}
-                  onChange={(html) => {
-                    setValue('comments', html, {
-                      shouldDirty: true,
-                      shouldTouch: true,
-                      shouldValidate: true,
-                    });
-                  }}
                   minHeight={240}
                 />
                 {errors.comments ? (

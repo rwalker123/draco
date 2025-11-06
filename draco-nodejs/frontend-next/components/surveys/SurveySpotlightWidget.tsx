@@ -60,13 +60,16 @@ const normalizeSpotlight = (value: unknown): PlayerSurveySpotlightType | null =>
 
   const normalizeId = (input: unknown) => {
     if (typeof input === 'bigint') {
-      return input;
+      return input.toString();
+    }
+    if (typeof input === 'number' && Number.isFinite(input)) {
+      return String(input);
     }
     if (typeof input === 'string' && /^\d+$/.test(input.trim())) {
       try {
-        return BigInt(input.trim());
+        return BigInt(input.trim()).toString();
       } catch {
-        return input;
+        return input.trim();
       }
     }
     return input;
