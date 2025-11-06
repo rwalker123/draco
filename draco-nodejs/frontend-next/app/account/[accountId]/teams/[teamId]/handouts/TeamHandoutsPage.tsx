@@ -3,51 +3,44 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import HandoutSection from '@/components/handouts/HandoutSection';
-import { useTeamMembership } from '../../../../../../../../hooks/useTeamMembership';
 import TeamHandoutPageLayout from '@/components/handouts/TeamHandoutPageLayout';
 import { useTeamHandoutHeader } from '@/hooks/useTeamHandoutHeader';
 
 const TeamHandoutsPage: React.FC = () => {
   const params = useParams();
   const accountIdParam = params?.accountId;
-  const seasonIdParam = params?.seasonId;
-  const teamSeasonIdParam = params?.teamSeasonId;
+  const teamIdParam = params?.teamId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
-  const seasonId = Array.isArray(seasonIdParam) ? seasonIdParam[0] : seasonIdParam;
-  const teamSeasonId = Array.isArray(teamSeasonIdParam) ? teamSeasonIdParam[0] : teamSeasonIdParam;
+  const teamId = Array.isArray(teamIdParam) ? teamIdParam[0] : teamIdParam;
 
-  const { teamHeader, loading, error } = useTeamHandoutHeader({
+  const { teamHeader, loading, error, notMember } = useTeamHandoutHeader({
     accountId,
-    seasonId,
-    teamSeasonId,
+    teamId,
   });
-  const {
-    isMember: isTeamMember,
-    loading: membershipLoading,
-    error: membershipError,
-  } = useTeamMembership(accountId, teamSeasonId, seasonId);
 
-  if (!accountId || !seasonId || !teamSeasonId) {
+  if (!accountId || !teamId) {
     return null;
   }
 
-  const combinedLoading = loading || membershipLoading;
-  const primaryError = error ?? membershipError ?? null;
-  const notAuthorized = !combinedLoading && !primaryError && !isTeamMember;
-  const breadcrumbHref = `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`;
+  const breadcrumbHref =
+    teamHeader?.seasonId && teamHeader.teamSeasonId
+      ? `/account/${accountId}/seasons/${teamHeader.seasonId}/teams/${teamHeader.teamSeasonId}`
+      : undefined;
+
+  const title = teamHeader?.teamName ? `${teamHeader.teamName} Handouts` : 'Team Handouts';
 
   return (
     <TeamHandoutPageLayout
       accountId={accountId}
       teamHeader={teamHeader}
-      loading={combinedLoading}
-      error={primaryError}
-      title={teamHeader?.teamName || 'Team Handouts'}
+      loading={loading}
+      error={error}
+      title={title}
       breadcrumbHref={breadcrumbHref}
-      notAuthorized={notAuthorized}
+      notAuthorized={notMember}
       notAuthorizedMessage="Team handouts are only available to team members."
     >
-      {isTeamMember && teamHeader ? (
+      {teamHeader && !notMember ? (
         <HandoutSection
           scope={{ type: 'team', accountId, teamId: teamHeader.teamId }}
           title="Team Handouts"

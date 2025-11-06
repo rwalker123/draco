@@ -175,6 +175,17 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
     }
   };
 
+  const clearHeadingFormatting = () => {
+    if (!disabled) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createParagraphNode());
+        }
+      });
+    }
+  };
+
   return (
     <Toolbar
       variant="dense"
@@ -281,6 +292,19 @@ function ToolbarPlugin({ disabled = false }: { disabled?: boolean }) {
       >
         <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
           H3
+        </Typography>
+      </IconButton>
+
+      <IconButton
+        size="small"
+        onClick={clearHeadingFormatting}
+        disabled={disabled}
+        color={headingLevel === '' ? 'primary' : 'default'}
+        title="Normal Text"
+        sx={{ minWidth: 32 }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px', lineHeight: 1 }}>
+          N
         </Typography>
       </IconButton>
 

@@ -394,30 +394,30 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                   alt={teamData?.teamName ? `${teamData.teamName} logo` : 'Team logo'}
                 />
                 {teamData?.leagueName && (
-                  <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ color: 'text.secondary', fontWeight: 'bold', textAlign: 'center' }}
+                  >
                     {teamData.leagueName}
                   </Typography>
                 )}
                 {teamData?.teamName && (
-                  <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ color: 'text.primary', fontWeight: 'bold', textAlign: 'center' }}
+                  >
                     {teamData.teamName}
                   </Typography>
                 )}
               </Box>
               {teamData?.record && (
-                <Typography
-                  variant="h6"
-                  sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 'medium' }}
-                >
+                <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 'medium' }}>
                   {teamData.record.wins}-{teamData.record.losses}
                   {teamData.record.ties > 0 ? `-${teamData.record.ties}` : ''}
                 </Typography>
               )}
               {teamData?.seasonName && (
-                <Typography
-                  variant="body1"
-                  sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'normal' }}
-                >
+                <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 'normal' }}>
                   {teamData.seasonName} Season
                 </Typography>
               )}

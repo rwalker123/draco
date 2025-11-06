@@ -29,11 +29,11 @@ const AccountHandoutsPage: React.FC = () => {
           <Typography
             variant="h4"
             component="h1"
-            sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
+            sx={{ color: 'text.primary', fontWeight: 'bold', mb: 1 }}
           >
             Handouts
           </Typography>
-          <Typography variant="body1" sx={{ color: 'white', opacity: 0.85 }}>
+          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
             Browse important forms, documents, and resources shared with your organization.
           </Typography>
         </Box>

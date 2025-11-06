@@ -40,7 +40,7 @@ import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
-import ThemeSwitcher from './ThemeSwitcher';
+import TopBarQuickActions from './TopBarQuickActions';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -288,7 +288,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
           {/* Right side - User info and actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ThemeSwitcher />
+            <TopBarQuickActions accountId={accountId} canViewHandouts={isMember === true} />
             {user ? (
               <>
                 {greetingName && (

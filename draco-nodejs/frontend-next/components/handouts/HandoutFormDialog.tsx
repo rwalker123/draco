@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -69,7 +69,6 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   const [localError, setLocalError] = React.useState<string | null>(null);
 
   const {
-    control,
     handleSubmit,
     reset,
     setValue,
@@ -80,7 +79,14 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
     defaultValues,
   });
 
+  const editorRef = React.useRef<{
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  } | null>(null);
+
   const fileValue = watch('file');
+  const descriptionValue = watch('description');
   const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
   const [editorKey, setEditorKey] = React.useState<number>(0);
 
@@ -123,7 +129,21 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
     clearError();
   };
 
-  const onSubmit = handleSubmit(async (values) => {
+  const syncEditorContent = React.useCallback(() => {
+    if (!editorRef.current) {
+      return;
+    }
+
+    const sanitizedHtml = sanitizeHandoutContent(editorRef.current.getCurrentContent());
+    setValue('description', sanitizedHtml, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    setPlainTextLength(computePlainTextLength(sanitizedHtml));
+  }, [setValue, computePlainTextLength]);
+
+  const submitHandler = handleSubmit(async (values) => {
     try {
       setLocalError(null);
       clearError();
@@ -156,6 +176,11 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
     }
   });
 
+  const handleFormSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    syncEditorContent();
+    void submitHandler(event);
+  };
+
   const descriptionError = errors.description?.message as string | undefined;
   const remainingCharacters = Math.max(0, HANDOUT_DESCRIPTION_MAX_LENGTH - plainTextLength);
   const fileLabel = (() => {
@@ -171,7 +196,7 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
   return (
     <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
       <DialogTitle>{mode === 'create' ? 'Add Handout' : 'Edit Handout'}</DialogTitle>
-      <Box component="form" noValidate onSubmit={onSubmit}>
+      <Box component="form" noValidate onSubmit={handleFormSubmit}>
         <DialogContent>
           <Stack spacing={2.5}>
             {(localError || error) && (
@@ -189,24 +214,18 @@ const HandoutFormDialog: React.FC<HandoutFormDialogProps> = ({
               <Typography variant="subtitle2" color="text.secondary">
                 Description
               </Typography>
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <RichTextEditor
-                    key={editorKey}
-                    initialValue={field.value ?? ''}
-                    onChange={(html) => {
-                      const sanitizedHtml = sanitizeHandoutContent(html);
-                      field.onChange(sanitizedHtml);
-                      setPlainTextLength(computePlainTextLength(sanitizedHtml));
-                    }}
-                    minHeight={180}
-                    placeholder="Describe the handout..."
-                    disabled={isSubmitting || loading}
-                    error={Boolean(descriptionError)}
-                  />
-                )}
+              <RichTextEditor
+                key={editorKey}
+                ref={editorRef}
+                initialValue={descriptionValue ?? ''}
+                onChange={(html) => {
+                  const sanitizedHtml = sanitizeHandoutContent(html);
+                  setPlainTextLength(computePlainTextLength(sanitizedHtml));
+                }}
+                minHeight={180}
+                placeholder="Describe the handout..."
+                disabled={isSubmitting || loading}
+                error={Boolean(descriptionError)}
               />
               <Typography
                 variant="caption"

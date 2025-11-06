@@ -13,11 +13,11 @@ const optionalBigintQueryParam = z.preprocess((value) => {
   }
 
   if (typeof raw === 'bigint') {
-    return raw;
+    return raw.toString();
   }
 
   if (typeof raw === 'number' && Number.isFinite(raw)) {
-    return BigInt(Math.trunc(raw));
+    return Math.trunc(raw).toString();
   }
 
   if (typeof raw === 'string') {
@@ -28,7 +28,8 @@ const optionalBigintQueryParam = z.preprocess((value) => {
     }
 
     try {
-      return BigInt(trimmed);
+      BigInt(trimmed);
+      return trimmed;
     } catch {
       return trimmed;
     }

@@ -29,7 +29,6 @@ import {
   SponsorType,
   LeagueSeasonWithDivisionTeamsAndUnassignedType,
 } from '@draco/shared-schemas';
-import HandoutSection from '@/components/handouts/HandoutSection';
 import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
 import PendingPhotoSubmissionsPanel from '@/components/photo-submissions/PendingPhotoSubmissionsPanel';
 import PhotoSubmissionPanel from '@/components/photo-submissions/PhotoSubmissionPanel';
@@ -68,7 +67,6 @@ const BaseballAccountHome: React.FC = () => {
   const hasAccountContact = Boolean(isAccountMember);
   const canSubmitPhotos = Boolean(isAccountMember);
   const showSubmissionPanel = Boolean(isAccountMember);
-  const canViewHandouts = Boolean(isAccountMember);
 
   const canModerateAccountPhotos = useMemo(() => {
     if (!accountIdStr) {
@@ -821,29 +819,6 @@ const BaseballAccountHome: React.FC = () => {
         ) : null}
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}
-
-        {canViewHandouts ? (
-          <Box
-            sx={{
-              maxWidth: { xs: '100%', sm: 420 },
-              alignSelf: 'flex-start',
-              width: '100%',
-              '&:empty': { display: 'none' },
-            }}
-          >
-            <HandoutSection
-              scope={{ type: 'account', accountId: accountIdStr }}
-              title="Latest Handouts"
-              description="Quick access to recently added documents."
-              allowManage={false}
-              variant="card"
-              maxItems={3}
-              viewAllHref={`/account/${accountIdStr}/handouts`}
-              emptyMessage="No handouts are available yet."
-              hideWhenEmpty
-            />
-          </Box>
-        ) : null}
 
         {shouldShowAccountSponsors && (
           <SponsorCard

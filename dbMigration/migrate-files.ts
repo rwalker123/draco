@@ -84,6 +84,20 @@ interface TestLimits {
   filesPerDirectory: number;
 }
 
+type DbAccountHandoutRecord = {
+  id: bigint;
+  description: string;
+  filename: string;
+  accountid: bigint;
+};
+
+type DbTeamHandoutRecord = {
+  id: bigint;
+  description: string;
+  filename: string;
+  teamid: bigint;
+};
+
 class FileMigrationService {
   private prisma: any; // Will import dynamically
   private storageService: any; // Will import dynamically
@@ -422,6 +436,15 @@ class FileMigrationService {
     this.saveProgress();
   }
 
+  private parseBigIntId(value: string, context: string): bigint | null {
+    try {
+      return BigInt(value);
+    } catch (error) {
+      console.error(`❌ Unable to parse ${context} as bigint: ${value}`);
+      return null;
+    }
+  }
+
   private async delay(ms: number): Promise<void> {
     if (ms <= 0) {
       return;
@@ -686,6 +709,70 @@ class FileMigrationService {
 
   private async processAccountHandouts(accountId: string, remoteDirPath: string): Promise<void> {
     try {
+      const accountIdBigInt = this.parseBigIntId(
+        accountId,
+        `account handouts (account ${accountId})`,
+      );
+      if (accountIdBigInt === null) {
+        this.stats.handouts.errors++;
+        return;
+      }
+
+      const dbHandouts = (await this.prisma.accounthandouts.findMany({
+        where: { accountid: accountIdBigInt },
+      })) as DbAccountHandoutRecord[];
+
+      if (dbHandouts.length === 0) {
+        console.log(
+          `⚠️ Found handout files for account ${accountId}, but no accounthandouts records exist in the database.`,
+        );
+      }
+
+      const usedHandoutIds = new Set<bigint>();
+      const normalizeName = (name: string) => name.trim().toLowerCase();
+
+      const pickLatestRecord = (records: DbAccountHandoutRecord[]): DbAccountHandoutRecord => {
+        let latest = records[0];
+        for (const record of records) {
+          if (record.id > latest.id) {
+            latest = record;
+          }
+        }
+        return latest;
+      };
+
+      const findMatchingHandoutRecord = (fileName: string): DbAccountHandoutRecord | null => {
+        const availableExactMatches = dbHandouts.filter(
+          (record) => record.filename === fileName && !usedHandoutIds.has(record.id),
+        );
+
+        if (availableExactMatches.length > 0) {
+          if (availableExactMatches.length > 1) {
+            console.warn(
+              `⚠️ Multiple account handout rows match filename "${fileName}" for account ${accountId}. Using the most recent record.`,
+            );
+          }
+          return pickLatestRecord(availableExactMatches);
+        }
+
+        const normalizedTarget = normalizeName(fileName);
+        const availableNormalizedMatches = dbHandouts.filter(
+          (record) =>
+            normalizeName(record.filename) === normalizedTarget && !usedHandoutIds.has(record.id),
+        );
+
+        if (availableNormalizedMatches.length > 0) {
+          if (availableNormalizedMatches.length > 1) {
+            console.warn(
+              `⚠️ Multiple account handout rows match filename "${fileName}" (case-insensitive) for account ${accountId}. Using the most recent record.`,
+            );
+          }
+          return pickLatestRecord(availableNormalizedMatches);
+        }
+
+        return null;
+      };
+
       const handoutFiles = await this.listDirectory(remoteDirPath);
       let processedFiles = 0;
 
@@ -709,7 +796,49 @@ class FileMigrationService {
         const remotePath = `${remoteDirPath}/${file.name}`;
         const localPath = path.join(this.tempDir, 'accounts', accountId, 'Handouts', file.name);
 
-        console.log(`⬇️ Downloading handout (stub) for account ${accountId}: ${file.name}`);
+        const matchingRecord = findMatchingHandoutRecord(file.name);
+
+        if (!matchingRecord) {
+          console.warn(
+            `⚠️ No database handout record found for account ${accountId} matching file "${file.name}". Skipping upload.`,
+          );
+          this.stats.handouts.skipped++;
+          this.markFileFailed(remotePath);
+          continue;
+        }
+
+        const handoutId = matchingRecord.id.toString();
+        const storageFileName = matchingRecord.filename;
+
+        if (this.isFileAlreadyProcessed(remotePath)) {
+          try {
+            const existing = await this.storageService.getHandout(
+              accountId,
+              handoutId,
+              storageFileName,
+            );
+
+            if (existing) {
+              console.log(
+                `⏭️ Account handout already migrated for account ${accountId}, handout ${handoutId} (${storageFileName}).`,
+              );
+              this.stats.handouts.skipped++;
+              usedHandoutIds.add(matchingRecord.id);
+              continue;
+            }
+
+            console.log(
+              `🔁 Handout ${remotePath} was previously marked as migrated but is missing from storage. Reprocessing.`,
+            );
+            this.processedFiles.delete(remotePath);
+          } catch (error) {
+            console.warn(
+              `⚠️ Unable to verify existing handout for account ${accountId}, handout ${handoutId}. Proceeding with upload.`,
+            );
+          }
+        }
+
+        console.log(`⬇️ Downloading handout for account ${accountId}: ${file.name}`);
 
         if (!(await this.downloadFile(remotePath, localPath))) {
           this.stats.handouts.errors++;
@@ -717,13 +846,32 @@ class FileMigrationService {
         }
 
         this.stats.handouts.downloaded++;
-        this.stats.handouts.skipped++;
-        console.log(
-          `📝 Handout migration not yet implemented. File retained for future upload: ${remotePath}`,
-        );
-        this.markFileProcessed(remotePath);
 
-        await this.cleanupTempFile(localPath);
+        const buffer = await this.getFileBuffer(localPath);
+        if (!buffer) {
+          this.stats.handouts.errors++;
+          await this.cleanupTempFile(localPath);
+          continue;
+        }
+
+        try {
+          await this.storageService.saveHandout(accountId, handoutId, storageFileName, buffer);
+          console.log(
+            `✅ Uploaded account handout ${storageFileName} (ID ${handoutId}) for account ${accountId}`,
+          );
+          this.stats.handouts.uploaded++;
+          this.markFileProcessed(remotePath);
+          usedHandoutIds.add(matchingRecord.id);
+        } catch (error) {
+          console.error(
+            `❌ Failed to upload account handout ${storageFileName} (ID ${handoutId}) for account ${accountId}:`,
+            error,
+          );
+          this.stats.handouts.errors++;
+          this.markFileFailed(remotePath);
+        } finally {
+          await this.cleanupTempFile(localPath);
+        }
       }
     } catch (error) {
       console.error(`❌ Error processing handouts for account ${accountId}:`, error);
@@ -1017,6 +1165,76 @@ class FileMigrationService {
 
   private async processTeamHandouts(teamId: string, remoteDirPath: string): Promise<void> {
     try {
+      const accountId = this.teamToAccountMap.get(teamId);
+      if (!accountId) {
+        console.warn(
+          `⚠️ Unable to determine account for team ${teamId} while migrating team handouts.`,
+        );
+        this.stats.handouts.errors++;
+        return;
+      }
+
+      const teamIdBigInt = this.parseBigIntId(teamId, `team handouts (team ${teamId})`);
+      if (teamIdBigInt === null) {
+        this.stats.handouts.errors++;
+        return;
+      }
+
+      const dbHandouts = (await this.prisma.teamhandouts.findMany({
+        where: { teamid: teamIdBigInt },
+      })) as DbTeamHandoutRecord[];
+
+      if (dbHandouts.length === 0) {
+        console.log(
+          `⚠️ Found handout files for team ${teamId}, but no teamhandouts records exist in the database.`,
+        );
+      }
+
+      const usedHandoutIds = new Set<bigint>();
+      const normalizeName = (name: string) => name.trim().toLowerCase();
+
+      const pickLatestRecord = (records: DbTeamHandoutRecord[]): DbTeamHandoutRecord => {
+        let latest = records[0];
+        for (const record of records) {
+          if (record.id > latest.id) {
+            latest = record;
+          }
+        }
+        return latest;
+      };
+
+      const findMatchingHandoutRecord = (fileName: string): DbTeamHandoutRecord | null => {
+        const exactMatches = dbHandouts.filter(
+          (record) => record.filename === fileName && !usedHandoutIds.has(record.id),
+        );
+
+        if (exactMatches.length > 0) {
+          if (exactMatches.length > 1) {
+            console.warn(
+              `⚠️ Multiple team handout rows match filename "${fileName}" for team ${teamId}. Using the most recent record.`,
+            );
+          }
+          return pickLatestRecord(exactMatches);
+        }
+
+        const normalizedTarget = normalizeName(fileName);
+        const normalizedMatches = dbHandouts.filter(
+          (record) =>
+            normalizeName(record.filename) === normalizedTarget && !usedHandoutIds.has(record.id),
+        );
+
+        if (normalizedMatches.length > 0) {
+          if (normalizedMatches.length > 1) {
+            console.warn(
+              `⚠️ Multiple team handout rows match filename "${fileName}" (case-insensitive) for team ${teamId}. Using the most recent record.`,
+            );
+          }
+          return pickLatestRecord(normalizedMatches);
+        }
+
+        return null;
+      };
+
       const handoutFiles = await this.listDirectory(remoteDirPath);
       let processedFiles = 0;
 
@@ -1040,7 +1258,50 @@ class FileMigrationService {
         const remotePath = `${remoteDirPath}/${file.name}`;
         const localPath = path.join(this.tempDir, 'teams', teamId, 'Handouts', file.name);
 
-        console.log(`⬇️ Downloading handout (stub) for team ${teamId}: ${file.name}`);
+        const matchingRecord = findMatchingHandoutRecord(file.name);
+
+        if (!matchingRecord) {
+          console.warn(
+            `⚠️ No database handout record found for team ${teamId} matching file "${file.name}". Skipping upload.`,
+          );
+          this.stats.handouts.skipped++;
+          this.markFileFailed(remotePath);
+          continue;
+        }
+
+        const handoutId = matchingRecord.id.toString();
+        const storageFileName = matchingRecord.filename;
+
+        if (this.isFileAlreadyProcessed(remotePath)) {
+          try {
+            const existing = await this.storageService.getHandout(
+              accountId,
+              handoutId,
+              storageFileName,
+              teamId,
+            );
+
+            if (existing) {
+              console.log(
+                `⏭️ Team handout already migrated for account ${accountId}, team ${teamId}, handout ${handoutId} (${storageFileName}).`,
+              );
+              this.stats.handouts.skipped++;
+              usedHandoutIds.add(matchingRecord.id);
+              continue;
+            }
+
+            console.log(
+              `🔁 Handout ${remotePath} was previously marked as migrated but is missing from storage. Reprocessing.`,
+            );
+            this.processedFiles.delete(remotePath);
+          } catch (error) {
+            console.warn(
+              `⚠️ Unable to verify existing team handout for team ${teamId}, handout ${handoutId}. Proceeding with upload.`,
+            );
+          }
+        }
+
+        console.log(`⬇️ Downloading handout for team ${teamId}: ${file.name}`);
 
         if (!(await this.downloadFile(remotePath, localPath))) {
           this.stats.handouts.errors++;
@@ -1048,13 +1309,38 @@ class FileMigrationService {
         }
 
         this.stats.handouts.downloaded++;
-        this.stats.handouts.skipped++;
-        console.log(
-          `📝 Team handout migration not yet implemented. File retained for future upload: ${remotePath}`,
-        );
-        this.markFileProcessed(remotePath);
 
-        await this.cleanupTempFile(localPath);
+        const buffer = await this.getFileBuffer(localPath);
+        if (!buffer) {
+          this.stats.handouts.errors++;
+          await this.cleanupTempFile(localPath);
+          continue;
+        }
+
+        try {
+          await this.storageService.saveHandout(
+            accountId,
+            handoutId,
+            storageFileName,
+            buffer,
+            teamId,
+          );
+          console.log(
+            `✅ Uploaded team handout ${storageFileName} (ID ${handoutId}) for account ${accountId}, team ${teamId}`,
+          );
+          this.stats.handouts.uploaded++;
+          this.markFileProcessed(remotePath);
+          usedHandoutIds.add(matchingRecord.id);
+        } catch (error) {
+          console.error(
+            `❌ Failed to upload team handout ${storageFileName} (ID ${handoutId}) for account ${accountId}, team ${teamId}:`,
+            error,
+          );
+          this.stats.handouts.errors++;
+          this.markFileFailed(remotePath);
+        } finally {
+          await this.cleanupTempFile(localPath);
+        }
       }
     } catch (error) {
       console.error(`❌ Error processing handouts for team ${teamId}:`, error);
