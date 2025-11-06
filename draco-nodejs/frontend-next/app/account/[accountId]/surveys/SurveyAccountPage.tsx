@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
+import WidgetShell from '../../../../components/ui/WidgetShell';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
@@ -366,13 +367,23 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ textAlign: 'center', color: 'white' }}>
-          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.contrastText' }}>
+        <Box
+          sx={(theme) => ({
+            textAlign: 'center',
+            color: theme.palette.widget.headerText,
+          })}
+        >
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'inherit' }}>
             Player Surveys
           </Typography>
           <Typography
             variant="body1"
-            sx={{ mt: 1, maxWidth: 620, mx: 'auto', color: 'rgba(255,255,255,0.85)' }}
+            sx={(theme) => ({
+              mt: 1,
+              maxWidth: 620,
+              mx: 'auto',
+              color: theme.palette.widget.supportingText,
+            })}
           >
             Browse survey responses from current-season players.
           </Typography>
@@ -384,14 +395,11 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
           {globalError && <Alert severity="error">{globalError}</Alert>}
           {globalSuccess && <Alert severity="success">{globalSuccess}</Alert>}
 
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Player Responses
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Search by player to filter responses or browse the full list.
-            </Typography>
-
+          <WidgetShell
+            accent="info"
+            title="Player Responses"
+            subtitle="Search by player to filter responses or browse the full list."
+          >
             {categoriesError && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {categoriesError}
@@ -410,7 +418,13 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
                   p: 2,
                 })}
               >
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant="h6"
+                  sx={(theme) => ({
+                    fontWeight: 600,
+                    color: theme.palette.widget.headerText,
+                  })}
+                >
                   Your Survey
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
@@ -643,7 +657,7 @@ const SurveyAccountPage: React.FC<SurveyAccountPageProps> = ({ accountId }) => {
                 />
               </Box>
             )}
-          </Paper>
+          </WidgetShell>
         </Stack>
       </Box>
     </main>
