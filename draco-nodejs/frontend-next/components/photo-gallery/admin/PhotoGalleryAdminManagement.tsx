@@ -507,7 +507,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Photo Gallery Management
           </Typography>
         </Box>
@@ -658,6 +658,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
                               aria-label="Edit photo"
                               onClick={() => handleOpenEditDialog(photo)}
                               size="small"
+                              color="primary"
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -667,7 +668,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
                               aria-label="Delete photo"
                               onClick={() => handleConfirmDelete(photo)}
                               size="small"
-                              sx={{ color: 'error.main' }}
+                              color="error"
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>

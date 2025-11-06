@@ -231,6 +231,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
                         aria-label="Edit member business"
                         size="small"
                         onClick={() => handleOpenEdit(business)}
+                        color="primary"
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -241,6 +242,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
                           setSelectedBusiness(business);
                           setDeleteOpen(true);
                         }}
+                        color="error"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>

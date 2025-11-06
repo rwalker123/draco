@@ -51,7 +51,7 @@ export default function PlayerStatisticsClientWrapper() {
       <AccountPageHeader accountId={accountId}>
         <Box sx={{ textAlign: 'center' }}>
           <Box>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Player Statistics
             </Typography>
           </Box>

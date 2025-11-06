@@ -102,6 +102,7 @@ const TeamsWantedCardPublic: React.FC<ITeamsWantedCardPublicProps> = ({
                 size="small"
                 onClick={() => onEdit(classified.id.toString(), 'access-code-required')}
                 aria-label="Edit classified"
+                color="primary"
               >
                 <EditIcon fontSize="small" />
               </IconButton>

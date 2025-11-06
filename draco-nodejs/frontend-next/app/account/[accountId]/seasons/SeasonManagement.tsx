@@ -652,10 +652,10 @@ const SeasonManagement: React.FC = () => {
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountIdStr || ''}>
         <Box textAlign="center">
-          <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold' }}>
+          <Typography variant="h4" component="h1" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Season Management
           </Typography>
-          <Typography variant="subtitle1" sx={{ color: 'white', opacity: 0.8 }}>
+          <Typography variant="subtitle1" color="text.secondary" sx={{ opacity: 0.8 }}>
             Manage seasons, leagues, and current season settings for your organization.
           </Typography>
         </Box>

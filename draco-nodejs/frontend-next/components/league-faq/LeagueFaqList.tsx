@@ -55,6 +55,7 @@ export const LeagueFaqList: React.FC<LeagueFaqListProps> = ({ faqs, onEdit, onDe
                           event.stopPropagation();
                           onEdit(faq);
                         }}
+                        color="primary"
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -70,6 +71,7 @@ export const LeagueFaqList: React.FC<LeagueFaqListProps> = ({ faqs, onEdit, onDe
                           event.stopPropagation();
                           onDelete(faq);
                         }}
+                        color="error"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>

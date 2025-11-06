@@ -188,12 +188,11 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                   onEditContact(user);
                 }
               }}
+              color="primary"
               sx={{
                 backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                color: 'text.secondary',
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 1)',
-                  color: 'primary.main',
                 },
                 transition: 'all 0.2s ease-in-out',
               }}
@@ -210,12 +209,11 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                   e.stopPropagation();
                   onDeleteContact(user);
                 }}
+                color="error"
                 sx={{
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  color: 'text.secondary',
                   '&:hover': {
                     backgroundColor: 'rgba(255, 255, 255, 1)',
-                    color: 'error.main',
                   },
                   transition: 'all 0.2s ease-in-out',
                 }}

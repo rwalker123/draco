@@ -468,7 +468,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           sx={{ position: 'relative' }}
         >
           <Box sx={{ flex: 1, textAlign: 'center' }}>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Teams
             </Typography>
           </Box>

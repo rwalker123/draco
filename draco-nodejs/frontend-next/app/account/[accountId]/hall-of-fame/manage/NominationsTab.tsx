@@ -227,7 +227,11 @@ const NominationsTab: React.FC<NominationsTabProps> = ({ accountId, onNomination
                 </IconButton>
               </Tooltip>
               <Tooltip title="Edit nomination">
-                <IconButton onClick={() => setEditNominationTarget(nomination)} sx={{ ml: 1 }}>
+                <IconButton
+                  onClick={() => setEditNominationTarget(nomination)}
+                  sx={{ ml: 1 }}
+                  color="primary"
+                >
                   <EditIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -237,7 +241,11 @@ const NominationsTab: React.FC<NominationsTabProps> = ({ accountId, onNomination
                 </IconButton>
               </Tooltip>
               <Tooltip title="Delete nomination">
-                <IconButton onClick={() => setDeleteNominationTarget(nomination)} sx={{ ml: 1 }}>
+                <IconButton
+                  onClick={() => setDeleteNominationTarget(nomination)}
+                  sx={{ ml: 1 }}
+                  color="error"
+                >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Tooltip>

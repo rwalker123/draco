@@ -128,7 +128,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
         {accountId ? (
           <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
             <Box sx={{ flex: 1, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                 Sign Up
               </Typography>
             </Box>
@@ -160,10 +160,10 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
       {accountId ? (
         <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
           <Box sx={{ flex: 1, textAlign: 'center' }}>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Sign Up
             </Typography>
-            <Typography align="center" color="white" sx={{ mb: 3 }}>
+            <Typography align="center" color="text.secondary" sx={{ mb: 3 }}>
               Join ezRecSports to sign up and manage your sports organization
             </Typography>
           </Box>

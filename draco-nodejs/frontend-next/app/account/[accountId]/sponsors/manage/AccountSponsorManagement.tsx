@@ -110,7 +110,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
         <Box display="flex" justifyContent="center">
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Sponsor Management
           </Typography>
         </Box>
@@ -175,6 +175,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
                           aria-label="edit"
                           onClick={() => handleOpenEdit(sponsor)}
                           size="small"
+                          color="primary"
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
@@ -183,6 +184,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
                           onClick={() => handleDelete(sponsor.id)}
                           size="small"
                           disabled={mutationLoading}
+                          color="error"
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>

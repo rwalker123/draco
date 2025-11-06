@@ -138,7 +138,11 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
     return (
       <main className="min-h-screen bg-background">
         <AccountPageHeader accountId={accountId}>
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
+          <Typography
+            variant="h4"
+            color="text.primary"
+            sx={{ fontWeight: 'bold', textAlign: 'center' }}
+          >
             Poll Management
           </Typography>
         </AccountPageHeader>
@@ -152,13 +156,14 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ textAlign: 'center', color: 'white' }}>
-          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.contrastText' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h3" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Poll Management
           </Typography>
           <Typography
             variant="body1"
-            sx={{ mt: 1, maxWidth: 520, mx: 'auto', color: 'rgba(255,255,255,0.85)' }}
+            color="text.secondary"
+            sx={{ mt: 1, maxWidth: 520, mx: 'auto' }}
           >
             Create, edit, and retire polls that keep your members engaged. Results update instantly
             as votes come in.
@@ -255,12 +260,12 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
                         </TableCell>
                         <TableCell align="right">
                           <Tooltip title="Edit poll">
-                            <IconButton onClick={() => handleOpenEdit(poll)}>
+                            <IconButton color="primary" onClick={() => handleOpenEdit(poll)}>
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete poll">
-                            <IconButton onClick={() => handleConfirmDelete(poll)}>
+                            <IconButton color="error" onClick={() => handleConfirmDelete(poll)}>
                               <DeleteIcon />
                             </IconButton>
                           </Tooltip>

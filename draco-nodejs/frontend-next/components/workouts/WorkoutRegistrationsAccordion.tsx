@@ -411,6 +411,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                         event.stopPropagation();
                         handleEditAction(workout);
                       }}
+                      color="primary"
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>

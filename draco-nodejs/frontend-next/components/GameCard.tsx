@@ -318,11 +318,10 @@ const GameCard: React.FC<GameCardProps> = ({
                       <IconButton
                         size="small"
                         onClick={handleGameResultsClick}
+                        color="primary"
                         sx={{
-                          color: 'primary.main',
                           p: 0.5,
                           '&:hover': {
-                            color: 'primary.dark',
                             bgcolor: 'action.hover',
                           },
                         }}
@@ -422,12 +421,11 @@ const GameCard: React.FC<GameCardProps> = ({
                     <IconButton
                       size="small"
                       onClick={handleGameResultsClick}
+                      color="primary"
                       sx={{
-                        color: 'primary.main',
                         mt: 1,
                         p: 0.5,
                         '&:hover': {
-                          color: 'primary.dark',
                           bgcolor: 'action.hover',
                         },
                       }}

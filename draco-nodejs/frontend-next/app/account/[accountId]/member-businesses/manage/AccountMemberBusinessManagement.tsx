@@ -190,8 +190,8 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
       <main className="min-h-screen bg-background">
         <AccountPageHeader accountId={accountId}>
           <Box display="flex" alignItems="center" gap={1} justifyContent="center">
-            <BusinessIcon sx={{ color: 'white' }} />
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <BusinessIcon sx={{ color: 'text.secondary' }} />
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Member Business Management
             </Typography>
           </Box>
@@ -255,6 +255,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
                             aria-label="edit"
                             size="small"
                             onClick={() => handleEdit(business)}
+                            color="primary"
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -262,6 +263,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
                             aria-label="delete"
                             size="small"
                             onClick={() => handleDelete(business)}
+                            color="error"
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>

@@ -25,11 +25,12 @@ const AccountHandoutManagementPage: React.FC = () => {
             <Typography
               variant="h4"
               component="h1"
-              sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
+              color="text.primary"
+              sx={{ fontWeight: 'bold', mb: 1 }}
             >
               Handout Management
             </Typography>
-            <Typography variant="body1" sx={{ color: 'white', opacity: 0.85 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.85 }}>
               Upload, update, and remove the handouts available to your members.
             </Typography>
           </Box>

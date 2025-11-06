@@ -189,13 +189,14 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
       <AccountPageHeader accountId={accountId}>
         <Stack alignItems="center" justifyContent="center" spacing={2} textAlign="center">
           <Box>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, textAlign: 'center' }}>
+            <Typography
+              variant="h4"
+              color="text.primary"
+              sx={{ fontWeight: 700, textAlign: 'center' }}
+            >
               Fields
             </Typography>
-            <Typography
-              variant="body1"
-              sx={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}
-            >
+            <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center' }}>
               Review locations and publish updates so teams always know where to play.
             </Typography>
           </Box>
@@ -320,6 +321,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
                                     aria-label="Edit field"
                                     size="small"
                                     onClick={() => handleOpenEditDialog(field)}
+                                    color="primary"
                                   >
                                     <EditIcon fontSize="small" />
                                   </IconButton>

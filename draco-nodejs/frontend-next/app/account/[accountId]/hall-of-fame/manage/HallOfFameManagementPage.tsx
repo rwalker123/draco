@@ -51,12 +51,17 @@ const HallOfFameManagementPage: React.FC<HallOfFameManagementPageProps> = ({ acc
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                 <Typography
                   variant="h4"
-                  sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}
+                  color="text.primary"
+                  sx={{ fontWeight: 'bold', textAlign: 'center' }}
                 >
                   Hall of Fame Management
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mt: 1, opacity: 0.85, maxWidth: 600, mx: 'auto' }}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ mt: 1, opacity: 0.85, maxWidth: 600, mx: 'auto' }}
+              >
                 Manage inductees, review nominations, and control the public nomination experience
                 for your organization.
               </Typography>

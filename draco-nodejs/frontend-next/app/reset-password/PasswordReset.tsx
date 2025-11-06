@@ -269,7 +269,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({
       {accountId ? (
         <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
           <Box sx={{ flex: 1, textAlign: 'center' }}>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Password Reset
             </Typography>
           </Box>

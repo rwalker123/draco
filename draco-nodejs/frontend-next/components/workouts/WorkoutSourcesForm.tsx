@@ -100,7 +100,7 @@ export const WorkoutSourcesForm: React.FC = () => {
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId as string}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Workout Where Heard
           </Typography>
         </Box>

@@ -387,6 +387,7 @@ const MembersTab: React.FC<MembersTabProps> = ({ accountId, refreshKey, createRe
                       edge="end"
                       onClick={() => setEditMember(member)}
                       aria-label="Edit member"
+                      color="primary"
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
@@ -397,6 +398,7 @@ const MembersTab: React.FC<MembersTabProps> = ({ accountId, refreshKey, createRe
                       onClick={() => setDeleteMemberTarget(member)}
                       aria-label="Delete member"
                       sx={{ ml: 1 }}
+                      color="error"
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>

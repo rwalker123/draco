@@ -230,7 +230,11 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
                         {canManageUrls && (
                           <>
                             <Tooltip title="Edit URL">
-                              <IconButton size="small" onClick={() => openEditDialog(url)}>
+                              <IconButton
+                                size="small"
+                                onClick={() => openEditDialog(url)}
+                                color="primary"
+                              >
                                 <EditIcon />
                               </IconButton>
                             </Tooltip>

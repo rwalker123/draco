@@ -56,7 +56,7 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
             sx={{ position: 'relative' }}
           >
             <Box sx={{ flex: 1, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                 Standings
               </Typography>
             </Box>
@@ -81,7 +81,7 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
           sx={{ position: 'relative' }}
         >
           <Box sx={{ flex: 1, textAlign: 'center' }}>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Standings
             </Typography>
           </Box>

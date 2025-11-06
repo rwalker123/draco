@@ -52,11 +52,12 @@ export default function Communications() {
             <Typography
               variant="h4"
               component="h1"
-              sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}
+              color="text.primary"
+              sx={{ fontWeight: 'bold', mb: 1 }}
             >
               Communications
             </Typography>
-            <Typography variant="body1" sx={{ color: 'white', opacity: 0.85 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.85 }}>
               Send messages, manage templates, and review delivery history for your organization.
             </Typography>
           </Box>

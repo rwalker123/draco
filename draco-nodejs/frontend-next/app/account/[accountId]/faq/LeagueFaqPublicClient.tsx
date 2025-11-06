@@ -13,19 +13,13 @@ const LeagueFaqPublicClient: React.FC<LeagueFaqPublicClientProps> = ({ accountId
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
         <Stack spacing={1} alignItems="center" textAlign="center">
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 'bold',
-              color: 'inherit',
-            }}
-          >
+          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
             League FAQs
           </Typography>
           <Typography
             variant="body1"
+            color="text.secondary"
             sx={{
-              color: 'inherit',
               opacity: (theme) => (theme.palette.mode === 'dark' ? 0.85 : 0.65),
             }}
           >

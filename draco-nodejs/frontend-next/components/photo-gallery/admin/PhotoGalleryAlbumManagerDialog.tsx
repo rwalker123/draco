@@ -318,7 +318,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
                       {isDefault ? (
                         <Tooltip title="Default album">
                           <span>
-                            <IconButton size="small" disabled>
+                            <IconButton size="small" disabled color="primary">
                               <EditIcon fontSize="small" />
                             </IconButton>
                           </span>
@@ -348,6 +348,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
                             <IconButton
                               onClick={() => handleStartEdit(album)}
                               disabled={submitting}
+                              color="primary"
                             >
                               <EditIcon />
                             </IconButton>

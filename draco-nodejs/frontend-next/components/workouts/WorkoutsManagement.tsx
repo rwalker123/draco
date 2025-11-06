@@ -81,7 +81,7 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+          <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Workouts Management
           </Typography>
         </Box>
