@@ -173,7 +173,7 @@ const PhotoGalleryCard: React.FC<PhotoGalleryCardProps> = ({
                         onEdit(photo);
                       }}
                       size="small"
-                      sx={{ color: 'common.white' }}
+                      color="primary"
                       aria-label="Edit photo"
                     >
                       <EditIcon fontSize="small" />
@@ -189,7 +189,7 @@ const PhotoGalleryCard: React.FC<PhotoGalleryCardProps> = ({
                         onDelete(photo);
                       }}
                       size="small"
-                      sx={{ color: 'error.light' }}
+                      color="error"
                       aria-label="Delete photo"
                     >
                       <DeleteIcon fontSize="small" />

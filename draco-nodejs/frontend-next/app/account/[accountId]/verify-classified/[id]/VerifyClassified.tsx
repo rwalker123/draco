@@ -145,7 +145,13 @@ const VerifyClassified: React.FC<VerifyClassifiedProps> = ({ accountId, classifi
       {/* Account Header */}
       <AccountPageHeader accountId={accountId}>
         <Box display="flex" flexDirection="column" alignItems="center">
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Typography
+            variant="h4"
+            component="h1"
+            color="text.primary"
+            sx={{ fontWeight: 'bold' }}
+            gutterBottom
+          >
             Verify Teams Wanted Access
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">

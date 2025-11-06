@@ -38,10 +38,9 @@ const UserActions: React.FC<UserActionsProps> = ({
           <IconButton
             size="small"
             onClick={handleEditContact}
+            color="primary"
             sx={{
-              color: 'text.secondary',
               '&:hover': {
-                color: 'primary.main',
                 backgroundColor: 'rgba(25, 118, 210, 0.04)',
               },
             }}
@@ -56,10 +55,9 @@ const UserActions: React.FC<UserActionsProps> = ({
           <IconButton
             size="small"
             onClick={handleDeleteContact}
+            color="error"
             sx={{
-              color: 'text.secondary',
               '&:hover': {
-                color: 'error.main',
                 backgroundColor: 'rgba(211, 47, 47, 0.04)',
               },
             }}

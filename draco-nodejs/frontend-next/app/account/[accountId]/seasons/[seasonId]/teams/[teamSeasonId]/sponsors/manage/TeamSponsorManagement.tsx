@@ -161,11 +161,11 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
             />
             <Stack direction="row" spacing={1.5} alignItems="baseline" flexWrap="wrap">
               {teamHeaderData?.leagueName && (
-                <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                   {teamHeaderData.leagueName}
                 </Typography>
               )}
-              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                 {teamHeaderData?.teamName || 'Team Sponsor Management'}
               </Typography>
             </Stack>
@@ -251,6 +251,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
                           aria-label="edit"
                           onClick={() => handleOpenEdit(sponsor)}
                           size="small"
+                          color="primary"
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
@@ -259,6 +260,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
                           onClick={() => handleDelete(sponsor.id)}
                           size="small"
                           disabled={mutationLoading}
+                          color="error"
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>

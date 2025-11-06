@@ -196,6 +196,7 @@ const HandoutList: React.FC<HandoutListProps> = ({
                           edge="end"
                           onClick={() => onEdit(handout)}
                           disabled={actionsDisabled}
+                          color="primary"
                         >
                           <EditIcon />
                         </IconButton>

@@ -116,7 +116,7 @@ export default function EmailCompose() {
               sx={{ position: 'relative' }}
             >
               <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
-                <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                   Compose Email
                 </Typography>
               </Box>
@@ -160,7 +160,7 @@ export default function EmailCompose() {
             sx={{ position: 'relative' }}
           >
             <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
-              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                 Compose Email
               </Typography>
             </Box>

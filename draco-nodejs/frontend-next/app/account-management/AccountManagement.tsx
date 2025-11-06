@@ -315,7 +315,11 @@ const AccountManagement: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Edit Account">
-                        <IconButton size="small" onClick={() => openEditDialog(account)}>
+                        <IconButton
+                          size="small"
+                          onClick={() => openEditDialog(account)}
+                          color="primary"
+                        >
                           <EditIcon />
                         </IconButton>
                       </Tooltip>

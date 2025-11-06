@@ -92,7 +92,7 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
       {accountId ? (
         <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
           <Box sx={{ flex: 1, textAlign: 'center' }}>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Sign In
             </Typography>
           </Box>

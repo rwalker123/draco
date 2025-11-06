@@ -123,14 +123,19 @@ export default function TemplateListView({
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-                    <IconButton size="small" onClick={() => onEdit(template)} title="Edit Template">
+                    <IconButton
+                      size="small"
+                      onClick={() => onEdit(template)}
+                      title="Edit Template"
+                      color="primary"
+                    >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => onDelete(template)}
-                      sx={{ color: 'error.main' }}
                       title="Delete Template"
+                      color="error"
                     >
                       <DeleteIcon />
                     </IconButton>

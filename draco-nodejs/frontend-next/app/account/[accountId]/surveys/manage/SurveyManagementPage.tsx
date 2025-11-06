@@ -144,13 +144,14 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
-        <Box sx={{ textAlign: 'center', color: 'white' }}>
-          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.contrastText' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h3" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Player Survey Management
           </Typography>
           <Typography
             variant="body1"
-            sx={{ mt: 1, maxWidth: 620, mx: 'auto', color: 'rgba(255,255,255,0.85)' }}
+            color="text.secondary"
+            sx={{ mt: 1, maxWidth: 620, mx: 'auto' }}
           >
             Create categories and questions for your player surveys, and review or edit player
             responses from one workspace.

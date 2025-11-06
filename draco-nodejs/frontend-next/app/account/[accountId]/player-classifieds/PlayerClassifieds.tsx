@@ -95,7 +95,7 @@ const PlayerClassifieds: React.FC<PlayerClassifiedsProps> = ({ accountId }) => {
           sx={{ position: 'relative' }}
         >
           <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
               Player Classifieds
             </Typography>
           </Box>

@@ -1406,12 +1406,12 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
                     alt={teamHeaderData?.teamName ? `${teamHeaderData.teamName} logo` : 'Team logo'}
                   />
                   {teamHeaderData?.leagueName && (
-                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                       {teamHeaderData.leagueName}
                     </Typography>
                   )}
                   {teamHeaderData?.teamName && (
-                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
                       {teamHeaderData.teamName}
                     </Typography>
                   )}
@@ -1419,7 +1419,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
                 {teamHeaderData?.record && (
                   <Typography
                     variant="h6"
-                    sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 'medium' }}
+                    color="text.secondary"
+                    sx={{ fontWeight: 'medium', opacity: 0.9 }}
                   >
                     {teamHeaderData.record.wins}-{teamHeaderData.record.losses}
                     {teamHeaderData.record.ties > 0 ? `-${teamHeaderData.record.ties}` : ''}
@@ -1428,7 +1429,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
                 {teamHeaderData?.seasonName && (
                   <Typography
                     variant="body1"
-                    sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'normal' }}
+                    color="text.secondary"
+                    sx={{ fontWeight: 'normal', opacity: 0.8 }}
                   >
                     {teamHeaderData.seasonName} Season
                   </Typography>

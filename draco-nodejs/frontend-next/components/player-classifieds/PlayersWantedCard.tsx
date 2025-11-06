@@ -82,6 +82,7 @@ const PlayersWantedCard: React.FC<IPlayersWantedCardProps> = ({
                 size="small"
                 onClick={() => onEdit(classified.id.toString())}
                 aria-label="Edit classified"
+                color="primary"
               >
                 <EditIcon fontSize="small" />
               </IconButton>

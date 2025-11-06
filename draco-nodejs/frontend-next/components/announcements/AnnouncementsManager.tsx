@@ -257,6 +257,7 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
                             aria-label="edit"
                             onClick={() => handleEdit(announcement)}
                             disabled={mutationLoading}
+                            color="primary"
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -270,6 +271,7 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
                             onClick={() => handleDeletePrompt(announcement)}
                             disabled={mutationLoading}
                             sx={{ ml: 1 }}
+                            color="error"
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
