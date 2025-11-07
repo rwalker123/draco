@@ -28,8 +28,12 @@ function resolveOrigin(): string {
   return FALLBACK_ORIGIN.replace(/\/$/, '');
 }
 
-export function buildCanonicalUrl(path?: string): string {
-  const origin = resolveOrigin();
+interface BuildCanonicalOptions {
+  origin?: string;
+}
+
+export function buildCanonicalUrl(path?: string, options?: BuildCanonicalOptions): string {
+  const origin = options?.origin ?? resolveOrigin();
   const pathname = normalizePath(path);
   try {
     return new URL(pathname, origin).toString();
