@@ -19,6 +19,7 @@ import MemberBusinessCard from '@/components/profile/MemberBusinessCard';
 import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
 import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
+import AccountOptional from '@/components/account/AccountOptional';
 
 interface OrganizationTeamsState {
   teams: UserTeam[];
@@ -414,10 +415,15 @@ const ProfilePageClient: React.FC = () => {
                 currentAccount?.id ? `/account/${String(currentAccount.id)}/surveys` : undefined
               }
             />
-            <MemberBusinessCard
-              accountId={currentAccount?.id ?? null}
-              contactId={contact?.id ?? null}
-            />
+            <AccountOptional
+              accountId={currentAccount?.id ? String(currentAccount.id) : null}
+              componentId="profile.memberBusiness.card"
+            >
+              <MemberBusinessCard
+                accountId={currentAccount?.id ?? null}
+                contactId={contact?.id ?? null}
+              />
+            </AccountOptional>
           </Stack>
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>

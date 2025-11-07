@@ -16,6 +16,8 @@ import {
   TableHead,
   TableRow,
   Typography,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -33,6 +35,8 @@ import MemberBusinessFormDialog, {
 import MemberBusinessDeleteDialog, {
   type MemberBusinessDeleteResult,
 } from '@/components/profile/MemberBusinessDeleteDialog';
+import WidgetShell from '@/components/ui/WidgetShell';
+import { useAccountSettings } from '@/hooks/useAccountSettings';
 
 interface AccountMemberBusinessManagementProps {
   accountId: string;
@@ -52,6 +56,13 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
   accountId,
 }) => {
   const apiClient = useApiClient();
+  const {
+    settings: accountSettings,
+    loading: settingsLoading,
+    error: settingsLoadError,
+    updatingKey: settingUpdatingKey,
+    updateSetting,
+  } = useAccountSettings(accountId);
   const [memberBusinesses, setMemberBusinesses] = useState<MemberBusinessType[]>([]);
   const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const contactNamesRef = useRef<Record<string, string>>({});
@@ -185,6 +196,26 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     setError(message);
   };
 
+  const directorySetting = useMemo(
+    () => accountSettings?.find((setting) => setting.definition.key === 'ShowBusinessDirectory'),
+    [accountSettings],
+  );
+
+  const handleDirectoryToggle = async (
+    _event: React.ChangeEvent<HTMLInputElement>,
+    checked: boolean,
+  ) => {
+    try {
+      await updateSetting('ShowBusinessDirectory', checked);
+      setSuccess(`Member Business Directory ${checked ? 'enabled' : 'disabled'} for this account.`);
+      setError(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to update member business availability';
+      setError(message);
+    }
+  };
+
   return (
     <>
       <main className="min-h-screen bg-background">
@@ -199,7 +230,43 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
 
         <Container maxWidth="lg" sx={{ py: 4 }}>
           <Stack spacing={3}>
-            <Typography variant="h5" component="h1">
+            <WidgetShell
+              title="Directory Availability"
+              subtitle="Control whether members can view and manage the public directory."
+              accent="primary"
+            >
+              {settingsLoadError ? (
+                <Alert severity="error">{settingsLoadError}</Alert>
+              ) : (
+                <Stack spacing={1}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={Boolean(directorySetting?.value)}
+                        onChange={handleDirectoryToggle}
+                        disabled={
+                          settingsLoading ||
+                          !directorySetting ||
+                          settingUpdatingKey === 'ShowBusinessDirectory'
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={
+                      directorySetting?.value
+                        ? 'Member Business Directory is enabled'
+                        : 'Member Business Directory is disabled'
+                    }
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    When enabled, members can access the Member Business Directory from their
+                    profile and navigation menu. Disabling it hides those entry points but does not
+                    remove existing records.
+                  </Typography>
+                </Stack>
+              )}
+            </WidgetShell>
+            <Typography variant="h5" component="h1" color="text.primary">
               Registered Member Businesses
             </Typography>
 

@@ -27,3 +27,4 @@ export * from './photoGalleryResponseFormatter.js';
 export * from './memberBusinessResponseFormatter.js';
 export * from './HallOfFameResponseFormatter.js';
 export * from './AnnouncementResponseFormatter.js';
+export * from './accountSettingsResponseFormatter.js';

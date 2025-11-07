@@ -36,3 +36,4 @@ export * from './PrismaHofNominationRepository.js';
 export * from './PrismaHofNominationSetupRepository.js';
 export * from './PrismaStatsEntryRepository.js';
 export * from './PrismaAnnouncementRepository.js';
+export * from './PrismaAccountSettingsRepository.js';

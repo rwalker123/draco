@@ -61,9 +61,9 @@ const DeleteAccountUrlDialog: React.FC<DeleteAccountUrlDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Delete URL</DialogTitle>
+      <DialogTitle sx={{ color: 'text.primary' }}>Delete URL</DialogTitle>
       <DialogContent>
-        <Typography>
+        <Typography color="text.primary">
           Are you sure you want to delete the URL &quot;{url?.url}&quot;? This action cannot be
           undone.
         </Typography>

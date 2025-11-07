@@ -4940,6 +4940,482 @@
           }
         }
       },
+      "AccountSettingsStateList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "definition": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "ShowBusinessDirectory",
+                    "ShowSponsorSpotlight",
+                    "ShowPlayerClassified",
+                    "ShowPlayerSurvey",
+                    "ShowHOF",
+                    "TrackWaiver",
+                    "ShowWaiver",
+                    "TrackIdentification",
+                    "ShowIdentification",
+                    "TrackGamesPlayed",
+                    "ShowRosterCard",
+                    "ShowUserInfoOnRosterPage",
+                    "MsgBoardShowPhoto",
+                    "ShowContactInfo",
+                    "EditContactInfo",
+                    "MessageBoardCleanup"
+                  ]
+                },
+                "label": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "groupId": {
+                  "type": "string",
+                  "enum": [
+                    "accountFeatures",
+                    "playerData",
+                    "contactInformation",
+                    "teamPages",
+                    "messageBoard"
+                  ]
+                },
+                "groupLabel": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "integer"
+                },
+                "valueType": {
+                  "type": "string",
+                  "enum": [
+                    "boolean",
+                    "number"
+                  ]
+                },
+                "defaultValue": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "valueRange": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "number"
+                    },
+                    "max": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "requires": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "enum": [
+                          "ShowBusinessDirectory",
+                          "ShowSponsorSpotlight",
+                          "ShowPlayerClassified",
+                          "ShowPlayerSurvey",
+                          "ShowHOF",
+                          "TrackWaiver",
+                          "ShowWaiver",
+                          "TrackIdentification",
+                          "ShowIdentification",
+                          "TrackGamesPlayed",
+                          "ShowRosterCard",
+                          "ShowUserInfoOnRosterPage",
+                          "MsgBoardShowPhoto",
+                          "ShowContactInfo",
+                          "EditContactInfo",
+                          "MessageBoardCleanup"
+                        ]
+                      },
+                      "value": {
+                        "anyOf": [
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
+                      "description": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "key",
+                      "value"
+                    ]
+                  }
+                },
+                "componentGates": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "page",
+                          "widget"
+                        ]
+                      },
+                      "displayName": {
+                        "type": "string"
+                      },
+                      "hiddenBehavior": {
+                        "type": "string",
+                        "enum": [
+                          "omit",
+                          "notFound"
+                        ]
+                      },
+                      "expectedValue": {
+                        "anyOf": [
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "displayName"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "key",
+                "label",
+                "description",
+                "groupId",
+                "groupLabel",
+                "sortOrder",
+                "valueType",
+                "defaultValue"
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "effectiveValue": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "isDefault": {
+              "type": "boolean"
+            },
+            "isLocked": {
+              "type": "boolean"
+            },
+            "lockedReason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "definition",
+            "value",
+            "effectiveValue",
+            "isDefault",
+            "isLocked"
+          ]
+        }
+      },
+      "AccountSettingState": {
+        "type": "object",
+        "properties": {
+          "definition": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "enum": [
+                  "ShowBusinessDirectory",
+                  "ShowSponsorSpotlight",
+                  "ShowPlayerClassified",
+                  "ShowPlayerSurvey",
+                  "ShowHOF",
+                  "TrackWaiver",
+                  "ShowWaiver",
+                  "TrackIdentification",
+                  "ShowIdentification",
+                  "TrackGamesPlayed",
+                  "ShowRosterCard",
+                  "ShowUserInfoOnRosterPage",
+                  "MsgBoardShowPhoto",
+                  "ShowContactInfo",
+                  "EditContactInfo",
+                  "MessageBoardCleanup"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "groupId": {
+                "type": "string",
+                "enum": [
+                  "accountFeatures",
+                  "playerData",
+                  "contactInformation",
+                  "teamPages",
+                  "messageBoard"
+                ]
+              },
+              "groupLabel": {
+                "type": "string"
+              },
+              "sortOrder": {
+                "type": "integer"
+              },
+              "valueType": {
+                "type": "string",
+                "enum": [
+                  "boolean",
+                  "number"
+                ]
+              },
+              "defaultValue": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "valueRange": {
+                "type": "object",
+                "properties": {
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  }
+                }
+              },
+              "requires": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "enum": [
+                        "ShowBusinessDirectory",
+                        "ShowSponsorSpotlight",
+                        "ShowPlayerClassified",
+                        "ShowPlayerSurvey",
+                        "ShowHOF",
+                        "TrackWaiver",
+                        "ShowWaiver",
+                        "TrackIdentification",
+                        "ShowIdentification",
+                        "TrackGamesPlayed",
+                        "ShowRosterCard",
+                        "ShowUserInfoOnRosterPage",
+                        "MsgBoardShowPhoto",
+                        "ShowContactInfo",
+                        "EditContactInfo",
+                        "MessageBoardCleanup"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "value"
+                  ]
+                }
+              },
+              "componentGates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "page",
+                        "widget"
+                      ]
+                    },
+                    "displayName": {
+                      "type": "string"
+                    },
+                    "hiddenBehavior": {
+                      "type": "string",
+                      "enum": [
+                        "omit",
+                        "notFound"
+                      ]
+                    },
+                    "expectedValue": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "displayName"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "key",
+              "label",
+              "description",
+              "groupId",
+              "groupLabel",
+              "sortOrder",
+              "valueType",
+              "defaultValue"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "effectiveValue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "isLocked": {
+            "type": "boolean"
+          },
+          "lockedReason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "definition",
+          "value",
+          "effectiveValue",
+          "isDefault",
+          "isLocked"
+        ]
+      },
+      "AccountSettingUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "AccountSettingKey": {
+        "type": "string",
+        "enum": [
+          "ShowBusinessDirectory",
+          "ShowSponsorSpotlight",
+          "ShowPlayerClassified",
+          "ShowPlayerSurvey",
+          "ShowHOF",
+          "TrackWaiver",
+          "ShowWaiver",
+          "TrackIdentification",
+          "ShowIdentification",
+          "TrackGamesPlayed",
+          "ShowRosterCard",
+          "ShowUserInfoOnRosterPage",
+          "MsgBoardShowPhoto",
+          "ShowContactInfo",
+          "EditContactInfo",
+          "MessageBoardCleanup"
+        ]
+      },
       "Sponsor": {
         "type": "object",
         "properties": {
@@ -19489,6 +19965,217 @@
           },
           "500": {
             "description": "Unexpected server error while denying the submission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/settings": {
+      "get": {
+        "operationId": "getAccountSettings",
+        "summary": "List account feature settings",
+        "description": "Returns metadata and current values for account-level feature toggles.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account settings with metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSettingsStateList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to manage account settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving account settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/settings/{settingKey}": {
+      "put": {
+        "operationId": "updateAccountSetting",
+        "summary": "Update an account feature setting",
+        "description": "Updates a single account-level feature toggle and returns the refreshed settings payload.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "settingKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ShowBusinessDirectory",
+                "ShowSponsorSpotlight",
+                "ShowPlayerClassified",
+                "ShowPlayerSurvey",
+                "ShowHOF",
+                "TrackWaiver",
+                "ShowWaiver",
+                "TrackIdentification",
+                "ShowIdentification",
+                "TrackGamesPlayed",
+                "ShowRosterCard",
+                "ShowUserInfoOnRosterPage",
+                "MsgBoardShowPhoto",
+                "ShowContactInfo",
+                "EditContactInfo",
+                "MessageBoardCleanup"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountSettingUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated setting state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSettingState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to manage account settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account or setting not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting requirements prevent enabling the setting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while updating the setting.",
             "content": {
               "application/json": {
                 "schema": {

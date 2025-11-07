@@ -6,12 +6,16 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
 import { isAccountAdministrator } from '../../../../utils/permissionUtils';
-import UrlManagement from '../../../../components/UrlManagement';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { getAccountById } from '@draco/shared-api-client';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
-import type { AccountType } from '@draco/shared-schemas';
+import type { AccountSettingKey, AccountType } from '@draco/shared-schemas';
+import { useAccountSettings } from '../../../../hooks/useAccountSettings';
+import { GeneralSettingsWidget } from '../../../../components/account/settings/GeneralSettingsWidget';
+import { UrlManagementWidget } from '../../../../components/account/settings/UrlManagementWidget';
+import { SocialMediaWidget } from '../../../../components/account/settings/SocialMediaWidget';
+import { SecuritySettingsWidget } from '../../../../components/account/settings/SecuritySettingsWidget';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -58,6 +62,15 @@ const AccountSettings: React.FC = () => {
   const canManageAccountSettings =
     isGlobalAdministrator || isAccountAdministrator(hasRole, accountIdStr);
 
+  const {
+    settings,
+    loading: settingsLoading,
+    error: settingsError,
+    updatingKey,
+    updateSetting,
+    refetch: refreshSettings,
+  } = useAccountSettings(canManageAccountSettings ? accountIdStr : null);
+
   const loadAccountData = useCallback(async () => {
     try {
       setLoading(true);
@@ -91,6 +104,13 @@ const AccountSettings: React.FC = () => {
       loadAccountData();
     }
   }, [accountId, token, loadAccountData]);
+
+  const handleSettingUpdate = useCallback(
+    async (key: AccountSettingKey, value: boolean | number) => {
+      await updateSetting(key, value);
+    },
+    [updateSetting],
+  );
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -169,9 +189,9 @@ const AccountSettings: React.FC = () => {
 
           {/* URL Management Tab */}
           <TabPanel value={tabValue} index={0}>
-            <UrlManagement
+            <UrlManagementWidget
               accountId={accountIdStr || ''}
-              accountName={account.name}
+              account={account}
               onUrlsChange={(urls) => {
                 setAccount({ ...account, urls });
               }}
@@ -180,88 +200,29 @@ const AccountSettings: React.FC = () => {
 
           {/* General Settings Tab */}
           <TabPanel value={tabValue} index={1}>
-            <Typography variant="h6" gutterBottom>
-              General Account Settings
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Configure basic account information and preferences.
-            </Typography>
-
-            <Alert severity="info" sx={{ mb: 3 }}>
-              General settings management is coming soon. This will include account name, timezone,
-              and other basic configuration options.
-            </Alert>
-
-            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Account Name:</strong> {account.name}
-                <br />
-                <strong>Account Type:</strong>{' '}
-                {account.configuration?.accountType?.name ?? 'Unknown'}
-                <br />
-                <strong>First Year:</strong> {account.configuration?.firstYear ?? 'N/A'}
-                <br />
-                <strong>Affiliation:</strong> {account.configuration?.affiliation?.name || 'None'}
-                <br />
-                <strong>Timezone:</strong> {account.configuration?.timeZone || 'Not set'}
-              </Typography>
-            </Box>
+            <GeneralSettingsWidget
+              loading={settingsLoading}
+              error={settingsError}
+              settings={settings}
+              canManage={canManageAccountSettings}
+              updatingKey={updatingKey}
+              onRetry={refreshSettings}
+              onUpdate={handleSettingUpdate}
+            />
           </TabPanel>
 
           {/* Social Media Tab */}
           <TabPanel value={tabValue} index={2}>
-            <Typography variant="h6" gutterBottom>
-              Social Media Integration
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Connect your social media accounts and configure sharing options.
-            </Typography>
-
-            <Alert severity="info" sx={{ mb: 3 }}>
-              Social media integration is coming soon. This will include Twitter, Facebook, and
-              YouTube account connections.
-            </Alert>
-
-            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Twitter Account:</strong>{' '}
-                {account.socials?.twitterAccountName || 'Not configured'}
-                <br />
-                <strong>Facebook Fan Page:</strong>{' '}
-                {account.socials?.facebookFanPage || 'Not configured'}
-                <br />
-                <strong>YouTube User ID:</strong>{' '}
-                {account.socials?.youtubeUserId || 'Not configured'}
-              </Typography>
-            </Box>
+            <SocialMediaWidget account={account} />
           </TabPanel>
 
           {/* Security Tab */}
           <TabPanel value={tabValue} index={3}>
-            <Typography variant="h6" gutterBottom>
-              Security Settings
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Manage account security, user permissions, and access controls.
-            </Typography>
-
-            <Alert severity="info" sx={{ mb: 3 }}>
-              Security settings management is coming soon. This will include user roles,
-              permissions, and access control configuration.
-            </Alert>
-
-            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Owner:</strong>{' '}
-                {account.accountOwner?.contact
-                  ? `${account.accountOwner.contact.firstName} ${account.accountOwner.contact.lastName}`
-                  : 'Not assigned'}
-                <br />
-                <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}
-                <br />
-                <strong>Administrator:</strong> {hasRole('Administrator') ? 'Yes' : 'No'}
-              </Typography>
-            </Box>
+            <SecuritySettingsWidget
+              account={account}
+              isAccountAdmin={hasRole('AccountAdmin')}
+              isAdministrator={hasRole('Administrator')}
+            />
           </TabPanel>
         </Paper>
       </Box>

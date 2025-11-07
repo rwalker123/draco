@@ -44,7 +44,10 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
   const [domain, setDomain] = React.useState('');
   const [validationError, setValidationError] = React.useState<string | null>(null);
 
-  const urlPreview = React.useMemo(() => buildAccountUrlPreview(protocol, domain), [protocol, domain]);
+  const urlPreview = React.useMemo(
+    () => buildAccountUrlPreview(protocol, domain),
+    [protocol, domain],
+  );
 
   const resetState = React.useCallback(() => {
     setProtocol('https://');
@@ -62,7 +65,8 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
     if (url) {
       try {
         const parsed = new URL(url.url);
-        const parsedProtocol: AccountUrlProtocol = parsed.protocol === 'http:' ? 'http://' : 'https://';
+        const parsedProtocol: AccountUrlProtocol =
+          parsed.protocol === 'http:' ? 'http://' : 'https://';
         setProtocol(parsedProtocol);
         setDomain(sanitizeDomainInput(parsed.host));
       } catch (parseError) {
@@ -105,7 +109,7 @@ const EditAccountUrlDialog: React.FC<EditAccountUrlDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Edit URL</DialogTitle>
+      <DialogTitle sx={{ color: 'text.primary' }}>Edit URL</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           {(validationError || error) && (
