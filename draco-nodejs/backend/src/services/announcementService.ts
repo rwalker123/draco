@@ -6,7 +6,10 @@ import {
   dbAccountAnnouncement,
   dbTeamAnnouncement,
 } from '../repositories/index.js';
-import { AnnouncementResponseFormatter } from '../responseFormatters/index.js';
+import {
+  AnnouncementResponseFormatter,
+  type AnnouncementSummaryResponse,
+} from '../responseFormatters/index.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
 
@@ -15,6 +18,11 @@ interface NormalizedAnnouncementPayload {
   body: string;
   publishedAt: Date;
   isSpecial: boolean;
+}
+
+interface AnnouncementSummaryOptions {
+  includeSpecialOnly?: boolean;
+  limit?: number;
 }
 
 export class AnnouncementService {
@@ -30,6 +38,15 @@ export class AnnouncementService {
   async listAccountAnnouncements(accountId: bigint): Promise<AnnouncementType[]> {
     const records = await this.announcementRepository.listAccountAnnouncements(accountId);
     return AnnouncementResponseFormatter.formatAccountAnnouncements(records);
+  }
+
+  async listAccountAnnouncementSummaries(
+    accountId: bigint,
+    options?: AnnouncementSummaryOptions,
+  ): Promise<AnnouncementSummaryResponse[]> {
+    const records = await this.announcementRepository.listAccountAnnouncements(accountId);
+    const summaries = AnnouncementResponseFormatter.formatAccountAnnouncementSummaries(records);
+    return this.filterSummaries(summaries, options);
   }
 
   async getAccountAnnouncement(
@@ -86,6 +103,20 @@ export class AnnouncementService {
     await this.ensureTeamBelongsToAccount(accountId, teamId);
     const records = await this.announcementRepository.listTeamAnnouncements(teamId);
     return AnnouncementResponseFormatter.formatTeamAnnouncements(records, accountId);
+  }
+
+  async listTeamAnnouncementSummaries(
+    accountId: bigint,
+    teamId: bigint,
+    options?: AnnouncementSummaryOptions,
+  ): Promise<AnnouncementSummaryResponse[]> {
+    await this.ensureTeamBelongsToAccount(accountId, teamId);
+    const records = await this.announcementRepository.listTeamAnnouncements(teamId);
+    const summaries = AnnouncementResponseFormatter.formatTeamAnnouncementSummaries(
+      records,
+      accountId,
+    );
+    return this.filterSummaries(summaries, options);
   }
 
   async getTeamAnnouncement(
@@ -202,5 +233,26 @@ export class AnnouncementService {
     if (!team || team.accountid !== accountId) {
       throw new NotFoundError('Team not found');
     }
+  }
+
+  private filterSummaries<T extends { isSpecial: boolean }>(
+    summaries: T[],
+    options?: AnnouncementSummaryOptions,
+  ): T[] {
+    const includeSpecialOnly = options?.includeSpecialOnly ?? false;
+    const rawLimit = options?.limit;
+
+    const filtered = includeSpecialOnly ? summaries.filter((item) => item.isSpecial) : summaries;
+
+    if (rawLimit === undefined) {
+      return filtered;
+    }
+
+    const limit = Number.isFinite(rawLimit) ? Math.max(Math.floor(rawLimit), 0) : 0;
+    if (limit <= 0 || filtered.length <= limit) {
+      return filtered;
+    }
+
+    return filtered.slice(0, limit);
   }
 }

@@ -10553,6 +10553,95 @@ components:
         - announcements
       title: AnnouncementList
       description: Collection wrapper for announcement responses
+    AnnouncementSummary:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        publishedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp string
+        isSpecial:
+          type: boolean
+          default: false
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        visibility:
+          type: string
+          enum:
+            - account
+            - team
+          description: Scope where the announcement is published
+      required:
+        - title
+        - publishedAt
+        - id
+        - accountId
+        - visibility
+      title: AnnouncementSummary
+      description: Announcement metadata without the body content.
+    AnnouncementSummaryList:
+      type: object
+      properties:
+        announcements:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                minLength: 1
+                maxLength: 100
+              publishedAt:
+                type: string
+                format: date-time
+                description: ISO 8601 timestamp string
+              isSpecial:
+                type: boolean
+                default: false
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              accountId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              visibility:
+                type: string
+                enum:
+                  - account
+                  - team
+                description: Scope where the announcement is published
+            required:
+              - title
+              - publishedAt
+              - id
+              - accountId
+              - visibility
+            title: AnnouncementSummary
+            description: Announcement metadata without the body content.
+      required:
+        - announcements
+      title: AnnouncementSummaryList
+      description: Collection wrapper for announcement summary responses.
     UpsertAnnouncement:
       type: object
       properties:
@@ -14691,11 +14780,12 @@ paths:
           description: Authentication required.
         "403":
           description: Administrator privileges are required to access analytics.
-  /api/accounts/{accountId}/announcements:
+  /api/accounts/{accountId}/announcements/titles:
     get:
-      summary: List account announcements
-      description: Retrieve public announcements for an account.
-      operationId: listAccountAnnouncements
+      summary: List account announcement summaries
+      description: Retrieve announcement metadata (id, title, publish date, and
+        special flag) for an account.
+      operationId: listAccountAnnouncementSummaries
       tags:
         - Announcements
       parameters:
@@ -14706,6 +14796,44 @@ paths:
           schema:
             type: string
             format: number
+        - &a3
+          name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 25
+          description: Maximum number of announcement summaries to return (default 10).
+        - &a4
+          name: includeSpecialOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: When true, only announcements marked as special are included.
+      responses:
+        "200":
+          description: Announcement summaries for the specified account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementSummaryList"
+        "500":
+          description: Unexpected error while retrieving announcement summaries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/announcements:
+    get:
+      summary: List account announcements
+      description: Retrieve public announcements for an account.
+      operationId: listAccountAnnouncements
+      tags:
+        - Announcements
+      parameters:
+        - *a1
       responses:
         "200":
           description: Announcements published for the account.
@@ -14892,6 +15020,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/teams/{teamId}/announcements/titles:
+    get:
+      summary: List team announcement summaries
+      description: Retrieve announcement metadata (id, title, publish date, and
+        special flag) for a team.
+      operationId: listTeamAnnouncementSummaries
+      tags:
+        - Announcements
+      parameters:
+        - *a1
+        - &a5
+          name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - *a3
+        - *a4
+      responses:
+        "200":
+          description: Team announcement summaries for the specified account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementSummaryList"
+        "404":
+          description: Team not found for the account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error retrieving team announcement summaries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/teams/{teamId}/announcements:
     get:
       summary: List team announcements
@@ -14902,13 +15068,7 @@ paths:
         - Announcements
       parameters:
         - *a1
-        - &a3
-          name: teamId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: number
+        - *a5
       responses:
         "200":
           description: Team announcements for the specified account.
@@ -14938,7 +15098,7 @@ paths:
         - bearerAuth: []
       parameters:
         - *a1
-        - *a3
+        - *a5
       requestBody:
         content:
           application/json:
@@ -14990,7 +15150,7 @@ paths:
         - Announcements
       parameters:
         - *a1
-        - *a3
+        - *a5
         - *a2
       responses:
         "200":
@@ -15021,7 +15181,7 @@ paths:
         - bearerAuth: []
       parameters:
         - *a1
-        - *a3
+        - *a5
         - *a2
       requestBody:
         content:
@@ -15075,7 +15235,7 @@ paths:
         - bearerAuth: []
       parameters:
         - *a1
-        - *a3
+        - *a5
         - *a2
       responses:
         "204":
@@ -19102,7 +19262,7 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - &a4
+        - &a6
           name: accountId
           in: path
           required: true
@@ -19131,7 +19291,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a4
+        - *a6
       requestBody:
         content:
           application/json:
@@ -19177,8 +19337,8 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - *a4
-        - &a5
+        - *a6
+        - &a7
           name: faqId
           in: path
           required: true
@@ -19213,8 +19373,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a4
-        - *a5
+        - *a6
+        - *a7
       requestBody:
         content:
           application/json:
@@ -19266,8 +19426,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a4
-        - *a5
+        - *a6
+        - *a7
       responses:
         "204":
           description: League FAQ entry deleted
@@ -20843,7 +21003,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a6
+        - &a8
           name: accountId
           in: path
           required: true
@@ -20877,7 +21037,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
+        - *a8
       requestBody:
         content:
           application/json:
@@ -20934,8 +21094,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a6
-        - &a7
+        - *a8
+        - &a9
           name: memberBusinessId
           in: path
           required: true
@@ -20970,8 +21130,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
-        - *a7
+        - *a8
+        - *a9
       requestBody:
         content:
           application/json:
@@ -21029,8 +21189,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
-        - *a7
+        - *a8
+        - *a9
       responses:
         "204":
           description: Member business entry deleted
@@ -21986,7 +22146,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a8
+        - &a10
           name: accountId
           in: path
           required: true
@@ -22030,7 +22190,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
+        - *a10
       requestBody:
         content:
           application/json:
@@ -22077,8 +22237,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - &a9
+        - *a10
+        - &a11
           name: categoryId
           in: path
           required: true
@@ -22137,8 +22297,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
+        - *a10
+        - *a11
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -22177,8 +22337,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a9
+        - *a10
+        - *a11
       requestBody:
         content:
           application/json:
@@ -22231,8 +22391,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - &a10
+        - *a10
+        - &a12
           name: questionId
           in: path
           required: true
@@ -22290,8 +22450,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
         - *a10
+        - *a12
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -22328,7 +22488,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a8
+        - *a10
         - schema:
             type: integer
             minimum: 1
@@ -22379,8 +22539,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a8
-        - &a11
+        - *a10
+        - &a13
           name: playerId
           in: path
           required: true
@@ -22418,9 +22578,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a11
         - *a10
+        - *a13
+        - *a12
       requestBody:
         content:
           application/json:
@@ -22473,9 +22633,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a8
-        - *a11
         - *a10
+        - *a13
+        - *a12
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -22512,7 +22672,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a8
+        - *a10
       responses:
         "200":
           description: Player survey spotlight result.
@@ -22541,7 +22701,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a8
+        - *a10
         - name: teamSeasonId
           in: path
           required: true
@@ -25064,23 +25224,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a13
+        - &a15
           name: accountId
           in: path
           required: true
-          schema: &a12
+          schema: &a14
             type: string
             format: number
-        - &a14
+        - &a16
           name: seasonId
           in: path
           required: true
-          schema: *a12
-        - &a15
+          schema: *a14
+        - &a17
           name: teamSeasonId
           in: path
           required: true
-          schema: *a12
+          schema: *a14
       responses:
         "200":
           description: Completed games retrieved.
@@ -25126,14 +25286,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
-        - &a16
+        - *a16
+        - *a17
+        - &a18
           name: gameId
           in: path
           required: true
-          schema: *a12
+          schema: *a14
       responses:
         "200":
           description: Batting stats retrieved.
@@ -25178,10 +25338,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
+        - *a17
+        - *a18
       requestBody:
         required: true
         content:
@@ -25239,15 +25399,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
-        - &a17
+        - *a17
+        - *a18
+        - &a19
           name: statId
           in: path
           required: true
-          schema: *a12
+          schema: *a14
       requestBody:
         required: true
         content:
@@ -25298,11 +25458,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
         - *a17
+        - *a18
+        - *a19
       responses:
         "204":
           description: Batting stat deleted.
@@ -25344,10 +25504,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
+        - *a17
+        - *a18
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -25392,10 +25552,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
+        - *a17
+        - *a18
       requestBody:
         required: true
         content:
@@ -25453,11 +25613,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
         - *a17
+        - *a18
+        - *a19
       requestBody:
         required: true
         content:
@@ -25508,11 +25668,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
         - *a17
+        - *a18
+        - *a19
       responses:
         "204":
           description: Pitching stat deleted.
@@ -25554,10 +25714,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
+        - *a17
+        - *a18
       responses:
         "200":
           description: Attendance retrieved.
@@ -25602,10 +25762,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a13
-        - *a14
         - *a15
         - *a16
+        - *a17
+        - *a18
       requestBody:
         required: true
         content:

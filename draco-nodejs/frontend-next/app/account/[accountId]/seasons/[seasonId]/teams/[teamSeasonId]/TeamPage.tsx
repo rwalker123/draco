@@ -5,6 +5,7 @@ import GameListDisplay, { Game } from '../../../../../../../components/GameListD
 import React from 'react';
 import { getGameSummary } from '../../../../../../../lib/utils';
 import { useAuth } from '../../../../../../../context/AuthContext';
+import { useAccountTimezone } from '../../../../../../../context/AccountContext';
 import { useSchedulePermissions } from '../../../../../../../hooks/useSchedulePermissions';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import Box from '@mui/material/Box';
@@ -14,7 +15,11 @@ import TeamAvatar from '../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 import SponsorCard from '../../../../../../../components/sponsors/SponsorCard';
 import { SponsorService } from '../../../../../../../services/sponsorService';
-import { SponsorType, UpsertPlayersWantedClassifiedType } from '@draco/shared-schemas';
+import {
+  AnnouncementType,
+  SponsorType,
+  UpsertPlayersWantedClassifiedType,
+} from '@draco/shared-schemas';
 import { useRole } from '../../../../../../../context/RoleContext';
 import TeamAdminPanel from '../../../../../../../components/sponsors/TeamAdminPanel';
 import { useAccountMembership } from '../../../../../../../hooks/useAccountMembership';
@@ -25,7 +30,6 @@ import {
   listTeamSeasonGames as apiListTeamSeasonGames,
   type RecentGames,
 } from '@draco/shared-api-client';
-import HandoutSection from '@/components/handouts/HandoutSection';
 import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePlayersWantedDialog';
 import PendingPhotoSubmissionsPanel from '../../../../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
 import PhotoSubmissionPanel from '../../../../../../../components/photo-submissions/PhotoSubmissionPanel';
@@ -35,6 +39,10 @@ import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection'
 import { useGameRecapFlow } from '../../../../../../../hooks/useGameRecapFlow';
 import LeadersWidget from '../../../../../../../components/statistics/LeadersWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
+import { AnnouncementService } from '@/services/announcementService';
+import SpecialAnnouncementsWidget, {
+  type SpecialAnnouncementCard,
+} from '@/components/announcements/SpecialAnnouncementsWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -59,6 +67,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
+  const [teamAnnouncements, setTeamAnnouncements] = React.useState<AnnouncementType[]>([]);
+  const [teamAnnouncementsLoading, setTeamAnnouncementsLoading] = React.useState(false);
+  const [teamAnnouncementsError, setTeamAnnouncementsError] = React.useState<string | null>(null);
   const [playersWantedDialogOpen, setPlayersWantedDialogOpen] = React.useState(false);
   const [playersWantedInitialData, setPlayersWantedInitialData] = React.useState<
     UpsertPlayersWantedClassifiedType | undefined
@@ -69,6 +80,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     teamSeasonId,
   });
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
+  const timeZone = useAccountTimezone();
   const { isMember } = useAccountMembership(accountId);
   const isAccountMember = isMember === true;
   const {
@@ -81,6 +93,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const apiClientRef = React.useRef(apiClient);
   const sponsorService = React.useMemo(
     () => new SponsorService(token, apiClient),
+    [token, apiClient],
+  );
+  const announcementService = React.useMemo(
+    () => new AnnouncementService(token, apiClient),
     [token, apiClient],
   );
 
@@ -120,6 +136,52 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       isMounted = false;
     };
   }, [accountId, seasonId, teamSeasonId, sponsorService]);
+
+  React.useEffect(() => {
+    if (!accountId || !teamData?.teamId) {
+      setTeamAnnouncements([]);
+      setTeamAnnouncementsError(null);
+      setTeamAnnouncementsLoading(false);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchTeamAnnouncements = async () => {
+      setTeamAnnouncementsLoading(true);
+      setTeamAnnouncementsError(null);
+
+      try {
+        const data = await announcementService.listTeamAnnouncements({
+          accountId,
+          teamId: teamData.teamId!,
+        });
+
+        if (ignore) {
+          return;
+        }
+
+        setTeamAnnouncements(data);
+      } catch (err) {
+        if (ignore) {
+          return;
+        }
+        const message = err instanceof Error ? err.message : 'Failed to load team announcements';
+        setTeamAnnouncementsError(message);
+        setTeamAnnouncements([]);
+      } finally {
+        if (!ignore) {
+          setTeamAnnouncementsLoading(false);
+        }
+      }
+    };
+
+    void fetchTeamAnnouncements();
+
+    return () => {
+      ignore = true;
+    };
+  }, [accountId, teamData?.teamId, announcementService]);
 
   const teamModerationTeamId = teamData?.teamId ?? null;
 
@@ -176,6 +238,33 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     },
     [approveTeamSubmission, refreshTeamGallery],
   );
+
+  const specialTeamAnnouncements = React.useMemo<SpecialAnnouncementCard[]>(() => {
+    if (teamAnnouncements.length === 0) {
+      return [];
+    }
+
+    const teamName = teamData?.teamName;
+    const rawLeagueName = teamData?.leagueName;
+    const leagueName =
+      rawLeagueName && rawLeagueName !== 'Unknown League' ? rawLeagueName : undefined;
+    const heading = teamName ? (leagueName ? `${leagueName} ${teamName}` : teamName) : undefined;
+    const sourceLabel = teamName ? `${teamName} Announcement` : 'Team Announcement';
+
+    return teamAnnouncements
+      .filter((announcement) => announcement.isSpecial)
+      .map<SpecialAnnouncementCard>((announcement) => ({
+        id: announcement.id,
+        title: announcement.title,
+        publishedAt: announcement.publishedAt,
+        accountId: announcement.accountId,
+        teamId: announcement.teamId,
+        visibility: announcement.visibility,
+        body: announcement.body,
+        sourceLabel,
+        heading,
+      }));
+  }, [teamAnnouncements, teamData?.teamName, teamData?.leagueName]);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -333,21 +422,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
-  const teamHandoutScope = React.useMemo(() => {
-    if (!teamData?.teamId) {
-      return null;
-    }
-    return {
-      type: 'team' as const,
-      accountId,
-      teamId: teamData.teamId,
-    };
-  }, [accountId, teamData?.teamId]);
-
   const upcomingSections = React.useMemo(
     () => [{ title: 'Upcoming Games', games: upcomingGames }],
     [upcomingGames],
   );
+  const hasUpcomingGames = upcomingGames.length > 0;
 
   const completedSections = React.useMemo(
     () => [{ title: 'Completed Games', games: completedGames }],
@@ -453,66 +532,130 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           }
           announcementsHref={
             teamData?.teamId
-              ? `/account/${accountId}/teams/${teamData.teamId}/announcements/manage`
+              ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/announcements/manage`
               : undefined
           }
         />
       )}
 
-      {teamData?.leagueId && (
-        <Box sx={{ mt: 4 }}>
-          <LeadersWidget
-            variant="team"
+      <Box
+        sx={{
+          mt: 4,
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          alignItems: 'stretch',
+        }}
+      >
+        {teamData?.teamId ? (
+          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
+            <SpecialAnnouncementsWidget
+              announcements={specialTeamAnnouncements}
+              loading={teamAnnouncementsLoading}
+              error={teamAnnouncementsError}
+              title="Team Announcements"
+              subtitle={
+                teamData?.teamName
+                  ? `Special announcements from the ${teamData.teamName}`
+                  : undefined
+              }
+              viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/announcements`}
+              showSourceLabels={false}
+            />
+          </Box>
+        ) : null}
+
+        {!loading ? (
+          <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
+            {error ? (
+              <Alert severity="error" sx={{ height: '100%' }}>
+                {error}
+              </Alert>
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  gap: 3,
+                }}
+              >
+                {hasUpcomingGames ? (
+                  <Box sx={{ flex: '1 1 320px', minWidth: 280 }}>
+                    <GameListDisplay
+                      sections={upcomingSections}
+                      emptyMessage="No upcoming games."
+                      timeZone={timeZone}
+                    />
+                  </Box>
+                ) : null}
+                <Box sx={{ flex: '1 1 320px', minWidth: 280 }}>
+                  <GameListDisplay
+                    sections={completedSections}
+                    emptyMessage="No completed games."
+                    canEditRecap={canEditRecap}
+                    onEditRecap={handleOpenEditRecap}
+                    onViewRecap={handleOpenViewRecap}
+                    timeZone={timeZone}
+                  />
+                </Box>
+              </Box>
+            )}
+          </Box>
+        ) : null}
+
+        {teamData?.leagueId ? (
+          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
+            <LeadersWidget
+              variant="team"
+              accountId={accountId}
+              seasonId={seasonId}
+              teamSeasonId={teamSeasonId}
+              leagueId={teamData.leagueId}
+              leagueName={teamData.leagueName}
+              leagues={[
+                {
+                  id: teamData.leagueId,
+                  name: teamData.leagueName ?? 'League',
+                },
+              ]}
+              teamId={teamSeasonId}
+              randomize
+            />
+          </Box>
+        ) : null}
+
+        <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
+          <SurveySpotlightWidget
             accountId={accountId}
-            seasonId={seasonId}
             teamSeasonId={teamSeasonId}
-            leagueId={teamData.leagueId}
-            leagueName={teamData.leagueName}
-            leagues={[
-              {
-                id: teamData.leagueId,
-                name: teamData.leagueName ?? 'League',
-              },
-            ]}
-            teamId={teamSeasonId}
-            randomize
+            variant="card"
+            icon={<Target className="h-5 w-5" />}
+            title="Player Survey Spotlight"
+            canAnswerSurvey={isAccountMember}
           />
         </Box>
-      )}
 
-      {shouldShowTeamPendingPanel ? (
-        <PendingPhotoSubmissionsPanel
-          contextLabel={teamData?.teamName ?? 'this team'}
-          submissions={teamPendingSubmissions}
-          loading={teamPendingLoading}
-          error={teamPendingError}
-          successMessage={teamPendingSuccess}
-          processingIds={teamPendingProcessing}
-          onRefresh={refreshTeamPending}
-          onApprove={handleApproveTeamPhoto}
-          onDeny={denyTeamSubmission}
-          onClearStatus={clearTeamPendingStatus}
-          emptyMessage="No pending photo submissions for this team."
-          containerSx={{ mb: 4 }}
-        />
-      ) : null}
+        {shouldShowTeamPendingPanel ? (
+          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
+            <PendingPhotoSubmissionsPanel
+              contextLabel={teamData?.teamName ?? 'this team'}
+              submissions={teamPendingSubmissions}
+              loading={teamPendingLoading}
+              error={teamPendingError}
+              successMessage={teamPendingSuccess}
+              processingIds={teamPendingProcessing}
+              onRefresh={refreshTeamPending}
+              onApprove={handleApproveTeamPhoto}
+              onDeny={denyTeamSubmission}
+              onClearStatus={clearTeamPendingStatus}
+              emptyMessage="No pending photo submissions for this team."
+              containerSx={{ mb: 0 }}
+            />
+          </Box>
+        ) : null}
 
-      {teamData?.teamId && (
-        <>
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 3,
-              gridTemplateColumns: showTeamSubmissionPanel
-                ? {
-                    xs: '1fr',
-                    lg: 'minmax(0, 2.1fr) minmax(0, 1fr)',
-                  }
-                : '1fr',
-              alignItems: 'stretch',
-              mb: 6,
-            }}
-          >
+        {teamData?.teamId ? (
+          <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
             <PhotoGallerySection
               title="Team Photo Gallery"
               description={`Highlights from the ${teamData?.seasonName ?? 'current'} season.`}
@@ -525,6 +668,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               totalCountOverride={teamGalleryPhotos.length}
               sx={{ height: '100%' }}
             />
+          </Box>
+        ) : null}
+
+        {teamData?.teamId && showTeamSubmissionPanel ? (
+          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
             <PhotoSubmissionPanel
               variant="team"
               enabled={showTeamSubmissionPanel}
@@ -539,76 +687,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               }}
             />
           </Box>
+        ) : null}
 
-          {isTeamMember && teamHandoutScope && (
-            <Box
-              sx={{
-                maxWidth: { xs: '100%', md: 420 },
-                mb: 4,
-                '&:empty': { display: 'none', marginBottom: 0 },
-              }}
-            >
-              <HandoutSection
-                scope={teamHandoutScope}
-                title="Team Handouts"
-                description="Important documents shared with your roster."
-                allowManage={false}
-                variant="card"
-                maxItems={3}
-                viewAllHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/handouts`}
-                emptyMessage="No team handouts have been posted yet."
-                hideWhenEmpty
-              />
-            </Box>
-          )}
-        </>
-      )}
-
-      {/* Upcoming & Recent Games - Responsive Side by Side */}
-      {loading ? null : error ? (
-        <div className="text-center text-red-600 py-8">{error}</div>
-      ) : (
-        <div className="flex flex-col md:flex-row gap-6 mb-8">
-          <div className="flex-1 min-w-0">
-            <GameListDisplay sections={upcomingSections} emptyMessage="No upcoming games." />
-          </div>
-          <div className="flex-1 min-w-0">
-            <GameListDisplay
-              sections={completedSections}
-              emptyMessage="No completed games."
-              canEditRecap={canEditRecap}
-              onEditRecap={handleOpenEditRecap}
-              onViewRecap={handleOpenViewRecap}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Stats Leaders & Sponsors */}
-      <div className="flex flex-col md:flex-row gap-6 mb-8">
-        <div className="flex-1 min-w-0">
-          {shouldShowTeamSponsors && (
+        {shouldShowTeamSponsors ? (
+          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
             <SponsorCard
               sponsors={teamSponsors}
               title="Team Sponsors"
               emptyMessage={teamSponsorError ?? undefined}
             />
-          )}
-        </div>
-      </div>
-
-      {/* Community Section */}
-      <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,1fr)_auto] gap-6 mb-8">
-        <SurveySpotlightWidget
-          accountId={accountId}
-          teamSeasonId={teamSeasonId}
-          variant="card"
-          className="h-full"
-          icon={<Target className="h-5 w-5" />}
-          title="Player Survey Spotlight"
-          canAnswerSurvey={isAccountMember}
-        />
-      </div>
+          </Box>
+        ) : null}
+      </Box>
 
       {recapError && (
         <Alert

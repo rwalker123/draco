@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../../context/AuthContext';
+import ProtectedRoute from '../../../../../../components/auth/ProtectedRoute';
 import LeagueSeasonManagement from './LeagueSeasonManagement';
 
 export default function LeagueSeasonManagementClientWrapper() {
@@ -28,11 +29,13 @@ export default function LeagueSeasonManagementClientWrapper() {
   };
 
   return (
-    <LeagueSeasonManagement
-      accountId={accountIdStr}
-      season={season}
-      token={token || ''}
-      onClose={handleClose}
-    />
+    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+      <LeagueSeasonManagement
+        accountId={accountIdStr}
+        season={season}
+        token={token || ''}
+        onClose={handleClose}
+      />
+    </ProtectedRoute>
   );
 }

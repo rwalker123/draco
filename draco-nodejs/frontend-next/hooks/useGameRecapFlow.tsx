@@ -42,7 +42,7 @@ export interface RecapOption {
   recap?: string;
 }
 
-interface UseGameRecapFlowParams<GameType extends RecapGameBase> {
+export interface UseGameRecapFlowParams<GameType extends RecapGameBase> {
   accountId: string;
   seasonId?: string;
   resolveSeasonId?: (game: GameType) => string | null | undefined;
@@ -461,25 +461,8 @@ export function useGameRecapFlow<GameType extends RecapGameBase>(
         return;
       }
 
-      if (!game.hasGameRecap) {
-        const teamSeasonId = editableTeamIds[0];
-        openDialog(game, teamSeasonId, { readOnly: false });
-        return;
-      }
-
       try {
-        const availableRecaps = await fetchRecapsForBothTeams(game);
-
-        if (availableRecaps.length === 0) {
-          const teamSeasonId = editableTeamIds[0];
-          debugLog('openEditRecap:no-available-recaps', {
-            gameId: game.id,
-            fallbackTeamSeasonId: teamSeasonId,
-          });
-          openDialog(game, teamSeasonId, { readOnly: false });
-          return;
-        }
-
+        const availableRecaps = game.hasGameRecap ? await fetchRecapsForBothTeams(game) : [];
         const options = buildSelectionOptions(game, editableTeamIds, availableRecaps);
         debugLog('openEditRecap:options', {
           gameId: game.id,

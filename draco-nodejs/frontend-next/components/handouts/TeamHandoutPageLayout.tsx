@@ -24,6 +24,7 @@ interface TeamHandoutPageLayoutProps {
   title: string;
   breadcrumbHref?: string;
   breadcrumbLabel?: string;
+  currentLabel?: string;
   notAuthorized?: boolean;
   notAuthorizedMessage?: string;
   missingTeamMessage?: string;
@@ -39,6 +40,7 @@ const TeamHandoutPageLayout: React.FC<TeamHandoutPageLayoutProps> = ({
   title,
   breadcrumbHref,
   breadcrumbLabel = 'Team Overview',
+  currentLabel = 'Handouts',
   notAuthorized = false,
   notAuthorizedMessage = 'You do not have access to this team.',
   missingTeamMessage = 'Team details are unavailable at the moment.',
@@ -117,7 +119,7 @@ const TeamHandoutPageLayout: React.FC<TeamHandoutPageLayoutProps> = ({
               <MUILink component={NextLink} color="inherit" underline="hover" href={breadcrumbHref}>
                 {breadcrumbLabel}
               </MUILink>
-              <Typography color="text.primary">Handouts</Typography>
+              <Typography color="text.primary">{currentLabel}</Typography>
             </Breadcrumbs>
           </Box>
         ) : null}
