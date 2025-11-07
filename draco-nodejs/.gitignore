@@ -76,6 +76,7 @@ frontend-next/public/*
 !frontend-next/public/branding/
 frontend-next/public/branding/*
 !frontend-next/public/branding/default-sports-favicon.svg
+!frontend-next/public/robots.txt
 
 # Storybook build outputs
 .out
