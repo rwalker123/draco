@@ -30,7 +30,6 @@ import {
   listTeamSeasonGames as apiListTeamSeasonGames,
   type RecentGames,
 } from '@draco/shared-api-client';
-import HandoutSection from '@/components/handouts/HandoutSection';
 import CreatePlayersWantedDialog from '@/components/player-classifieds/CreatePlayersWantedDialog';
 import PendingPhotoSubmissionsPanel from '../../../../../../../components/photo-submissions/PendingPhotoSubmissionsPanel';
 import PhotoSubmissionPanel from '../../../../../../../components/photo-submissions/PhotoSubmissionPanel';
@@ -422,17 +421,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       hasRoleInTeam('TeamManager', teamSeasonId)
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
-
-  const teamHandoutScope = React.useMemo(() => {
-    if (!teamData?.teamId) {
-      return null;
-    }
-    return {
-      type: 'team' as const,
-      accountId,
-      teamId: teamData.teamId,
-    };
-  }, [accountId, teamData?.teamId]);
 
   const upcomingSections = React.useMemo(
     () => [{ title: 'Upcoming Games', games: upcomingGames }],
