@@ -14143,6 +14143,121 @@
         "title": "AnnouncementList",
         "description": "Collection wrapper for announcement responses"
       },
+      "AnnouncementSummary": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp string"
+          },
+          "isSpecial": {
+            "type": "boolean",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "account",
+              "team"
+            ],
+            "description": "Scope where the announcement is published"
+          }
+        },
+        "required": [
+          "title",
+          "publishedAt",
+          "id",
+          "accountId",
+          "visibility"
+        ],
+        "title": "AnnouncementSummary",
+        "description": "Announcement metadata without the body content."
+      },
+      "AnnouncementSummaryList": {
+        "type": "object",
+        "properties": {
+          "announcements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "publishedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "ISO 8601 timestamp string"
+                },
+                "isSpecial": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "visibility": {
+                  "type": "string",
+                  "enum": [
+                    "account",
+                    "team"
+                  ],
+                  "description": "Scope where the announcement is published"
+                }
+              },
+              "required": [
+                "title",
+                "publishedAt",
+                "id",
+                "accountId",
+                "visibility"
+              ],
+              "title": "AnnouncementSummary",
+              "description": "Announcement metadata without the body content."
+            }
+          }
+        },
+        "required": [
+          "announcements"
+        ],
+        "title": "AnnouncementSummaryList",
+        "description": "Collection wrapper for announcement summary responses."
+      },
       "UpsertAnnouncement": {
         "type": "object",
         "properties": {
@@ -20157,6 +20272,69 @@
         }
       }
     },
+    "/api/accounts/{accountId}/announcements/titles": {
+      "get": {
+        "summary": "List account announcement summaries",
+        "description": "Retrieve announcement metadata (id, title, publish date, and special flag) for an account.",
+        "operationId": "listAccountAnnouncementSummaries",
+        "tags": [
+          "Announcements"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 25
+            },
+            "description": "Maximum number of announcement summaries to return (default 10)."
+          },
+          {
+            "name": "includeSpecialOnly",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "When true, only announcements marked as special are included."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Announcement summaries for the specified account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementSummaryList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error while retrieving announcement summaries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/announcements": {
       "get": {
         "summary": "List account announcements",
@@ -20518,6 +20696,88 @@
           },
           "500": {
             "description": "Unexpected error deleting the announcement.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/announcements/titles": {
+      "get": {
+        "summary": "List team announcement summaries",
+        "description": "Retrieve announcement metadata (id, title, publish date, and special flag) for a team.",
+        "operationId": "listTeamAnnouncementSummaries",
+        "tags": [
+          "Announcements"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 25
+            },
+            "description": "Maximum number of announcement summaries to return (default 10)."
+          },
+          {
+            "name": "includeSpecialOnly",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "When true, only announcements marked as special are included."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team announcement summaries for the specified account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementSummaryList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error retrieving team announcement summaries.",
             "content": {
               "application/json": {
                 "schema": {

@@ -8,6 +8,7 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
   const {
     AnnouncementListSchemaRef,
     AnnouncementSchemaRef,
+    AnnouncementSummaryListSchemaRef,
     UpsertAnnouncementSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
@@ -36,6 +37,44 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
     required: true,
     schema: { type: 'string', format: 'number' } as const,
   };
+
+  const summaryQueryParameters: ParameterObject[] = [
+    {
+      name: 'limit',
+      in: 'query' as const,
+      required: false,
+      schema: { type: 'integer', minimum: 1, maximum: 25 },
+      description: 'Maximum number of announcement summaries to return (default 10).',
+    },
+    {
+      name: 'includeSpecialOnly',
+      in: 'query' as const,
+      required: false,
+      schema: { type: 'boolean' },
+      description: 'When true, only announcements marked as special are included.',
+    },
+  ];
+
+  registry.registerPath({
+    method: 'get',
+    path: `${PATH_PREFIX}/announcements/titles`,
+    summary: 'List account announcement summaries',
+    description:
+      'Retrieve announcement metadata (id, title, publish date, and special flag) for an account.',
+    operationId: 'listAccountAnnouncementSummaries',
+    tags: ['Announcements'],
+    parameters: [accountIdParameter, ...summaryQueryParameters],
+    responses: {
+      200: {
+        description: 'Announcement summaries for the specified account.',
+        content: { 'application/json': { schema: AnnouncementSummaryListSchemaRef } },
+      },
+      500: {
+        description: 'Unexpected error while retrieving announcement summaries.',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
 
   registry.registerPath({
     method: 'get',
@@ -196,6 +235,31 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
       },
       500: {
         description: 'Unexpected error deleting the announcement.',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: `${TEAM_PATH_PREFIX}/announcements/titles`,
+    summary: 'List team announcement summaries',
+    description:
+      'Retrieve announcement metadata (id, title, publish date, and special flag) for a team.',
+    operationId: 'listTeamAnnouncementSummaries',
+    tags: ['Announcements'],
+    parameters: [accountIdParameter, teamIdParameter, ...summaryQueryParameters],
+    responses: {
+      200: {
+        description: 'Team announcement summaries for the specified account.',
+        content: { 'application/json': { schema: AnnouncementSummaryListSchemaRef } },
+      },
+      404: {
+        description: 'Team not found for the account.',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Unexpected error retrieving team announcement summaries.',
         content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },

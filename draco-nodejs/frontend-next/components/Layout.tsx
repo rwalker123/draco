@@ -289,7 +289,11 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
           {/* Right side - User info and actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TopBarQuickActions accountId={accountId} canViewHandouts={isMember === true} />
+            <TopBarQuickActions
+              accountId={accountId}
+              canViewHandouts={isMember === true}
+              canViewAnnouncements={isMember === true}
+            />
             {user ? (
               <>
                 {greetingName && (

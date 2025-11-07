@@ -266,3 +266,5 @@ export function useTeamHandoutHeader({
 
   return { teamHeader, loading, error, notMember };
 }
+
+export { useTeamHandoutHeader as useTeamResourceHeader };

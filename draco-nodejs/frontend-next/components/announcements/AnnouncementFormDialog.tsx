@@ -13,6 +13,7 @@ import {
   Stack,
   Switch,
   TextField,
+  Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -26,6 +27,8 @@ import {
   ANNOUNCEMENT_TITLE_MAX_LENGTH,
   ANNOUNCEMENT_BODY_MAX_LENGTH,
 } from '@draco/shared-schemas';
+import RichTextEditor from '../email/RichTextEditor';
+import { sanitizeDisplayText, sanitizeRichContent } from '../../utils/sanitization';
 
 const AnnouncementFormSchema = z.object({
   title: z
@@ -90,45 +93,86 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
     ),
     defaultValues: createDefaultValues(),
   });
+  const editorRef = React.useRef<{
+    getCurrentContent: () => string;
+    getTextContent: () => string;
+    insertText: (text: string) => void;
+  } | null>(null);
+  const [editorInitialValue, setEditorInitialValue] = React.useState<string>('');
+  const [plainTextLength, setPlainTextLength] = React.useState<number>(0);
+  const [editorKey, setEditorKey] = React.useState<number>(0);
+
+  const computePlainTextLength = React.useCallback<(html: string) => number>((html) => {
+    return sanitizeDisplayText(html ?? '').trim().length;
+  }, []);
 
   React.useEffect(() => {
     if (!open) {
       reset(createDefaultValues());
+      setEditorInitialValue('');
+      setPlainTextLength(0);
+      setEditorKey((key) => key + 1);
       return;
     }
 
     if (mode === 'edit' && initialAnnouncement) {
       const publishedAt = new Date(initialAnnouncement.publishedAt);
       setValue('title', initialAnnouncement.title, { shouldDirty: false });
-      setValue('body', initialAnnouncement.body, { shouldDirty: false });
+      const sanitizedBody = sanitizeRichContent(initialAnnouncement.body ?? '');
+      setValue('body', sanitizedBody, { shouldDirty: false });
       setValue('publishedAt', Number.isNaN(publishedAt.getTime()) ? new Date() : publishedAt, {
         shouldDirty: false,
       });
       setValue('isSpecial', initialAnnouncement.isSpecial ?? false, { shouldDirty: false });
+      setEditorInitialValue(sanitizedBody);
+      setPlainTextLength(computePlainTextLength(sanitizedBody));
+      setEditorKey((key) => key + 1);
     } else {
       reset(createDefaultValues());
+      setEditorInitialValue('');
+      setPlainTextLength(0);
+      setEditorKey((key) => key + 1);
     }
-  }, [open, mode, initialAnnouncement, reset, setValue]);
+  }, [open, mode, initialAnnouncement, reset, setValue, computePlainTextLength]);
 
   const dialogTitle = mode === 'create' ? 'Create Announcement' : 'Edit Announcement';
 
   const submitHandler = handleSubmit(async (values) => {
     const payload: UpsertAnnouncementType = {
       title: values.title.trim(),
-      body: values.body.trim(),
+      body: values.body,
       publishedAt: values.publishedAt.toISOString(),
       isSpecial: Boolean(values.isSpecial),
     };
 
     await onSubmit(payload);
   });
+  const syncEditorContent = React.useCallback(() => {
+    if (!editorRef.current) {
+      return;
+    }
+    const sanitizedHtml = sanitizeRichContent(editorRef.current.getCurrentContent());
+    setValue('body', sanitizedHtml, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    setPlainTextLength(computePlainTextLength(sanitizedHtml));
+  }, [setValue, computePlainTextLength]);
+
+  const handleFormSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    syncEditorContent();
+    void submitHandler(event);
+  };
 
   const effectiveSubmitting = submitting || isSubmitting;
+  const bodyError = errors.body?.message as string | undefined;
+  const remainingCharacters = Math.max(0, ANNOUNCEMENT_BODY_MAX_LENGTH - plainTextLength);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ color: (theme) => theme.palette.text.primary }}>{dialogTitle}</DialogTitle>
-      <Box component="form" onSubmit={submitHandler} noValidate>
+      <Box component="form" onSubmit={handleFormSubmit} noValidate>
         <DialogContent dividers>
           {submitError ? (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -170,16 +214,28 @@ const AnnouncementFormDialog: React.FC<AnnouncementFormDialogProps> = ({
                 </LocalizationProvider>
               )}
             />
-            <TextField
-              {...register('body')}
-              label="Announcement Details"
-              fullWidth
-              multiline
-              minRows={4}
-              required
-              error={Boolean(errors.body)}
-              helperText={errors.body?.message ?? `${ANNOUNCEMENT_BODY_MAX_LENGTH} character limit`}
-            />
+            <TextField {...register('body')} type="hidden" />
+            <Stack spacing={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Announcement Details
+              </Typography>
+              <RichTextEditor
+                key={editorKey}
+                ref={editorRef}
+                initialValue={editorInitialValue}
+                onChange={(html) => {
+                  const sanitizedHtml = sanitizeRichContent(html);
+                  setPlainTextLength(computePlainTextLength(sanitizedHtml));
+                }}
+                minHeight={200}
+                placeholder="Share announcement details..."
+                disabled={effectiveSubmitting}
+                error={Boolean(bodyError)}
+              />
+              <Typography variant="caption" color={bodyError ? 'error.main' : 'text.secondary'}>
+                {bodyError ?? `${remainingCharacters} characters remaining`}
+              </Typography>
+            </Stack>
             <Controller
               name="isSpecial"
               control={control}

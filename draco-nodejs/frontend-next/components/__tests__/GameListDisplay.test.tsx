@@ -2,6 +2,8 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import GameListDisplay, { GameListSection, Game } from '../GameListDisplay';
 import { GameStatus } from '../../types/schedule';
+import { ThemeProvider } from '@mui/material/styles';
+import { dracoTheme } from '../../theme';
 
 // Mock the gameUtils module
 vi.mock('../../utils/gameUtils', () => ({
@@ -17,6 +19,10 @@ vi.mock('../../utils/gameUtils', () => ({
     return statusMap[status] || 'Unknown';
   }),
 }));
+
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(<ThemeProvider theme={dracoTheme}>{component}</ThemeProvider>);
+};
 
 const mockGame: Game = {
   id: '1',
@@ -46,7 +52,7 @@ const mockSections: GameListSection[] = [
 
 describe('GameListDisplay', () => {
   it('renders with vertical layout by default', () => {
-    render(<GameListDisplay sections={mockSections} />);
+    renderWithTheme(<GameListDisplay sections={mockSections} />);
 
     expect(screen.getByText('Test Section')).toBeInTheDocument();
     expect(screen.getByText('Home Team')).toBeInTheDocument();
@@ -56,7 +62,7 @@ describe('GameListDisplay', () => {
   });
 
   it('renders with horizontal layout when specified', () => {
-    render(<GameListDisplay sections={mockSections} layout="horizontal" />);
+    renderWithTheme(<GameListDisplay sections={mockSections} layout="horizontal" />);
 
     expect(screen.getByText('Test Section')).toBeInTheDocument();
     expect(screen.getByText('Home Team')).toBeInTheDocument();
@@ -73,7 +79,7 @@ describe('GameListDisplay', () => {
       },
     ];
 
-    render(<GameListDisplay sections={emptySections} emptyMessage="No games found" />);
+    renderWithTheme(<GameListDisplay sections={emptySections} emptyMessage="No games found" />);
 
     expect(screen.getByText('Empty Section')).toBeInTheDocument();
     expect(screen.getByText('No games found')).toBeInTheDocument();
@@ -95,11 +101,30 @@ describe('GameListDisplay', () => {
       },
     ];
 
-    render(<GameListDisplay sections={scheduledSections} />);
+    renderWithTheme(<GameListDisplay sections={scheduledSections} />);
 
     expect(screen.getByText('Scheduled Games')).toBeInTheDocument();
     expect(screen.getByText('Home Team')).toBeInTheDocument();
     expect(screen.getByText('Visitor Team')).toBeInTheDocument();
     expect(screen.getByText('TF')).toBeInTheDocument();
+  });
+
+  it('applies the provided timezone when formatting scheduled game times', () => {
+    const pacificGame: Game = {
+      ...mockGame,
+      gameStatus: GameStatus.Scheduled,
+      gameStatusText: 'Scheduled',
+    };
+
+    const pacificSections: GameListSection[] = [
+      {
+        title: 'Scheduled Games',
+        games: [pacificGame],
+      },
+    ];
+
+    renderWithTheme(<GameListDisplay sections={pacificSections} timeZone="America/Los_Angeles" />);
+
+    expect(screen.getByText('10:00 AM')).toBeInTheDocument();
   });
 });

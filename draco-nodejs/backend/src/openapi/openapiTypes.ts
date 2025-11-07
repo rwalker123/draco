@@ -686,6 +686,26 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const UpsertHandoutSchemaRef = registry.register('UpsertHandout', UpsertHandoutSchema);
   const AnnouncementSchemaRef = registry.register('Announcement', AnnouncementSchema);
   const AnnouncementListSchemaRef = registry.register('AnnouncementList', AnnouncementListSchema);
+  const AnnouncementSummarySchema = AnnouncementSchema.omit({ body: true }).openapi({
+    title: 'AnnouncementSummary',
+    description: 'Announcement metadata without the body content.',
+  });
+  const AnnouncementSummarySchemaRef = registry.register(
+    'AnnouncementSummary',
+    AnnouncementSummarySchema,
+  );
+  const AnnouncementSummaryListSchema = z
+    .object({
+      announcements: AnnouncementSummarySchema.array(),
+    })
+    .openapi({
+      title: 'AnnouncementSummaryList',
+      description: 'Collection wrapper for announcement summary responses.',
+    });
+  const AnnouncementSummaryListSchemaRef = registry.register(
+    'AnnouncementSummaryList',
+    AnnouncementSummaryListSchema,
+  );
   const UpsertAnnouncementSchemaRef = registry.register(
     'UpsertAnnouncement',
     UpsertAnnouncementSchema,
@@ -940,6 +960,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpsertHandoutSchemaRef,
     AnnouncementSchemaRef,
     AnnouncementListSchemaRef,
+    AnnouncementSummarySchemaRef,
+    AnnouncementSummaryListSchemaRef,
     UpsertAnnouncementSchemaRef,
     CreatePhotoGalleryPhotoSchemaRef,
     UpdatePhotoGalleryPhotoSchemaRef,

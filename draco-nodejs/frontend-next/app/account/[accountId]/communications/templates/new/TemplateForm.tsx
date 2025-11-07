@@ -22,7 +22,6 @@ import {
   Description as TemplateIcon,
 } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
-import ProtectedRoute from '../../../../../../components/auth/ProtectedRoute';
 import { createEmailService } from '../../../../../../services/emailService';
 import { useAuth } from '../../../../../../context/AuthContext';
 import { useApiClient } from '../../../../../../hooks/useApiClient';
@@ -291,209 +290,200 @@ export default function TemplateForm({ mode, templateId }: TemplateFormProps) {
   // Show loading state while template is being loaded for edit mode
   if (templateLoading) {
     return (
-      <ProtectedRoute requiredRole={['ContactAdmin', 'AccountAdmin']} checkAccountBoundary={true}>
-        <main className="min-h-screen bg-background">
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '50vh',
-              gap: 2,
-            }}
-          >
-            <LinearProgress sx={{ width: '200px' }} />
-            <Typography variant="body1" color="text.secondary">
-              Loading template...
-            </Typography>
-          </Box>
-        </main>
-      </ProtectedRoute>
+      <main className="min-h-screen bg-background">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+            gap: 2,
+          }}
+        >
+          <LinearProgress sx={{ width: '200px' }} />
+          <Typography variant="body1" color="text.secondary">
+            Loading template...
+          </Typography>
+        </Box>
+      </main>
     );
   }
 
   return (
-    <ProtectedRoute requiredRole={['ContactAdmin', 'AccountAdmin']} checkAccountBoundary={true}>
-      <main className="min-h-screen bg-background">
-        <Box sx={{ p: 3 }}>
-          {/* Header with breadcrumbs and actions */}
-          <Box sx={{ mb: 3 }}>
-            <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
-              Back to Templates
-            </Button>
+    <main className="min-h-screen bg-background">
+      <Box sx={{ p: 3 }}>
+        {/* Header with breadcrumbs and actions */}
+        <Box sx={{ mb: 3 }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
+            Back to Templates
+          </Button>
 
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-              <Link
-                color="inherit"
-                href={`/account/${accountId}/home`}
-                sx={{ display: 'flex', alignItems: 'center' }}
-              >
-                <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-                Home
-              </Link>
-              <Link
-                color="inherit"
-                href={`/account/${accountId}/communications`}
-                sx={{ display: 'flex', alignItems: 'center' }}
-              >
-                <EmailIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-                Communications
-              </Link>
-              <Link
-                color="inherit"
-                href={`/account/${accountId}/communications/templates`}
-                sx={{ display: 'flex', alignItems: 'center' }}
-              >
-                <TemplateIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-                Templates
-              </Link>
-              <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
-                {mode === 'create' ? 'Create New Template' : 'Edit Template'}
-              </Typography>
-            </Breadcrumbs>
-
-            <Box
-              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+            <Link
+              color="inherit"
+              href={`/account/${accountId}/home`}
+              sx={{ display: 'flex', alignItems: 'center' }}
             >
-              <Typography variant="h4" component="h1">
-                {mode === 'create' ? 'Create Email Template' : 'Edit Email Template'}
-              </Typography>
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  onClick={handleCancel}
-                  disabled={loading}
-                  startIcon={<CancelIcon />}
-                  variant="outlined"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  variant="contained"
-                  disabled={loading || !formData.name.trim()}
-                  startIcon={<SaveIcon />}
-                >
-                  {mode === 'create' ? 'Create Template' : 'Save Changes'}
-                </Button>
-              </Box>
-            </Box>
-
-            <Typography variant="body1" color="text.secondary">
-              {mode === 'create'
-                ? 'Create a reusable email template with variable substitution for consistent communication.'
-                : 'Edit your email template. Changes will be saved when you click Save Changes.'}
+              <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+              Home
+            </Link>
+            <Link
+              color="inherit"
+              href={`/account/${accountId}/communications`}
+              sx={{ display: 'flex', alignItems: 'center' }}
+            >
+              <EmailIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+              Communications
+            </Link>
+            <Link
+              color="inherit"
+              href={`/account/${accountId}/communications/templates`}
+              sx={{ display: 'flex', alignItems: 'center' }}
+            >
+              <TemplateIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+              Templates
+            </Link>
+            <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+              {mode === 'create' ? 'Create New Template' : 'Edit Template'}
             </Typography>
+          </Breadcrumbs>
+
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
+            <Typography variant="h4" component="h1">
+              {mode === 'create' ? 'Create Email Template' : 'Edit Email Template'}
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                onClick={handleCancel}
+                disabled={loading}
+                startIcon={<CancelIcon />}
+                variant="outlined"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                variant="contained"
+                disabled={loading || !formData.name.trim()}
+                startIcon={<SaveIcon />}
+              >
+                {mode === 'create' ? 'Create Template' : 'Save Changes'}
+              </Button>
+            </Box>
           </Box>
 
-          {(loading || templateLoading) && <LinearProgress sx={{ mb: 2 }} />}
+          <Typography variant="body1" color="text.secondary">
+            {mode === 'create'
+              ? 'Create a reusable email template with variable substitution for consistent communication.'
+              : 'Edit your email template. Changes will be saved when you click Save Changes.'}
+          </Typography>
+        </Box>
 
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
+        {(loading || templateLoading) && <LinearProgress sx={{ mb: 2 }} />}
 
-          {/* Main content card */}
-          <Card>
-            <CardContent sx={{ p: 3 }}>
-              {/* Basic Information */}
-              <Box sx={{ mb: 3 }}>
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Main content card */}
+        <Card>
+          <CardContent sx={{ p: 3 }}>
+            {/* Basic Information */}
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                label="Template Name"
+                value={formData.name}
+                onChange={handleInputChange('name')}
+                error={!!errors.name}
+                helperText={errors.name}
+                fullWidth
+                required
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                label="Description (Optional)"
+                value={formData.description}
+                onChange={handleInputChange('description')}
+                multiline
+                rows={2}
+                fullWidth
+              />
+            </Box>
+
+            {/* Template Content Tabs */}
+            <Box sx={{ flexGrow: 1 }}>
+              <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 2 }}>
+                <Tab label="Subject" />
+                <Tab label="Content" />
+              </Tabs>
+
+              <TabPanel value={activeTab} index={0}>
                 <TextField
-                  label="Template Name"
-                  value={formData.name}
-                  onChange={handleInputChange('name')}
-                  error={!!errors.name}
-                  helperText={errors.name}
-                  fullWidth
-                  required
-                  sx={{ mb: 2 }}
-                />
-
-                <TextField
-                  label="Description (Optional)"
-                  value={formData.description}
-                  onChange={handleInputChange('description')}
+                  label="Subject Template (Optional)"
+                  value={formData.subjectTemplate}
+                  onChange={handleInputChange('subjectTemplate')}
+                  placeholder="Enter subject template with variables like {{firstName}} or {{teamName}}"
                   multiline
                   rows={2}
                   fullWidth
+                  helperText="Use {{variableName}} for dynamic content"
+                  inputRef={subjectTextFieldRef}
                 />
-              </Box>
+              </TabPanel>
 
-              {/* Template Content Tabs */}
-              <Box sx={{ flexGrow: 1 }}>
-                <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 2 }}>
-                  <Tab label="Subject" />
-                  <Tab label="Content" />
-                </Tabs>
-
-                <TabPanel value={activeTab} index={0}>
-                  <TextField
-                    label="Subject Template (Optional)"
-                    value={formData.subjectTemplate}
-                    onChange={handleInputChange('subjectTemplate')}
-                    placeholder="Enter subject template with variables like {{firstName}} or {{teamName}}"
-                    multiline
-                    rows={2}
-                    fullWidth
-                    helperText="Use {{variableName}} for dynamic content"
-                    inputRef={subjectTextFieldRef}
+              <TabPanel value={activeTab} index={1}>
+                <Box sx={{ height: 400, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <TemplateRichTextEditor
+                    ref={editorRef}
+                    content={formData.bodyTemplate}
+                    placeholder="Enter your email template content here..."
+                    error={!!errors.bodyTemplate}
+                    helperText={errors.bodyTemplate}
                   />
-                </TabPanel>
-
-                <TabPanel value={activeTab} index={1}>
-                  <Box sx={{ height: 400, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                    <TemplateRichTextEditor
-                      ref={editorRef}
-                      content={formData.bodyTemplate}
-                      placeholder="Enter your email template content here..."
-                      error={!!errors.bodyTemplate}
-                      helperText={errors.bodyTemplate}
-                    />
-                  </Box>
-                </TabPanel>
-              </Box>
-
-              {/* Template Variables - Always Visible */}
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Template Variables
-                  <Typography
-                    component="span"
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ ml: 1 }}
-                  >
-                    (Click to insert into {activeTab === 0 ? 'Subject' : 'Content'})
-                  </Typography>
-                </Typography>
-                <VariableInsertionHelper
-                  onInsert={(variable) =>
-                    handleVariableInsert(variable, activeTab === 0 ? 'subject' : 'body')
-                  }
-                />
-              </Box>
-
-              {/* Variable Preview */}
-              {(formData.subjectTemplate || formData.bodyTemplate) && (
-                <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Variables found:{' '}
-                    {[
-                      ...(formData.subjectTemplate.match(/\{\{[^}]+\}\}/g) || []),
-                      ...(formData.bodyTemplate.match(/\{\{[^}]+\}\}/g) || []),
-                    ]
-                      .map((v) => v.replace(/[{}]/g, '').trim())
-                      .filter((v, i, arr) => arr.indexOf(v) === i)
-                      .join(', ')}
-                  </Typography>
                 </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Box>
-      </main>
-    </ProtectedRoute>
+              </TabPanel>
+            </Box>
+
+            {/* Template Variables - Always Visible */}
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Template Variables
+                <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                  (Click to insert into {activeTab === 0 ? 'Subject' : 'Content'})
+                </Typography>
+              </Typography>
+              <VariableInsertionHelper
+                onInsert={(variable) =>
+                  handleVariableInsert(variable, activeTab === 0 ? 'subject' : 'body')
+                }
+              />
+            </Box>
+
+            {/* Variable Preview */}
+            {(formData.subjectTemplate || formData.bodyTemplate) && (
+              <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Variables found:{' '}
+                  {[
+                    ...(formData.subjectTemplate.match(/\{\{[^}]+\}\}/g) || []),
+                    ...(formData.bodyTemplate.match(/\{\{[^}]+\}\}/g) || []),
+                  ]
+                    .map((v) => v.replace(/[{}]/g, '').trim())
+                    .filter((v, i, arr) => arr.indexOf(v) === i)
+                    .join(', ')}
+                </Typography>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
+    </main>
   );
 }

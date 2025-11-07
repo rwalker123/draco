@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Box, Typography, Button, Alert, CircularProgress, Container, Chip } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Container, Chip, Typography } from '@mui/material';
 import { Group as GroupIcon, LocationOn as LocationIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
@@ -15,6 +15,7 @@ import AccountPollsCard from '../../../components/polls/AccountPollsCard';
 import { SponsorService } from '../../../services/sponsorService';
 import SponsorCard from '../../../components/sponsors/SponsorCard';
 import LeadersWidget from '../../../components/statistics/LeadersWidget';
+import { AnnouncementService } from '../../../services/announcementService';
 import {
   getAccountById,
   getAccountUserTeams,
@@ -28,6 +29,7 @@ import {
   AccountType,
   SponsorType,
   LeagueSeasonWithDivisionTeamsAndUnassignedType,
+  AnnouncementType,
 } from '@draco/shared-schemas';
 import TodaysBirthdaysCard from '@/components/birthdays/TodaysBirthdaysCard';
 import PendingPhotoSubmissionsPanel from '@/components/photo-submissions/PendingPhotoSubmissionsPanel';
@@ -42,6 +44,18 @@ import { mapLeagueSetup } from '../../../utils/leagueSeasonMapper';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import HofNominationWidget from '@/components/hall-of-fame/HofNominationWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
+import SpecialAnnouncementsWidget, {
+  type SpecialAnnouncementCard,
+} from '@/components/announcements/SpecialAnnouncementsWidget';
+
+interface TeamAnnouncementSection {
+  teamId: string;
+  teamSeasonId?: string | null;
+  seasonId?: string | null;
+  leagueName?: string;
+  teamName: string;
+  announcements: AnnouncementType[];
+}
 
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -52,12 +66,22 @@ const BaseballAccountHome: React.FC = () => {
   const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
   const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
   const [sponsorError, setSponsorError] = useState<string | null>(null);
+  const [accountAnnouncements, setAccountAnnouncements] = useState<AnnouncementType[]>([]);
+  const [accountAnnouncementsLoading, setAccountAnnouncementsLoading] = useState(false);
+  const [accountAnnouncementsError, setAccountAnnouncementsError] = useState<string | null>(null);
+  const [teamAnnouncements, setTeamAnnouncements] = useState<TeamAnnouncementSection[]>([]);
+  const [teamAnnouncementsLoading, setTeamAnnouncementsLoading] = useState(false);
+  const [teamAnnouncementsError, setTeamAnnouncementsError] = useState<string | null>(null);
   const { user, token } = useAuth();
   const { hasRole, hasRoleInAccount } = useRole();
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const apiClient = useApiClient();
+  const announcementService = useMemo(
+    () => new AnnouncementService(token, apiClient),
+    [token, apiClient],
+  );
   const {
     isMember,
     loading: membershipLoading,
@@ -80,6 +104,46 @@ const BaseballAccountHome: React.FC = () => {
       hasRoleInAccount('AccountPhotoAdmin', accountIdStr)
     );
   }, [accountIdStr, hasRole, hasRoleInAccount]);
+
+  const specialAnnouncements = useMemo<SpecialAnnouncementCard[]>(() => {
+    const accountLabel = account?.name ? `${account.name} Announcement` : 'Account Announcement';
+    const accountSpecial = accountAnnouncements
+      .filter((item) => item.isSpecial)
+      .map<SpecialAnnouncementCard>((item) => ({
+        id: item.id,
+        title: item.title,
+        publishedAt: item.publishedAt,
+        body: item.body,
+        accountId: item.accountId,
+        teamId: item.teamId,
+        visibility: item.visibility,
+        sourceLabel: accountLabel,
+      }));
+
+    const teamSpecial = teamAnnouncements.flatMap((section) => {
+      const leagueHeading =
+        section.leagueName && section.leagueName !== 'Unknown League' ? section.leagueName : null;
+      const heading = leagueHeading ? `${leagueHeading} ${section.teamName}` : section.teamName;
+
+      return section.announcements
+        .filter((item) => item.isSpecial)
+        .map<SpecialAnnouncementCard>((item) => ({
+          id: item.id,
+          title: item.title,
+          publishedAt: item.publishedAt,
+          body: item.body,
+          accountId: item.accountId,
+          teamId: item.teamId,
+          visibility: item.visibility,
+          sourceLabel: `${section.teamName} Announcement`,
+          heading,
+        }));
+    });
+
+    return [...accountSpecial, ...teamSpecial].sort(
+      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+    );
+  }, [accountAnnouncements, teamAnnouncements, account]);
 
   const shouldShowPendingPanel = Boolean(token && canModerateAccountPhotos && accountIdStr);
   const {
@@ -406,6 +470,50 @@ const BaseballAccountHome: React.FC = () => {
   }, [accountIdStr, apiClient]);
 
   useEffect(() => {
+    if (!accountIdStr || !isAccountMember) {
+      setAccountAnnouncements([]);
+      setAccountAnnouncementsError(null);
+      setAccountAnnouncementsLoading(false);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchAnnouncements = async () => {
+      setAccountAnnouncementsLoading(true);
+      setAccountAnnouncementsError(null);
+
+      try {
+        const data = await announcementService.listAccountAnnouncements(accountIdStr);
+
+        if (ignore) {
+          return;
+        }
+
+        setAccountAnnouncements(data);
+      } catch (err) {
+        if (ignore) {
+          return;
+        }
+
+        const message = err instanceof Error ? err.message : 'Failed to load account announcements';
+        setAccountAnnouncementsError(message);
+        setAccountAnnouncements([]);
+      } finally {
+        if (!ignore) {
+          setAccountAnnouncementsLoading(false);
+        }
+      }
+    };
+
+    void fetchAnnouncements();
+
+    return () => {
+      ignore = true;
+    };
+  }, [accountIdStr, announcementService, isAccountMember]);
+
+  useEffect(() => {
     if (!accountIdStr || !currentSeason?.id) {
       setSeasonTeamIds(null);
       setSeasonLeagueHierarchy([]);
@@ -513,6 +621,100 @@ const BaseballAccountHome: React.FC = () => {
       ignore = true;
     };
   }, [accountIdStr, user, token, apiClient]);
+
+  useEffect(() => {
+    if (!accountIdStr || !isAccountMember) {
+      setTeamAnnouncements([]);
+      setTeamAnnouncementsError(null);
+      setTeamAnnouncementsLoading(false);
+      return;
+    }
+
+    if (userTeams.length === 0) {
+      setTeamAnnouncements([]);
+      setTeamAnnouncementsError(null);
+      setTeamAnnouncementsLoading(false);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchTeamAnnouncements = async () => {
+      setTeamAnnouncementsLoading(true);
+      setTeamAnnouncementsError(null);
+
+      try {
+        const errors: string[] = [];
+
+        const sections = await Promise.all(
+          userTeams
+            .filter((team) => team.teamId)
+            .map(async (team) => {
+              try {
+                const data = await announcementService.listTeamAnnouncements({
+                  accountId: accountIdStr,
+                  teamId: team.teamId!,
+                });
+
+                return {
+                  teamId: team.teamId!,
+                  teamSeasonId: team.id,
+                  seasonId: null,
+                  leagueName: team.leagueName,
+                  teamName: team.name,
+                  announcements: data,
+                } as TeamAnnouncementSection;
+              } catch (error) {
+                console.warn(
+                  `Failed to load announcements for team ${team.name} (${team.teamId}) in account ${accountIdStr}:`,
+                  error,
+                );
+                errors.push(team.name);
+                return {
+                  teamId: team.teamId ?? team.id,
+                  teamSeasonId: team.id,
+                  seasonId: null,
+                  leagueName: team.leagueName,
+                  teamName: team.name,
+                  announcements: [],
+                } as TeamAnnouncementSection;
+              }
+            }),
+        );
+
+        if (ignore) {
+          return;
+        }
+
+        setTeamAnnouncements(sections);
+        if (errors.length > 0) {
+          setTeamAnnouncementsError(
+            `Failed to load announcements for ${errors.join(', ')}. Please try again.`,
+          );
+        } else {
+          setTeamAnnouncementsError(null);
+        }
+      } catch (err) {
+        if (ignore) {
+          return;
+        }
+
+        const message = err instanceof Error ? err.message : 'Failed to load team announcements';
+        setTeamAnnouncementsError(message);
+        setTeamAnnouncements([]);
+      } finally {
+        if (!ignore) {
+          setTeamAnnouncementsLoading(false);
+        }
+      }
+    };
+
+    void fetchTeamAnnouncements();
+
+    return () => {
+      ignore = true;
+    };
+  }, [accountIdStr, announcementService, isAccountMember, userTeams]);
 
   useEffect(() => {
     if (!accountIdStr) return;
@@ -676,6 +878,18 @@ const BaseballAccountHome: React.FC = () => {
           token={token || undefined}
           isAccountMember={isAccountMember}
         />
+
+        {isAccountMember ? (
+          <Box sx={{ mt: 3 }}>
+            <SpecialAnnouncementsWidget
+              announcements={specialAnnouncements}
+              loading={accountAnnouncementsLoading || teamAnnouncementsLoading}
+              error={accountAnnouncementsError ?? teamAnnouncementsError}
+              viewAllHref={`/account/${accountIdStr}/announcements`}
+              showSourceLabels={false}
+            />
+          </Box>
+        ) : null}
 
         {/* Scoreboard Widgets */}
         {currentSeason && (

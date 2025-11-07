@@ -17,7 +17,7 @@ export default function TeamSponsorManagementClient() {
   }
 
   return (
-    <ProtectedRoute requiredPermission="team.sponsors.manage" checkAccountBoundary>
+    <ProtectedRoute requiredRole={['AccountAdmin', 'TeamAdmin']} checkAccountBoundary={true}>
       <TeamSponsorManagement
         accountId={accountId}
         seasonId={seasonId}

@@ -18,7 +18,6 @@ import {
   Description as TemplateIcon,
 } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
-import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
 import { createEmailService } from '../../../../../services/emailService';
 import { useAuth } from '../../../../../context/AuthContext';
 import { useApiClient } from '../../../../../hooks/useApiClient';
@@ -120,116 +119,110 @@ export default function EmailTemplates() {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredRole={['ContactAdmin', 'AccountAdmin']} checkAccountBoundary={true}>
-        <main className="min-h-screen bg-background">
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '50vh',
-              gap: 2,
-            }}
-          >
-            <CircularProgress size={48} />
-            <Typography variant="body1" color="text.secondary">
-              Loading email templates...
-            </Typography>
-          </Box>
-        </main>
-      </ProtectedRoute>
+      <main className="min-h-screen bg-background">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+            gap: 2,
+          }}
+        >
+          <CircularProgress size={48} />
+          <Typography variant="body1" color="text.secondary">
+            Loading email templates...
+          </Typography>
+        </Box>
+      </main>
     );
   }
 
   return (
-    <ProtectedRoute requiredRole={['ContactAdmin', 'AccountAdmin']} checkAccountBoundary={true}>
-      <main className="min-h-screen bg-background">
-        <Box sx={{ p: 3 }}>
-          <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
-            Back to Communications
-          </Button>
+    <main className="min-h-screen bg-background">
+      <Box sx={{ p: 3 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
+          Back to Communications
+        </Button>
 
-          <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
-          >
-            <Typography variant="h4" component="h1">
-              Email Templates
-            </Typography>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateTemplate}>
-              Create Template
-            </Button>
-          </Box>
-
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-            Create and manage reusable email templates with variable substitution for consistent
-            communication.
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h4" component="h1">
+            Email Templates
           </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-
-          {templates.length === 0 && !loading ? (
-            <Card sx={{ mt: 3 }}>
-              <CardContent sx={{ textAlign: 'center', py: 6 }}>
-                <TemplateIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  No Templates Created Yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Create your first email template to streamline your communications. Templates
-                  support variable substitution like {'{'}firstName{'}'} and {'{'}teamName{'}'}.
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleCreateTemplate}
-                  size="large"
-                >
-                  Create First Template
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <TemplateListView
-              templates={templates}
-              onEdit={handleEditTemplate}
-              onPreview={handlePreviewTemplate}
-              onDelete={openDeleteDialog}
-            />
-          )}
-
-          {/* Dialogs */}
-          {selectedTemplate && (
-            <TemplatePreviewDialog
-              open={previewDialogOpen}
-              onClose={handleDialogClose}
-              template={selectedTemplate}
-              accountId={accountId as string}
-            />
-          )}
-
-          {/* Delete Confirmation Dialog */}
-          <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel} maxWidth="sm" fullWidth>
-            <DialogTitle>Delete Email Template</DialogTitle>
-            <DialogContent>
-              <Typography>
-                Are you sure you want to delete the template &quot;{selectedTemplateForDelete?.name}
-                &quot;? This action cannot be undone.
-              </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleDeleteCancel}>Cancel</Button>
-              <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-                Delete
-              </Button>
-            </DialogActions>
-          </Dialog>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateTemplate}>
+            Create Template
+          </Button>
         </Box>
-      </main>
-    </ProtectedRoute>
+
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+          Create and manage reusable email templates with variable substitution for consistent
+          communication.
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {templates.length === 0 && !loading ? (
+          <Card sx={{ mt: 3 }}>
+            <CardContent sx={{ textAlign: 'center', py: 6 }}>
+              <TemplateIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                No Templates Created Yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Create your first email template to streamline your communications. Templates
+                support variable substitution like {'{'}firstName{'}'} and {'{'}teamName{'}'}.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreateTemplate}
+                size="large"
+              >
+                Create First Template
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <TemplateListView
+            templates={templates}
+            onEdit={handleEditTemplate}
+            onPreview={handlePreviewTemplate}
+            onDelete={openDeleteDialog}
+          />
+        )}
+
+        {/* Dialogs */}
+        {selectedTemplate && (
+          <TemplatePreviewDialog
+            open={previewDialogOpen}
+            onClose={handleDialogClose}
+            template={selectedTemplate}
+            accountId={accountId as string}
+          />
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel} maxWidth="sm" fullWidth>
+          <DialogTitle>Delete Email Template</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete the template &quot;{selectedTemplateForDelete?.name}
+              &quot;? This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel}>Cancel</Button>
+            <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </main>
   );
 }

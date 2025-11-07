@@ -6,6 +6,7 @@ import EnterGameResultsDialog, {
   GameResultsSuccessPayload,
 } from './EnterGameResultsDialog';
 import { useRole } from '../context/RoleContext';
+import { useAccountTimezone } from '../context/AccountContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameUtils';
 import { GameStatus } from '../types/schedule';
@@ -47,6 +48,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
   }>({ open: false, game: null });
 
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
+  const timeZone = useAccountTimezone();
   const { token } = useAuth();
   const canEditGames = isAccountAdministrator(hasRole, accountId);
 
@@ -305,6 +307,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         onEditRecap={handleOpenEditRecap}
         onViewRecap={handleOpenViewRecap}
         layout={layout}
+        timeZone={timeZone}
       />
       {canEditGames && (
         <EnterGameResultsDialog

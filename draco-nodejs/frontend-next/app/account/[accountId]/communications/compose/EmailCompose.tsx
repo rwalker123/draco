@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Box, Button, CircularProgress, Alert, Typography } from '@mui/material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import ProtectedRoute from '../../../../../components/auth/ProtectedRoute';
 
 import { EmailComposePage } from '../../../../../components/emails/compose';
 import { useEmailRecipients, useCurrentSeason } from '../../../../../hooks/useEmailRecipients';
@@ -80,76 +79,29 @@ export default function EmailCompose() {
   // Show loading state
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
-        <main className="min-h-screen bg-background">
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '50vh',
-              gap: 2,
-            }}
-          >
-            <CircularProgress size={48} />
-            <Typography variant="body1" color="text.secondary">
-              Loading email composer...
-            </Typography>
-          </Box>
-        </main>
-      </ProtectedRoute>
+      <main className="min-h-screen bg-background">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+            gap: 2,
+          }}
+        >
+          <CircularProgress size={48} />
+          <Typography variant="body1" color="text.secondary">
+            Loading email composer...
+          </Typography>
+        </Box>
+      </main>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
-        <main className="min-h-screen bg-background">
-          {/* Account Header */}
-          <AccountPageHeader accountId={accountId as string}>
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              sx={{ position: 'relative' }}
-            >
-              <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
-                <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
-                  Compose Email
-                </Typography>
-              </Box>
-            </Box>
-          </AccountPageHeader>
-
-          <Box sx={{ p: 3 }}>
-            <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
-              Back to Communications
-            </Button>
-
-            <Alert
-              severity="error"
-              action={
-                <Button size="small" onClick={refreshRecipients}>
-                  Retry
-                </Button>
-              }
-            >
-              <Typography variant="h6">Failed to Load</Typography>
-              <Typography variant="body2">
-                {typeof error === 'string' ? error : error?.userMessage || 'An error occurred'}
-              </Typography>
-            </Alert>
-          </Box>
-        </main>
-      </ProtectedRoute>
-    );
-  }
-
-  // Render the complete email compose interface
-  return (
-    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
       <main className="min-h-screen bg-background">
         {/* Account Header */}
         <AccountPageHeader accountId={accountId as string}>
@@ -167,26 +119,67 @@ export default function EmailCompose() {
           </Box>
         </AccountPageHeader>
 
-        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-          {/* Navigation Header */}
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-            <Button startIcon={<ArrowBackIcon />} onClick={handleBack} size="small" color="inherit">
-              Back to Communications
-            </Button>
-          </Box>
+        <Box sx={{ p: 3 }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
+            Back to Communications
+          </Button>
 
-          {/* Main Compose Interface */}
-          <Box sx={{ flex: 1 }}>
-            <EmailComposePage
-              accountId={accountId as string}
-              seasonId={currentSeason?.id}
-              initialData={initialData}
-              onSendComplete={handleSendComplete}
-              onCancel={handleCancel}
-            />
-          </Box>
+          <Alert
+            severity="error"
+            action={
+              <Button size="small" onClick={refreshRecipients}>
+                Retry
+              </Button>
+            }
+          >
+            <Typography variant="h6">Failed to Load</Typography>
+            <Typography variant="body2">
+              {typeof error === 'string' ? error : error?.userMessage || 'An error occurred'}
+            </Typography>
+          </Alert>
         </Box>
       </main>
-    </ProtectedRoute>
+    );
+  }
+
+  // Render the complete email compose interface
+  return (
+    <main className="min-h-screen bg-background">
+      {/* Account Header */}
+      <AccountPageHeader accountId={accountId as string}>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          sx={{ position: 'relative' }}
+        >
+          <Box sx={{ flex: 1, textAlign: 'center', mb: 2 }}>
+            <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold' }}>
+              Compose Email
+            </Typography>
+          </Box>
+        </Box>
+      </AccountPageHeader>
+
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Navigation Header */}
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Button startIcon={<ArrowBackIcon />} onClick={handleBack} size="small" color="inherit">
+            Back to Communications
+          </Button>
+        </Box>
+
+        {/* Main Compose Interface */}
+        <Box sx={{ flex: 1 }}>
+          <EmailComposePage
+            accountId={accountId as string}
+            seasonId={currentSeason?.id}
+            initialData={initialData}
+            onSendComplete={handleSendComplete}
+            onCancel={handleCancel}
+          />
+        </Box>
+      </Box>
+    </main>
   );
 }

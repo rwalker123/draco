@@ -230,6 +230,34 @@ describe('AnnouncementService', () => {
     ]);
   });
 
+  it('lists account announcement summaries with filters applied', async () => {
+    const specialDate = new Date('2024-06-05T15:30:00Z');
+    accountAnnouncements.unshift({
+      id: 2n,
+      accountid: accountId,
+      date: specialDate,
+      title: 'Special bulletin',
+      text: 'Important account announcement.',
+      specialannounce: true,
+    });
+
+    const result = await service.listAccountAnnouncementSummaries(accountId, {
+      includeSpecialOnly: true,
+      limit: 1,
+    });
+
+    expect(result).toEqual([
+      {
+        id: '2',
+        accountId: accountId.toString(),
+        title: 'Special bulletin',
+        publishedAt: specialDate.toISOString(),
+        isSpecial: true,
+        visibility: 'account',
+      },
+    ]);
+  });
+
   it('creates an account announcement with trimmed payload', async () => {
     const payload = {
       title: '  New Sponsor  ',
@@ -260,6 +288,36 @@ describe('AnnouncementService', () => {
     expect(result.isSpecial).toBe(false);
     const stored = teamAnnouncements.find((record) => record.id === 1n);
     expect(stored?.title).toBe('Updated practice schedule');
+  });
+
+  it('lists team announcement summaries with limit applied', async () => {
+    const latestDate = new Date('2024-06-03T18:00:00Z');
+    teamAnnouncements.unshift({
+      id: 2n,
+      teamid: teamId,
+      date: latestDate,
+      title: 'Lineup posted',
+      text: "Visit the portal for this week's lineup.",
+      specialannounce: false,
+      teams: {
+        id: teamId,
+        accountid: accountId,
+      },
+    });
+
+    const result = await service.listTeamAnnouncementSummaries(accountId, teamId, { limit: 1 });
+
+    expect(result).toEqual([
+      {
+        id: '2',
+        accountId: accountId.toString(),
+        teamId: teamId.toString(),
+        title: 'Lineup posted',
+        publishedAt: latestDate.toISOString(),
+        isSpecial: false,
+        visibility: 'team',
+      },
+    ]);
   });
 
   it('deletes a team announcement', async () => {

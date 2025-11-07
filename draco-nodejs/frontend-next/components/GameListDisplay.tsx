@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, Typography, Paper, IconButton as MuiIconButton } from '@mui/material';
+import { Box, Typography, IconButton as MuiIconButton } from '@mui/material';
 import EventIcon from '@mui/icons-material/Event';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import GameCard, { GameCardData } from './GameCard';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
+import WidgetShell, { type WidgetAccent } from './ui/WidgetShell';
 
 export interface GameRecap {
   teamId: string;
@@ -31,6 +32,7 @@ export interface GameListDisplayProps {
   onViewRecap?: (game: Game) => void;
   layout?: 'vertical' | 'horizontal';
   timeZone?: string;
+  accent?: WidgetAccent | 'none';
 }
 
 const GameListDisplay: React.FC<GameListDisplayProps> = ({
@@ -43,6 +45,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   onViewRecap,
   layout = 'vertical',
   timeZone = DEFAULT_TIMEZONE,
+  accent = 'warning',
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -90,122 +93,112 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   }, [layout, sections]);
 
   return (
-    <Paper
+    <WidgetShell
+      accent={accent}
+      disablePadding
       sx={{
-        p: 4,
         mb: 2,
-        borderRadius: 2,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
         minWidth: 0,
       }}
     >
-      {sections.map((section) => (
-        <Box key={section.title} mb={1.5}>
-          <Typography
-            variant="h5"
-            gutterBottom
-            sx={{
-              fontWeight: 'bold',
-              color: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              mb: 3,
-            }}
-          >
-            <EventIcon sx={{ color: 'warning.main' }} />
-            {section.title}
-          </Typography>
-          {section.games.length > 0 ? (
-            <Box sx={{ position: 'relative', width: '100%' }}>
-              {/* Navigation Buttons - Only show for horizontal layout */}
-              {layout === 'horizontal' && (
-                <>
-                  {canScrollLeft && (
-                    <MuiIconButton
-                      onClick={scrollLeft}
-                      sx={{
-                        position: 'absolute',
-                        left: -20,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        zIndex: 2,
-                        bgcolor: 'background.paper',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        '&:hover': {
+      <Box
+        sx={{
+          p: 4,
+        }}
+      >
+        {sections.map((section) => (
+          <Box key={section.title} mb={1.5}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{
+                fontWeight: 'bold',
+                color: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mb: 3,
+              }}
+            >
+              <EventIcon sx={{ color: 'warning.main' }} />
+              {section.title}
+            </Typography>
+            {section.games.length > 0 ? (
+              <Box sx={{ position: 'relative', width: '100%' }}>
+                {/* Navigation Buttons - Only show for horizontal layout */}
+                {layout === 'horizontal' && (
+                  <>
+                    {canScrollLeft && (
+                      <MuiIconButton
+                        onClick={scrollLeft}
+                        sx={{
+                          position: 'absolute',
+                          left: -20,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          zIndex: 2,
                           bgcolor: 'background.paper',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                        },
-                      }}
-                      size="small"
-                    >
-                      <ChevronLeftIcon />
-                    </MuiIconButton>
-                  )}
-                  {canScrollRight && (
-                    <MuiIconButton
-                      onClick={scrollRight}
-                      sx={{
-                        position: 'absolute',
-                        right: -20,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        zIndex: 2,
-                        bgcolor: 'background.paper',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        '&:hover': {
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          '&:hover': {
+                            bgcolor: 'background.paper',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                          },
+                        }}
+                        size="small"
+                      >
+                        <ChevronLeftIcon />
+                      </MuiIconButton>
+                    )}
+                    {canScrollRight && (
+                      <MuiIconButton
+                        onClick={scrollRight}
+                        sx={{
+                          position: 'absolute',
+                          right: -20,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          zIndex: 2,
                           bgcolor: 'background.paper',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                        },
-                      }}
-                      size="small"
-                    >
-                      <ChevronRightIcon />
-                    </MuiIconButton>
-                  )}
-                </>
-              )}
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          '&:hover': {
+                            bgcolor: 'background.paper',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                          },
+                        }}
+                        size="small"
+                      >
+                        <ChevronRightIcon />
+                      </MuiIconButton>
+                    )}
+                  </>
+                )}
 
-              <Box
-                ref={scrollContainerRef}
-                sx={{
-                  display: layout === 'horizontal' ? 'flex' : 'block',
-                  flexWrap: 'nowrap',
-                  gap: layout === 'horizontal' ? 2 : 0,
-                  overflowX: layout === 'horizontal' ? 'auto' : 'visible',
-                  overflowY: 'hidden',
-                  pb: layout === 'horizontal' ? 1 : 0,
-                  pt: layout === 'horizontal' ? 0.5 : 0,
-                  width: '100%',
-                  scrollBehavior: 'smooth',
-                  // Hide scrollbars but keep functionality
-                  '&::-webkit-scrollbar': {
-                    display: 'none',
-                  },
-                  scrollbarWidth: 'none', // Firefox
-                  msOverflowStyle: 'none', // IE/Edge
-                  // Touch scrolling improvements
-                  WebkitOverflowScrolling: 'touch',
-                }}
-              >
-                {layout === 'horizontal'
-                  ? section.games.map((game) => (
-                      <GameCard
-                        key={game.id}
-                        game={game}
-                        layout={layout}
-                        canEditGames={canEditGames}
-                        onEnterGameResults={onEnterGameResults}
-                        canEditRecap={canEditRecap}
-                        onEditRecap={onEditRecap}
-                        onViewRecap={onViewRecap}
-                        fitContent={true}
-                        timeZone={timeZone}
-                      />
-                    ))
-                  : section.games.map((game, index) => (
-                      <Box key={game.id} sx={{ mt: index === 0 ? 0.5 : 0 }}>
+                <Box
+                  ref={scrollContainerRef}
+                  sx={{
+                    display: layout === 'horizontal' ? 'flex' : 'block',
+                    flexWrap: 'nowrap',
+                    gap: layout === 'horizontal' ? 2 : 0,
+                    overflowX: layout === 'horizontal' ? 'auto' : 'visible',
+                    overflowY: 'hidden',
+                    pb: layout === 'horizontal' ? 1 : 0,
+                    pt: layout === 'horizontal' ? 0.5 : 0,
+                    width: '100%',
+                    scrollBehavior: 'smooth',
+                    // Hide scrollbars but keep functionality
+                    '&::-webkit-scrollbar': {
+                      display: 'none',
+                    },
+                    scrollbarWidth: 'none', // Firefox
+                    msOverflowStyle: 'none', // IE/Edge
+                    // Touch scrolling improvements
+                    WebkitOverflowScrolling: 'touch',
+                  }}
+                >
+                  {layout === 'horizontal'
+                    ? section.games.map((game) => (
                         <GameCard
+                          key={game.id}
                           game={game}
                           layout={layout}
                           canEditGames={canEditGames}
@@ -213,20 +206,35 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           canEditRecap={canEditRecap}
                           onEditRecap={onEditRecap}
                           onViewRecap={onViewRecap}
+                          fitContent={true}
                           timeZone={timeZone}
                         />
-                      </Box>
-                    ))}
+                      ))
+                    : section.games.map((game, index) => (
+                        <Box key={game.id} sx={{ mt: index === 0 ? 0.5 : 0 }}>
+                          <GameCard
+                            game={game}
+                            layout={layout}
+                            canEditGames={canEditGames}
+                            onEnterGameResults={onEnterGameResults}
+                            canEditRecap={canEditRecap}
+                            onEditRecap={onEditRecap}
+                            onViewRecap={onViewRecap}
+                            timeZone={timeZone}
+                          />
+                        </Box>
+                      ))}
+                </Box>
               </Box>
-            </Box>
-          ) : (
-            <Typography color="text.secondary" textAlign="center" mt={2}>
-              {emptyMessage}
-            </Typography>
-          )}
-        </Box>
-      ))}
-    </Paper>
+            ) : (
+              <Typography color="text.secondary" textAlign="center" mt={2}>
+                {emptyMessage}
+              </Typography>
+            )}
+          </Box>
+        ))}
+      </Box>
+    </WidgetShell>
   );
 };
 
