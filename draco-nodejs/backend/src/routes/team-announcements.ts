@@ -4,32 +4,11 @@ import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { parseAnnouncementSummaryOptions } from './utils/announcementSummaryOptions.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const announcementService = ServiceFactory.getAnnouncementService();
-const MAX_SUMMARY_LIMIT = 25;
-const DEFAULT_SUMMARY_LIMIT = 10;
-
-const parseSummaryOptions = (query: Request['query']) => {
-  const limitValue = Array.isArray(query.limit) ? query.limit[0] : query.limit;
-  const includeSpecialOnlyValue = Array.isArray(query.includeSpecialOnly)
-    ? query.includeSpecialOnly[0]
-    : query.includeSpecialOnly;
-
-  let limit: number | undefined;
-  if (typeof limitValue === 'string' && limitValue.trim().length > 0) {
-    const parsed = Number.parseInt(limitValue, 10);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      limit = Math.min(parsed, MAX_SUMMARY_LIMIT);
-    }
-  }
-
-  const includeSpecialOnly = includeSpecialOnlyValue === 'true';
-
-  return { limit: limit ?? DEFAULT_SUMMARY_LIMIT, includeSpecialOnly };
-};
-
 router.get(
   '/:teamId/announcements/titles',
   optionalAuth,
@@ -37,7 +16,7 @@ router.get(
     const { accountId } = extractAccountParams(req.params);
     const { teamId } = extractBigIntParams(req.params, 'teamId');
 
-    const summaryOptions = parseSummaryOptions(req.query);
+    const summaryOptions = parseAnnouncementSummaryOptions(req.query);
     const announcements = await announcementService.listTeamAnnouncementSummaries(
       accountId,
       teamId,
