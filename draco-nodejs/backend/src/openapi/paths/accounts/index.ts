@@ -17,7 +17,6 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     AccountSettingsStateListSchemaRef,
     AccountSettingStateSchemaRef,
     AccountSettingUpdateRequestSchemaRef,
-    AccountSettingKeySchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     CreateAccountSchemaRef,
