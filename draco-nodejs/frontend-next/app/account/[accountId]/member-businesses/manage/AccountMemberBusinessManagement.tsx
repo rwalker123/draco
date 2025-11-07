@@ -266,10 +266,6 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
                 </Stack>
               )}
             </WidgetShell>
-            <Typography variant="h5" component="h1" color="text.primary">
-              Registered Member Businesses
-            </Typography>
-
             {success && (
               <Alert severity="success" onClose={() => setSuccess(null)}>
                 {success}
@@ -282,72 +278,78 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
               </Alert>
             )}
 
-            {loading ? (
-              <Box display="flex" justifyContent="center" py={6}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <TableContainer component={Paper}>
-                <Table sx={{ tableLayout: 'auto' }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ whiteSpace: 'normal' }}>Name</TableCell>
-                      <TableCell sx={{ whiteSpace: 'normal' }}>Contact</TableCell>
-                      <TableCell sx={{ whiteSpace: 'normal' }}>Email</TableCell>
-                      <TableCell sx={{ whiteSpace: 'normal' }}>Phone</TableCell>
-                      <TableCell sx={{ whiteSpace: 'normal' }}>Website</TableCell>
-                      <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {memberBusinesses.map((business) => (
-                      <TableRow key={business.id} hover>
-                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                          {business.name}
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                          {contactDisplay[business.contactId] ?? business.contactId}
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                          {business.email || '—'}
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                          {business.phone || '—'}
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                          {business.website || '—'}
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            aria-label="edit"
-                            size="small"
-                            onClick={() => handleEdit(business)}
-                            color="primary"
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            aria-label="delete"
-                            size="small"
-                            onClick={() => handleDelete(business)}
-                            color="error"
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {memberBusinesses.length === 0 && (
+            <WidgetShell
+              title="Registered Member Businesses"
+              subtitle="Manage and review member-submitted listings."
+              accent="success"
+            >
+              {loading ? (
+                <Box display="flex" justifyContent="center" py={6}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table sx={{ tableLayout: 'auto' }}>
+                    <TableHead>
                       <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          No member businesses have been added yet.
-                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal' }}>Name</TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal' }}>Contact</TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal' }}>Email</TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal' }}>Phone</TableCell>
+                        <TableCell sx={{ whiteSpace: 'normal' }}>Website</TableCell>
+                        <TableCell align="right">Actions</TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
+                    </TableHead>
+                    <TableBody>
+                      {memberBusinesses.map((business) => (
+                        <TableRow key={business.id} hover>
+                          <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                            {business.name}
+                          </TableCell>
+                          <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                            {contactDisplay[business.contactId] ?? business.contactId}
+                          </TableCell>
+                          <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                            {business.email || '—'}
+                          </TableCell>
+                          <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                            {business.phone || '—'}
+                          </TableCell>
+                          <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                            {business.website || '—'}
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                              aria-label="edit"
+                              size="small"
+                              onClick={() => handleEdit(business)}
+                              color="primary"
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              aria-label="delete"
+                              size="small"
+                              onClick={() => handleDelete(business)}
+                              color="error"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {memberBusinesses.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center">
+                            No member businesses have been added yet.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </WidgetShell>
           </Stack>
         </Container>
       </main>
