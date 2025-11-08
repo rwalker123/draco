@@ -404,9 +404,9 @@ const ProfilePageClient: React.FC = () => {
 
   const contactSettingsPending = Boolean(currentAccountId) && accountSettingsLoading;
 
-  const allowContactInfoView = currentAccountId ? showContactInfoSetting === true : true;
+  const allowContactInfoView = currentAccountId ? showContactInfoSetting !== false : true;
   const allowContactEdit =
-    allowContactInfoView && (currentAccountId ? editContactInfoSetting === true : true);
+    allowContactInfoView && (currentAccountId ? editContactInfoSetting !== false : true);
   const hideContactDetails = Boolean(currentAccountId && !allowContactInfoView);
 
   useEffect(() => {
