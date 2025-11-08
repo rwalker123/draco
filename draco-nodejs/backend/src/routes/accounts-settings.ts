@@ -19,8 +19,21 @@ const accountsService = ServiceFactory.getAccountsService();
 const accountSettingsService = ServiceFactory.getAccountSettingsService();
 
 /**
+ * GET /api/accounts/:accountId/settings/public
+ * Publicly accessible account settings (read-only, no auth)
+ */
+router.get(
+  '/:accountId/settings/public',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const settings = await accountSettingsService.getAccountSettings(accountId);
+    res.json(settings);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/settings
- * Returns account-level feature toggle configuration + metadata
+ * Returns account-level feature toggle configuration + metadata (requires auth)
  */
 router.get(
   '/:accountId/settings',

@@ -89,6 +89,44 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
 
   registry.registerPath({
     method: 'get',
+    path: '/api/accounts/{accountId}/settings/public',
+    operationId: 'getAccountSettingsPublic',
+    summary: 'List public account feature settings',
+    description:
+      'Returns metadata and current values for account-level feature toggles without requiring authentication.',
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Account settings with metadata.',
+        content: {
+          'application/json': { schema: AccountSettingsStateListSchemaRef },
+        },
+      },
+      404: {
+        description: 'Account not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while retrieving account settings.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
     path: '/api/accounts/{accountId}/photo-gallery/photos',
     operationId: 'listAccountGalleryPhotosAdmin',
     summary: 'List gallery photos for administration',

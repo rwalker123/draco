@@ -20,6 +20,12 @@ export const AccountOptional: React.FC<AccountOptionalProps> = ({
   children,
   requireMatch = false,
 }) => {
+  const logDebug = (...args: unknown[]) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[AccountOptional]', ...args);
+    }
+  };
+
   const gate = getComponentGate(componentId);
   const effectiveAccountId = gate ? accountId : null;
   const { settings, loading } = useAccountSettings(effectiveAccountId);
@@ -40,22 +46,30 @@ export const AccountOptional: React.FC<AccountOptionalProps> = ({
 
   if (!gate) {
     if (requireMatch) {
-      console.warn(`AccountOptional: unknown componentId "${componentId}"`);
+      logDebug(`Unknown componentId "${componentId}" (allowing render)`);
     }
     return <>{children}</>;
   }
 
   if (loading && !settings) {
+    logDebug(`Waiting for settings for component "${componentId}"`, { accountId });
     return null;
   }
 
   if (!allowed) {
+    logDebug(`Component "${componentId}" hidden by gate`, {
+      accountId,
+      settingKey: gate.settingKey,
+      expectedValue: gate.expectedValue,
+    });
     if (gate.hiddenBehavior === 'notFound') {
+      logDebug(`Triggering notFound for "${componentId}"`);
       notFound();
     }
     return <>{fallback}</>;
   }
 
+  logDebug(`Component "${componentId}" allowed`, { accountId });
   return <>{children}</>;
 };
 

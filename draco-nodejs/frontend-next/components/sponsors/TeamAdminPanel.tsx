@@ -8,6 +8,7 @@ import Link from 'next/link';
 import DescriptionIcon from '@mui/icons-material/Description';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import WidgetShell from '../ui/WidgetShell';
+import AccountOptional from '../account/AccountOptional';
 
 interface TeamAdminPanelProps {
   accountId: string;
@@ -58,9 +59,11 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         }}
       >
         {shouldShowClassifiedsLink && (
-          <Typography variant="body2" color="text.secondary">
-            Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
-          </Typography>
+          <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
+            <Typography variant="body2" color="text.secondary">
+              Need reinforcements? Easily post a Players Wanted ad to recruit new talent.
+            </Typography>
+          </AccountOptional>
         )}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -101,16 +104,18 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
             </Button>
           )}
           {shouldShowClassifiedsLink && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<PersonSearchIcon />}
-              {...(onPostPlayersWanted
-                ? { onClick: onPostPlayersWanted }
-                : { component: Link, href: playerClassifiedsHref! })}
-            >
-              Post Players Wanted Ad
-            </Button>
+            <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<PersonSearchIcon />}
+                {...(onPostPlayersWanted
+                  ? { onClick: onPostPlayersWanted }
+                  : { component: Link, href: playerClassifiedsHref! })}
+              >
+                Post Players Wanted Ad
+              </Button>
+            </AccountOptional>
           )}
         </Stack>
       </Box>

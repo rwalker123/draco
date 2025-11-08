@@ -169,6 +169,18 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         displayName: 'Player Classified Navigation Link',
         expectedValue: true,
       },
+      {
+        id: 'home.playerClassified.widget',
+        type: 'widget',
+        displayName: 'Account Home Player Classified Widget',
+        expectedValue: true,
+      },
+      {
+        id: 'team.playerClassified.cta',
+        type: 'widget',
+        displayName: 'Team Page Player Classified CTA',
+        expectedValue: true,
+      },
     ],
   }),
   booleanSetting({

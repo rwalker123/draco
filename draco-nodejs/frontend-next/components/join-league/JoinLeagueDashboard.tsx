@@ -5,6 +5,7 @@ import PlayersWantedPreview from './PlayersWantedPreview';
 import ContactLeagueSection from './ContactLeagueSection';
 import { AccountType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
+import AccountOptional from '../account/AccountOptional';
 
 interface JoinLeagueDashboardProps {
   accountId: string;
@@ -47,17 +48,8 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
     >
       <Box
         sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            md: 'repeat(2, 1fr)',
-            lg: 'repeat(3, 1fr)',
-          },
-          gridTemplateRows: {
-            xs: 'auto auto auto',
-            md: 'auto auto',
-            lg: 'auto',
-          },
+          display: 'flex',
+          flexWrap: 'wrap',
           gap: 4,
         }}
       >
@@ -67,11 +59,13 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
           showViewAllWorkoutsButton={showViewAllWorkoutsButton}
           onViewAllWorkouts={onViewAllWorkouts}
         />
-        <PlayersWantedPreview
-          accountId={accountId}
-          maxDisplay={3}
-          isAccountMember={isAccountMember}
-        />
+        <AccountOptional accountId={accountId} componentId="home.playerClassified.widget">
+          <PlayersWantedPreview
+            accountId={accountId}
+            maxDisplay={3}
+            isAccountMember={isAccountMember}
+          />
+        </AccountOptional>
         <ContactLeagueSection account={account} />
       </Box>
     </WidgetShell>

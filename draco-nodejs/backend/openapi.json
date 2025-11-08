@@ -16747,6 +16747,59 @@
         }
       }
     },
+    "/api/accounts/{accountId}/settings/public": {
+      "get": {
+        "operationId": "getAccountSettingsPublic",
+        "summary": "List public account feature settings",
+        "description": "Returns metadata and current values for account-level feature toggles without requiring authentication.",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account settings with metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSettingsStateList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving account settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/photo-gallery/photos": {
       "get": {
         "operationId": "listAccountGalleryPhotosAdmin",
