@@ -205,9 +205,21 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         expectedValue: true,
       },
       {
+        id: 'profile.contactSurvey.link',
+        type: 'widget',
+        displayName: 'Contact Card Player Survey Shortcut',
+        expectedValue: true,
+      },
+      {
         id: 'team.playerInterview.widget',
         type: 'widget',
         displayName: 'Player Interview Widget',
+        expectedValue: true,
+      },
+      {
+        id: 'admin.playerSurvey.toggle',
+        type: 'widget',
+        displayName: 'Player Survey Availability Toggle',
         expectedValue: true,
       },
     ],

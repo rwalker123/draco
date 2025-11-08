@@ -15,6 +15,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
+import AccountOptional from '../account/AccountOptional';
 
 interface ContactInfoCardProps {
   contact: BaseContactType | null;
@@ -23,6 +24,7 @@ interface ContactInfoCardProps {
   accountName?: string;
   onEdit?: () => void;
   surveyHref?: string;
+  surveyAccountId?: string | null;
   infoMessage?: string | null;
 }
 
@@ -82,6 +84,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   accountName,
   onEdit,
   surveyHref,
+  surveyAccountId,
   infoMessage,
 }) => {
   const widgetShellSx = { p: 4 };
@@ -134,24 +137,29 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   const zip = contact.contactDetails?.zip || '';
   const dateOfBirth = contact.contactDetails?.dateOfBirth || '';
   const formattedDateOfBirth = formatDateOfBirth(dateOfBirth);
+  const surveyButton =
+    surveyHref && surveyAccountId ? (
+      <AccountOptional accountId={surveyAccountId} componentId="profile.contactSurvey.link">
+        <Tooltip title="Open player survey">
+          <Button
+            component={NextLink}
+            href={surveyHref}
+            variant="contained"
+            size="small"
+            color="primary"
+            data-testid="profile-contact-survey-link"
+            sx={{ minWidth: 36, px: 1 }}
+          >
+            <DescriptionIcon fontSize="small" />
+          </Button>
+        </Tooltip>
+      </AccountOptional>
+    ) : null;
+
   const actionButtons =
-    surveyHref || onEdit ? (
+    surveyButton || onEdit ? (
       <Stack direction="row" spacing={1}>
-        {surveyHref && (
-          <Tooltip title="Open player survey">
-            <Button
-              component={NextLink}
-              href={surveyHref}
-              variant="contained"
-              size="small"
-              color="primary"
-              data-testid="profile-contact-survey-link"
-              sx={{ minWidth: 36, px: 1 }}
-            >
-              <DescriptionIcon fontSize="small" />
-            </Button>
-          </Tooltip>
-        )}
+        {surveyButton}
         {onEdit && (
           <Tooltip title="Edit contact information">
             <Button

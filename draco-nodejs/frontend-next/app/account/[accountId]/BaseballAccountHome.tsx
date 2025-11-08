@@ -47,6 +47,7 @@ import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import SpecialAnnouncementsWidget, {
   type SpecialAnnouncementCard,
 } from '@/components/announcements/SpecialAnnouncementsWidget';
+import AccountOptional from '@/components/account/AccountOptional';
 
 interface TeamAnnouncementSection {
   teamId: string;
@@ -944,9 +945,14 @@ const BaseballAccountHome: React.FC = () => {
             </Box>
           ) : null}
           {accountIdStr ? (
-            <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
-              <SurveySpotlightWidget accountId={accountIdStr} canAnswerSurvey={hasAccountContact} />
-            </Box>
+            <AccountOptional accountId={accountIdStr} componentId="account.playerSurvey.widget">
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+                <SurveySpotlightWidget
+                  accountId={accountIdStr}
+                  canAnswerSurvey={hasAccountContact}
+                />
+              </Box>
+            </AccountOptional>
           ) : null}
           <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
             <TodaysBirthdaysCard

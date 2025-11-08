@@ -414,6 +414,7 @@ const ProfilePageClient: React.FC = () => {
               surveyHref={
                 currentAccount?.id ? `/account/${String(currentAccount.id)}/surveys` : undefined
               }
+              surveyAccountId={currentAccount?.id ? String(currentAccount.id) : null}
             />
             <AccountOptional
               accountId={currentAccount?.id ? String(currentAccount.id) : null}
