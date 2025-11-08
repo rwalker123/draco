@@ -223,6 +223,9 @@ export class AccountSettingsService {
     }
 
     const unmetRequirement = definition.requires.find((requirement: AccountSettingDependency) => {
+      // Only enforce dependencies when the setting is being moved to the value that
+      // explicitly requires another flag. For example: "EditContactInfo" only depends on
+      // "ShowContactInfo" when it is being turned on. Toggling it off should always be allowed.
       if (candidateValue !== requirement.value) {
         return false;
       }
