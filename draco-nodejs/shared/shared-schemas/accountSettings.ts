@@ -245,6 +245,12 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         displayName: 'Hall Of Fame Widget',
         expectedValue: true,
       },
+      {
+        id: 'admin.hallOfFame.toggle',
+        type: 'widget',
+        displayName: 'Hall Of Fame Availability Toggle',
+        expectedValue: true,
+      },
     ],
   }),
   booleanSetting({

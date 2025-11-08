@@ -39,8 +39,9 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { useHallOfFameService } from '@/hooks/useHallOfFameService';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import WidgetShell from '@/components/ui/WidgetShell';
 
-interface MembersTabProps {
+interface MembersWidgetProps {
   accountId: string;
   refreshKey: number;
   createRequestKey: number;
@@ -145,7 +146,11 @@ type UpdateMemberFormValues = UpdateHofMemberType;
 const defaultBiographyHint =
   'Share notable accomplishments, leadership qualities, or the impact this member has made.';
 
-const MembersTab: React.FC<MembersTabProps> = ({ accountId, refreshKey, createRequestKey }) => {
+const MembersWidget: React.FC<MembersWidgetProps> = ({
+  accountId,
+  refreshKey,
+  createRequestKey,
+}) => {
   const {
     fetchClasses,
     fetchClassMembers,
@@ -286,7 +291,11 @@ const MembersTab: React.FC<MembersTabProps> = ({ accountId, refreshKey, createRe
   ) : null;
 
   return (
-    <Box>
+    <WidgetShell
+      title="Inducted Members"
+      subtitle="Review classes and edit Hall of Fame inductees."
+      accent="primary"
+    >
       {state.error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {state.error}
@@ -297,10 +306,6 @@ const MembersTab: React.FC<MembersTabProps> = ({ accountId, refreshKey, createRe
           {actionError}
         </Alert>
       ) : null}
-
-      <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-        Inducted Members
-      </Typography>
 
       {state.classes.length > 0 ? (
         <Tabs
@@ -437,7 +442,7 @@ const MembersTab: React.FC<MembersTabProps> = ({ accountId, refreshKey, createRe
           onConfirm={() => handleDeleteMember(deleteMemberTarget)}
         />
       ) : null}
-    </Box>
+    </WidgetShell>
   );
 };
 
@@ -733,4 +738,4 @@ const DeleteMemberDialog: React.FC<DeleteMemberDialogProps> = ({
   );
 };
 
-export default MembersTab;
+export default MembersWidget;

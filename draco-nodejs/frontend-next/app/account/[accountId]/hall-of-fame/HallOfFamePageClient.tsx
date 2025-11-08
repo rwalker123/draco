@@ -2,6 +2,10 @@
 
 import HallOfFamePage from './HallOfFamePage';
 
-export default function HallOfFamePageClient() {
-  return <HallOfFamePage />;
+interface HallOfFamePageClientProps {
+  accountId: string;
+}
+
+export default function HallOfFamePageClient({ accountId }: HallOfFamePageClientProps) {
+  return <HallOfFamePage accountId={accountId} />;
 }

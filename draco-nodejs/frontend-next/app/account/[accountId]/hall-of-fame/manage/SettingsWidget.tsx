@@ -1,24 +1,16 @@
 'use client';
 
 import React from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  FormControlLabel,
-  Stack,
-  Switch,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, FormControlLabel, Stack, Switch, TextField } from '@mui/material';
 import { useHallOfFameService } from '@/hooks/useHallOfFameService';
 import { useNotifications } from '@/hooks/useNotifications';
+import WidgetShell from '@/components/ui/WidgetShell';
 
-interface SettingsTabProps {
+interface SettingsWidgetProps {
   accountId: string;
 }
 
-const SettingsTab: React.FC<SettingsTabProps> = ({ accountId }) => {
+const SettingsWidget: React.FC<SettingsWidgetProps> = ({ accountId }) => {
   const { getNominationSetup, updateNominationSetup } = useHallOfFameService(accountId);
   const { showNotification } = useNotifications();
 
@@ -72,11 +64,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ accountId }) => {
   };
 
   return (
-    <Box>
-      <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-        Nomination Settings
-      </Typography>
-
+    <WidgetShell
+      title="Nomination Settings"
+      subtitle="Control how the Hall of Fame nomination form behaves."
+      accent="info"
+    >
       {error ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -111,8 +103,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ accountId }) => {
           </Button>
         </Box>
       </Stack>
-    </Box>
+    </WidgetShell>
   );
 };
 
-export default SettingsTab;
+export default SettingsWidget;
