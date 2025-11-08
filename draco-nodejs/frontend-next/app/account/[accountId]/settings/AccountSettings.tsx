@@ -69,7 +69,9 @@ const AccountSettings: React.FC = () => {
     updatingKey,
     updateSetting,
     refetch: refreshSettings,
-  } = useAccountSettings(canManageAccountSettings ? accountIdStr : null);
+  } = useAccountSettings(canManageAccountSettings ? accountIdStr : null, {
+    requireManage: true,
+  });
 
   const loadAccountData = useCallback(async () => {
     try {

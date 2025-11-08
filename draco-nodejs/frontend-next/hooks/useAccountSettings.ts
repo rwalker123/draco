@@ -19,9 +19,14 @@ interface AccountSettingsState {
   updatingKey: AccountSettingKey | null;
 }
 
-export function useAccountSettings(accountId?: string | null) {
+interface UseAccountSettingsOptions {
+  requireManage?: boolean;
+}
+
+export function useAccountSettings(accountId?: string | null, options?: UseAccountSettingsOptions) {
   const { token } = useAuth();
   const apiClient = useApiClient();
+  const requireManage = options?.requireManage ?? false;
   const [state, setState] = useState<AccountSettingsState>({
     data: null,
     loading: Boolean(accountId),
@@ -30,7 +35,7 @@ export function useAccountSettings(accountId?: string | null) {
     updatingKey: null,
   });
 
-  const canRequest = Boolean(accountId && token);
+  const canRequest = requireManage && Boolean(accountId && token);
   const hasAccountContext = Boolean(accountId);
 
   const fetchSettings = useCallback(async (): Promise<void> => {

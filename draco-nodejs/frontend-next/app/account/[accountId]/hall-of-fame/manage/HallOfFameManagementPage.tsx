@@ -38,7 +38,7 @@ const HallOfFameManagementPage: React.FC<HallOfFameManagementPageProps> = ({ acc
     error: settingsError,
     updatingKey: settingsUpdatingKey,
     updateSetting,
-  } = useAccountSettings(accountId);
+  } = useAccountSettings(accountId, { requireManage: true });
   const hofSetting = React.useMemo(
     () => accountSettings?.find((setting) => setting.definition.key === 'ShowHOF'),
     [accountSettings],

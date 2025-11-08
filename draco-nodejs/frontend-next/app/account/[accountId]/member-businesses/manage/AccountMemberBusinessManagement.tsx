@@ -62,7 +62,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     error: settingsLoadError,
     updatingKey: settingUpdatingKey,
     updateSetting,
-  } = useAccountSettings(accountId);
+  } = useAccountSettings(accountId, { requireManage: true });
   const [memberBusinesses, setMemberBusinesses] = useState<MemberBusinessType[]>([]);
   const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const contactNamesRef = useRef<Record<string, string>>({});

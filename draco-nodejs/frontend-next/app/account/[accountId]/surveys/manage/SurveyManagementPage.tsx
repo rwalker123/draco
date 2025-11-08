@@ -34,7 +34,7 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
     error: settingsLoadError,
     updatingKey: settingUpdatingKey,
     updateSetting,
-  } = useAccountSettings(accountId);
+  } = useAccountSettings(accountId, { requireManage: true });
   const [categories, setCategories] = useState<PlayerSurveyCategoryType[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
