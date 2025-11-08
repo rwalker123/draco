@@ -299,7 +299,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       <>
         {canManageStats && !selectedGameId && (
           <Alert severity="info" sx={{ mt: 3 }}>
-            Select a completed game to enable inline editing management.
+            Select a completed game to enter statistics.
           </Alert>
         )}
 
