@@ -82,8 +82,6 @@ export function useAccountSettings(accountId?: string | null) {
   }, [accountId, apiClient, canRequest, hasAccountContext]);
 
   useEffect(() => {
-    let cancelled = false;
-
     const load = async () => {
       try {
         await fetchSettings();
@@ -92,13 +90,7 @@ export function useAccountSettings(accountId?: string | null) {
       }
     };
 
-    if (!cancelled) {
-      load();
-    }
-
-    return () => {
-      cancelled = true;
-    };
+    void load();
   }, [fetchSettings]);
 
   const updateSetting = useCallback(
