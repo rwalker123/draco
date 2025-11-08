@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../../../../../../../../context/AuthContext';
 import { useRole } from '../../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../../hooks/useApiClient';
+import { useAccountSettings } from '../../../../../../../../hooks/useAccountSettings';
 import AccountPageHeader from '../../../../../../../../components/AccountPageHeader';
 import TeamAvatar from '../../../../../../../../components/TeamAvatar';
 import TeamInfoCard from '../../../../../../../../components/TeamInfoCard';
@@ -267,6 +268,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const { token } = useAuth();
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const apiClient = useApiClient();
+  const { settings: accountSettings } = useAccountSettings(accountId);
 
   const statsService = useMemo(
     () => new TeamStatsEntryService(token, apiClient),
@@ -280,6 +282,14 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       hasRoleInTeam('TeamAdmin', teamSeasonId),
     [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId],
   );
+
+  const trackGamesPlayedEnabled = useMemo(() => {
+    if (!accountSettings) {
+      return true;
+    }
+    const state = accountSettings.find((setting) => setting.definition.key === 'TrackGamesPlayed');
+    return Boolean(state?.effectiveValue ?? state?.value);
+  }, [accountSettings]);
 
   const [teamHeaderData, setTeamHeaderData] = useState<{
     teamName: string;
@@ -509,6 +519,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
 
       const { forceRefresh = false } = options ?? {};
       const cached = cachedGameStatsRef.current.get(gameId);
+      const shouldLoadAttendance = trackGamesPlayedEnabled && canManageStats;
 
       if (!forceRefresh && cached) {
         applyCachedGameStats(cached);
@@ -517,7 +528,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
 
       setStatsLoading(true);
       setStatsError(null);
-      if (canManageStats) {
+      if (shouldLoadAttendance) {
         setAttendanceLoading(true);
         setAttendanceError(null);
       } else {
@@ -546,7 +557,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         let attendanceData: GameAttendanceType | null = null;
         let attendanceSelectionData = Array.from(lockedRosterIdsForGame);
 
-        if (canManageStats) {
+        if (shouldLoadAttendance) {
           try {
             const attendanceResponse = await statsService.getGameAttendance(
               accountId,
@@ -577,6 +588,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           attendanceSelectionData = combined;
           setAttendance(emptyAttendance);
           setAttendanceSelection(combined);
+          setAttendanceLoading(false);
+          setAttendanceError(null);
         }
 
         setBattingStats(batting);
@@ -602,7 +615,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           setBattingStats(null);
           setPitchingStats(null);
           setAttendanceSelection([]);
-          if (canManageStats) {
+          if (shouldLoadAttendance) {
             setAttendance(emptyAttendance);
             setAttendanceLoading(false);
           } else {
@@ -611,12 +624,20 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         }
       } finally {
         setStatsLoading(false);
-        if (!canManageStats) {
+        if (!shouldLoadAttendance) {
           setAttendanceLoading(false);
         }
       }
     },
-    [accountId, applyCachedGameStats, canManageStats, seasonId, statsService, teamSeasonId],
+    [
+      accountId,
+      applyCachedGameStats,
+      canManageStats,
+      seasonId,
+      statsService,
+      teamSeasonId,
+      trackGamesPlayedEnabled,
+    ],
   );
 
   const refreshStats = useCallback(
@@ -716,7 +737,10 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   };
 
   const handleTabChange = (nextTab: TabKey) => {
-    if (nextTab === 'attendance' && (!canManageStats || !selectedGameId)) {
+    if (
+      nextTab === 'attendance' &&
+      (!canManageStats || !selectedGameId || !trackGamesPlayedEnabled)
+    ) {
       setTabValue('batting');
       return;
     }
@@ -1255,7 +1279,12 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   }, [battingStats, pitchingStats]);
   const handleAttendanceToggle = useCallback(
     async (rosterSeasonId: string, present: boolean) => {
-      if (!selectedGameId || !canManageStats || pendingAttendanceRosterId) {
+      if (
+        !selectedGameId ||
+        !canManageStats ||
+        pendingAttendanceRosterId ||
+        !trackGamesPlayedEnabled
+      ) {
         return;
       }
 
@@ -1298,11 +1327,21 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       statsService,
       teamSeasonId,
       updateCachedAttendance,
+      trackGamesPlayedEnabled,
     ],
   );
 
   const battingTotals = battingStats?.totals ?? null;
   const pitchingTotals = pitchingStats?.totals ?? null;
+
+  useEffect(() => {
+    if (!trackGamesPlayedEnabled) {
+      setAttendance(emptyAttendance);
+      setAttendanceSelection([]);
+      setAttendanceError(null);
+      setAttendanceLoading(false);
+    }
+  }, [trackGamesPlayedEnabled]);
 
   useEffect(() => {
     if (!lockedAttendanceRosterIds.length) {
@@ -1482,6 +1521,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           tab={tabValue}
           onTabChange={handleTabChange}
           canManageStats={canManageStats}
+          enableAttendanceTracking={trackGamesPlayedEnabled}
           loading={statsLoading}
           error={statsError}
           selectedGameId={selectedGameId}

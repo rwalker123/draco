@@ -182,6 +182,7 @@ describe('StatsTabsCard', () => {
         tab={'batting' satisfies TabKey}
         onTabChange={noop}
         canManageStats={false}
+        enableAttendanceTracking
         loading={false}
         error={null}
         selectedGameId="game-1"
@@ -224,6 +225,7 @@ describe('StatsTabsCard', () => {
         tab={'batting' satisfies TabKey}
         onTabChange={onTabChange}
         canManageStats
+        enableAttendanceTracking
         loading={false}
         error={null}
         selectedGameId="game-1"
@@ -268,6 +270,7 @@ describe('StatsTabsCard', () => {
         tab={'batting' satisfies TabKey}
         onTabChange={noop}
         canManageStats
+        enableAttendanceTracking
         loading={false}
         error={null}
         selectedGameId="game-1"

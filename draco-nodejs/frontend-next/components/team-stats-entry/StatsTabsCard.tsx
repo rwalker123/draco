@@ -45,6 +45,7 @@ interface StatsTabsCardProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
   canManageStats: boolean;
+  enableAttendanceTracking: boolean;
   loading: boolean;
   error: string | null;
   selectedGameId: string | null;
@@ -82,6 +83,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       tab,
       onTabChange,
       canManageStats,
+      enableAttendanceTracking,
       loading,
       error,
       selectedGameId,
@@ -130,7 +132,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       }
     }, [selectedGameId, canManageStats]);
 
-    const showAttendanceTab = canManageStats && Boolean(selectedGameId);
+    const showAttendanceTab = enableAttendanceTracking && canManageStats && Boolean(selectedGameId);
 
     const availableTabs: TabKey[] = useMemo(
       () => (showAttendanceTab ? ['batting', 'pitching', 'attendance'] : ['batting', 'pitching']),
@@ -298,7 +300,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       <>
         {canManageStats && !selectedGameId && (
           <Alert severity="info" sx={{ mt: 3 }}>
-            Select a completed game to enable inline editing and attendance management.
+            Select a completed game to enable inline editing management.
           </Alert>
         )}
 
