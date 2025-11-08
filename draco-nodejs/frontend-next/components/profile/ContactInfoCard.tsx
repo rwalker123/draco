@@ -26,6 +26,7 @@ interface ContactInfoCardProps {
   surveyHref?: string;
   surveyAccountId?: string | null;
   infoMessage?: string | null;
+  hideDetails?: boolean;
 }
 
 const renderContactField = (label: string, value?: string | null) => {
@@ -86,6 +87,7 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   surveyHref,
   surveyAccountId,
   infoMessage,
+  hideDetails = false,
 }) => {
   const widgetShellSx = { p: 4 };
 
@@ -222,29 +224,31 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
       data-testid="profile-contact-card"
       headerContent={headerContent}
     >
-      <Stack spacing={2.5}>
-        <Stack spacing={1.5}>
-          {renderContactField('Email', contact.email ?? '')}
-          {renderContactField('Primary Phone', primaryPhone)}
-          {renderContactField('Secondary Phone', secondaryPhone)}
-          {renderContactField('Additional Phone', tertiaryPhone)}
-          {renderContactField('Date of Birth', formattedDateOfBirth)}
-        </Stack>
+      {!hideDetails && (
+        <Stack spacing={2.5}>
+          <Stack spacing={1.5}>
+            {renderContactField('Email', contact.email ?? '')}
+            {renderContactField('Primary Phone', primaryPhone)}
+            {renderContactField('Secondary Phone', secondaryPhone)}
+            {renderContactField('Additional Phone', tertiaryPhone)}
+            {renderContactField('Date of Birth', formattedDateOfBirth)}
+          </Stack>
 
-        {addressLine && (
-          <Box sx={{ pt: 0.5 }}>
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
-            >
-              Mailing Address
-            </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', fontWeight: 600 }}>
-              {addressLine}
-            </Typography>
-          </Box>
-        )}
-      </Stack>
+          {addressLine && (
+            <Box sx={{ pt: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+              >
+                Mailing Address
+              </Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-line', fontWeight: 600 }}>
+                {addressLine}
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      )}
     </WidgetShell>
   );
 };

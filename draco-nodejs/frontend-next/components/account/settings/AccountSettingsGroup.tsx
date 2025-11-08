@@ -24,6 +24,7 @@ import {
 export interface AccountSettingsGroupProps {
   title: string;
   settings: AccountSettingState[];
+  settingsMap: Map<AccountSettingKey, AccountSettingState>;
   canManage: boolean;
   updatingKey: AccountSettingKey | null;
   onUpdate: (key: AccountSettingKey, value: boolean | number) => Promise<void>;
@@ -32,6 +33,7 @@ export interface AccountSettingsGroupProps {
 export function AccountSettingsGroup({
   title,
   settings,
+  settingsMap,
   canManage,
   updatingKey,
   onUpdate,
@@ -57,6 +59,7 @@ export function AccountSettingsGroup({
           <AccountSettingRow
             key={setting.definition.key}
             setting={setting}
+            settingsMap={settingsMap}
             canManage={canManage}
             isUpdating={updatingKey === setting.definition.key}
             onUpdate={onUpdate}
@@ -69,18 +72,42 @@ export function AccountSettingsGroup({
 
 interface AccountSettingRowProps {
   setting: AccountSettingState;
+  settingsMap: Map<AccountSettingKey, AccountSettingState>;
   canManage: boolean;
   isUpdating: boolean;
   onUpdate: (key: AccountSettingKey, value: boolean | number) => Promise<void>;
 }
 
-function AccountSettingRow({ setting, canManage, isUpdating, onUpdate }: AccountSettingRowProps) {
+function AccountSettingRow({
+  setting,
+  settingsMap,
+  canManage,
+  isUpdating,
+  onUpdate,
+}: AccountSettingRowProps) {
   const { definition, value, isDefault, isLocked, lockedReason } = setting;
-  const disabled = !canManage || isLocked;
   const [localError, setLocalError] = useState<string | null>(null);
   const [numericDraft, setNumericDraft] = useState<string>(() =>
     definition.valueType === AccountSettingValueTypeEnum.enum.number ? String(value) : '',
   );
+
+  const unmetDependencies = useMemo(() => {
+    if (!definition.requires?.length) {
+      return [];
+    }
+
+    return definition.requires.filter((dependency) => {
+      const requiredSetting = settingsMap.get(dependency.key);
+      if (!requiredSetting) {
+        return true;
+      }
+      const requiredValue = requiredSetting.effectiveValue ?? requiredSetting.value;
+      return requiredValue !== dependency.value;
+    });
+  }, [definition.requires, settingsMap]);
+
+  const dependenciesSatisfied = unmetDependencies.length === 0;
+  const disabled = !canManage || isLocked || !dependenciesSatisfied;
 
   useEffect(() => {
     if (definition.valueType === AccountSettingValueTypeEnum.enum.number) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, Button, Stack } from '@mui/material';
 import type { AccountSettingKey, AccountSettingState } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
@@ -24,6 +24,14 @@ export const GeneralSettingsWidget: React.FC<GeneralSettingsWidgetProps> = ({
   onRetry,
   onUpdate,
 }) => {
+  const settingsMap = useMemo(() => {
+    const map = new Map<AccountSettingKey, AccountSettingState>();
+    (settings ?? []).forEach((entry) => {
+      map.set(entry.definition.key, entry);
+    });
+    return map;
+  }, [settings]);
+
   if (error) {
     return (
       <WidgetShell title="General Account Settings" subtitle="Enable or disable account features.">
@@ -63,6 +71,7 @@ export const GeneralSettingsWidget: React.FC<GeneralSettingsWidgetProps> = ({
             key={group.id}
             title={group.label}
             settings={group.settings}
+            settingsMap={settingsMap}
             canManage={canManage}
             updatingKey={updatingKey}
             onUpdate={onUpdate}
