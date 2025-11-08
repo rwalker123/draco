@@ -350,12 +350,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       setBattingStats(cached.batting);
       setPitchingStats(cached.pitching);
 
-      if (canManageStats) {
-        setAttendance(cached.attendance ?? emptyAttendance);
-      } else {
-        setAttendance(emptyAttendance);
-      }
-
+      setAttendance(canManageStats ? (cached.attendance ?? emptyAttendance) : emptyAttendance);
       setAttendanceSelection(cached.attendanceSelection);
     },
     [canManageStats],
