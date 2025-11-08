@@ -37,3 +37,4 @@ export * from './IHofNominationRepository.js';
 export * from './IHofNominationSetupRepository.js';
 export * from './IAnnouncementRepository.js';
 export * from './IStatsEntryRepository.js';
+export * from './IAccountSettingsRepository.js';

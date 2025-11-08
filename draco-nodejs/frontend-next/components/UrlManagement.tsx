@@ -166,7 +166,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
 
   return (
     <Box sx={{ position: 'relative', minHeight: '400px' }}>
-      <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+      <Typography variant="h5" component="h2" sx={{ mb: 3 }} color="text.primary">
         URL Management
       </Typography>
 
@@ -214,7 +214,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
                   <TableRow key={url.id} hover>
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        <LinkIcon color="primary" />
+                        <LinkIcon color="action" />
                         <Typography variant="body2" fontFamily="monospace">
                           {url.url}
                         </Typography>
@@ -224,7 +224,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
                       <Stack direction="row" spacing={1}>
                         <Tooltip title="Visit URL">
                           <IconButton size="small" onClick={() => handleVisitUrl(url.url)}>
-                            <OpenInNewIcon />
+                            <OpenInNewIcon color="action" />
                           </IconButton>
                         </Tooltip>
                         {canManageUrls && (
@@ -233,7 +233,12 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
                               <IconButton
                                 size="small"
                                 onClick={() => openEditDialog(url)}
-                                color="primary"
+                                sx={{
+                                  color: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? theme.palette.primary.light
+                                      : theme.palette.primary.main,
+                                }}
                               >
                                 <EditIcon />
                               </IconButton>
@@ -241,8 +246,13 @@ const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, o
                             <Tooltip title="Delete URL">
                               <IconButton
                                 size="small"
-                                color="error"
                                 onClick={() => openDeleteDialog(url)}
+                                sx={{
+                                  color: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? theme.palette.error.light
+                                      : theme.palette.error.main,
+                                }}
                               >
                                 <DeleteIcon />
                               </IconButton>

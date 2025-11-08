@@ -43,6 +43,7 @@ import { AnnouncementService } from '@/services/announcementService';
 import SpecialAnnouncementsWidget, {
   type SpecialAnnouncementCard,
 } from '@/components/announcements/SpecialAnnouncementsWidget';
+import AccountOptional from '@/components/account/AccountOptional';
 
 interface TeamPageProps {
   accountId: string;
@@ -624,16 +625,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           </Box>
         ) : null}
 
-        <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
-          <SurveySpotlightWidget
-            accountId={accountId}
-            teamSeasonId={teamSeasonId}
-            variant="card"
-            icon={<Target className="h-5 w-5" />}
-            title="Player Survey Spotlight"
-            canAnswerSurvey={isAccountMember}
-          />
-        </Box>
+        <AccountOptional accountId={accountId} componentId="team.playerInterview.widget">
+          <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
+            <SurveySpotlightWidget
+              accountId={accountId}
+              teamSeasonId={teamSeasonId}
+              variant="card"
+              icon={<Target className="h-5 w-5" />}
+              title="Player Survey Spotlight"
+              canAnswerSurvey={isAccountMember}
+            />
+          </Box>
+        </AccountOptional>
 
         {shouldShowTeamPendingPanel ? (
           <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>

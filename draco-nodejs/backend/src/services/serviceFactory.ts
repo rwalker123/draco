@@ -60,6 +60,7 @@ import { HofSetupService } from './hofSetupService.js';
 import { StatsEntryService } from './statsEntryService.js';
 import { PlayerSurveyService } from './playerSurveyService.js';
 import { AnnouncementService } from './announcementService.js';
+import { AccountSettingsService } from './accountSettingsService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -117,6 +118,7 @@ export class ServiceFactory {
   private static statsEntryService: StatsEntryService;
   private static playerSurveyService: PlayerSurveyService;
   private static announcementService: AnnouncementService;
+  private static accountSettingsService: AccountSettingsService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -402,6 +404,14 @@ export class ServiceFactory {
     }
 
     return this.photoGalleryService;
+  }
+
+  static getAccountSettingsService(): AccountSettingsService {
+    if (!this.accountSettingsService) {
+      this.accountSettingsService = new AccountSettingsService();
+    }
+
+    return this.accountSettingsService;
   }
 
   static getPhotoGalleryAssetService(): PhotoGalleryAssetService {

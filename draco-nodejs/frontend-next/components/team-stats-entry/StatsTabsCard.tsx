@@ -9,7 +9,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, Box, Button, Card, CardContent, CircularProgress, Tab, Tabs } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Tab, Tabs } from '@mui/material';
 import type {
   CreateGameBattingStatType,
   CreateGamePitchingStatType,
@@ -45,6 +45,7 @@ interface StatsTabsCardProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
   canManageStats: boolean;
+  enableAttendanceTracking: boolean;
   loading: boolean;
   error: string | null;
   selectedGameId: string | null;
@@ -82,7 +83,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       tab,
       onTabChange,
       canManageStats,
-      loading,
+      enableAttendanceTracking,
       error,
       selectedGameId,
       battingStats,
@@ -130,7 +131,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       }
     }, [selectedGameId, canManageStats]);
 
-    const showAttendanceTab = canManageStats && Boolean(selectedGameId);
+    const showAttendanceTab = enableAttendanceTracking && canManageStats && Boolean(selectedGameId);
 
     const availableTabs: TabKey[] = useMemo(
       () => (showAttendanceTab ? ['batting', 'pitching', 'attendance'] : ['batting', 'pitching']),
@@ -298,7 +299,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       <>
         {canManageStats && !selectedGameId && (
           <Alert severity="info" sx={{ mt: 3 }}>
-            Select a completed game to enable inline editing and attendance management.
+            Select a completed game to enter statistics.
           </Alert>
         )}
 
@@ -358,10 +359,6 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                   <Alert severity="error" sx={{ mb: 3 }}>
                     {error}
                   </Alert>
-                ) : loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress aria-label="Loading game statistics" />
-                  </Box>
                 ) : (
                   <>
                     {currentTab === 'batting' && (
@@ -421,9 +418,9 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                 {seasonError}
               </Alert>
             ) : seasonLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress aria-label="Loading season statistics" />
-              </Box>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Loading season statistics…
+              </Alert>
             ) : (
               <>
                 {currentTab === 'batting' && (

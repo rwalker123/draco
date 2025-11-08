@@ -41,8 +41,9 @@ import { useHallOfFameService } from '@/hooks/useHallOfFameService';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatPhoneInput, formatPhoneNumber } from '@/utils/phoneNumber';
+import WidgetShell from '@/components/ui/WidgetShell';
 
-interface NominationsTabProps {
+interface NominationsWidgetProps {
   accountId: string;
   onNominationInducted: () => void;
 }
@@ -60,7 +61,10 @@ const UpdateNominationFormSchema = UpdateHofNominationSchema.extend({
 
 type NominationFormValues = z.infer<typeof UpdateNominationFormSchema>;
 
-const NominationsTab: React.FC<NominationsTabProps> = ({ accountId, onNominationInducted }) => {
+const NominationsWidget: React.FC<NominationsWidgetProps> = ({
+  accountId,
+  onNominationInducted,
+}) => {
   const {
     listNominations,
     deleteNomination,
@@ -167,11 +171,11 @@ const NominationsTab: React.FC<NominationsTabProps> = ({ accountId, onNomination
   };
 
   return (
-    <Box>
-      <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-        Nominations
-      </Typography>
-
+    <WidgetShell
+      title="Nominations"
+      subtitle="Review submissions and induct deserving nominees."
+      accent="secondary"
+    >
       {error ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -308,7 +312,7 @@ const NominationsTab: React.FC<NominationsTabProps> = ({ accountId, onNomination
           listEligibleContacts={listEligibleContacts}
         />
       ) : null}
-    </Box>
+    </WidgetShell>
   );
 };
 
@@ -732,4 +736,4 @@ const NominationInductDialog: React.FC<NominationInductDialogProps> = ({
   );
 };
 
-export default NominationsTab;
+export default NominationsWidget;

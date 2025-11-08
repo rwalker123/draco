@@ -2,6 +2,7 @@ import HallOfFamePageClient from './HallOfFamePageClient';
 import { getAccountBranding } from '../../../../lib/metadataFetchers';
 import { buildSeoMetadata } from '../../../../lib/seoMetadata';
 import { resolveRouteParams, type MetadataParams } from '../../../../lib/metadataParams';
+import AccountOptional from '@/components/account/AccountOptional';
 
 export async function generateMetadata({
   params,
@@ -21,6 +22,16 @@ export async function generateMetadata({
   });
 }
 
-export default function HallOfFamePage() {
-  return <HallOfFamePageClient />;
+export default async function HallOfFamePage({
+  params,
+}: {
+  params: MetadataParams<{ accountId: string }>;
+}) {
+  const { accountId } = await resolveRouteParams(params);
+
+  return (
+    <AccountOptional accountId={accountId} componentId="account.hallOfFame.page">
+      <HallOfFamePageClient accountId={accountId} />
+    </AccountOptional>
+  );
 }

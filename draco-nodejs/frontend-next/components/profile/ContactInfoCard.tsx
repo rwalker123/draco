@@ -15,6 +15,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
+import AccountOptional from '../account/AccountOptional';
 
 interface ContactInfoCardProps {
   contact: BaseContactType | null;
@@ -23,7 +24,9 @@ interface ContactInfoCardProps {
   accountName?: string;
   onEdit?: () => void;
   surveyHref?: string;
+  surveyAccountId?: string | null;
   infoMessage?: string | null;
+  hideDetails?: boolean;
 }
 
 const renderContactField = (label: string, value?: string | null) => {
@@ -82,7 +85,9 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   accountName,
   onEdit,
   surveyHref,
+  surveyAccountId,
   infoMessage,
+  hideDetails = false,
 }) => {
   const widgetShellSx = { p: 4 };
 
@@ -134,24 +139,29 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   const zip = contact.contactDetails?.zip || '';
   const dateOfBirth = contact.contactDetails?.dateOfBirth || '';
   const formattedDateOfBirth = formatDateOfBirth(dateOfBirth);
+  const surveyButton =
+    surveyHref && surveyAccountId ? (
+      <AccountOptional accountId={surveyAccountId} componentId="profile.contactSurvey.link">
+        <Tooltip title="Open player survey">
+          <Button
+            component={NextLink}
+            href={surveyHref}
+            variant="contained"
+            size="small"
+            color="primary"
+            data-testid="profile-contact-survey-link"
+            sx={{ minWidth: 36, px: 1 }}
+          >
+            <DescriptionIcon fontSize="small" />
+          </Button>
+        </Tooltip>
+      </AccountOptional>
+    ) : null;
+
   const actionButtons =
-    surveyHref || onEdit ? (
+    surveyButton || onEdit ? (
       <Stack direction="row" spacing={1}>
-        {surveyHref && (
-          <Tooltip title="Open player survey">
-            <Button
-              component={NextLink}
-              href={surveyHref}
-              variant="contained"
-              size="small"
-              color="primary"
-              data-testid="profile-contact-survey-link"
-              sx={{ minWidth: 36, px: 1 }}
-            >
-              <DescriptionIcon fontSize="small" />
-            </Button>
-          </Tooltip>
-        )}
+        {surveyButton}
         {onEdit && (
           <Tooltip title="Edit contact information">
             <Button
@@ -214,29 +224,31 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
       data-testid="profile-contact-card"
       headerContent={headerContent}
     >
-      <Stack spacing={2.5}>
-        <Stack spacing={1.5}>
-          {renderContactField('Email', contact.email ?? '')}
-          {renderContactField('Primary Phone', primaryPhone)}
-          {renderContactField('Secondary Phone', secondaryPhone)}
-          {renderContactField('Additional Phone', tertiaryPhone)}
-          {renderContactField('Date of Birth', formattedDateOfBirth)}
-        </Stack>
+      {!hideDetails && (
+        <Stack spacing={2.5}>
+          <Stack spacing={1.5}>
+            {renderContactField('Email', contact.email ?? '')}
+            {renderContactField('Primary Phone', primaryPhone)}
+            {renderContactField('Secondary Phone', secondaryPhone)}
+            {renderContactField('Additional Phone', tertiaryPhone)}
+            {renderContactField('Date of Birth', formattedDateOfBirth)}
+          </Stack>
 
-        {addressLine && (
-          <Box sx={{ pt: 0.5 }}>
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
-            >
-              Mailing Address
-            </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', fontWeight: 600 }}>
-              {addressLine}
-            </Typography>
-          </Box>
-        )}
-      </Stack>
+          {addressLine && (
+            <Box sx={{ pt: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+              >
+                Mailing Address
+              </Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-line', fontWeight: 600 }}>
+                {addressLine}
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      )}
     </WidgetShell>
   );
 };

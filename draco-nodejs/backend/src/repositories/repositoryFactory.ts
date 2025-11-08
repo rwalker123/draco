@@ -39,6 +39,7 @@ import {
   IStatsEntryRepository,
   IAnnouncementRepository,
   IPlayerSurveyRepository,
+  IAccountSettingsRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -79,6 +80,7 @@ import {
   PrismaStatsEntryRepository,
   PrismaAnnouncementRepository,
   PrismaPlayerSurveyRepository,
+  PrismaAccountSettingsRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -126,6 +128,7 @@ export class RepositoryFactory {
   private static statsEntryRepository: IStatsEntryRepository;
   private static playerSurveyRepository: IPlayerSurveyRepository;
   private static announcementRepository: IAnnouncementRepository;
+  private static accountSettingsRepository: IAccountSettingsRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -181,6 +184,13 @@ export class RepositoryFactory {
       this.photoSubmissionRepository = new PrismaPhotoSubmissionRepository(prisma);
     }
     return this.photoSubmissionRepository;
+  }
+
+  static getAccountSettingsRepository(): IAccountSettingsRepository {
+    if (!this.accountSettingsRepository) {
+      this.accountSettingsRepository = new PrismaAccountSettingsRepository(prisma);
+    }
+    return this.accountSettingsRepository;
   }
 
   private static ensurePhotoGalleryRepository(): PrismaPhotoGalleryRepository {

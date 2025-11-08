@@ -13,6 +13,10 @@ import {
   AccountUrlSchema,
   CreateAccountUrlSchema,
   AccountTwitterSettingsSchema,
+  AccountSettingsStateListSchema,
+  AccountSettingStateSchema,
+  AccountSettingUpdateRequestSchema,
+  AccountSettingKeySchema,
   AccountWithSeasonsSchema,
   AuthenticationErrorSchema,
   AuthorizationErrorSchema,
@@ -340,6 +344,22 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const AccountTwitterSettingsSchemaRef = registry.register(
     'AccountTwitterSettings',
     AccountTwitterSettingsSchema,
+  );
+  const AccountSettingsStateListSchemaRef = registry.register(
+    'AccountSettingsStateList',
+    AccountSettingsStateListSchema,
+  );
+  const AccountSettingStateSchemaRef = registry.register(
+    'AccountSettingState',
+    AccountSettingStateSchema,
+  );
+  const AccountSettingUpdateRequestSchemaRef = registry.register(
+    'AccountSettingUpdateRequest',
+    AccountSettingUpdateRequestSchema,
+  );
+  const AccountSettingKeySchemaRef = registry.register(
+    'AccountSettingKey',
+    AccountSettingKeySchema,
   );
   const SponsorSchemaRef = registry.register('Sponsor', SponsorSchema);
   const SponsorListSchemaRef = registry.register('SponsorList', SponsorListSchema);
@@ -870,6 +890,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     AccountUrlSchemaRef,
     CreateAccountUrlSchemaRef,
     AccountTwitterSettingsSchemaRef,
+    AccountSettingsStateListSchemaRef,
+    AccountSettingStateSchemaRef,
+    AccountSettingUpdateRequestSchemaRef,
+    AccountSettingKeySchemaRef,
     AutomaticRoleHoldersSchemaRef,
     RoleMetadataSchemaRef,
     SponsorSchemaRef,

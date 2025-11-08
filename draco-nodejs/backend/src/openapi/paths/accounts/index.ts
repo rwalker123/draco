@@ -1,4 +1,5 @@
 import { RegisterContext } from '../../openapiTypes.js';
+import { ACCOUNT_SETTING_KEYS } from '@draco/shared-schemas';
 
 export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
@@ -13,6 +14,9 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
     AccountUrlSchemaRef,
     AccountWithSeasonsSchemaRef,
     AccountTwitterSettingsSchemaRef,
+    AccountSettingsStateListSchemaRef,
+    AccountSettingStateSchemaRef,
+    AccountSettingUpdateRequestSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     CreateAccountSchemaRef,
@@ -78,6 +82,44 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
           'application/json': {
             schema: InternalServerErrorSchemaRef,
           },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/settings/public',
+    operationId: 'getAccountSettingsPublic',
+    summary: 'List public account feature settings',
+    description:
+      'Returns metadata and current values for account-level feature toggles without requiring authentication.',
+    tags: ['Accounts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Account settings with metadata.',
+        content: {
+          'application/json': { schema: AccountSettingsStateListSchemaRef },
+        },
+      },
+      404: {
+        description: 'Account not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while retrieving account settings.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
         },
       },
     },
@@ -2385,6 +2427,137 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs }: RegisterCont
       },
       500: {
         description: 'Unexpected server error while denying the submission.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/settings',
+    operationId: 'getAccountSettings',
+    summary: 'List account feature settings',
+    description: 'Returns metadata and current values for account-level feature toggles.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Account settings with metadata.',
+        content: {
+          'application/json': { schema: AccountSettingsStateListSchemaRef },
+        },
+      },
+      401: {
+        description: 'Authentication required.',
+        content: {
+          'application/json': { schema: AuthenticationErrorSchemaRef },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions to manage account settings.',
+        content: {
+          'application/json': { schema: AuthorizationErrorSchemaRef },
+        },
+      },
+      404: {
+        description: 'Account not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while retrieving account settings.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/settings/{settingKey}',
+    operationId: 'updateAccountSetting',
+    summary: 'Update an account feature setting',
+    description:
+      'Updates a single account-level feature toggle and returns the refreshed settings payload.',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'settingKey',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          enum: [...ACCOUNT_SETTING_KEYS],
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: AccountSettingUpdateRequestSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated setting state.',
+        content: {
+          'application/json': { schema: AccountSettingStateSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error.',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: {
+        description: 'Authentication required.',
+        content: {
+          'application/json': { schema: AuthenticationErrorSchemaRef },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions to manage account settings.',
+        content: {
+          'application/json': { schema: AuthorizationErrorSchemaRef },
+        },
+      },
+      404: {
+        description: 'Account or setting not found.',
+        content: {
+          'application/json': { schema: NotFoundErrorSchemaRef },
+        },
+      },
+      409: {
+        description: 'Conflicting requirements prevent enabling the setting.',
+        content: {
+          'application/json': { schema: ConflictErrorSchemaRef },
+        },
+      },
+      500: {
+        description: 'Unexpected server error while updating the setting.',
         content: {
           'application/json': { schema: InternalServerErrorSchemaRef },
         },

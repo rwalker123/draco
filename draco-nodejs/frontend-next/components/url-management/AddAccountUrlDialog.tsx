@@ -42,7 +42,10 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
   const [domain, setDomain] = React.useState('');
   const [validationError, setValidationError] = React.useState<string | null>(null);
 
-  const urlPreview = React.useMemo(() => buildAccountUrlPreview(protocol, domain), [protocol, domain]);
+  const urlPreview = React.useMemo(
+    () => buildAccountUrlPreview(protocol, domain),
+    [protocol, domain],
+  );
 
   const resetState = React.useCallback(() => {
     setProtocol('https://');
@@ -82,7 +85,7 @@ const AddAccountUrlDialog: React.FC<AddAccountUrlDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Add URL for {accountName}</DialogTitle>
+      <DialogTitle sx={{ color: 'text.primary' }}>Add URL for {accountName}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           {(validationError || error) && (

@@ -1,6 +1,7 @@
 import { getAccountBranding } from '../../../../lib/metadataFetchers';
 import { resolveRouteParams, type MetadataParams } from '../../../../lib/metadataParams';
 import SurveyAccountPageClientWrapper from './SurveyAccountPageClientWrapper';
+import AccountOptional from '@/components/account/AccountOptional';
 
 export async function generateMetadata({
   params,
@@ -16,6 +17,16 @@ export async function generateMetadata({
   };
 }
 
-export default function AccountSurveysPage() {
-  return <SurveyAccountPageClientWrapper />;
+export default async function AccountSurveysPage({
+  params,
+}: {
+  params: MetadataParams<{ accountId: string }>;
+}) {
+  const { accountId } = await resolveRouteParams(params);
+
+  return (
+    <AccountOptional accountId={accountId} componentId="account.playerSurvey.page">
+      <SurveyAccountPageClientWrapper accountId={accountId} />
+    </AccountOptional>
+  );
 }

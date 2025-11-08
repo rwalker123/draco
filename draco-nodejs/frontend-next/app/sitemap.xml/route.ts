@@ -23,21 +23,26 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request): Promise<Response> {
   const requestUrl = new URL(request.url);
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+  const requestHost = requestUrl.hostname.replace(/^www\./, '');
+  const configuredHost = (() => {
+    if (!configuredOrigin) {
+      return null;
+    }
+    try {
+      return new URL(configuredOrigin).hostname.replace(/^www\./, '');
+    } catch {
+      return null;
+    }
+  })();
 
-  // Only allow sitemap responses from the primary configured host
-  const tenantHost = requestUrl.hostname !== 'localhost' && requestUrl.hostname !== '127.0.0.1';
-  const configuredHost =
-    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? null;
-  const isPrimaryHost =
-    configuredHost &&
-    new URL(configuredHost).hostname.replace(/^www\./, '') ===
-      requestUrl.hostname.replace(/^www\./, '');
+  const shouldEnforcePrimaryHost =
+    process.env.NODE_ENV === 'production' && configuredHost !== null && configuredHost.length > 0;
 
-  if (tenantHost && !isPrimaryHost) {
+  if (shouldEnforcePrimaryHost && configuredHost !== requestHost) {
     return new Response('Not Found', { status: 404 });
   }
 
-  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
   let requestOrigin = configuredOrigin?.replace(/\/$/, '') ?? requestUrl.origin;
 
   if (!configuredOrigin) {

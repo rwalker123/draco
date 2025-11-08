@@ -47,6 +47,7 @@ import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import SpecialAnnouncementsWidget, {
   type SpecialAnnouncementCard,
 } from '@/components/announcements/SpecialAnnouncementsWidget';
+import AccountOptional from '@/components/account/AccountOptional';
 
 interface TeamAnnouncementSection {
   teamId: string;
@@ -939,14 +940,21 @@ const BaseballAccountHome: React.FC = () => {
             </Box>
           ) : null}
           {accountIdStr ? (
-            <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
-              <HofSpotlightWidget accountId={accountIdStr} />
-            </Box>
+            <AccountOptional accountId={accountIdStr} componentId="account.home.hallOfFame">
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+                <HofSpotlightWidget accountId={accountIdStr} />
+              </Box>
+            </AccountOptional>
           ) : null}
           {accountIdStr ? (
-            <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
-              <SurveySpotlightWidget accountId={accountIdStr} canAnswerSurvey={hasAccountContact} />
-            </Box>
+            <AccountOptional accountId={accountIdStr} componentId="account.playerSurvey.widget">
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
+                <SurveySpotlightWidget
+                  accountId={accountIdStr}
+                  canAnswerSurvey={hasAccountContact}
+                />
+              </Box>
+            </AccountOptional>
           ) : null}
           <Box sx={{ flex: { xs: '1 1 100%', sm: '0 1 320px' } }}>
             <TodaysBirthdaysCard
@@ -1017,19 +1025,21 @@ const BaseballAccountHome: React.FC = () => {
         </Box>
 
         {accountIdStr ? (
-          <Box
-            sx={{
-              mt: 2,
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 2,
-              alignItems: 'flex-start',
-              justifyContent: 'flex-start',
-              flexWrap: 'wrap',
-            }}
-          >
-            <HofNominationWidget accountId={accountIdStr} />
-          </Box>
+          <AccountOptional accountId={accountIdStr} componentId="account.home.hallOfFame">
+            <Box
+              sx={{
+                mt: 2,
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+                alignItems: 'flex-start',
+                justifyContent: 'flex-start',
+                flexWrap: 'wrap',
+              }}
+            >
+              <HofNominationWidget accountId={accountIdStr} />
+            </Box>
+          </AccountOptional>
         ) : null}
 
         {hasAccountContact && <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />}

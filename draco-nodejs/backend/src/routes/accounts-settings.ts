@@ -6,11 +6,70 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { AccountTwitterSettingsSchema, CreateAccountUrlSchema } from '@draco/shared-schemas';
+import {
+  AccountTwitterSettingsSchema,
+  CreateAccountUrlSchema,
+  AccountSettingUpdateRequestSchema,
+  AccountSettingKeySchema,
+} from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const accountsService = ServiceFactory.getAccountsService();
+const accountSettingsService = ServiceFactory.getAccountSettingsService();
+
+/**
+ * GET /api/accounts/:accountId/settings/public
+ * Publicly accessible account settings (read-only, no auth)
+ */
+router.get(
+  '/:accountId/settings/public',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const settings = await accountSettingsService.getAccountSettings(accountId);
+    res.json(settings);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/settings
+ * Returns account-level feature toggle configuration + metadata (requires auth)
+ */
+router.get(
+  '/:accountId/settings',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const settings = await accountSettingsService.getAccountSettings(accountId);
+    res.json(settings);
+  }),
+);
+
+/**
+ * PUT /api/accounts/:accountId/settings/:settingKey
+ * Updates a single account setting and returns the full settings payload
+ */
+router.put(
+  '/:accountId/settings/:settingKey',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const parsedKey = AccountSettingKeySchema.parse(req.params.settingKey);
+    const payload = AccountSettingUpdateRequestSchema.parse(req.body);
+
+    const setting = await accountSettingsService.updateAccountSetting(
+      accountId,
+      parsedKey,
+      payload.value,
+    );
+
+    res.json(setting);
+  }),
+);
 
 /**
  * GET /api/accounts/types

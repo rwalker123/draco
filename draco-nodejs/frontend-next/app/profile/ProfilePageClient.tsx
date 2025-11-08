@@ -14,11 +14,13 @@ import { ApiClientError, unwrapApiResult } from '@/utils/apiResult';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuth } from '@/context/AuthContext';
 import { useAccount } from '@/context/AccountContext';
+import { useAccountSettings } from '@/hooks/useAccountSettings';
 import ContactInfoCard from '@/components/profile/ContactInfoCard';
 import MemberBusinessCard from '@/components/profile/MemberBusinessCard';
 import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
 import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
+import AccountOptional from '@/components/account/AccountOptional';
 
 interface OrganizationTeamsState {
   teams: UserTeam[];
@@ -45,6 +47,13 @@ const ProfilePageClient: React.FC = () => {
   const router = useRouter();
   const { user, token } = useAuth();
   const { currentAccount } = useAccount();
+  const currentAccountId = currentAccount?.id ? String(currentAccount.id) : null;
+
+  const {
+    settings: accountSettings,
+    loading: accountSettingsLoading,
+    error: accountSettingsError,
+  } = useAccountSettings(currentAccountId);
 
   const [contact, setContact] = useState<BaseContactType | null>(null);
   const [contactLoading, setContactLoading] = useState<boolean>(true);
@@ -367,6 +376,45 @@ const ProfilePageClient: React.FC = () => {
     setContact(updated);
   }, []);
 
+  const showContactInfoSetting = useMemo(() => {
+    if (!currentAccountId) {
+      return true;
+    }
+
+    const state = accountSettings?.find((entry) => entry.definition.key === 'ShowContactInfo');
+    if (!state) {
+      return undefined;
+    }
+
+    return Boolean(state.effectiveValue ?? state.value);
+  }, [accountSettings, currentAccountId]);
+
+  const editContactInfoSetting = useMemo(() => {
+    if (!currentAccountId) {
+      return true;
+    }
+
+    const state = accountSettings?.find((entry) => entry.definition.key === 'EditContactInfo');
+    if (!state) {
+      return undefined;
+    }
+
+    return Boolean(state.effectiveValue ?? state.value);
+  }, [accountSettings, currentAccountId]);
+
+  const contactSettingsPending = Boolean(currentAccountId) && accountSettingsLoading;
+
+  const allowContactInfoView = currentAccountId ? showContactInfoSetting !== false : true;
+  const allowContactEdit =
+    allowContactInfoView && (currentAccountId ? editContactInfoSetting !== false : true);
+  const hideContactDetails = Boolean(currentAccountId && !allowContactInfoView);
+
+  useEffect(() => {
+    if (!allowContactEdit && isEditDialogOpen) {
+      setEditDialogOpen(false);
+    }
+  }, [allowContactEdit, isEditDialogOpen]);
+
   if (!user) {
     return (
       <Box
@@ -405,19 +453,26 @@ const ProfilePageClient: React.FC = () => {
           <Stack spacing={3} sx={{ height: '100%' }}>
             <ContactInfoCard
               contact={contact}
-              loading={contactLoading}
-              error={contactError}
-              infoMessage={contactInfoMessage}
+              loading={contactLoading || contactSettingsPending}
+              error={currentAccountId && accountSettingsError ? accountSettingsError : contactError}
+              infoMessage={hideContactDetails ? null : contactInfoMessage}
               accountName={currentAccount?.name}
-              onEdit={contact && currentAccount?.id ? handleEditContact : undefined}
-              surveyHref={
-                currentAccount?.id ? `/account/${String(currentAccount.id)}/surveys` : undefined
+              onEdit={
+                contact && currentAccountId && allowContactEdit ? handleEditContact : undefined
               }
+              surveyHref={currentAccountId ? `/account/${currentAccountId}/surveys` : undefined}
+              surveyAccountId={currentAccountId}
+              hideDetails={hideContactDetails}
             />
-            <MemberBusinessCard
-              accountId={currentAccount?.id ?? null}
-              contactId={contact?.id ?? null}
-            />
+            <AccountOptional
+              accountId={currentAccount?.id ? String(currentAccount.id) : null}
+              componentId="profile.memberBusiness.card"
+            >
+              <MemberBusinessCard
+                accountId={currentAccount?.id ?? null}
+                contactId={contact?.id ?? null}
+              />
+            </AccountOptional>
           </Stack>
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>
@@ -434,15 +489,17 @@ const ProfilePageClient: React.FC = () => {
           </Stack>
         </Grid>
       </Grid>
-      <EditContactInfoDialog
-        open={isEditDialogOpen}
-        contact={contact}
-        accountId={currentAccount?.id ?? null}
-        onClose={() => setEditDialogOpen(false)}
-        onSuccess={(updated) => {
-          handleContactUpdated(updated);
-        }}
-      />
+      {currentAccountId && allowContactInfoView && allowContactEdit && (
+        <EditContactInfoDialog
+          open={isEditDialogOpen}
+          contact={contact}
+          accountId={currentAccountId}
+          onClose={() => setEditDialogOpen(false)}
+          onSuccess={(updated) => {
+            handleContactUpdated(updated);
+          }}
+        />
+      )}
     </Box>
   );
 };

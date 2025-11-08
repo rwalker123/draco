@@ -23,12 +23,11 @@ import {
   Button,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import SearchIcon from '@mui/icons-material/Search';
-import { useParams } from 'next/navigation';
 import {
   getAccountHallOfFameClass,
   getAccountHallOfFameNominationSetup,
@@ -53,18 +52,16 @@ type ClassPortrait = {
   displayName: string;
 };
 
-const HallOfFamePage: React.FC = () => {
-  const params = useParams();
+interface HallOfFamePageProps {
+  accountId: string;
+}
+
+const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
   const apiClient = useApiClient();
   const theme = useTheme();
 
-  const headerTextColor = theme.palette.getContrastText(theme.palette.primary.main);
-  const headerSubtextColor = alpha(headerTextColor, 0.85);
   const carouselButtonShadow = theme.shadows[4];
   const carouselButtonHoverBackground = theme.palette.action.hover;
-
-  const accountIdParam = params?.accountId;
-  const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
 
   const [classSummaries, setClassSummaries] = React.useState<HofClassSummaryType[]>([]);
   const [selectedClassIndex, setSelectedClassIndex] = React.useState(0);
@@ -414,7 +411,7 @@ const HallOfFamePage: React.FC = () => {
             variant="h4"
             component="h1"
             sx={{
-              color: headerTextColor,
+              color: 'text.primary',
               fontWeight: 'bold',
               mb: 1,
               display: 'flex',
@@ -424,7 +421,7 @@ const HallOfFamePage: React.FC = () => {
           >
             <EmojiEventsIcon sx={{ color: theme.palette.primary.main }} /> Hall of Fame
           </Typography>
-          <Typography variant="body1" sx={{ color: headerSubtextColor }}>
+          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
             Celebrate legendary contributors and revisit the moments that shaped your organization.
           </Typography>
         </Box>
