@@ -9,7 +9,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, Box, Button, Card, CardContent, CircularProgress, Tab, Tabs } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Tab, Tabs } from '@mui/material';
 import type {
   CreateGameBattingStatType,
   CreateGamePitchingStatType,
@@ -84,7 +84,6 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       onTabChange,
       canManageStats,
       enableAttendanceTracking,
-      loading,
       error,
       selectedGameId,
       battingStats,
@@ -360,10 +359,6 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                   <Alert severity="error" sx={{ mb: 3 }}>
                     {error}
                   </Alert>
-                ) : loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress aria-label="Loading game statistics" />
-                  </Box>
                 ) : (
                   <>
                     {currentTab === 'batting' && (
@@ -423,9 +418,9 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                 {seasonError}
               </Alert>
             ) : seasonLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress aria-label="Loading season statistics" />
-              </Box>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Loading season statistics…
+              </Alert>
             ) : (
               <>
                 {currentTab === 'batting' && (

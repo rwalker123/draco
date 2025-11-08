@@ -349,20 +349,14 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     (cached: CachedGameStats) => {
       setBattingStats(cached.batting);
       setPitchingStats(cached.pitching);
-      setStatsError(null);
-      setStatsLoading(false);
 
       if (canManageStats) {
         setAttendance(cached.attendance ?? emptyAttendance);
-        setAttendanceSelection(cached.attendanceSelection);
-        setAttendanceError(null);
-        setAttendanceLoading(false);
       } else {
         setAttendance(emptyAttendance);
-        setAttendanceSelection(cached.attendanceSelection);
-        setAttendanceError(null);
-        setAttendanceLoading(false);
       }
+
+      setAttendanceSelection(cached.attendanceSelection);
     },
     [canManageStats],
   );
@@ -511,23 +505,38 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     }
   }, [sortedGames, selectedGameId]);
 
-  const loadGameStats = useCallback(
+  const showSnackbar = useCallback((message: string, severity: 'success' | 'error' = 'success') => {
+    setSnackbar({ message, severity });
+  }, []);
+
+  const loadAndActivateGame = useCallback(
     async (gameId: string, options?: { forceRefresh?: boolean }) => {
       if (!gameId) {
         return;
       }
 
       const { forceRefresh = false } = options ?? {};
-      const cached = cachedGameStatsRef.current.get(gameId);
       const shouldLoadAttendance = trackGamesPlayedEnabled && canManageStats;
+      const cached = cachedGameStatsRef.current.get(gameId);
+
+      if (!forceRefresh && cached && selectedGameId === gameId) {
+        return;
+      }
 
       if (!forceRefresh && cached) {
+        setSelectedGameId(gameId);
         applyCachedGameStats(cached);
+        setStatsError(null);
+        setAttendanceError(null);
+        if (!shouldLoadAttendance) {
+          setAttendanceLoading(false);
+        }
         return;
       }
 
       setStatsLoading(true);
       setStatsError(null);
+
       if (shouldLoadAttendance) {
         setAttendanceLoading(true);
         setAttendanceError(null);
@@ -566,62 +575,39 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
               gameId,
             );
             attendanceData = attendanceResponse;
-            const combinedSelection = Array.from(
+            attendanceSelectionData = Array.from(
               new Set([...attendanceResponse.playerIds, ...lockedRosterIdsForGame]),
             );
-            attendanceSelectionData = combinedSelection;
-            setAttendance(attendanceResponse);
-            setAttendanceSelection(combinedSelection);
             setAttendanceError(null);
           } catch (attendanceErr) {
             const message =
               attendanceErr instanceof Error ? attendanceErr.message : 'Unable to load attendance.';
             setAttendanceError(message);
-            setAttendance(emptyAttendance);
             attendanceSelectionData = Array.from(lockedRosterIdsForGame);
-            setAttendanceSelection(attendanceSelectionData);
           } finally {
             setAttendanceLoading(false);
           }
         } else {
-          const combined = Array.from(lockedRosterIdsForGame);
-          attendanceSelectionData = combined;
-          setAttendance(emptyAttendance);
-          setAttendanceSelection(combined);
           setAttendanceLoading(false);
-          setAttendanceError(null);
         }
 
-        setBattingStats(batting);
-        setPitchingStats(pitching);
-        setStatsError(null);
-
-        cachedGameStatsRef.current.set(gameId, {
+        const nextCache: CachedGameStats = {
           batting,
           pitching,
           attendance: attendanceData,
           attendanceSelection: attendanceSelectionData,
-        });
+        };
+
+        cachedGameStatsRef.current.set(gameId, nextCache);
+        setSelectedGameId(gameId);
+        applyCachedGameStats(nextCache);
+        setStatsError(null);
       } catch (error) {
         const message =
           error instanceof Error
             ? error.message
             : 'Unable to load statistics for the selected game.';
-        setStatsError(message);
-
-        if (cached) {
-          applyCachedGameStats(cached);
-        } else {
-          setBattingStats(null);
-          setPitchingStats(null);
-          setAttendanceSelection([]);
-          if (shouldLoadAttendance) {
-            setAttendance(emptyAttendance);
-            setAttendanceLoading(false);
-          } else {
-            setAttendance(emptyAttendance);
-          }
-        }
+        showSnackbar(message, 'error');
       } finally {
         setStatsLoading(false);
         if (!shouldLoadAttendance) {
@@ -634,32 +620,13 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       applyCachedGameStats,
       canManageStats,
       seasonId,
+      selectedGameId,
+      showSnackbar,
       statsService,
       teamSeasonId,
       trackGamesPlayedEnabled,
     ],
   );
-
-  const refreshStats = useCallback(
-    async (gameId: string, forceRefresh = false) => {
-      await loadGameStats(gameId, { forceRefresh });
-    },
-    [loadGameStats],
-  );
-
-  useEffect(() => {
-    if (!selectedGameId) {
-      setBattingStats(null);
-      setPitchingStats(null);
-      setAttendance(emptyAttendance);
-      setAttendanceSelection([]);
-      setStatsLoading(false);
-      setAttendanceLoading(false);
-      return;
-    }
-
-    void refreshStats(selectedGameId);
-  }, [refreshStats, selectedGameId]);
 
   const playerSummaryMap = useMemo(() => {
     const map = new Map<string, TeamStatsPlayerSummaryType>();
@@ -702,14 +669,14 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     return map;
   }, [battingStats, pitchingStats]);
 
-  const availableBattingPlayers = battingStats?.availablePlayers ?? [];
-  const availablePitchingPlayers = pitchingStats?.availablePlayers ?? [];
-
   const attendanceOptions = useMemo(() => {
     const summaries = Array.from(playerSummaryMap.values());
     summaries.sort((a, b) => a.playerName.localeCompare(b.playerName));
     return summaries;
   }, [playerSummaryMap]);
+
+  const availableBattingPlayers = battingStats?.availablePlayers ?? [];
+  const availablePitchingPlayers = pitchingStats?.availablePlayers ?? [];
 
   const handleSortOrderChange = (order: SortOrder) => {
     setSortOrder(order);
@@ -717,9 +684,10 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
 
   const attemptGameSelect = useCallback(
     async (gameId: string) => {
-      if (selectedGameId === gameId) {
+      if (!gameId || selectedGameId === gameId || statsLoading) {
         return;
       }
+
       const cardHandle = statsTabsCardRef.current;
       if (cardHandle?.hasPendingEdits()) {
         const resolved = await cardHandle.resolvePendingEdits('game-change');
@@ -727,9 +695,10 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           return;
         }
       }
-      setSelectedGameId(gameId);
+
+      await loadAndActivateGame(gameId);
     },
-    [selectedGameId],
+    [loadAndActivateGame, selectedGameId, statsLoading],
   );
 
   const handleGameSelect = (gameId: string) => {
@@ -746,10 +715,6 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     }
     setTabValue(nextTab);
   };
-
-  const showSnackbar = useCallback((message: string, severity: 'success' | 'error' = 'success') => {
-    setSnackbar({ message, severity });
-  }, []);
 
   const handleGridError = useCallback(
     (error: Error) => {
