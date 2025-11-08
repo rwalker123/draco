@@ -45,6 +45,7 @@ import SignPlayerDialog from '../../../../../../../../components/roster/SignPlay
 import { RosterPlayerMutationResult } from '../../../../../../../../hooks/roster/useRosterPlayer';
 import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDataManager';
 import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
+import { useAccountSettings } from '../../../../../../../../hooks/useAccountSettings';
 import {
   RosterPlayerType,
   RosterMemberType,
@@ -52,6 +53,7 @@ import {
   SignRosterMemberType,
   ContactType,
   TeamRosterMembersType,
+  type AccountSettingKey,
 } from '@draco/shared-schemas';
 import { getContactDisplayName } from '../../../../../../../../utils/contactUtils';
 
@@ -98,6 +100,21 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     seasonId,
     teamSeasonId,
   });
+
+  const { settings: accountSettings } = useAccountSettings(accountId);
+
+  const getSettingValue = useCallback(
+    (key: AccountSettingKey) => {
+      const state = accountSettings?.find((setting) => setting.definition.key === key);
+      return Boolean(state?.effectiveValue ?? state?.value);
+    },
+    [accountSettings],
+  );
+
+  const trackWaiverEnabled = getSettingValue('TrackWaiver');
+  const showWaiverStatus = getSettingValue('ShowWaiver');
+  const trackIdentificationEnabled = getSettingValue('TrackIdentification');
+  const showIdentificationStatus = getSettingValue('ShowIdentification');
 
   // Use scroll position hook
   const { saveScrollPosition, restoreScrollPosition } = useScrollPosition();
@@ -641,20 +658,22 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       } catch {}
     }
 
-    // Submitted Waiver
-    info.push(
-      <span key="waiver" style={{ display: 'block' }}>
-        Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}
-      </span>,
-    );
+    if (showWaiverStatus) {
+      info.push(
+        <span key="waiver" style={{ display: 'block' }}>
+          Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}
+        </span>,
+      );
+    }
 
-    // Submitted Driver's License
-    info.push(
-      <span key="license" style={{ display: 'block' }}>
-        {"Submitted Driver's License: "}
-        {member.player.submittedDriversLicense ? 'Yes' : 'No'}
-      </span>,
-    );
+    if (showIdentificationStatus) {
+      info.push(
+        <span key="license" style={{ display: 'block' }}>
+          {"Submitted Driver's License: "}
+          {member.player.submittedDriversLicense ? 'Yes' : 'No'}
+        </span>,
+      );
+    }
 
     return info.length > 0 ? info : ['No verification data'];
   };
@@ -1178,6 +1197,8 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         initialPlayer={selectedPlayer}
         initialRosterData={rosterFormData}
         onSuccess={handleRosterDialogSuccess}
+        enableWaiverTracking={trackWaiverEnabled}
+        enableIdentificationTracking={trackIdentificationEnabled}
       />
 
       {/* Delete Player Dialog */}

@@ -42,6 +42,8 @@ interface SignPlayerDialogProps {
   initialPlayer?: BaseContactType | RosterPlayerType | null;
   initialRosterData?: SignRosterMemberType;
   onSuccess?: (result: RosterPlayerMutationResult) => Promise<void> | void;
+  enableWaiverTracking?: boolean;
+  enableIdentificationTracking?: boolean;
 }
 
 const isRosterPlayer = (
@@ -61,6 +63,8 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   initialPlayer,
   initialRosterData,
   onSuccess,
+  enableWaiverTracking = true,
+  enableIdentificationTracking = true,
 }) => {
   // Search states - contained within this component
   const [searchInput, setSearchInput] = useState('');
@@ -557,45 +561,49 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
               )}
             />
 
-            <Controller
-              name="submittedWaiver"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={field.value ?? false}
-                      onChange={(event) => field.onChange(event.target.checked)}
-                      disabled={
-                        (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
-                        isSubmitting
-                      }
-                    />
-                  }
-                  label="Submitted Waiver"
-                />
-              )}
-            />
+            {enableWaiverTracking ? (
+              <Controller
+                name="submittedWaiver"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value ?? false}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                        disabled={
+                          (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
+                          isSubmitting
+                        }
+                      />
+                    }
+                    label="Submitted Waiver"
+                  />
+                )}
+              />
+            ) : null}
 
-            <Controller
-              name="player.submittedDriversLicense"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={field.value ?? false}
-                      onChange={(event) => field.onChange(event.target.checked)}
-                      disabled={
-                        (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
-                        isSubmitting
-                      }
-                    />
-                  }
-                  label="Submitted Driver's License"
-                />
-              )}
-            />
+            {enableIdentificationTracking ? (
+              <Controller
+                name="player.submittedDriversLicense"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value ?? false}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                        disabled={
+                          (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
+                          isSubmitting
+                        }
+                      />
+                    }
+                    label="Submitted Driver's License"
+                  />
+                )}
+              />
+            ) : null}
           </Box>
         </Box>
       </DialogContent>
