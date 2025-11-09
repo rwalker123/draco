@@ -32,6 +32,7 @@ export const RosterMemberSchema = z
     inactive: z.boolean().default(false),
     submittedWaiver: z.boolean().optional(),
     dateAdded: isoDateStringSchema.nullable().default(null),
+    gamesPlayed: z.number().int().min(0).optional(),
     player: RosterPlayerSchema,
     // todo: add team season summary info here eventually?
   })
@@ -101,6 +102,7 @@ export const PublicRosterMemberSchema = z
     lastName: z.string().trim().nullable().optional(),
     middleName: z.string().trim().nullable().optional(),
     photoUrl: z.string().trim().nullable().optional(),
+    gamesPlayed: z.number().int().min(0).nullable().optional(),
   })
   .openapi({
     description:

@@ -18,9 +18,10 @@ export class RosterResponseFormatter {
   static formatRosterMembersResponse(
     dbTeamSeason: dbTeamSeason,
     dbRosterMembers: dbRosterSeason[],
+    gamesPlayedMap?: Map<string, number>,
   ): TeamRosterMembersType {
     const rosterMembers: RosterMemberType[] = dbRosterMembers.map((member) =>
-      this.formatRosterMemberResponse(member),
+      this.formatRosterMemberResponse(member, gamesPlayedMap),
     );
 
     const teamRosterMembers: TeamRosterMembersType = {
@@ -34,10 +35,15 @@ export class RosterResponseFormatter {
     return teamRosterMembers;
   }
 
-  static formatRosterMemberResponse(member: dbRosterMember): RosterMemberType {
+  static formatRosterMemberResponse(
+    member: dbRosterMember,
+    gamesPlayedMap?: Map<string, number>,
+  ): RosterMemberType {
     const contact: dbBaseContact = member.roster.contacts;
 
     const contactEntry: BaseContactType = ContactResponseFormatter.formatContactResponse(contact);
+    const gamesPlayed =
+      gamesPlayedMap !== undefined ? (gamesPlayedMap.get(member.id.toString()) ?? 0) : undefined;
 
     return {
       id: member.id.toString(),
@@ -51,6 +57,7 @@ export class RosterResponseFormatter {
         firstYear: member.roster.firstyear,
         contact: contactEntry,
       },
+      gamesPlayed,
     };
   }
 
@@ -58,9 +65,12 @@ export class RosterResponseFormatter {
     dbTeamSeason: dbTeamSeason,
     dbRosterMembers: dbRosterSeason[],
     accountId: bigint,
+    gamesPlayedMap?: Map<string, number>,
   ): PublicTeamRosterResponseType {
     const rosterMembers: PublicRosterMemberType[] = dbRosterMembers.map((member) => {
       const contact = member.roster.contacts;
+      const gamesPlayed =
+        gamesPlayedMap !== undefined ? (gamesPlayedMap.get(member.id.toString()) ?? 0) : null;
       return {
         id: member.id.toString(),
         playerNumber: member.playernumber ?? null,
@@ -68,6 +78,7 @@ export class RosterResponseFormatter {
         lastName: contact.lastname ?? null,
         middleName: contact.middlename ?? null,
         photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+        gamesPlayed,
       };
     });
 

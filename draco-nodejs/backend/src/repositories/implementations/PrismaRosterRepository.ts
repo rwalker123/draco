@@ -161,4 +161,23 @@ export class PrismaRosterRepository implements IRosterRepository {
       where: { id: rosterMemberId },
     });
   }
+
+  async countGamesPlayedByTeamSeason(
+    teamSeasonId: bigint,
+  ): Promise<Array<{ rosterSeasonId: bigint; gamesPlayed: number }>> {
+    const grouped = await this.prisma.playerrecap.groupBy({
+      by: ['playerid'],
+      where: {
+        teamid: teamSeasonId,
+      },
+      _count: {
+        playerid: true,
+      },
+    });
+
+    return grouped.map((row) => ({
+      rosterSeasonId: row.playerid,
+      gamesPlayed: row._count.playerid ?? 0,
+    }));
+  }
 }

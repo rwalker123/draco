@@ -3,11 +3,21 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { SignRosterMemberSchema, UpdateRosterMemberSchema } from '@draco/shared-schemas';
+import {
+  AccountSettingState,
+  SignRosterMemberSchema,
+  UpdateRosterMemberSchema,
+} from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const rosterService = ServiceFactory.getRosterService();
+const accountSettingsService = ServiceFactory.getAccountSettingsService();
+
+const isTrackGamesPlayedEnabled = (settings: AccountSettingState[]): boolean =>
+  settings.some(
+    (setting) => setting.definition.key === 'TrackGamesPlayed' && Boolean(setting.effectiveValue),
+  );
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster
@@ -20,10 +30,14 @@ router.get(
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
+    const accountSettings = await accountSettingsService.getAccountSettings(accountId);
+    const trackGamesPlayed = isTrackGamesPlayedEnabled(accountSettings);
+
     const rosterMembers = await rosterService.getTeamRosterMembers(
       teamSeasonId,
       seasonId,
       accountId,
+      trackGamesPlayed,
     );
 
     res.json(rosterMembers);
@@ -39,10 +53,14 @@ router.get(
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
+    const accountSettings = await accountSettingsService.getAccountSettings(accountId);
+    const trackGamesPlayed = isTrackGamesPlayedEnabled(accountSettings);
+
     const rosterMembers = await rosterService.getPublicTeamRoster(
       teamSeasonId,
       seasonId,
       accountId,
+      trackGamesPlayed,
     );
 
     res.json(rosterMembers);

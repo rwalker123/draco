@@ -20,6 +20,9 @@ export interface IRosterRepository {
     playerId: bigint,
     leagueSeasonId: bigint,
   ): Promise<dbRosterMember | null>;
+  countGamesPlayedByTeamSeason(
+    teamSeasonId: bigint,
+  ): Promise<Array<{ rosterSeasonId: bigint; gamesPlayed: number }>>;
   findRosterPlayerByContactId(contactId: bigint): Promise<dbRosterPlayer | null>;
   createRosterPlayer(
     contactId: bigint,

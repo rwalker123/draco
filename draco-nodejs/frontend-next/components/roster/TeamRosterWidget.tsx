@@ -127,6 +127,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const showWaiverStatus = getSettingValue('ShowWaiver');
   const showIdentificationStatus = getSettingValue('ShowIdentification');
   const showContactInfoOnRoster = getSettingValue('ShowUserInfoOnRosterPage');
+  const showGamesPlayed = getSettingValue('TrackGamesPlayed');
   const canShowContactInfo = canViewSensitiveDetails && showContactInfoOnRoster;
 
   const activePlayers = React.useMemo(() => {
@@ -180,6 +181,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
           <TableRow>
             <TableCell>#</TableCell>
             <TableCell>Player</TableCell>
+            {showGamesPlayed && <TableCell>Games Played</TableCell>}
             {canShowContactInfo && <TableCell>Contact Info</TableCell>}
             {canViewSensitiveDetails && <TableCell>Verification</TableCell>}
           </TableRow>
@@ -216,6 +218,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
                     )}
                   </Box>
                 </TableCell>
+                {showGamesPlayed && <TableCell>{member.gamesPlayed ?? '-'}</TableCell>}
                 {canShowContactInfo && (
                   <TableCell>{formatRosterContactInfo(member.player.contact)}</TableCell>
                 )}
@@ -242,6 +245,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
           <TableRow>
             <TableCell>#</TableCell>
             <TableCell>Player</TableCell>
+            {showGamesPlayed && <TableCell>Games Played</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -270,6 +274,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
                     </Typography>
                   </Box>
                 </TableCell>
+                {showGamesPlayed && <TableCell>{member.gamesPlayed ?? '-'}</TableCell>}
               </TableRow>
             );
           })}

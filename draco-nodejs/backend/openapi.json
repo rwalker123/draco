@@ -52,6 +52,10 @@
             "format": "date-time",
             "default": null
           },
+          "gamesPlayed": {
+            "type": "integer",
+            "minimum": 0
+          },
           "player": {
             "type": "object",
             "properties": {
@@ -299,6 +303,10 @@
           },
           "submittedWaiver": {
             "type": "boolean"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "minimum": 0
           },
           "player": {
             "type": "object",
@@ -2333,6 +2341,10 @@
                   "format": "date-time",
                   "default": null
                 },
+                "gamesPlayed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
                 "player": {
                   "type": "object",
                   "properties": {
@@ -2490,6 +2502,11 @@
           "photoUrl": {
             "type": "string",
             "nullable": true
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
           }
         },
         "required": [
@@ -2546,6 +2563,11 @@
                 "photoUrl": {
                   "type": "string",
                   "nullable": true
+                },
+                "gamesPlayed": {
+                  "type": "integer",
+                  "nullable": true,
+                  "minimum": 0
                 }
               },
               "required": [

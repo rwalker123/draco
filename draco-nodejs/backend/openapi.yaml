@@ -34,6 +34,9 @@ components:
           nullable: true
           format: date-time
           default: null
+        gamesPlayed:
+          type: integer
+          minimum: 0
         player:
           type: object
           properties:
@@ -227,6 +230,9 @@ components:
           maximum: 99
         submittedWaiver:
           type: boolean
+        gamesPlayed:
+          type: integer
+          minimum: 0
         player:
           type: object
           properties:
@@ -1734,6 +1740,9 @@ components:
                 nullable: true
                 format: date-time
                 default: null
+              gamesPlayed:
+                type: integer
+                minimum: 0
               player:
                 type: object
                 properties:
@@ -1854,6 +1863,10 @@ components:
         photoUrl:
           type: string
           nullable: true
+        gamesPlayed:
+          type: integer
+          nullable: true
+          minimum: 0
       required:
         - id
       description: Public-safe roster member payload exposing only jersey number,
@@ -1897,6 +1910,10 @@ components:
               photoUrl:
                 type: string
                 nullable: true
+              gamesPlayed:
+                type: integer
+                nullable: true
+                minimum: 0
             required:
               - id
             description: Public-safe roster member payload exposing only jersey number,
