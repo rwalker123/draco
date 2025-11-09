@@ -87,18 +87,44 @@ export default function LeaderCard({
   };
 
   const shortPlayerName = useMemo(() => {
+    if (leader.isTie) {
+      const label = leader.playerName?.trim();
+      if (label) {
+        return label;
+      }
+      if (leader.tieCount && leader.tieCount > 0) {
+        return `${leader.tieCount} tied`;
+      }
+      return 'Tied';
+    }
+
     const trimmed = leader.playerName.trim();
     if (!trimmed) {
       return leader.playerName;
     }
     const parts = trimmed.split(/\s+/);
     return parts.length > 0 ? parts[parts.length - 1] : trimmed;
-  }, [leader.playerName]);
+  }, [leader.isTie, leader.playerName, leader.tieCount]);
+
+  const isTie = leader.isTie;
+
+  const tieBadgeLabel = useMemo(() => {
+    if (!isTie) {
+      return null;
+    }
+    if (typeof leader.tieCount === 'number' && leader.tieCount > 0) {
+      return String(leader.tieCount);
+    }
+    const numericPrefix = parseInt(leader.playerName, 10);
+    if (!Number.isNaN(numericPrefix)) {
+      return String(numericPrefix);
+    }
+    return '#';
+  }, [isTie, leader.tieCount, leader.playerName]);
 
   const primaryColor = theme.palette.primary.main;
   const primaryLight = theme.palette.primary.light;
   const secondaryColor = theme.palette.secondary.main;
-  const isTie = leader.isTie;
   const showPhoto = !isTie && Boolean(leader.photoUrl) && !imageError;
 
   return (
@@ -175,7 +201,8 @@ export default function LeaderCard({
                 loading: 'lazy',
               }}
             >
-              {(!showPhoto || isTie) && (isTie ? '#' : getPlayerInitials(leader.playerName))}
+              {(!showPhoto || isTie) &&
+                (isTie ? tieBadgeLabel : getPlayerInitials(leader.playerName))}
             </Avatar>
 
             <Box
