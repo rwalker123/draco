@@ -31,6 +31,25 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster-public
+ * Get public-safe roster members (names, jersey numbers, photos only)
+ */
+router.get(
+  '/:teamSeasonId/roster-public',
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+
+    const rosterMembers = await rosterService.getPublicTeamRoster(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    res.json(rosterMembers);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/available-players
  * Get all available players (not on any team in this season) for adding to roster
  */

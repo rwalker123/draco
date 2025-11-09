@@ -44,6 +44,7 @@ import SpecialAnnouncementsWidget, {
   type SpecialAnnouncementCard,
 } from '@/components/announcements/SpecialAnnouncementsWidget';
 import AccountOptional from '@/components/account/AccountOptional';
+import TeamRosterWidget from '@/components/roster/TeamRosterWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -194,6 +195,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       hasRoleInAccount('AccountPhotoAdmin', accountId) ||
       hasRoleInTeam('TeamAdmin', teamSeasonId) ||
       hasRoleInTeam('TeamPhotoAdmin', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
+  const canViewRosterDetails = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId)
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
@@ -624,6 +633,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             />
           </Box>
         ) : null}
+
+        <Box sx={{ flex: '2 1 640px', minWidth: 320 }}>
+          <TeamRosterWidget
+            accountId={accountId}
+            seasonId={seasonId}
+            teamSeasonId={teamSeasonId}
+            canViewSensitiveDetails={canViewRosterDetails}
+          />
+        </Box>
 
         <AccountOptional accountId={accountId} componentId="team.playerInterview.widget">
           <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>

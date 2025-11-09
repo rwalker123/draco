@@ -12,6 +12,7 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
     SignRosterMemberSchemaRef,
     UpdateRosterMemberSchemaRef,
     TeamRosterMembersSchemaRef,
+    PublicTeamRosterResponseSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster
@@ -74,6 +75,72 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-public
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-public',
+    description:
+      'Get public-safe roster members (name, jersey number, photo) for a specific team season.',
+    summary: 'Get public team roster members',
+    operationId: 'getPublicTeamRosterMembers',
+    tags: ['Rosters'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Public roster members returned successfully.',
+        content: {
+          'application/json': {
+            schema: PublicTeamRosterResponseSchemaRef,
           },
         },
       },

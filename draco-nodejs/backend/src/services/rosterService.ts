@@ -1,6 +1,7 @@
 import {
   BaseContactType,
   CreateContactType,
+  PublicTeamRosterResponseType,
   RosterMemberType,
   SignRosterMemberType,
   TeamRosterMembersType,
@@ -43,6 +44,31 @@ export class RosterService {
 
     const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
     return RosterResponseFormatter.formatRosterMembersResponse(teamSeason, rosterMembers);
+  }
+
+  async getPublicTeamRoster(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<PublicTeamRosterResponseType> {
+    const teamSeason: dbTeamSeason | null = await this.teamRepository.findTeamSeasonSummary(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
+    const activeRosterMembers = rosterMembers.filter((member) => !member.inactive);
+
+    return RosterResponseFormatter.formatPublicRosterMembersResponse(
+      teamSeason,
+      activeRosterMembers,
+      accountId,
+    );
   }
 
   async getAvailablePlayers(

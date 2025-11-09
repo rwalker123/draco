@@ -1,4 +1,10 @@
-import { BaseContactType, RosterMemberType, TeamRosterMembersType } from '@draco/shared-schemas';
+import {
+  BaseContactType,
+  PublicRosterMemberType,
+  PublicTeamRosterResponseType,
+  RosterMemberType,
+  TeamRosterMembersType,
+} from '@draco/shared-schemas';
 import {
   dbBaseContact,
   dbRosterMember,
@@ -6,6 +12,7 @@ import {
   dbTeamSeason,
 } from '../repositories/index.js';
 import { ContactResponseFormatter } from './responseFormatters.js';
+import { getContactPhotoUrl } from '../config/logo.js';
 
 export class RosterResponseFormatter {
   static formatRosterMembersResponse(
@@ -44,6 +51,32 @@ export class RosterResponseFormatter {
         firstYear: member.roster.firstyear,
         contact: contactEntry,
       },
+    };
+  }
+
+  static formatPublicRosterMembersResponse(
+    dbTeamSeason: dbTeamSeason,
+    dbRosterMembers: dbRosterSeason[],
+    accountId: bigint,
+  ): PublicTeamRosterResponseType {
+    const rosterMembers: PublicRosterMemberType[] = dbRosterMembers.map((member) => {
+      const contact = member.roster.contacts;
+      return {
+        id: member.id.toString(),
+        playerNumber: member.playernumber ?? null,
+        firstName: contact.firstname ?? null,
+        lastName: contact.lastname ?? null,
+        middleName: contact.middlename ?? null,
+        photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      };
+    });
+
+    return {
+      teamSeason: {
+        id: dbTeamSeason.id.toString(),
+        name: dbTeamSeason.name,
+      },
+      rosterMembers,
     };
   }
 }

@@ -109,6 +109,8 @@ import {
   RoleCheckSchema,
   RoleMetadataSchema,
   SubmitHofNominationSchema,
+  PublicRosterMemberSchema,
+  PublicTeamRosterResponseSchema,
   RosterMemberSchema,
   RosterPlayerSchema,
   SignRosterMemberSchema,
@@ -265,6 +267,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const TeamRosterMembersSchemaRef = registry.register(
     'TeamRosterMembers',
     TeamRosterMembersSchema,
+  );
+  const PublicRosterMemberSchemaRef = registry.register(
+    'PublicRosterMember',
+    PublicRosterMemberSchema,
+  );
+  const PublicTeamRosterResponseSchemaRef = registry.register(
+    'PublicTeamRosterResponse',
+    PublicTeamRosterResponseSchema,
   );
   const TeamSeasonSchemaRef = registry.register('TeamSeason', TeamSeasonSchema);
   const UpsertTeamManagerSchemaRef = registry.register(
@@ -852,6 +862,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
     TeamRosterMembersSchemaRef,
+    PublicRosterMemberSchemaRef,
+    PublicTeamRosterResponseSchemaRef,
     TeamSeasonSchemaRef,
     UpsertTeamManagerSchemaRef,
     UpsertTeamSeasonSchemaRef,

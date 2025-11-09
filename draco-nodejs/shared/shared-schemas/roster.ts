@@ -93,6 +93,28 @@ export const SignRosterMemberSchema = RosterMemberSchema.omit({
     description: 'Schema for signing a contact to a roster and providing player details',
   });
 
+export const PublicRosterMemberSchema = z
+  .object({
+    id: z.bigint().transform((val) => val.toString()),
+    playerNumber: z.number().min(0).max(99).nullable().optional(),
+    firstName: z.string().trim().nullable().optional(),
+    lastName: z.string().trim().nullable().optional(),
+    middleName: z.string().trim().nullable().optional(),
+    photoUrl: z.string().trim().nullable().optional(),
+  })
+  .openapi({
+    description:
+      'Public-safe roster member payload exposing only jersey number, player name, and optional photo URL.',
+  });
+
+export const PublicTeamRosterResponseSchema = z.object({
+  teamSeason: z.object({
+    id: z.bigint().transform((val) => val.toString()),
+    name: z.string().trim(),
+  }),
+  rosterMembers: PublicRosterMemberSchema.array(),
+});
+
 // todo should have called these with Type at the end, like RosterPlayerType, etc.
 export type RosterPlayerType = z.infer<typeof RosterPlayerSchema>;
 export type RosterMemberType = z.infer<typeof RosterMemberSchema>;
@@ -100,3 +122,5 @@ export type CreateRosterMemberType = z.infer<typeof CreateRosterMemberSchema>;
 export type UpdateRosterMemberType = z.infer<typeof UpdateRosterMemberSchema>;
 export type SignRosterMemberType = z.infer<typeof SignRosterMemberSchema>;
 export type TeamRosterMembersType = z.infer<typeof TeamRosterMembersSchema>;
+export type PublicRosterMemberType = z.infer<typeof PublicRosterMemberSchema>;
+export type PublicTeamRosterResponseType = z.infer<typeof PublicTeamRosterResponseSchema>;
