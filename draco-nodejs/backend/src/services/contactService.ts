@@ -242,8 +242,10 @@ export class ContactService {
     }
 
     const today = new Date();
-    const todayMonth = today.getUTCMonth() + 1;
-    const todayDate = today.getUTCDate();
+    // Use the calendar date instead of UTC math so we don't shift to the next/previous day
+    // when the server timezone differs from the account's locale.
+    const todayMonth = today.getMonth() + 1;
+    const todayDate = today.getDate();
 
     const birthdays = await this.contactRepository.findActiveSeasonRosterContacts(
       accountId,
