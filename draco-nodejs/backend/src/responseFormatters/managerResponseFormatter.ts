@@ -25,16 +25,7 @@ export class ManagerResponseFormatter {
             creatorAccountId !== undefined
               ? getContactPhotoUrl(creatorAccountId, manager.contacts.id.toString())
               : undefined,
-          contactDetails: {
-            phone1: manager.contacts.phone1 || '',
-            phone2: manager.contacts.phone2 || '',
-            phone3: manager.contacts.phone3 || '',
-            streetAddress: manager.contacts.streetaddress || '',
-            city: manager.contacts.city || '',
-            state: manager.contacts.state || '',
-            zip: manager.contacts.zip || '',
-            dateOfBirth: manager.contacts.dateofbirth?.toISOString() || '',
-          },
+          contactDetails: formatContactDetails(manager.contacts),
         },
       };
     });
@@ -61,17 +52,19 @@ export class ManagerResponseFormatter {
           creatorAccountId !== undefined
             ? getContactPhotoUrl(creatorAccountId, rawManager.contacts.id.toString())
             : undefined,
-        contactDetails: {
-          phone1: rawManager.contacts.phone1 || '',
-          phone2: rawManager.contacts.phone2 || '',
-          phone3: rawManager.contacts.phone3 || '',
-          streetAddress: rawManager.contacts.streetaddress || '',
-          city: rawManager.contacts.city || '',
-          state: rawManager.contacts.state || '',
-          zip: rawManager.contacts.zip || '',
-          dateOfBirth: rawManager.contacts.dateofbirth?.toISOString() || '',
-        },
+        contactDetails: formatContactDetails(rawManager.contacts),
       },
     };
   }
 }
+
+const formatContactDetails = (contact: dbTeamManagerWithContact['contacts']) => ({
+  phone1: contact.phone1 || '',
+  phone2: contact.phone2 || '',
+  phone3: contact.phone3 || '',
+  streetAddress: contact.streetaddress || '',
+  city: contact.city || '',
+  state: contact.state || '',
+  zip: contact.zip || '',
+  dateOfBirth: contact.dateofbirth?.toISOString() || '',
+});

@@ -54,20 +54,21 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const apiClient = useApiClient();
   const { token } = useAuth();
   const isAuthenticated = Boolean(token);
+  const hasPrivateAccess = isAuthenticated && canViewSensitiveDetails;
   const [publicRoster, setPublicRoster] = React.useState<PublicTeamRosterResponseType | null>(null);
   const [publicLoading, setPublicLoading] = React.useState(false);
   const [publicError, setPublicError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (!hasPrivateAccess) {
       return;
     }
     fetchRosterData();
     fetchManagers();
-  }, [fetchManagers, fetchRosterData, isAuthenticated]);
+  }, [fetchManagers, fetchRosterData, hasPrivateAccess]);
 
   React.useEffect(() => {
-    if (isAuthenticated) {
+    if (hasPrivateAccess) {
       setPublicRoster(null);
       setPublicError(null);
       setPublicLoading(false);
@@ -114,7 +115,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     return () => {
       ignore = true;
     };
-  }, [accountId, apiClient, isAuthenticated, seasonId, teamSeasonId]);
+  }, [accountId, apiClient, hasPrivateAccess, seasonId, teamSeasonId]);
 
   const getSettingValue = React.useCallback(
     (key: AccountSettingKey) => {
@@ -284,9 +285,9 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   );
 
   const renderContent = () => {
-    const isLoading = isAuthenticated ? loading : publicLoading;
-    const currentError = isAuthenticated ? error : publicError;
-    const playerCount = isAuthenticated ? activePlayers.length : publicPlayers.length;
+    const isLoading = hasPrivateAccess ? loading : publicLoading;
+    const currentError = hasPrivateAccess ? error : publicError;
+    const playerCount = hasPrivateAccess ? activePlayers.length : publicPlayers.length;
 
     if (isLoading) {
       return (
@@ -314,10 +315,10 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
       );
     }
 
-    return isAuthenticated ? renderPrivateTable() : renderPublicTable();
+    return hasPrivateAccess ? renderPrivateTable() : renderPublicTable();
   };
 
-  const totalPlayers = isAuthenticated ? activePlayers.length : publicPlayers.length;
+  const totalPlayers = hasPrivateAccess ? activePlayers.length : publicPlayers.length;
 
   return (
     <WidgetShell
