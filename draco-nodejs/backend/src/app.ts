@@ -26,7 +26,7 @@ import teamHandoutsRouter from './routes/team-handouts.js';
 import teamAnnouncementsRouter from './routes/team-announcements.js';
 import teamPhotoSubmissionsRouter from './routes/team-photo-submissions.js';
 import gamesRouter from './routes/games.js';
-import teamManagersRouter from './routes/teamManagers.js';
+import teamManagersRouter from './routes/team-managers.js';
 import seasonManagersRouter from './routes/seasonManagers.js';
 import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';

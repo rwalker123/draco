@@ -45,6 +45,7 @@ import SpecialAnnouncementsWidget, {
 } from '@/components/announcements/SpecialAnnouncementsWidget';
 import AccountOptional from '@/components/account/AccountOptional';
 import TeamRosterWidget from '@/components/roster/TeamRosterWidget';
+import TeamManagersWidget from '@/components/team/TeamManagersWidget';
 
 interface TeamPageProps {
   accountId: string;
@@ -432,6 +433,22 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     );
   }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
 
+  const canEnterStatistics = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId)
+    );
+  }, [accountId, hasRole, hasRoleInAccount, hasRoleInTeam, teamSeasonId]);
+
+  const canViewManagerContacts = React.useMemo(() => {
+    return (
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRole('TeamAdmin')
+    );
+  }, [accountId, hasRole, hasRoleInAccount]);
+
   const upcomingSections = React.useMemo(
     () => [{ title: 'Upcoming Games', games: upcomingGames }],
     [upcomingGames],
@@ -545,6 +562,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/announcements/manage`
               : undefined
           }
+          canEnterStatistics={canEnterStatistics}
         />
       )}
 
@@ -640,6 +658,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             seasonId={seasonId}
             teamSeasonId={teamSeasonId}
             canViewSensitiveDetails={canViewRosterDetails}
+          />
+        </Box>
+
+        <Box sx={{ flex: '1 1 360px', minWidth: 300 }}>
+          <TeamManagersWidget
+            accountId={accountId}
+            seasonId={seasonId}
+            teamSeasonId={teamSeasonId}
+            teamName={teamData?.teamName ?? null}
+            canViewContactInfo={canViewManagerContacts}
           />
         </Box>
 

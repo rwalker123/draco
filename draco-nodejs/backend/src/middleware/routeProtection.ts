@@ -33,6 +33,7 @@ declare global {
         contactId: bigint;
         enforced: boolean;
       };
+      hasAccountRoleAccess?: boolean;
     }
   }
 }
@@ -384,6 +385,111 @@ export class RouteProtection {
   requireLeagueAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]);
   requireTeamAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.TEAM_ADMIN]);
   requireTeamPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]);
+
+  hasAnyRoleForAccount = async (
+    req: Request,
+    accountId: bigint,
+    roleNames: RoleNamesType[],
+  ): Promise<boolean> => {
+    return this.userHasAnyRoleForAccount(req, accountId, roleNames);
+  };
+
+  hasPermissionForAccount = async (
+    req: Request,
+    accountId: bigint,
+    permission: string,
+    contextOverrides?: Partial<RoleContextData>,
+  ): Promise<boolean> => {
+    if (!req.user?.id) {
+      return false;
+    }
+
+    const roleContext: RoleContextData = {
+      accountId,
+      teamId: contextOverrides?.teamId ?? this.extractTeamId(req),
+      leagueId: contextOverrides?.leagueId ?? this.extractLeagueId(req),
+      seasonId: contextOverrides?.seasonId ?? this.extractSeasonId(req),
+    };
+
+    return this.roleService.hasPermission(req.user.id, permission, roleContext);
+  };
+
+  evaluateAccountRoles = (roleNames: RoleNamesType[]) => {
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      const accountId = this.extractAccountId(req);
+      if (!accountId) {
+        req.hasAccountRoleAccess = false;
+        return next();
+      }
+
+      const hasRole = await this.userHasAnyRoleForAccount(req, accountId, roleNames, false);
+      req.hasAccountRoleAccess = hasRole;
+      next();
+    });
+  };
+
+  requireAnyAccountRole = (roleNames: RoleNamesType[]) => {
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
+      }
+
+      const accountId = this.extractAccountId(req);
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
+      const hasRole = await this.userHasAnyRoleForAccount(req, accountId, roleNames);
+      if (!hasRole) {
+        throw new AuthorizationError('Access denied');
+      }
+
+      next();
+    });
+  };
+
+  private async userHasAnyRoleForAccount(
+    req: Request,
+    accountId: bigint,
+    roleNames: RoleNamesType[],
+    requireUser: boolean = true,
+  ): Promise<boolean> {
+    if (!req.user?.id) {
+      return !requireUser ? false : false;
+    }
+
+    const userRoles =
+      req.userRoles ?? (await this.roleService.getUserRoles(req.user.id, accountId));
+    req.userRoles = userRoles;
+
+    const accountIdStr = accountId.toString();
+
+    for (const roleName of roleNames) {
+      const roleId = ROLE_IDS[roleName];
+
+      if (
+        roleName === RoleNamesType.ADMINISTRATOR &&
+        roleId &&
+        userRoles.globalRoles.includes(roleId)
+      ) {
+        return true;
+      }
+
+      if (
+        userRoles.contactRoles.some(
+          (role) =>
+            role.accountId === accountIdStr &&
+            ((roleId && role.roleId === roleId) ||
+              role.roleId === roleName ||
+              role.roleName === roleName),
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   /**
    * Extract account ID from request (from URL params, body, or query)

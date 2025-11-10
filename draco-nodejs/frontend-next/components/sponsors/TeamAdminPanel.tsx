@@ -8,6 +8,7 @@ import Link from 'next/link';
 import DescriptionIcon from '@mui/icons-material/Description';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import PrintIcon from '@mui/icons-material/Print';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
 
@@ -22,6 +23,7 @@ interface TeamAdminPanelProps {
   onPostPlayersWanted?: () => void;
   handoutsHref?: string;
   announcementsHref?: string;
+  canEnterStatistics?: boolean;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -35,11 +37,13 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   onPostPlayersWanted,
   handoutsHref,
   announcementsHref,
+  canEnterStatistics = false,
 }) => {
   const shouldShowClassifiedsLink =
     showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
   const shouldShowHandoutsLink = Boolean(handoutsHref);
   const shouldShowAnnouncementsLink = canManageAnnouncements && Boolean(announcementsHref);
+  const shouldShowStatEntryLink = Boolean(canEnterStatistics);
 
   return (
     <WidgetShell
@@ -80,6 +84,17 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
             >
               Manage Team Sponsors
+            </Button>
+          )}
+          {shouldShowStatEntryLink && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<BarChartIcon />}
+              component={Link}
+              href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/stat-entry`}
+            >
+              Enter Statistics
             </Button>
           )}
           {shouldShowAnnouncementsLink && (

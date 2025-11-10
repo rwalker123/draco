@@ -1,27 +1,50 @@
 import { TeamManagerType } from '@draco/shared-schemas';
 import { dbTeamManagerWithContact } from '../repositories/index.js';
+import { getContactPhotoUrl } from '../config/logo.js';
 
 export class ManagerResponseFormatter {
   static formatManagersListResponse(rawManagers: dbTeamManagerWithContact[]): TeamManagerType[] {
-    return rawManagers.map((manager) => ({
-      id: manager.id.toString(),
-      team: {
-        id: manager.teamseasonid.toString(),
-      },
-      contact: {
-        id: manager.contacts.id.toString(),
-        creatoraccountid: '',
-        userId: manager.contacts.userid || undefined,
-        firstName: manager.contacts.firstname,
-        lastName: manager.contacts.lastname,
-        middleName: manager.contacts.middlename || '',
-        email: manager.contacts.email || undefined,
-        contactroles: [],
-      },
-    }));
+    return rawManagers.map((manager) => {
+      const creatorAccountId = manager.contacts.creatoraccountid
+        ? manager.contacts.creatoraccountid.toString()
+        : undefined;
+
+      return {
+        id: manager.id.toString(),
+        team: {
+          id: manager.teamseasonid.toString(),
+        },
+        contact: {
+          id: manager.contacts.id.toString(),
+          userId: manager.contacts.userid || undefined,
+          firstName: manager.contacts.firstname,
+          lastName: manager.contacts.lastname,
+          middleName: manager.contacts.middlename || '',
+          email: manager.contacts.email || undefined,
+          photoUrl:
+            creatorAccountId !== undefined
+              ? getContactPhotoUrl(creatorAccountId, manager.contacts.id.toString())
+              : undefined,
+          contactDetails: {
+            phone1: manager.contacts.phone1 || '',
+            phone2: manager.contacts.phone2 || '',
+            phone3: manager.contacts.phone3 || '',
+            streetAddress: manager.contacts.streetaddress || '',
+            city: manager.contacts.city || '',
+            state: manager.contacts.state || '',
+            zip: manager.contacts.zip || '',
+            dateOfBirth: manager.contacts.dateofbirth?.toISOString() || '',
+          },
+        },
+      };
+    });
   }
 
   static formatAddManagerResponse(rawManager: dbTeamManagerWithContact): TeamManagerType {
+    const creatorAccountId = rawManager.contacts.creatoraccountid
+      ? rawManager.contacts.creatoraccountid.toString()
+      : undefined;
+
     return {
       id: rawManager.id.toString(),
       team: {
@@ -34,6 +57,20 @@ export class ManagerResponseFormatter {
         lastName: rawManager.contacts.lastname,
         middleName: rawManager.contacts.middlename || '',
         email: rawManager.contacts.email || undefined,
+        photoUrl:
+          creatorAccountId !== undefined
+            ? getContactPhotoUrl(creatorAccountId, rawManager.contacts.id.toString())
+            : undefined,
+        contactDetails: {
+          phone1: rawManager.contacts.phone1 || '',
+          phone2: rawManager.contacts.phone2 || '',
+          phone3: rawManager.contacts.phone3 || '',
+          streetAddress: rawManager.contacts.streetaddress || '',
+          city: rawManager.contacts.city || '',
+          state: rawManager.contacts.state || '',
+          zip: rawManager.contacts.zip || '',
+          dateOfBirth: rawManager.contacts.dateofbirth?.toISOString() || '',
+        },
       },
     };
   }
