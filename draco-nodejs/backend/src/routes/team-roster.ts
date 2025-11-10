@@ -3,11 +3,29 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { SignRosterMemberSchema, UpdateRosterMemberSchema } from '@draco/shared-schemas';
+import {
+  AccountSettingState,
+  SignRosterMemberSchema,
+  UpdateRosterMemberSchema,
+} from '@draco/shared-schemas';
+import { AuthorizationError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const rosterService = ServiceFactory.getRosterService();
+const accountSettingsService = ServiceFactory.getAccountSettingsService();
+
+const isSettingEnabled = (settings: AccountSettingState[], key: string): boolean =>
+  settings.some((setting) => setting.definition.key === key && Boolean(setting.effectiveValue));
+
+const isTrackGamesPlayedEnabled = (settings: AccountSettingState[]): boolean =>
+  isSettingEnabled(settings, 'TrackGamesPlayed');
+
+const ensureRosterCardEnabled = (settings: AccountSettingState[]): void => {
+  if (!isSettingEnabled(settings, 'ShowRosterCard')) {
+    throw new AuthorizationError('Printable roster card is disabled for this account.');
+  }
+};
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster
@@ -20,13 +38,60 @@ router.get(
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
+    const accountSettings = await accountSettingsService.getAccountSettings(accountId);
+    const trackGamesPlayed = isTrackGamesPlayedEnabled(accountSettings);
+
     const rosterMembers = await rosterService.getTeamRosterMembers(
       teamSeasonId,
       seasonId,
       accountId,
+      trackGamesPlayed,
     );
 
     res.json(rosterMembers);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster-public
+ * Get public-safe roster members (names, jersey numbers, photos only)
+ */
+router.get(
+  '/:teamSeasonId/roster-public',
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+
+    const accountSettings = await accountSettingsService.getAccountSettings(accountId);
+    const trackGamesPlayed = isTrackGamesPlayedEnabled(accountSettings);
+
+    const rosterMembers = await rosterService.getPublicTeamRoster(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      trackGamesPlayed,
+    );
+
+    res.json(rosterMembers);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster-card
+ * Get printable roster card data
+ */
+router.get(
+  '/:teamSeasonId/roster-card',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.enforceTeamBoundary(),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+
+    const accountSettings = await accountSettingsService.getAccountSettings(accountId);
+    ensureRosterCardEnabled(accountSettings);
+
+    const rosterCard = await rosterService.getTeamRosterCard(accountId, seasonId, teamSeasonId);
+    res.json(rosterCard);
   }),
 );
 

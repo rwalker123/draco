@@ -38,14 +38,18 @@ import {
   SupervisorAccount as ManagerIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { format, parseISO } from 'date-fns';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import SignPlayerDialog from '../../../../../../../../components/roster/SignPlayerDialog';
+import {
+  formatRosterContactInfo,
+  formatRosterVerificationInfo,
+} from '@/components/roster/rosterFormatters';
 import { RosterPlayerMutationResult } from '../../../../../../../../hooks/roster/useRosterPlayer';
 import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDataManager';
 import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
 import { useAccountSettings } from '../../../../../../../../hooks/useAccountSettings';
+import { useRole } from '../../../../../../../../context/RoleContext';
 import {
   RosterPlayerType,
   RosterMemberType,
@@ -102,6 +106,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   });
 
   const { settings: accountSettings } = useAccountSettings(accountId);
+  const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
 
   const getSettingValue = useCallback(
     (key: AccountSettingKey) => {
@@ -115,6 +120,15 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const showWaiverStatus = getSettingValue('ShowWaiver');
   const trackIdentificationEnabled = getSettingValue('TrackIdentification');
   const showIdentificationStatus = getSettingValue('ShowIdentification');
+  const showContactInfoOnRoster = getSettingValue('ShowUserInfoOnRosterPage');
+  const canViewSensitiveRosterDetails = useMemo(
+    () =>
+      hasRole('Administrator') ||
+      hasRoleInAccount('AccountAdmin', accountId) ||
+      hasRoleInTeam('TeamAdmin', teamSeasonId),
+    [accountId, teamSeasonId, hasRole, hasRoleInAccount, hasRoleInTeam],
+  );
+  const canShowRosterContactInfo = canViewSensitiveRosterDetails && showContactInfoOnRoster;
 
   // Use scroll position hook
   const { saveScrollPosition, restoreScrollPosition } = useScrollPosition();
@@ -490,193 +504,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     ],
   );
 
-  // Helper function to format all contact information
-  const formatContactInfo = (contact: BaseContactType) => {
-    const info = [];
-
-    // Address first
-    if (
-      contact.contactDetails?.streetAddress ||
-      contact.contactDetails?.city ||
-      contact.contactDetails?.state ||
-      contact.contactDetails?.zip
-    ) {
-      const addressParts = [
-        contact.contactDetails?.streetAddress,
-        contact.contactDetails?.city,
-        contact.contactDetails?.state,
-        contact.contactDetails?.zip,
-      ].filter(Boolean);
-
-      if (addressParts.length > 0) {
-        const fullAddress = addressParts.join(', ');
-        const streetAddress = contact.contactDetails?.streetAddress || '';
-        const cityStateZip = [
-          contact.contactDetails?.city,
-          contact.contactDetails?.state,
-          contact.contactDetails?.zip,
-        ]
-          .filter(Boolean)
-          .join(', ');
-
-        info.push(
-          <Link
-            href={`https://maps.google.com/maps?q=${encodeURIComponent(fullAddress)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{
-              color: 'primary.main',
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
-              display: 'block',
-            }}
-          >
-            {streetAddress && <span style={{ display: 'block' }}>{streetAddress}</span>}
-            {cityStateZip && <span style={{ display: 'block' }}>{cityStateZip}</span>}
-          </Link>,
-        );
-      }
-    }
-
-    // Email second
-    if (contact.email) {
-      info.push(
-        <Link
-          href={`mailto:${contact.email}`}
-          sx={{
-            color: 'primary.main',
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-          }}
-        >
-          {contact.email}
-        </Link>,
-      );
-    }
-
-    // Phone numbers last - use individual phone fields from contactDetails
-    if (contact.contactDetails?.phone1)
-      info.push(
-        <Link
-          href={`tel:${contact.contactDetails.phone1.replace(/\D/g, '')}`}
-          sx={{
-            color: 'primary.main',
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-          }}
-        >
-          home: {contact.contactDetails.phone1}
-        </Link>,
-      );
-    if (contact.contactDetails?.phone2)
-      info.push(
-        <Link
-          href={`tel:${contact.contactDetails.phone2.replace(/\D/g, '')}`}
-          sx={{
-            color: 'primary.main',
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-          }}
-        >
-          cell: {contact.contactDetails.phone2}
-        </Link>,
-      );
-    if (contact.contactDetails?.phone3)
-      info.push(
-        <Link
-          href={`tel:${contact.contactDetails.phone3.replace(/\D/g, '')}`}
-          sx={{
-            color: 'primary.main',
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-          }}
-        >
-          work: {contact.contactDetails.phone3}
-        </Link>,
-      );
-
-    if (info.length === 0) {
-      return '-';
-    }
-
-    return (
-      <Table size="small" sx={{ minWidth: 0 }}>
-        <TableBody>
-          {info.map((item, index) => (
-            <TableRow key={index} sx={{ '& td': { border: 0, py: 0.5 } }}>
-              <TableCell sx={{ py: 0, px: 0 }}>
-                <Typography variant="body2" fontSize="0.75rem">
-                  {item}
-                </Typography>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
-  };
-
-  // Helper function to format verification information
-  const formatVerificationInfo = (member: RosterMemberType) => {
-    const info = [];
-
-    // Age and Date of Birth first
-    if (
-      member.player.contact.contactDetails?.dateOfBirth &&
-      typeof member.player.contact.contactDetails.dateOfBirth === 'string'
-    ) {
-      try {
-        const birthDate = parseISO(member.player.contact.contactDetails.dateOfBirth);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-
-        // Adjust age if birthday hasn't occurred this year
-        const adjustedAge =
-          monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())
-            ? age - 1
-            : age;
-
-        const birthMonthYear = format(birthDate, 'MMM yyyy');
-
-        info.push(
-          <span key="age" style={{ display: 'block' }}>
-            Age: {adjustedAge} ({birthMonthYear})
-          </span>,
-        );
-      } catch {}
-    }
-
-    // Date Added
-    if (member.dateAdded && typeof member.dateAdded === 'string') {
-      try {
-        info.push(
-          <span key="dateadded" style={{ display: 'block' }}>
-            Date Added: {format(parseISO(member.dateAdded), 'MMM dd, yyyy')}
-          </span>,
-        );
-      } catch {}
-    }
-
-    if (showWaiverStatus) {
-      info.push(
-        <span key="waiver" style={{ display: 'block' }}>
-          Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}
-        </span>,
-      );
-    }
-
-    if (showIdentificationStatus) {
-      info.push(
-        <span key="license" style={{ display: 'block' }}>
-          {"Submitted Driver's License: "}
-          {member.player.submittedDriversLicense ? 'Yes' : 'No'}
-        </span>,
-      );
-    }
-
-    return info.length > 0 ? info : ['No verification data'];
-  };
+  // format helpers moved to reusable formatter module
 
   const handleAddManager = async () => {
     if (!selectedManagerContactId) return;
@@ -972,8 +800,8 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
               <TableRow>
                 <TableCell>#</TableCell>
                 <TableCell>Name</TableCell>
-                <TableCell>Contact Info</TableCell>
-                <TableCell>Verification</TableCell>
+                {canShowRosterContactInfo && <TableCell>Contact Info</TableCell>}
+                {canViewSensitiveRosterDetails && <TableCell>Verification</TableCell>}
                 <TableCell sx={{ width: '280px', maxWidth: '280px' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -1002,8 +830,17 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>{formatContactInfo(member.player.contact)}</TableCell>
-                  <TableCell>{formatVerificationInfo(member)}</TableCell>
+                  {canShowRosterContactInfo && (
+                    <TableCell>{formatRosterContactInfo(member.player.contact)}</TableCell>
+                  )}
+                  {canViewSensitiveRosterDetails && (
+                    <TableCell>
+                      {formatRosterVerificationInfo(member, {
+                        showWaiverStatus,
+                        showIdentificationStatus,
+                      })}
+                    </TableCell>
+                  )}
                   <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       <Button
@@ -1064,7 +901,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
               ))}
               {activePlayers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell
+                    colSpan={canViewSensitiveRosterDetails ? (canShowRosterContactInfo ? 5 : 4) : 3}
+                    align="center"
+                  >
                     <Typography variant="body2" color="text.secondary">
                       No active players
                     </Typography>
@@ -1090,8 +930,8 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 <TableRow>
                   <TableCell>#</TableCell>
                   <TableCell>Name</TableCell>
-                  <TableCell>Contact Info</TableCell>
-                  <TableCell>Verification</TableCell>
+                  {canShowRosterContactInfo && <TableCell>Contact Info</TableCell>}
+                  {canViewSensitiveRosterDetails && <TableCell>Verification</TableCell>}
                   <TableCell sx={{ width: '280px', maxWidth: '280px' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -1119,8 +959,17 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell>{formatContactInfo(member.player.contact)}</TableCell>
-                    <TableCell>{formatVerificationInfo(member)}</TableCell>
+                    {canShowRosterContactInfo && (
+                      <TableCell>{formatRosterContactInfo(member.player.contact)}</TableCell>
+                    )}
+                    {canViewSensitiveRosterDetails && (
+                      <TableCell>
+                        {formatRosterVerificationInfo(member, {
+                          showWaiverStatus,
+                          showIdentificationStatus,
+                        })}
+                      </TableCell>
+                    )}
                     <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Button

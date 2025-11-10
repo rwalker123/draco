@@ -208,7 +208,12 @@ export const useRosterDataManager = (
 
   // Fetch roster data
   const fetchRosterData = useCallback(async () => {
-    if (!accountId || !seasonId || !teamSeasonId || !token) return;
+    if (!accountId || !seasonId || !teamSeasonId || !token) {
+      if (!token) {
+        setLoading(false);
+      }
+      return;
+    }
 
     setLoading(true);
     setError(null);

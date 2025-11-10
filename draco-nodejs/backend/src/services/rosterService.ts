@@ -1,8 +1,10 @@
 import {
   BaseContactType,
   CreateContactType,
+  PublicTeamRosterResponseType,
   RosterMemberType,
   SignRosterMemberType,
+  TeamRosterCardType,
   TeamRosterMembersType,
   UpdateRosterMemberType,
 } from '@draco/shared-schemas';
@@ -17,7 +19,9 @@ import {
   dbRosterPlayer,
   dbRosterSeasonContactReference,
   dbTeamSeason,
+  dbTeamSeasonLeague,
 } from '../repositories/index.js';
+import { ServiceFactory } from './serviceFactory.js';
 
 export class RosterService {
   constructor(
@@ -26,10 +30,13 @@ export class RosterService {
     private contactRepository: IContactRepository,
   ) {}
 
+  private accountsService = ServiceFactory.getAccountsService();
+
   async getTeamRosterMembers(
     teamSeasonId: bigint,
     seasonId: bigint,
     accountId: bigint,
+    includeGamesPlayed = false,
   ): Promise<TeamRosterMembersType> {
     const teamSeason: dbTeamSeason | null = await this.teamRepository.findTeamSeasonSummary(
       teamSeasonId,
@@ -42,7 +49,88 @@ export class RosterService {
     }
 
     const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
-    return RosterResponseFormatter.formatRosterMembersResponse(teamSeason, rosterMembers);
+
+    let gamesPlayedMap: Map<string, number> | undefined;
+    if (includeGamesPlayed) {
+      const gamesPlayedCounts =
+        await this.rosterRepository.countGamesPlayedByTeamSeason(teamSeasonId);
+      gamesPlayedMap = new Map(
+        gamesPlayedCounts.map((row) => [row.rosterSeasonId.toString(), row.gamesPlayed]),
+      );
+    }
+
+    return RosterResponseFormatter.formatRosterMembersResponse(
+      teamSeason,
+      rosterMembers,
+      gamesPlayedMap,
+    );
+  }
+
+  async getPublicTeamRoster(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    includeGamesPlayed = false,
+  ): Promise<PublicTeamRosterResponseType> {
+    const teamSeason: dbTeamSeason | null = await this.teamRepository.findTeamSeasonSummary(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
+    const activeRosterMembers = rosterMembers.filter((member) => !member.inactive);
+
+    let gamesPlayedMap: Map<string, number> | undefined;
+    if (includeGamesPlayed) {
+      const gamesPlayedCounts =
+        await this.rosterRepository.countGamesPlayedByTeamSeason(teamSeasonId);
+      gamesPlayedMap = new Map(
+        gamesPlayedCounts.map((row) => [row.rosterSeasonId.toString(), row.gamesPlayed]),
+      );
+    }
+
+    return RosterResponseFormatter.formatPublicRosterMembersResponse(
+      teamSeason,
+      activeRosterMembers,
+      accountId,
+      gamesPlayedMap,
+    );
+  }
+
+  async getTeamRosterCard(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<TeamRosterCardType> {
+    const teamSeason: dbTeamSeason | null = await this.teamRepository.findTeamSeasonSummary(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const [accountHeader, leagueInfo, rosterMembers] = await Promise.all([
+      this.accountsService.getAccountHeader(accountId),
+      this.teamRepository.getLeagueInfo(teamSeasonId, seasonId, accountId),
+      this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId),
+    ]);
+
+    const activeRosterMembers = rosterMembers.filter((member) => !member.inactive);
+
+    return RosterResponseFormatter.formatRosterCardResponse(
+      accountHeader,
+      teamSeason,
+      leagueInfo as dbTeamSeasonLeague | null,
+      activeRosterMembers,
+    );
   }
 
   async getAvailablePlayers(

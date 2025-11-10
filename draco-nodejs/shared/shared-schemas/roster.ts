@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { BaseContactSchema, CreateContactSchema } from './contact.js';
+import { AccountHeaderSchema } from './account.js';
 
 extendZodWithOpenApi(z);
 
@@ -32,6 +33,7 @@ export const RosterMemberSchema = z
     inactive: z.boolean().default(false),
     submittedWaiver: z.boolean().optional(),
     dateAdded: isoDateStringSchema.nullable().default(null),
+    gamesPlayed: z.number().int().min(0).optional(),
     player: RosterPlayerSchema,
     // todo: add team season summary info here eventually?
   })
@@ -93,6 +95,47 @@ export const SignRosterMemberSchema = RosterMemberSchema.omit({
     description: 'Schema for signing a contact to a roster and providing player details',
   });
 
+export const PublicRosterMemberSchema = z
+  .object({
+    id: z.bigint().transform((val) => val.toString()),
+    playerNumber: z.number().min(0).max(99).nullable().optional(),
+    firstName: z.string().trim().nullable().optional(),
+    lastName: z.string().trim().nullable().optional(),
+    middleName: z.string().trim().nullable().optional(),
+    photoUrl: z.string().trim().nullable().optional(),
+    gamesPlayed: z.number().int().min(0).nullable().optional(),
+  })
+  .openapi({
+    description:
+      'Public-safe roster member payload exposing only jersey number, player name, and optional photo URL.',
+  });
+
+export const PublicTeamRosterResponseSchema = z.object({
+  teamSeason: z.object({
+    id: z.bigint().transform((val) => val.toString()),
+    name: z.string().trim(),
+  }),
+  rosterMembers: PublicRosterMemberSchema.array(),
+});
+
+export const RosterCardPlayerSchema = z.object({
+  id: z.bigint().transform((val) => val.toString()),
+  playerNumber: z.number().min(0).max(99).nullable().optional(),
+  firstName: z.string().trim(),
+  lastName: z.string().trim(),
+});
+
+export const TeamRosterCardSchema = z.object({
+  account: AccountHeaderSchema.partial(),
+  teamSeason: z.object({
+    id: z.bigint().transform((val) => val.toString()),
+    name: z.string().trim(),
+    leagueName: z.string().trim().nullable().optional(),
+    seasonName: z.string().trim().nullable().optional(),
+  }),
+  players: RosterCardPlayerSchema.array(),
+});
+
 // todo should have called these with Type at the end, like RosterPlayerType, etc.
 export type RosterPlayerType = z.infer<typeof RosterPlayerSchema>;
 export type RosterMemberType = z.infer<typeof RosterMemberSchema>;
@@ -100,3 +143,7 @@ export type CreateRosterMemberType = z.infer<typeof CreateRosterMemberSchema>;
 export type UpdateRosterMemberType = z.infer<typeof UpdateRosterMemberSchema>;
 export type SignRosterMemberType = z.infer<typeof SignRosterMemberSchema>;
 export type TeamRosterMembersType = z.infer<typeof TeamRosterMembersSchema>;
+export type PublicRosterMemberType = z.infer<typeof PublicRosterMemberSchema>;
+export type PublicTeamRosterResponseType = z.infer<typeof PublicTeamRosterResponseSchema>;
+export type RosterCardPlayerType = z.infer<typeof RosterCardPlayerSchema>;
+export type TeamRosterCardType = z.infer<typeof TeamRosterCardSchema>;

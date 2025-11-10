@@ -34,6 +34,9 @@ components:
           nullable: true
           format: date-time
           default: null
+        gamesPlayed:
+          type: integer
+          minimum: 0
         player:
           type: object
           properties:
@@ -227,6 +230,9 @@ components:
           maximum: 99
         submittedWaiver:
           type: boolean
+        gamesPlayed:
+          type: integer
+          minimum: 0
         player:
           type: object
           properties:
@@ -1734,6 +1740,9 @@ components:
                 nullable: true
                 format: date-time
                 default: null
+              gamesPlayed:
+                type: integer
+                minimum: 0
               player:
                 type: object
                 properties:
@@ -1831,6 +1840,160 @@ components:
       required:
         - teamSeason
         - rosterMembers
+    PublicRosterMember:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        playerNumber:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 99
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        middleName:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        gamesPlayed:
+          type: integer
+          nullable: true
+          minimum: 0
+      required:
+        - id
+      description: Public-safe roster member payload exposing only jersey number,
+        player name, and optional photo URL.
+    PublicTeamRosterResponse:
+      type: object
+      properties:
+        teamSeason:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+          required:
+            - id
+            - name
+        rosterMembers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              playerNumber:
+                type: number
+                nullable: true
+                minimum: 0
+                maximum: 99
+              firstName:
+                type: string
+                nullable: true
+              lastName:
+                type: string
+                nullable: true
+              middleName:
+                type: string
+                nullable: true
+              photoUrl:
+                type: string
+                nullable: true
+              gamesPlayed:
+                type: integer
+                nullable: true
+                minimum: 0
+            required:
+              - id
+            description: Public-safe roster member payload exposing only jersey number,
+              player name, and optional photo URL.
+      required:
+        - teamSeason
+        - rosterMembers
+    RosterCardPlayer:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^d+$
+        playerNumber:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 99
+        firstName:
+          type: string
+        lastName:
+          type: string
+      required:
+        - id
+        - firstName
+        - lastName
+    TeamRosterCard:
+      type: object
+      properties:
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            accountLogoUrl:
+              type: string
+        teamSeason:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^d+$
+            name:
+              type: string
+            leagueName:
+              type: string
+              nullable: true
+            seasonName:
+              type: string
+              nullable: true
+          required:
+            - id
+            - name
+        players:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^d+$
+              playerNumber:
+                type: number
+                nullable: true
+                minimum: 0
+                maximum: 99
+              firstName:
+                type: string
+              lastName:
+                type: string
+            required:
+              - id
+              - firstName
+              - lastName
+      required:
+        - account
+        - teamSeason
+        - players
     TeamSeason:
       type: object
       properties:
@@ -23644,6 +23807,112 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-public:
+    get:
+      description: Get public-safe roster members (name, jersey number, photo) for a
+        specific team season.
+      summary: Get public team roster members
+      operationId: getPublicTeamRosterMembers
+      tags:
+        - Rosters
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Public roster members returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicTeamRosterResponse"
+        "404":
+          description: Team season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-card:
+    get:
+      description: Fetch printable roster card data for a team season when the
+        ShowRosterCard setting is enabled.
+      summary: Get team roster card
+      operationId: getTeamRosterCard
+      security:
+        - bearerAuth: []
+      tags:
+        - Rosters
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Roster card returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamRosterCard"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied or roster card disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Team season not found
           content:
             application/json:
               schema:
