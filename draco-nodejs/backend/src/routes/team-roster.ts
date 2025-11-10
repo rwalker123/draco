@@ -8,16 +8,24 @@ import {
   SignRosterMemberSchema,
   UpdateRosterMemberSchema,
 } from '@draco/shared-schemas';
+import { AuthorizationError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const rosterService = ServiceFactory.getRosterService();
 const accountSettingsService = ServiceFactory.getAccountSettingsService();
 
+const isSettingEnabled = (settings: AccountSettingState[], key: string): boolean =>
+  settings.some((setting) => setting.definition.key === key && Boolean(setting.effectiveValue));
+
 const isTrackGamesPlayedEnabled = (settings: AccountSettingState[]): boolean =>
-  settings.some(
-    (setting) => setting.definition.key === 'TrackGamesPlayed' && Boolean(setting.effectiveValue),
-  );
+  isSettingEnabled(settings, 'TrackGamesPlayed');
+
+const ensureRosterCardEnabled = (settings: AccountSettingState[]): void => {
+  if (!isSettingEnabled(settings, 'ShowRosterCard')) {
+    throw new AuthorizationError('Printable roster card is disabled for this account.');
+  }
+};
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster
@@ -64,6 +72,26 @@ router.get(
     );
 
     res.json(rosterMembers);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster-card
+ * Get printable roster card data
+ */
+router.get(
+  '/:teamSeasonId/roster-card',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.enforceTeamBoundary(),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+
+    const accountSettings = await accountSettingsService.getAccountSettings(accountId);
+    ensureRosterCardEnabled(accountSettings);
+
+    const rosterCard = await rosterService.getTeamRosterCard(accountId, seasonId, teamSeasonId);
+    res.json(rosterCard);
   }),
 );
 

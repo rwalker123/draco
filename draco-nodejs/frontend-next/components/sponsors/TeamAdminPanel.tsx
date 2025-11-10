@@ -7,6 +7,7 @@ import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import Link from 'next/link';
 import DescriptionIcon from '@mui/icons-material/Description';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import PrintIcon from '@mui/icons-material/Print';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
 
@@ -103,6 +104,17 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
               Manage Handouts
             </Button>
           )}
+          <AccountOptional accountId={accountId} componentId="team.printableRosterCard">
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<PrintIcon />}
+              component={Link}
+              href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster-card`}
+            >
+              Printable Roster Card
+            </Button>
+          </AccountOptional>
           {shouldShowClassifiedsLink && (
             <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">
               <Button

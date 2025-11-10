@@ -13,6 +13,7 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
     UpdateRosterMemberSchemaRef,
     TeamRosterMembersSchemaRef,
     PublicTeamRosterResponseSchemaRef,
+    TeamRosterCardSchemaRef,
   } = schemaRefs;
 
   // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster
@@ -141,6 +142,89 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
         content: {
           'application/json': {
             schema: PublicTeamRosterResponseSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-card
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-card',
+    description:
+      'Fetch printable roster card data for a team season when the ShowRosterCard setting is enabled.',
+    summary: 'Get team roster card',
+    operationId: 'getTeamRosterCard',
+    security: [{ bearerAuth: [] }],
+    tags: ['Rosters'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Roster card returned successfully.',
+        content: {
+          'application/json': {
+            schema: TeamRosterCardSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied or roster card disabled',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
           },
         },
       },

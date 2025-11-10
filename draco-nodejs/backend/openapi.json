@@ -2582,6 +2582,109 @@
           "rosterMembers"
         ]
       },
+      "RosterCardPlayer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "playerNumber": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 99
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "TeamRosterCard": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "accountLogoUrl": {
+                "type": "string"
+              }
+            }
+          },
+          "teamSeason": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "leagueName": {
+                "type": "string",
+                "nullable": true
+              },
+              "seasonName": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "players": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "playerNumber": {
+                  "type": "number",
+                  "nullable": true,
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "firstName": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "firstName",
+                "lastName"
+              ]
+            }
+          }
+        },
+        "required": [
+          "account",
+          "teamSeason",
+          "players"
+        ]
+      },
       "TeamSeason": {
         "type": "object",
         "properties": {
@@ -35016,6 +35119,102 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicTeamRosterResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-card": {
+      "get": {
+        "description": "Fetch printable roster card data for a team season when the ShowRosterCard setting is enabled.",
+        "summary": "Get team roster card",
+        "operationId": "getTeamRosterCard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Rosters"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roster card returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRosterCard"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied or roster card disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
                 }
               }
             }

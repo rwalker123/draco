@@ -372,6 +372,7 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         type: 'widget',
         displayName: 'Printable Roster Card',
         expectedValue: true,
+        hiddenBehavior: 'notFound',
       },
     ],
   }),

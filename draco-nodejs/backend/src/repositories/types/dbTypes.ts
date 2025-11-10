@@ -608,6 +608,12 @@ export type dbTeamSeasonLeague = Prisma.teamsseasonGetPayload<{
             name: true;
           };
         };
+        season: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
       };
     };
   };

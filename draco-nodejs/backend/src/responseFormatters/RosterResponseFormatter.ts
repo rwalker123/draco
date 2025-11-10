@@ -1,8 +1,11 @@
 import {
+  AccountHeaderType,
   BaseContactType,
   PublicRosterMemberType,
   PublicTeamRosterResponseType,
+  RosterCardPlayerType,
   RosterMemberType,
+  TeamRosterCardType,
   TeamRosterMembersType,
 } from '@draco/shared-schemas';
 import {
@@ -10,6 +13,7 @@ import {
   dbRosterMember,
   dbRosterSeason,
   dbTeamSeason,
+  dbTeamSeasonLeague,
 } from '../repositories/index.js';
 import { ContactResponseFormatter } from './responseFormatters.js';
 import { getContactPhotoUrl } from '../config/logo.js';
@@ -88,6 +92,44 @@ export class RosterResponseFormatter {
         name: dbTeamSeason.name,
       },
       rosterMembers,
+    };
+  }
+
+  static formatRosterCardResponse(
+    account: Partial<AccountHeaderType> | undefined,
+    teamSeason: dbTeamSeason,
+    leagueInfo: dbTeamSeasonLeague | null,
+    rosterMembers: dbRosterSeason[],
+  ): TeamRosterCardType {
+    const players: RosterCardPlayerType[] = rosterMembers
+      .filter((member) => !member.inactive)
+      .map((member) => ({
+        id: member.id.toString(),
+        playerNumber: member.playernumber ?? null,
+        firstName: member.roster.contacts.firstname ?? '',
+        lastName: member.roster.contacts.lastname ?? '',
+      }))
+      .sort((a, b) => {
+        const lastComparison = (a.lastName || '').localeCompare(b.lastName || '');
+        if (lastComparison !== 0) {
+          return lastComparison;
+        }
+        return (a.firstName || '').localeCompare(b.firstName || '');
+      });
+
+    return {
+      account: {
+        id: account?.id,
+        name: account?.name,
+        accountLogoUrl: account?.accountLogoUrl,
+      },
+      teamSeason: {
+        id: teamSeason.id.toString(),
+        name: teamSeason.name,
+        leagueName: leagueInfo?.leagueseason?.league?.name ?? undefined,
+        seasonName: leagueInfo?.leagueseason?.season?.name ?? undefined,
+      },
+      players,
     };
   }
 }

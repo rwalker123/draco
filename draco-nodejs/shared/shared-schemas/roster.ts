@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { BaseContactSchema, CreateContactSchema } from './contact.js';
+import { AccountHeaderSchema } from './account.js';
 
 extendZodWithOpenApi(z);
 
@@ -117,6 +118,24 @@ export const PublicTeamRosterResponseSchema = z.object({
   rosterMembers: PublicRosterMemberSchema.array(),
 });
 
+export const RosterCardPlayerSchema = z.object({
+  id: z.bigint().transform((val) => val.toString()),
+  playerNumber: z.number().min(0).max(99).nullable().optional(),
+  firstName: z.string().trim(),
+  lastName: z.string().trim(),
+});
+
+export const TeamRosterCardSchema = z.object({
+  account: AccountHeaderSchema.partial(),
+  teamSeason: z.object({
+    id: z.bigint().transform((val) => val.toString()),
+    name: z.string().trim(),
+    leagueName: z.string().trim().nullable().optional(),
+    seasonName: z.string().trim().nullable().optional(),
+  }),
+  players: RosterCardPlayerSchema.array(),
+});
+
 // todo should have called these with Type at the end, like RosterPlayerType, etc.
 export type RosterPlayerType = z.infer<typeof RosterPlayerSchema>;
 export type RosterMemberType = z.infer<typeof RosterMemberSchema>;
@@ -126,3 +145,5 @@ export type SignRosterMemberType = z.infer<typeof SignRosterMemberSchema>;
 export type TeamRosterMembersType = z.infer<typeof TeamRosterMembersSchema>;
 export type PublicRosterMemberType = z.infer<typeof PublicRosterMemberSchema>;
 export type PublicTeamRosterResponseType = z.infer<typeof PublicTeamRosterResponseSchema>;
+export type RosterCardPlayerType = z.infer<typeof RosterCardPlayerSchema>;
+export type TeamRosterCardType = z.infer<typeof TeamRosterCardSchema>;
