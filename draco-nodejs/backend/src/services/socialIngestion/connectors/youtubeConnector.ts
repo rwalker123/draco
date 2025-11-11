@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { SocialVideoIngestionRecord, YouTubeConnectorOptions } from '../ingestionTypes.js';
 import { deterministicUuid } from '../../../utils/deterministicUuid.js';
-import { httpsJsonRequest } from '../../../utils/httpClient.js';
+import { fetchJson } from '../../../utils/fetchJson.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
 
 interface YouTubeSearchResponse {
@@ -80,7 +80,7 @@ export class YouTubeConnector extends BaseSocialIngestionConnector {
     url.searchParams.set('key', this.options.apiKey ?? '');
 
     try {
-      const response = await httpsJsonRequest<YouTubeSearchResponse>(url, { timeoutMs: 8000 });
+      const response = await fetchJson<YouTubeSearchResponse>(url, { timeoutMs: 8000 });
       if (!response.items?.length) {
         return [];
       }

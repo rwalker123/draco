@@ -3,7 +3,7 @@ import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { SocialFeedIngestionRecord, TwitterConnectorOptions } from '../ingestionTypes.js';
 import { SocialMediaAttachment } from '../../../types/social.js';
 import { deterministicUuid } from '../../../utils/deterministicUuid.js';
-import { httpsJsonRequest } from '../../../utils/httpClient.js';
+import { fetchJson } from '../../../utils/fetchJson.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
 
 interface TwitterApiResponse {
@@ -88,7 +88,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
     query.searchParams.set('max_results', String(this.options.maxResults));
 
     try {
-      const response = await httpsJsonRequest<TwitterApiResponse>(query, {
+      const response = await fetchJson<TwitterApiResponse>(query, {
         headers: {
           Authorization: `Bearer ${this.options.bearerToken as string}`,
         },

@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { DiscordConnectorOptions, DiscordMessageIngestionRecord } from '../ingestionTypes.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
-import { httpsJsonRequest } from '../../../utils/httpClient.js';
+import { fetchJson } from '../../../utils/fetchJson.js';
 
 interface DiscordMessage {
   id: string;
@@ -76,7 +76,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
     url.searchParams.set('limit', String(Math.min(this.options.limit, 50)));
 
     try {
-      const response = await httpsJsonRequest<DiscordMessage[]>(url, {
+      const response = await fetchJson<DiscordMessage[]>(url, {
         headers: {
           Authorization: `Bot ${this.options.botToken as string}`,
         },
