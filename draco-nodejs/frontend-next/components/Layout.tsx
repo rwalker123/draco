@@ -291,7 +291,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TopBarQuickActions
               accountId={accountId}
-              canViewHandouts={isMember === true}
+              canViewHandouts={Boolean(accountId)}
               canViewAnnouncements={isMember === true}
             />
             {user ? (
