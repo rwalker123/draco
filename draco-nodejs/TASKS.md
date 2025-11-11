@@ -18,7 +18,7 @@
 - [x] Gate routes with RBAC + account boundary middleware and wire tests covering route/service/repository interactions. _New `/api/accounts/:accountId/seasons/:seasonId/social/*` routes (see `backend/src/routes/accounts-social.ts`) enforce `authenticateToken`, account boundary, and `account.manage` permissions for mutating actions; exercised by `src/services/__tests__/socialHubService.test.ts` for live event service logic. _
 
 ## Phase 4 – Frontend Social Hub
-- [ ] Promote `app/social-hub-test` into a real `/social-hub` route with navigation entry points.
+- [x] Promote `app/social-hub-test` into a real `/account/:accountId/social-hub` route with navigation entry points. _Account-scoped Social Hub now reuses the client prototype, inherits branding metadata, and is linked from the global layout menu plus the baseball quick actions menu._
 - [ ] Build typed service hooks for the new social/community APIs and integrate them into each tab (Timeline, Video, Q&A, Boards, Looking For, Live Chat).
 - [ ] Persist layout preferences (grid/timeline/dashboard) and add analytics events for tab/view interactions.
 

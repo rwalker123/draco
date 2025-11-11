@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import {
   Box,
@@ -29,25 +31,36 @@ import {
   YouTube,
   Instagram,
   QuestionAnswer,
-  People,
   EmojiEvents,
   Search,
   FilterList,
   Refresh,
   OpenInNew,
   ThumbUp,
-  Comment,
   Share,
   PlayCircleOutline,
-  CalendarToday,
   LocationOn,
-  SportsBaseball,
   Forum,
   PersonSearch,
 } from '@mui/icons-material';
 
 // Mock data for different social sources
-const mockTwitterPosts = [
+interface SocialCardData {
+  id?: number;
+  author?: string;
+  handle?: string;
+  content?: string;
+  timestamp?: string;
+  likes?: number;
+  retweets?: number;
+  image?: string | null;
+  title?: string;
+  thumbnail?: string | null;
+  views?: string;
+  duration?: string;
+}
+
+const mockTwitterPosts: SocialCardData[] = [
   {
     id: 1,
     author: 'Eagles Baseball',
@@ -69,7 +82,7 @@ const mockTwitterPosts = [
   },
 ];
 
-const mockYouTubeVideos = [
+const mockYouTubeVideos: SocialCardData[] = [
   {
     id: 1,
     title: 'Season Highlights 2024',
@@ -162,7 +175,11 @@ const mockHallOfFame = [
   },
 ];
 
-export default function SocialHubTest() {
+interface SocialHubExperienceProps {
+  accountId?: string;
+}
+
+export default function SocialHubExperience({ accountId }: SocialHubExperienceProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [layoutStyle, setLayoutStyle] = useState<'grid' | 'timeline' | 'dashboard'>('grid');
 
@@ -171,7 +188,18 @@ export default function SocialHubTest() {
   };
 
   // Social Media Card Component
-  const SocialMediaCard = ({ type, data }: { type: string; data: any }) => {
+  const SocialMediaCard = ({ type, data }: { type: string; data: SocialCardData }) => {
+    const timestamp = data.timestamp ?? '';
+    const safeAuthor = data.author && data.author.length > 0 ? data.author : 'Community Channel';
+    const avatarInitial = safeAuthor.charAt(0).toUpperCase();
+    const safeHandle = data.handle ?? '';
+    const safeContent = data.content ?? '';
+    const safeLikes = data.likes ?? 0;
+    const safeRetweets = data.retweets ?? 0;
+    const safeThumbnail = data.thumbnail ?? data.image ?? undefined;
+    const safeTitle = data.title ?? 'Video Highlight';
+    const safeViews = data.views ?? '0';
+    const safeDuration = data.duration ?? '';
     const getIcon = () => {
       switch (type) {
         case 'twitter':
@@ -193,7 +221,7 @@ export default function SocialHubTest() {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             {getIcon()}
             <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-              {data.timestamp}
+              {timestamp}
             </Typography>
             <IconButton size="small" sx={{ ml: 'auto' }}>
               <OpenInNew fontSize="small" />
@@ -203,25 +231,25 @@ export default function SocialHubTest() {
           {type === 'twitter' && (
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Avatar sx={{ width: 32, height: 32, mr: 1 }}>{data.author[0]}</Avatar>
+                <Avatar sx={{ width: 32, height: 32, mr: 1 }}>{avatarInitial}</Avatar>
                 <Box>
-                  <Typography variant="subtitle2">{data.author}</Typography>
+                  <Typography variant="subtitle2">{safeAuthor}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {data.handle}
+                    {safeHandle}
                   </Typography>
                 </Box>
               </Box>
               <Typography variant="body2" sx={{ mb: 2 }}>
-                {data.content}
+                {safeContent}
               </Typography>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <ThumbUp fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="caption">{data.likes}</Typography>
+                  <Typography variant="caption">{safeLikes}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Share fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="caption">{data.retweets}</Typography>
+                  <Typography variant="caption">{safeRetweets}</Typography>
                 </Box>
               </Box>
             </>
@@ -233,8 +261,8 @@ export default function SocialHubTest() {
                 <CardMedia
                   component="img"
                   height="140"
-                  image={data.thumbnail}
-                  alt={data.title}
+                  image={safeThumbnail ?? '/api/placeholder/320/180'}
+                  alt={safeTitle}
                   sx={{ borderRadius: 1 }}
                 />
                 <Box
@@ -249,7 +277,7 @@ export default function SocialHubTest() {
                     borderRadius: 1,
                   }}
                 >
-                  <Typography variant="caption">{data.duration}</Typography>
+                  <Typography variant="caption">{safeDuration}</Typography>
                 </Box>
                 <PlayCircleOutline
                   sx={{
@@ -264,10 +292,10 @@ export default function SocialHubTest() {
                 />
               </Box>
               <Typography variant="subtitle2" gutterBottom>
-                {data.title}
+                {safeTitle}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {data.views} views • {data.timestamp}
+                {safeViews} views • {timestamp}
               </Typography>
             </>
           )}
@@ -454,7 +482,7 @@ export default function SocialHubTest() {
                 </Typography>
               </Box>
               <Typography variant="body2">
-                "Great pitching performance last night!" - 12 replies
+                {`"Great pitching performance last night!" - 12 replies`}
               </Typography>
             </CardContent>
           </Card>
@@ -593,7 +621,7 @@ export default function SocialHubTest() {
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Typography variant="h3" gutterBottom>
-        Social Hub Concept
+        Social Hub Concept{accountId ? ` · Account ${accountId}` : ''}
       </Typography>
 
       {/* Layout Selector */}

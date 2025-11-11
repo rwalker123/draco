@@ -71,7 +71,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     {
       label: 'Socials',
       icon: <SocialIcon />,
-      path: `/social-hub-test`,
+      path: `/account/${accountId}/social-hub`,
     },
     {
       label: 'Fields',
