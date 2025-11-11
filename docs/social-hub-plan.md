@@ -267,6 +267,15 @@ Additional automation:
 - **Schedule Sync**: when `leagueevents` entries with stream info are created, add them to Social Feed + TV Guide.
 - **Cleanup**: nightly job to archive posts older than retention window, trimming media caches.
 
+## Phase 3 – Backend Implementation Progress
+
+- **Ingestion Workers**: `SocialIngestionService` spins up Twitter, YouTube, and Discord connectors (configurable via `SOCIAL_INGESTION_*` env vars) that hydrate the new `socialfeeditems`, `socialvideos`, and `discordmessages` tables on an interval.
+- **Connectors**:
+  - Twitter – pulls recent tweets for configured handles using the v2 recent-search API.
+  - YouTube – fetches latest uploads per channel ID.
+  - Discord – polls channel messages through the Bot API (complementing the upcoming webhook).
+- Each connector performs deterministic ID generation to avoid duplicates and writes through the new social repositories.
+
 ## Next Actions
 1. Review this matrix with stakeholders listed above; capture approvals or requested changes.
 2. Once approved, proceed to Phase 1 Task 2 (decision on custom board vs Discord) and Task 3 (success metrics).

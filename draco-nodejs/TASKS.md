@@ -14,7 +14,7 @@
 
 ## Phase 3 – Backend Implementation
 - [x] Implement repository/service/formatter layers for social content following the layered backend architecture. _See `backend/prisma/schema.prisma` + migration `20250215_social_content_tables`, new repositories (`PrismaSocialContentRepository`, `PrismaLiveEventRepository`), response formatters, and `SocialHubService`. _
-- [ ] Add schedulable ingestion workers or queue consumers to hydrate the social tables.
+- [x] Add schedulable ingestion workers or queue consumers to hydrate the social tables. _`SocialIngestionService` now boots Twitter/YouTube/Discord connectors (configurable via `SOCIAL_INGESTION_*` env vars) to populate the new social tables; see `backend/src/services/socialIngestion/*` and `backend/src/config/socialIngestion.ts`. _
 - [ ] Gate routes with RBAC + account boundary middleware and wire tests covering route/service/repository interactions.
 
 ## Phase 4 – Frontend Social Hub
