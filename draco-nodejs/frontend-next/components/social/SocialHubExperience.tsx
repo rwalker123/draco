@@ -49,25 +49,6 @@ import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
 
-const mockMessageBoard = [
-  {
-    id: 1,
-    author: 'TeamParent123',
-    title: "Carpool for Saturday's game?",
-    replies: 5,
-    lastReply: '30 min ago',
-    category: 'logistics',
-  },
-  {
-    id: 2,
-    author: 'BaseballFan99',
-    title: 'Great pitching performance last night!',
-    replies: 12,
-    lastReply: '2 hours ago',
-    category: 'discussion',
-  },
-];
-
 const formatRelativeTime = (isoString: string): string => {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) {

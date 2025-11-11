@@ -19,7 +19,7 @@
 
 ## Phase 4 – Frontend Social Hub
 - [x] Promote `app/social-hub-test` into a real `/account/:accountId/social-hub` route with navigation entry points. _Account-scoped Social Hub now reuses the client prototype, inherits branding metadata, and is linked from the global layout menu plus the baseball quick actions menu._
-- [ ] Build typed service hooks for the new social/community APIs and integrate them into each tab (Timeline, Video, Q&A, Boards, Looking For, Live Chat).
+- [x] Build typed service hooks for the new social/community APIs and integrate them into each tab (Timeline, Video, Q&A, Boards, Looking For, Live Chat). _`useSocialHubService` now wraps the social feed/video/community endpoints and the Social Hub grid view consumes those hooks (plus the existing spotlight widgets) to render live data._
 - [ ] Persist layout preferences (grid/timeline/dashboard) and add analytics events for tab/view interactions.
 
 ## Phase 5 – Community & Adoption
