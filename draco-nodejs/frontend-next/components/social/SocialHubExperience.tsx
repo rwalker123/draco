@@ -30,8 +30,6 @@ import {
   Facebook,
   YouTube,
   Instagram,
-  QuestionAnswer,
-  EmojiEvents,
   Search,
   FilterList,
   Refresh,
@@ -39,10 +37,12 @@ import {
   ThumbUp,
   Share,
   PlayCircleOutline,
-  LocationOn,
   Forum,
   PersonSearch,
 } from '@mui/icons-material';
+import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
+import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
+import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
 
 // Mock data for different social sources
 interface SocialCardData {
@@ -101,25 +101,6 @@ const mockYouTubeVideos: SocialCardData[] = [
   },
 ];
 
-const mockPlayerQuestions = [
-  {
-    id: 1,
-    player: 'Mike Johnson',
-    number: '23',
-    position: 'Pitcher',
-    question: 'Favorite pre-game meal?',
-    answer: 'Chicken and rice, keeps me energized!',
-  },
-  {
-    id: 2,
-    player: 'Sarah Davis',
-    number: '7',
-    position: 'Shortstop',
-    question: 'Baseball idol?',
-    answer: 'Derek Jeter - smooth fielding and clutch hitting!',
-  },
-];
-
 const mockMessageBoard = [
   {
     id: 1,
@@ -139,47 +120,15 @@ const mockMessageBoard = [
   },
 ];
 
-const mockLookingFor = [
-  {
-    id: 1,
-    type: 'team',
-    title: 'U16 Team Looking for Pitcher',
-    location: 'North Valley',
-    contact: 'coach@example.com',
-    posted: '2 days ago',
-  },
-  {
-    id: 2,
-    type: 'player',
-    title: 'Experienced Catcher Seeking Team',
-    location: 'Downtown Area',
-    age: '17',
-    posted: '4 days ago',
-  },
-];
-
-const mockHallOfFame = [
-  {
-    id: 1,
-    name: 'Tom Anderson',
-    year: '2023',
-    achievement: 'All-State pitcher, 15-0 record',
-    image: '/api/placeholder/100/100',
-  },
-  {
-    id: 2,
-    name: 'Lisa Chen',
-    year: '2022',
-    achievement: 'League MVP, .425 batting average',
-    image: '/api/placeholder/100/100',
-  },
-];
-
 interface SocialHubExperienceProps {
   accountId?: string;
+  isAccountMember?: boolean | null;
 }
 
-export default function SocialHubExperience({ accountId }: SocialHubExperienceProps) {
+export default function SocialHubExperience({
+  accountId,
+  isAccountMember,
+}: SocialHubExperienceProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [layoutStyle, setLayoutStyle] = useState<'grid' | 'timeline' | 'dashboard'>('grid');
 
@@ -304,6 +253,17 @@ export default function SocialHubExperience({ accountId }: SocialHubExperiencePr
     );
   };
 
+  const renderAccountRequiredNotice = (title: string, description: string) => (
+    <Paper sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        {title}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {description}
+      </Typography>
+    </Paper>
+  );
+
   // Grid Layout
   const GridLayout = () => (
     <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
@@ -358,92 +318,45 @@ export default function SocialHubExperience({ accountId }: SocialHubExperiencePr
 
       {/* Sidebar */}
       <Box sx={{ flex: { xs: 1, md: '1 1 0' } }}>
-        {/* Player Questionnaires */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <QuestionAnswer sx={{ mr: 1 }} /> Player Spotlights
-          </Typography>
-          <Stack spacing={2}>
-            {mockPlayerQuestions.map((qa) => (
-              <Card key={qa.id} variant="outlined">
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main', mr: 1 }}>{qa.number}</Avatar>
-                    <Box>
-                      <Typography variant="subtitle2">{qa.player}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {qa.position}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                    Q: {qa.question}
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 0.5 }}>
-                    A: {qa.answer}
-                  </Typography>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        </Paper>
+        <Box sx={{ mb: 3 }}>
+          {accountId ? (
+            <SurveySpotlightWidget
+              accountId={accountId}
+              canAnswerSurvey={Boolean(isAccountMember)}
+            />
+          ) : (
+            renderAccountRequiredNotice(
+              'Player Spotlights',
+              'Select an account to highlight recent survey responses.',
+            )
+          )}
+        </Box>
 
-        {/* Looking For */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <PersonSearch sx={{ mr: 1 }} /> Looking For Players/Teams
-          </Typography>
-          <Stack spacing={2}>
-            {mockLookingFor.map((item) => (
-              <Card key={item.id} variant="outlined">
-                <CardContent>
-                  <Chip
-                    label={item.type === 'team' ? 'Team Seeking' : 'Player Available'}
-                    size="small"
-                    color={item.type === 'team' ? 'primary' : 'secondary'}
-                    sx={{ mb: 1 }}
-                  />
-                  <Typography variant="subtitle2">{item.title}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                    <LocationOn fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
-                    <Typography variant="caption" color="text.secondary">
-                      {item.location}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {item.posted}
-                  </Typography>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        </Paper>
+        <Box sx={{ mb: 3 }}>
+          {accountId ? (
+            <PlayersWantedPreview
+              accountId={accountId}
+              isAccountMember={Boolean(isAccountMember)}
+              maxDisplay={3}
+            />
+          ) : (
+            renderAccountRequiredNotice(
+              'Looking for Players/Teams',
+              'Choose an account to browse the latest classifieds.',
+            )
+          )}
+        </Box>
 
-        {/* Hall of Fame */}
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <EmojiEvents sx={{ mr: 1, color: 'gold' }} /> Hall of Fame
-          </Typography>
-          <Stack spacing={2}>
-            {mockHallOfFame.map((member) => (
-              <Box key={member.id} sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar src={member.image} sx={{ width: 60, height: 60, mr: 2 }} />
-                <Box>
-                  <Typography variant="subtitle2">{member.name}</Typography>
-                  <Typography variant="caption" color="primary">
-                    Class of {member.year}
-                  </Typography>
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    {member.achievement}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-          <Button fullWidth variant="outlined" sx={{ mt: 2 }}>
-            View Full Hall of Fame
-          </Button>
-        </Paper>
+        <Box>
+          {accountId ? (
+            <HofSpotlightWidget accountId={accountId} hideCta />
+          ) : (
+            renderAccountRequiredNotice(
+              'Hall of Fame',
+              'Select an account to celebrate recent inductees.',
+            )
+          )}
+        </Box>
       </Box>
     </Box>
   );

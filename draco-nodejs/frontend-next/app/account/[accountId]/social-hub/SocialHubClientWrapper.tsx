@@ -4,12 +4,14 @@ import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Alert, Box, Button, Container } from '@mui/material';
 import SocialHubExperience from '../../../../components/social/SocialHubExperience';
+import { useAccountMembership } from '../../../../hooks/useAccountMembership';
 
 export default function SocialHubClientWrapper() {
   const params = useParams();
   const router = useRouter();
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
+  const { isMember } = useAccountMembership(accountId);
 
   if (!accountId) {
     return (
@@ -26,5 +28,5 @@ export default function SocialHubClientWrapper() {
     );
   }
 
-  return <SocialHubExperience accountId={accountId} />;
+  return <SocialHubExperience accountId={accountId} isAccountMember={isMember} />;
 }
