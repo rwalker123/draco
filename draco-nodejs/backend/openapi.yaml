@@ -11602,6 +11602,935 @@ components:
           example: "12345"
       title: PhotoGalleryQuery
       description: Optional filters when retrieving the account photo gallery
+    SocialFeedItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Stable identifier for the post.
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        seasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        source:
+          type: string
+          enum:
+            - twitter
+            - facebook
+            - instagram
+            - tiktok
+            - youtube
+            - twitch
+            - discord-global
+            - discord-team
+            - custom
+          title: SocialSource
+          description: Originating platform for a social feed item.
+        channelName:
+          type: string
+          minLength: 1
+        authorName:
+          type: string
+          nullable: true
+        authorHandle:
+          type: string
+          nullable: true
+        content:
+          type: string
+        media:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                  - image
+                  - video
+                  - file
+                description: Attachment media type.
+                example: image
+              url:
+                type: string
+                format: uri
+                example: https://cdn.example.com/media.jpg
+              thumbnailUrl:
+                type: string
+                nullable: true
+                format: uri
+            required:
+              - type
+              - url
+            title: SocialMediaAttachment
+        postedAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+        permalink:
+          type: string
+          nullable: true
+          format: uri
+        metadata:
+          type: object
+          properties:
+            reactions:
+              type: integer
+              minimum: 0
+            replies:
+              type: integer
+              minimum: 0
+            viewCount:
+              type: integer
+              minimum: 0
+          title: SocialFeedItemMetadata
+      required:
+        - id
+        - accountId
+        - seasonId
+        - source
+        - channelName
+        - content
+        - postedAt
+      title: SocialFeedItem
+      description: Normalized social media post content.
+    SocialFeedList:
+      type: object
+      properties:
+        feed:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+                description: Stable identifier for the post.
+              accountId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              seasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              teamSeasonId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              source:
+                type: string
+                enum:
+                  - twitter
+                  - facebook
+                  - instagram
+                  - tiktok
+                  - youtube
+                  - twitch
+                  - discord-global
+                  - discord-team
+                  - custom
+                title: SocialSource
+                description: Originating platform for a social feed item.
+              channelName:
+                type: string
+                minLength: 1
+              authorName:
+                type: string
+                nullable: true
+              authorHandle:
+                type: string
+                nullable: true
+              content:
+                type: string
+              media:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - image
+                        - video
+                        - file
+                      description: Attachment media type.
+                      example: image
+                    url:
+                      type: string
+                      format: uri
+                      example: https://cdn.example.com/media.jpg
+                    thumbnailUrl:
+                      type: string
+                      nullable: true
+                      format: uri
+                  required:
+                    - type
+                    - url
+                  title: SocialMediaAttachment
+              postedAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+              permalink:
+                type: string
+                nullable: true
+                format: uri
+              metadata:
+                type: object
+                properties:
+                  reactions:
+                    type: integer
+                    minimum: 0
+                  replies:
+                    type: integer
+                    minimum: 0
+                  viewCount:
+                    type: integer
+                    minimum: 0
+                title: SocialFeedItemMetadata
+            required:
+              - id
+              - accountId
+              - seasonId
+              - source
+              - channelName
+              - content
+              - postedAt
+            title: SocialFeedItem
+            description: Normalized social media post content.
+      required:
+        - feed
+      title: SocialFeedList
+    SocialFeedQuery:
+      type: object
+      properties:
+        teamId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        sources:
+          type: array
+          items:
+            type: string
+            enum:
+              - twitter
+              - facebook
+              - instagram
+              - tiktok
+              - youtube
+              - twitch
+              - discord-global
+              - discord-team
+              - custom
+            title: SocialSource
+            description: Originating platform for a social feed item.
+          minItems: 1
+        before:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: Only return posts created before this timestamp.
+        limit:
+          type: number
+          minimum: 1
+          maximum: 200
+          default: 50
+      title: SocialFeedQuery
+    SocialVideo:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        seasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        source:
+          type: string
+          enum:
+            - twitter
+            - facebook
+            - instagram
+            - tiktok
+            - youtube
+            - twitch
+            - discord-global
+            - discord-team
+            - custom
+          title: SocialSource
+          description: Originating platform for a social feed item.
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        durationSeconds:
+          type: integer
+          nullable: true
+          minimum: 0
+        thumbnailUrl:
+          type: string
+          format: uri
+        videoUrl:
+          type: string
+          format: uri
+        isLive:
+          type: boolean
+        publishedAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+      required:
+        - id
+        - accountId
+        - seasonId
+        - source
+        - title
+        - thumbnailUrl
+        - videoUrl
+        - isLive
+        - publishedAt
+      title: SocialVideo
+    SocialVideoList:
+      type: object
+      properties:
+        videos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              accountId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              seasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              teamSeasonId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              source:
+                type: string
+                enum:
+                  - twitter
+                  - facebook
+                  - instagram
+                  - tiktok
+                  - youtube
+                  - twitch
+                  - discord-global
+                  - discord-team
+                  - custom
+                title: SocialSource
+                description: Originating platform for a social feed item.
+              title:
+                type: string
+                minLength: 1
+              description:
+                type: string
+                nullable: true
+              durationSeconds:
+                type: integer
+                nullable: true
+                minimum: 0
+              thumbnailUrl:
+                type: string
+                format: uri
+              videoUrl:
+                type: string
+                format: uri
+              isLive:
+                type: boolean
+              publishedAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+            required:
+              - id
+              - accountId
+              - seasonId
+              - source
+              - title
+              - thumbnailUrl
+              - videoUrl
+              - isLive
+              - publishedAt
+            title: SocialVideo
+      required:
+        - videos
+      title: SocialVideoList
+    SocialVideoQuery:
+      type: object
+      properties:
+        teamId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        liveOnly:
+          type: boolean
+        limit:
+          type: number
+          minimum: 1
+          maximum: 100
+          default: 20
+      title: SocialVideoQuery
+    CommunityMessagePreview:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        seasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        channelId:
+          type: string
+          minLength: 1
+        channelName:
+          type: string
+          minLength: 1
+        authorId:
+          type: string
+          minLength: 1
+        authorDisplayName:
+          type: string
+          minLength: 1
+        avatarUrl:
+          type: string
+          nullable: true
+          format: uri
+        content:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                  - image
+                  - video
+                  - file
+                description: Attachment media type.
+                example: image
+              url:
+                type: string
+                format: uri
+                example: https://cdn.example.com/media.jpg
+              thumbnailUrl:
+                type: string
+                nullable: true
+                format: uri
+            required:
+              - type
+              - url
+            title: CommunityMessageAttachment
+        postedAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+        permalink:
+          type: string
+          nullable: true
+          format: uri
+      required:
+        - id
+        - accountId
+        - seasonId
+        - channelId
+        - channelName
+        - authorId
+        - authorDisplayName
+        - content
+        - postedAt
+      title: CommunityMessagePreview
+    CommunityMessageList:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              accountId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              seasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              teamSeasonId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              channelId:
+                type: string
+                minLength: 1
+              channelName:
+                type: string
+                minLength: 1
+              authorId:
+                type: string
+                minLength: 1
+              authorDisplayName:
+                type: string
+                minLength: 1
+              avatarUrl:
+                type: string
+                nullable: true
+                format: uri
+              content:
+                type: string
+              attachments:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - image
+                        - video
+                        - file
+                      description: Attachment media type.
+                      example: image
+                    url:
+                      type: string
+                      format: uri
+                      example: https://cdn.example.com/media.jpg
+                    thumbnailUrl:
+                      type: string
+                      nullable: true
+                      format: uri
+                  required:
+                    - type
+                    - url
+                  title: CommunityMessageAttachment
+              postedAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+              permalink:
+                type: string
+                nullable: true
+                format: uri
+            required:
+              - id
+              - accountId
+              - seasonId
+              - channelId
+              - channelName
+              - authorId
+              - authorDisplayName
+              - content
+              - postedAt
+            title: CommunityMessagePreview
+      required:
+        - messages
+      title: CommunityMessageList
+    CommunityMessageQuery:
+      type: object
+      properties:
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        channelIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        limit:
+          type: number
+          minimum: 1
+          maximum: 200
+          default: 50
+      title: CommunityMessageQuery
+    LiveEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        leagueEventId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        seasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        teamId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        startsAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        streamPlatform:
+          type: string
+          nullable: true
+        streamUrl:
+          type: string
+          nullable: true
+          format: uri
+        discordChannelId:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+            - upcoming
+            - live
+            - ended
+            - cancelled
+          title: LiveEventStatus
+        featured:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+      required:
+        - id
+        - leagueEventId
+        - accountId
+        - seasonId
+        - leagueSeasonId
+        - startsAt
+        - title
+        - status
+        - featured
+        - createdAt
+        - updatedAt
+      title: LiveEvent
+    LiveEventList:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              leagueEventId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              accountId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              seasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              leagueSeasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teamSeasonId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              teamId:
+                type: string
+                nullable: true
+                pattern: ^\d+$
+                example: "12345"
+              startsAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+              title:
+                type: string
+                minLength: 1
+              description:
+                type: string
+                nullable: true
+              streamPlatform:
+                type: string
+                nullable: true
+              streamUrl:
+                type: string
+                nullable: true
+                format: uri
+              discordChannelId:
+                type: string
+                nullable: true
+              location:
+                type: string
+                nullable: true
+              status:
+                type: string
+                enum:
+                  - upcoming
+                  - live
+                  - ended
+                  - cancelled
+                title: LiveEventStatus
+              featured:
+                type: boolean
+              createdAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+              updatedAt:
+                type: string
+                format: date-time
+                example: 2024-03-01T18:30:00Z
+            required:
+              - id
+              - leagueEventId
+              - accountId
+              - seasonId
+              - leagueSeasonId
+              - startsAt
+              - title
+              - status
+              - featured
+              - createdAt
+              - updatedAt
+            title: LiveEvent
+      required:
+        - events
+      title: LiveEventList
+    LiveEventQuery:
+      type: object
+      properties:
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        status:
+          type: array
+          items:
+            type: string
+            enum:
+              - upcoming
+              - live
+              - ended
+              - cancelled
+            title: LiveEventStatus
+          minItems: 1
+        featuredOnly:
+          type: boolean
+      title: LiveEventQuery
+    LiveEventCreate:
+      type: object
+      properties:
+        leagueEventId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 255
+        streamPlatform:
+          type: string
+          maxLength: 50
+        streamUrl:
+          type: string
+          format: uri
+        discordChannelId:
+          type: string
+          maxLength: 32
+        location:
+          type: string
+          maxLength: 255
+        status:
+          type: string
+          enum:
+            - upcoming
+            - live
+            - ended
+            - cancelled
+          title: LiveEventStatus
+        featured:
+          type: boolean
+        startsAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+      required:
+        - title
+      title: LiveEventCreate
+    LiveEventUpdate:
+      type: object
+      properties:
+        leagueEventId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 255
+        streamPlatform:
+          type: string
+          maxLength: 50
+        streamUrl:
+          type: string
+          format: uri
+        discordChannelId:
+          type: string
+          maxLength: 32
+        location:
+          type: string
+          maxLength: 255
+        status:
+          type: string
+          enum:
+            - upcoming
+            - live
+            - ended
+            - cancelled
+          title: LiveEventStatus
+        featured:
+          type: boolean
+        startsAt:
+          type: string
+          format: date-time
+          example: 2024-03-01T18:30:00Z
+      title: LiveEventUpdate
     PhotoSubmission:
       type: object
       properties:
@@ -24775,6 +25704,514 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/social/feed:
+    get:
+      summary: List social feed items
+      description: Retrieve normalized social media posts for the specified account
+        and season.
+      operationId: listSocialFeed
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - &a14
+          name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - &a15
+          name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - schema:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          required: false
+          name: teamId
+          in: query
+        - schema:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          required: false
+          name: teamSeasonId
+          in: query
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - twitter
+                - facebook
+                - instagram
+                - tiktok
+                - youtube
+                - twitch
+                - discord-global
+                - discord-team
+                - custom
+              title: SocialSource
+              description: Originating platform for a social feed item.
+            minItems: 1
+          required: false
+          name: sources
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            example: 2024-03-01T18:30:00Z
+            description: Only return posts created before this timestamp.
+          required: false
+          description: Only return posts created before this timestamp.
+          name: before
+          in: query
+        - schema:
+            type: number
+            minimum: 1
+            maximum: 200
+            default: 50
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Social feed items.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialFeedList"
+        "400":
+          description: Invalid feed query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User does not have access to this account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error retrieving feed items.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/social/videos:
+    get:
+      summary: List social videos
+      description: Retrieve video content linked to the account.
+      operationId: listSocialVideos
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+        - schema:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          required: false
+          name: teamId
+          in: query
+        - schema:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          required: false
+          name: teamSeasonId
+          in: query
+        - schema:
+            type: boolean
+          required: false
+          name: liveOnly
+          in: query
+        - schema:
+            type: number
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Video entries from connected platforms.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialVideoList"
+        "400":
+          description: Invalid video query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User does not have access to this account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error retrieving videos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/social/community-messages:
+    get:
+      summary: List community messages
+      description: Retrieve recent Discord messages mirrored for the account.
+      operationId: listCommunityMessages
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+        - schema:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          required: false
+          name: teamSeasonId
+          in: query
+        - schema:
+            type: array
+            items:
+              type: string
+              minLength: 1
+          required: false
+          name: channelIds
+          in: query
+        - schema:
+            type: number
+            minimum: 1
+            maximum: 200
+            default: 50
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Community chat previews.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityMessageList"
+        "400":
+          description: Invalid message query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User does not have access to this account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error retrieving community messages.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/social/live-events:
+    get:
+      summary: List live events
+      description: Retrieve upcoming or historical livestream events for the account.
+      operationId: listLiveEvents
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+        - schema:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          required: false
+          name: teamSeasonId
+          in: query
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - upcoming
+                - live
+                - ended
+                - cancelled
+              title: LiveEventStatus
+            minItems: 1
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: boolean
+          required: false
+          name: featuredOnly
+          in: query
+      responses:
+        "200":
+          description: Live event metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveEventList"
+        "400":
+          description: Invalid live event filters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User does not have access to this account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error retrieving live events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      summary: Create live event
+      description: Create livestream metadata for the account.
+      operationId: createLiveEvent
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveEventCreate"
+      responses:
+        "201":
+          description: Live event created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveEvent"
+        "400":
+          description: Invalid live event payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User lacks permission to manage live events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Referenced league season or event not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error creating the live event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/social/live-events/{liveEventId}:
+    get:
+      summary: Get live event
+      description: Retrieve details for a specific live event.
+      operationId: getLiveEvent
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+        - &a16
+          name: liveEventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Live event details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveEvent"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User does not have access to this account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Live event not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error retrieving the live event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    patch:
+      summary: Update live event
+      description: Update livestream metadata.
+      operationId: updateLiveEvent
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+        - *a16
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveEventUpdate"
+      responses:
+        "200":
+          description: Updated live event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveEvent"
+        "400":
+          description: Invalid live event payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User lacks permission to manage live events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Live event not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error updating the live event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete live event metadata
+      description: Remove livestream metadata for the account.
+      operationId: deleteLiveEvent
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+        - *a16
+      responses:
+        "204":
+          description: Live event deleted.
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User lacks permission to manage live events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Live event not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error deleting the live event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/sponsors:
     get:
       description: List sponsors configured for an account
@@ -25985,23 +27422,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a15
+        - &a18
           name: accountId
           in: path
           required: true
-          schema: &a14
+          schema: &a17
             type: string
             format: number
-        - &a16
+        - &a19
           name: seasonId
           in: path
           required: true
-          schema: *a14
-        - &a17
+          schema: *a17
+        - &a20
           name: teamSeasonId
           in: path
           required: true
-          schema: *a14
+          schema: *a17
       responses:
         "200":
           description: Completed games retrieved.
@@ -26047,14 +27484,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
-        - &a18
+        - *a18
+        - *a19
+        - *a20
+        - &a21
           name: gameId
           in: path
           required: true
-          schema: *a14
+          schema: *a17
       responses:
         "200":
           description: Batting stats retrieved.
@@ -26099,10 +27536,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
+        - *a19
+        - *a20
+        - *a21
       requestBody:
         required: true
         content:
@@ -26160,15 +27597,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
-        - &a19
+        - *a19
+        - *a20
+        - *a21
+        - &a22
           name: statId
           in: path
           required: true
-          schema: *a14
+          schema: *a17
       requestBody:
         required: true
         content:
@@ -26219,11 +27656,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
         - *a19
+        - *a20
+        - *a21
+        - *a22
       responses:
         "204":
           description: Batting stat deleted.
@@ -26265,10 +27702,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
+        - *a19
+        - *a20
+        - *a21
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -26313,10 +27750,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
+        - *a19
+        - *a20
+        - *a21
       requestBody:
         required: true
         content:
@@ -26374,11 +27811,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
         - *a19
+        - *a20
+        - *a21
+        - *a22
       requestBody:
         required: true
         content:
@@ -26429,11 +27866,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
         - *a19
+        - *a20
+        - *a21
+        - *a22
       responses:
         "204":
           description: Pitching stat deleted.
@@ -26475,10 +27912,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
+        - *a19
+        - *a20
+        - *a21
       responses:
         "200":
           description: Attendance retrieved.
@@ -26523,10 +27960,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a15
-        - *a16
-        - *a17
         - *a18
+        - *a19
+        - *a20
+        - *a21
       requestBody:
         required: true
         content:

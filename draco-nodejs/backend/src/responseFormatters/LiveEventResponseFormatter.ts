@@ -1,12 +1,12 @@
 import { dbLiveEvent } from '../repositories/types/dbTypes.js';
-import { LiveEventResponse, LiveEventStatus } from '../types/social.js';
+import type { LiveEventType, LiveEventStatusType } from '@draco/shared-schemas';
 
 export class LiveEventResponseFormatter {
-  static format(events: dbLiveEvent[]): LiveEventResponse[] {
+  static format(events: dbLiveEvent[]): LiveEventType[] {
     return events.map((event) => this.formatOne(event));
   }
 
-  static formatOne(event: dbLiveEvent): LiveEventResponse {
+  static formatOne(event: dbLiveEvent): LiveEventType {
     const leagueEvent = event.leagueevents;
     const leagueSeason = leagueEvent.leagueseason;
     const teamSeason = event.teamsseason;
@@ -32,7 +32,7 @@ export class LiveEventResponseFormatter {
     };
   }
 
-  private static normalizeStatus(rawStatus: string): LiveEventStatus {
+  private static normalizeStatus(rawStatus: string): LiveEventStatusType {
     const normalized = rawStatus.toLowerCase();
     if (normalized === 'live' || normalized === 'ended' || normalized === 'cancelled') {
       return normalized;

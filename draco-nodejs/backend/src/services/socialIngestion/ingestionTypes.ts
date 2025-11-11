@@ -1,8 +1,8 @@
 import {
-  SocialFeedItemMetadata,
-  SocialMediaAttachment,
-  CommunityMessageAttachment,
-} from '../../types/social.js';
+  SocialFeedItemMetadataType,
+  SocialMediaAttachmentType,
+  CommunityMessageAttachmentType,
+} from '@draco/shared-schemas';
 import {
   TwitterIngestionTarget,
   YouTubeIngestionTarget,
@@ -17,8 +17,8 @@ export interface SocialFeedIngestionRecord {
   channelName?: string;
   postedAt: Date;
   permalink?: string | null;
-  media?: SocialMediaAttachment[];
-  metadata?: SocialFeedItemMetadata;
+  media?: SocialMediaAttachmentType[];
+  metadata?: SocialFeedItemMetadataType;
 }
 
 export interface SocialVideoIngestionRecord {
@@ -39,7 +39,7 @@ export interface DiscordMessageIngestionRecord {
   authorDisplayName: string;
   authorId?: string;
   postedAt: Date;
-  attachments?: CommunityMessageAttachment[];
+  attachments?: CommunityMessageAttachmentType[];
   permalink?: string | null;
 }
 

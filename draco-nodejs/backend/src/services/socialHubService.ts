@@ -12,18 +12,30 @@ import {
   SocialFeedResponseFormatter,
   LiveEventResponseFormatter,
 } from '../responseFormatters/index.js';
-import {
-  CommunityMessageFilters,
-  LiveEventFilters,
-  LiveEventResponse,
-  LiveEventUpsertInput,
-  SocialFeedFilters,
-  SocialFeedItemResponse,
-  SocialVideoFilters,
-  SocialVideoResponse,
-  CommunityMessagePreviewResponse,
-} from '../types/social.js';
+import type {
+  SocialFeedItemType,
+  SocialVideoType,
+  CommunityMessagePreviewType,
+  LiveEventType,
+  LiveEventStatusType,
+  LiveEventCreateType,
+  LiveEventUpdateType,
+  SocialFeedQueryType,
+  SocialVideoQueryType,
+  CommunityMessageQueryType,
+  LiveEventQueryType,
+} from '@draco/shared-schemas';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+
+type LiveEventMutationPayload = LiveEventCreateType | LiveEventUpdateType;
+type LiveEventIdField = 'leagueEventId' | 'leagueSeasonId' | 'teamSeasonId';
+type HydratedLiveEventPayload = Partial<{
+  [K in keyof LiveEventMutationPayload]: K extends LiveEventIdField
+    ? bigint
+    : K extends 'startsAt'
+      ? Date
+      : LiveEventMutationPayload[K];
+}>;
 
 export class SocialHubService {
   private readonly socialContentRepository: ISocialContentRepository;
@@ -41,68 +53,68 @@ export class SocialHubService {
   async listFeedItems(
     accountId: bigint,
     seasonId: bigint,
-    filters?: SocialFeedFilters,
-  ): Promise<SocialFeedItemResponse[]> {
-    const query: SocialFeedQuery = {
+    query?: SocialFeedQueryType,
+  ): Promise<SocialFeedItemType[]> {
+    const repositoryQuery: SocialFeedQuery = {
       accountId,
       seasonId,
-      teamId: filters?.teamId,
-      teamSeasonId: filters?.teamSeasonId,
-      sources: filters?.sources,
-      before: filters?.before,
-      limit: filters?.limit,
+      teamId: toOptionalBigInt(query?.teamId),
+      teamSeasonId: toOptionalBigInt(query?.teamSeasonId),
+      sources: query?.sources,
+      before: toOptionalDate(query?.before),
+      limit: query?.limit,
     };
 
-    const records = await this.socialContentRepository.listFeedItems(query);
+    const records = await this.socialContentRepository.listFeedItems(repositoryQuery);
     return SocialFeedResponseFormatter.formatFeedItems(records);
   }
 
   async listVideos(
     accountId: bigint,
     seasonId: bigint,
-    filters?: SocialVideoFilters,
-  ): Promise<SocialVideoResponse[]> {
-    const query: SocialVideoQuery = {
+    query?: SocialVideoQueryType,
+  ): Promise<SocialVideoType[]> {
+    const repositoryQuery: SocialVideoQuery = {
       accountId,
       seasonId,
-      teamId: filters?.teamId,
-      teamSeasonId: filters?.teamSeasonId,
-      liveOnly: filters?.liveOnly,
-      limit: filters?.limit,
+      teamId: toOptionalBigInt(query?.teamId),
+      teamSeasonId: toOptionalBigInt(query?.teamSeasonId),
+      liveOnly: query?.liveOnly,
+      limit: query?.limit,
     };
 
-    const records = await this.socialContentRepository.listVideos(query);
+    const records = await this.socialContentRepository.listVideos(repositoryQuery);
     return SocialFeedResponseFormatter.formatVideos(records);
   }
 
   async listCommunityMessages(
     accountId: bigint,
     seasonId: bigint,
-    filters?: CommunityMessageFilters,
-  ): Promise<CommunityMessagePreviewResponse[]> {
-    const query: CommunityMessageQuery = {
+    query?: CommunityMessageQueryType,
+  ): Promise<CommunityMessagePreviewType[]> {
+    const repositoryQuery: CommunityMessageQuery = {
       accountId,
       seasonId,
-      teamSeasonId: filters?.teamSeasonId,
-      channelIds: filters?.channelIds,
-      limit: filters?.limit,
+      teamSeasonId: toOptionalBigInt(query?.teamSeasonId),
+      channelIds: query?.channelIds,
+      limit: query?.limit,
     };
 
-    const records = await this.socialContentRepository.listCommunityMessages(query);
+    const records = await this.socialContentRepository.listCommunityMessages(repositoryQuery);
     return SocialFeedResponseFormatter.formatCommunityMessages(records);
   }
 
   async listLiveEvents(
     accountId: bigint,
     seasonId: bigint,
-    filters?: LiveEventFilters,
-  ): Promise<LiveEventResponse[]> {
+    query?: LiveEventQueryType,
+  ): Promise<LiveEventType[]> {
     const records = await this.liveEventRepository.listLiveEvents({
       accountId,
       seasonId,
-      teamSeasonId: filters?.teamSeasonId,
-      status: filters?.status,
-      featuredOnly: filters?.featuredOnly,
+      teamSeasonId: toOptionalBigInt(query?.teamSeasonId),
+      status: query?.status as LiveEventStatusType[] | undefined,
+      featuredOnly: query?.featuredOnly,
     });
 
     return LiveEventResponseFormatter.format(records);
@@ -112,7 +124,7 @@ export class SocialHubService {
     accountId: bigint,
     seasonId: bigint,
     liveEventId: bigint,
-  ): Promise<LiveEventResponse> {
+  ): Promise<LiveEventType> {
     const record = await this.liveEventRepository.findLiveEventById(
       accountId,
       seasonId,
@@ -129,29 +141,31 @@ export class SocialHubService {
   async createLiveEvent(
     accountId: bigint,
     seasonId: bigint,
-    payload: LiveEventUpsertInput,
-  ): Promise<LiveEventResponse> {
-    const leagueEventId = await this.resolveLeagueEventId(accountId, seasonId, payload);
+    payload: LiveEventCreateType,
+  ): Promise<LiveEventType> {
+    const mappedPayload = mapLiveEventPayload(payload);
+    const title = SocialHubService.requireTitle(mappedPayload);
+    const leagueEventId = await this.resolveLeagueEventId(accountId, seasonId, mappedPayload);
 
-    if (payload.teamSeasonId) {
+    if (mappedPayload.teamSeasonId) {
       await this.liveEventRepository.ensureTeamSeasonAccess(
         accountId,
         seasonId,
-        payload.teamSeasonId,
+        mappedPayload.teamSeasonId,
       );
     }
 
     const created = await this.liveEventRepository.createLiveEventDetails({
       leagueeventid: leagueEventId,
-      teamseasonid: payload.teamSeasonId ?? null,
-      title: payload.title,
-      description: payload.description ?? null,
-      streamplatform: payload.streamPlatform ?? null,
-      streamurl: payload.streamUrl ?? null,
-      discordchannelid: payload.discordChannelId ?? null,
-      location: payload.location ?? null,
-      status: payload.status ?? 'upcoming',
-      featured: payload.featured ?? false,
+      teamseasonid: mappedPayload.teamSeasonId ?? null,
+      title,
+      description: mappedPayload.description ?? null,
+      streamplatform: mappedPayload.streamPlatform ?? null,
+      streamurl: mappedPayload.streamUrl ?? null,
+      discordchannelid: mappedPayload.discordChannelId ?? null,
+      location: mappedPayload.location ?? null,
+      status: mappedPayload.status ?? 'upcoming',
+      featured: mappedPayload.featured ?? false,
     });
 
     return this.getLiveEvent(accountId, seasonId, created.id);
@@ -161,39 +175,38 @@ export class SocialHubService {
     accountId: bigint,
     seasonId: bigint,
     liveEventId: bigint,
-    payload: LiveEventUpsertInput,
-  ): Promise<LiveEventResponse> {
+    payload: LiveEventUpdateType,
+  ): Promise<LiveEventType> {
+    const mappedPayload = mapLiveEventPayload(payload);
     const existing = await this.requireLiveEvent(accountId, seasonId, liveEventId);
 
-    if (payload.leagueSeasonId) {
+    if (mappedPayload.leagueSeasonId) {
       await this.liveEventRepository.ensureLeagueSeasonAccess(
         accountId,
         seasonId,
-        payload.leagueSeasonId,
+        mappedPayload.leagueSeasonId,
       );
     }
 
-    if ('teamSeasonId' in payload) {
-      if (payload.teamSeasonId) {
-        await this.liveEventRepository.ensureTeamSeasonAccess(
-          accountId,
-          seasonId,
-          payload.teamSeasonId,
-        );
-      }
+    if (mappedPayload.teamSeasonId) {
+      await this.liveEventRepository.ensureTeamSeasonAccess(
+        accountId,
+        seasonId,
+        mappedPayload.teamSeasonId,
+      );
     }
 
     const updatedLeagueEventData: Prisma.leagueeventsUncheckedUpdateInput = {};
-    if (payload.leagueSeasonId) {
-      updatedLeagueEventData.leagueseasonid = payload.leagueSeasonId;
+    if (mappedPayload.leagueSeasonId) {
+      updatedLeagueEventData.leagueseasonid = mappedPayload.leagueSeasonId;
     }
-    if (payload.startsAt) {
-      updatedLeagueEventData.eventdate = payload.startsAt;
+    if (mappedPayload.startsAt) {
+      updatedLeagueEventData.eventdate = mappedPayload.startsAt;
     }
-    if (payload.title) {
-      updatedLeagueEventData.description = SocialHubService.formatLeagueEventDescription(
-        payload.title,
-      );
+    const normalizedTitle = SocialHubService.normalizeOptionalTitle(mappedPayload.title);
+    if (normalizedTitle) {
+      updatedLeagueEventData.description =
+        SocialHubService.formatLeagueEventDescription(normalizedTitle);
     }
 
     if (Object.keys(updatedLeagueEventData).length > 0) {
@@ -205,40 +218,40 @@ export class SocialHubService {
 
     const detailUpdates: Prisma.socialliveeventsUncheckedUpdateInput = {};
 
-    if ('teamSeasonId' in payload) {
-      detailUpdates.teamseasonid = payload.teamSeasonId ?? null;
+    if ('teamSeasonId' in mappedPayload) {
+      detailUpdates.teamseasonid = mappedPayload.teamSeasonId ?? null;
     }
 
-    if (payload.title) {
-      detailUpdates.title = payload.title;
+    if (normalizedTitle) {
+      detailUpdates.title = normalizedTitle;
     }
 
-    if ('description' in payload) {
-      detailUpdates.description = payload.description ?? null;
+    if ('description' in mappedPayload) {
+      detailUpdates.description = mappedPayload.description ?? null;
     }
 
-    if ('streamPlatform' in payload) {
-      detailUpdates.streamplatform = payload.streamPlatform ?? null;
+    if ('streamPlatform' in mappedPayload) {
+      detailUpdates.streamplatform = mappedPayload.streamPlatform ?? null;
     }
 
-    if ('streamUrl' in payload) {
-      detailUpdates.streamurl = payload.streamUrl ?? null;
+    if ('streamUrl' in mappedPayload) {
+      detailUpdates.streamurl = mappedPayload.streamUrl ?? null;
     }
 
-    if ('discordChannelId' in payload) {
-      detailUpdates.discordchannelid = payload.discordChannelId ?? null;
+    if ('discordChannelId' in mappedPayload) {
+      detailUpdates.discordchannelid = mappedPayload.discordChannelId ?? null;
     }
 
-    if ('location' in payload) {
-      detailUpdates.location = payload.location ?? null;
+    if ('location' in mappedPayload) {
+      detailUpdates.location = mappedPayload.location ?? null;
     }
 
-    if ('status' in payload && payload.status) {
-      detailUpdates.status = payload.status;
+    if (mappedPayload.status) {
+      detailUpdates.status = mappedPayload.status;
     }
 
-    if ('featured' in payload && typeof payload.featured === 'boolean') {
-      detailUpdates.featured = payload.featured;
+    if (mappedPayload.featured !== undefined) {
+      detailUpdates.featured = mappedPayload.featured;
     }
 
     if (Object.keys(detailUpdates).length > 0) {
@@ -274,7 +287,7 @@ export class SocialHubService {
   private async resolveLeagueEventId(
     accountId: bigint,
     seasonId: bigint,
-    payload: LiveEventUpsertInput,
+    payload: HydratedLiveEventPayload,
   ): Promise<bigint> {
     if (payload.leagueEventId) {
       const leagueEvent = await this.liveEventRepository.ensureLeagueEventAccess(
@@ -299,7 +312,10 @@ export class SocialHubService {
         updateData.eventdate = payload.startsAt;
       }
 
-      updateData.description = SocialHubService.formatLeagueEventDescription(payload.title);
+      const existingTitle = SocialHubService.normalizeOptionalTitle(payload.title);
+      if (existingTitle) {
+        updateData.description = SocialHubService.formatLeagueEventDescription(existingTitle);
+      }
 
       await this.liveEventRepository.updateLeagueEvent(leagueEvent.id, updateData);
 
@@ -323,7 +339,9 @@ export class SocialHubService {
     const createdLeagueEvent = await this.liveEventRepository.createLeagueEvent({
       leagueseasonid: payload.leagueSeasonId,
       eventdate: payload.startsAt,
-      description: SocialHubService.formatLeagueEventDescription(payload.title),
+      description: SocialHubService.formatLeagueEventDescription(
+        SocialHubService.requireTitle(payload),
+      ),
     });
 
     return createdLeagueEvent.id;
@@ -333,4 +351,66 @@ export class SocialHubService {
     const trimmed = title.trim();
     return trimmed.length > 25 ? `${trimmed.slice(0, 22)}...` : trimmed;
   }
+
+  private static requireTitle(payload: HydratedLiveEventPayload): string {
+    const title = payload.title?.trim();
+    if (!title) {
+      throw new ValidationError('title is required');
+    }
+    return title;
+  }
+
+  private static normalizeOptionalTitle(title?: string): string | undefined {
+    if (!title) {
+      return undefined;
+    }
+    const trimmed = title.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+}
+
+const LIVE_EVENT_ID_FIELDS: ReadonlySet<LiveEventIdField> = new Set([
+  'leagueEventId',
+  'leagueSeasonId',
+  'teamSeasonId',
+]);
+
+function mapLiveEventPayload(payload: LiveEventMutationPayload): HydratedLiveEventPayload {
+  const mapped: HydratedLiveEventPayload = {};
+  const payloadKeys = Object.keys(payload) as Array<keyof LiveEventMutationPayload>;
+
+  payloadKeys.forEach((key) => {
+    const value = payload[key];
+
+    if (LIVE_EVENT_ID_FIELDS.has(key as LiveEventIdField)) {
+      mapped[key as LiveEventIdField] = toOptionalBigInt(value as string | null | undefined);
+      return;
+    }
+
+    if (key === 'startsAt') {
+      mapped.startsAt = toOptionalDate(value as string | undefined);
+      return;
+    }
+
+    (mapped as Record<string, unknown>)[key as string] =
+      value as LiveEventMutationPayload[typeof key];
+  });
+
+  return mapped;
+}
+
+function toOptionalBigInt(value?: string | null): bigint | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const trimmed = String(value).trim();
+  return trimmed ? BigInt(trimmed) : undefined;
+}
+
+function toOptionalDate(value?: string): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+  return new Date(value);
 }

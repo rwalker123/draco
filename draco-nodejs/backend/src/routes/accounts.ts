@@ -20,6 +20,7 @@ import accountsMemberBusinessRouter from './accounts-member-businesses.js';
 import accountsHallOfFameRouter from './accounts-hall-of-fame.js';
 import accountsLeagueFaqRouter from './accounts-league-faq.js';
 import accountsAnnouncementsRouter from './accounts-announcements.js';
+import accountsSocialRouter from './accounts-social.js';
 
 const router = Router({ mergeParams: true });
 
@@ -78,5 +79,8 @@ router.use('/', accountsHandoutsRouter);
 
 // Announcement endpoints
 router.use('/', accountsAnnouncementsRouter);
+
+// Social feed endpoints
+router.use('/', accountsSocialRouter);
 
 export default router;

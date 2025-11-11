@@ -5,42 +5,42 @@ import {
   dbSocialVideo,
 } from '../repositories/types/dbTypes.js';
 import {
-  CommunityMessageAttachment,
-  CommunityMessagePreviewResponse,
-  SocialFeedItemMetadata,
-  SocialFeedItemResponse,
-  SocialMediaAttachment,
-  SocialVideoResponse,
-} from '../types/social.js';
+  CommunityMessageAttachmentType,
+  CommunityMessagePreviewType,
+  SocialFeedItemMetadataType,
+  SocialFeedItemType,
+  SocialMediaAttachmentType,
+  SocialVideoType,
+} from '@draco/shared-schemas';
 
 export class SocialFeedResponseFormatter {
-  static formatFeedItems(records: dbSocialFeedItem[]): SocialFeedItemResponse[] {
+  static formatFeedItems(records: dbSocialFeedItem[]): SocialFeedItemType[] {
     return records.map((record) => ({
       id: record.id,
       accountId: record.accountid.toString(),
       seasonId: record.seasonid.toString(),
       teamId: record.teamid?.toString() ?? null,
       teamSeasonId: record.teamseasonid?.toString() ?? null,
-      source: record.source as SocialFeedItemResponse['source'],
+      source: record.source as SocialFeedItemType['source'],
       channelName: record.channelname,
       authorName: record.authorname,
       authorHandle: record.authorhandle,
       content: record.content,
       media: this.parseAttachments(record.media),
       postedAt: record.postedat.toISOString(),
-      permalink: record.permalink,
+      permalink: record.permalink ?? null,
       metadata: this.parseMetadata(record.metadata),
     }));
   }
 
-  static formatVideos(records: dbSocialVideo[]): SocialVideoResponse[] {
+  static formatVideos(records: dbSocialVideo[]): SocialVideoType[] {
     return records.map((record) => ({
       id: record.id,
       accountId: record.accountid.toString(),
       seasonId: record.seasonid.toString(),
       teamId: record.teamid?.toString() ?? null,
       teamSeasonId: record.teamseasonid?.toString() ?? null,
-      source: record.source as SocialVideoResponse['source'],
+      source: record.source as SocialVideoType['source'],
       title: record.title,
       description: record.description,
       durationSeconds: record.durationseconds ?? undefined,
@@ -53,7 +53,7 @@ export class SocialFeedResponseFormatter {
 
   static formatCommunityMessages(
     records: dbDiscordMessagePreview[],
-  ): CommunityMessagePreviewResponse[] {
+  ): CommunityMessagePreviewType[] {
     return records.map((record) => ({
       id: record.id,
       accountId: record.accountid.toString(),
@@ -68,18 +68,18 @@ export class SocialFeedResponseFormatter {
       content: record.content,
       attachments: this.parseCommunityAttachments(record.attachments),
       postedAt: record.postedat.toISOString(),
-      permalink: record.permalink,
+      permalink: record.permalink ?? null,
     }));
   }
 
   private static parseAttachments(
     media: Prisma.JsonValue | null,
-  ): SocialMediaAttachment[] | undefined {
+  ): SocialMediaAttachmentType[] | undefined {
     if (!media || !Array.isArray(media)) {
       return undefined;
     }
 
-    const attachments: SocialMediaAttachment[] = [];
+    const attachments: SocialMediaAttachmentType[] = [];
 
     for (const item of media) {
       if (
@@ -93,7 +93,7 @@ export class SocialFeedResponseFormatter {
 
       const typed = item as Record<string, unknown>;
       attachments.push({
-        type: typed.type as SocialMediaAttachment['type'],
+        type: typed.type as SocialMediaAttachmentType['type'],
         url: typed.url as string,
         thumbnailUrl: typeof typed.thumbnailUrl === 'string' ? typed.thumbnailUrl : null,
       });
@@ -104,12 +104,12 @@ export class SocialFeedResponseFormatter {
 
   private static parseCommunityAttachments(
     payload: Prisma.JsonValue | null,
-  ): CommunityMessageAttachment[] | undefined {
+  ): CommunityMessageAttachmentType[] | undefined {
     if (!payload || !Array.isArray(payload)) {
       return undefined;
     }
 
-    const attachments: CommunityMessageAttachment[] = [];
+    const attachments: CommunityMessageAttachmentType[] = [];
 
     for (const item of payload) {
       if (
@@ -123,7 +123,7 @@ export class SocialFeedResponseFormatter {
 
       const typed = item as Record<string, unknown>;
       attachments.push({
-        type: typed.type as CommunityMessageAttachment['type'],
+        type: typed.type as CommunityMessageAttachmentType['type'],
         url: typed.url as string,
         thumbnailUrl: typeof typed.thumbnailUrl === 'string' ? typed.thumbnailUrl : null,
       });
@@ -134,13 +134,13 @@ export class SocialFeedResponseFormatter {
 
   private static parseMetadata(
     metadata: Prisma.JsonValue | null,
-  ): SocialFeedItemMetadata | undefined {
+  ): SocialFeedItemMetadataType | undefined {
     if (!metadata || typeof metadata !== 'object' || metadata === null) {
       return undefined;
     }
 
     const data = metadata as Record<string, unknown>;
-    const parsed: SocialFeedItemMetadata = {};
+    const parsed: SocialFeedItemMetadataType = {};
 
     if (typeof data.reactions === 'number') {
       parsed.reactions = data.reactions;

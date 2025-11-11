@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { BaseSocialIngestionConnector } from './baseConnector.js';
 import { SocialFeedIngestionRecord, TwitterConnectorOptions } from '../ingestionTypes.js';
-import { SocialMediaAttachment } from '../../../types/social.js';
+import type { SocialMediaAttachmentType } from '@draco/shared-schemas';
 import { deterministicUuid } from '../../../utils/deterministicUuid.js';
 import { fetchJson } from '../../../utils/fetchJson.js';
 import { ISocialContentRepository } from '../../../repositories/interfaces/ISocialContentRepository.js';
@@ -114,7 +114,7 @@ export class TwitterConnector extends BaseSocialIngestionConnector {
               type: item.type === 'video' ? 'video' : 'image',
               url: item.url ?? item.preview_image_url ?? '',
               thumbnailUrl: item.preview_image_url ?? null,
-            })) as SocialMediaAttachment[]) ?? [];
+            })) as SocialMediaAttachmentType[]) ?? [];
 
         const author = tweet.author_id ? userMap.get(tweet.author_id) : undefined;
 
