@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -14,9 +14,6 @@ import {
   IconButton,
   Button,
   Stack,
-  Tabs,
-  Tab,
-  Badge,
   Divider,
   List,
   ListItem,
@@ -24,6 +21,8 @@ import {
   ListItemText,
   TextField,
   InputAdornment,
+  Alert,
+  Skeleton,
 } from '@mui/material';
 import {
   Twitter,
@@ -35,71 +34,20 @@ import {
   Refresh,
   OpenInNew,
   ThumbUp,
+  Comment,
   Share,
   PlayCircleOutline,
   Forum,
-  PersonSearch,
 } from '@mui/icons-material';
+import type {
+  SocialFeedItemType,
+  SocialVideoType,
+  CommunityMessagePreviewType,
+} from '@draco/shared-schemas';
+import { useSocialHubService } from '@/hooks/useSocialHubService';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import HofSpotlightWidget from '@/components/hall-of-fame/HofSpotlightWidget';
 import PlayersWantedPreview from '@/components/join-league/PlayersWantedPreview';
-
-// Mock data for different social sources
-interface SocialCardData {
-  id?: number;
-  author?: string;
-  handle?: string;
-  content?: string;
-  timestamp?: string;
-  likes?: number;
-  retweets?: number;
-  image?: string | null;
-  title?: string;
-  thumbnail?: string | null;
-  views?: string;
-  duration?: string;
-}
-
-const mockTwitterPosts: SocialCardData[] = [
-  {
-    id: 1,
-    author: 'Eagles Baseball',
-    handle: '@eaglesbaseball',
-    content: 'Great win today! Final score 7-3. Johnson with the complete game! 🦅⚾',
-    timestamp: '2 hours ago',
-    likes: 45,
-    retweets: 12,
-    image: null,
-  },
-  {
-    id: 2,
-    author: 'Coach Smith',
-    handle: '@coachsmith',
-    content: "Proud of our team's performance this season. Looking forward to playoffs!",
-    timestamp: '5 hours ago',
-    likes: 23,
-    retweets: 5,
-  },
-];
-
-const mockYouTubeVideos: SocialCardData[] = [
-  {
-    id: 1,
-    title: 'Season Highlights 2024',
-    thumbnail: '/api/placeholder/320/180',
-    views: '1.2K',
-    duration: '4:32',
-    timestamp: '3 days ago',
-  },
-  {
-    id: 2,
-    title: 'Player Interview: Mike Johnson',
-    thumbnail: '/api/placeholder/320/180',
-    views: '856',
-    duration: '12:45',
-    timestamp: '1 week ago',
-  },
-];
 
 const mockMessageBoard = [
   {
@@ -120,138 +68,326 @@ const mockMessageBoard = [
   },
 ];
 
+const formatRelativeTime = (isoString: string): string => {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.max(Math.floor(diffMs / 60000), 0);
+
+  if (minutes < 1) {
+    return 'Just now';
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) {
+    return `${days}d ago`;
+  }
+
+  return date.toLocaleDateString();
+};
+
+const formatDuration = (seconds?: number | null): string | null => {
+  if (!seconds || seconds <= 0) {
+    return null;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const minutesPart = minutes % 60;
+    return `${hours}h ${minutesPart}m`;
+  }
+
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+const getSourceIcon = (source: string) => {
+  switch (source) {
+    case 'twitter':
+      return <Twitter sx={{ color: '#1DA1F2' }} />;
+    case 'youtube':
+      return <YouTube sx={{ color: '#FF0000' }} />;
+    case 'instagram':
+      return <Instagram sx={{ color: '#E4405F' }} />;
+    case 'facebook':
+      return <Facebook sx={{ color: '#4267B2' }} />;
+    case 'discord':
+      return <Forum sx={{ color: 'text.secondary.main' }} />;
+    default:
+      return <Share sx={{ color: 'text.secondary' }} />;
+  }
+};
+
+const SocialFeedCard = ({ item }: { item: SocialFeedItemType }) => {
+  const postedLabel = formatRelativeTime(item.postedAt);
+  const authorDisplay = item.authorName ?? item.channelName;
+  const handleDisplay = item.authorHandle ?? item.channelName;
+  const initial = authorDisplay?.charAt(0).toUpperCase() ?? 'C';
+  const mediaAttachment = item.media?.[0];
+  const mediaUrl = mediaAttachment?.thumbnailUrl ?? mediaAttachment?.url ?? undefined;
+  const reactions = item.metadata?.reactions ?? 0;
+  const replies = item.metadata?.replies ?? 0;
+
+  return (
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ flex: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          {getSourceIcon(item.source)}
+          <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+            {postedLabel}
+          </Typography>
+          {item.permalink ? (
+            <IconButton
+              size="small"
+              sx={{ ml: 'auto' }}
+              component="a"
+              href={item.permalink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <OpenInNew fontSize="small" />
+            </IconButton>
+          ) : null}
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Avatar sx={{ width: 32, height: 32, mr: 1 }}>{initial}</Avatar>
+          <Box>
+            <Typography variant="subtitle2">{authorDisplay}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {handleDisplay}
+            </Typography>
+          </Box>
+        </Box>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          {item.content}
+        </Typography>
+        {mediaUrl && (
+          <CardMedia
+            component="img"
+            height="200"
+            image={mediaUrl}
+            alt={item.channelName}
+            sx={{ borderRadius: 1, mb: 2 }}
+          />
+        )}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <ThumbUp fontSize="small" sx={{ mr: 0.5 }} />
+            <Typography variant="caption">{reactions}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Comment fontSize="small" sx={{ mr: 0.5 }} />
+            <Typography variant="caption">{replies}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Share fontSize="small" sx={{ mr: 0.5 }} />
+            <Typography variant="caption">{item.source}</Typography>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+};
+
+const SocialVideoCard = ({ video }: { video: SocialVideoType }) => {
+  const publishedLabel = formatRelativeTime(video.publishedAt);
+  const durationLabel = video.isLive ? 'LIVE' : formatDuration(video.durationSeconds);
+
+  return (
+    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ position: 'relative' }}>
+        <CardMedia
+          component="img"
+          height="160"
+          image={video.thumbnailUrl}
+          alt={video.title}
+          sx={{ borderRadius: 1 }}
+        />
+        {durationLabel && (
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 8,
+              right: 8,
+              bgcolor: video.isLive ? 'error.main' : 'rgba(0,0,0,0.75)',
+              color: 'white',
+              px: 1,
+              py: 0.25,
+              borderRadius: 1,
+              fontWeight: 600,
+            }}
+          >
+            <Typography variant="caption">{durationLabel}</Typography>
+          </Box>
+        )}
+        <PlayCircleOutline
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: 48,
+            color: 'white',
+            opacity: 0.85,
+          }}
+        />
+      </Box>
+      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Typography variant="subtitle2">{video.title}</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+          {video.description ?? 'Watch the latest highlight.'}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {publishedLabel}
+        </Typography>
+        <Button
+          variant="contained"
+          size="small"
+          component="a"
+          href={video.videoUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Watch
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
 interface SocialHubExperienceProps {
   accountId?: string;
+  seasonId?: string;
   isAccountMember?: boolean | null;
 }
 
 export default function SocialHubExperience({
   accountId,
+  seasonId,
   isAccountMember,
 }: SocialHubExperienceProps) {
-  const [activeTab, setActiveTab] = useState(0);
-  const [layoutStyle, setLayoutStyle] = useState<'grid' | 'timeline' | 'dashboard'>('grid');
+  const { fetchFeed, fetchVideos, fetchCommunityMessages } = useSocialHubService({
+    accountId,
+    seasonId,
+  });
+  const [feedState, setFeedState] = useState<{
+    items: SocialFeedItemType[];
+    loading: boolean;
+    error: string | null;
+  }>({ items: [], loading: false, error: null });
+  const [videoState, setVideoState] = useState<{
+    items: SocialVideoType[];
+    loading: boolean;
+    error: string | null;
+  }>({ items: [], loading: false, error: null });
+  const [communityState, setCommunityState] = useState<{
+    items: CommunityMessagePreviewType[];
+    loading: boolean;
+    error: string | null;
+  }>({ items: [], loading: false, error: null });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
+  useEffect(() => {
+    if (!accountId || !seasonId) {
+      setFeedState({ items: [], loading: false, error: null });
+      return;
+    }
 
-  // Social Media Card Component
-  const SocialMediaCard = ({ type, data }: { type: string; data: SocialCardData }) => {
-    const timestamp = data.timestamp ?? '';
-    const safeAuthor = data.author && data.author.length > 0 ? data.author : 'Community Channel';
-    const avatarInitial = safeAuthor.charAt(0).toUpperCase();
-    const safeHandle = data.handle ?? '';
-    const safeContent = data.content ?? '';
-    const safeLikes = data.likes ?? 0;
-    const safeRetweets = data.retweets ?? 0;
-    const safeThumbnail = data.thumbnail ?? data.image ?? undefined;
-    const safeTitle = data.title ?? 'Video Highlight';
-    const safeViews = data.views ?? '0';
-    const safeDuration = data.duration ?? '';
-    const getIcon = () => {
-      switch (type) {
-        case 'twitter':
-          return <Twitter sx={{ color: '#1DA1F2' }} />;
-        case 'facebook':
-          return <Facebook sx={{ color: '#4267B2' }} />;
-        case 'youtube':
-          return <YouTube sx={{ color: '#FF0000' }} />;
-        case 'instagram':
-          return <Instagram sx={{ color: '#E4405F' }} />;
-        default:
-          return null;
-      }
+    let cancelled = false;
+    setFeedState((prev) => ({ ...prev, loading: true, error: null }));
+
+    fetchFeed({ limit: 6 })
+      .then((items) => {
+        if (!cancelled) {
+          setFeedState({ items, loading: false, error: null });
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setFeedState({
+            items: [],
+            loading: false,
+            error: error instanceof Error ? error.message : 'Unable to load social feed.',
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
     };
+  }, [accountId, seasonId, fetchFeed]);
 
-    return (
-      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <CardContent sx={{ flex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            {getIcon()}
-            <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-              {timestamp}
-            </Typography>
-            <IconButton size="small" sx={{ ml: 'auto' }}>
-              <OpenInNew fontSize="small" />
-            </IconButton>
-          </Box>
+  useEffect(() => {
+    if (!accountId || !seasonId) {
+      setVideoState({ items: [], loading: false, error: null });
+      return;
+    }
 
-          {type === 'twitter' && (
-            <>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Avatar sx={{ width: 32, height: 32, mr: 1 }}>{avatarInitial}</Avatar>
-                <Box>
-                  <Typography variant="subtitle2">{safeAuthor}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {safeHandle}
-                  </Typography>
-                </Box>
-              </Box>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                {safeContent}
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ThumbUp fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="caption">{safeLikes}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Share fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="caption">{safeRetweets}</Typography>
-                </Box>
-              </Box>
-            </>
-          )}
+    let cancelled = false;
+    setVideoState((prev) => ({ ...prev, loading: true, error: null }));
 
-          {type === 'youtube' && (
-            <>
-              <Box sx={{ position: 'relative', mb: 2 }}>
-                <CardMedia
-                  component="img"
-                  height="140"
-                  image={safeThumbnail ?? '/api/placeholder/320/180'}
-                  alt={safeTitle}
-                  sx={{ borderRadius: 1 }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 8,
-                    right: 8,
-                    bgcolor: 'rgba(0,0,0,0.8)',
-                    color: 'white',
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography variant="caption">{safeDuration}</Typography>
-                </Box>
-                <PlayCircleOutline
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    fontSize: 48,
-                    color: 'white',
-                    opacity: 0.8,
-                  }}
-                />
-              </Box>
-              <Typography variant="subtitle2" gutterBottom>
-                {safeTitle}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {safeViews} views • {timestamp}
-              </Typography>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
+    fetchVideos({ limit: 4 })
+      .then((items) => {
+        if (!cancelled) {
+          setVideoState({ items, loading: false, error: null });
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setVideoState({
+            items: [],
+            loading: false,
+            error: error instanceof Error ? error.message : 'Unable to load social videos.',
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, fetchVideos]);
+
+  useEffect(() => {
+    if (!accountId || !seasonId) {
+      setCommunityState({ items: [], loading: false, error: null });
+      return;
+    }
+
+    let cancelled = false;
+    setCommunityState((prev) => ({ ...prev, loading: true, error: null }));
+
+    fetchCommunityMessages({ limit: 5 })
+      .then((items) => {
+        if (!cancelled) {
+          setCommunityState({ items, loading: false, error: null });
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setCommunityState({
+            items: [],
+            loading: false,
+            error: error instanceof Error ? error.message : 'Unable to load community discussions.',
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, seasonId, fetchCommunityMessages]);
 
   const renderAccountRequiredNotice = (title: string, description: string) => (
     <Paper sx={{ p: 3 }}>
@@ -264,6 +400,22 @@ export default function SocialHubExperience({
     </Paper>
   );
 
+  const displayedFeedItems = feedState.items.slice(0, 4);
+  const displayedVideos = videoState.items.slice(0, 2);
+
+  const renderCardSkeletons = (count: number) => (
+    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Skeleton
+          key={`card-skeleton-${index}`}
+          variant="rounded"
+          height={210}
+          sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' }, borderRadius: 2 }}
+        />
+      ))}
+    </Box>
+  );
+
   // Grid Layout
   const GridLayout = () => (
     <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
@@ -273,46 +425,138 @@ export default function SocialHubExperience({
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
             <Share sx={{ mr: 1 }} /> Recent Social Media
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {mockTwitterPosts.map((post) => (
-              <Box key={post.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
-                <SocialMediaCard type="twitter" data={post} />
-              </Box>
-            ))}
-            {mockYouTubeVideos.map((video) => (
-              <Box key={video.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
-                <SocialMediaCard type="youtube" data={video} />
-              </Box>
-            ))}
-          </Box>
+          {!accountId || !seasonId ? (
+            <Alert severity="info">Select an account and season to view social activity.</Alert>
+          ) : (
+            <>
+              {feedState.error ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {feedState.error}
+                </Alert>
+              ) : null}
+              {feedState.loading && feedState.items.length === 0 ? (
+                renderCardSkeletons(2)
+              ) : displayedFeedItems.length > 0 ? (
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  {displayedFeedItems.map((post) => (
+                    <Box key={post.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
+                      <SocialFeedCard item={post} />
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Alert severity="info">No recent social posts yet.</Alert>
+              )}
+            </>
+          )}
+        </Paper>
+
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+            <YouTube sx={{ mr: 1, color: '#FF0000' }} /> Featured Videos
+          </Typography>
+          {!accountId || !seasonId ? (
+            <Alert severity="info">Select an account and season to load social videos.</Alert>
+          ) : (
+            <>
+              {videoState.error ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {videoState.error}
+                </Alert>
+              ) : null}
+              {videoState.loading && videoState.items.length === 0 ? (
+                renderCardSkeletons(2)
+              ) : displayedVideos.length > 0 ? (
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  {displayedVideos.map((video) => (
+                    <Box
+                      key={video.id}
+                      sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}
+                    >
+                      <SocialVideoCard video={video} />
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Alert severity="info">No connected video streams yet.</Alert>
+              )}
+            </>
+          )}
         </Paper>
 
         {/* Message Board */}
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <Forum sx={{ mr: 1 }} /> Message Board
-            <Chip label="5 new" size="small" color="primary" sx={{ ml: 1 }} />
+            <Forum sx={{ mr: 1 }} /> Community Chats
           </Typography>
-          <List>
-            {mockMessageBoard.map((post, index) => (
-              <React.Fragment key={post.id}>
-                {index > 0 && <Divider />}
-                <ListItem>
-                  <ListItemAvatar>
-                    <Avatar>{post.author[0]}</Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={post.title}
-                    secondary={`by ${post.author} • ${post.replies} replies • ${post.lastReply}`}
-                  />
-                  <Chip label={post.category} size="small" variant="outlined" />
-                </ListItem>
-              </React.Fragment>
-            ))}
-          </List>
-          <Button fullWidth variant="outlined" sx={{ mt: 2 }}>
-            View All Discussions
-          </Button>
+          {!accountId || !seasonId ? (
+            <Alert severity="info">Select an account and season to load community messages.</Alert>
+          ) : (
+            <>
+              {communityState.error ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {communityState.error}
+                </Alert>
+              ) : null}
+              {communityState.loading && communityState.items.length === 0 ? (
+                <Stack spacing={2}>
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={`community-skeleton-${index}`} variant="rounded" height={80} />
+                  ))}
+                </Stack>
+              ) : communityState.items.length > 0 ? (
+                <List>
+                  {communityState.items.map((message, index) => (
+                    <React.Fragment key={message.id}>
+                      {index > 0 && <Divider />}
+                      <ListItem alignItems="flex-start" disableGutters>
+                        <ListItemAvatar>
+                          <Avatar src={message.avatarUrl ?? undefined}>
+                            {(message.authorDisplayName ?? 'C').charAt(0)}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="subtitle2">
+                                {message.authorDisplayName}
+                              </Typography>
+                              <Chip
+                                label={`#${message.channelName}`}
+                                size="small"
+                                variant="outlined"
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {formatRelativeTime(message.postedAt)}
+                              </Typography>
+                            </Box>
+                          }
+                          secondary={
+                            <Typography variant="body2" color="text.secondary">
+                              {message.content}
+                            </Typography>
+                          }
+                        />
+                        {message.permalink ? (
+                          <IconButton
+                            size="small"
+                            component="a"
+                            href={message.permalink}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <OpenInNew fontSize="small" />
+                          </IconButton>
+                        ) : null}
+                      </ListItem>
+                    </React.Fragment>
+                  ))}
+                </List>
+              ) : (
+                <Alert severity="info">No recent Discord activity yet.</Alert>
+              )}
+            </>
+          )}
         </Paper>
       </Box>
 
@@ -361,208 +605,11 @@ export default function SocialHubExperience({
     </Box>
   );
 
-  // Timeline Layout
-  const TimelineLayout = () => (
-    <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Activity Timeline
-        </Typography>
-        <Stack spacing={3}>
-          {/* Mix all activities in chronological order */}
-          <Card variant="outlined">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Twitter sx={{ color: '#1DA1F2', mr: 1 }} />
-                <Typography variant="subtitle2">Twitter Post</Typography>
-                <Typography variant="caption" sx={{ ml: 'auto' }}>
-                  2 hours ago
-                </Typography>
-              </Box>
-              <Typography variant="body2">
-                Great win today! Final score 7-3. Johnson with the complete game! 🦅⚾
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Card variant="outlined">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Forum sx={{ mr: 1 }} />
-                <Typography variant="subtitle2">New Message Board Post</Typography>
-                <Typography variant="caption" sx={{ ml: 'auto' }}>
-                  3 hours ago
-                </Typography>
-              </Box>
-              <Typography variant="body2">
-                {`"Great pitching performance last night!" - 12 replies`}
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Card variant="outlined">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <YouTube sx={{ color: '#FF0000', mr: 1 }} />
-                <Typography variant="subtitle2">New Video</Typography>
-                <Typography variant="caption" sx={{ ml: 'auto' }}>
-                  3 days ago
-                </Typography>
-              </Box>
-              <Typography variant="body2">Season Highlights 2024 - 1.2K views</Typography>
-            </CardContent>
-          </Card>
-
-          <Card variant="outlined">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <PersonSearch sx={{ mr: 1 }} />
-                <Typography variant="subtitle2">Looking For</Typography>
-                <Typography variant="caption" sx={{ ml: 'auto' }}>
-                  4 days ago
-                </Typography>
-              </Box>
-              <Typography variant="body2">U16 Team Looking for Pitcher - North Valley</Typography>
-            </CardContent>
-          </Card>
-        </Stack>
-      </Paper>
-    </Box>
-  );
-
-  // Dashboard Layout
-  const DashboardLayout = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Stats Overview */}
-      <Box>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ flex: { xs: '1 1 calc(50% - 4px)', sm: '1 1 calc(25% - 6px)' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="primary">
-                156
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Social Posts
-              </Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ flex: { xs: '1 1 calc(50% - 4px)', sm: '1 1 calc(25% - 6px)' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="primary">
-                23
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Active Discussions
-              </Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ flex: { xs: '1 1 calc(50% - 4px)', sm: '1 1 calc(25% - 6px)' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="primary">
-                8
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Recent Videos
-              </Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ flex: { xs: '1 1 calc(50% - 4px)', sm: '1 1 calc(25% - 6px)' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="primary">
-                45
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Hall of Famers
-              </Typography>
-            </Paper>
-          </Box>
-        </Box>
-      </Box>
-
-      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-        {/* Recent Activity Feed */}
-        <Box sx={{ flex: { xs: 1, md: '2 1 0' } }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Recent Activity
-            </Typography>
-            <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 2 }}>
-              <Tab label="All" />
-              <Tab label="Social Media" icon={<Badge badgeContent={4} color="primary" />} />
-              <Tab label="Discussions" />
-              <Tab label="Videos" />
-            </Tabs>
-            {activeTab === 0 && <GridLayout />}
-            {activeTab === 1 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {mockTwitterPosts.map((post) => (
-                  <Box key={post.id}>
-                    <SocialMediaCard type="twitter" data={post} />
-                  </Box>
-                ))}
-              </Box>
-            )}
-          </Paper>
-        </Box>
-
-        {/* Quick Actions */}
-        <Box sx={{ flex: { xs: 1, md: '1 1 0' } }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Quick Actions
-            </Typography>
-            <Stack spacing={2}>
-              <Button fullWidth variant="contained" startIcon={<Twitter />}>
-                Post to Twitter
-              </Button>
-              <Button fullWidth variant="contained" startIcon={<YouTube />}>
-                Upload Video
-              </Button>
-              <Button fullWidth variant="contained" startIcon={<Forum />}>
-                Start Discussion
-              </Button>
-              <Button fullWidth variant="contained" startIcon={<PersonSearch />}>
-                Post Looking For
-              </Button>
-            </Stack>
-          </Paper>
-        </Box>
-      </Box>
-    </Box>
-  );
-
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Typography variant="h3" gutterBottom>
         Social Hub Concept{accountId ? ` · Account ${accountId}` : ''}
       </Typography>
-
-      {/* Layout Selector */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Choose Layout Style:
-        </Typography>
-        <Stack direction="row" spacing={2}>
-          <Button
-            variant={layoutStyle === 'grid' ? 'contained' : 'outlined'}
-            onClick={() => setLayoutStyle('grid')}
-          >
-            Grid View
-          </Button>
-          <Button
-            variant={layoutStyle === 'timeline' ? 'contained' : 'outlined'}
-            onClick={() => setLayoutStyle('timeline')}
-          >
-            Timeline View
-          </Button>
-          <Button
-            variant={layoutStyle === 'dashboard' ? 'contained' : 'outlined'}
-            onClick={() => setLayoutStyle('dashboard')}
-          >
-            Dashboard View
-          </Button>
-        </Stack>
-      </Box>
 
       {/* Search and Filter Bar */}
       <Paper sx={{ p: 2, mb: 3 }}>
@@ -585,10 +632,7 @@ export default function SocialHubExperience({
         </Box>
       </Paper>
 
-      {/* Render Selected Layout */}
-      {layoutStyle === 'grid' && <GridLayout />}
-      {layoutStyle === 'timeline' && <TimelineLayout />}
-      {layoutStyle === 'dashboard' && <DashboardLayout />}
+      <GridLayout />
     </Container>
   );
 }
