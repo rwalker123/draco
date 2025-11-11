@@ -61,6 +61,7 @@ import { StatsEntryService } from './statsEntryService.js';
 import { PlayerSurveyService } from './playerSurveyService.js';
 import { AnnouncementService } from './announcementService.js';
 import { AccountSettingsService } from './accountSettingsService.js';
+import { SocialHubService } from './socialHubService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -119,6 +120,7 @@ export class ServiceFactory {
   private static playerSurveyService: PlayerSurveyService;
   private static announcementService: AnnouncementService;
   private static accountSettingsService: AccountSettingsService;
+  private static socialHubService: SocialHubService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -412,6 +414,14 @@ export class ServiceFactory {
     }
 
     return this.accountSettingsService;
+  }
+
+  static getSocialHubService(): SocialHubService {
+    if (!this.socialHubService) {
+      this.socialHubService = new SocialHubService();
+    }
+
+    return this.socialHubService;
   }
 
   static getPhotoGalleryAssetService(): PhotoGalleryAssetService {

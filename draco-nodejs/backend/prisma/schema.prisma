@@ -55,6 +55,9 @@ model accounts {
   leaguefaq               leaguefaq[]
   leaguenews              leaguenews[]
   leagueumpires           leagueumpires[]
+  socialfeeditems         socialfeeditems[]
+  socialvideos            socialvideos[]
+  discordmessages         discordmessages[]
   photogallery            photogallery[]
   photogallerysubmission  photogallerysubmission[]
   playerswantedclassified playerswantedclassified[]
@@ -690,6 +693,109 @@ model leagueevents {
   description    String       @db.VarChar(25)
   leagueseasonid BigInt
   leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_leagueevents_leagueseason")
+  socialliveevents socialliveevents?
+}
+
+model socialliveevents {
+  id               BigInt       @id @default(autoincrement())
+  leagueeventid    BigInt       @unique
+  teamseasonid     BigInt?
+  title            String       @db.VarChar(100)
+  description      String?      @db.VarChar(255)
+  streamplatform   String?      @db.VarChar(50)
+  streamurl        String?      @db.VarChar(512)
+  discordchannelid String?      @db.VarChar(32)
+  location         String?      @db.VarChar(255)
+  status           String       @default("upcoming") @db.VarChar(20)
+  featured         Boolean      @default(false)
+  createdat        DateTime     @default(now()) @db.Timestamptz(6)
+  updatedat        DateTime     @updatedAt @default(now()) @db.Timestamptz(6)
+  leagueevents     leagueevents @relation(fields: [leagueeventid], references: [id], onDelete: Cascade, map: "fk_socialliveevents_leagueevents")
+  teamsseason      teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_socialliveevents_teamseason")
+
+  @@index([teamseasonid], map: "idx_socialliveevents_teamseasonid")
+}
+
+model socialfeeditems {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountid    BigInt
+  seasonid     BigInt
+  teamid       BigInt?
+  teamseasonid BigInt?
+  source       String     @db.VarChar(30)
+  channelname  String     @db.VarChar(100)
+  authorname   String?    @db.VarChar(100)
+  authorhandle String?    @db.VarChar(100)
+  content      String
+  media        Json?
+  metadata     Json?
+  postedat     DateTime   @db.Timestamptz(6)
+  permalink    String?    @db.VarChar(512)
+  createdat    DateTime   @default(now()) @db.Timestamptz(6)
+  updatedat    DateTime   @updatedAt @default(now()) @db.Timestamptz(6)
+  accounts     accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_socialfeeditems_accounts")
+  season       season     @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_socialfeeditems_season")
+  teams        teams?     @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_socialfeeditems_team")
+  teamsseason  teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_socialfeeditems_teamseason")
+
+  @@index([accountid], map: "idx_socialfeeditems_accountid")
+  @@index([seasonid], map: "idx_socialfeeditems_seasonid")
+  @@index([postedat], map: "idx_socialfeeditems_postedat")
+}
+
+model socialvideos {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountid       BigInt
+  seasonid        BigInt
+  teamid          BigInt?
+  teamseasonid    BigInt?
+  source          String     @db.VarChar(30)
+  title           String     @db.VarChar(200)
+  description     String?
+  durationseconds Int?
+  thumbnailurl    String     @db.VarChar(512)
+  videourl        String     @db.VarChar(512)
+  islive          Boolean    @default(false)
+  publishedat     DateTime   @db.Timestamptz(6)
+  metadata        Json?
+  createdat       DateTime   @default(now()) @db.Timestamptz(6)
+  updatedat       DateTime   @updatedAt @default(now()) @db.Timestamptz(6)
+  accounts        accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_socialvideos_accounts")
+  season          season     @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_socialvideos_season")
+  teams           teams?     @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_socialvideos_team")
+  teamsseason     teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_socialvideos_teamseason")
+
+  @@index([accountid], map: "idx_socialvideos_accountid")
+  @@index([seasonid], map: "idx_socialvideos_seasonid")
+  @@index([publishedat], map: "idx_socialvideos_publishedat")
+}
+
+model discordmessages {
+  id           String     @id @db.VarChar(32)
+  accountid    BigInt
+  seasonid     BigInt
+  teamid       BigInt?
+  teamseasonid BigInt?
+  channelid    String     @db.VarChar(32)
+  channelname  String     @db.VarChar(100)
+  authorid     String     @db.VarChar(32)
+  authorname   String     @db.VarChar(100)
+  avatarurl    String?    @db.VarChar(512)
+  content      String
+  attachments  Json?
+  postedat     DateTime   @db.Timestamptz(6)
+  permalink    String     @db.VarChar(512)
+  createdat    DateTime   @default(now()) @db.Timestamptz(6)
+  updatedat    DateTime   @updatedAt @default(now()) @db.Timestamptz(6)
+  accounts     accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_discordmessages_accounts")
+  season       season     @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_discordmessages_season")
+  teams        teams?     @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_discordmessages_team")
+  teamsseason  teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_discordmessages_teamseason")
+
+  @@index([accountid], map: "idx_discordmessages_accountid")
+  @@index([seasonid], map: "idx_discordmessages_seasonid")
+  @@index([channelid], map: "idx_discordmessages_channelid")
+  @@index([postedat], map: "idx_discordmessages_postedat")
 }
 
 model leaguefaq {
@@ -1063,6 +1169,9 @@ model season {
   name                        String                        @db.VarChar(25)
   leagueseason                leagueseason[]
   playerseasonaffiliationdues playerseasonaffiliationdues[]
+  socialfeeditems             socialfeeditems[]
+  socialvideos                socialvideos[]
+  discordmessages             discordmessages[]
   accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_season_accounts")
 }
 
@@ -1111,6 +1220,9 @@ model teams {
   sponsors       sponsors[]
   teamhandouts   teamhandouts[]
   teamnews       teamnews[]
+  socialfeeditems socialfeeditems[]
+  socialvideos    socialvideos[]
+  discordmessages discordmessages[]
   accounts       accounts         @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teams_accounts")
   teamsseason    teamsseason[]
 }
@@ -1146,6 +1258,10 @@ model teamsseason {
   playerrecap                                        playerrecap[]
   rosterseason                                       rosterseason[]
   teamseasonmanager                                  teamseasonmanager[]
+  socialfeeditems                                    socialfeeditems[]
+  socialvideos                                       socialvideos[]
+  discordmessages                                    discordmessages[]
+  socialliveevents                                   socialliveevents[]
   divisionseason                                     divisionseason?     @relation(fields: [divisionseasonid], references: [id], map: "fk_teamsseason_divisionseasonid")
   leagueseason                                       leagueseason        @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_teamsseason_leagueseason")
   teams                                              teams               @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamsseason_teams")

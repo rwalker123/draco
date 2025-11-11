@@ -40,6 +40,8 @@ import {
   IAnnouncementRepository,
   IPlayerSurveyRepository,
   IAccountSettingsRepository,
+  ISocialContentRepository,
+  ILiveEventRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -81,6 +83,8 @@ import {
   PrismaAnnouncementRepository,
   PrismaPlayerSurveyRepository,
   PrismaAccountSettingsRepository,
+  PrismaSocialContentRepository,
+  PrismaLiveEventRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -129,6 +133,8 @@ export class RepositoryFactory {
   private static playerSurveyRepository: IPlayerSurveyRepository;
   private static announcementRepository: IAnnouncementRepository;
   private static accountSettingsRepository: IAccountSettingsRepository;
+  private static socialContentRepository: ISocialContentRepository;
+  private static liveEventRepository: ILiveEventRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -191,6 +197,20 @@ export class RepositoryFactory {
       this.accountSettingsRepository = new PrismaAccountSettingsRepository(prisma);
     }
     return this.accountSettingsRepository;
+  }
+
+  static getSocialContentRepository(): ISocialContentRepository {
+    if (!this.socialContentRepository) {
+      this.socialContentRepository = new PrismaSocialContentRepository(prisma);
+    }
+    return this.socialContentRepository;
+  }
+
+  static getLiveEventRepository(): ILiveEventRepository {
+    if (!this.liveEventRepository) {
+      this.liveEventRepository = new PrismaLiveEventRepository(prisma);
+    }
+    return this.liveEventRepository;
   }
 
   private static ensurePhotoGalleryRepository(): PrismaPhotoGalleryRepository {
