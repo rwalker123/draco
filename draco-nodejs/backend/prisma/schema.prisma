@@ -68,6 +68,9 @@ model accounts {
   teamswantedclassified   teamswantedclassified[]
   votequestion            votequestion[]
   workoutannouncement     workoutannouncement[]
+  accountdiscordsettings  accountdiscordsettings?
+  accountdiscordrolemapping accountdiscordrolemapping[]
+  userdiscordaccounts     userdiscordaccounts[]
 }
 
 model accountsettings {
@@ -146,6 +149,59 @@ model aspnetusers {
   aspnetuserroles      aspnetuserroles[]
   created_templates    email_templates[] @relation("EmailTemplateCreatedBy")
   created_emails       emails[]          @relation("EmailCreatedBy")
+  userdiscordaccounts  userdiscordaccounts[]
+}
+
+model accountdiscordsettings {
+  id                BigInt     @id @default(autoincrement())
+  accountid         BigInt
+  guildid           String?    @db.VarChar(32)
+  guildname         String?    @db.VarChar(100)
+  botuserid         String?    @db.VarChar(32)
+  botusername       String?    @db.VarChar(100)
+  rolesyncenabled   Boolean    @default(false)
+  bottokenencrypted String?    @db.Text
+  createdat         DateTime   @default(now()) @db.Timestamptz(6)
+  updatedat         DateTime   @updatedAt @db.Timestamptz(6)
+  accounts          accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordsettings_accounts")
+
+  @@unique([accountid], map: "uq_accountdiscordsettings_accountid")
+}
+
+model accountdiscordrolemapping {
+  id             BigInt   @id @default(autoincrement())
+  accountid      BigInt
+  discordroleid  String   @db.VarChar(32)
+  discordrolename String  @db.VarChar(100)
+  permissions    String[]
+  createdat      DateTime @default(now()) @db.Timestamptz(6)
+  updatedat      DateTime @updatedAt @db.Timestamptz(6)
+  accounts       accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordrolemapping_accounts")
+
+  @@index([accountid], map: "idx_accountdiscordrolemapping_accountid")
+}
+
+model userdiscordaccounts {
+  id                 BigInt   @id @default(autoincrement())
+  userid             String   @db.VarChar(128)
+  accountid          BigInt
+  discorduserid      String   @db.VarChar(32)
+  username           String?  @db.VarChar(100)
+  discriminator      String?  @db.VarChar(8)
+  avatarurl          String?  @db.VarChar(255)
+  accesstokenencrypted   String?  @db.Text
+  refreshtokenencrypted  String?  @db.Text
+  tokenexpiresat     DateTime? @db.Timestamptz(6)
+  guildmember        Boolean  @default(false)
+  lastsyncedat       DateTime? @db.Timestamptz(6)
+  createdat          DateTime @default(now()) @db.Timestamptz(6)
+  updatedat          DateTime @updatedAt @db.Timestamptz(6)
+  aspnetusers        aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, map: "fk_userdiscordaccounts_aspnetusers")
+  accounts           accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_userdiscordaccounts_accounts")
+
+  @@unique([accountid, userid], map: "uq_userdiscordaccounts_account_user")
+  @@unique([accountid, discorduserid], map: "uq_userdiscordaccounts_account_discord")
+  @@index([discorduserid], map: "idx_userdiscordaccounts_discorduser")
 }
 
 model availablefields {
