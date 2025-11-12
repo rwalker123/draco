@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { PaginationWithTotalSchema } from './paging.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -33,7 +34,7 @@ export const EmailComposeSchema = z.object({
   body: z.string(),
   templateId: z.string().optional(),
   attachments: z.array(z.string()).optional(),
-  scheduledSend: z.iso.datetime().optional(),
+  scheduledSend: isoDateTimeSchema.optional(),
   status: z.enum(['scheduled', 'sending']).optional(),
 });
 
@@ -72,10 +73,10 @@ export const EmailDetailRecipientSchema = z.object({
   contactName: z.string().optional(),
   recipientType: z.string().optional(),
   status: z.string(),
-  sentAt: z.iso.datetime().optional(),
-  deliveredAt: z.iso.datetime().optional(),
-  openedAt: z.iso.datetime().optional(),
-  clickedAt: z.iso.datetime().optional(),
+  sentAt: isoDateTimeSchema.optional(),
+  deliveredAt: isoDateTimeSchema.optional(),
+  openedAt: isoDateTimeSchema.optional(),
+  clickedAt: isoDateTimeSchema.optional(),
   bounceReason: z.string().optional(),
   errorMessage: z.string().optional(),
 });
@@ -86,7 +87,7 @@ export const EmailAttachmentSchema = z.object({
   originalName: z.string(),
   fileSize: z.number(),
   mimeType: z.string(),
-  uploadedAt: z.iso.datetime().optional(),
+  uploadedAt: isoDateTimeSchema.optional(),
   storagePath: z.string().optional(),
 });
 
@@ -97,8 +98,8 @@ export const EmailDetailSchema = z.object({
   bodyText: z.string().nullable(),
   status: z.string(),
   createdAt: z.string(),
-  sentAt: z.iso.datetime().optional(),
-  scheduledSendAt: z.iso.datetime().optional(),
+  sentAt: isoDateTimeSchema.optional(),
+  scheduledSendAt: isoDateTimeSchema.optional(),
   totalRecipients: z.number(),
   successfulDeliveries: z.number(),
   failedDeliveries: z.number(),
@@ -121,7 +122,7 @@ export const EmailListItemSchema = z.object({
   subject: z.string(),
   status: z.string(),
   createdAt: z.string(),
-  sentAt: z.iso.datetime().optional(),
+  sentAt: isoDateTimeSchema.optional(),
   totalRecipients: z.number(),
   successfulDeliveries: z.number(),
   failedDeliveries: z.number(),

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { FieldSchema } from './field.js';
 import { booleanQueryParam } from './queryParams.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -9,10 +10,6 @@ export const WORKOUT_DEFAULT_LIST_LIMIT = 25;
 export const WORKOUT_REGISTRATIONS_DEFAULT_LIMIT = 50;
 export const WORKOUT_REGISTRATIONS_MAX_EXPORT = 10000;
 export const WORKOUT_SOURCE_OPTION_MAX_LENGTH = 25;
-
-const isoDateTimeStringSchema = z.iso.datetime().openapi({
-  description: 'ISO 8601 date-time string',
-});
 
 export const WorkoutStatusSchema = z
   .enum(['upcoming', 'past', 'all'])
@@ -22,7 +19,7 @@ export const WorkoutSummarySchema = z
   .object({
     id: z.bigint().transform((val) => val.toString()),
     workoutDesc: z.string(),
-    workoutDate: isoDateTimeStringSchema,
+    workoutDate: isoDateTimeSchema,
     field: FieldSchema.optional().nullable(),
     registrationCount: z.number().int().nonnegative().optional(),
   })
@@ -42,7 +39,7 @@ export const WorkoutSchema = WorkoutSummarySchema.extend({
 export const UpsertWorkoutSchema = z
   .object({
     workoutDesc: z.string().trim().min(1).max(255),
-    workoutDate: isoDateTimeStringSchema,
+    workoutDate: isoDateTimeSchema,
     fieldId: z
       .string()
       .trim()
@@ -72,7 +69,7 @@ export const WorkoutRegistrationSchema = z
     positions: z.string(),
     isManager: z.boolean(),
     whereHeard: z.string(),
-    dateRegistered: isoDateTimeStringSchema,
+    dateRegistered: isoDateTimeSchema,
   })
   .openapi({
     title: 'WorkoutRegistration',
@@ -139,8 +136,8 @@ export const WorkoutListQuerySchema = z
   .object({
     status: WorkoutStatusSchema.optional(),
     limit: z.coerce.number().int().min(1).max(100).default(WORKOUT_DEFAULT_LIST_LIMIT),
-    after: z.string().trim().datetime().optional(),
-    before: z.string().trim().datetime().optional(),
+    after: isoDateTimeSchema.optional(),
+    before: isoDateTimeSchema.optional(),
     includeRegistrationCounts: booleanQueryParam.default(false),
   })
   .openapi({

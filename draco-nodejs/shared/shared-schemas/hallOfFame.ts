@@ -4,6 +4,7 @@ import { PhoneNumberSchema } from './contact.js';
 import { PagingSchema } from './paging.js';
 import { numberQueryParam } from './queryParams.js';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -199,7 +200,7 @@ export const HofNominationSchema = HofNominationBaseSchema.extend({
   accountId: bigintToStringSchema,
 })
   .extend({
-    submittedAt: z.string().datetime({ offset: true }).optional().openapi({
+    submittedAt: isoDateTimeSchema.optional().openapi({
       description: 'ISO-8601 timestamp when the nomination was created.',
     }),
   })

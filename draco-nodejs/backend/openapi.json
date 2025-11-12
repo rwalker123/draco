@@ -3119,7 +3119,9 @@
           },
           "scheduledSend": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "status": {
             "type": "string",
@@ -3197,7 +3199,9 @@
           },
           "scheduledSend": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "status": {
             "type": "string",
@@ -3245,11 +3249,15 @@
           },
           "sentAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "scheduledSendAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "totalRecipients": {
             "type": "number"
@@ -3312,19 +3320,27 @@
                 },
                 "sentAt": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "deliveredAt": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "openedAt": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "clickedAt": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "bounceReason": {
                   "type": "string"
@@ -3362,7 +3378,9 @@
                 },
                 "uploadedAt": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "storagePath": {
                   "type": "string"
@@ -3418,7 +3436,9 @@
                 },
                 "sentAt": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "totalRecipients": {
                   "type": "number"
@@ -10510,7 +10530,9 @@
           },
           "lastUpdatedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           }
         },
         "required": [
@@ -11174,6 +11196,7 @@
           "submittedAt": {
             "type": "string",
             "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
             "description": "ISO-8601 timestamp when the nomination was created."
           }
         },
@@ -11233,6 +11256,7 @@
                 "submittedAt": {
                   "type": "string",
                   "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
                   "description": "ISO-8601 timestamp when the nomination was created."
                 }
               },
@@ -11384,7 +11408,8 @@
           "workoutDate": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 date-time string"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "field": {
             "type": "object",
@@ -11500,7 +11525,8 @@
           "workoutDate": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 date-time string"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "field": {
             "type": "object",
@@ -11623,7 +11649,8 @@
           "workoutDate": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 date-time string"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "fieldId": {
             "type": "string",
@@ -11687,7 +11714,8 @@
           "dateRegistered": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 date-time string"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           }
         },
         "required": [
@@ -11754,7 +11782,8 @@
                 "dateRegistered": {
                   "type": "string",
                   "format": "date-time",
-                  "description": "ISO 8601 date-time string"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 }
               },
               "required": [
@@ -11898,11 +11927,15 @@
           },
           "after": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "before": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "includeRegistrationCounts": {
             "type": "boolean",
@@ -13357,7 +13390,9 @@
           },
           "gameDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "homeTeam": {
             "type": "object",
@@ -13677,7 +13712,9 @@
                 },
                 "gameDate": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "homeTeam": {
                   "type": "object",
@@ -13965,7 +14002,9 @@
                 },
                 "gameDate": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "homeTeam": {
                   "type": "object",
@@ -14262,7 +14301,9 @@
                 },
                 "gameDate": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "homeTeam": {
                   "type": "object",
@@ -14731,7 +14772,8 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp string"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "isSpecial": {
             "type": "boolean",
@@ -14793,7 +14835,8 @@
                 "publishedAt": {
                   "type": "string",
                   "format": "date-time",
-                  "description": "ISO 8601 timestamp string"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "isSpecial": {
                   "type": "boolean",
@@ -14853,7 +14896,8 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp string"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "isSpecial": {
             "type": "boolean",
@@ -14909,7 +14953,8 @@
                 "publishedAt": {
                   "type": "string",
                   "format": "date-time",
-                  "description": "ISO 8601 timestamp string"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "isSpecial": {
                   "type": "boolean",
@@ -14973,7 +15018,8 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp string"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "isSpecial": {
             "type": "boolean",
@@ -15118,8 +15164,8 @@
           },
           "submittedAt": {
             "type": "string",
-            "nullable": true,
             "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
             "description": "Timestamp when the source submission was created"
           },
           "originalUrl": {
@@ -15463,8 +15509,8 @@
                 },
                 "submittedAt": {
                   "type": "string",
-                  "nullable": true,
                   "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
                   "description": "Timestamp when the source submission was created"
                 },
                 "originalUrl": {
@@ -15671,7 +15717,8 @@
           "postedAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "permalink": {
             "type": "string",
@@ -15811,7 +15858,8 @@
                 "postedAt": {
                   "type": "string",
                   "format": "date-time",
-                  "example": "2024-03-01T18:30:00Z"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "permalink": {
                   "type": "string",
@@ -15976,7 +16024,8 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           }
         },
         "required": [
@@ -16069,7 +16118,8 @@
                 "publishedAt": {
                   "type": "string",
                   "format": "date-time",
-                  "example": "2024-03-01T18:30:00Z"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 }
               },
               "required": [
@@ -16206,7 +16256,8 @@
           "postedAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "permalink": {
             "type": "string",
@@ -16321,7 +16372,8 @@
                 "postedAt": {
                   "type": "string",
                   "format": "date-time",
-                  "example": "2024-03-01T18:30:00Z"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "permalink": {
                   "type": "string",
@@ -16416,7 +16468,8 @@
           "startsAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "title": {
             "type": "string",
@@ -16459,12 +16512,14 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           }
         },
         "required": [
@@ -16530,7 +16585,8 @@
                 "startsAt": {
                   "type": "string",
                   "format": "date-time",
-                  "example": "2024-03-01T18:30:00Z"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "title": {
                   "type": "string",
@@ -16573,12 +16629,14 @@
                 "createdAt": {
                   "type": "string",
                   "format": "date-time",
-                  "example": "2024-03-01T18:30:00Z"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 },
                 "updatedAt": {
                   "type": "string",
                   "format": "date-time",
-                  "example": "2024-03-01T18:30:00Z"
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
                 }
               },
               "required": [
@@ -16690,7 +16748,8 @@
           "startsAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           }
         },
         "required": [
@@ -16757,7 +16816,8 @@
           "startsAt": {
             "type": "string",
             "format": "date-time",
-            "example": "2024-03-01T18:30:00Z"
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           }
         },
         "title": "LiveEventUpdate"
@@ -17519,7 +17579,9 @@
         "properties": {
           "gameDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
           },
           "gameStatus": {
             "type": "number",
@@ -43970,18 +44032,24 @@
           {
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "example": "2024-03-01T18:30:00Z",
+              "description": "ISO 8601 timestamp string with timezone offset."
             },
             "required": false,
+            "description": "ISO 8601 timestamp string with timezone offset.",
             "name": "after",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "example": "2024-03-01T18:30:00Z",
+              "description": "ISO 8601 timestamp string with timezone offset."
             },
             "required": false,
+            "description": "ISO 8601 timestamp string with timezone offset.",
             "name": "before",
             "in": "query"
           },

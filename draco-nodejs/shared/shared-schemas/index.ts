@@ -32,3 +32,4 @@ export * from './playerSurvey.js';
 export * from './announcement.js';
 export * from './accountSettings.js';
 export * from './social.js';
+export * from './accountDiscord.js';

@@ -1,3 +1,17 @@
+import { z } from 'zod';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z);
+
+export const isoDateTimeSchema = z.string().trim().datetime({ offset: true }).openapi({
+  type: 'string',
+  format: 'date-time',
+  example: '2024-03-01T18:30:00Z',
+  description: 'ISO 8601 timestamp string with timezone offset.',
+});
+
+export type IsoDateTimeString = z.infer<typeof isoDateTimeSchema>;
+
 /**
  * Shared date helpers to keep frontend and backend aligned on date formatting.
  * Uses direct UTC math so we don't depend on a browser-specific timezone.

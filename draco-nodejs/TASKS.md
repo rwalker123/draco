@@ -20,9 +20,13 @@
 ## Phase 4 – Frontend Social Hub
 - [x] Promote `app/social-hub-test` into a real `/account/:accountId/social-hub` route with navigation entry points. _Account-scoped Social Hub now reuses the client prototype, inherits branding metadata, and is linked from the global layout menu plus the baseball quick actions menu._
 - [x] Build typed service hooks for the new social/community APIs and integrate them into each tab (Timeline, Video, Q&A, Boards, Looking For, Live Chat). _`useSocialHubService` now wraps the social feed/video/community endpoints and the Social Hub grid view consumes those hooks (plus the existing spotlight widgets) to render live data._
-- [ ] Persist layout preferences (grid/timeline/dashboard) and add analytics events for tab/view interactions.
 
 ## Phase 5 – Community & Adoption
 - [ ] Implement Discord SSO + role mapping (if Discord replaces or supplements the custom board).
+  - [ ] Build the Discord OAuth linking flow (frontend profile UI + backend endpoints) to let users connect their Discord identity and store the user/refresh tokens securely.
+  - [ ] Add account-level configuration for Discord (guild id, bot token, required scopes) with validation and secure storage in the backend admin settings.
+  - [ ] Create the role-mapping data model and admin UI so Discord role IDs can be mapped to Draco permissions (e.g., coach, player, parent).
+  - [ ] Implement membership/role sync jobs that validate guild membership on link, refresh roles on sign-in/cron, and downgrade permissions when roles are removed.
+  - [ ] Provide admin tooling to view, unlink, or resync Discord accounts, plus audit logging for link/unlink operations.
 - [ ] Automate thread creation from key system events (new video, game result, scheduled stream) to drive participation.
 - [ ] Ship announcements/notifications surfacing “needs reply” items and weekly engagement prompts.

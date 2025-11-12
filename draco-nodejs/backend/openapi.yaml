@@ -2315,6 +2315,8 @@ components:
         scheduledSend:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         status:
           type: string
           enum:
@@ -2370,6 +2372,8 @@ components:
         scheduledSend:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         status:
           type: string
           enum:
@@ -2404,9 +2408,13 @@ components:
         sentAt:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         scheduledSendAt:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         totalRecipients:
           type: number
         successfulDeliveries:
@@ -2452,15 +2460,23 @@ components:
               sentAt:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               deliveredAt:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               openedAt:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               clickedAt:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               bounceReason:
                 type: string
               errorMessage:
@@ -2487,6 +2503,8 @@ components:
               uploadedAt:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               storagePath:
                 type: string
             required:
@@ -2530,6 +2548,8 @@ components:
               sentAt:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               totalRecipients:
                 type: number
               successfulDeliveries:
@@ -7832,6 +7852,8 @@ components:
         lastUpdatedAt:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
       required:
         - player
         - answers
@@ -8345,6 +8367,7 @@ components:
         submittedAt:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
           description: ISO-8601 timestamp when the nomination was created.
       required:
         - nominator
@@ -8393,6 +8416,7 @@ components:
               submittedAt:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
                 description: ISO-8601 timestamp when the nomination was created.
             required:
               - nominator
@@ -8505,7 +8529,8 @@ components:
         workoutDate:
           type: string
           format: date-time
-          description: ISO 8601 date-time string
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         field:
           type: object
           nullable: true
@@ -8585,7 +8610,8 @@ components:
         workoutDate:
           type: string
           format: date-time
-          description: ISO 8601 date-time string
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         field:
           type: object
           nullable: true
@@ -8671,7 +8697,8 @@ components:
         workoutDate:
           type: string
           format: date-time
-          description: ISO 8601 date-time string
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         fieldId:
           type: string
           nullable: true
@@ -8717,7 +8744,8 @@ components:
         dateRegistered:
           type: string
           format: date-time
-          description: ISO 8601 date-time string
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
       required:
         - id
         - workoutId
@@ -8768,7 +8796,8 @@ components:
               dateRegistered:
                 type: string
                 format: date-time
-                description: ISO 8601 date-time string
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
             required:
               - id
               - workoutId
@@ -8879,9 +8908,13 @@ components:
         after:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         before:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         includeRegistrationCounts:
           type: boolean
           default: false
@@ -9956,6 +9989,8 @@ components:
         gameDate:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         homeTeam:
           type: object
           properties:
@@ -10191,6 +10226,8 @@ components:
               gameDate:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               homeTeam:
                 type: object
                 properties:
@@ -10399,6 +10436,8 @@ components:
               gameDate:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               homeTeam:
                 type: object
                 properties:
@@ -10613,6 +10652,8 @@ components:
               gameDate:
                 type: string
                 format: date-time
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               homeTeam:
                 type: object
                 properties:
@@ -10955,7 +10996,8 @@ components:
         publishedAt:
           type: string
           format: date-time
-          description: ISO 8601 timestamp string
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         isSpecial:
           type: boolean
           default: false
@@ -11005,7 +11047,8 @@ components:
               publishedAt:
                 type: string
                 format: date-time
-                description: ISO 8601 timestamp string
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               isSpecial:
                 type: boolean
                 default: false
@@ -11050,7 +11093,8 @@ components:
         publishedAt:
           type: string
           format: date-time
-          description: ISO 8601 timestamp string
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         isSpecial:
           type: boolean
           default: false
@@ -11095,7 +11139,8 @@ components:
               publishedAt:
                 type: string
                 format: date-time
-                description: ISO 8601 timestamp string
+                example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               isSpecial:
                 type: boolean
                 default: false
@@ -11143,7 +11188,8 @@ components:
         publishedAt:
           type: string
           format: date-time
-          description: ISO 8601 timestamp string
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         isSpecial:
           type: boolean
           default: false
@@ -11251,8 +11297,8 @@ components:
           description: Optional caption describing the gallery photo
         submittedAt:
           type: string
-          nullable: true
           format: date-time
+          example: 2024-03-01T18:30:00Z
           description: Timestamp when the source submission was created
         originalUrl:
           type: string
@@ -11515,8 +11561,8 @@ components:
                 description: Optional caption describing the gallery photo
               submittedAt:
                 type: string
-                nullable: true
                 format: date-time
+                example: 2024-03-01T18:30:00Z
                 description: Timestamp when the source submission was created
               originalUrl:
                 type: string
@@ -11681,6 +11727,7 @@ components:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         permalink:
           type: string
           nullable: true
@@ -11792,6 +11839,7 @@ components:
                 type: string
                 format: date-time
                 example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               permalink:
                 type: string
                 nullable: true
@@ -11921,6 +11969,7 @@ components:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
       required:
         - id
         - accountId
@@ -11997,6 +12046,7 @@ components:
                 type: string
                 format: date-time
                 example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
             required:
               - id
               - accountId
@@ -12101,6 +12151,7 @@ components:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         permalink:
           type: string
           nullable: true
@@ -12192,6 +12243,7 @@ components:
                 type: string
                 format: date-time
                 example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               permalink:
                 type: string
                 nullable: true
@@ -12265,6 +12317,7 @@ components:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         title:
           type: string
           minLength: 1
@@ -12298,10 +12351,12 @@ components:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         updatedAt:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
       required:
         - id
         - leagueEventId
@@ -12357,6 +12412,7 @@ components:
                 type: string
                 format: date-time
                 example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               title:
                 type: string
                 minLength: 1
@@ -12390,10 +12446,12 @@ components:
                 type: string
                 format: date-time
                 example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
               updatedAt:
                 type: string
                 format: date-time
                 example: 2024-03-01T18:30:00Z
+                description: ISO 8601 timestamp string with timezone offset.
             required:
               - id
               - leagueEventId
@@ -12479,6 +12537,7 @@ components:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
       required:
         - title
       title: LiveEventCreate
@@ -12530,6 +12589,7 @@ components:
           type: string
           format: date-time
           example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
       title: LiveEventUpdate
     PhotoSubmission:
       type: object
@@ -13145,6 +13205,8 @@ components:
         gameDate:
           type: string
           format: date-time
+          example: 2024-03-01T18:30:00Z
+          description: ISO 8601 timestamp string with timezone offset.
         gameStatus:
           type: number
           description: 0=Scheduled, 1=Final, 2=Rainout, 3=Postponed, 4=Forfeit, 5=Did Not
@@ -29341,13 +29403,19 @@ paths:
         - schema:
             type: string
             format: date-time
+            example: 2024-03-01T18:30:00Z
+            description: ISO 8601 timestamp string with timezone offset.
           required: false
+          description: ISO 8601 timestamp string with timezone offset.
           name: after
           in: query
         - schema:
             type: string
             format: date-time
+            example: 2024-03-01T18:30:00Z
+            description: ISO 8601 timestamp string with timezone offset.
           required: false
+          description: ISO 8601 timestamp string with timezone offset.
           name: before
           in: query
         - schema:

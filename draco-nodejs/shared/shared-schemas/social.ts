@@ -1,15 +1,10 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { bigintToStringSchema, trimToUndefined } from './standardSchema.js';
+import { isoDateTimeSchema } from './date.js';
 import { booleanQueryParam, numberQueryParam } from './queryParams.js';
 
 extendZodWithOpenApi(z);
-
-const isoDateTimeSchema = z.string().datetime({ offset: true }).openapi({
-  type: 'string',
-  format: 'date-time',
-  example: '2024-03-01T18:30:00Z',
-});
 
 const optionalBigintStringSchema = z
   .preprocess((value) => {

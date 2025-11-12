@@ -3,6 +3,7 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { PaginationWithTotalSchema } from './paging.js';
 import { PublicContactSummarySchema } from './contact.js';
 import { bigintToStringSchema, nameSchema } from './standardSchema.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -118,7 +119,7 @@ export const PlayerSurveyDetailSchema = z
   .object({
     player: PublicContactSummarySchema,
     answers: PlayerSurveyAnswerSchema.array(),
-    lastUpdatedAt: z.string().datetime().optional(),
+    lastUpdatedAt: isoDateTimeSchema.optional(),
   })
   .openapi({
     title: 'PlayerSurveyDetail',
