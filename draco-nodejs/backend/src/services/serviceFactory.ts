@@ -67,6 +67,7 @@ import { SocialIngestionService } from './socialIngestion/socialIngestionService
 import { TwitterConnector } from './socialIngestion/connectors/twitterConnector.js';
 import { YouTubeConnector } from './socialIngestion/connectors/youtubeConnector.js';
 import { DiscordConnector } from './socialIngestion/connectors/discordConnector.js';
+import { DiscordIntegrationService } from './discordIntegrationService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -127,6 +128,7 @@ export class ServiceFactory {
   private static accountSettingsService: AccountSettingsService;
   private static socialHubService: SocialHubService;
   private static socialIngestionService: SocialIngestionService;
+  private static discordIntegrationService: DiscordIntegrationService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -420,6 +422,14 @@ export class ServiceFactory {
     }
 
     return this.accountSettingsService;
+  }
+
+  static getDiscordIntegrationService(): DiscordIntegrationService {
+    if (!this.discordIntegrationService) {
+      this.discordIntegrationService = new DiscordIntegrationService();
+    }
+
+    return this.discordIntegrationService;
   }
 
   static getSocialHubService(): SocialHubService {

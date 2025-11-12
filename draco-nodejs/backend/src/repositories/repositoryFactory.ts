@@ -42,6 +42,7 @@ import {
   IAccountSettingsRepository,
   ISocialContentRepository,
   ILiveEventRepository,
+  IDiscordIntegrationRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -85,6 +86,7 @@ import {
   PrismaAccountSettingsRepository,
   PrismaSocialContentRepository,
   PrismaLiveEventRepository,
+  PrismaDiscordIntegrationRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -135,6 +137,7 @@ export class RepositoryFactory {
   private static accountSettingsRepository: IAccountSettingsRepository;
   private static socialContentRepository: ISocialContentRepository;
   private static liveEventRepository: ILiveEventRepository;
+  private static discordIntegrationRepository: IDiscordIntegrationRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -197,6 +200,13 @@ export class RepositoryFactory {
       this.accountSettingsRepository = new PrismaAccountSettingsRepository(prisma);
     }
     return this.accountSettingsRepository;
+  }
+
+  static getDiscordIntegrationRepository(): IDiscordIntegrationRepository {
+    if (!this.discordIntegrationRepository) {
+      this.discordIntegrationRepository = new PrismaDiscordIntegrationRepository(prisma);
+    }
+    return this.discordIntegrationRepository;
   }
 
   static getSocialContentRepository(): ISocialContentRepository {

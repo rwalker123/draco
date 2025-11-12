@@ -24,9 +24,15 @@
 ## Phase 5 – Community & Adoption
 - [ ] Implement Discord SSO + role mapping (if Discord replaces or supplements the custom board).
   - [ ] Build the Discord OAuth linking flow (frontend profile UI + backend endpoints) to let users connect their Discord identity and store the user/refresh tokens securely.
-  - [ ] Add account-level configuration for Discord (guild id, bot token, required scopes) with validation and secure storage in the backend admin settings.
-  - [ ] Create the role-mapping data model and admin UI so Discord role IDs can be mapped to Draco permissions (e.g., coach, player, parent).
+    - [x] Backend: shared schemas/config, repository/service logic, and `/api/accounts/:accountId/discord/link*` routes handle OAuth state, token exchange, and persistence.
+    - [x] Frontend: profile UI + CTA wiring to start the OAuth flow and surface status/unlink actions. _Profile page now includes the Discord Integration card and `/profile/discord/callback` flow that drives OAuth start/complete, status refresh, and unlinking._
+  - [x] Add account-level configuration for Discord (guild id, bot token, required scopes) with validation and secure storage in the backend admin settings. _Implemented via `shared/shared-schemas/accountDiscord.ts`, new Prisma tables/migration `20250301_discord_linking`, repository/service wiring, and `/api/accounts/:accountId/discord` routes._
+  - [x] Define the role-mapping data model and backend APIs so Discord role IDs can be mapped to Draco permissions (e.g., coach, player, parent). _Backed by `accountdiscordrolemapping` table, repository methods, service logic, and admin routes._
+  - [ ] Build the account admin UI for editing Discord role mappings and configuration using the shared schemas/hooks.
   - [ ] Implement membership/role sync jobs that validate guild membership on link, refresh roles on sign-in/cron, and downgrade permissions when roles are removed.
   - [ ] Provide admin tooling to view, unlink, or resync Discord accounts, plus audit logging for link/unlink operations.
+  - [ ] Expose user-level endpoints + UI to list, link, and unlink Discord accounts (including secure token storage in repositories and service coverage).
+  - [ ] Document the new Discord endpoints and schemas in OpenAPI (`backend/src/openapi/paths/accounts` + shared type exports).
+  - [ ] Add unit tests for `DiscordIntegrationService` (encryption helpers, role-mapping validation, repository interactions).
 - [ ] Automate thread creation from key system events (new video, game result, scheduled stream) to drive participation.
 - [ ] Ship announcements/notifications surfacing “needs reply” items and weekly engagement prompts.

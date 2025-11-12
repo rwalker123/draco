@@ -40,3 +40,4 @@ export * from './IStatsEntryRepository.js';
 export * from './IAccountSettingsRepository.js';
 export * from './ISocialContentRepository.js';
 export * from './ILiveEventRepository.js';
+export * from './IDiscordIntegrationRepository.js';

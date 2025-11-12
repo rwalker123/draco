@@ -42,10 +42,14 @@ export const DiscordAccountConfigUpdateSchema = z.object({
   guildId: DiscordGuildIdSchema.nullable(),
   roleSyncEnabled: z.boolean().optional(),
   botToken: z
-    .string()
-    .trim()
-    .min(1, 'Bot token is required')
-    .max(256, 'Bot token cannot exceed 256 characters')
+    .union([
+      z
+        .string()
+        .trim()
+        .min(1, 'Bot token is required when provided')
+        .max(256, 'Bot token cannot exceed 256 characters'),
+      z.literal(null),
+    ])
     .optional(),
 });
 
@@ -71,7 +75,14 @@ export const DiscordRoleMappingUpdateSchema = z.object({
 
 export type DiscordRoleMappingUpdateType = z.infer<typeof DiscordRoleMappingUpdateSchema>;
 
+export const DiscordRoleMappingListSchema = z.object({
+  roleMappings: DiscordRoleMappingSchema.array(),
+});
+
+export type DiscordRoleMappingListType = z.infer<typeof DiscordRoleMappingListSchema>;
+
 export const DiscordLinkStatusSchema = z.object({
+  linkingEnabled: z.boolean(),
   linked: z.boolean(),
   username: z.string().nullable(),
   discriminator: z.string().nullable(),
@@ -88,3 +99,10 @@ export const DiscordOAuthStartResponseSchema = z.object({
 });
 
 export type DiscordOAuthStartResponseType = z.infer<typeof DiscordOAuthStartResponseSchema>;
+
+export const DiscordOAuthCallbackSchema = z.object({
+  code: z.string().trim().min(1, 'Authorization code is required'),
+  state: z.string().trim().min(1, 'OAuth state is required'),
+});
+
+export type DiscordOAuthCallbackType = z.infer<typeof DiscordOAuthCallbackSchema>;
