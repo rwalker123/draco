@@ -86,6 +86,7 @@ export class DiscordIntegrationService {
   private readonly discordRepository = RepositoryFactory.getDiscordIntegrationRepository();
   private readonly accountRepository = RepositoryFactory.getAccountRepository();
   private readonly seasonsRepository = RepositoryFactory.getSeasonsRepository();
+  private channelIngestionTargetsCache: DiscordIngestionTarget[] | null = null;
   private getBotToken(): string {
     const token = process.env.DISCORD_BOT_TOKEN;
     if (!token) {
@@ -127,6 +128,7 @@ export class DiscordIntegrationService {
       this.discordRepository.deleteLinkedAccounts(accountId),
       this.discordRepository.deleteFeatureSyncsByAccount(accountId),
     ]);
+    this.invalidateChannelIngestionTargetsCache();
     await this.discordRepository.deleteAccountConfig(accountId);
     const config = await this.getOrCreateAccountConfigRecord(accountId);
     return DiscordIntegrationResponseFormatter.formatAccountConfig(config);
@@ -251,6 +253,7 @@ export class DiscordIntegrationService {
       teamId,
     });
 
+    this.invalidateChannelIngestionTargetsCache();
     return DiscordIntegrationResponseFormatter.formatChannelMapping(created);
   }
 
@@ -261,29 +264,41 @@ export class DiscordIntegrationService {
       throw new NotFoundError('Channel mapping not found');
     }
     await this.discordRepository.deleteChannelMapping(accountId, mappingId);
+    this.invalidateChannelIngestionTargetsCache();
   }
 
   async getChannelIngestionTargets(): Promise<DiscordIngestionTarget[]> {
+    if (this.channelIngestionTargetsCache) {
+      return this.channelIngestionTargetsCache.map((target) => ({ ...target }));
+    }
+
     const mappings = await this.discordRepository.listAllChannelMappings();
     const targets: DiscordIngestionTarget[] = [];
+    const accountSeasonCache = new Map<bigint, bigint>();
 
     for (const mapping of mappings) {
       if (mapping.scope === 'account') {
-        const currentSeason = await this.seasonsRepository.findCurrentSeason(mapping.accountid);
-        if (!currentSeason) {
-          console.warn(
-            '[discord] Skipping account-scoped mapping because no current season is set',
-            {
-              accountId: mapping.accountid.toString(),
-              channelId: mapping.channelid,
-            },
-          );
-          continue;
+        let seasonId = accountSeasonCache.get(mapping.accountid);
+        if (!seasonId) {
+          const currentSeason = await this.seasonsRepository.findCurrentSeason(mapping.accountid);
+          if (!currentSeason) {
+            console.warn(
+              '[discord] Skipping account-scoped mapping because no current season is set',
+              {
+                accountId: mapping.accountid.toString(),
+                channelId: mapping.channelid,
+              },
+            );
+            continue;
+          }
+
+          seasonId = currentSeason.id;
+          accountSeasonCache.set(mapping.accountid, seasonId);
         }
 
         targets.push({
           accountId: mapping.accountid,
-          seasonId: currentSeason.id,
+          seasonId,
           teamSeasonId: undefined,
           teamId: undefined,
           channelId: mapping.channelid,
@@ -311,7 +326,12 @@ export class DiscordIntegrationService {
       });
     }
 
-    return targets;
+    this.channelIngestionTargetsCache = targets;
+    return targets.map((target) => ({ ...target }));
+  }
+
+  private invalidateChannelIngestionTargetsCache(): void {
+    this.channelIngestionTargetsCache = null;
   }
 
   async getFeatureSyncStatus(
