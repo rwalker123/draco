@@ -50,9 +50,7 @@ const RoleMappingFormSchema = DiscordRoleMappingUpdateSchema.extend({
 
 type RoleMappingFormValues = z.infer<typeof RoleMappingFormSchema>;
 
-export const DiscordIntegrationAdminWidget: React.FC<DiscordIntegrationAdminWidgetProps> = ({
-  accountId,
-}) => {
+const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ accountId }) => {
   const {
     fetchConfig,
     fetchRoleMappings,
@@ -552,17 +550,25 @@ export const DiscordIntegrationAdminWidget: React.FC<DiscordIntegrationAdminWidg
         </DialogActions>
       </Dialog>
 
-      {accountId && (
-        <AddDiscordChannelMappingDialog
-          open={channelDialogOpen}
-          accountId={accountId}
-          availableChannels={availableChannels}
-          onClose={() => setChannelDialogOpen(false)}
-          onSuccess={handleChannelDialogSuccess}
-        />
-      )}
+      <AddDiscordChannelMappingDialog
+        open={channelDialogOpen}
+        accountId={accountId}
+        availableChannels={availableChannels}
+        onClose={() => setChannelDialogOpen(false)}
+        onSuccess={handleChannelDialogSuccess}
+      />
     </Stack>
   );
+};
+
+export const DiscordIntegrationAdminWidget: React.FC<DiscordIntegrationAdminWidgetProps> = ({
+  accountId,
+}) => {
+  if (!accountId) {
+    return null;
+  }
+
+  return <DiscordIntegrationAdminWidgetInner accountId={accountId} />;
 };
 
 export default DiscordIntegrationAdminWidget;

@@ -135,7 +135,13 @@ export class SocialFeedResponseFormatter {
   private static parseMetadata(
     metadata: Prisma.JsonValue | null,
   ): SocialFeedItemMetadataType | undefined {
-    if (!metadata || typeof metadata !== 'object' || metadata === null) {
+    if (
+      metadata === null ||
+      typeof metadata !== 'object' ||
+      Array.isArray(metadata) ||
+      metadata instanceof Date ||
+      metadata instanceof RegExp
+    ) {
       return undefined;
     }
 

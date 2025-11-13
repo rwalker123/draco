@@ -4,6 +4,7 @@ import {
   accountdiscordchannels,
   userdiscordaccounts,
   PrismaClient,
+  Prisma,
 } from '@prisma/client';
 import {
   DiscordAccountConfigUpsertInput,
@@ -34,19 +35,28 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
     accountId: bigint,
     data: DiscordAccountConfigUpsertInput,
   ): Promise<accountdiscordsettings> {
+    const createData: Prisma.accountdiscordsettingsCreateInput = {
+      guildid: data.guildId ?? null,
+      guildname: data.guildName ?? null,
+      rolesyncenabled: data.roleSyncEnabled ?? false,
+      accounts: {
+        connect: { id: accountId },
+      },
+    };
+
+    const updateData: Prisma.accountdiscordsettingsUpdateInput = {
+      guildid: data.guildId ?? null,
+      guildname: data.guildName ?? null,
+    };
+
+    if (data.roleSyncEnabled !== undefined) {
+      updateData.rolesyncenabled = data.roleSyncEnabled;
+    }
+
     return this.prisma.accountdiscordsettings.upsert({
       where: { accountid: accountId },
-      create: {
-        accountid: accountId,
-        guildid: data.guildId ?? null,
-        guildname: data.guildName ?? null,
-        rolesyncenabled: data.roleSyncEnabled ?? false,
-      },
-      update: {
-        guildid: data.guildId ?? null,
-        guildname: data.guildName ?? null,
-        rolesyncenabled: data.roleSyncEnabled ?? false,
-      },
+      create: createData,
+      update: updateData,
     });
   }
 

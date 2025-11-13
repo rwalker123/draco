@@ -15,18 +15,14 @@ const DiscordOAuthCallbackPageClient: React.FC = () => {
   const messageParam = searchParams.get('message');
 
   useEffect(() => {
-    let cancelled = false;
-
     if (statusParam === 'success') {
-      if (!cancelled) {
-        setStatus('success');
-        setMessage('Discord account linked successfully. Redirecting to your profile…');
-        redirectTimeoutRef.current = window.setTimeout(() => {
-          router.replace('/profile');
-        }, 1500);
-      }
+      setStatus('success');
+      setMessage('Discord account linked successfully. Redirecting to your profile…');
+      redirectTimeoutRef.current = window.setTimeout(() => {
+        router.replace('/profile');
+      }, 1500);
+
       return () => {
-        cancelled = true;
         if (redirectTimeoutRef.current) {
           window.clearTimeout(redirectTimeoutRef.current);
         }
@@ -35,10 +31,7 @@ const DiscordOAuthCallbackPageClient: React.FC = () => {
 
     setStatus('error');
     setMessage(messageParam || 'Discord linking could not be completed.');
-
-    return () => {
-      cancelled = true;
-    };
+    return undefined;
   }, [messageParam, router, statusParam]);
 
   const showSpinner = status === 'pending';

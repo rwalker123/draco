@@ -515,6 +515,11 @@ export class DiscordIntegrationService {
       throw new ValidationError('Invalid Discord install state payload.');
     }
 
+    const expiresAt = new Date(statePayload.expiresAt);
+    if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
+      throw new ValidationError('Discord install state has expired. Please restart the flow.');
+    }
+
     if (!guildId) {
       throw new ValidationError('Discord did not return a guild id.');
     }
