@@ -2,6 +2,7 @@ import type {
   accountdiscordsettings,
   accountdiscordrolemapping,
   accountdiscordchannels,
+  accountdiscordfeaturesync,
   userdiscordaccounts,
 } from '@prisma/client';
 import {
@@ -12,6 +13,8 @@ import {
   DiscordChannelMappingType,
   DiscordChannelMappingListType,
   DiscordGuildChannelType,
+  DiscordFeatureSyncStatusType,
+  DiscordFeatureSyncFeatureType,
 } from '@draco/shared-schemas';
 
 export class DiscordIntegrationResponseFormatter {
@@ -99,5 +102,26 @@ export class DiscordIntegrationResponseFormatter {
 
   static formatAvailableChannels(channels: DiscordGuildChannelType[]): DiscordGuildChannelType[] {
     return channels;
+  }
+
+  static formatFeatureSync(
+    feature: DiscordFeatureSyncFeatureType,
+    record: accountdiscordfeaturesync | null,
+    guildConfigured: boolean,
+  ): DiscordFeatureSyncStatusType {
+    return {
+      feature,
+      enabled: Boolean(record?.enabled && record?.discordchannelid),
+      guildConfigured,
+      channel: record?.discordchannelid
+        ? {
+            discordChannelId: record.discordchannelid,
+            discordChannelName: record.discordchannelname ?? '',
+            channelType: record.channeltype ?? null,
+            autoCreated: record.autocreated ?? false,
+            lastSyncedAt: record.lastsyncedat ? record.lastsyncedat.toISOString() : null,
+          }
+        : null,
+    };
   }
 }

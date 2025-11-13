@@ -17,7 +17,9 @@ const DEFAULT_TOKEN_URL = 'https://discord.com/api/oauth2/token';
 const DEFAULT_API_BASE_URL = 'https://discord.com/api';
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_INSTALL_REDIRECT_PATH = '/api/discord/install/callback';
-const DEFAULT_INSTALL_PERMISSIONS = '268435456';
+// Permissions: VIEW_CHANNEL + SEND_MESSAGES + EMBED_LINKS + MANAGE_CHANNELS
+// Calculate via https://discordapi.com/permissions.html
+const DEFAULT_INSTALL_PERMISSIONS = '268443664';
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) {

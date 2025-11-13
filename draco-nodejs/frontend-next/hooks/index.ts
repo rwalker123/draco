@@ -33,6 +33,7 @@ export { useSignupService } from './useSignupService';
 export { usePasswordResetService } from './usePasswordResetService';
 export { useHallOfFameService } from './useHallOfFameService';
 export { usePlayerCareerStatistics } from './usePlayerCareerStatistics';
+export { useDiscordFeatureSync } from './useDiscordFeatureSync';
 
 // Player Classifieds hooks
 export { usePlayerClassifieds } from './usePlayerClassifieds';

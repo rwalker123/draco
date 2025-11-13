@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnnouncementService } from '../announcementService.js';
 import {
   IAnnouncementRepository,
@@ -8,6 +8,19 @@ import {
 } from '../../repositories/index.js';
 import { leaguenews, teamnews } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
+import { DiscordIntegrationService } from '../discordIntegrationService.js';
+
+const publishAnnouncementSpy = vi
+  .spyOn(DiscordIntegrationService.prototype, 'publishAnnouncement')
+  .mockResolvedValue();
+
+afterEach(() => {
+  publishAnnouncementSpy.mockClear();
+});
+
+afterAll(() => {
+  publishAnnouncementSpy.mockRestore();
+});
 
 const cloneAccountAnnouncement = (record: dbAccountAnnouncement): dbAccountAnnouncement => ({
   id: record.id,

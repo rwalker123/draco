@@ -6015,6 +6015,780 @@
         "title": "MemberBusinessQueryParams",
         "description": "Optional filters for member business listings"
       },
+      "DiscordAccountConfig": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "guildId": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^\\d+$"
+          },
+          "guildName": {
+            "type": "string",
+            "nullable": true
+          },
+          "roleSyncEnabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "guildId",
+          "guildName",
+          "roleSyncEnabled",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DiscordAccountConfigUpdate": {
+        "type": "object",
+        "properties": {
+          "guildId": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^\\d+$"
+          },
+          "roleSyncEnabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DiscordRoleMapping": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "discordRoleId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^\\d+$"
+          },
+          "discordRoleName": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "discordRoleId",
+          "discordRoleName",
+          "permissions",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DiscordRoleMappingList": {
+        "type": "object",
+        "properties": {
+          "roleMappings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "discordRoleId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^\\d+$"
+                },
+                "discordRoleName": {
+                  "type": "string"
+                },
+                "permissions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                }
+              },
+              "required": [
+                "id",
+                "accountId",
+                "discordRoleId",
+                "discordRoleName",
+                "permissions",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "roleMappings"
+        ]
+      },
+      "DiscordRoleMappingUpdate": {
+        "type": "object",
+        "properties": {
+          "discordRoleId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^\\d+$"
+          },
+          "discordRoleName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "discordRoleId",
+          "discordRoleName",
+          "permissions"
+        ]
+      },
+      "DiscordChannelMapping": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "accountId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "discordChannelId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "discordChannelName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "channelType": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "account",
+              "season",
+              "teamSeason"
+            ]
+          },
+          "seasonId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamSeasonId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "discordChannelId",
+          "discordChannelName",
+          "label",
+          "scope",
+          "seasonId",
+          "teamSeasonId",
+          "teamId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DiscordChannelMappingList": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "accountId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "discordChannelId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "discordChannelName": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "channelType": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "label": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "account",
+                    "season",
+                    "teamSeason"
+                  ]
+                },
+                "seasonId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamSeasonId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamId": {
+                  "type": "string",
+                  "nullable": true,
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                }
+              },
+              "required": [
+                "id",
+                "accountId",
+                "discordChannelId",
+                "discordChannelName",
+                "label",
+                "scope",
+                "seasonId",
+                "teamSeasonId",
+                "teamId",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "channels"
+        ]
+      },
+      "DiscordChannelMappingCreate": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "account",
+                  "season",
+                  "teamSeason"
+                ]
+              },
+              "seasonId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "teamSeasonId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "teamId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "existing"
+                ]
+              },
+              "discordChannelId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "discordChannelName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "channelType": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "scope",
+              "mode",
+              "discordChannelId",
+              "discordChannelName"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "account",
+                  "season",
+                  "teamSeason"
+                ]
+              },
+              "seasonId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "teamSeasonId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "teamId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "autoCreate"
+                ]
+              },
+              "newChannelName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "newChannelType": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "announcement"
+                ],
+                "default": "text"
+              }
+            },
+            "required": [
+              "scope",
+              "mode",
+              "newChannelName"
+            ]
+          }
+        ]
+      },
+      "DiscordGuildChannel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "DiscordOAuthStartResponse": {
+        "type": "object",
+        "properties": {
+          "authorizationUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          }
+        },
+        "required": [
+          "authorizationUrl",
+          "expiresAt"
+        ]
+      },
+      "DiscordLinkStatus": {
+        "type": "object",
+        "properties": {
+          "linkingEnabled": {
+            "type": "boolean"
+          },
+          "linked": {
+            "type": "boolean"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "discriminator": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "guildMember": {
+            "type": "boolean"
+          },
+          "lastSyncedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-01T18:30:00Z",
+            "description": "ISO 8601 timestamp string with timezone offset."
+          }
+        },
+        "required": [
+          "linkingEnabled",
+          "linked",
+          "username",
+          "discriminator",
+          "avatarUrl"
+        ]
+      },
+      "DiscordFeatureSyncStatus": {
+        "type": "object",
+        "properties": {
+          "feature": {
+            "type": "string",
+            "enum": [
+              "announcements"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "guildConfigured": {
+            "type": "boolean"
+          },
+          "channel": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "discordChannelId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^\\d+$"
+              },
+              "discordChannelName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "channelType": {
+                "type": "string",
+                "nullable": true
+              },
+              "autoCreated": {
+                "type": "boolean"
+              },
+              "lastSyncedAt": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2024-03-01T18:30:00Z",
+                "description": "ISO 8601 timestamp string with timezone offset."
+              }
+            },
+            "required": [
+              "discordChannelId",
+              "discordChannelName"
+            ]
+          }
+        },
+        "required": [
+          "feature",
+          "enabled",
+          "guildConfigured",
+          "channel"
+        ]
+      },
+      "DiscordFeatureSyncUpdate": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "channel": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "existing"
+                    ]
+                  },
+                  "discordChannelId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32,
+                    "pattern": "^\\d+$"
+                  },
+                  "discordChannelName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "channelType": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "discordChannelId",
+                  "discordChannelName"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "autoCreate"
+                    ]
+                  },
+                  "newChannelName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "newChannelType": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "announcement"
+                    ],
+                    "default": "text"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "newChannelName"
+                ]
+              },
+              {
+                "nullable": true
+              }
+            ]
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "DiscordFeatureSyncFeature": {
+        "type": "string",
+        "enum": [
+          "announcements"
+        ]
+      },
       "PlayersWantedClassified": {
         "type": "object",
         "properties": {
@@ -21832,6 +22606,1080 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/config": {
+      "get": {
+        "operationId": "getAccountDiscordConfig",
+        "summary": "Get Discord configuration for an account",
+        "description": "Returns the saved Discord guild configuration for the specified account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord configuration for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordAccountConfig"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateAccountDiscordConfig",
+        "summary": "Update Discord configuration for an account",
+        "description": "Creates or updates the Discord guild metadata for the specified account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordAccountConfigUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated Discord configuration.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordAccountConfig"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAccountDiscordConfig",
+        "summary": "Remove Discord configuration for an account",
+        "description": "Disconnects the configured Discord guild and clears related mappings.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated Discord configuration after removal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordAccountConfig"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/link-status": {
+      "get": {
+        "operationId": "getAccountDiscordLinkStatus",
+        "summary": "Get the authenticated contact’s Discord link status",
+        "description": "Returns whether the current user has linked their Discord identity.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Link status for the authenticated user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordLinkStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Account access denied."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/link/start": {
+      "post": {
+        "operationId": "startAccountDiscordLink",
+        "summary": "Begin the Discord user linking flow",
+        "description": "Starts the OAuth flow for the current user to link their Discord account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "OAuth start payload for the linking flow.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordOAuthStartResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Account access denied."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/link": {
+      "delete": {
+        "operationId": "deleteAccountDiscordLink",
+        "summary": "Unlink the authenticated contact’s Discord account",
+        "description": "Removes the stored Discord tokens for the current user.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated link status after unlinking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordLinkStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Account access denied."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/install/start": {
+      "post": {
+        "operationId": "startAccountDiscordInstall",
+        "summary": "Begin the Discord bot installation flow",
+        "description": "Starts the OAuth flow to install the Draco Discord bot for an account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "OAuth start payload for installing the Discord bot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordOAuthStartResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/role-mappings": {
+      "get": {
+        "operationId": "listAccountDiscordRoleMappings",
+        "summary": "List Discord role mappings for an account",
+        "description": "Returns the configured Discord role-to-permission mappings for the account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord role mappings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordRoleMappingList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAccountDiscordRoleMapping",
+        "summary": "Create a Discord role mapping",
+        "description": "Adds a new Discord role mapping for the specified account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordRoleMappingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created Discord role mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordRoleMapping"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/role-mappings/{roleMappingId}": {
+      "put": {
+        "operationId": "updateAccountDiscordRoleMapping",
+        "summary": "Update a Discord role mapping",
+        "description": "Updates an existing Discord role mapping for the specified account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "roleMappingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordRoleMappingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated Discord role mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordRoleMapping"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account or role mapping not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAccountDiscordRoleMapping",
+        "summary": "Delete a Discord role mapping",
+        "description": "Removes a Discord role mapping from the specified account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "roleMappingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Role mapping deleted."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account or role mapping not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/channel-mappings": {
+      "get": {
+        "operationId": "listAccountDiscordChannelMappings",
+        "summary": "List Discord channel mappings for an account",
+        "description": "Returns the Discord channel ingestion mappings configured for the account.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord channel mappings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordChannelMappingList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAccountDiscordChannelMapping",
+        "summary": "Create a Discord channel mapping",
+        "description": "Creates a new Discord channel ingestion mapping.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordChannelMappingCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created Discord channel mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordChannelMapping"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/channel-mappings/{mappingId}": {
+      "delete": {
+        "operationId": "deleteAccountDiscordChannelMapping",
+        "summary": "Delete a Discord channel mapping",
+        "description": "Removes a Discord channel ingestion mapping.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "mappingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Channel mapping deleted."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord settings."
+          },
+          "404": {
+            "description": "Account or channel mapping not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/available-channels": {
+      "get": {
+        "operationId": "listAccountDiscordAvailableChannels",
+        "summary": "List channels available within the configured Discord guild",
+        "description": "Returns text and announcement channels exposed by the Draco bot.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord channels in the guild.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiscordGuildChannel"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Account access denied."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/discord/feature-sync/{feature}": {
+      "get": {
+        "operationId": "getAccountDiscordFeatureSync",
+        "summary": "Get Discord sync settings for a feature",
+        "description": "Returns the sync status for a feature such as announcements.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "feature",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "announcements"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discord sync status for the feature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordFeatureSyncStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord communications."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateAccountDiscordFeatureSync",
+        "summary": "Update Discord sync settings for a feature",
+        "description": "Enables or disables Discord syncing for a supported feature.",
+        "tags": [
+          "Discord"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "feature",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "announcements"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscordFeatureSyncUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated Discord sync status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordFeatureSyncStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage Discord communications."
+          },
+          "404": {
+            "description": "Account not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

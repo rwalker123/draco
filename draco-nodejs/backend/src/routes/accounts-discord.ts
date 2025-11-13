@@ -7,8 +7,10 @@ import {
   DiscordAccountConfigUpdateSchema,
   DiscordRoleMappingUpdateSchema,
   DiscordChannelMappingCreateSchema,
+  DiscordFeatureSyncFeatureEnum,
+  DiscordFeatureSyncUpdateSchema,
 } from '@draco/shared-schemas';
-import { AuthenticationError } from '../utils/customErrors.js';
+import { AuthenticationError, ValidationError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -20,6 +22,14 @@ const requireUserId = (req: Request): string => {
     throw new AuthenticationError('Authentication required');
   }
   return userId;
+};
+
+const parseFeature = (featureParam: string) => {
+  const result = DiscordFeatureSyncFeatureEnum.safeParse(featureParam);
+  if (!result.success) {
+    throw new ValidationError('Unsupported Discord feature sync feature.');
+  }
+  return result.data;
 };
 
 router.get(
@@ -206,11 +216,41 @@ router.get(
   '/:accountId/discord/available-channels',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.settings.manage'),
+  routeProtection.requireAnyPermission([
+    'account.settings.manage',
+    'account.communications.manage',
+  ]),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const channels = await discordIntegrationService.listAvailableChannels(accountId);
     res.json(channels);
+  }),
+);
+
+router.get(
+  '/:accountId/discord/feature-sync/:feature',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.communications.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const feature = parseFeature(req.params.feature);
+    const status = await discordIntegrationService.getFeatureSyncStatus(accountId, feature);
+    res.json(status);
+  }),
+);
+
+router.put(
+  '/:accountId/discord/feature-sync/:feature',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.communications.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const feature = parseFeature(req.params.feature);
+    const payload = DiscordFeatureSyncUpdateSchema.parse(req.body);
+    const status = await discordIntegrationService.updateFeatureSync(accountId, feature, payload);
+    res.json(status);
   }),
 );
 

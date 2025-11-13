@@ -18,60 +18,61 @@ model accounthandouts {
 }
 
 model accounts {
-  id                      BigInt                    @id @default(autoincrement())
-  name                    String                    @db.VarChar(75)
-  firstyear               Int                       @default(0)
-  accounttypeid           BigInt
-  affiliationid           BigInt
-  timezoneid              String                    @db.VarChar(50)
-  twitteraccountname      String                    @db.VarChar(50)
-  twitteroauthtoken       String                    @db.VarChar(50)
-  twitteroauthsecretkey   String                    @db.VarChar(50)
-  youtubeuserid           String?                   @db.VarChar(50)
-  facebookfanpage         String?                   @db.VarChar(50)
-  twitterwidgetscript     String?                   @db.VarChar(512)
-  defaultvideo            String                    @default("") @db.VarChar(50)
-  autoplayvideo           Boolean                   @default(false)
-  owneruserid             String?                   @db.VarChar(128)
-  accounthandouts         accounthandouts[]
-  aspnetusers             aspnetusers?              @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
-  accounttypes            accounttypes              @relation(fields: [accounttypeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounttypes_accounts")
-  accountsettings         accountsettings[]
-  accountsurl             accountsurl[]
-  accountwelcome          accountwelcome[]
-  availablefields         availablefields[]
-  contactroles            contactroles[]
-  contacts                contacts[]
-  currentseason           currentseason?
-  divisiondefs            divisiondefs[]
-  email_templates         email_templates[]
-  emails                  emails[]
-  golfleaguecourses       golfleaguecourses[]
-  golfleaguesetup         golfleaguesetup[]
-  hof                     hof[]
-  hofnomination           hofnomination[]
-  hofnominationsetup      hofnominationsetup?
-  league                  league[]
-  leaguefaq               leaguefaq[]
-  leaguenews              leaguenews[]
-  leagueumpires           leagueumpires[]
-  socialfeeditems         socialfeeditems[]
-  socialvideos            socialvideos[]
-  discordmessages         discordmessages[]
-  photogallery            photogallery[]
-  photogallerysubmission  photogallerysubmission[]
-  playerswantedclassified playerswantedclassified[]
-  profilecategory         profilecategory[]
-  season                  season[]
-  sponsors                sponsors[]
-  teams                   teams[]
-  teamswantedclassified   teamswantedclassified[]
-  votequestion            votequestion[]
-  workoutannouncement     workoutannouncement[]
-  accountdiscordsettings  accountdiscordsettings?
+  id                        BigInt                      @id @default(autoincrement())
+  name                      String                      @db.VarChar(75)
+  firstyear                 Int                         @default(0)
+  accounttypeid             BigInt
+  affiliationid             BigInt
+  timezoneid                String                      @db.VarChar(50)
+  twitteraccountname        String                      @db.VarChar(50)
+  twitteroauthtoken         String                      @db.VarChar(50)
+  twitteroauthsecretkey     String                      @db.VarChar(50)
+  youtubeuserid             String?                     @db.VarChar(50)
+  facebookfanpage           String?                     @db.VarChar(50)
+  twitterwidgetscript       String?                     @db.VarChar(512)
+  defaultvideo              String                      @default("") @db.VarChar(50)
+  autoplayvideo             Boolean                     @default(false)
+  owneruserid               String?                     @db.VarChar(128)
+  accounthandouts           accounthandouts[]
+  aspnetusers               aspnetusers?                @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
+  accounttypes              accounttypes                @relation(fields: [accounttypeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounttypes_accounts")
+  accountsettings           accountsettings[]
+  accountsurl               accountsurl[]
+  accountwelcome            accountwelcome[]
+  availablefields           availablefields[]
+  contactroles              contactroles[]
+  contacts                  contacts[]
+  currentseason             currentseason?
+  divisiondefs              divisiondefs[]
+  email_templates           email_templates[]
+  emails                    emails[]
+  golfleaguecourses         golfleaguecourses[]
+  golfleaguesetup           golfleaguesetup[]
+  hof                       hof[]
+  hofnomination             hofnomination[]
+  hofnominationsetup        hofnominationsetup?
+  league                    league[]
+  leaguefaq                 leaguefaq[]
+  leaguenews                leaguenews[]
+  leagueumpires             leagueumpires[]
+  socialfeeditems           socialfeeditems[]
+  socialvideos              socialvideos[]
+  discordmessages           discordmessages[]
+  photogallery              photogallery[]
+  photogallerysubmission    photogallerysubmission[]
+  playerswantedclassified   playerswantedclassified[]
+  profilecategory           profilecategory[]
+  season                    season[]
+  sponsors                  sponsors[]
+  teams                     teams[]
+  teamswantedclassified     teamswantedclassified[]
+  votequestion              votequestion[]
+  workoutannouncement       workoutannouncement[]
+  accountdiscordsettings    accountdiscordsettings?
   accountdiscordrolemapping accountdiscordrolemapping[]
-  accountdiscordchannels accountdiscordchannels[]
-  userdiscordaccounts     userdiscordaccounts[]
+  accountdiscordchannels    accountdiscordchannels[]
+  accountdiscordfeaturesync accountdiscordfeaturesync[]
+  userdiscordaccounts       userdiscordaccounts[]
 }
 
 model accountsettings {
@@ -134,86 +135,103 @@ model aspnetuserroles {
 }
 
 model aspnetusers {
-  id                   String            @id @db.VarChar(128)
-  email                String?           @db.VarChar(256)
+  id                   String                @id @db.VarChar(128)
+  email                String?               @db.VarChar(256)
   emailconfirmed       Boolean
   passwordhash         String?
   securitystamp        String?
-  phonenumber          String?           @db.VarChar(30)
+  phonenumber          String?               @db.VarChar(30)
   phonenumberconfirmed Boolean
   twofactorenabled     Boolean
-  lockoutenddateutc    DateTime?         @db.Timestamptz(6)
+  lockoutenddateutc    DateTime?             @db.Timestamptz(6)
   lockoutenabled       Boolean
   accessfailedcount    Int
-  username             String?           @unique(map: "uq_aspnetusers_username") @db.VarChar(256)
+  username             String?               @unique(map: "uq_aspnetusers_username") @db.VarChar(256)
   accounts             accounts[]
   aspnetuserroles      aspnetuserroles[]
-  created_templates    email_templates[] @relation("EmailTemplateCreatedBy")
-  created_emails       emails[]          @relation("EmailCreatedBy")
+  created_templates    email_templates[]     @relation("EmailTemplateCreatedBy")
+  created_emails       emails[]              @relation("EmailCreatedBy")
   userdiscordaccounts  userdiscordaccounts[]
 }
 
 model accountdiscordsettings {
-  id               BigInt   @id @default(autoincrement())
-  accountid        BigInt
-  guildid          String?  @db.VarChar(32)
-  guildname        String?  @db.VarChar(100)
-  rolesyncenabled  Boolean  @default(false)
-  createdat        DateTime @default(now()) @db.Timestamptz(6)
-  updatedat        DateTime @updatedAt @db.Timestamptz(6)
-  accounts         accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordsettings_accounts")
+  id              BigInt   @id @default(autoincrement())
+  accountid       BigInt
+  guildid         String?  @db.VarChar(32)
+  guildname       String?  @db.VarChar(100)
+  rolesyncenabled Boolean  @default(false)
+  createdat       DateTime @default(now()) @db.Timestamptz(6)
+  updatedat       DateTime @updatedAt @db.Timestamptz(6)
+  accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordsettings_accounts")
 
   @@unique([accountid], map: "uq_accountdiscordsettings_accountid")
 }
 
 model accountdiscordchannels {
-  id            BigInt   @id @default(autoincrement())
-  accountid     BigInt
-  channelid     String   @db.VarChar(32)
-  channelname   String   @db.VarChar(100)
-  channeltype   String?  @db.VarChar(32)
-  label         String?  @db.VarChar(100)
-  scope         String   @db.VarChar(32)
-  seasonid      BigInt?
-  teamseasonid  BigInt?
-  teamid        BigInt?
-  createdat     DateTime @default(now()) @db.Timestamptz(6)
-  updatedat     DateTime @updatedAt @db.Timestamptz(6)
-  accounts      accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordchannels_accounts")
+  id           BigInt   @id @default(autoincrement())
+  accountid    BigInt
+  channelid    String   @db.VarChar(32)
+  channelname  String   @db.VarChar(100)
+  channeltype  String?  @db.VarChar(32)
+  label        String?  @db.VarChar(100)
+  scope        String   @db.VarChar(32)
+  seasonid     BigInt?
+  teamseasonid BigInt?
+  teamid       BigInt?
+  createdat    DateTime @default(now()) @db.Timestamptz(6)
+  updatedat    DateTime @updatedAt @db.Timestamptz(6)
+  accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordchannels_accounts")
 
   @@index([accountid], map: "idx_accountdiscordchannels_accountid")
 }
 
+model accountdiscordfeaturesync {
+  id                 BigInt    @id @default(autoincrement())
+  accountid          BigInt
+  feature            String    @db.VarChar(64)
+  enabled            Boolean   @default(false)
+  discordchannelid   String?   @db.VarChar(32)
+  discordchannelname String?   @db.VarChar(100)
+  channeltype        String?   @db.VarChar(32)
+  autocreated        Boolean   @default(false)
+  lastsyncedat       DateTime? @db.Timestamptz(6)
+  createdat          DateTime  @default(now()) @db.Timestamptz(6)
+  updatedat          DateTime  @updatedAt @db.Timestamptz(6)
+  accounts           accounts  @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordfeaturesync_accounts")
+
+  @@unique([accountid, feature], map: "u_accountdiscordfeaturesync_account_feature")
+}
+
 model accountdiscordrolemapping {
-  id             BigInt   @id @default(autoincrement())
-  accountid      BigInt
-  discordroleid  String   @db.VarChar(32)
-  discordrolename String  @db.VarChar(100)
-  permissions    String[]
-  createdat      DateTime @default(now()) @db.Timestamptz(6)
-  updatedat      DateTime @updatedAt @db.Timestamptz(6)
-  accounts       accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordrolemapping_accounts")
+  id              BigInt   @id @default(autoincrement())
+  accountid       BigInt
+  discordroleid   String   @db.VarChar(32)
+  discordrolename String   @db.VarChar(100)
+  permissions     String[]
+  createdat       DateTime @default(now()) @db.Timestamptz(6)
+  updatedat       DateTime @updatedAt @db.Timestamptz(6)
+  accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountdiscordrolemapping_accounts")
 
   @@index([accountid], map: "idx_accountdiscordrolemapping_accountid")
 }
 
 model userdiscordaccounts {
-  id                 BigInt   @id @default(autoincrement())
-  userid             String   @db.VarChar(128)
-  accountid          BigInt
-  discorduserid      String   @db.VarChar(32)
-  username           String?  @db.VarChar(100)
-  discriminator      String?  @db.VarChar(8)
-  avatarurl          String?  @db.VarChar(255)
-  accesstokenencrypted   String?  @db.Text
-  refreshtokenencrypted  String?  @db.Text
-  tokenexpiresat     DateTime? @db.Timestamptz(6)
-  guildmember        Boolean  @default(false)
-  lastsyncedat       DateTime? @db.Timestamptz(6)
-  createdat          DateTime @default(now()) @db.Timestamptz(6)
-  updatedat          DateTime @updatedAt @db.Timestamptz(6)
-  aspnetusers        aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, map: "fk_userdiscordaccounts_aspnetusers")
-  accounts           accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_userdiscordaccounts_accounts")
+  id                    BigInt      @id @default(autoincrement())
+  userid                String      @db.VarChar(128)
+  accountid             BigInt
+  discorduserid         String      @db.VarChar(32)
+  username              String?     @db.VarChar(100)
+  discriminator         String?     @db.VarChar(8)
+  avatarurl             String?     @db.VarChar(255)
+  accesstokenencrypted  String?     @db.Text
+  refreshtokenencrypted String?     @db.Text
+  tokenexpiresat        DateTime?   @db.Timestamptz(6)
+  guildmember           Boolean     @default(false)
+  lastsyncedat          DateTime?   @db.Timestamptz(6)
+  createdat             DateTime    @default(now()) @db.Timestamptz(6)
+  updatedat             DateTime    @updatedAt @db.Timestamptz(6)
+  aspnetusers           aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, map: "fk_userdiscordaccounts_aspnetusers")
+  accounts              accounts    @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_userdiscordaccounts_accounts")
 
   @@unique([accountid, userid], map: "uq_userdiscordaccounts_account_user")
   @@unique([accountid, discorduserid], map: "uq_userdiscordaccounts_account_discord")
@@ -285,48 +303,48 @@ model contactroles {
 }
 
 model contacts {
-  id                                                        BigInt                     @id @default(autoincrement())
-  userid                                                    String?                    @db.VarChar(128)
-  lastname                                                  String                     @db.Citext
-  firstname                                                 String                     @db.Citext
-  middlename                                                String                     @db.Citext
-  phone1                                                    String?                    @db.VarChar(14)
-  phone2                                                    String?                    @db.VarChar(14)
-  phone3                                                    String?                    @db.VarChar(14)
-  creatoraccountid                                          BigInt
-  streetaddress                                             String?                    @db.VarChar(75)
-  city                                                      String?                    @db.VarChar(25)
-  state                                                     String?                    @db.VarChar(25)
-  zip                                                       String?                    @db.VarChar(15)
-  dateofbirth                                               DateTime                   @db.Date
-  isfemale                                                  Boolean?                   @default(false)
-  email                                                     String?                    @db.VarChar(50)
-  contactroles                                              contactroles[]
-  accounts                                                  accounts                   @relation(fields: [creatoraccountid], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  email_recipients                                          email_recipients[]
-  fieldcontacts                                             fieldcontacts[]
-  golfcourseforcontact                                      golfcourseforcontact[]
-  golferstatsconfiguration                                  golferstatsconfiguration[]
-  golferstatsvalue                                          golferstatsvalue[]
-  golfleaguesetup_golfleaguesetup_presidentidTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_presidentidTocontacts")
-  golfleaguesetup_golfleaguesetup_vicepresidentidTocontacts golfleaguesetup[]          @relation("golfleaguesetup_vicepresidentidTocontacts")
-  golfleaguesetup_golfleaguesetup_secretaryidTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_secretaryidTocontacts")
-  golfleaguesetup_golfleaguesetup_treasureridTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_treasureridTocontacts")
-  golfroster                                                golfroster[]
-  golfscore                                                 golfscore[]
-  hof                                                       hof[]
-  leagueumpires                                             leagueumpires[]
-  memberbusiness                                            memberbusiness[]
-  messagepost                                               messagepost[]
-  messagetopic                                              messagetopic[]
-  playerprofile                                             playerprofile[]
-  playerswantedclassified                                   playerswantedclassified[]
-  roster                                                    roster?
-  photogallerysubmission_photogallerysubmission_submittercontactidTocontacts photogallerysubmission[] @relation("photogallerysubmission_submittercontactidTocontacts")
-  photogallerysubmission_photogallerysubmission_moderatedbycontactidTocontacts photogallerysubmission[] @relation("photogallerysubmission_moderatedbycontactidTocontacts")
-  teamseasonmanager                                         teamseasonmanager[]
-  voteanswers                                               voteanswers[]
-  sent_emails                                               emails[]                    @relation("EmailSenderContact")
+  id                                                                           BigInt                     @id @default(autoincrement())
+  userid                                                                       String?                    @db.VarChar(128)
+  lastname                                                                     String                     @db.Citext
+  firstname                                                                    String                     @db.Citext
+  middlename                                                                   String                     @db.Citext
+  phone1                                                                       String?                    @db.VarChar(14)
+  phone2                                                                       String?                    @db.VarChar(14)
+  phone3                                                                       String?                    @db.VarChar(14)
+  creatoraccountid                                                             BigInt
+  streetaddress                                                                String?                    @db.VarChar(75)
+  city                                                                         String?                    @db.VarChar(25)
+  state                                                                        String?                    @db.VarChar(25)
+  zip                                                                          String?                    @db.VarChar(15)
+  dateofbirth                                                                  DateTime                   @db.Date
+  isfemale                                                                     Boolean?                   @default(false)
+  email                                                                        String?                    @db.VarChar(50)
+  contactroles                                                                 contactroles[]
+  accounts                                                                     accounts                   @relation(fields: [creatoraccountid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  email_recipients                                                             email_recipients[]
+  fieldcontacts                                                                fieldcontacts[]
+  golfcourseforcontact                                                         golfcourseforcontact[]
+  golferstatsconfiguration                                                     golferstatsconfiguration[]
+  golferstatsvalue                                                             golferstatsvalue[]
+  golfleaguesetup_golfleaguesetup_presidentidTocontacts                        golfleaguesetup[]          @relation("golfleaguesetup_presidentidTocontacts")
+  golfleaguesetup_golfleaguesetup_vicepresidentidTocontacts                    golfleaguesetup[]          @relation("golfleaguesetup_vicepresidentidTocontacts")
+  golfleaguesetup_golfleaguesetup_secretaryidTocontacts                        golfleaguesetup[]          @relation("golfleaguesetup_secretaryidTocontacts")
+  golfleaguesetup_golfleaguesetup_treasureridTocontacts                        golfleaguesetup[]          @relation("golfleaguesetup_treasureridTocontacts")
+  golfroster                                                                   golfroster[]
+  golfscore                                                                    golfscore[]
+  hof                                                                          hof[]
+  leagueumpires                                                                leagueumpires[]
+  memberbusiness                                                               memberbusiness[]
+  messagepost                                                                  messagepost[]
+  messagetopic                                                                 messagetopic[]
+  playerprofile                                                                playerprofile[]
+  playerswantedclassified                                                      playerswantedclassified[]
+  roster                                                                       roster?
+  photogallerysubmission_photogallerysubmission_submittercontactidTocontacts   photogallerysubmission[]   @relation("photogallerysubmission_submittercontactidTocontacts")
+  photogallerysubmission_photogallerysubmission_moderatedbycontactidTocontacts photogallerysubmission[]   @relation("photogallerysubmission_moderatedbycontactidTocontacts")
+  teamseasonmanager                                                            teamseasonmanager[]
+  voteanswers                                                                  voteanswers[]
+  sent_emails                                                                  emails[]                   @relation("EmailSenderContact")
 
   @@unique([lastname, firstname, middlename, creatoraccountid])
 }
@@ -760,11 +778,11 @@ model league {
 }
 
 model leagueevents {
-  id             BigInt       @id @default(autoincrement())
-  eventdate      DateTime     @db.Timestamptz(6)
-  description    String       @db.VarChar(25)
-  leagueseasonid BigInt
-  leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_leagueevents_leagueseason")
+  id               BigInt            @id @default(autoincrement())
+  eventdate        DateTime          @db.Timestamptz(6)
+  description      String            @db.VarChar(25)
+  leagueseasonid   BigInt
+  leagueseason     leagueseason      @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_leagueevents_leagueseason")
   socialliveevents socialliveevents?
 }
 
@@ -781,7 +799,7 @@ model socialliveevents {
   status           String       @default("upcoming") @db.VarChar(20)
   featured         Boolean      @default(false)
   createdat        DateTime     @default(now()) @db.Timestamptz(6)
-  updatedat        DateTime     @updatedAt @default(now()) @db.Timestamptz(6)
+  updatedat        DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
   leagueevents     leagueevents @relation(fields: [leagueeventid], references: [id], onDelete: Cascade, map: "fk_socialliveevents_leagueevents")
   teamsseason      teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_socialliveevents_teamseason")
 
@@ -789,25 +807,25 @@ model socialliveevents {
 }
 
 model socialfeeditems {
-  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   accountid    BigInt
   seasonid     BigInt
   teamid       BigInt?
   teamseasonid BigInt?
-  source       String     @db.VarChar(30)
-  channelname  String     @db.VarChar(100)
-  authorname   String?    @db.VarChar(100)
-  authorhandle String?    @db.VarChar(100)
+  source       String       @db.VarChar(30)
+  channelname  String       @db.VarChar(100)
+  authorname   String?      @db.VarChar(100)
+  authorhandle String?      @db.VarChar(100)
   content      String
   media        Json?
   metadata     Json?
-  postedat     DateTime   @db.Timestamptz(6)
-  permalink    String?    @db.VarChar(512)
-  createdat    DateTime   @default(now()) @db.Timestamptz(6)
-  updatedat    DateTime   @updatedAt @default(now()) @db.Timestamptz(6)
-  accounts     accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_socialfeeditems_accounts")
-  season       season     @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_socialfeeditems_season")
-  teams        teams?     @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_socialfeeditems_team")
+  postedat     DateTime     @db.Timestamptz(6)
+  permalink    String?      @db.VarChar(512)
+  createdat    DateTime     @default(now()) @db.Timestamptz(6)
+  updatedat    DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+  accounts     accounts     @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_socialfeeditems_accounts")
+  season       season       @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_socialfeeditems_season")
+  teams        teams?       @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_socialfeeditems_team")
   teamsseason  teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_socialfeeditems_teamseason")
 
   @@index([accountid], map: "idx_socialfeeditems_accountid")
@@ -816,25 +834,25 @@ model socialfeeditems {
 }
 
 model socialvideos {
-  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   accountid       BigInt
   seasonid        BigInt
   teamid          BigInt?
   teamseasonid    BigInt?
-  source          String     @db.VarChar(30)
-  title           String     @db.VarChar(200)
+  source          String       @db.VarChar(30)
+  title           String       @db.VarChar(200)
   description     String?
   durationseconds Int?
-  thumbnailurl    String     @db.VarChar(512)
-  videourl        String     @db.VarChar(512)
-  islive          Boolean    @default(false)
-  publishedat     DateTime   @db.Timestamptz(6)
+  thumbnailurl    String       @db.VarChar(512)
+  videourl        String       @db.VarChar(512)
+  islive          Boolean      @default(false)
+  publishedat     DateTime     @db.Timestamptz(6)
   metadata        Json?
-  createdat       DateTime   @default(now()) @db.Timestamptz(6)
-  updatedat       DateTime   @updatedAt @default(now()) @db.Timestamptz(6)
-  accounts        accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_socialvideos_accounts")
-  season          season     @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_socialvideos_season")
-  teams           teams?     @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_socialvideos_team")
+  createdat       DateTime     @default(now()) @db.Timestamptz(6)
+  updatedat       DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+  accounts        accounts     @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_socialvideos_accounts")
+  season          season       @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_socialvideos_season")
+  teams           teams?       @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_socialvideos_team")
   teamsseason     teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_socialvideos_teamseason")
 
   @@index([accountid], map: "idx_socialvideos_accountid")
@@ -843,25 +861,25 @@ model socialvideos {
 }
 
 model discordmessages {
-  id           String     @id @db.VarChar(32)
+  id           String       @id @db.VarChar(32)
   accountid    BigInt
   seasonid     BigInt
   teamid       BigInt?
   teamseasonid BigInt?
-  channelid    String     @db.VarChar(32)
-  channelname  String     @db.VarChar(100)
-  authorid     String     @db.VarChar(32)
-  authorname   String     @db.VarChar(100)
-  avatarurl    String?    @db.VarChar(512)
+  channelid    String       @db.VarChar(32)
+  channelname  String       @db.VarChar(100)
+  authorid     String       @db.VarChar(32)
+  authorname   String       @db.VarChar(100)
+  avatarurl    String?      @db.VarChar(512)
   content      String
   attachments  Json?
-  postedat     DateTime   @db.Timestamptz(6)
-  permalink    String     @db.VarChar(512)
-  createdat    DateTime   @default(now()) @db.Timestamptz(6)
-  updatedat    DateTime   @updatedAt @default(now()) @db.Timestamptz(6)
-  accounts     accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_discordmessages_accounts")
-  season       season     @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_discordmessages_season")
-  teams        teams?     @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_discordmessages_team")
+  postedat     DateTime     @db.Timestamptz(6)
+  permalink    String       @db.VarChar(512)
+  createdat    DateTime     @default(now()) @db.Timestamptz(6)
+  updatedat    DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+  accounts     accounts     @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_discordmessages_accounts")
+  season       season       @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_discordmessages_season")
+  teams        teams?       @relation(fields: [teamid], references: [id], onDelete: SetNull, map: "fk_discordmessages_team")
   teamsseason  teamsseason? @relation(fields: [teamseasonid], references: [id], onDelete: SetNull, map: "fk_discordmessages_teamseason")
 
   @@index([accountid], map: "idx_discordmessages_accountid")
@@ -1011,23 +1029,23 @@ model messagetopic {
 }
 
 model photogallery {
-  id                BigInt             @id @default(autoincrement())
-  accountid         BigInt
-  title             String             @db.VarChar(50)
-  caption           String             @db.VarChar(255)
-  albumid           BigInt?
-  accounts          accounts           @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallery_accounts")
-  photogalleryalbum photogalleryalbum? @relation(fields: [albumid], references: [id], map: "fk_photogallery_albumid")
+  id                     BigInt                   @id @default(autoincrement())
+  accountid              BigInt
+  title                  String                   @db.VarChar(50)
+  caption                String                   @db.VarChar(255)
+  albumid                BigInt?
+  accounts               accounts                 @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallery_accounts")
+  photogalleryalbum      photogalleryalbum?       @relation(fields: [albumid], references: [id], map: "fk_photogallery_albumid")
   photogallerysubmission photogallerysubmission[]
 }
 
 model photogalleryalbum {
-  id            BigInt         @id @default(autoincrement())
-  accountid     BigInt
-  title         String         @db.VarChar(25)
-  parentalbumid BigInt
-  teamid        BigInt
-  photogallery  photogallery[]
+  id                     BigInt                   @id @default(autoincrement())
+  accountid              BigInt
+  title                  String                   @db.VarChar(25)
+  parentalbumid          BigInt
+  teamid                 BigInt
+  photogallery           photogallery[]
   photogallerysubmission photogallerysubmission[]
 }
 
@@ -1282,21 +1300,21 @@ model teamnews {
 }
 
 model teams {
-  id             BigInt           @id @default(autoincrement())
-  accountid      BigInt
-  webaddress     String           @db.VarChar(100)
-  youtubeuserid  String?          @db.VarChar(100)
-  defaultvideo   String           @default("") @db.VarChar(50)
-  autoplayvideo  Boolean          @default(false)
-  accountwelcome accountwelcome[]
-  sponsors       sponsors[]
-  teamhandouts   teamhandouts[]
-  teamnews       teamnews[]
+  id              BigInt            @id @default(autoincrement())
+  accountid       BigInt
+  webaddress      String            @db.VarChar(100)
+  youtubeuserid   String?           @db.VarChar(100)
+  defaultvideo    String            @default("") @db.VarChar(50)
+  autoplayvideo   Boolean           @default(false)
+  accountwelcome  accountwelcome[]
+  sponsors        sponsors[]
+  teamhandouts    teamhandouts[]
+  teamnews        teamnews[]
   socialfeeditems socialfeeditems[]
   socialvideos    socialvideos[]
   discordmessages discordmessages[]
-  accounts       accounts         @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teams_accounts")
-  teamsseason    teamsseason[]
+  accounts        accounts          @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teams_accounts")
+  teamsseason     teamsseason[]
 }
 
 model teamseasonmanager {

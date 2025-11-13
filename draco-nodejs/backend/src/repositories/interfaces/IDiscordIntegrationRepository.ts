@@ -2,6 +2,7 @@ import {
   accountdiscordsettings,
   accountdiscordrolemapping,
   accountdiscordchannels,
+  accountdiscordfeaturesync,
   userdiscordaccounts,
 } from '@prisma/client';
 
@@ -40,6 +41,16 @@ export interface DiscordChannelMappingCreateInput {
   seasonId?: bigint | null;
   teamSeasonId?: bigint | null;
   teamId?: bigint | null;
+}
+
+export interface DiscordFeatureSyncUpsertInput {
+  feature: string;
+  enabled: boolean;
+  discordChannelId?: string | null;
+  discordChannelName?: string | null;
+  channelType?: string | null;
+  autoCreated?: boolean;
+  lastSyncedAt?: Date | null;
 }
 
 export interface IDiscordIntegrationRepository {
@@ -89,4 +100,12 @@ export interface IDiscordIntegrationRepository {
   deleteChannelMapping(accountId: bigint, mappingId: bigint): Promise<void>;
   listAllChannelMappings(): Promise<accountdiscordchannels[]>;
   deleteChannelMappingsByAccount(accountId: bigint): Promise<void>;
+
+  getFeatureSync(accountId: bigint, feature: string): Promise<accountdiscordfeaturesync | null>;
+  upsertFeatureSync(
+    accountId: bigint,
+    data: DiscordFeatureSyncUpsertInput,
+  ): Promise<accountdiscordfeaturesync>;
+  deleteFeatureSync(accountId: bigint, feature: string): Promise<void>;
+  deleteFeatureSyncsByAccount(accountId: bigint): Promise<void>;
 }
