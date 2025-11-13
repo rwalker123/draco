@@ -105,10 +105,6 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const accountId =
     propAccountId ?? accountIdFromPath ?? accountIdFromQuery ?? accountIdFromContext;
   const { isMember } = useAccountMembership(accountId);
-  const resolvedAccountIdForNav = accountId ?? currentAccountId;
-  const socialHubPath = resolvedAccountIdForNav
-    ? `/account/${resolvedAccountIdForNav}/social-hub`
-    : null;
 
   // Fetch account type and current account info
   React.useEffect(() => {
@@ -376,12 +372,6 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             <ListItemText>Account Management</ListItemText>
           </MenuItem>
         )}
-        <MenuItem onClick={() => handleNavigation(socialHubPath ?? '/accounts')}>
-          <ListItemIcon>
-            <CampaignIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Social Hub</ListItemText>
-        </MenuItem>
         {(() => {
           if (
             user &&
