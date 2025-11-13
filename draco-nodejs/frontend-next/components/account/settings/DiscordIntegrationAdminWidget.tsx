@@ -25,6 +25,7 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Refresh as RefreshIcon,
+  LinkOff as LinkOffIcon,
 } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -39,6 +40,7 @@ import { DiscordRoleMappingUpdateSchema } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
 import { useAccountDiscordAdmin } from '@/hooks/useAccountDiscordAdmin';
 import AddDiscordChannelMappingDialog from './AddDiscordChannelMappingDialog';
+import ConfirmDiscordDisconnectDialog from './ConfirmDiscordDisconnectDialog';
 
 interface DiscordIntegrationAdminWidgetProps {
   accountId: string | null;
@@ -53,6 +55,7 @@ type RoleMappingFormValues = z.infer<typeof RoleMappingFormSchema>;
 const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ accountId }) => {
   const {
     fetchConfig,
+    updateConfig,
     fetchRoleMappings,
     createRoleMapping,
     updateRoleMapping,
@@ -74,6 +77,10 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
   const [channelDialogOpen, setChannelDialogOpen] = useState(false);
   const [channelError, setChannelError] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
+  const [guildIdInput, setGuildIdInput] = useState('');
+  const [savingGuildId, setSavingGuildId] = useState(false);
+  const [guildIdError, setGuildIdError] = useState<string | null>(null);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
 
   const {
     register,
@@ -124,10 +131,12 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
   const loadConfig = useCallback(async () => {
     if (!accountId) {
       setConfig(null);
+      setGuildIdInput('');
       return;
     }
     const payload = await fetchConfig(accountId);
     setConfig(payload);
+    setGuildIdInput(payload.guildId ?? '');
   }, [accountId, fetchConfig]);
 
   const loadAll = useCallback(async () => {
@@ -167,6 +176,40 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
       setInstalling(false);
     }
   }, [accountId, startInstall]);
+
+  const openDisconnectDialog = useCallback(() => {
+    setDisconnectDialogOpen(true);
+  }, []);
+
+  const closeDisconnectDialog = useCallback(() => {
+    setDisconnectDialogOpen(false);
+  }, []);
+
+  const handleDisconnectSuccess = useCallback(async () => {
+    await loadAll();
+  }, [loadAll]);
+
+  const handleGuildIdSave = useCallback(async () => {
+    if (!accountId) {
+      return;
+    }
+    const trimmed = guildIdInput.trim();
+    if (!trimmed) {
+      setGuildIdError('Discord guild id is required.');
+      return;
+    }
+    setSavingGuildId(true);
+    setGuildIdError(null);
+    try {
+      await updateConfig(accountId, { guildId: trimmed });
+      await loadAll();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to save the Discord guild id.';
+      setGuildIdError(message);
+    } finally {
+      setSavingGuildId(false);
+    }
+  }, [accountId, guildIdInput, loadAll, updateConfig]);
 
   const openRoleDialog = useCallback(() => {
     setRoleMappingError(null);
@@ -323,42 +366,75 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
     );
   }
 
+  if (!config?.guildId) {
+    return (
+      <WidgetShell
+        title="Discord Integration"
+        subtitle="Provide your Discord guild id to get started."
+        accent="warning"
+      >
+        <Stack spacing={2}>
+          <TextField
+            label="Discord Guild ID"
+            value={guildIdInput}
+            onChange={(event) => {
+              setGuildIdInput(event.target.value);
+              setGuildIdError(null);
+            }}
+            error={Boolean(guildIdError)}
+            helperText={
+              guildIdError ??
+              'Enable Developer Mode in Discord → right-click your server name → Copy Server ID.'
+            }
+          />
+          <Alert severity="info">
+            Need help? In Discord, go to <strong>User Settings &gt; Advanced</strong>, enable{' '}
+            <strong>Developer Mode</strong>, then right-click your server name in the sidebar and
+            choose <em>Copy Server ID</em>. Paste that value here.
+          </Alert>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            <Button
+              variant="contained"
+              onClick={handleGuildIdSave}
+              disabled={savingGuildId || !guildIdInput.trim()}
+              startIcon={savingGuildId ? <CircularProgress size={16} /> : undefined}
+            >
+              Save Guild ID
+            </Button>
+          </Stack>
+        </Stack>
+      </WidgetShell>
+    );
+  }
+
   return (
     <Stack spacing={3}>
       <WidgetShell
         title="Discord Bot Installation"
         subtitle="Install the Draco bot into your Discord server so members can link their accounts."
-        accent={config?.guildId ? 'success' : 'warning'}
+        accent="success"
       >
-        {config?.guildId ? (
-          <Stack spacing={2}>
-            <Alert severity="success">Bot installed for {guildDisplayName}</Alert>
-            <Box>
-              <Button
-                variant="outlined"
-                onClick={handleInstall}
-                disabled={installing}
-                startIcon={installing ? <CircularProgress size={16} /> : undefined}
-              >
-                Reinstall Bot
-              </Button>
-            </Box>
-          </Stack>
-        ) : (
-          <Stack spacing={2}>
-            <Alert severity="warning">
-              The Draco bot has not been installed for this organization.
-            </Alert>
+        <Stack spacing={2}>
+          <Alert severity="success">Bot installed for {guildDisplayName}</Alert>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             <Button
-              variant="contained"
+              variant="outlined"
               onClick={handleInstall}
               disabled={installing}
               startIcon={installing ? <CircularProgress size={16} /> : undefined}
             >
-              Install Draco Bot
+              Reinstall Bot
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={openDisconnectDialog}
+              startIcon={<LinkOffIcon fontSize="small" />}
+            >
+              Disconnect Discord
             </Button>
           </Stack>
-        )}
+        </Stack>
       </WidgetShell>
 
       <WidgetShell
@@ -556,6 +632,12 @@ const DiscordIntegrationAdminWidgetInner: React.FC<{ accountId: string }> = ({ a
         availableChannels={availableChannels}
         onClose={() => setChannelDialogOpen(false)}
         onSuccess={handleChannelDialogSuccess}
+      />
+      <ConfirmDiscordDisconnectDialog
+        open={disconnectDialogOpen}
+        accountId={accountId}
+        onClose={closeDisconnectDialog}
+        onDisconnected={handleDisconnectSuccess}
       />
     </Stack>
   );

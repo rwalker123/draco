@@ -112,6 +112,18 @@ export class DiscordIntegrationService {
     return DiscordIntegrationResponseFormatter.formatAccountConfig(updated);
   }
 
+  async disconnectAccountGuild(accountId: bigint): Promise<DiscordAccountConfigType> {
+    await this.ensureAccountExists(accountId);
+    await Promise.all([
+      this.discordRepository.deleteChannelMappingsByAccount(accountId),
+      this.discordRepository.deleteRoleMappingsByAccount(accountId),
+      this.discordRepository.deleteLinkedAccounts(accountId),
+    ]);
+    await this.discordRepository.deleteAccountConfig(accountId);
+    const config = await this.getOrCreateAccountConfigRecord(accountId);
+    return DiscordIntegrationResponseFormatter.formatAccountConfig(config);
+  }
+
   async listRoleMappings(accountId: bigint): Promise<DiscordRoleMappingListType> {
     await this.ensureAccountExists(accountId);
     const mappings = await this.discordRepository.listRoleMappings(accountId);
@@ -121,9 +133,12 @@ export class DiscordIntegrationService {
   async listAvailableChannels(accountId: bigint): Promise<DiscordGuildChannelType[]> {
     await this.ensureAccountExists(accountId);
     const config = await this.getOrCreateAccountConfigRecord(accountId);
-    this.ensureGuildConfigured(config);
+    const guildId = config.guildid;
+    if (!guildId) {
+      return [];
+    }
 
-    const channels = await this.fetchGuildChannels(config.guildid as string);
+    const channels = await this.fetchGuildChannels(guildId);
     const normalized = channels
       .filter((channel) => channel.type === undefined || channel.type === 0 || channel.type === 5)
       .map<DiscordGuildChannelType>((channel) => ({

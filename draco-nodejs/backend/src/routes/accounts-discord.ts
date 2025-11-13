@@ -47,6 +47,18 @@ router.put(
   }),
 );
 
+router.delete(
+  '/:accountId/discord/config',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const config = await discordIntegrationService.disconnectAccountGuild(accountId);
+    res.json(config);
+  }),
+);
+
 router.get(
   '/:accountId/discord/link-status',
   authenticateToken,

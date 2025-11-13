@@ -49,6 +49,7 @@ export interface IDiscordIntegrationRepository {
     accountId: bigint,
     data: DiscordAccountConfigUpsertInput,
   ): Promise<accountdiscordsettings>;
+  deleteAccountConfig(accountId: bigint): Promise<void>;
 
   listRoleMappings(accountId: bigint): Promise<accountdiscordrolemapping[]>;
   findRoleMappingById(
@@ -68,11 +69,13 @@ export interface IDiscordIntegrationRepository {
     data: DiscordRoleMappingUpsertInput,
   ): Promise<accountdiscordrolemapping>;
   deleteRoleMapping(roleMappingId: bigint): Promise<void>;
+  deleteRoleMappingsByAccount(accountId: bigint): Promise<void>;
 
   listLinkedAccounts(accountId: bigint): Promise<userdiscordaccounts[]>;
   findLinkedAccount(accountId: bigint, userId: string): Promise<userdiscordaccounts | null>;
   upsertLinkedAccount(data: DiscordLinkUpsertInput): Promise<userdiscordaccounts>;
   deleteLinkedAccount(accountId: bigint, userId: string): Promise<void>;
+  deleteLinkedAccounts(accountId: bigint): Promise<void>;
 
   listChannelMappings(accountId: bigint): Promise<accountdiscordchannels[]>;
   findChannelMappingById(
@@ -85,4 +88,5 @@ export interface IDiscordIntegrationRepository {
   ): Promise<accountdiscordchannels>;
   deleteChannelMapping(accountId: bigint, mappingId: bigint): Promise<void>;
   listAllChannelMappings(): Promise<accountdiscordchannels[]>;
+  deleteChannelMappingsByAccount(accountId: bigint): Promise<void>;
 }
