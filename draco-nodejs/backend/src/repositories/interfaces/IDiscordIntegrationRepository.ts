@@ -107,4 +107,5 @@ export interface IDiscordIntegrationRepository {
     data: DiscordFeatureSyncUpsertInput,
   ): Promise<accountdiscordfeaturesync>;
   deleteFeatureSync(accountId: bigint, feature: string): Promise<void>;
+  deleteFeatureSyncsByAccount(accountId: bigint): Promise<void>;
 }

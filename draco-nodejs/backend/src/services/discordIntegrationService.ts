@@ -125,6 +125,7 @@ export class DiscordIntegrationService {
       this.discordRepository.deleteChannelMappingsByAccount(accountId),
       this.discordRepository.deleteRoleMappingsByAccount(accountId),
       this.discordRepository.deleteLinkedAccounts(accountId),
+      this.discordRepository.deleteFeatureSyncsByAccount(accountId),
     ]);
     await this.discordRepository.deleteAccountConfig(accountId);
     const config = await this.getOrCreateAccountConfigRecord(accountId);

@@ -312,4 +312,12 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
       },
     });
   }
+
+  async deleteFeatureSyncsByAccount(accountId: bigint): Promise<void> {
+    await this.prisma.accountdiscordfeaturesync.deleteMany({
+      where: {
+        accountid: accountId,
+      },
+    });
+  }
 }
