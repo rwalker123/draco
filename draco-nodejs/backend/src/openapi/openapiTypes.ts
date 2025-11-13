@@ -223,6 +223,8 @@ import {
   CommunityMessagePreviewSchema,
   CommunityMessageListSchema,
   CommunityMessageQuerySchema,
+  CommunityChannelSchema,
+  CommunityChannelListSchema,
   LiveEventSchema,
   LiveEventListSchema,
   LiveEventQuerySchema,
@@ -813,6 +815,11 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'CommunityMessageQuery',
     CommunityMessageQuerySchema,
   );
+  const CommunityChannelSchemaRef = registry.register('CommunityChannel', CommunityChannelSchema);
+  const CommunityChannelListSchemaRef = registry.register(
+    'CommunityChannelList',
+    CommunityChannelListSchema,
+  );
   const LiveEventSchemaRef = registry.register('LiveEvent', LiveEventSchema);
   const LiveEventListSchemaRef = registry.register('LiveEventList', LiveEventListSchema);
   const LiveEventQuerySchemaRef = registry.register('LiveEventQuery', LiveEventQuerySchema);
@@ -1061,6 +1068,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     CommunityMessagePreviewSchemaRef,
     CommunityMessageListSchemaRef,
     CommunityMessageQuerySchemaRef,
+    CommunityChannelSchemaRef,
+    CommunityChannelListSchemaRef,
     LiveEventSchemaRef,
     LiveEventListSchemaRef,
     LiveEventQuerySchemaRef,

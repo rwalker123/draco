@@ -16,6 +16,7 @@ import type {
   SocialFeedItemType,
   SocialVideoType,
   CommunityMessagePreviewType,
+  CommunityChannelType,
   LiveEventType,
   LiveEventStatusType,
   LiveEventCreateType,
@@ -25,6 +26,7 @@ import type {
   CommunityMessageQueryType,
   LiveEventQueryType,
 } from '@draco/shared-schemas';
+import { DiscordIntegrationService } from './discordIntegrationService.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 
 type LiveEventMutationPayload = LiveEventCreateType | LiveEventUpdateType;
@@ -40,14 +42,17 @@ type HydratedLiveEventPayload = Partial<{
 export class SocialHubService {
   private readonly socialContentRepository: ISocialContentRepository;
   private readonly liveEventRepository: ILiveEventRepository;
+  private readonly discordIntegrationService: DiscordIntegrationService;
 
   constructor(
     socialContentRepository?: ISocialContentRepository,
     liveEventRepository?: ILiveEventRepository,
+    discordIntegrationService?: DiscordIntegrationService,
   ) {
     this.socialContentRepository =
       socialContentRepository ?? RepositoryFactory.getSocialContentRepository();
     this.liveEventRepository = liveEventRepository ?? RepositoryFactory.getLiveEventRepository();
+    this.discordIntegrationService = discordIntegrationService ?? new DiscordIntegrationService();
   }
 
   async listFeedItems(
@@ -102,6 +107,13 @@ export class SocialHubService {
 
     const records = await this.socialContentRepository.listCommunityMessages(repositoryQuery);
     return SocialFeedResponseFormatter.formatCommunityMessages(records);
+  }
+
+  async listCommunityChannels(
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<CommunityChannelType[]> {
+    return this.discordIntegrationService.listCommunityChannels(accountId, seasonId);
   }
 
   async listLiveEvents(

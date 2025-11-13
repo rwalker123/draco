@@ -434,7 +434,11 @@ export class ServiceFactory {
 
   static getSocialHubService(): SocialHubService {
     if (!this.socialHubService) {
-      this.socialHubService = new SocialHubService();
+      this.socialHubService = new SocialHubService(
+        undefined,
+        undefined,
+        this.getDiscordIntegrationService(),
+      );
     }
 
     return this.socialHubService;
@@ -444,6 +448,7 @@ export class ServiceFactory {
     if (!this.socialIngestionService) {
       const connectors = [];
       const socialContentRepository = RepositoryFactory.getSocialContentRepository();
+      const discordIntegrationService = this.getDiscordIntegrationService();
 
       if (socialIngestionConfig.twitter.enabled && socialIngestionConfig.twitter.targets.length) {
         connectors.push(
@@ -472,12 +477,16 @@ export class ServiceFactory {
         );
       }
 
-      if (socialIngestionConfig.discord.enabled && socialIngestionConfig.discord.targets.length) {
+      if (socialIngestionConfig.discord.enabled) {
+        const targetsProvider = async () => {
+          const dbTargets = await discordIntegrationService.getChannelIngestionTargets();
+          return [...dbTargets, ...socialIngestionConfig.discord.targets];
+        };
         connectors.push(
           new DiscordConnector(socialContentRepository, {
             botToken: socialIngestionConfig.discord.botToken,
             limit: socialIngestionConfig.discord.limit,
-            targets: socialIngestionConfig.discord.targets,
+            targetsProvider,
             intervalMs: socialIngestionConfig.discord.intervalMs,
             enabled:
               socialIngestionConfig.discord.enabled &&

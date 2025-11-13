@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import type { DiscordLinkStatusType } from '@draco/shared-schemas';
 import { useDiscordIntegration } from '@/hooks/useDiscordIntegration';
-import { DISCORD_LINK_ACCOUNT_STORAGE_KEY } from '@/constants/storageKeys';
 import WidgetShell from '@/components/ui/WidgetShell';
 
 interface DiscordIntegrationCardProps {
@@ -83,7 +82,6 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
 
     try {
       const { authorizationUrl } = await startLink(accountId);
-      sessionStorage.setItem(DISCORD_LINK_ACCOUNT_STORAGE_KEY, accountId);
       window.location.href = authorizationUrl;
     } catch (err) {
       const message =

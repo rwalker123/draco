@@ -29,7 +29,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
     private readonly repository: ISocialContentRepository,
     private readonly options: DiscordConnectorOptions,
   ) {
-    super('discord', options.enabled && options.targets.length > 0, options.intervalMs);
+    super('discord', options.enabled, options.intervalMs);
   }
 
   protected async runIngestion(): Promise<void> {
@@ -38,7 +38,13 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       return;
     }
 
-    for (const target of this.options.targets) {
+    const targets = await this.options.targetsProvider();
+    if (!targets.length) {
+      console.info('[discord] No Discord channel mappings configured. Skipping run.');
+      return;
+    }
+
+    for (const target of targets) {
       const messages = await this.fetchChannelMessages(target.channelId);
       if (!messages.length) {
         continue;
@@ -55,7 +61,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
           channelname: target.label ?? target.channelId,
           authorid: message.authorId ?? message.messageId,
           authorname: message.authorDisplayName,
-          avatarurl: null,
+          avatarurl: message.authorAvatarUrl ?? null,
           content: message.content,
           attachments: message.attachments?.length
             ? (JSON.parse(JSON.stringify(message.attachments)) as Prisma.InputJsonValue)
@@ -93,6 +99,7 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
         authorDisplayName:
           message.author.display_name ?? message.author.global_name ?? message.author.username,
         authorId: message.author.id,
+        authorAvatarUrl: this.buildAvatarUrl(message.author.id, message.author.avatar),
         postedAt: new Date(message.timestamp),
         attachments: message.attachments?.map((attachment) => ({
           type: attachment.content_type?.startsWith('video')
@@ -109,5 +116,14 @@ export class DiscordConnector extends BaseSocialIngestionConnector {
       console.error(`[discord] Failed to fetch messages for channel ${channelId}`, error);
       return [];
     }
+  }
+
+  private buildAvatarUrl(userId: string, avatarHash?: string | null): string | null {
+    if (!userId || !avatarHash) {
+      return null;
+    }
+
+    const extension = avatarHash.startsWith('a_') ? 'gif' : 'png';
+    return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=64`;
   }
 }

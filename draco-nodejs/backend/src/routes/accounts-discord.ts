@@ -5,8 +5,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import {
   DiscordAccountConfigUpdateSchema,
-  DiscordOAuthCallbackSchema,
   DiscordRoleMappingUpdateSchema,
+  DiscordChannelMappingCreateSchema,
 } from '@draco/shared-schemas';
 import { AuthenticationError } from '../utils/customErrors.js';
 
@@ -72,15 +72,15 @@ router.post(
 );
 
 router.post(
-  '/:accountId/discord/link/callback',
+  '/:accountId/discord/install/start',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const userId = requireUserId(req);
-    const payload = DiscordOAuthCallbackSchema.parse(req.body);
-    const status = await discordIntegrationService.completeLink(accountId, userId, payload);
-    res.json(status);
+    const response = await discordIntegrationService.startGuildInstall(accountId, userId);
+    res.status(201).json(response);
   }),
 );
 
@@ -149,6 +149,56 @@ router.delete(
     const { roleMappingId } = extractBigIntParams(req.params, 'roleMappingId');
     await discordIntegrationService.deleteRoleMapping(accountId, roleMappingId);
     res.status(204).send();
+  }),
+);
+
+router.get(
+  '/:accountId/discord/channel-mappings',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const mappings = await discordIntegrationService.listChannelMappings(accountId);
+    res.json(mappings);
+  }),
+);
+
+router.post(
+  '/:accountId/discord/channel-mappings',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const payload = DiscordChannelMappingCreateSchema.parse(req.body);
+    const mapping = await discordIntegrationService.createChannelMapping(accountId, payload);
+    res.status(201).json(mapping);
+  }),
+);
+
+router.delete(
+  '/:accountId/discord/channel-mappings/:mappingId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { mappingId } = extractBigIntParams(req.params, 'mappingId');
+    await discordIntegrationService.deleteChannelMapping(accountId, mappingId);
+    res.status(204).send();
+  }),
+);
+
+router.get(
+  '/:accountId/discord/available-channels',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.settings.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const channels = await discordIntegrationService.listAvailableChannels(accountId);
+    res.json(channels);
   }),
 );
 

@@ -3,6 +3,7 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { bigintToStringSchema, trimToUndefined } from './standardSchema.js';
 import { isoDateTimeSchema } from './date.js';
 import { booleanQueryParam, numberQueryParam } from './queryParams.js';
+import { DiscordChannelScopeEnum } from './accountDiscord.js';
 
 extendZodWithOpenApi(z);
 
@@ -205,6 +206,30 @@ export const CommunityMessageQuerySchema = z
     title: 'CommunityMessageQuery',
   });
 
+export const CommunityChannelSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    accountId: bigintToStringSchema,
+    seasonId: bigintToStringSchema,
+    discordChannelId: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    label: z.string().trim().nullable().optional(),
+    scope: DiscordChannelScopeEnum,
+    channelType: z.string().trim().nullable().optional(),
+    url: z.string().url().nullable().optional(),
+  })
+  .openapi({
+    title: 'CommunityChannel',
+  });
+
+export const CommunityChannelListSchema = z
+  .object({
+    channels: CommunityChannelSchema.array(),
+  })
+  .openapi({
+    title: 'CommunityChannelList',
+  });
+
 export const LiveEventStatusSchema = z
   .enum(['upcoming', 'live', 'ended', 'cancelled'])
   .openapi({ title: 'LiveEventStatus' });
@@ -308,6 +333,8 @@ export type CommunityMessageAttachmentType = z.infer<typeof CommunityMessageAtta
 export type CommunityMessagePreviewType = z.infer<typeof CommunityMessagePreviewSchema>;
 export type CommunityMessageListType = z.infer<typeof CommunityMessageListSchema>;
 export type CommunityMessageQueryType = z.infer<typeof CommunityMessageQuerySchema>;
+export type CommunityChannelType = z.infer<typeof CommunityChannelSchema>;
+export type CommunityChannelListType = z.infer<typeof CommunityChannelListSchema>;
 export type LiveEventStatusType = z.infer<typeof LiveEventStatusSchema>;
 export type LiveEventType = z.infer<typeof LiveEventSchema>;
 export type LiveEventListType = z.infer<typeof LiveEventListSchema>;

@@ -16,6 +16,7 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
     SocialVideoQuerySchemaRef,
     CommunityMessageListSchemaRef,
     CommunityMessageQuerySchemaRef,
+    CommunityChannelListSchemaRef,
     LiveEventListSchemaRef,
     LiveEventSchemaRef,
     LiveEventQuerySchemaRef,
@@ -147,6 +148,35 @@ export default ({ registry, schemaRefs }: RegisterContext) => {
       },
       500: {
         description: 'Unexpected error retrieving community messages.',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: `${BASE_PATH}/community-channels`,
+    summary: 'List mapped community channels',
+    description: 'Retrieve Discord channels mapped to this account/season for community chat.',
+    operationId: 'listSocialCommunityChannels',
+    tags: ['Social'],
+    security: [{ bearerAuth: [] }],
+    parameters: [accountIdParameter, seasonIdParameter],
+    responses: {
+      200: {
+        description: 'Mapped community channels.',
+        content: { 'application/json': { schema: CommunityChannelListSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required.',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'User does not have access to this account.',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Unexpected error retrieving mapped channels.',
         content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },

@@ -12280,6 +12280,102 @@ components:
           maximum: 200
           default: 50
       title: CommunityMessageQuery
+    CommunityChannel:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        accountId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        seasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        discordChannelId:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          nullable: true
+        scope:
+          type: string
+          enum:
+            - account
+            - season
+            - teamSeason
+        channelType:
+          type: string
+          nullable: true
+        url:
+          type: string
+          nullable: true
+          format: uri
+      required:
+        - id
+        - accountId
+        - seasonId
+        - discordChannelId
+        - name
+        - scope
+      title: CommunityChannel
+    CommunityChannelList:
+      type: object
+      properties:
+        channels:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              accountId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              seasonId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              discordChannelId:
+                type: string
+                minLength: 1
+              name:
+                type: string
+                minLength: 1
+              label:
+                type: string
+                nullable: true
+              scope:
+                type: string
+                enum:
+                  - account
+                  - season
+                  - teamSeason
+              channelType:
+                type: string
+                nullable: true
+              url:
+                type: string
+                nullable: true
+                format: uri
+            required:
+              - id
+              - accountId
+              - seasonId
+              - discordChannelId
+              - name
+              - scope
+            title: CommunityChannel
+      required:
+        - channels
+      title: CommunityChannelList
     LiveEvent:
       type: object
       properties:
@@ -26005,6 +26101,44 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "500":
           description: Unexpected error retrieving community messages.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/social/community-channels:
+    get:
+      summary: List mapped community channels
+      description: Retrieve Discord channels mapped to this account/season for
+        community chat.
+      operationId: listSocialCommunityChannels
+      tags:
+        - Social
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a14
+        - *a15
+      responses:
+        "200":
+          description: Mapped community channels.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityChannelList"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: User does not have access to this account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Unexpected error retrieving mapped channels.
           content:
             application/json:
               schema:

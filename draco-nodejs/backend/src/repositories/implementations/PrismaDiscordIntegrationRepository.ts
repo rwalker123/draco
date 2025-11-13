@@ -1,6 +1,7 @@
 import {
   accountdiscordsettings,
   accountdiscordrolemapping,
+  accountdiscordchannels,
   userdiscordaccounts,
   PrismaClient,
 } from '@prisma/client';
@@ -8,6 +9,7 @@ import {
   DiscordAccountConfigUpsertInput,
   DiscordLinkUpsertInput,
   DiscordRoleMappingUpsertInput,
+  DiscordChannelMappingCreateInput,
   IDiscordIntegrationRepository,
 } from '../interfaces/IDiscordIntegrationRepository.js';
 
@@ -38,18 +40,12 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
         accountid: accountId,
         guildid: data.guildId ?? null,
         guildname: data.guildName ?? null,
-        botuserid: data.botUserId ?? null,
-        botusername: data.botUserName ?? null,
         rolesyncenabled: data.roleSyncEnabled ?? false,
-        bottokenencrypted: data.botTokenEncrypted ?? null,
       },
       update: {
         guildid: data.guildId ?? null,
         guildname: data.guildName ?? null,
-        botuserid: data.botUserId ?? null,
-        botusername: data.botUserName ?? null,
         rolesyncenabled: data.roleSyncEnabled ?? false,
-        bottokenencrypted: data.botTokenEncrypted ?? null,
       },
     });
   }
@@ -173,6 +169,57 @@ export class PrismaDiscordIntegrationRepository implements IDiscordIntegrationRe
       where: {
         accountid: accountId,
         userid: userId,
+      },
+    });
+  }
+
+  async listChannelMappings(accountId: bigint): Promise<accountdiscordchannels[]> {
+    return this.prisma.accountdiscordchannels.findMany({
+      where: { accountid: accountId },
+      orderBy: { createdat: 'asc' },
+    });
+  }
+
+  async listAllChannelMappings(): Promise<accountdiscordchannels[]> {
+    return this.prisma.accountdiscordchannels.findMany();
+  }
+
+  async findChannelMappingById(
+    accountId: bigint,
+    mappingId: bigint,
+  ): Promise<accountdiscordchannels | null> {
+    return this.prisma.accountdiscordchannels.findFirst({
+      where: {
+        id: mappingId,
+        accountid: accountId,
+      },
+    });
+  }
+
+  async createChannelMapping(
+    accountId: bigint,
+    data: DiscordChannelMappingCreateInput,
+  ): Promise<accountdiscordchannels> {
+    return this.prisma.accountdiscordchannels.create({
+      data: {
+        accountid: accountId,
+        channelid: data.discordChannelId,
+        channelname: data.discordChannelName,
+        channeltype: data.channelType ?? null,
+        label: data.label ?? null,
+        scope: data.scope,
+        seasonid: data.seasonId ?? null,
+        teamseasonid: data.teamSeasonId ?? null,
+        teamid: data.teamId ?? null,
+      },
+    });
+  }
+
+  async deleteChannelMapping(accountId: bigint, mappingId: bigint): Promise<void> {
+    await this.prisma.accountdiscordchannels.deleteMany({
+      where: {
+        id: mappingId,
+        accountid: accountId,
       },
     });
   }

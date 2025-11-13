@@ -1,16 +1,14 @@
 import {
   accountdiscordsettings,
   accountdiscordrolemapping,
+  accountdiscordchannels,
   userdiscordaccounts,
 } from '@prisma/client';
 
 export interface DiscordAccountConfigUpsertInput {
   guildId?: string | null;
   guildName?: string | null;
-  botUserId?: string | null;
-  botUserName?: string | null;
   roleSyncEnabled?: boolean;
-  botTokenEncrypted?: string | null;
 }
 
 export interface DiscordRoleMappingUpsertInput {
@@ -31,6 +29,17 @@ export interface DiscordLinkUpsertInput {
   tokenExpiresAt?: Date | null;
   guildMember?: boolean;
   lastSyncedAt?: Date | null;
+}
+
+export interface DiscordChannelMappingCreateInput {
+  discordChannelId: string;
+  discordChannelName: string;
+  channelType?: string | null;
+  label?: string | null;
+  scope: 'account' | 'season' | 'teamSeason';
+  seasonId?: bigint | null;
+  teamSeasonId?: bigint | null;
+  teamId?: bigint | null;
 }
 
 export interface IDiscordIntegrationRepository {
@@ -64,4 +73,16 @@ export interface IDiscordIntegrationRepository {
   findLinkedAccount(accountId: bigint, userId: string): Promise<userdiscordaccounts | null>;
   upsertLinkedAccount(data: DiscordLinkUpsertInput): Promise<userdiscordaccounts>;
   deleteLinkedAccount(accountId: bigint, userId: string): Promise<void>;
+
+  listChannelMappings(accountId: bigint): Promise<accountdiscordchannels[]>;
+  findChannelMappingById(
+    accountId: bigint,
+    mappingId: bigint,
+  ): Promise<accountdiscordchannels | null>;
+  createChannelMapping(
+    accountId: bigint,
+    data: DiscordChannelMappingCreateInput,
+  ): Promise<accountdiscordchannels>;
+  deleteChannelMapping(accountId: bigint, mappingId: bigint): Promise<void>;
+  listAllChannelMappings(): Promise<accountdiscordchannels[]>;
 }

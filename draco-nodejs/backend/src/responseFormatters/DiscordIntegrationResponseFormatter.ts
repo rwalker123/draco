@@ -1,6 +1,7 @@
 import type {
   accountdiscordsettings,
   accountdiscordrolemapping,
+  accountdiscordchannels,
   userdiscordaccounts,
 } from '@prisma/client';
 import {
@@ -8,6 +9,9 @@ import {
   DiscordLinkStatusType,
   DiscordRoleMappingListType,
   DiscordRoleMappingType,
+  DiscordChannelMappingType,
+  DiscordChannelMappingListType,
+  DiscordGuildChannelType,
 } from '@draco/shared-schemas';
 
 export class DiscordIntegrationResponseFormatter {
@@ -17,10 +21,7 @@ export class DiscordIntegrationResponseFormatter {
       accountId: record.accountid.toString(),
       guildId: record.guildid ?? null,
       guildName: record.guildname ?? null,
-      botUserId: record.botuserid ?? null,
-      botUserName: record.botusername ?? null,
       roleSyncEnabled: Boolean(record.rolesyncenabled),
-      botTokenConfigured: Boolean(record.bottokenencrypted),
       createdAt: record.createdat.toISOString(),
       updatedAt: record.updatedat.toISOString(),
     };
@@ -69,5 +70,34 @@ export class DiscordIntegrationResponseFormatter {
       guildMember: Boolean(record.guildmember),
       lastSyncedAt: record.lastsyncedat ? record.lastsyncedat.toISOString() : null,
     };
+  }
+
+  static formatChannelMapping(record: accountdiscordchannels): DiscordChannelMappingType {
+    return {
+      id: record.id.toString(),
+      accountId: record.accountid.toString(),
+      discordChannelId: record.channelid,
+      discordChannelName: record.channelname,
+      channelType: record.channeltype ?? null,
+      label: record.label ?? null,
+      scope: record.scope as DiscordChannelMappingType['scope'],
+      seasonId: record.seasonid ? record.seasonid.toString() : null,
+      teamSeasonId: record.teamseasonid ? record.teamseasonid.toString() : null,
+      teamId: record.teamid ? record.teamid.toString() : null,
+      createdAt: record.createdat.toISOString(),
+      updatedAt: record.updatedat.toISOString(),
+    };
+  }
+
+  static formatChannelMappingList(
+    records: accountdiscordchannels[],
+  ): DiscordChannelMappingListType {
+    return {
+      channels: records.map((record) => this.formatChannelMapping(record)),
+    };
+  }
+
+  static formatAvailableChannels(channels: DiscordGuildChannelType[]): DiscordGuildChannelType[] {
+    return channels;
   }
 }

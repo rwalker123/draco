@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Paper, Tabs, Tab, Alert, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, Tabs, Tab, Alert, CircularProgress, Stack } from '@mui/material';
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
@@ -16,6 +16,7 @@ import { GeneralSettingsWidget } from '../../../../components/account/settings/G
 import { UrlManagementWidget } from '../../../../components/account/settings/UrlManagementWidget';
 import { SocialMediaWidget } from '../../../../components/account/settings/SocialMediaWidget';
 import { SecuritySettingsWidget } from '../../../../components/account/settings/SecuritySettingsWidget';
+import { DiscordIntegrationAdminWidget } from '../../../../components/account/settings/DiscordIntegrationAdminWidget';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -215,7 +216,10 @@ const AccountSettings: React.FC = () => {
 
           {/* Social Media Tab */}
           <TabPanel value={tabValue} index={2}>
-            <SocialMediaWidget account={account} />
+            <Stack spacing={3}>
+              <SocialMediaWidget account={account} />
+              <DiscordIntegrationAdminWidget accountId={accountIdStr || null} />
+            </Stack>
           </TabPanel>
 
           {/* Security Tab */}

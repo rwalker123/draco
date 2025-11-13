@@ -53,6 +53,17 @@ router.get(
 );
 
 router.get(
+  '/:accountId/seasons/:seasonId/social/community-channels',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
+    const channels = await socialHubService.listCommunityChannels(accountId, seasonId);
+    res.json({ channels });
+  }),
+);
+
+router.get(
   '/:accountId/seasons/:seasonId/social/live-events',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),

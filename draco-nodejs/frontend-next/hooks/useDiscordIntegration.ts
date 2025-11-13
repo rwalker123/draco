@@ -1,11 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import {
-  DiscordLinkStatusType,
-  DiscordOAuthCallbackType,
-  DiscordOAuthStartResponseType,
-} from '@draco/shared-schemas';
+import { DiscordLinkStatusType, DiscordOAuthStartResponseType } from '@draco/shared-schemas';
 import { useAuth } from '@/context/AuthContext';
 
 type DiscordRequestOptions = RequestInit & { errorMessage?: string };
@@ -82,20 +78,6 @@ export const useDiscordIntegration = () => {
     [request],
   );
 
-  const completeLink = useCallback(
-    async (
-      accountId: string,
-      payload: DiscordOAuthCallbackType,
-    ): Promise<DiscordLinkStatusType> => {
-      return request<DiscordLinkStatusType>(buildApiPath(accountId, 'link/callback'), {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        errorMessage: 'Unable to complete the Discord linking flow.',
-      });
-    },
-    [request],
-  );
-
   const unlinkDiscord = useCallback(
     async (accountId: string): Promise<DiscordLinkStatusType> => {
       return request<DiscordLinkStatusType>(buildApiPath(accountId, 'link'), {
@@ -109,7 +91,6 @@ export const useDiscordIntegration = () => {
   return {
     getLinkStatus,
     startLink,
-    completeLink,
     unlinkDiscord,
   };
 };

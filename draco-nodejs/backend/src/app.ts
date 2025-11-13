@@ -37,6 +37,7 @@ import emailsRouter from './routes/emails.js';
 import webhookRouter from './routes/webhookRoutes.js';
 import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
+import discordRouter from './routes/discord.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -239,6 +240,7 @@ app.use('/api', emailsRouter);
 app.use('/api/webhooks', webhookRouter);
 app.use('/api/accounts', accountsRouter);
 app.use('/api/roles', rolesRouter);
+app.use('/api/discord', discordRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 

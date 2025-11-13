@@ -28,10 +28,7 @@ export const DiscordAccountConfigSchema = z.object({
   accountId: bigintToStringSchema,
   guildId: DiscordGuildIdSchema.nullable(),
   guildName: z.string().nullable(),
-  botUserId: z.string().nullable(),
-  botUserName: z.string().nullable(),
   roleSyncEnabled: z.boolean(),
-  botTokenConfigured: z.boolean(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
 });
@@ -39,18 +36,8 @@ export const DiscordAccountConfigSchema = z.object({
 export type DiscordAccountConfigType = z.infer<typeof DiscordAccountConfigSchema>;
 
 export const DiscordAccountConfigUpdateSchema = z.object({
-  guildId: DiscordGuildIdSchema.nullable(),
+  guildId: DiscordGuildIdSchema.nullable().optional(),
   roleSyncEnabled: z.boolean().optional(),
-  botToken: z
-    .union([
-      z
-        .string()
-        .trim()
-        .min(1, 'Bot token is required when provided')
-        .max(256, 'Bot token cannot exceed 256 characters'),
-      z.literal(null),
-    ])
-    .optional(),
 });
 
 export type DiscordAccountConfigUpdateType = z.infer<typeof DiscordAccountConfigUpdateSchema>;
@@ -80,6 +67,100 @@ export const DiscordRoleMappingListSchema = z.object({
 });
 
 export type DiscordRoleMappingListType = z.infer<typeof DiscordRoleMappingListSchema>;
+
+export const DiscordChannelScopeEnum = z.enum(['account', 'season', 'teamSeason']);
+
+export const DiscordGuildChannelSchema = z.object({
+  id: z.string().trim().min(1),
+  name: z.string().trim().min(1),
+  type: z.string().trim().nullable().optional(),
+});
+
+export type DiscordGuildChannelType = z.infer<typeof DiscordGuildChannelSchema>;
+
+export const DiscordChannelMappingSchema = z.object({
+  id: bigintToStringSchema,
+  accountId: bigintToStringSchema,
+  discordChannelId: z.string().trim().min(1),
+  discordChannelName: z.string().trim().min(1),
+  channelType: z.string().nullable().optional(),
+  label: z.string().nullable(),
+  scope: DiscordChannelScopeEnum,
+  seasonId: bigintToStringSchema.nullable(),
+  teamSeasonId: bigintToStringSchema.nullable(),
+  teamId: bigintToStringSchema.nullable(),
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+});
+
+export type DiscordChannelMappingType = z.infer<typeof DiscordChannelMappingSchema>;
+
+export const DiscordChannelMappingListSchema = z.object({
+  channels: DiscordChannelMappingSchema.array(),
+});
+
+export type DiscordChannelMappingListType = z.infer<typeof DiscordChannelMappingListSchema>;
+
+export const DiscordChannelCreateTypeEnum = z.enum(['text', 'announcement']);
+
+const optionalIdSchema = z
+  .union([bigintToStringSchema, z.literal('')])
+  .transform((value) => (value === '' ? undefined : value));
+
+const ChannelMappingBaseSchema = z.object({
+  label: z.string().trim().max(100).optional(),
+  scope: DiscordChannelScopeEnum,
+  seasonId: optionalIdSchema.optional(),
+  teamSeasonId: optionalIdSchema.optional(),
+  teamId: optionalIdSchema.optional(),
+});
+
+export const DiscordChannelMappingExistingSchema = ChannelMappingBaseSchema.extend({
+  mode: z.literal('existing'),
+  discordChannelId: z.string().trim().min(1, 'Channel is required'),
+  discordChannelName: z.string().trim().min(1, 'Channel name is required'),
+  channelType: z.string().trim().optional(),
+});
+
+export const DiscordChannelMappingAutoCreateSchema = ChannelMappingBaseSchema.extend({
+  mode: z.literal('autoCreate'),
+  newChannelName: z.string().trim().min(1, 'Channel name is required').max(100),
+  newChannelType: DiscordChannelCreateTypeEnum.default('text'),
+});
+
+export const DiscordChannelMappingCreateSchema = z
+  .discriminatedUnion('mode', [
+    DiscordChannelMappingExistingSchema,
+    DiscordChannelMappingAutoCreateSchema,
+  ])
+  .superRefine((value, ctx) => {
+    if (value.scope === 'season' && !value.seasonId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['seasonId'],
+        message: 'Season is required when mapping a season channel.',
+      });
+    }
+
+    if (value.scope === 'teamSeason') {
+      if (!value.seasonId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['seasonId'],
+          message: 'Season is required when mapping a team channel.',
+        });
+      }
+      if (!value.teamSeasonId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['teamSeasonId'],
+          message: 'Team season is required when mapping a team channel.',
+        });
+      }
+    }
+  });
+
+export type DiscordChannelMappingCreateType = z.infer<typeof DiscordChannelMappingCreateSchema>;
 
 export const DiscordLinkStatusSchema = z.object({
   linkingEnabled: z.boolean(),

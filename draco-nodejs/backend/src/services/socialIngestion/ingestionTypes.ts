@@ -38,6 +38,7 @@ export interface DiscordMessageIngestionRecord {
   content: string;
   authorDisplayName: string;
   authorId?: string;
+  authorAvatarUrl?: string | null;
   postedAt: Date;
   attachments?: CommunityMessageAttachmentType[];
   permalink?: string | null;
@@ -68,7 +69,7 @@ export interface YouTubeConnectorOptions {
 export interface DiscordConnectorOptions {
   botToken?: string;
   limit: number;
-  targets: DiscordIngestionTarget[];
+  targetsProvider: () => Promise<DiscordIngestionTarget[]>;
   intervalMs: number;
   enabled: boolean;
 }

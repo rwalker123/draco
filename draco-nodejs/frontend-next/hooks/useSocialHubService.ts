@@ -2,7 +2,12 @@
 
 import { useApiClient } from './useApiClient';
 import { useCallback } from 'react';
-import { listSocialFeed, listSocialVideos, listCommunityMessages } from '@draco/shared-api-client';
+import {
+  listSocialFeed,
+  listSocialVideos,
+  listCommunityMessages,
+  listSocialCommunityChannels,
+} from '@draco/shared-api-client';
 import type {
   SocialFeedItemType,
   SocialFeedQueryType,
@@ -10,6 +15,7 @@ import type {
   SocialVideoQueryType,
   CommunityMessagePreviewType,
   CommunityMessageQueryType,
+  CommunityChannelType,
 } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../utils/apiResult';
 
@@ -88,9 +94,22 @@ export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceCon
     [apiClient, ensureContext],
   );
 
+  const fetchCommunityChannels = useCallback(async (): Promise<CommunityChannelType[]> => {
+    const context = ensureContext();
+    const result = await listSocialCommunityChannels({
+      client: apiClient,
+      path: { accountId: context.accountId, seasonId: context.seasonId },
+      throwOnError: false,
+    });
+
+    const payload = unwrapApiResult(result, 'Failed to load community channels');
+    return payload.channels;
+  }, [apiClient, ensureContext]);
+
   return {
     fetchFeed,
     fetchVideos,
     fetchCommunityMessages,
+    fetchCommunityChannels,
   };
 };
